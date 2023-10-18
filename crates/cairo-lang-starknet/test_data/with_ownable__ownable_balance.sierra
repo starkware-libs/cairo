@@ -1010,648 +1010,647 @@ store_temp<Array<felt252>>([1]) -> ([1]); // 727
 function_call<user@core::Felt252Serde::serialize>([5], [1]) -> ([6], [7]); // 728
 drop<Unit>([7]) -> (); // 729
 struct_construct<Unit>() -> ([8]); // 730
-store_temp<Array<felt252>>([6]) -> ([6]); // 731
-store_temp<Unit>([8]) -> ([8]); // 732
-return([6], [8]); // 733
-store_temp<core::array::Span::<core::felt252>>([1]) -> ([1]); // 734
-function_call<user@core::Felt252Serde::deserialize>([1]) -> ([2], [3]); // 735
-enum_match<core::option::Option::<core::felt252>>([3]) { fallthrough([4]) 752([5]) }; // 736
-branch_align() -> (); // 737
-contract_address_try_from_felt252([0], [4]) { fallthrough([6], [7]) 745([8]) }; // 738
-branch_align() -> (); // 739
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([7]) -> ([9]); // 740
-store_temp<RangeCheck>([6]) -> ([6]); // 741
-store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 742
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([9]); // 743
-return([6], [2], [9]); // 744
-branch_align() -> (); // 745
-struct_construct<Unit>() -> ([10]); // 746
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([10]) -> ([11]); // 747
-store_temp<RangeCheck>([8]) -> ([8]); // 748
-store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 749
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([11]) -> ([11]); // 750
-return([8], [2], [11]); // 751
-branch_align() -> (); // 752
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([5]) -> ([12]); // 753
-store_temp<RangeCheck>([0]) -> ([0]); // 754
-store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 755
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([12]) -> ([12]); // 756
-return([0], [2], [12]); // 757
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([5]); // 758
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([6]); // 759
-store_temp<RangeCheck>([0]) -> ([0]); // 760
-store_temp<GasBuiltin>([1]) -> ([1]); // 761
-store_temp<System>([2]) -> ([2]); // 762
-store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([6]) -> ([6]); // 763
-store_temp<ContractAddress>([4]) -> ([4]); // 764
-function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::transfer_ownership>([0], [1], [2], [6], [4]) -> ([7], [8], [9], [10]); // 765
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([10]) { fallthrough([11]) 777([12]) }; // 766
-branch_align() -> (); // 767
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([11]) -> ([13], [14]); // 768
-drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([13]) -> (); // 769
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([3], [14]) -> ([15]); // 770
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([15]) -> ([16]); // 771
-store_temp<RangeCheck>([7]) -> ([7]); // 772
-store_temp<GasBuiltin>([8]) -> ([8]); // 773
-store_temp<System>([9]) -> ([9]); // 774
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([16]) -> ([16]); // 775
-return([7], [8], [9], [16]); // 776
-branch_align() -> (); // 777
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([3]) -> (); // 778
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([12]) -> ([17]); // 779
-store_temp<RangeCheck>([7]) -> ([7]); // 780
-store_temp<GasBuiltin>([8]) -> ([8]); // 781
-store_temp<System>([9]) -> ([9]); // 782
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([17]) -> ([17]); // 783
-return([7], [8], [9], [17]); // 784
-struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([2]) -> ([5], [6]); // 785
-store_temp<GasBuiltin>([0]) -> ([0]); // 786
-store_temp<System>([1]) -> ([1]); // 787
-store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([5]); // 788
-store_temp<ContractAddress>([3]) -> ([3]); // 789
-function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::init_ownable>([0], [1], [5], [3]) -> ([7], [8], [9]); // 790
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([9]) { fallthrough([10]) 819([11]) }; // 791
-branch_align() -> (); // 792
-store_temp<GasBuiltin>([7]) -> ([7]); // 793
-store_temp<System>([8]) -> ([8]); // 794
-store_temp<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> ([6]); // 795
-store_temp<u128>([4]) -> ([4]); // 796
-function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>([7], [8], [6], [4]) -> ([12], [13], [14]); // 797
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([14]) { fallthrough([15]) 812([16]) }; // 798
-branch_align() -> (); // 799
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([10]) -> ([17], [18]); // 800
-drop<Unit>([18]) -> (); // 801
-struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([15]) -> ([19], [20]); // 802
-drop<Unit>([20]) -> (); // 803
-struct_construct<Unit>() -> ([21]); // 804
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([17], [19]) -> ([22]); // 805
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([22], [21]) -> ([23]); // 806
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([23]) -> ([24]); // 807
-store_temp<GasBuiltin>([12]) -> ([12]); // 808
-store_temp<System>([13]) -> ([13]); // 809
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([24]) -> ([24]); // 810
-return([12], [13], [24]); // 811
-branch_align() -> (); // 812
-drop<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([10]) -> (); // 813
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([16]) -> ([25]); // 814
-store_temp<GasBuiltin>([12]) -> ([12]); // 815
-store_temp<System>([13]) -> ([13]); // 816
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([25]) -> ([25]); // 817
-return([12], [13], [25]); // 818
-branch_align() -> (); // 819
-drop<u128>([4]) -> (); // 820
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> (); // 821
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([11]) -> ([26]); // 822
-store_temp<GasBuiltin>([7]) -> ([7]); // 823
-store_temp<System>([8]) -> ([8]); // 824
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([26]) -> ([26]); // 825
-return([7], [8], [26]); // 826
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([3]) -> (); // 827
-storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 828
-u32_const<0>() -> ([5]); // 829
-store_temp<RangeCheck>([0]) -> ([0]); // 830
-store_temp<GasBuiltin>([1]) -> ([1]); // 831
-store_temp<System>([2]) -> ([2]); // 832
-store_temp<u32>([5]) -> ([5]); // 833
-store_temp<StorageBaseAddress>([4]) -> ([4]); // 834
-function_call<user@core::starknet::storage_access::StoreU128::read>([0], [1], [2], [5], [4]) -> ([6], [7], [8], [9]); // 835
-enum_match<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([9]) { fallthrough([10]) 858([11]) }; // 836
-branch_align() -> (); // 837
-struct_deconstruct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([10]) -> ([12]); // 838
-store_temp<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>([12]) -> ([12]); // 839
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall>([12]) -> ([13]); // 840
-enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([13]) { fallthrough([14]) 851([15]) }; // 841
-branch_align() -> (); // 842
-struct_deconstruct<Tuple<u128>>([14]) -> ([16]); // 843
-struct_construct<Tuple<u128>>([16]) -> ([17]); // 844
-enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>([17]) -> ([18]); // 845
-store_temp<RangeCheck>([6]) -> ([6]); // 846
-store_temp<GasBuiltin>([7]) -> ([7]); // 847
-store_temp<System>([8]) -> ([8]); // 848
-store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([18]) -> ([18]); // 849
-return([6], [7], [8], [18]); // 850
-branch_align() -> (); // 851
-enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([15]) -> ([19]); // 852
-store_temp<RangeCheck>([6]) -> ([6]); // 853
-store_temp<GasBuiltin>([7]) -> ([7]); // 854
-store_temp<System>([8]) -> ([8]); // 855
-store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([19]) -> ([19]); // 856
-return([6], [7], [8], [19]); // 857
-branch_align() -> (); // 858
-enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([11]) -> ([20]); // 859
-store_temp<RangeCheck>([6]) -> ([6]); // 860
-store_temp<GasBuiltin>([7]) -> ([7]); // 861
-store_temp<System>([8]) -> ([8]); // 862
-store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([20]) -> ([20]); // 863
-return([6], [7], [8], [20]); // 864
-struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([4]); // 865
-store_temp<RangeCheck>([0]) -> ([0]); // 866
-store_temp<GasBuiltin>([1]) -> ([1]); // 867
-store_temp<System>([2]) -> ([2]); // 868
-store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 869
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 870
-enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 928([10]) }; // 871
-branch_align() -> (); // 872
-store_temp<GasBuiltin>([6]) -> ([6]); // 873
-store_temp<System>([7]) -> ([7]); // 874
-function_call<user@core::starknet::info::get_caller_address>([6], [7]) -> ([11], [12], [13]); // 875
-enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) { fallthrough([14]) 920([15]) }; // 876
-branch_align() -> (); // 877
-struct_deconstruct<Tuple<ContractAddress>>([9]) -> ([16]); // 878
-snapshot_take<ContractAddress>([16]) -> ([17], [18]); // 879
-drop<ContractAddress>([17]) -> (); // 880
-rename<ContractAddress>([18]) -> ([19]); // 881
-contract_address_to_felt252([19]) -> ([20]); // 882
-struct_deconstruct<Tuple<ContractAddress>>([14]) -> ([21]); // 883
-snapshot_take<ContractAddress>([21]) -> ([22], [23]); // 884
-drop<ContractAddress>([22]) -> (); // 885
-rename<ContractAddress>([23]) -> ([24]); // 886
-contract_address_to_felt252([24]) -> ([25]); // 887
-snapshot_take<felt252>([20]) -> ([26], [27]); // 888
-drop<felt252>([26]) -> (); // 889
-snapshot_take<felt252>([25]) -> ([28], [29]); // 890
-drop<felt252>([28]) -> (); // 891
-rename<felt252>([27]) -> ([30]); // 892
-rename<felt252>([29]) -> ([31]); // 893
-felt252_sub([30], [31]) -> ([32]); // 894
-store_temp<felt252>([32]) -> ([32]); // 895
-felt252_is_zero([32]) { fallthrough() 906([33]) }; // 896
-branch_align() -> (); // 897
-struct_construct<Unit>() -> ([34]); // 898
-struct_construct<Tuple<Unit>>([34]) -> ([35]); // 899
-enum_init<core::panics::PanicResult::<((),)>, 0>([35]) -> ([36]); // 900
-store_temp<RangeCheck>([5]) -> ([5]); // 901
-store_temp<GasBuiltin>([11]) -> ([11]); // 902
-store_temp<System>([12]) -> ([12]); // 903
-store_temp<core::panics::PanicResult::<((),)>>([36]) -> ([36]); // 904
-return([5], [11], [12], [36]); // 905
-branch_align() -> (); // 906
-drop<NonZero<felt252>>([33]) -> (); // 907
-array_new<felt252>() -> ([37]); // 908
-felt252_const<27063539617145597287547105838>() -> ([38]); // 909
-store_temp<felt252>([38]) -> ([38]); // 910
-array_append<felt252>([37], [38]) -> ([39]); // 911
-struct_construct<core::panics::Panic>() -> ([40]); // 912
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41]); // 913
-enum_init<core::panics::PanicResult::<((),)>, 1>([41]) -> ([42]); // 914
-store_temp<RangeCheck>([5]) -> ([5]); // 915
-store_temp<GasBuiltin>([11]) -> ([11]); // 916
-store_temp<System>([12]) -> ([12]); // 917
-store_temp<core::panics::PanicResult::<((),)>>([42]) -> ([42]); // 918
-return([5], [11], [12], [42]); // 919
-branch_align() -> (); // 920
-drop<Tuple<ContractAddress>>([9]) -> (); // 921
-enum_init<core::panics::PanicResult::<((),)>, 1>([15]) -> ([43]); // 922
-store_temp<RangeCheck>([5]) -> ([5]); // 923
-store_temp<GasBuiltin>([11]) -> ([11]); // 924
-store_temp<System>([12]) -> ([12]); // 925
-store_temp<core::panics::PanicResult::<((),)>>([43]) -> ([43]); // 926
-return([5], [11], [12], [43]); // 927
-branch_align() -> (); // 928
-enum_init<core::panics::PanicResult::<((),)>, 1>([10]) -> ([44]); // 929
-store_temp<RangeCheck>([5]) -> ([5]); // 930
-store_temp<GasBuiltin>([6]) -> ([6]); // 931
-store_temp<System>([7]) -> ([7]); // 932
-store_temp<core::panics::PanicResult::<((),)>>([44]) -> ([44]); // 933
-return([5], [6], [7], [44]); // 934
-storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 935
-u128_to_felt252([3]) -> ([5]); // 936
-storage_address_from_base([4]) -> ([6]); // 937
-u32_const<0>() -> ([7]); // 938
-snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> ([8], [9]); // 939
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([9]) -> (); // 940
-store_temp<u32>([7]) -> ([7]); // 941
-store_temp<StorageAddress>([6]) -> ([6]); // 942
-storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 951([12], [13], [14]) }; // 943
-branch_align() -> (); // 944
-struct_construct<Unit>() -> ([15]); // 945
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([15]) -> ([16]); // 946
-store_temp<GasBuiltin>([10]) -> ([17]); // 947
-store_temp<System>([11]) -> ([18]); // 948
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([16]) -> ([19]); // 949
-jump() { 956() }; // 950
-branch_align() -> (); // 951
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([14]) -> ([20]); // 952
-store_temp<GasBuiltin>([12]) -> ([17]); // 953
-store_temp<System>([13]) -> ([18]); // 954
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([20]) -> ([19]); // 955
-function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>([19]) -> ([21]); // 956
-enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 966([23]) }; // 957
-branch_align() -> (); // 958
-struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 959
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 960
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 961
-store_temp<GasBuiltin>([17]) -> ([17]); // 962
-store_temp<System>([18]) -> ([18]); // 963
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([26]) -> ([26]); // 964
-return([17], [18], [26]); // 965
-branch_align() -> (); // 966
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([8]) -> (); // 967
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 968
-store_temp<GasBuiltin>([17]) -> ([17]); // 969
-store_temp<System>([18]) -> ([18]); // 970
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([27]) -> ([27]); // 971
-return([17], [18], [27]); // 972
-struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([0]) -> ([1], [2]); // 973
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> (); // 974
-store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([1]) -> ([1]); // 975
-return([1]); // 976
-struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([4]); // 977
-store_temp<RangeCheck>([0]) -> ([0]); // 978
-store_temp<GasBuiltin>([1]) -> ([1]); // 979
-store_temp<System>([2]) -> ([2]); // 980
-store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 981
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 982
-enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 993([10]) }; // 983
-branch_align() -> (); // 984
-struct_deconstruct<Tuple<ContractAddress>>([9]) -> ([11]); // 985
-struct_construct<Tuple<ContractAddress>>([11]) -> ([12]); // 986
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([12]) -> ([13]); // 987
-store_temp<RangeCheck>([5]) -> ([5]); // 988
-store_temp<GasBuiltin>([6]) -> ([6]); // 989
-store_temp<System>([7]) -> ([7]); // 990
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) -> ([13]); // 991
-return([5], [6], [7], [13]); // 992
-branch_align() -> (); // 993
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([10]) -> ([14]); // 994
-store_temp<RangeCheck>([5]) -> ([5]); // 995
-store_temp<GasBuiltin>([6]) -> ([6]); // 996
-store_temp<System>([7]) -> ([7]); // 997
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([14]) -> ([14]); // 998
-return([5], [6], [7], [14]); // 999
-rename<felt252>([0]) -> ([2]); // 1000
-array_append<felt252>([1], [2]) -> ([3]); // 1001
-struct_construct<Unit>() -> ([4]); // 1002
-store_temp<Array<felt252>>([3]) -> ([3]); // 1003
-store_temp<Unit>([4]) -> ([4]); // 1004
-return([3], [4]); // 1005
-struct_deconstruct<core::array::Span::<core::felt252>>([0]) -> ([1]); // 1006
-array_snapshot_pop_front<felt252>([1]) { fallthrough([2], [3]) 1013([4]) }; // 1007
-branch_align() -> (); // 1008
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([3]) -> ([5]); // 1009
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([6]); // 1010
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([5]) -> ([7]); // 1011
-jump() { 1018() }; // 1012
-branch_align() -> (); // 1013
-struct_construct<Unit>() -> ([8]); // 1014
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 1015
-store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 1016
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 1017
-struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 1018
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1019
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 1028([12]) }; // 1020
-branch_align() -> (); // 1021
-unbox<felt252>([11]) -> ([13]); // 1022
-rename<felt252>([13]) -> ([14]); // 1023
-enum_init<core::option::Option::<core::felt252>, 0>([14]) -> ([15]); // 1024
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1025
-store_temp<core::option::Option::<core::felt252>>([15]) -> ([15]); // 1026
-return([10], [15]); // 1027
-branch_align() -> (); // 1028
-drop<Unit>([12]) -> (); // 1029
-struct_construct<Unit>() -> ([16]); // 1030
-enum_init<core::option::Option::<core::felt252>, 1>([16]) -> ([17]); // 1031
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1032
-store_temp<core::option::Option::<core::felt252>>([17]) -> ([17]); // 1033
-return([10], [17]); // 1034
-snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([5], [6]); // 1035
-store_temp<RangeCheck>([0]) -> ([0]); // 1036
-store_temp<GasBuiltin>([1]) -> ([1]); // 1037
-store_temp<System>([2]) -> ([2]); // 1038
-store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([6]) -> ([6]); // 1039
-function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([0], [1], [2], [6]) -> ([7], [8], [9], [10]); // 1040
-enum_match<core::panics::PanicResult::<((),)>>([10]) { fallthrough([11]) 1070([12]) }; // 1041
-branch_align() -> (); // 1042
-drop<Tuple<Unit>>([11]) -> (); // 1043
-struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([13]); // 1044
-store_temp<GasBuiltin>([8]) -> ([8]); // 1045
-store_temp<System>([9]) -> ([9]); // 1046
-store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([13]) -> ([13]); // 1047
-store_temp<ContractAddress>([4]) -> ([4]); // 1048
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([8], [9], [13], [4]) -> ([14], [15], [16]); // 1049
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([16]) { fallthrough([17]) 1063([18]) }; // 1050
-branch_align() -> (); // 1051
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([17]) -> ([19], [20]); // 1052
-drop<Unit>([20]) -> (); // 1053
-struct_construct<Unit>() -> ([21]); // 1054
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([19]) -> ([22]); // 1055
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([22], [21]) -> ([23]); // 1056
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([23]) -> ([24]); // 1057
-store_temp<RangeCheck>([7]) -> ([7]); // 1058
-store_temp<GasBuiltin>([14]) -> ([14]); // 1059
-store_temp<System>([15]) -> ([15]); // 1060
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([24]) -> ([24]); // 1061
-return([7], [14], [15], [24]); // 1062
-branch_align() -> (); // 1063
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([18]) -> ([25]); // 1064
-store_temp<RangeCheck>([7]) -> ([7]); // 1065
-store_temp<GasBuiltin>([14]) -> ([14]); // 1066
-store_temp<System>([15]) -> ([15]); // 1067
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([25]) -> ([25]); // 1068
-return([7], [14], [15], [25]); // 1069
-branch_align() -> (); // 1070
-drop<ContractAddress>([4]) -> (); // 1071
-drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> (); // 1072
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([12]) -> ([26]); // 1073
-store_temp<RangeCheck>([7]) -> ([7]); // 1074
-store_temp<GasBuiltin>([8]) -> ([8]); // 1075
-store_temp<System>([9]) -> ([9]); // 1076
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([26]) -> ([26]); // 1077
-return([7], [8], [9], [26]); // 1078
-struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([2]) -> ([4]); // 1079
-store_temp<GasBuiltin>([0]) -> ([0]); // 1080
-store_temp<System>([1]) -> ([1]); // 1081
-store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 1082
-store_temp<ContractAddress>([3]) -> ([3]); // 1083
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([0], [1], [4], [3]) -> ([5], [6], [7]); // 1084
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([7]) { fallthrough([8]) 1097([9]) }; // 1085
-branch_align() -> (); // 1086
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8]) -> ([10], [11]); // 1087
-drop<Unit>([11]) -> (); // 1088
-struct_construct<Unit>() -> ([12]); // 1089
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([10]) -> ([13]); // 1090
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([13], [12]) -> ([14]); // 1091
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([14]) -> ([15]); // 1092
-store_temp<GasBuiltin>([5]) -> ([5]); // 1093
-store_temp<System>([6]) -> ([6]); // 1094
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([15]) -> ([15]); // 1095
-return([5], [6], [15]); // 1096
-branch_align() -> (); // 1097
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([9]) -> ([16]); // 1098
-store_temp<GasBuiltin>([5]) -> ([5]); // 1099
-store_temp<System>([6]) -> ([6]); // 1100
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([16]) -> ([16]); // 1101
-return([5], [6], [16]); // 1102
-storage_address_from_base([4]) -> ([5]); // 1103
-storage_read_syscall([1], [2], [3], [5]) { fallthrough([6], [7], [8]) 1135([9], [10], [11]) }; // 1104
-branch_align() -> (); // 1105
-store_temp<RangeCheck>([0]) -> ([0]); // 1106
-store_temp<felt252>([8]) -> ([8]); // 1107
-function_call<user@core::integer::u128_try_from_felt252>([0], [8]) -> ([12], [13]); // 1108
-store_temp<GasBuiltin>([6]) -> ([6]); // 1109
-store_temp<System>([7]) -> ([7]); // 1110
-enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([14]) 1121([15]) }; // 1111
-branch_align() -> (); // 1112
-enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([14]) -> ([16]); // 1113
-struct_construct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([16]) -> ([17]); // 1114
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>([17]) -> ([18]); // 1115
-store_temp<RangeCheck>([12]) -> ([12]); // 1116
-store_temp<GasBuiltin>([6]) -> ([6]); // 1117
-store_temp<System>([7]) -> ([7]); // 1118
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([18]) -> ([18]); // 1119
-return([12], [6], [7], [18]); // 1120
-branch_align() -> (); // 1121
-drop<Unit>([15]) -> (); // 1122
-array_new<felt252>() -> ([19]); // 1123
-felt252_const<476442828812030857794232422692155113556837216824>() -> ([20]); // 1124
-store_temp<felt252>([20]) -> ([20]); // 1125
-array_append<felt252>([19], [20]) -> ([21]); // 1126
-struct_construct<core::panics::Panic>() -> ([22]); // 1127
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([22], [21]) -> ([23]); // 1128
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>([23]) -> ([24]); // 1129
-store_temp<RangeCheck>([12]) -> ([12]); // 1130
-store_temp<GasBuiltin>([6]) -> ([6]); // 1131
-store_temp<System>([7]) -> ([7]); // 1132
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([24]) -> ([24]); // 1133
-return([12], [6], [7], [24]); // 1134
-branch_align() -> (); // 1135
-enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 1>([11]) -> ([25]); // 1136
-struct_construct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([25]) -> ([26]); // 1137
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>([26]) -> ([27]); // 1138
-store_temp<RangeCheck>([0]) -> ([0]); // 1139
-store_temp<GasBuiltin>([9]) -> ([9]); // 1140
-store_temp<System>([10]) -> ([10]); // 1141
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([27]) -> ([27]); // 1142
-return([0], [9], [10], [27]); // 1143
-enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1150([2]) }; // 1144
-branch_align() -> (); // 1145
-struct_construct<Tuple<u128>>([1]) -> ([3]); // 1146
-enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>([3]) -> ([4]); // 1147
-store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([4]) -> ([4]); // 1148
-return([4]); // 1149
-branch_align() -> (); // 1150
-struct_construct<core::panics::Panic>() -> ([5]); // 1151
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1152
-enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([6]) -> ([7]); // 1153
-store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([7]) -> ([7]); // 1154
-return([7]); // 1155
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([3]) -> (); // 1156
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1157
-u32_const<0>() -> ([5]); // 1158
-store_temp<RangeCheck>([0]) -> ([0]); // 1159
-store_temp<GasBuiltin>([1]) -> ([1]); // 1160
-store_temp<System>([2]) -> ([2]); // 1161
-store_temp<u32>([5]) -> ([5]); // 1162
-store_temp<StorageBaseAddress>([4]) -> ([4]); // 1163
-function_call<user@core::starknet::storage_access::StoreContractAddress::read>([0], [1], [2], [5], [4]) -> ([6], [7], [8], [9]); // 1164
-enum_match<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([9]) { fallthrough([10]) 1187([11]) }; // 1165
-branch_align() -> (); // 1166
-struct_deconstruct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([10]) -> ([12]); // 1167
-store_temp<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([12]) -> ([12]); // 1168
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>([12]) -> ([13]); // 1169
-enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) { fallthrough([14]) 1180([15]) }; // 1170
-branch_align() -> (); // 1171
-struct_deconstruct<Tuple<ContractAddress>>([14]) -> ([16]); // 1172
-struct_construct<Tuple<ContractAddress>>([16]) -> ([17]); // 1173
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([17]) -> ([18]); // 1174
-store_temp<RangeCheck>([6]) -> ([6]); // 1175
-store_temp<GasBuiltin>([7]) -> ([7]); // 1176
-store_temp<System>([8]) -> ([8]); // 1177
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([18]) -> ([18]); // 1178
-return([6], [7], [8], [18]); // 1179
-branch_align() -> (); // 1180
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([15]) -> ([19]); // 1181
-store_temp<RangeCheck>([6]) -> ([6]); // 1182
-store_temp<GasBuiltin>([7]) -> ([7]); // 1183
-store_temp<System>([8]) -> ([8]); // 1184
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([19]) -> ([19]); // 1185
-return([6], [7], [8], [19]); // 1186
-branch_align() -> (); // 1187
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([11]) -> ([20]); // 1188
-store_temp<RangeCheck>([6]) -> ([6]); // 1189
-store_temp<GasBuiltin>([7]) -> ([7]); // 1190
-store_temp<System>([8]) -> ([8]); // 1191
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([20]) -> ([20]); // 1192
-return([6], [7], [8], [20]); // 1193
-store_temp<GasBuiltin>([0]) -> ([0]); // 1194
-store_temp<System>([1]) -> ([1]); // 1195
-function_call<user@core::starknet::info::get_execution_info>([0], [1]) -> ([2], [3], [4]); // 1196
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) { fallthrough([5]) 1212([6]) }; // 1197
-branch_align() -> (); // 1198
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([5]) -> ([7]); // 1199
-unbox<core::starknet::info::ExecutionInfo>([7]) -> ([8]); // 1200
-struct_deconstruct<core::starknet::info::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 1201
-drop<Box<core::starknet::info::BlockInfo>>([9]) -> (); // 1202
-drop<Box<core::starknet::info::TxInfo>>([10]) -> (); // 1203
-drop<ContractAddress>([12]) -> (); // 1204
-drop<felt252>([13]) -> (); // 1205
-struct_construct<Tuple<ContractAddress>>([11]) -> ([14]); // 1206
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([14]) -> ([15]); // 1207
-store_temp<GasBuiltin>([2]) -> ([2]); // 1208
-store_temp<System>([3]) -> ([3]); // 1209
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([15]) -> ([15]); // 1210
-return([2], [3], [15]); // 1211
-branch_align() -> (); // 1212
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([16]); // 1213
-store_temp<GasBuiltin>([2]) -> ([2]); // 1214
-store_temp<System>([3]) -> ([3]); // 1215
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([16]) -> ([16]); // 1216
-return([2], [3], [16]); // 1217
-enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1224([2]) }; // 1218
-branch_align() -> (); // 1219
-struct_construct<Tuple<Unit>>([1]) -> ([3]); // 1220
-enum_init<core::panics::PanicResult::<((),)>, 0>([3]) -> ([4]); // 1221
-store_temp<core::panics::PanicResult::<((),)>>([4]) -> ([4]); // 1222
-return([4]); // 1223
-branch_align() -> (); // 1224
-struct_construct<core::panics::Panic>() -> ([5]); // 1225
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1226
-enum_init<core::panics::PanicResult::<((),)>, 1>([6]) -> ([7]); // 1227
-store_temp<core::panics::PanicResult::<((),)>>([7]) -> ([7]); // 1228
-return([7]); // 1229
-storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1230
-contract_address_to_felt252([3]) -> ([5]); // 1231
-storage_address_from_base([4]) -> ([6]); // 1232
-u32_const<0>() -> ([7]); // 1233
-snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([2]) -> ([8], [9]); // 1234
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([9]) -> (); // 1235
-store_temp<u32>([7]) -> ([7]); // 1236
-store_temp<StorageAddress>([6]) -> ([6]); // 1237
-storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1246([12], [13], [14]) }; // 1238
-branch_align() -> (); // 1239
-struct_construct<Unit>() -> ([15]); // 1240
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([15]) -> ([16]); // 1241
-store_temp<GasBuiltin>([10]) -> ([17]); // 1242
-store_temp<System>([11]) -> ([18]); // 1243
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([16]) -> ([19]); // 1244
-jump() { 1251() }; // 1245
-branch_align() -> (); // 1246
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([14]) -> ([20]); // 1247
-store_temp<GasBuiltin>([12]) -> ([17]); // 1248
-store_temp<System>([13]) -> ([18]); // 1249
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([20]) -> ([19]); // 1250
-function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>([19]) -> ([21]); // 1251
-enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 1261([23]) }; // 1252
-branch_align() -> (); // 1253
-struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 1254
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1255
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1256
-store_temp<GasBuiltin>([17]) -> ([17]); // 1257
-store_temp<System>([18]) -> ([18]); // 1258
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([26]) -> ([26]); // 1259
-return([17], [18], [26]); // 1260
-branch_align() -> (); // 1261
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([8]) -> (); // 1262
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1263
-store_temp<GasBuiltin>([17]) -> ([17]); // 1264
-store_temp<System>([18]) -> ([18]); // 1265
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([27]) -> ([27]); // 1266
-return([17], [18], [27]); // 1267
-storage_address_from_base([4]) -> ([5]); // 1268
-storage_read_syscall([1], [2], [3], [5]) { fallthrough([6], [7], [8]) 1300([9], [10], [11]) }; // 1269
-branch_align() -> (); // 1270
-store_temp<RangeCheck>([0]) -> ([0]); // 1271
-store_temp<felt252>([8]) -> ([8]); // 1272
-function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([0], [8]) -> ([12], [13]); // 1273
-store_temp<GasBuiltin>([6]) -> ([6]); // 1274
-store_temp<System>([7]) -> ([7]); // 1275
-enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([14]) 1286([15]) }; // 1276
-branch_align() -> (); // 1277
-enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([14]) -> ([16]); // 1278
-struct_construct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([16]) -> ([17]); // 1279
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>([17]) -> ([18]); // 1280
-store_temp<RangeCheck>([12]) -> ([12]); // 1281
-store_temp<GasBuiltin>([6]) -> ([6]); // 1282
-store_temp<System>([7]) -> ([7]); // 1283
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([18]) -> ([18]); // 1284
-return([12], [6], [7], [18]); // 1285
-branch_align() -> (); // 1286
-drop<Unit>([15]) -> (); // 1287
-array_new<felt252>() -> ([19]); // 1288
-felt252_const<1749165063169615148890104124711417950509560691>() -> ([20]); // 1289
-store_temp<felt252>([20]) -> ([20]); // 1290
-array_append<felt252>([19], [20]) -> ([21]); // 1291
-struct_construct<core::panics::Panic>() -> ([22]); // 1292
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([22], [21]) -> ([23]); // 1293
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 1>([23]) -> ([24]); // 1294
-store_temp<RangeCheck>([12]) -> ([12]); // 1295
-store_temp<GasBuiltin>([6]) -> ([6]); // 1296
-store_temp<System>([7]) -> ([7]); // 1297
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([24]) -> ([24]); // 1298
-return([12], [6], [7], [24]); // 1299
-branch_align() -> (); // 1300
-enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1>([11]) -> ([25]); // 1301
-struct_construct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([25]) -> ([26]); // 1302
-enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>([26]) -> ([27]); // 1303
-store_temp<RangeCheck>([0]) -> ([0]); // 1304
-store_temp<GasBuiltin>([9]) -> ([9]); // 1305
-store_temp<System>([10]) -> ([10]); // 1306
-store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([27]) -> ([27]); // 1307
-return([0], [9], [10], [27]); // 1308
-enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1315([2]) }; // 1309
-branch_align() -> (); // 1310
-struct_construct<Tuple<ContractAddress>>([1]) -> ([3]); // 1311
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([3]) -> ([4]); // 1312
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([4]) -> ([4]); // 1313
-return([4]); // 1314
-branch_align() -> (); // 1315
-struct_construct<core::panics::Panic>() -> ([5]); // 1316
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1317
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([7]); // 1318
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) -> ([7]); // 1319
-return([7]); // 1320
-get_execution_info_syscall([0], [1]) { fallthrough([2], [3], [4]) 1328([5], [6], [7]) }; // 1321
-branch_align() -> (); // 1322
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 1323
-store_temp<GasBuiltin>([2]) -> ([9]); // 1324
-store_temp<System>([3]) -> ([10]); // 1325
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 1326
-jump() { 1333() }; // 1327
-branch_align() -> (); // 1328
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 1329
-store_temp<GasBuiltin>([5]) -> ([9]); // 1330
-store_temp<System>([6]) -> ([10]); // 1331
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 1332
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 1333
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([13]) { fallthrough([14]) 1343([15]) }; // 1334
-branch_align() -> (); // 1335
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([14]) -> ([16]); // 1336
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([16]) -> ([17]); // 1337
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 1338
-store_temp<GasBuiltin>([9]) -> ([9]); // 1339
-store_temp<System>([10]) -> ([10]); // 1340
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([18]) -> ([18]); // 1341
-return([9], [10], [18]); // 1342
-branch_align() -> (); // 1343
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 1344
-store_temp<GasBuiltin>([9]) -> ([9]); // 1345
-store_temp<System>([10]) -> ([10]); // 1346
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([19]) -> ([19]); // 1347
-return([9], [10], [19]); // 1348
-contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1355([4]) }; // 1349
-branch_align() -> (); // 1350
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 1351
-store_temp<RangeCheck>([2]) -> ([6]); // 1352
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([7]); // 1353
-jump() { 1360() }; // 1354
-branch_align() -> (); // 1355
-struct_construct<Unit>() -> ([8]); // 1356
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([8]) -> ([9]); // 1357
-store_temp<RangeCheck>([4]) -> ([6]); // 1358
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([7]); // 1359
-return([6], [7]); // 1360
-enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1367([2]) }; // 1361
-branch_align() -> (); // 1362
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([1]) -> ([3]); // 1363
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 1364
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) -> ([4]); // 1365
-return([4]); // 1366
-branch_align() -> (); // 1367
-struct_construct<core::panics::Panic>() -> ([5]); // 1368
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1369
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 1370
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([7]) -> ([7]); // 1371
-return([7]); // 1372
+store_temp<Unit>([8]) -> ([8]); // 731
+return([6], [8]); // 732
+store_temp<core::array::Span::<core::felt252>>([1]) -> ([1]); // 733
+function_call<user@core::Felt252Serde::deserialize>([1]) -> ([2], [3]); // 734
+enum_match<core::option::Option::<core::felt252>>([3]) { fallthrough([4]) 751([5]) }; // 735
+branch_align() -> (); // 736
+contract_address_try_from_felt252([0], [4]) { fallthrough([6], [7]) 744([8]) }; // 737
+branch_align() -> (); // 738
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([7]) -> ([9]); // 739
+store_temp<RangeCheck>([6]) -> ([6]); // 740
+store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 741
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([9]); // 742
+return([6], [2], [9]); // 743
+branch_align() -> (); // 744
+struct_construct<Unit>() -> ([10]); // 745
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([10]) -> ([11]); // 746
+store_temp<RangeCheck>([8]) -> ([8]); // 747
+store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 748
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([11]) -> ([11]); // 749
+return([8], [2], [11]); // 750
+branch_align() -> (); // 751
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([5]) -> ([12]); // 752
+store_temp<RangeCheck>([0]) -> ([0]); // 753
+store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 754
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([12]) -> ([12]); // 755
+return([0], [2], [12]); // 756
+struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([5]); // 757
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([6]); // 758
+store_temp<RangeCheck>([0]) -> ([0]); // 759
+store_temp<GasBuiltin>([1]) -> ([1]); // 760
+store_temp<System>([2]) -> ([2]); // 761
+store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([6]) -> ([6]); // 762
+store_temp<ContractAddress>([4]) -> ([4]); // 763
+function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::transfer_ownership>([0], [1], [2], [6], [4]) -> ([7], [8], [9], [10]); // 764
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([10]) { fallthrough([11]) 776([12]) }; // 765
+branch_align() -> (); // 766
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([11]) -> ([13], [14]); // 767
+drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([13]) -> (); // 768
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([3], [14]) -> ([15]); // 769
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([15]) -> ([16]); // 770
+store_temp<RangeCheck>([7]) -> ([7]); // 771
+store_temp<GasBuiltin>([8]) -> ([8]); // 772
+store_temp<System>([9]) -> ([9]); // 773
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([16]) -> ([16]); // 774
+return([7], [8], [9], [16]); // 775
+branch_align() -> (); // 776
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([3]) -> (); // 777
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([12]) -> ([17]); // 778
+store_temp<RangeCheck>([7]) -> ([7]); // 779
+store_temp<GasBuiltin>([8]) -> ([8]); // 780
+store_temp<System>([9]) -> ([9]); // 781
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([17]) -> ([17]); // 782
+return([7], [8], [9], [17]); // 783
+struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([2]) -> ([5], [6]); // 784
+store_temp<GasBuiltin>([0]) -> ([0]); // 785
+store_temp<System>([1]) -> ([1]); // 786
+store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([5]); // 787
+store_temp<ContractAddress>([3]) -> ([3]); // 788
+function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::init_ownable>([0], [1], [5], [3]) -> ([7], [8], [9]); // 789
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([9]) { fallthrough([10]) 818([11]) }; // 790
+branch_align() -> (); // 791
+store_temp<GasBuiltin>([7]) -> ([7]); // 792
+store_temp<System>([8]) -> ([8]); // 793
+store_temp<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> ([6]); // 794
+store_temp<u128>([4]) -> ([4]); // 795
+function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>([7], [8], [6], [4]) -> ([12], [13], [14]); // 796
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([14]) { fallthrough([15]) 811([16]) }; // 797
+branch_align() -> (); // 798
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([10]) -> ([17], [18]); // 799
+drop<Unit>([18]) -> (); // 800
+struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([15]) -> ([19], [20]); // 801
+drop<Unit>([20]) -> (); // 802
+struct_construct<Unit>() -> ([21]); // 803
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([17], [19]) -> ([22]); // 804
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([22], [21]) -> ([23]); // 805
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([23]) -> ([24]); // 806
+store_temp<GasBuiltin>([12]) -> ([12]); // 807
+store_temp<System>([13]) -> ([13]); // 808
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([24]) -> ([24]); // 809
+return([12], [13], [24]); // 810
+branch_align() -> (); // 811
+drop<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([10]) -> (); // 812
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([16]) -> ([25]); // 813
+store_temp<GasBuiltin>([12]) -> ([12]); // 814
+store_temp<System>([13]) -> ([13]); // 815
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([25]) -> ([25]); // 816
+return([12], [13], [25]); // 817
+branch_align() -> (); // 818
+drop<u128>([4]) -> (); // 819
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> (); // 820
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([11]) -> ([26]); // 821
+store_temp<GasBuiltin>([7]) -> ([7]); // 822
+store_temp<System>([8]) -> ([8]); // 823
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([26]) -> ([26]); // 824
+return([7], [8], [26]); // 825
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([3]) -> (); // 826
+storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 827
+u32_const<0>() -> ([5]); // 828
+store_temp<RangeCheck>([0]) -> ([0]); // 829
+store_temp<GasBuiltin>([1]) -> ([1]); // 830
+store_temp<System>([2]) -> ([2]); // 831
+store_temp<u32>([5]) -> ([5]); // 832
+store_temp<StorageBaseAddress>([4]) -> ([4]); // 833
+function_call<user@core::starknet::storage_access::StoreU128::read>([0], [1], [2], [5], [4]) -> ([6], [7], [8], [9]); // 834
+enum_match<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([9]) { fallthrough([10]) 857([11]) }; // 835
+branch_align() -> (); // 836
+struct_deconstruct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([10]) -> ([12]); // 837
+store_temp<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>([12]) -> ([12]); // 838
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall>([12]) -> ([13]); // 839
+enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([13]) { fallthrough([14]) 850([15]) }; // 840
+branch_align() -> (); // 841
+struct_deconstruct<Tuple<u128>>([14]) -> ([16]); // 842
+struct_construct<Tuple<u128>>([16]) -> ([17]); // 843
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>([17]) -> ([18]); // 844
+store_temp<RangeCheck>([6]) -> ([6]); // 845
+store_temp<GasBuiltin>([7]) -> ([7]); // 846
+store_temp<System>([8]) -> ([8]); // 847
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([18]) -> ([18]); // 848
+return([6], [7], [8], [18]); // 849
+branch_align() -> (); // 850
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([15]) -> ([19]); // 851
+store_temp<RangeCheck>([6]) -> ([6]); // 852
+store_temp<GasBuiltin>([7]) -> ([7]); // 853
+store_temp<System>([8]) -> ([8]); // 854
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([19]) -> ([19]); // 855
+return([6], [7], [8], [19]); // 856
+branch_align() -> (); // 857
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([11]) -> ([20]); // 858
+store_temp<RangeCheck>([6]) -> ([6]); // 859
+store_temp<GasBuiltin>([7]) -> ([7]); // 860
+store_temp<System>([8]) -> ([8]); // 861
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([20]) -> ([20]); // 862
+return([6], [7], [8], [20]); // 863
+struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([4]); // 864
+store_temp<RangeCheck>([0]) -> ([0]); // 865
+store_temp<GasBuiltin>([1]) -> ([1]); // 866
+store_temp<System>([2]) -> ([2]); // 867
+store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 868
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 869
+enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 927([10]) }; // 870
+branch_align() -> (); // 871
+store_temp<GasBuiltin>([6]) -> ([6]); // 872
+store_temp<System>([7]) -> ([7]); // 873
+function_call<user@core::starknet::info::get_caller_address>([6], [7]) -> ([11], [12], [13]); // 874
+enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) { fallthrough([14]) 919([15]) }; // 875
+branch_align() -> (); // 876
+struct_deconstruct<Tuple<ContractAddress>>([9]) -> ([16]); // 877
+snapshot_take<ContractAddress>([16]) -> ([17], [18]); // 878
+drop<ContractAddress>([17]) -> (); // 879
+rename<ContractAddress>([18]) -> ([19]); // 880
+contract_address_to_felt252([19]) -> ([20]); // 881
+struct_deconstruct<Tuple<ContractAddress>>([14]) -> ([21]); // 882
+snapshot_take<ContractAddress>([21]) -> ([22], [23]); // 883
+drop<ContractAddress>([22]) -> (); // 884
+rename<ContractAddress>([23]) -> ([24]); // 885
+contract_address_to_felt252([24]) -> ([25]); // 886
+snapshot_take<felt252>([20]) -> ([26], [27]); // 887
+drop<felt252>([26]) -> (); // 888
+snapshot_take<felt252>([25]) -> ([28], [29]); // 889
+drop<felt252>([28]) -> (); // 890
+rename<felt252>([27]) -> ([30]); // 891
+rename<felt252>([29]) -> ([31]); // 892
+felt252_sub([30], [31]) -> ([32]); // 893
+store_temp<felt252>([32]) -> ([32]); // 894
+felt252_is_zero([32]) { fallthrough() 905([33]) }; // 895
+branch_align() -> (); // 896
+struct_construct<Unit>() -> ([34]); // 897
+struct_construct<Tuple<Unit>>([34]) -> ([35]); // 898
+enum_init<core::panics::PanicResult::<((),)>, 0>([35]) -> ([36]); // 899
+store_temp<RangeCheck>([5]) -> ([5]); // 900
+store_temp<GasBuiltin>([11]) -> ([11]); // 901
+store_temp<System>([12]) -> ([12]); // 902
+store_temp<core::panics::PanicResult::<((),)>>([36]) -> ([36]); // 903
+return([5], [11], [12], [36]); // 904
+branch_align() -> (); // 905
+drop<NonZero<felt252>>([33]) -> (); // 906
+array_new<felt252>() -> ([37]); // 907
+felt252_const<27063539617145597287547105838>() -> ([38]); // 908
+store_temp<felt252>([38]) -> ([38]); // 909
+array_append<felt252>([37], [38]) -> ([39]); // 910
+struct_construct<core::panics::Panic>() -> ([40]); // 911
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41]); // 912
+enum_init<core::panics::PanicResult::<((),)>, 1>([41]) -> ([42]); // 913
+store_temp<RangeCheck>([5]) -> ([5]); // 914
+store_temp<GasBuiltin>([11]) -> ([11]); // 915
+store_temp<System>([12]) -> ([12]); // 916
+store_temp<core::panics::PanicResult::<((),)>>([42]) -> ([42]); // 917
+return([5], [11], [12], [42]); // 918
+branch_align() -> (); // 919
+drop<Tuple<ContractAddress>>([9]) -> (); // 920
+enum_init<core::panics::PanicResult::<((),)>, 1>([15]) -> ([43]); // 921
+store_temp<RangeCheck>([5]) -> ([5]); // 922
+store_temp<GasBuiltin>([11]) -> ([11]); // 923
+store_temp<System>([12]) -> ([12]); // 924
+store_temp<core::panics::PanicResult::<((),)>>([43]) -> ([43]); // 925
+return([5], [11], [12], [43]); // 926
+branch_align() -> (); // 927
+enum_init<core::panics::PanicResult::<((),)>, 1>([10]) -> ([44]); // 928
+store_temp<RangeCheck>([5]) -> ([5]); // 929
+store_temp<GasBuiltin>([6]) -> ([6]); // 930
+store_temp<System>([7]) -> ([7]); // 931
+store_temp<core::panics::PanicResult::<((),)>>([44]) -> ([44]); // 932
+return([5], [6], [7], [44]); // 933
+storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 934
+u128_to_felt252([3]) -> ([5]); // 935
+storage_address_from_base([4]) -> ([6]); // 936
+u32_const<0>() -> ([7]); // 937
+snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> ([8], [9]); // 938
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([9]) -> (); // 939
+store_temp<u32>([7]) -> ([7]); // 940
+store_temp<StorageAddress>([6]) -> ([6]); // 941
+storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 950([12], [13], [14]) }; // 942
+branch_align() -> (); // 943
+struct_construct<Unit>() -> ([15]); // 944
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([15]) -> ([16]); // 945
+store_temp<GasBuiltin>([10]) -> ([17]); // 946
+store_temp<System>([11]) -> ([18]); // 947
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([16]) -> ([19]); // 948
+jump() { 955() }; // 949
+branch_align() -> (); // 950
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([14]) -> ([20]); // 951
+store_temp<GasBuiltin>([12]) -> ([17]); // 952
+store_temp<System>([13]) -> ([18]); // 953
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([20]) -> ([19]); // 954
+function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>([19]) -> ([21]); // 955
+enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 965([23]) }; // 956
+branch_align() -> (); // 957
+struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 958
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 959
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 960
+store_temp<GasBuiltin>([17]) -> ([17]); // 961
+store_temp<System>([18]) -> ([18]); // 962
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([26]) -> ([26]); // 963
+return([17], [18], [26]); // 964
+branch_align() -> (); // 965
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([8]) -> (); // 966
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 967
+store_temp<GasBuiltin>([17]) -> ([17]); // 968
+store_temp<System>([18]) -> ([18]); // 969
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([27]) -> ([27]); // 970
+return([17], [18], [27]); // 971
+struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([0]) -> ([1], [2]); // 972
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> (); // 973
+store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([1]) -> ([1]); // 974
+return([1]); // 975
+struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([4]); // 976
+store_temp<RangeCheck>([0]) -> ([0]); // 977
+store_temp<GasBuiltin>([1]) -> ([1]); // 978
+store_temp<System>([2]) -> ([2]); // 979
+store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 980
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 981
+enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 992([10]) }; // 982
+branch_align() -> (); // 983
+struct_deconstruct<Tuple<ContractAddress>>([9]) -> ([11]); // 984
+struct_construct<Tuple<ContractAddress>>([11]) -> ([12]); // 985
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([12]) -> ([13]); // 986
+store_temp<RangeCheck>([5]) -> ([5]); // 987
+store_temp<GasBuiltin>([6]) -> ([6]); // 988
+store_temp<System>([7]) -> ([7]); // 989
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) -> ([13]); // 990
+return([5], [6], [7], [13]); // 991
+branch_align() -> (); // 992
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([10]) -> ([14]); // 993
+store_temp<RangeCheck>([5]) -> ([5]); // 994
+store_temp<GasBuiltin>([6]) -> ([6]); // 995
+store_temp<System>([7]) -> ([7]); // 996
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([14]) -> ([14]); // 997
+return([5], [6], [7], [14]); // 998
+rename<felt252>([0]) -> ([2]); // 999
+array_append<felt252>([1], [2]) -> ([3]); // 1000
+struct_construct<Unit>() -> ([4]); // 1001
+store_temp<Array<felt252>>([3]) -> ([3]); // 1002
+store_temp<Unit>([4]) -> ([4]); // 1003
+return([3], [4]); // 1004
+struct_deconstruct<core::array::Span::<core::felt252>>([0]) -> ([1]); // 1005
+array_snapshot_pop_front<felt252>([1]) { fallthrough([2], [3]) 1012([4]) }; // 1006
+branch_align() -> (); // 1007
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([3]) -> ([5]); // 1008
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([6]); // 1009
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([5]) -> ([7]); // 1010
+jump() { 1017() }; // 1011
+branch_align() -> (); // 1012
+struct_construct<Unit>() -> ([8]); // 1013
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 1014
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 1015
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 1016
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 1017
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1018
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 1027([12]) }; // 1019
+branch_align() -> (); // 1020
+unbox<felt252>([11]) -> ([13]); // 1021
+rename<felt252>([13]) -> ([14]); // 1022
+enum_init<core::option::Option::<core::felt252>, 0>([14]) -> ([15]); // 1023
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1024
+store_temp<core::option::Option::<core::felt252>>([15]) -> ([15]); // 1025
+return([10], [15]); // 1026
+branch_align() -> (); // 1027
+drop<Unit>([12]) -> (); // 1028
+struct_construct<Unit>() -> ([16]); // 1029
+enum_init<core::option::Option::<core::felt252>, 1>([16]) -> ([17]); // 1030
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1031
+store_temp<core::option::Option::<core::felt252>>([17]) -> ([17]); // 1032
+return([10], [17]); // 1033
+snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([5], [6]); // 1034
+store_temp<RangeCheck>([0]) -> ([0]); // 1035
+store_temp<GasBuiltin>([1]) -> ([1]); // 1036
+store_temp<System>([2]) -> ([2]); // 1037
+store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([6]) -> ([6]); // 1038
+function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>([0], [1], [2], [6]) -> ([7], [8], [9], [10]); // 1039
+enum_match<core::panics::PanicResult::<((),)>>([10]) { fallthrough([11]) 1069([12]) }; // 1040
+branch_align() -> (); // 1041
+drop<Tuple<Unit>>([11]) -> (); // 1042
+struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([13]); // 1043
+store_temp<GasBuiltin>([8]) -> ([8]); // 1044
+store_temp<System>([9]) -> ([9]); // 1045
+store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([13]) -> ([13]); // 1046
+store_temp<ContractAddress>([4]) -> ([4]); // 1047
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([8], [9], [13], [4]) -> ([14], [15], [16]); // 1048
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([16]) { fallthrough([17]) 1062([18]) }; // 1049
+branch_align() -> (); // 1050
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([17]) -> ([19], [20]); // 1051
+drop<Unit>([20]) -> (); // 1052
+struct_construct<Unit>() -> ([21]); // 1053
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([19]) -> ([22]); // 1054
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([22], [21]) -> ([23]); // 1055
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([23]) -> ([24]); // 1056
+store_temp<RangeCheck>([7]) -> ([7]); // 1057
+store_temp<GasBuiltin>([14]) -> ([14]); // 1058
+store_temp<System>([15]) -> ([15]); // 1059
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([24]) -> ([24]); // 1060
+return([7], [14], [15], [24]); // 1061
+branch_align() -> (); // 1062
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([18]) -> ([25]); // 1063
+store_temp<RangeCheck>([7]) -> ([7]); // 1064
+store_temp<GasBuiltin>([14]) -> ([14]); // 1065
+store_temp<System>([15]) -> ([15]); // 1066
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([25]) -> ([25]); // 1067
+return([7], [14], [15], [25]); // 1068
+branch_align() -> (); // 1069
+drop<ContractAddress>([4]) -> (); // 1070
+drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> (); // 1071
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([12]) -> ([26]); // 1072
+store_temp<RangeCheck>([7]) -> ([7]); // 1073
+store_temp<GasBuiltin>([8]) -> ([8]); // 1074
+store_temp<System>([9]) -> ([9]); // 1075
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([26]) -> ([26]); // 1076
+return([7], [8], [9], [26]); // 1077
+struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([2]) -> ([4]); // 1078
+store_temp<GasBuiltin>([0]) -> ([0]); // 1079
+store_temp<System>([1]) -> ([1]); // 1080
+store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([4]) -> ([4]); // 1081
+store_temp<ContractAddress>([3]) -> ([3]); // 1082
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([0], [1], [4], [3]) -> ([5], [6], [7]); // 1083
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([7]) { fallthrough([8]) 1096([9]) }; // 1084
+branch_align() -> (); // 1085
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8]) -> ([10], [11]); // 1086
+drop<Unit>([11]) -> (); // 1087
+struct_construct<Unit>() -> ([12]); // 1088
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([10]) -> ([13]); // 1089
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([13], [12]) -> ([14]); // 1090
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([14]) -> ([15]); // 1091
+store_temp<GasBuiltin>([5]) -> ([5]); // 1092
+store_temp<System>([6]) -> ([6]); // 1093
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([15]) -> ([15]); // 1094
+return([5], [6], [15]); // 1095
+branch_align() -> (); // 1096
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>([9]) -> ([16]); // 1097
+store_temp<GasBuiltin>([5]) -> ([5]); // 1098
+store_temp<System>([6]) -> ([6]); // 1099
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>([16]) -> ([16]); // 1100
+return([5], [6], [16]); // 1101
+storage_address_from_base([4]) -> ([5]); // 1102
+storage_read_syscall([1], [2], [3], [5]) { fallthrough([6], [7], [8]) 1134([9], [10], [11]) }; // 1103
+branch_align() -> (); // 1104
+store_temp<RangeCheck>([0]) -> ([0]); // 1105
+store_temp<felt252>([8]) -> ([8]); // 1106
+function_call<user@core::integer::u128_try_from_felt252>([0], [8]) -> ([12], [13]); // 1107
+store_temp<GasBuiltin>([6]) -> ([6]); // 1108
+store_temp<System>([7]) -> ([7]); // 1109
+enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([14]) 1120([15]) }; // 1110
+branch_align() -> (); // 1111
+enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([14]) -> ([16]); // 1112
+struct_construct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([16]) -> ([17]); // 1113
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>([17]) -> ([18]); // 1114
+store_temp<RangeCheck>([12]) -> ([12]); // 1115
+store_temp<GasBuiltin>([6]) -> ([6]); // 1116
+store_temp<System>([7]) -> ([7]); // 1117
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([18]) -> ([18]); // 1118
+return([12], [6], [7], [18]); // 1119
+branch_align() -> (); // 1120
+drop<Unit>([15]) -> (); // 1121
+array_new<felt252>() -> ([19]); // 1122
+felt252_const<476442828812030857794232422692155113556837216824>() -> ([20]); // 1123
+store_temp<felt252>([20]) -> ([20]); // 1124
+array_append<felt252>([19], [20]) -> ([21]); // 1125
+struct_construct<core::panics::Panic>() -> ([22]); // 1126
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([22], [21]) -> ([23]); // 1127
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>([23]) -> ([24]); // 1128
+store_temp<RangeCheck>([12]) -> ([12]); // 1129
+store_temp<GasBuiltin>([6]) -> ([6]); // 1130
+store_temp<System>([7]) -> ([7]); // 1131
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([24]) -> ([24]); // 1132
+return([12], [6], [7], [24]); // 1133
+branch_align() -> (); // 1134
+enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 1>([11]) -> ([25]); // 1135
+struct_construct<Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>>([25]) -> ([26]); // 1136
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>([26]) -> ([27]); // 1137
+store_temp<RangeCheck>([0]) -> ([0]); // 1138
+store_temp<GasBuiltin>([9]) -> ([9]); // 1139
+store_temp<System>([10]) -> ([10]); // 1140
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>([27]) -> ([27]); // 1141
+return([0], [9], [10], [27]); // 1142
+enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1149([2]) }; // 1143
+branch_align() -> (); // 1144
+struct_construct<Tuple<u128>>([1]) -> ([3]); // 1145
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>([3]) -> ([4]); // 1146
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([4]) -> ([4]); // 1147
+return([4]); // 1148
+branch_align() -> (); // 1149
+struct_construct<core::panics::Panic>() -> ([5]); // 1150
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1151
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([6]) -> ([7]); // 1152
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([7]) -> ([7]); // 1153
+return([7]); // 1154
+drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([3]) -> (); // 1155
+storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1156
+u32_const<0>() -> ([5]); // 1157
+store_temp<RangeCheck>([0]) -> ([0]); // 1158
+store_temp<GasBuiltin>([1]) -> ([1]); // 1159
+store_temp<System>([2]) -> ([2]); // 1160
+store_temp<u32>([5]) -> ([5]); // 1161
+store_temp<StorageBaseAddress>([4]) -> ([4]); // 1162
+function_call<user@core::starknet::storage_access::StoreContractAddress::read>([0], [1], [2], [5], [4]) -> ([6], [7], [8], [9]); // 1163
+enum_match<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([9]) { fallthrough([10]) 1186([11]) }; // 1164
+branch_align() -> (); // 1165
+struct_deconstruct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([10]) -> ([12]); // 1166
+store_temp<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([12]) -> ([12]); // 1167
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>([12]) -> ([13]); // 1168
+enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([13]) { fallthrough([14]) 1179([15]) }; // 1169
+branch_align() -> (); // 1170
+struct_deconstruct<Tuple<ContractAddress>>([14]) -> ([16]); // 1171
+struct_construct<Tuple<ContractAddress>>([16]) -> ([17]); // 1172
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([17]) -> ([18]); // 1173
+store_temp<RangeCheck>([6]) -> ([6]); // 1174
+store_temp<GasBuiltin>([7]) -> ([7]); // 1175
+store_temp<System>([8]) -> ([8]); // 1176
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([18]) -> ([18]); // 1177
+return([6], [7], [8], [18]); // 1178
+branch_align() -> (); // 1179
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([15]) -> ([19]); // 1180
+store_temp<RangeCheck>([6]) -> ([6]); // 1181
+store_temp<GasBuiltin>([7]) -> ([7]); // 1182
+store_temp<System>([8]) -> ([8]); // 1183
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([19]) -> ([19]); // 1184
+return([6], [7], [8], [19]); // 1185
+branch_align() -> (); // 1186
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([11]) -> ([20]); // 1187
+store_temp<RangeCheck>([6]) -> ([6]); // 1188
+store_temp<GasBuiltin>([7]) -> ([7]); // 1189
+store_temp<System>([8]) -> ([8]); // 1190
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([20]) -> ([20]); // 1191
+return([6], [7], [8], [20]); // 1192
+store_temp<GasBuiltin>([0]) -> ([0]); // 1193
+store_temp<System>([1]) -> ([1]); // 1194
+function_call<user@core::starknet::info::get_execution_info>([0], [1]) -> ([2], [3], [4]); // 1195
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) { fallthrough([5]) 1211([6]) }; // 1196
+branch_align() -> (); // 1197
+struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([5]) -> ([7]); // 1198
+unbox<core::starknet::info::ExecutionInfo>([7]) -> ([8]); // 1199
+struct_deconstruct<core::starknet::info::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 1200
+drop<Box<core::starknet::info::BlockInfo>>([9]) -> (); // 1201
+drop<Box<core::starknet::info::TxInfo>>([10]) -> (); // 1202
+drop<ContractAddress>([12]) -> (); // 1203
+drop<felt252>([13]) -> (); // 1204
+struct_construct<Tuple<ContractAddress>>([11]) -> ([14]); // 1205
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([14]) -> ([15]); // 1206
+store_temp<GasBuiltin>([2]) -> ([2]); // 1207
+store_temp<System>([3]) -> ([3]); // 1208
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([15]) -> ([15]); // 1209
+return([2], [3], [15]); // 1210
+branch_align() -> (); // 1211
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([16]); // 1212
+store_temp<GasBuiltin>([2]) -> ([2]); // 1213
+store_temp<System>([3]) -> ([3]); // 1214
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([16]) -> ([16]); // 1215
+return([2], [3], [16]); // 1216
+enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1223([2]) }; // 1217
+branch_align() -> (); // 1218
+struct_construct<Tuple<Unit>>([1]) -> ([3]); // 1219
+enum_init<core::panics::PanicResult::<((),)>, 0>([3]) -> ([4]); // 1220
+store_temp<core::panics::PanicResult::<((),)>>([4]) -> ([4]); // 1221
+return([4]); // 1222
+branch_align() -> (); // 1223
+struct_construct<core::panics::Panic>() -> ([5]); // 1224
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1225
+enum_init<core::panics::PanicResult::<((),)>, 1>([6]) -> ([7]); // 1226
+store_temp<core::panics::PanicResult::<((),)>>([7]) -> ([7]); // 1227
+return([7]); // 1228
+storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1229
+contract_address_to_felt252([3]) -> ([5]); // 1230
+storage_address_from_base([4]) -> ([6]); // 1231
+u32_const<0>() -> ([7]); // 1232
+snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([2]) -> ([8], [9]); // 1233
+drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([9]) -> (); // 1234
+store_temp<u32>([7]) -> ([7]); // 1235
+store_temp<StorageAddress>([6]) -> ([6]); // 1236
+storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1245([12], [13], [14]) }; // 1237
+branch_align() -> (); // 1238
+struct_construct<Unit>() -> ([15]); // 1239
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([15]) -> ([16]); // 1240
+store_temp<GasBuiltin>([10]) -> ([17]); // 1241
+store_temp<System>([11]) -> ([18]); // 1242
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([16]) -> ([19]); // 1243
+jump() { 1250() }; // 1244
+branch_align() -> (); // 1245
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([14]) -> ([20]); // 1246
+store_temp<GasBuiltin>([12]) -> ([17]); // 1247
+store_temp<System>([13]) -> ([18]); // 1248
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([20]) -> ([19]); // 1249
+function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>([19]) -> ([21]); // 1250
+enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 1260([23]) }; // 1251
+branch_align() -> (); // 1252
+struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 1253
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1254
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1255
+store_temp<GasBuiltin>([17]) -> ([17]); // 1256
+store_temp<System>([18]) -> ([18]); // 1257
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([26]) -> ([26]); // 1258
+return([17], [18], [26]); // 1259
+branch_align() -> (); // 1260
+drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([8]) -> (); // 1261
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1262
+store_temp<GasBuiltin>([17]) -> ([17]); // 1263
+store_temp<System>([18]) -> ([18]); // 1264
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([27]) -> ([27]); // 1265
+return([17], [18], [27]); // 1266
+storage_address_from_base([4]) -> ([5]); // 1267
+storage_read_syscall([1], [2], [3], [5]) { fallthrough([6], [7], [8]) 1299([9], [10], [11]) }; // 1268
+branch_align() -> (); // 1269
+store_temp<RangeCheck>([0]) -> ([0]); // 1270
+store_temp<felt252>([8]) -> ([8]); // 1271
+function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([0], [8]) -> ([12], [13]); // 1272
+store_temp<GasBuiltin>([6]) -> ([6]); // 1273
+store_temp<System>([7]) -> ([7]); // 1274
+enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([14]) 1285([15]) }; // 1275
+branch_align() -> (); // 1276
+enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([14]) -> ([16]); // 1277
+struct_construct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([16]) -> ([17]); // 1278
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>([17]) -> ([18]); // 1279
+store_temp<RangeCheck>([12]) -> ([12]); // 1280
+store_temp<GasBuiltin>([6]) -> ([6]); // 1281
+store_temp<System>([7]) -> ([7]); // 1282
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([18]) -> ([18]); // 1283
+return([12], [6], [7], [18]); // 1284
+branch_align() -> (); // 1285
+drop<Unit>([15]) -> (); // 1286
+array_new<felt252>() -> ([19]); // 1287
+felt252_const<1749165063169615148890104124711417950509560691>() -> ([20]); // 1288
+store_temp<felt252>([20]) -> ([20]); // 1289
+array_append<felt252>([19], [20]) -> ([21]); // 1290
+struct_construct<core::panics::Panic>() -> ([22]); // 1291
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([22], [21]) -> ([23]); // 1292
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 1>([23]) -> ([24]); // 1293
+store_temp<RangeCheck>([12]) -> ([12]); // 1294
+store_temp<GasBuiltin>([6]) -> ([6]); // 1295
+store_temp<System>([7]) -> ([7]); // 1296
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([24]) -> ([24]); // 1297
+return([12], [6], [7], [24]); // 1298
+branch_align() -> (); // 1299
+enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1>([11]) -> ([25]); // 1300
+struct_construct<Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>>([25]) -> ([26]); // 1301
+enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>([26]) -> ([27]); // 1302
+store_temp<RangeCheck>([0]) -> ([0]); // 1303
+store_temp<GasBuiltin>([9]) -> ([9]); // 1304
+store_temp<System>([10]) -> ([10]); // 1305
+store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>([27]) -> ([27]); // 1306
+return([0], [9], [10], [27]); // 1307
+enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1314([2]) }; // 1308
+branch_align() -> (); // 1309
+struct_construct<Tuple<ContractAddress>>([1]) -> ([3]); // 1310
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([3]) -> ([4]); // 1311
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([4]) -> ([4]); // 1312
+return([4]); // 1313
+branch_align() -> (); // 1314
+struct_construct<core::panics::Panic>() -> ([5]); // 1315
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1316
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([7]); // 1317
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) -> ([7]); // 1318
+return([7]); // 1319
+get_execution_info_syscall([0], [1]) { fallthrough([2], [3], [4]) 1327([5], [6], [7]) }; // 1320
+branch_align() -> (); // 1321
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 1322
+store_temp<GasBuiltin>([2]) -> ([9]); // 1323
+store_temp<System>([3]) -> ([10]); // 1324
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 1325
+jump() { 1332() }; // 1326
+branch_align() -> (); // 1327
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 1328
+store_temp<GasBuiltin>([5]) -> ([9]); // 1329
+store_temp<System>([6]) -> ([10]); // 1330
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 1331
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 1332
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([13]) { fallthrough([14]) 1342([15]) }; // 1333
+branch_align() -> (); // 1334
+struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([14]) -> ([16]); // 1335
+struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([16]) -> ([17]); // 1336
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 1337
+store_temp<GasBuiltin>([9]) -> ([9]); // 1338
+store_temp<System>([10]) -> ([10]); // 1339
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([18]) -> ([18]); // 1340
+return([9], [10], [18]); // 1341
+branch_align() -> (); // 1342
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 1343
+store_temp<GasBuiltin>([9]) -> ([9]); // 1344
+store_temp<System>([10]) -> ([10]); // 1345
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([19]) -> ([19]); // 1346
+return([9], [10], [19]); // 1347
+contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1354([4]) }; // 1348
+branch_align() -> (); // 1349
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 1350
+store_temp<RangeCheck>([2]) -> ([6]); // 1351
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([7]); // 1352
+jump() { 1359() }; // 1353
+branch_align() -> (); // 1354
+struct_construct<Unit>() -> ([8]); // 1355
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([8]) -> ([9]); // 1356
+store_temp<RangeCheck>([4]) -> ([6]); // 1357
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([7]); // 1358
+return([6], [7]); // 1359
+enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1366([2]) }; // 1360
+branch_align() -> (); // 1361
+struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([1]) -> ([3]); // 1362
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 1363
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) -> ([4]); // 1364
+return([4]); // 1365
+branch_align() -> (); // 1366
+struct_construct<core::panics::Panic>() -> ([5]); // 1367
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1368
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 1369
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([7]) -> ([7]); // 1370
+return([7]); // 1371
 
 cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__get_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__set_balance@97([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -1663,26 +1662,26 @@ core::integer::u128_try_from_felt252@638([0]: RangeCheck, [1]: felt252) -> (Rang
 cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::set_balance@652([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
 cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::owner@698([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::starknet::contract_address::ContractAddressSerde::serialize@722([0]: ContractAddress, [1]: Array<felt252>) -> (Array<felt252>, Unit);
-core::starknet::contract_address::ContractAddressSerde::deserialize@734([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
-cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::transfer_ownership@758([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::constructor@785([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [3]: ContractAddress, [4]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read@827([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
-cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership@865([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write@935([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp::get_component@973([0]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState) -> (cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>);
-cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::owner@977([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::Felt252Serde::serialize@1000([0]: felt252, [1]: Array<felt252>) -> (Array<felt252>, Unit);
-core::Felt252Serde::deserialize@1006([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::felt252>);
-cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::transfer_ownership@1035([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
-cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::init_ownable@1079([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
-core::starknet::storage_access::StoreU128::read@1103([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>);
-core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall@1144([0]: core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u128,)>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read@1156([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::starknet::info::get_caller_address@1194([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1218([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write@1230([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>);
-core::starknet::storage_access::StoreContractAddress::read@1268([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>);
-core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@1309([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::starknet::info::get_execution_info@1321([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
-core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1349([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
-core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall@1361([0]: core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
+core::starknet::contract_address::ContractAddressSerde::deserialize@733([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::transfer_ownership@757([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::constructor@784([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [3]: ContractAddress, [4]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read@826([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership@864([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write@934([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp::get_component@972([0]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState) -> (cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>);
+cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::owner@976([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::Felt252Serde::serialize@999([0]: felt252, [1]: Array<felt252>) -> (Array<felt252>, Unit);
+core::Felt252Serde::deserialize@1005([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::felt252>);
+cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::transfer_ownership@1034([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
+cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::init_ownable@1078([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
+core::starknet::storage_access::StoreU128::read@1102([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>);
+core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall@1143([0]: core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u128,)>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read@1155([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::info::get_caller_address@1193([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1217([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write@1229([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>);
+core::starknet::storage_access::StoreContractAddress::read@1267([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>);
+core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@1308([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::info::get_execution_info@1320([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
+core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1348([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall@1360([0]: core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);

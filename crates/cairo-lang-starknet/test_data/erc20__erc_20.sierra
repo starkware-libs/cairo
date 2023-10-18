@@ -454,6 +454,7 @@ libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panic
 libfunc enum_match<cairo_level_tests::contracts::erc20::erc_20::Event> = enum_match<cairo_level_tests::contracts::erc20::erc_20::Event>;
 libfunc felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697> = felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>;
 libfunc function_call<user@cairo_level_tests::contracts::erc20::erc_20::TransferIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::erc20::erc_20::TransferIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999> = felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>;
 libfunc function_call<user@cairo_level_tests::contracts::erc20::erc_20::ApprovalIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::erc20::erc_20::ApprovalIsEvent::append_keys_and_data>;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>;
@@ -4637,8 +4638,8 @@ store_temp<Array<felt252>>([6]) -> ([6]); // 4151
 store_temp<Array<felt252>>([2]) -> ([2]); // 4152
 function_call<user@cairo_level_tests::contracts::erc20::erc_20::TransferIsEvent::append_keys_and_data>([3], [6], [2]) -> ([7], [8], [9]); // 4153
 drop<Unit>([9]) -> (); // 4154
-store_temp<Array<felt252>>([7]) -> ([10]); // 4155
-store_temp<Array<felt252>>([8]) -> ([11]); // 4156
+rename<Array<felt252>>([7]) -> ([10]); // 4155
+rename<Array<felt252>>([8]) -> ([11]); // 4156
 jump() { 4169() }; // 4157
 branch_align() -> (); // 4158
 felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>() -> ([12]); // 4159
@@ -4649,8 +4650,8 @@ store_temp<Array<felt252>>([13]) -> ([13]); // 4163
 store_temp<Array<felt252>>([2]) -> ([2]); // 4164
 function_call<user@cairo_level_tests::contracts::erc20::erc_20::ApprovalIsEvent::append_keys_and_data>([4], [13], [2]) -> ([14], [15], [16]); // 4165
 drop<Unit>([16]) -> (); // 4166
-store_temp<Array<felt252>>([14]) -> ([10]); // 4167
-store_temp<Array<felt252>>([15]) -> ([11]); // 4168
+rename<Array<felt252>>([14]) -> ([10]); // 4167
+rename<Array<felt252>>([15]) -> ([11]); // 4168
 struct_construct<Unit>() -> ([17]); // 4169
 store_temp<Unit>([17]) -> ([17]); // 4170
 return([10], [11], [17]); // 4171
@@ -4868,9 +4869,8 @@ store_temp<Array<felt252>>([1]) -> ([1]); // 4382
 function_call<user@core::Felt252Serde::serialize>([5], [1]) -> ([6], [7]); // 4383
 drop<Unit>([7]) -> (); // 4384
 struct_construct<Unit>() -> ([8]); // 4385
-store_temp<Array<felt252>>([6]) -> ([6]); // 4386
-store_temp<Unit>([8]) -> ([8]); // 4387
-return([6], [8]); // 4388
+store_temp<Unit>([8]) -> ([8]); // 4386
+return([6], [8]); // 4387
 
 cairo_level_tests::contracts::erc20::erc_20::__wrapper__IERC20Impl__get_name@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::erc20::erc_20::__wrapper__IERC20Impl__get_symbol@101([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
