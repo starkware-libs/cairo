@@ -1,5 +1,5 @@
 use starknet::{secp256r1::Secp256r1Impl, SyscallResultTrait};
-use starknet::secp256_trait::{recover_public_key, Secp256PointTrait, Signature, verify_signature};
+use starknet::secp256_trait::{recover_public_key, Secp256PointTrait, Signature, is_valid_signature};
 use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
 use test::test_utils::assert_eq;
 
@@ -28,7 +28,7 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
         0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d
     );
 
-    let public_key = Secp256r1Impl::secp256_ec_get_point_from_xy_syscall(public_key_x, public_key_y)
+    let public_key = Secp256r1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
         .unwrap_syscall()
         .unwrap();
 
@@ -39,10 +39,9 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
 #[available_gas(100000000)]
 fn test_verify_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = verify_signature::<
+    let is_valid = is_valid_signature::<
         Secp256r1Point
-    >(msg_hash, signature.r, signature.s, public_key)
-        .unwrap();
+    >(msg_hash, signature.r, signature.s, public_key);
     assert(is_valid, 'Signature should be valid');
 }
 
@@ -50,37 +49,30 @@ fn test_verify_signature() {
 #[available_gas(100000000)]
 fn test_verify_signature_invalid_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = verify_signature::<
+    let is_valid = is_valid_signature::<
         Secp256r1Point
-    >(msg_hash, signature.r + 1, signature.s, public_key)
-        .unwrap();
+    >(msg_hash, signature.r + 1, signature.s, public_key);
     assert(!is_valid, 'Signature should be invalid');
 }
 
 #[test]
-#[should_panic(expected: ('Signature out of range',))]
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_r() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
-    match verify_signature::<
+    let is_valid = is_valid_signature::<
         Secp256r1Point
-    >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key) {
-        Result::Ok(_) => {},
-        Result::Err(err) => panic_with_felt252(err)
-    }
+    >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key);
+    assert(!is_valid, 'Signature out of range');
 }
 
 #[test]
-#[should_panic(expected: ('Signature out of range',))]
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_s() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
-    match verify_signature::<
+    let is_valid = is_valid_signature::<
         Secp256r1Point
-    >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key) {
-        Result::Ok(_) => {},
-        Result::Err(err) => panic_with_felt252(err)
-    }
+    >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key);
+    assert(!is_valid, 'Signature out of range');
 }
 
 

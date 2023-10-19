@@ -2,7 +2,7 @@ use starknet::{
     eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait
 };
 use starknet::secp256_trait::{
-    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, verify_signature
+    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature
 };
 use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl, verify_eth_signature};
 
@@ -112,14 +112,13 @@ fn test_verify_eth_signature_overflowing_signature_s() {
 fn test_verify_signature() {
     let (msg_hash, signature, public_key_x, public_key_y, _) = get_message_and_signature(false);
 
-    let public_key = Secp256k1Impl::secp256_ec_get_point_from_xy_syscall(public_key_x, public_key_y)
+    let public_key = Secp256k1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
         .unwrap_syscall()
         .unwrap();
 
-    let is_valid = verify_signature::<Secp256k1Point>(
-        msg_hash, signature.r, signature.s, public_key
-    )
-        .unwrap();
+    let is_valid = is_valid_signature::<
+        Secp256k1Point
+    >(msg_hash, signature.r, signature.s, public_key);
     assert(is_valid, 'Signature should be valid');
 }
 
@@ -128,13 +127,12 @@ fn test_verify_signature() {
 fn test_verify_signature_invalid_signature() {
     let (msg_hash, signature, public_key_x, public_key_y, _) = get_message_and_signature(false);
 
-    let public_key = Secp256k1Impl::secp256_ec_get_point_from_xy_syscall(public_key_x, public_key_y)
+    let public_key = Secp256k1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
         .unwrap_syscall()
         .unwrap();
 
-    let is_valid = verify_signature::<Secp256k1Point>(
-        msg_hash, signature.r + 1, signature.s, public_key
-    )
-        .unwrap();
+    let is_valid = is_valid_signature::<
+        Secp256k1Point
+    >(msg_hash, signature.r + 1, signature.s, public_key);
     assert(!is_valid, 'Signature should be invalid');
 }
