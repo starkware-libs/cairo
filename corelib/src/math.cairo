@@ -1,5 +1,4 @@
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use num::traits::One;
 use traits::{Into, TryInto};
 use option::OptionTrait;
 use integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
@@ -129,16 +128,16 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-impl TOneableImpl<T, +One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
+impl TOneableImpl<T, +num::traits::One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
     fn one() -> T {
-        One::one()
+        num::traits::One::one()
     }
     #[inline(always)]
     fn is_one(self: T) -> bool {
-        One::is_one(@self)
+        num::traits::One::is_one(@self)
     }
     #[inline(always)]
     fn is_non_one(self: T) -> bool {
-        One::is_non_one(@self)
+        num::traits::One::is_non_one(@self)
     }
 }
