@@ -420,6 +420,40 @@ impl StoreClassHash of Store<ClassHash> {
     }
 }
 
+impl StoreBytes31 of Store<bytes31> {
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<bytes31> {
+        Result::Ok(
+            Store::<felt252>::read(address_domain, base)?
+                .try_into()
+                .expect('StoreBytes31 - non bytes31')
+        )
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: bytes31) -> SyscallResult<()> {
+        Store::<felt252>::write(address_domain, base, value.into())
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<bytes31> {
+        Result::Ok(
+            Store::<felt252>::read_at_offset(address_domain, base, offset)?
+                .try_into()
+                .expect('StoreBytes31 - non bytes31')
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: bytes31
+    ) -> SyscallResult<()> {
+        Store::<felt252>::write_at_offset(address_domain, base, offset, value.into())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8
+    }
+}
+
 impl TupleSize0Store of Store<()> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
