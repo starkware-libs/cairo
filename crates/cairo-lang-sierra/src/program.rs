@@ -3,7 +3,9 @@ use std::fmt;
 use anyhow::Result;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
+use crate::debug_info::DebugInfo;
 use crate::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
 };
@@ -17,22 +19,57 @@ use crate::ids::{
 ///
 /// Always prefer using this struct as saved artifacts instead of inner ones.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "version")]
+#[serde(untagged)]
 pub enum VersionedProgram {
-    #[serde(rename = "1")]
-    V1(Program),
+    V1 {
+        version: Version<1>,
+        #[serde(flatten)]
+        program: ProgramArtifact,
+    },
 }
 
-impl From<Program> for VersionedProgram {
-    fn from(value: Program) -> Self {
-        VersionedProgram::V1(value)
+impl VersionedProgram {
+    pub fn v1(program: ProgramArtifact) -> Self {
+        Self::V1 { program, version: Version::<1> }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Version<const V: u8>;
+
+#[derive(Debug, Error)]
+#[error("Unsupported Sierra program version")]
+struct VersionError;
+
+impl<const V: u8> Serialize for Version<V> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u8(V)
+    }
+}
+
+impl<'de, const V: u8> Deserialize<'de> for Version<V> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u8::deserialize(deserializer)?;
+        if value == V { Ok(Version::<V>) } else { Err(serde::de::Error::custom(VersionError)) }
+    }
+}
+
+impl From<ProgramArtifact> for VersionedProgram {
+    fn from(value: ProgramArtifact) -> Self {
+        VersionedProgram::v1(value)
     }
 }
 
 impl VersionedProgram {
-    pub fn into_v1(self) -> Result<Program> {
+    pub fn into_v1(self) -> Result<ProgramArtifact> {
         match self {
-            VersionedProgram::V1(program) => Ok(program),
+            VersionedProgram::V1 { program, .. } => Ok(program),
         }
     }
 }
@@ -40,8 +77,39 @@ impl VersionedProgram {
 impl fmt::Display for VersionedProgram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            VersionedProgram::V1(program) => fmt::Display::fmt(program, f),
+            VersionedProgram::V1 { program, .. } => fmt::Display::fmt(program, f),
         }
+    }
+}
+
+/// Sierra program in a form for storage on the filesystem and sharing externally.
+///
+/// Do not serialize this struct directly, use [`VersionedProgram`] instead.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProgramArtifact {
+    /// Sierra program itself.
+    #[serde(flatten)]
+    pub program: Program,
+    /// Debug information for a Sierra program.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub debug_info: Option<DebugInfo>,
+}
+
+impl ProgramArtifact {
+    /// Create a new [`ProgramArtifact`] without any extra information.
+    pub fn stripped(program: Program) -> Self {
+        Self { program, debug_info: None }
+    }
+
+    /// Add [`DebugInfo`] to the [`ProgramArtifact`], replacing existing one.
+    pub fn with_debug_info(self, debug_info: DebugInfo) -> Self {
+        Self { program: self.program, debug_info: Some(debug_info) }
+    }
+}
+
+impl fmt::Display for ProgramArtifact {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.program, f)
     }
 }
 
@@ -60,6 +128,11 @@ pub struct Program {
 impl Program {
     pub fn get_statement(&self, id: &StatementIdx) -> Option<&Statement> {
         self.statements.get(id.0)
+    }
+
+    /// Create a new [`ProgramArtifact`] out of this [`Program`].
+    pub fn into_artifact(self) -> VersionedProgram {
+        ProgramArtifact::stripped(self).into()
     }
 }
 

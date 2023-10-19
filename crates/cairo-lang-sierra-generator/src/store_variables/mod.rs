@@ -13,6 +13,8 @@ use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
+use sierra::extensions::function_call::FunctionCallLibfunc;
+use sierra::extensions::NamedLibfunc;
 use state::{
     merge_optional_states, DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState,
 };
@@ -107,11 +109,22 @@ impl<'a> AddStoreVariableStatements<'a> {
                 let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
                 let signature = libfunc_info.signature;
                 let state = &mut state_opt.unwrap_or_default();
-                let arg_states = self.prepare_libfunc_arguments(
-                    state,
-                    &invocation.args,
-                    &signature.param_signatures,
-                );
+
+                let libfunc_long_id =
+                    self.db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                let arg_states = match libfunc_long_id.generic_id.0.as_str() {
+                    FunctionCallLibfunc::STR_ID => {
+                        // The arguments were already stored using `push_values`.
+                        // Avoid calling `prepare_libfunc_arguments` as it might copy the
+                        // arguments to a local variables.
+                        invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
+                    }
+                    _ => self.prepare_libfunc_arguments(
+                        state,
+                        &invocation.args,
+                        &signature.param_signatures,
+                    ),
+                };
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
@@ -506,17 +519,20 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Adds a call to the rename() libfunc, renaming `src` to `dst`.
+    /// if `src` == `dst`, nothing is added.
     fn rename_var(
         &mut self,
         src: &sierra::ids::VarId,
         dst: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
-        self.result.push(simple_statement(
-            rename_libfunc_id(self.db, ty.clone()),
-            &[src.clone()],
-            &[dst.clone()],
-        ));
+        if src != dst {
+            self.result.push(simple_statement(
+                rename_libfunc_id(self.db, ty.clone()),
+                &[src.clone()],
+                &[dst.clone()],
+            ));
+        }
     }
 
     /// Merges the given `state` into the future state that corresponds to `target`.

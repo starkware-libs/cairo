@@ -23,8 +23,8 @@ libfunc i8_to_felt252 = i8_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
 i8_to_felt252([0]) -> ([1]); // 0
-store_temp<felt252>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: i8) -> (felt252);
 
@@ -92,8 +92,6 @@ libfunc store_temp<core::option::Option::<core::integer::i8>> = store_temp<core:
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i8>, 1> = enum_init<core::option::Option::<core::integer::i8>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::i8>> = rename<core::option::Option::<core::integer::i8>>;
 
 i8_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -106,9 +104,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::i8>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::i8>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::i8>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::i8>);
 
@@ -148,7 +144,6 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 i8_eq([0], [1]) { fallthrough() 6() }; // 0
 branch_align() -> (); // 1
@@ -160,8 +155,7 @@ branch_align() -> (); // 6
 struct_construct<Unit>() -> ([5]); // 7
 enum_init<core::bool, 1>([5]) -> ([6]); // 8
 store_temp<core::bool>([6]) -> ([4]); // 9
-rename<core::bool>([4]) -> ([7]); // 10
-return([7]); // 11
+return([4]); // 10
 
 test::foo@0([0]: i8, [1]: i8) -> (core::bool);
 
@@ -205,7 +199,6 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 i8_const<11>() -> ([0]); // 0
 i8_const<12>() -> ([1]); // 1
@@ -220,8 +213,7 @@ branch_align() -> (); // 9
 struct_construct<Unit>() -> ([5]); // 10
 enum_init<core::bool, 1>([5]) -> ([6]); // 11
 store_temp<core::bool>([6]) -> ([4]); // 12
-rename<core::bool>([4]) -> ([7]); // 13
-return([7]); // 14
+return([4]); // 13
 
 test::foo@0() -> (core::bool);
 
@@ -282,8 +274,6 @@ libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i8>> = st
 libfunc jump = jump;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 1>;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::integer::SignedIntegerResult::<core::integer::i8>> = rename<core::integer::SignedIntegerResult::<core::integer::i8>>;
 
 i8_overflowing_add_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
 branch_align() -> (); // 1
@@ -300,9 +290,7 @@ branch_align() -> (); // 11
 enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2>([8]) -> ([13]); // 12
 store_temp<RangeCheck>([7]) -> ([10]); // 13
 store_temp<core::integer::SignedIntegerResult::<core::integer::i8>>([13]) -> ([11]); // 14
-rename<RangeCheck>([10]) -> ([14]); // 15
-rename<core::integer::SignedIntegerResult::<core::integer::i8>>([11]) -> ([15]); // 16
-return([14], [15]); // 17
+return([10], [11]); // 15
 
 test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i8>);
 
@@ -363,8 +351,6 @@ libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i8>> = st
 libfunc jump = jump;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 1>;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::integer::SignedIntegerResult::<core::integer::i8>> = rename<core::integer::SignedIntegerResult::<core::integer::i8>>;
 
 i8_overflowing_sub_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
 branch_align() -> (); // 1
@@ -381,9 +367,7 @@ branch_align() -> (); // 11
 enum_init<core::integer::SignedIntegerResult::<core::integer::i8>, 2>([8]) -> ([13]); // 12
 store_temp<RangeCheck>([7]) -> ([10]); // 13
 store_temp<core::integer::SignedIntegerResult::<core::integer::i8>>([13]) -> ([11]); // 14
-rename<RangeCheck>([10]) -> ([14]); // 15
-rename<core::integer::SignedIntegerResult::<core::integer::i8>>([11]) -> ([15]); // 16
-return([14], [15]); // 17
+return([10], [11]); // 15
 
 test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i8>);
 
@@ -423,7 +407,6 @@ libfunc i8_const<123> = i8_const<123>;
 libfunc store_temp<i8> = store_temp<i8>;
 libfunc jump = jump;
 libfunc unwrap_non_zero<i8> = unwrap_non_zero<i8>;
-libfunc rename<i8> = rename<i8>;
 
 i8_is_zero([0]) { fallthrough() 5([1]) }; // 0
 branch_align() -> (); // 1
@@ -433,8 +416,7 @@ jump() { 8() }; // 4
 branch_align() -> (); // 5
 unwrap_non_zero<i8>([1]) -> ([4]); // 6
 store_temp<i8>([4]) -> ([3]); // 7
-rename<i8>([3]) -> ([5]); // 8
-return([5]); // 9
+return([3]); // 8
 
 test::foo@0([0]: i8) -> (i8);
 
@@ -484,8 +466,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u8, core::integer::u8>> = store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1> = enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::result::Result::<core::integer::u8, core::integer::u8>> = rename<core::result::Result::<core::integer::u8, core::integer::u8>>;
 
 i8_diff([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) }; // 0
 branch_align() -> (); // 1
@@ -497,9 +477,7 @@ branch_align() -> (); // 6
 enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1>([6]) -> ([10]); // 7
 store_temp<RangeCheck>([5]) -> ([8]); // 8
 store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([10]) -> ([9]); // 9
-rename<RangeCheck>([8]) -> ([11]); // 10
-rename<core::result::Result::<core::integer::u8, core::integer::u8>>([9]) -> ([12]); // 11
-return([11], [12]); // 12
+return([8], [9]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::result::Result::<core::integer::u8, core::integer::u8>);
 
@@ -530,7 +508,7 @@ libfunc i8_wide_mul = i8_wide_mul;
 libfunc store_temp<i16> = store_temp<i16>;
 
 i8_wide_mul([0], [1]) -> ([2]); // 0
-store_temp<i16>([2]) -> ([3]); // 1
-return([3]); // 2
+store_temp<i16>([2]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: i8, [1]: i8) -> (i16);

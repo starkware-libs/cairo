@@ -34,7 +34,7 @@ impl SemanticTokensTraverser {
     ) {
         let syntax_db = db.upcast();
         let green_node = node.green_node(syntax_db);
-        match green_node.details {
+        match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
                     self.encoder.next_line();
@@ -60,7 +60,7 @@ impl SemanticTokensTraverser {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                let children = node.children(syntax_db);
+                let children = syntax_db.get_children(node.clone());
                 match green_node.kind {
                     SyntaxKind::Param => {
                         self.mark_future_token(
@@ -97,8 +97,8 @@ impl SemanticTokensTraverser {
                     ),
                     _ => {}
                 }
-                for child in children {
-                    self.find_semantic_tokens(db, file_id, data, child);
+                for child in children.iter() {
+                    self.find_semantic_tokens(db, file_id, data, child.clone());
                 }
             }
         }

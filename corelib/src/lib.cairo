@@ -18,9 +18,9 @@ enum bool {
 impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
         if *self {
-            1
+            1_felt252
         } else {
-            0
+            0_felt252
         }.serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {

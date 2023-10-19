@@ -375,7 +375,8 @@ pub fn core_libfunc_cost(
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ConstCost::default().into()],
             NullableConcreteLibfunc::NullableFromBox(_) => vec![ConstCost::default().into()],
-            NullableConcreteLibfunc::MatchNullable(_) => {
+            NullableConcreteLibfunc::MatchNullable(_)
+            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
         },

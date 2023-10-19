@@ -98,3 +98,21 @@ fn test_equality() {
     assert(arr3 != arr5, 'arr3 == arr5');
     assert(arr4 != arr5, 'arr4 == arr5');
 }
+
+#[test]
+fn test_append() {
+    let mut arr = array![10, 11, 12];
+    arr.append(13);
+    assert(arr.len() == 4, 'Unexpected length');
+    assert_eq(arr[3], @13, 'Unexpected element');
+}
+
+#[test]
+fn test_append_span() {
+    let mut arr = array![10, 11, 12];
+    arr.append_span(arr.span());
+    assert(arr.len() == 6, 'Unexpected length');
+    assert_eq(arr[3], @10, 'Unexpected element');
+    assert_eq(arr[4], @11, 'Unexpected element');
+    assert_eq(arr[5], @12, 'Unexpected element');
+}

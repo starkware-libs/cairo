@@ -18,7 +18,6 @@ libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::fib_counter::fib> = function_call<user@examples::fib_counter::fib>;
 libfunc struct_deconstruct<Tuple<felt252, felt252>> = struct_deconstruct<Tuple<felt252, felt252>>;
-libfunc rename<Tuple<felt252, felt252>> = rename<Tuple<felt252, felt252>>;
 
 disable_ap_tracking() -> (); // 0
 dup<felt252>([2]) -> ([2], [3]); // 1
@@ -32,20 +31,19 @@ store_temp<Tuple<felt252, felt252>>([6]) -> ([7]); // 8
 jump() { 25() }; // 9
 branch_align() -> (); // 10
 drop<NonZero<felt252>>([4]) -> (); // 11
-dup<felt252>([1]) -> ([1], [9]); // 12
-felt252_add([0], [9]) -> ([8]); // 13
+dup<felt252>([1]) -> ([1], [8]); // 12
+felt252_add([0], [8]) -> ([9]); // 13
 felt252_const<1>() -> ([10]); // 14
 felt252_sub([2], [10]) -> ([11]); // 15
-store_temp<felt252>([1]) -> ([13]); // 16
-store_temp<felt252>([8]) -> ([14]); // 17
-store_temp<felt252>([11]) -> ([15]); // 18
-function_call<user@examples::fib_counter::fib>([13], [14], [15]) -> ([12]); // 19
-struct_deconstruct<Tuple<felt252, felt252>>([12]) -> ([16], [17]); // 20
-felt252_const<1>() -> ([18]); // 21
-felt252_add([17], [18]) -> ([19]); // 22
-struct_construct<Tuple<felt252, felt252>>([16], [19]) -> ([20]); // 23
-store_temp<Tuple<felt252, felt252>>([20]) -> ([7]); // 24
-rename<Tuple<felt252, felt252>>([7]) -> ([21]); // 25
-return([21]); // 26
+store_temp<felt252>([1]) -> ([1]); // 16
+store_temp<felt252>([9]) -> ([9]); // 17
+store_temp<felt252>([11]) -> ([11]); // 18
+function_call<user@examples::fib_counter::fib>([1], [9], [11]) -> ([12]); // 19
+struct_deconstruct<Tuple<felt252, felt252>>([12]) -> ([13], [14]); // 20
+felt252_const<1>() -> ([15]); // 21
+felt252_add([14], [15]) -> ([16]); // 22
+struct_construct<Tuple<felt252, felt252>>([13], [16]) -> ([17]); // 23
+store_temp<Tuple<felt252, felt252>>([17]) -> ([7]); // 24
+return([7]); // 25
 
 examples::fib_counter::fib@0([0]: felt252, [1]: felt252, [2]: felt252) -> (Tuple<felt252, felt252>);
