@@ -1,3 +1,133 @@
+//! > match multi numbers.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo1(a: felt252) -> felt252 {
+  let b=match a {
+    5=> {550},
+    6 => {70},
+    _=>{90}
+  };
+  return b;
+}
+
+//! > function_name
+foo1
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:3:5
+    5=> {550},
+    ^
+
+//! > lowering_flat
+Parameters: v0: core::felt252
+
+//! > ==========================================================================
+
+//! > match felt.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+  match a {
+    0 =>1,
+    1=>2,
+    2=>3,
+    _=>4,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0u
+  (v17: core::felt252) <- core::felt252_sub(v1, v0)
+End:
+  Match(match core::felt252_is_zero(v17) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk9, {v3 -> v16})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 1u
+  (v18: core::felt252) <- core::felt252_sub(v5, v0)
+End:
+  Match(match core::felt252_is_zero(v18) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v8) => blk4,
+  })
+
+blk3:
+Statements:
+  (v7: core::felt252) <- 2u
+End:
+  Goto(blk8, {v7 -> v15})
+
+blk4:
+Statements:
+  (v9: core::felt252) <- 2u
+  (v19: core::felt252) <- core::felt252_sub(v9, v0)
+End:
+  Match(match core::felt252_is_zero(v19) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v12) => blk6,
+  })
+
+blk5:
+Statements:
+  (v11: core::felt252) <- 3u
+End:
+  Goto(blk7, {v11 -> v14})
+
+blk6:
+Statements:
+  (v13: core::felt252) <- 4u
+End:
+  Goto(blk7, {v13 -> v14})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {v14 -> v15})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v15 -> v16})
+
+blk9:
+Statements:
+End:
+  Return(v16)
+
+//! > ==========================================================================
+
 //! > Test match 0.
 
 //! > test_runner_name
@@ -26,28 +156,30 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 7u
+  (v2: core::felt252) <- 0u
+  (v8: core::felt252) <- core::felt252_sub(v2, v1)
 End:
-  Match(match core::felt252_is_zero(v1) {
+  Match(match core::felt252_is_zero(v8) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v6: core::felt252) <- core::felt252_add(v0, v3)
+  (v4: core::felt252) <- 1u
+  (v9: core::felt252) <- core::felt252_add(v0, v4)
 End:
-  Goto(blk3, {v6 -> v5})
+  Goto(blk3, {v9 -> v7})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v5})
+  Goto(blk3, {v1 -> v7})
 
 blk3:
 Statements:
 End:
-  Return(v5)
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -124,7 +256,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match with a non-zero value is not supported.
+error: Unsupported match arm - variants must be the same order as enum declaration.
  --> lib.cairo:4:7
       12 => x,
       ^^
@@ -156,7 +288,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
+error: Match is Non Exhaustive - ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern
  --> lib.cairo:5:7
       1 => 7,
       ^

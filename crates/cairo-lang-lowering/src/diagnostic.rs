@@ -75,6 +75,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Unsupported match arm - variants must be the same order as enum declaration."
                     .into()
             }
+            ,
+            LoweringDiagnosticKind::NonExhaustiveMatch => {
+                "Match is Non Exhaustive - ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern"
+                    .into()
+            }
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
@@ -88,6 +93,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 .into()
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
+
         }
     }
 
@@ -125,6 +131,7 @@ pub enum LoweringDiagnosticKind {
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
+    NonExhaustiveMatch,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     LiteralError(LiteralError),

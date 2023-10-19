@@ -91,6 +91,7 @@ fn checked_compile_to_sierra(
 #[case::fib_box("fib_box")]
 #[case::fib_array("fib_array")]
 #[case::fib_counter("fib_counter")]
+#[case::fib_match("fib_match")]
 #[case::fib_struct("fib_struct")]
 #[case::fib_u128("fib_u128")]
 #[case::fib_u128_checked("fib_u128_checked")]
