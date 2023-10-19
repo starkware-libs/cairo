@@ -47,24 +47,29 @@ impl RewriteNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    syntax_node.children(db).map(RewriteNode::Copied).collect(),
+                    db.get_children(syntax_node.clone())
+                        .iter()
+                        .cloned()
+                        .map(RewriteNode::Copied)
+                        .collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
-                let num_children = node.children(db).len();
+                let children = db.get_children(node.clone());
+                let num_children = children.len();
                 let mut new_children = Vec::new();
 
                 // Get the index of the leftmost nonempty child.
                 let Some(left_idx) =
-                    node.children(db).position(|child| child.width(db) != TextWidth::default())
+                    children.iter().position(|child| child.width(db) != TextWidth::default())
                 else {
                     *self = RewriteNode::Modified(ModifiedNode { children: None });
                     return extract_matches!(self, RewriteNode::Modified);
                 };
                 // Get the index of the rightmost nonempty child.
-                let right_idx = node
-                    .children(db)
+                let right_idx = children
+                    .iter()
                     .rposition(|child| child.width(db) != TextWidth::default())
                     .unwrap();
                 new_children.extend(itertools::repeat_n(
@@ -74,27 +79,28 @@ impl RewriteNode {
 
                 // The number of children between the first and last nonempty nodes.
                 let num_middle = right_idx - left_idx + 1;
-                let mut children_iter = node.children(db).skip(left_idx);
+                let children = db.get_children(node.clone());
+                let mut children_iter = children.iter().skip(left_idx);
                 match num_middle {
                     1 => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap(),
+                            node: children_iter.next().unwrap().clone(),
                             trim_left: *trim_left,
                             trim_right: *trim_right,
                         });
                     }
                     _ => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap(),
+                            node: children_iter.next().unwrap().clone(),
                             trim_left: *trim_left,
                             trim_right: false,
                         });
                         for _ in 0..(num_middle - 2) {
-                            let child = children_iter.next().unwrap();
+                            let child = children_iter.next().unwrap().clone();
                             new_children.push(RewriteNode::Copied(child));
                         }
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap(),
+                            node: children_iter.next().unwrap().clone(),
                             trim_left: false,
                             trim_right: *trim_right,
                         });

@@ -90,10 +90,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::ExprPath
                 if matches!(parent_kind(db, self), Some(SyntaxKind::PatternEnum))
-                    && self
-                        .parent()
-                        .unwrap()
-                        .children(db)
+                    && db
+                        .get_children(self.parent().unwrap())
+                        .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
             {
                 true
@@ -607,7 +606,7 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
     // Currently, we only want single line blocks for match arms, with a single statments, with no
     // single line comments.
     grandparent_kind(db, node) == Some(SyntaxKind::MatchArm)
-        && node.children(db).len() == 1
+        && db.get_children(node.clone()).len() == 1
         && node.descendants(db).all(|d| {
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)

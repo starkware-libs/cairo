@@ -27,7 +27,8 @@ impl ast::UsePathLeafPtr {
 impl GetIdentifier for ast::UsePathLeafPtr {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         let alias_clause_green = self.alias_clause_green(db).0;
-        let children = match db.lookup_intern_green(alias_clause_green).details {
+        let green_node = db.lookup_intern_green(alias_clause_green);
+        let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
         };
@@ -42,7 +43,8 @@ impl GetIdentifier for ast::UsePathLeafPtr {
 impl GetIdentifier for ast::PathSegmentGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let children = match db.lookup_intern_green(self.0).details {
+        let green_node = db.lookup_intern_green(self.0);
+        let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
         };
@@ -53,7 +55,8 @@ impl GetIdentifier for ast::PathSegmentGreen {
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let children = match db.lookup_intern_green(self.0).details {
+        let green_node = db.lookup_intern_green(self.0);
+        let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
         };
@@ -64,7 +67,7 @@ impl GetIdentifier for ast::ExprPathGreen {
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match db.lookup_intern_green(self.0).details {
+        match &db.lookup_intern_green(self.0).details {
             GreenNodeDetails::Token(_) => "Unexpected token".into(),
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)

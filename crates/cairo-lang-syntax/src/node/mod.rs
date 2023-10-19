@@ -12,7 +12,7 @@ use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
-use crate::node::iter::{Preorder, SyntaxNodeChildIterator, WalkEvent};
+use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
 pub mod db;
@@ -70,21 +70,18 @@ impl SyntaxNode {
     }
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        match self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+        match &self.green_node(db).details {
+            green::GreenNodeDetails::Token(text) => Some(text.clone()),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode {
+    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
         db.lookup_intern_green(self.0.green)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);
         let end = self.span_end_without_trivia(db);
         TextSpan { start, end }
-    }
-    pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
-        SyntaxNodeChildIterator::new(self, db)
     }
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
@@ -101,7 +98,7 @@ impl SyntaxNode {
             return None;
         }
         // At this point we know we should have a second child which is the token.
-        let token_node = self.children(db).nth(1).unwrap();
+        let token_node = db.get_children(self.clone())[1].clone();
         Some(token_node)
     }
 
@@ -112,8 +109,9 @@ impl SyntaxNode {
                 if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.offset();
                 }
-                let children = &mut self.children(db);
-                if let Some(child) = children.find(|child| child.width(db) != TextWidth::default())
+                let children = db.get_children(self.clone());
+                if let Some(child) =
+                    children.iter().find(|child| child.width(db) != TextWidth::default())
                 {
                     child.span_start_without_trivia(db)
                 } else {
@@ -130,9 +128,9 @@ impl SyntaxNode {
                 if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.span(db).end;
                 }
-                let children = &mut self.children(db);
+                let children = &mut db.get_children(self.clone());
                 if let Some(child) =
-                    children.filter(|child| child.width(db) != TextWidth::default()).last()
+                    children.iter().filter(|child| child.width(db) != TextWidth::default()).last()
                 {
                     child.span_end_without_trivia(db)
                 } else {
@@ -145,7 +143,7 @@ impl SyntaxNode {
 
     /// Lookups a syntax node using an offset.
     pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
-        for child in self.children(db) {
+        for child in db.get_children(self.clone()).iter() {
             if child.offset().add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
             }
@@ -249,12 +247,11 @@ pub struct NodeTextFormatter<'a> {
 }
 impl<'a> Display for NodeTextFormatter<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let node = self.node.green_node(self.db);
-        match node.details {
+        match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.children(self.db) {
-                    write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
+                for child in self.db.get_children(self.node.clone()).iter() {
+                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
                 }
             }
         }
