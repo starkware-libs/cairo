@@ -51,25 +51,25 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
   (v2: core::felt252) <- 3u
 End:
-  Goto(blk3, {v2 -> v4})
+  Goto(blk3, {v2 -> v5})
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 4u
+  (v4: core::felt252) <- 4u
 End:
-  Goto(blk3, {v3 -> v4})
+  Goto(blk3, {v4 -> v5})
 
 blk3:
 Statements:
 End:
-  Return(v4)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -124,24 +124,24 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
+  Goto(blk3, {v0 -> v4})
 
 blk2:
 Statements:
-  (v2: core::felt252) <- 7u
+  (v3: core::felt252) <- 7u
 End:
-  Goto(blk3, {v2 -> v3})
+  Goto(blk3, {v3 -> v4})
 
 blk3:
 Statements:
 End:
-  Return(v3)
+  Return(v4)
 
 //! > ==========================================================================
 
