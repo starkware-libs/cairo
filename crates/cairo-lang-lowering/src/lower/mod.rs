@@ -1279,7 +1279,7 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(pattern.stable_ptr().untyped(), NonExhaustiveMatch),
         ));
     };
-    return lower_expr_felt252_arm(ctx, expr, match_input, builder, 0);
+    lower_expr_felt252_arm(ctx, expr, match_input, builder, 0)
 }
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
