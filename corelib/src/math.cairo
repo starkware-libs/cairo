@@ -128,16 +128,16 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-impl TOneableImpl<T, +num::traits::One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
+impl TOneableImpl<T, impl OneImpl: num::traits::One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
     fn one() -> T {
-        num::traits::One::one()
+        OneImpl::one()
     }
     #[inline(always)]
     fn is_one(self: T) -> bool {
-        num::traits::One::is_one(@self)
+        OneImpl::is_one(@self)
     }
     #[inline(always)]
     fn is_non_one(self: T) -> bool {
-        num::traits::One::is_non_one(@self)
+        OneImpl::is_non_one(@self)
     }
 }
