@@ -1,4 +1,3 @@
-use num::traits::Zero;
 // === Zeroable ===
 
 trait Zeroable<T> {
@@ -10,17 +9,17 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl TZeroableImpl<T, +Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
+impl TZeroableImpl<T, +num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
     fn zero() -> T {
-        Zero::zero()
+        num::traits::Zero::zero()
     }
     #[inline(always)]
     fn is_zero(self: T) -> bool {
-        Zero::is_zero(@self)
+        num::traits::Zero::is_zero(@self)
     }
     #[inline(always)]
     fn is_non_zero(self: T) -> bool {
-        Zero::is_non_zero(@self)
+        num::traits::Zero::is_non_zero(@self)
     }
 }
 
