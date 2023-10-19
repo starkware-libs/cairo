@@ -59,72 +59,70 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
-  (v17: core::felt252) <- core::felt252_sub(v1, v0)
 End:
-  Match(match core::felt252_is_zero(v17) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v2: core::felt252) <- 1u
 End:
-  Goto(blk9, {v3 -> v16})
+  Goto(blk9, {v2 -> v15})
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 1u
-  (v18: core::felt252) <- core::felt252_sub(v5, v0)
+  (v4: core::felt252) <- 1u
+  (v16: core::felt252) <- core::felt252_sub(v4, v0)
 End:
-  Match(match core::felt252_is_zero(v18) {
+  Match(match core::felt252_is_zero(v16) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v8) => blk4,
+    IsZeroResult::NonZero(v7) => blk4,
   })
 
 blk3:
 Statements:
-  (v7: core::felt252) <- 2u
+  (v6: core::felt252) <- 2u
 End:
-  Goto(blk8, {v7 -> v15})
+  Goto(blk8, {v6 -> v14})
 
 blk4:
 Statements:
-  (v9: core::felt252) <- 2u
-  (v19: core::felt252) <- core::felt252_sub(v9, v0)
+  (v8: core::felt252) <- 2u
+  (v17: core::felt252) <- core::felt252_sub(v8, v0)
 End:
-  Match(match core::felt252_is_zero(v19) {
+  Match(match core::felt252_is_zero(v17) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v12) => blk6,
+    IsZeroResult::NonZero(v11) => blk6,
   })
 
 blk5:
 Statements:
-  (v11: core::felt252) <- 3u
+  (v10: core::felt252) <- 3u
 End:
-  Goto(blk7, {v11 -> v14})
+  Goto(blk7, {v10 -> v13})
 
 blk6:
 Statements:
-  (v13: core::felt252) <- 4u
+  (v12: core::felt252) <- 4u
 End:
-  Goto(blk7, {v13 -> v14})
+  Goto(blk7, {v12 -> v13})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v14 -> v15})
+  Goto(blk8, {v13 -> v14})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v15 -> v16})
+  Goto(blk9, {v14 -> v15})
 
 blk9:
 Statements:
 End:
-  Return(v16)
+  Return(v15)
 
 //! > ==========================================================================
 
@@ -156,30 +154,28 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 7u
-  (v2: core::felt252) <- 0u
-  (v8: core::felt252) <- core::felt252_sub(v2, v1)
 End:
-  Match(match core::felt252_is_zero(v8) {
+  Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v6) => blk2,
+    IsZeroResult::NonZero(v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v4: core::felt252) <- 1u
-  (v9: core::felt252) <- core::felt252_add(v0, v4)
+  (v3: core::felt252) <- 1u
+  (v7: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {v9 -> v7})
+  Goto(blk3, {v7 -> v6})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v7})
+  Goto(blk3, {v1 -> v6})
 
 blk3:
 Statements:
 End:
-  Return(v7)
+  Return(v6)
 
 //! > ==========================================================================
 
