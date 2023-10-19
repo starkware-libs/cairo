@@ -14,12 +14,12 @@ struct ColoredPrinter<'a> {
 impl<'a> ColoredPrinter<'a> {
     fn print(&mut self, syntax_node: &SyntaxNode) {
         let node = syntax_node.green_node(self.db);
-        match node.details {
+        match &node.details {
             GreenNodeDetails::Token(text) => {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
-                    self.result.push_str(set_color(text, node.kind).to_string().as_str());
+                    self.result.push_str(set_color(text.clone(), node.kind).to_string().as_str());
                 }
             }
             GreenNodeDetails::Node { .. } => {
@@ -28,8 +28,8 @@ impl<'a> ColoredPrinter<'a> {
                 } else if self.verbose && is_empty_kind(node.kind) {
                     self.result.push_str(format!("{}", "<e>".red()).as_str());
                 } else {
-                    for child in syntax_node.children(self.db) {
-                        self.print(&child);
+                    for child in self.db.get_children(syntax_node.clone()).iter() {
+                        self.print(child);
                     }
                 }
             }

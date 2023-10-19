@@ -34,23 +34,22 @@ jump() { 29() }; // 9
 branch_align() -> (); // 10
 drop<NonZero<felt252>>([5]) -> (); // 11
 unbox<felt252>([0]) -> ([7]); // 12
-dup<Box<felt252>>([1]) -> ([1], [9]); // 13
-unbox<felt252>([9]) -> ([8]); // 14
+dup<Box<felt252>>([1]) -> ([1], [8]); // 13
+unbox<felt252>([8]) -> ([9]); // 14
 store_temp<felt252>([7]) -> ([7]); // 15
-store_temp<felt252>([8]) -> ([8]); // 16
-felt252_add([7], [8]) -> ([10]); // 17
+store_temp<felt252>([9]) -> ([9]); // 16
+felt252_add([7], [9]) -> ([10]); // 17
 store_temp<felt252>([10]) -> ([10]); // 18
 into_box<felt252>([10]) -> ([11]); // 19
 felt252_const<1>() -> ([12]); // 20
 felt252_sub([3], [12]) -> ([13]); // 21
 store_temp<felt252>([13]) -> ([13]); // 22
 into_box<felt252>([13]) -> ([14]); // 23
-store_temp<Box<felt252>>([1]) -> ([16]); // 24
-store_temp<Box<felt252>>([11]) -> ([17]); // 25
-store_temp<Box<felt252>>([14]) -> ([18]); // 26
-function_call<user@examples::fib_box::fib>([16], [17], [18]) -> ([15]); // 27
+store_temp<Box<felt252>>([1]) -> ([1]); // 24
+store_temp<Box<felt252>>([11]) -> ([11]); // 25
+store_temp<Box<felt252>>([14]) -> ([14]); // 26
+function_call<user@examples::fib_box::fib>([1], [11], [14]) -> ([15]); // 27
 rename<Box<felt252>>([15]) -> ([6]); // 28
-rename<Box<felt252>>([6]) -> ([19]); // 29
-return([19]); // 30
+return([6]); // 29
 
 examples::fib_box::fib@0([0]: Box<felt252>, [1]: Box<felt252>, [2]: Box<felt252>) -> (Box<felt252>);

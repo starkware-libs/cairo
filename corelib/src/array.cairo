@@ -30,8 +30,17 @@ impl ArrayImpl<T> of ArrayTrait<T> {
         array_new()
     }
     #[inline(always)]
-    fn append(ref self: Array<T>, value: T) {
+    fn append(ref self: Array<T>, value: T) nopanic {
         array_append(ref self, value)
+    }
+    fn append_span<+Clone<T>, +Drop<T>>(ref self: Array<T>, mut span: Span<T>) {
+        match span.pop_front() {
+            Option::Some(current) => {
+                self.append(current.clone());
+                self.append_span(span);
+            },
+            Option::None => {}
+        };
     }
     #[inline(always)]
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {

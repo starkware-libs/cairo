@@ -43,8 +43,6 @@ impl Default for CompilerConfig<'static> {
     }
 }
 
-pub type SierraProgram = Arc<Program>;
-
 /// Compiles a Cairo project at the given path.
 /// The project must be a valid Cairo project:
 /// Either a standalone `.cairo` file (a single crate), or a directory with a `cairo_project.toml`
@@ -53,12 +51,12 @@ pub type SierraProgram = Arc<Program>;
 /// * `path` - The path to the project.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
-/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,
-) -> Result<SierraProgram> {
+) -> Result<Program> {
     let mut db = RootDatabase::builder().detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db(&mut db, main_crate_ids, compiler_config)
@@ -71,12 +69,12 @@ pub fn compile_cairo_project_at_path(
 /// * `project_config` - The project configuration.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
-/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig<'_>,
-) -> Result<SierraProgram> {
+) -> Result<Program> {
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
@@ -92,22 +90,25 @@ pub fn compile(
 ///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
-/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
-) -> Result<SierraProgram> {
+) -> Result<Program> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let mut sierra_program = db
+    let sierra_program = db
         .get_sierra_program(main_crate_ids)
         .to_option()
         .context("Compilation failed without any diagnostics")?;
 
+    // Try to move the program out of the Arc if it is not cached in Salsa, or just clone it.
+    let mut sierra_program = Arc::try_unwrap(sierra_program).unwrap_or_else(|arc| (*arc).clone());
+
     if compiler_config.replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
+        sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
     }
 
     Ok(sierra_program)

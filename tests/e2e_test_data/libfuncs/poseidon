@@ -33,9 +33,9 @@ libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252,
 
 hades_permutation([0], [1], [2], [3]) -> ([4], [5], [6], [7]); // 0
 struct_construct<Tuple<felt252, felt252, felt252>>([5], [6], [7]) -> ([8]); // 1
-store_temp<Poseidon>([4]) -> ([9]); // 2
-store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([10]); // 3
-return([9], [10]); // 4
+store_temp<Poseidon>([4]) -> ([4]); // 2
+store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([8]); // 3
+return([4], [8]); // 4
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, Tuple<felt252, felt252, felt252>);
 
@@ -159,8 +159,6 @@ libfunc jump = jump;
 libfunc hades_permutation = hades_permutation;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc drop<felt252> = drop<felt252>;
-libfunc rename<Poseidon> = rename<Poseidon>;
-libfunc rename<felt252> = rename<felt252>;
 
 felt252_const<0>() -> ([4]); // 0
 felt252_const<0>() -> ([5]); // 1
@@ -263,8 +261,6 @@ drop<felt252>([92]) -> (); // 97
 drop<felt252>([93]) -> (); // 98
 store_temp<Poseidon>([90]) -> ([86]); // 99
 store_temp<felt252>([91]) -> ([87]); // 100
-rename<Poseidon>([86]) -> ([94]); // 101
-rename<felt252>([87]) -> ([95]); // 102
-return([94], [95]); // 103
+return([86], [87]); // 101
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, felt252);
