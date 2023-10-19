@@ -1,45 +1,4 @@
 use starknet::ClassHash;
-
-#[starknet::interface]
-trait IUpgradable<TContractState> {
-    fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
-}
-
-#[starknet::component]
-mod upgradable {
-    use starknet::ClassHash;
-    use starknet::syscalls::replace_class_syscall;
-
-    #[storage]
-    struct Storage {
-        current_implementation: ClassHash
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        ContractUpgraded: ContractUpgraded
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct ContractUpgraded {
-        old_class_hash: ClassHash,
-        new_class_hash: ClassHash
-    }
-
-    #[embeddable_as(UpgradableImpl)]
-    impl Upgradable<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::IUpgradable<ComponentState<TContractState>> {
-        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
-            replace_class_syscall(new_class_hash).unwrap();
-            let old_class_hash = self.current_implementation.read();
-            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
-            self.current_implementation.write(new_class_hash);
-        }
-    }
-}
-
 #[starknet::interface]
 trait ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128);
@@ -49,13 +8,18 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    component!(path: super::upgradable, storage: upgradable, event: UpgradableEvent);
+    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    component!(path: upgradable_comp, storage: upgradable, event: UpgradableEvent);
+    component!(path: ownable_comp, storage: ownable, event: OwnableEvent);
 
     #[storage]
     struct Storage {
         counter: u128,
         #[substorage(v0)]
-        upgradable: super::upgradable::Storage
+        upgradable: upgradable_comp::Storage,
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage
     }
 
     #[event]
@@ -63,7 +27,8 @@ mod counter_contract {
     enum Event {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        UpgradableEvent: super::upgradable::Event
+        UpgradableEvent: upgradable_comp::Event,
+        OwnableEvent: ownable_comp::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -101,5 +66,5 @@ mod counter_contract {
     }
 
     #[abi(embed_v0)]
-    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+    impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 }

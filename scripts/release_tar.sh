@@ -12,8 +12,7 @@ mkdir -p target/$TARGET/cairo
 (
     cd target/$TARGET
     mkdir cairo/bin
-    for NAME in $NAMES
-    do
+    for NAME in $NAMES; do
         cp release/$NAME cairo/bin/
     done
     cp -R ../../corelib cairo/

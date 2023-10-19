@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::ops::Deref;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
@@ -655,11 +656,13 @@ impl<'a> FormatterImpl<'a> {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
-        let mut children: Vec<SyntaxNode> = syntax_node.children(self.db).collect();
+
+        // TODO(ilya): consider not copying here.
+        let mut children = self.db.get_children(syntax_node.clone()).deref().clone();
         let n_children = children.len();
         if self.config.sort_module_level_items {
             children.sort_by_key(|c| MovableNode::new(self.db, c));
-        }
+        };
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
@@ -678,10 +681,11 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let mut children = syntax_node.children(self.db);
-        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
-        let token = children.next().unwrap();
-        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
+        let children = self.db.get_children(syntax_node.clone());
+        let mut children_iter = children.iter().cloned();
+        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
+        let token = children_iter.next().unwrap();
+        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, true);
@@ -778,9 +782,10 @@ impl MovableNode {
         }
     }
 }
-impl PartialOrd for MovableNode {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(match (self, other) {
+
+impl Ord for MovableNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
             (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
             (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
             | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
@@ -790,11 +795,12 @@ impl PartialOrd for MovableNode {
             (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
                 Ordering::Greater
             }
-        })
+        }
     }
 }
-impl Ord for MovableNode {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+
+impl PartialOrd for MovableNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }

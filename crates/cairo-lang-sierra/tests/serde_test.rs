@@ -34,11 +34,10 @@ fn get_path(file_name: &str, ext: &str) -> PathBuf {
 fn get_test_program_from_sierra(example_file_name: &str) -> VersionedProgram {
     let path = get_path(example_file_name, "sierra");
     let parser = cairo_lang_sierra::ProgramParser::new();
-    VersionedProgram::from(
-        parser
-            .parse(&std::fs::read_to_string(path).expect("Could not read example program."))
-            .expect("Could not parse example program."),
-    )
+    parser
+        .parse(&std::fs::read_to_string(path).expect("Could not read example program."))
+        .expect("Could not parse example program.")
+        .into_artifact()
 }
 
 // Parse code, serialize, and then deserialize it, ensuring the original parsed code is retained.

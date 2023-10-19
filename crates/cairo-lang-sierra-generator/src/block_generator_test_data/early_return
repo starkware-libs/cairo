@@ -26,14 +26,14 @@ foo
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
 felt252_const<1>() -> ([2])
-PushValues([2]: felt252) -> ([3])
-return([3])
+PushValues([2]: felt252) -> ([2])
+return([2])
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([1]) -> ()
-felt252_const<2>() -> ([4])
-PushValues([4]: felt252) -> ([5])
-return([5])
+felt252_const<2>() -> ([3])
+PushValues([3]: felt252) -> ([3])
+return([3])
 label_test::foo::1:
 
 //! > lowering_flat

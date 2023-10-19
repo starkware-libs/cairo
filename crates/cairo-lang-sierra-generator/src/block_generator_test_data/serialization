@@ -42,23 +42,23 @@ enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label
 branch_align() -> ()
 snapshot_take<felt252>([10]) -> ([12], [13])
 drop<felt252>([12]) -> ()
-PushValues([13]: felt252, [14]: Array<felt252>) -> ([17], [18])
-function_call<user@core::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
+PushValues([13]: felt252, [14]: Array<felt252>) -> ([13], [14])
+function_call<user@core::Felt252Serde::serialize>([13], [14]) -> ([15], [16])
 drop<Unit>([16]) -> ()
-PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
-function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
-drop<Unit>([20]) -> ()
-PushValues([19]: Array<felt252>) -> ([23])
+PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([15], [6])
+function_call<user@test::serialize_array_felt_helper>([15], [6]) -> ([17], [18])
+drop<Unit>([18]) -> ()
+PushValues([17]: Array<felt252>) -> ([19])
 jump() { label_test::serialize_array_felt_helper::5() }
 label_test::serialize_array_felt_helper::3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
 drop<Array<felt252>>([6]) -> ()
-PushValues([14]: Array<felt252>) -> ([23])
+PushValues([14]: Array<felt252>) -> ([19])
 label_test::serialize_array_felt_helper::5:
-struct_construct<Unit>() -> ([24])
-PushValues([23]: Array<felt252>, [24]: Unit) -> ([25], [26])
-return([25], [26])
+struct_construct<Unit>() -> ([20])
+PushValues([19]: Array<felt252>, [20]: Unit) -> ([19], [20])
+return([19], [20])
 label_test::serialize_array_felt_helper::4:
 label_test::serialize_array_felt_helper::1:
 

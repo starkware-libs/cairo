@@ -1,13 +1,17 @@
+use std::path::PathBuf;
+
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::test_utils::SHARED_DB;
+use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
 #[derive(Default)]
 struct ExpandContractTestRunner {}
@@ -69,7 +73,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
-        hello_starknet: "hello_starknet",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",
@@ -77,12 +80,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         external_event: "external_event",
         with_component: "with_component",
         with_component_diagnostics: "with_component_diagnostics",
-        with_ownable: "with_ownable",
-        with_erc20: "with_erc20",
-        upgradable_counter: "upgradable_counter",
-        ownable_erc20: "ownable_erc20",
         interfaces: "interfaces",
-        mintable: "mintable",
     },
     ExpandContractTestRunner
 );
@@ -98,4 +96,52 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         no_storage: "no_storage",
     },
     ExpandContractTestRunner
+);
+
+#[derive(Default)]
+struct ExpandContractFromCrateTestRunner {}
+
+impl TestFileRunner for ExpandContractFromCrateTestRunner {
+    /// Inits the database with the contracts crate, and expands a specific contract file.
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> TestRunnerResult {
+        let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
+        let contract_file_id =
+            db.intern_file(FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())));
+        let contract_module_ids = db.file_modules(contract_file_id).unwrap();
+        let mut diagnostic_items = vec![];
+        let result = contract_module_ids
+            .iter()
+            .map(|module_id| expand_module_text(&db, *module_id, &mut diagnostic_items))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let joined_diagnostics = diagnostic_items.join("\n");
+        let error = verify_diagnostics_expectation(_args, &joined_diagnostics);
+        TestRunnerResult {
+            outputs: OrderedHashMap::from([
+                ("generated_cairo_code".into(), result),
+                ("expected_diagnostics".into(), joined_diagnostics),
+            ]),
+            error,
+        }
+    }
+}
+
+// TODO(Gil): Move all contracts to the test crate and use this runner.
+cairo_lang_test_utils::test_file_test_with_runner!(
+    expand_contract_from_crate,
+    "src/plugin/plugin_test_data/contracts",
+    {
+        hello_starknet: "hello_starknet",
+        with_ownable: "with_ownable",
+        with_erc20: "with_erc20",
+        upgradable_counter: "upgradable_counter",
+        ownable_erc20: "ownable_erc20",
+        mintable: "mintable",
+        multi_component: "multi_component",
+    },
+    ExpandContractFromCrateTestRunner
 );
