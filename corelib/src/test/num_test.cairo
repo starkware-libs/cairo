@@ -8,7 +8,7 @@ use test::test_utils::assert_eq;
 
 
 #[test]
-fn test_bits_length() {
+fn test_bit_size() {
     assert_eq(@U8BitSize::bits(), @8, 'U8 bit size != 8');
     assert_eq(@U16BitSize::bits(), @16, 'U16 bit size != 16');
     assert_eq(@U32BitSize::bits(), @32, 'U32 bit size != 32');
