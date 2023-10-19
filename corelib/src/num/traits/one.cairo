@@ -7,5 +7,3 @@ trait One<T> {
     /// Returns `false` if `self` is equal to the multiplicative identity.
     fn is_non_one(self: @T) -> bool;
 }
-
-
