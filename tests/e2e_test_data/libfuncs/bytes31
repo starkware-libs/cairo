@@ -173,7 +173,7 @@ libfunc upcast<u8, bytes31> = upcast<u8, bytes31>;
 libfunc store_temp<bytes31> = store_temp<bytes31>;
 
 upcast<u8, bytes31>([0]) -> ([1]); // 0
-store_temp<bytes31>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<bytes31>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: u8) -> (bytes31);
