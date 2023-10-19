@@ -349,7 +349,7 @@ pub fn run_test_file(
                     .split(',')
                     .map(|param| {
                         let (param_name, param_value) = param.split_once(':').unwrap();
-                        (param_name.to_string(), param_value.to_string())
+                        (param_name.trim().to_string(), param_value.trim().to_string())
                     })
                     .collect::<OrderedHashMap<_, _>>(),
             )

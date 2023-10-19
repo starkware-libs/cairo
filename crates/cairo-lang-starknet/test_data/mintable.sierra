@@ -4309,8 +4309,8 @@ function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc2
 store_temp<test::erc20::name::ComponentMemberState>([69]) -> ([69]); // 3698
 store_temp<test::erc20::symbol::ComponentMemberState>([70]) -> ([70]); // 3699
 store_temp<test::erc20::decimals::ComponentMemberState>([71]) -> ([71]); // 3700
-store_temp<test::erc20::allowances::ComponentMemberState>([74]) -> ([74]); // 3701
-store_temp<test::erc20::balances::ComponentMemberState>([73]) -> ([73]); // 3702
+store_temp<test::erc20::balances::ComponentMemberState>([73]) -> ([73]); // 3701
+store_temp<test::erc20::allowances::ComponentMemberState>([74]) -> ([74]); // 3702
 store_temp<test::erc20::total_supply::ComponentMemberState>([75]) -> ([75]); // 3703
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([80]) { fallthrough([85]) 3869([86]) }; // 3704
 branch_align() -> (); // 3705

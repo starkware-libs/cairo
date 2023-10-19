@@ -49,7 +49,7 @@ pub fn verify_diagnostics_expectation(
     let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
         return None;
     };
-    if expect_diagnostics.trim() == "*" {
+    if expect_diagnostics == "*" {
         return None;
     }
 
@@ -68,9 +68,9 @@ pub fn verify_diagnostics_expectation(
 }
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
-/// Ignores case and whitespaces in the edges.
+/// Ignores case.
 pub fn bool_input(input: &str) -> bool {
-    let input = input.trim().to_lowercase();
+    let input = input.to_lowercase();
     bool::from_str(&input).unwrap_or_else(|_| panic!("Expected 'true' or 'false', actual: {input}"))
 }
 

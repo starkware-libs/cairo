@@ -45,6 +45,8 @@ pub enum CostError {
     SolvingGasEquationFailed,
     #[error("found an unexpected cycle during cost computation")]
     UnexpectedCycle,
+    #[error("failed to enforce function cost")]
+    EnforceWalletValueFailed(StatementIdx),
 }
 
 /// Helper to implement the `InvocationCostInfoProvider` for the equation generation.
@@ -119,6 +121,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
             core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_sizes)
         }),
         &compute_costs::PreCostContext {},
+        &Default::default(),
     )
 }
 
@@ -264,6 +267,7 @@ pub fn compute_postcost_info(
     program: &Program,
     get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
+    enforced_function_costs: &OrderedHashMap<FunctionId, i32>,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let type_size_map = get_type_size_map(program, &registry).unwrap();
@@ -278,5 +282,17 @@ pub fn compute_postcost_info(
             core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_size_map)
         }),
         &specific_cost_context,
+        &enforced_function_costs
+            .iter()
+            .map(|(func, val)| {
+                (
+                    registry
+                        .get_function(func)
+                        .expect("Program registry creation would have already failed.")
+                        .entry_point,
+                    *val,
+                )
+            })
+            .collect(),
     )
 }

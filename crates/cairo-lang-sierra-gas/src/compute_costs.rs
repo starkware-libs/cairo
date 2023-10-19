@@ -1,6 +1,7 @@
 use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
+use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
@@ -13,7 +14,6 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
-use crate::generate_equations::{calculate_reverse_topological_ordering, TopologicalOrderStatus};
 use crate::objects::{BranchCost, ConstCost, PreCost};
 use crate::CostError;
 
@@ -90,10 +90,12 @@ pub fn compute_costs<
     program: &Program,
     get_cost_fn: &dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     specific_cost_context: &SpecificCostContext,
+    enforced_wallet_values: &OrderedHashMap<StatementIdx, CostType>,
 ) -> Result<GasInfo, CostError> {
     let mut context = CostContext {
         program,
         get_cost_fn,
+        enforced_wallet_values,
         costs: Default::default(),
         target_values: Default::default(),
     };
@@ -107,6 +109,19 @@ pub fn compute_costs<
         // Recompute the wallet values for each statement, after setting the target values.
         context.costs = Default::default();
         context.prepare_wallet(specific_cost_context)?;
+
+        // Check that enforcing the wallet values succeeded.
+        for (idx, value) in enforced_wallet_values.iter() {
+            if context.wallet_at_ex(idx, false).value != *value {
+                return Err(CostError::EnforceWalletValueFailed(*idx));
+            }
+        }
+    } else {
+        // Check that enforced_wallet_values is empty.
+        assert!(
+            enforced_wallet_values.is_empty(),
+            "enforced_wallet_values cannot be used when should_handle_excess is false."
+        );
     }
 
     let mut variable_values = VariableValues::default();
@@ -339,6 +354,10 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     program: &'a Program,
     /// A callback function returning the cost of a libfunc for every output branch.
     get_cost_fn: &'a dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
+    /// A map from statement index to an enforced wallet value. For example, some functions
+    /// may have a required cost, in this case the functions entry points should have a predefined
+    /// wallet value.
+    enforced_wallet_values: &'a OrderedHashMap<StatementIdx, CostType>,
     /// The cost before executing a Sierra statement.
     costs: UnorderedHashMap<StatementIdx, WalletInfo<CostType>>,
     /// A partial map from StatementIdx to a requested lower bound on the wallet value.
@@ -357,6 +376,20 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
+        self.wallet_at_ex(idx, true)
+    }
+
+    /// Extended version of [Self::wallet_at].
+    ///
+    /// If `with_enforced_values` is `true`, the enforced wallet values are used if set.
+    fn wallet_at_ex(&self, idx: &StatementIdx, with_enforced_values: bool) -> WalletInfo<CostType> {
+        if with_enforced_values {
+            if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
+                // If there is an enforced value, use it.
+                return WalletInfo::from(enforced_wallet_value.clone());
+            }
+        }
+
         self.costs
             .get(idx)
             .unwrap_or_else(|| panic!("Wallet value for statement {idx} was not yet computed."))
@@ -369,7 +402,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         specific_cost_context: &SpecificCostContext,
     ) -> Result<(), CostError> {
         let topological_order =
-            compute_topological_order(self.program.statements.len(), &|current_idx| {
+            compute_topological_order(self.program.statements.len(), true, |current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -435,9 +468,11 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         // Unlike `prepare_wallet`:
         // * function calls are not treated as edges and
         // * the success branches of `withdraw_gas` are treated as edges.
+        //
+        // Note, that we allow cycles, but the result may not be optimal in such a case.
         let topological_order =
-            compute_topological_order(self.program.statements.len(), &|current_idx| {
-                match &self.program.get_statement(current_idx).unwrap() {
+            compute_topological_order(self.program.statements.len(), false, |current_idx| {
+                match self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
                         vec![]
@@ -469,7 +504,8 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         Ok((0..self.program.statements.len())
             .map(|i| {
                 let idx = StatementIdx(i);
-                (idx, self.wallet_at(&idx).value + excess.get(&idx).cloned().unwrap_or_default())
+                let original_wallet_value = self.wallet_at_ex(&idx, false).value;
+                (idx, original_wallet_value + excess.get(&idx).cloned().unwrap_or_default())
             })
             .collect())
     }
@@ -488,9 +524,19 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         excess: &mut UnorderedHashMap<StatementIdx, CostType>,
         finalized_excess_statements: &mut UnorderedHashSet<StatementIdx>,
     ) {
+        let wallet_value = self.wallet_at_ex(idx, false).value;
+
+        if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
+            // No excess is expected at statement with enforced wallet value.
+            // If there is one, we ignore it.
+            excess.insert(
+                *idx,
+                CostType::rectify(&(enforced_wallet_value.clone() - wallet_value.clone())),
+            );
+        }
+
         finalized_excess_statements.insert(*idx);
 
-        let wallet_value = self.wallet_at(idx).value;
         let current_excess = excess.get(idx).cloned().unwrap_or_default();
 
         let invocation = match &self.program.get_statement(idx).unwrap() {
@@ -569,21 +615,17 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 /// Each statement appears in the ordering after its dependencies.
 fn compute_topological_order(
     n_statements: usize,
-    dependencies_callback: &dyn Fn(&StatementIdx) -> Vec<StatementIdx>,
+    detect_cycles: bool,
+    dependencies_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<Vec<StatementIdx>, CostError> {
-    let mut topological_order: Vec<StatementIdx> = Default::default();
-    let mut status = vec![TopologicalOrderStatus::NotStarted; n_statements];
-    for idx in 0..n_statements {
-        calculate_reverse_topological_ordering(
-            &mut topological_order,
-            &mut status,
-            &StatementIdx(idx),
-            true,
-            dependencies_callback,
-        )?;
-    }
-
-    Ok(topological_order)
+    get_topological_ordering(
+        detect_cycles,
+        (0..n_statements).map(StatementIdx),
+        n_statements,
+        |idx| Ok(dependencies_callback(&idx)),
+        CostError::StatementOutOfBounds,
+        |_| CostError::UnexpectedCycle,
+    )
 }
 
 pub struct PreCostContext {}

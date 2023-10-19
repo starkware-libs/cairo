@@ -239,15 +239,20 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt252_add", &["2", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "4"], &["5"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_label(&db, 0),
-        dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["6"]),
         dummy_return_statement(&[]),
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1", "3"]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "3", "5", "6"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -255,11 +260,11 @@ fn store_temp_simple() {
             "felt252_add(2, 3) -> (4)",
             "nope() -> ()",
             "store_temp<felt252>(4) -> (4)",
-            "felt252_add(2, 4) -> (5)",
+            "felt252_add(5, 4) -> (5)",
             "nope() -> ()",
             "label_test::test::0:",
             "store_temp<felt252>(5) -> (5)",
-            "felt252_add(5, 5) -> (6)",
+            "felt252_add(5, 6) -> (6)",
             "return()",
         ]
     );
@@ -452,9 +457,9 @@ fn store_temp_push_values() {
         dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
         dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["7"]),
         dummy_simple_statement(&db, "store_temp<felt252>", &["7"], &["7"]),
-        dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("7", "102"), ("8", "103")]),
+        dummy_push_values(&db, &[("8", "100"), ("2", "101"), ("7", "102"), ("9", "103")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_return_statement(&["9"]),
+        dummy_return_statement(&["10"]),
     ];
 
     assert_eq!(
@@ -462,7 +467,7 @@ fn store_temp_push_values() {
             &db,
             statements,
             LocalVariables::default(),
-            &["0", "1", "3", "4", "6", "8", "9"]
+            &["0", "1", "3", "4", "6", "8", "9", "10"]
         ),
         vec![
             "felt252_add(0, 1) -> (2)",
@@ -471,12 +476,12 @@ fn store_temp_push_values() {
             "store_temp<felt252>(5) -> (5)",
             "felt252_add(5, 6) -> (7)",
             "store_temp<felt252>(7) -> (7)",
-            "store_temp<felt252>(5) -> (100)",
+            "store_temp<felt252>(8) -> (100)",
             "store_temp<felt252>(2) -> (101)",
             "store_temp<felt252>(7) -> (102)",
-            "store_temp<felt252>(8) -> (103)",
+            "store_temp<felt252>(9) -> (103)",
             "nope() -> ()",
-            "return(9)",
+            "return(10)",
         ]
     );
 }
@@ -589,7 +594,15 @@ fn consecutive_push_values() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
-        dummy_push_values(&db, &[("100", "200"), ("101", "201"), ("2", "202"), ("3", "203")]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                ("100", "200", false),
+                ("101", "201", true),
+                ("2", "202", false),
+                ("3", "203", false),
+            ],
+        ),
         dummy_push_values(&db, &[("101", "301"), ("202", "302"), ("203", "303"), ("4", "304")]),
         dummy_push_values(&db, &[("304", "404")]),
         dummy_return_statement(&["0"]),
@@ -608,7 +621,7 @@ fn consecutive_push_values() {
             "store_temp<felt252>(1) -> (101)",
             // Second statement. Reuse [100] and [101]. Push [2] and [3].
             "rename<felt252>(100) -> (200)",
-            "rename<felt252>(101) -> (201)",
+            "dup<felt252>(101) -> (101, 201)",
             "store_temp<felt252>(2) -> (202)",
             "store_temp<felt252>(3) -> (203)",
             // Third statement. Reuse [101], [202] and [203]. Push [4].

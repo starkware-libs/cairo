@@ -91,14 +91,14 @@ impl<'a> Printer<'a> {
     ) {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
-        match green_node.details {
+        match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
                     self.print_token_node(
                         field_description,
                         indent,
                         extra_head_indent,
-                        text,
+                        text.clone(),
                         green_node.kind,
                     )
                 }
@@ -170,7 +170,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children: Vec<_> = syntax_node.children(self.db).collect();
+        let children = self.db.get_children(syntax_node.clone());
         let num_children = children.len();
         let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
             " <ignored>".to_string()

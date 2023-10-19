@@ -10,9 +10,9 @@ use test_case::test_case;
 use super::{sierra_from_felt252s, sierra_to_felt252s, SERDE_SUPPORTED_LONG_IDS};
 use crate::compiler_version;
 use crate::felt252_serde::Felt252Serde;
-use crate::test_utils::get_example_file_path;
+use crate::test_utils::{get_contract_file_name_from_path, get_example_file_path};
 
-#[test_case("test_contract")]
+#[test_case("test_contract::test_contract")]
 #[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("with_erc20")]
@@ -20,7 +20,9 @@ use crate::test_utils::get_example_file_path;
 #[test_case("ownable_erc20")]
 #[test_case("upgradable_counter")]
 #[test_case("mintable")]
-fn test_felt252_serde(example_file_name: &str) {
+#[test_case("multi_component::contract_with_4_components")]
+fn test_felt252_serde(example_contract_path: &str) {
+    let example_file_name = get_contract_file_name_from_path(example_contract_path);
     let sierra = ProgramParser::new()
         .parse(
             &read_to_string(get_example_file_path(format!("{example_file_name}.sierra").as_str()))

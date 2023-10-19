@@ -22,8 +22,8 @@ felt252_const<4>() -> ([8]); // 9
 store_temp<felt252>([7]) -> ([7]); // 10
 store_temp<felt252>([8]) -> ([8]); // 11
 pedersen([6], [7], [8]) -> ([9], [10]); // 12
-store_temp<Pedersen>([9]) -> ([11]); // 13
-store_temp<felt252>([10]) -> ([12]); // 14
-return([11], [12]); // 15
+store_temp<Pedersen>([9]) -> ([9]); // 13
+store_temp<felt252>([10]) -> ([10]); // 14
+return([9], [10]); // 15
 
 examples::pedersen_test::test_pedersen@0([0]: Pedersen) -> (Pedersen, felt252);

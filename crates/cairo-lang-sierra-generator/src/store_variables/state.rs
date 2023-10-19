@@ -33,26 +33,27 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar {
-        ty: sierra::ids::ConcreteTypeId,
-    },
+    TempVar { ty: sierra::ids::ConcreteTypeId },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred {
-        info: DeferredVariableInfo,
-    },
+    Deferred { info: DeferredVariableInfo },
+    /// The variable is a local variable.
     LocalVar,
+    /// The variable was consumed and can no longer be used.
+    /// This state is used because there is no efficent way of removing variables
+    /// from [VariablesState::variables] without effecting thier order.
+    Removed,
 }
 
 /// Represents information known about the state of the variables.
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
-pub struct State {
+pub struct VariablesState {
     /// A map from [sierra::ids::VarId] of to its state.
     pub variables: OrderedHashMap<sierra::ids::VarId, VarState>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
-impl State {
+impl VariablesState {
     /// Registers output variables of a libfunc. See [Self::register_output].
     /// Clears the stack if needed.
     pub fn register_outputs(
@@ -117,13 +118,23 @@ impl State {
                 let ty = output_info.ty.clone();
                 match &arg_states[*param_idx] {
                     VarState::TempVar { .. } => {
-                        add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        // A partial paramater may be smaller than its parent so it can't replace it
+                        // on the stack.
+                        if matches!(
+                            output_info.ref_info,
+                            OutputVarReferenceInfo::SameAsParam { .. }
+                        ) {
+                            add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        }
                         VarState::TempVar { ty }
                     }
                     VarState::Deferred { info } => {
                         VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
                     VarState::LocalVar => VarState::LocalVar,
+                    VarState::Removed => {
+                        unreachable!("Unexpected var state.")
+                    }
                 }
             }
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
@@ -143,22 +154,27 @@ impl State {
         self.known_stack.clear();
     }
 
-    /// Marks `dst` as a rename of `src`.
-    ///
-    /// Updates [Self::known_stack] and [Self::variables] if necessary.
-    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
-        self.known_stack.clone_if_on_stack(src, dst);
-        if let Some(var_state) = self.variables.get(src) {
-            self.variables.insert(dst.clone(), var_state.clone());
+    /// Pops the state of `var` from self.variables and returns it.
+    pub fn pop_var_state(&mut self, var: &sierra::ids::VarId) -> VarState {
+        match self.variables.entry(var.clone()) {
+            indexmap::map::Entry::Occupied(mut e) => {
+                std::mem::replace(e.get_mut(), VarState::Removed)
+            }
+            indexmap::map::Entry::Vacant(_) => {
+                unreachable!("Unknown state for variable `{var}`.")
+            }
         }
     }
 }
 
-/// Merges the information from two [State]s.
+/// Merges the information from two [VariablesState]s.
 /// Used to determine the state at the merge of two code branches.
 ///
 /// If one of the given states is None, the second is returned.
-pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Option<State> {
+pub fn merge_optional_states(
+    a_opt: Option<VariablesState>,
+    b_opt: Option<VariablesState>,
+) -> Option<VariablesState> {
     match (a_opt, b_opt) {
         (None, None) => None,
         (None, Some(b)) => Some(b),
@@ -167,7 +183,15 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
             // Merge the lists of deferred variables.
             let mut variables = OrderedHashMap::default();
             for (var, var_state_a) in a.variables {
+                if matches!(var_state_a, VarState::Removed) {
+                    continue;
+                }
+
                 if let Some(var_state_b) = b.variables.get(&var) {
+                    if matches!(var_state_b, VarState::Removed) {
+                        continue;
+                    }
+
                     assert_eq!(
                         var_state_a, *var_state_b,
                         "Internal compiler error: Found different deferred variables."
@@ -176,7 +200,10 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
                 }
             }
 
-            Some(State { variables, known_stack: a.known_stack.merge_with(&b.known_stack) })
+            Some(VariablesState {
+                variables,
+                known_stack: a.known_stack.merge_with(&b.known_stack),
+            })
         }
     }
 }

@@ -86,7 +86,7 @@ fn test_generic_item_id(
     fn find_generics(
         db: &DatabaseForTesting,
         mut module_file_id: ModuleFileId,
-        node: SyntaxNode,
+        node: &SyntaxNode,
         output: &mut String,
     ) {
         match node.kind(db) {
@@ -111,11 +111,11 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in node.children(db) {
+        for child in db.get_children(node.clone()).iter() {
             find_generics(db, module_file_id, child, output);
         }
     }
-    find_generics(db, module_file_id, node, &mut output);
+    find_generics(db, module_file_id, &node, &mut output);
 
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }

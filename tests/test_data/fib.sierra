@@ -25,16 +25,15 @@ store_temp<felt252>([0]) -> ([5]); // 6
 jump() { 19() }; // 7
 branch_align() -> (); // 8
 drop<NonZero<felt252>>([4]) -> (); // 9
-dup<felt252>([1]) -> ([1], [7]); // 10
-felt252_add([0], [7]) -> ([6]); // 11
+dup<felt252>([1]) -> ([1], [6]); // 10
+felt252_add([0], [6]) -> ([7]); // 11
 felt252_const<1>() -> ([8]); // 12
 felt252_sub([2], [8]) -> ([9]); // 13
-store_temp<felt252>([1]) -> ([11]); // 14
-store_temp<felt252>([6]) -> ([12]); // 15
-store_temp<felt252>([9]) -> ([13]); // 16
-function_call<user@examples::fib::fib>([11], [12], [13]) -> ([10]); // 17
+store_temp<felt252>([1]) -> ([1]); // 14
+store_temp<felt252>([7]) -> ([7]); // 15
+store_temp<felt252>([9]) -> ([9]); // 16
+function_call<user@examples::fib::fib>([1], [7], [9]) -> ([10]); // 17
 rename<felt252>([10]) -> ([5]); // 18
-rename<felt252>([5]) -> ([14]); // 19
-return([14]); // 20
+return([5]); // 19
 
 examples::fib::fib@0([0]: felt252, [1]: felt252, [2]: felt252) -> (felt252);
