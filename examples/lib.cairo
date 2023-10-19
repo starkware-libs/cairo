@@ -7,6 +7,7 @@ mod fib_caller;
 mod fib_counter;
 mod fib_loop;
 mod fib_local;
+mod fib_match;
 mod fib_struct;
 mod fib_u128_checked;
 mod fib_u128;
