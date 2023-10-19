@@ -9,17 +9,17 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl TZeroableImpl<T, +num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
+impl TZeroableImpl<T, impl ZeroImpl: num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
     fn zero() -> T {
-        num::traits::Zero::zero()
+        ZeroImpl::zero()
     }
     #[inline(always)]
     fn is_zero(self: T) -> bool {
-        num::traits::Zero::is_zero(@self)
+        ZeroImpl::is_zero(@self)
     }
     #[inline(always)]
     fn is_non_zero(self: T) -> bool {
-        num::traits::Zero::is_non_zero(@self)
+        ZeroImpl::is_non_zero(@self)
     }
 }
 
