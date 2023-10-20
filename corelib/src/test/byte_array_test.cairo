@@ -444,6 +444,57 @@ fn test_reverse() {
     assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 }
 
+#[test]
+fn test_serde() {
+    let mut serialized = array![];
+    let ba: ByteArray = "";
+    let expected_serialized = array![0, 0, 0];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+
+    let mut serialized = array![];
+    let ba: ByteArray = "hello";
+    let expected_serialized = array![
+        0, // data len
+         0x68656c6c6f, // pending_word
+         5 // pending_word_len
+    ];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+
+    let mut serialized = array![];
+    let ba: ByteArray = "Long string, more than 31 characters.";
+    let expected_serialized = array![
+        1, // data len
+        0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
+        0x63746572732e, // pending_word
+        6 // pending_word_len
+    ];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+}
+
+#[test]
+#[should_panic(expected: "")]
+fn test_panic_with_byte_array_empty() {
+    let ba: ByteArray = Default::default();
+    byte_array::panic_with_byte_array(@ba);
+}
+
+#[test]
+#[should_panic(expected: "error")]
+fn test_panic_with_byte_array_short() {
+    let ba: ByteArray = "error";
+    byte_array::panic_with_byte_array(@ba);
+}
+
+#[test]
+#[should_panic(expected: "long error with more than 31 characters")]
+fn test_panic_with_byte_array_long() {
+    let ba: ByteArray = "long error with more than 31 characters";
+    byte_array::panic_with_byte_array(@ba);
+}
+
 // ========= Test helper functions =========
 
 use debug::PrintTrait;
@@ -490,6 +541,36 @@ fn compare_byte_array(
         ba_pending_word_felt.print();
         panic_with_felt252('wrong pending_word');
     }
+}
+
+fn compare_spans<T, +PrintTrait<T>, +PartialEq<T>, +Copy<T>>(mut a: Span<T>, mut b: Span<T>) {
+    if a.len() != b.len() {
+        'a.len():'.print();
+        a.len().print();
+        'b.len():'.print();
+        b.len().print();
+        panic_with_felt252('different lengths');
+    }
+    let mut index = 0;
+    loop {
+        match a.pop_front() {
+            Option::Some(current_a) => {
+                let current_b = b.pop_front().unwrap();
+                if current_a != current_b {
+                    'index:'.print();
+                    index.print();
+                    'a[index]:'.print();
+                    (*current_a).print();
+                    'b[index]:'.print();
+                    (*current_b).print();
+
+                    panic_with_felt252('different item');
+                }
+            },
+            Option::None(_) => { break; }
+        }
+        index += 1;
+    };
 }
 
 fn test_byte_array_1() -> ByteArray {

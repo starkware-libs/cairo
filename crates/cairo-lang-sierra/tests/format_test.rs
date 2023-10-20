@@ -1,4 +1,3 @@
-use cairo_lang_sierra::program::VersionedProgram;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -107,7 +106,7 @@ fn versioned_program_display_test() {
             "};
     assert_eq!(
         parser.parse(sierra_code).map(|p| p.to_string()),
-        Ok(VersionedProgram::from(parser.parse(sierra_code).unwrap()).to_string())
+        Ok(parser.parse(sierra_code).unwrap().into_artifact().to_string())
     );
 }
 

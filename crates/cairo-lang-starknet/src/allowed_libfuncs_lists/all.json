@@ -116,6 +116,7 @@
         "keccak_syscall",
         "library_call_syscall",
         "match_nullable",
+        "match_nullable_snapshot",
         "null",
         "nullable_from_box",
         "pedersen",

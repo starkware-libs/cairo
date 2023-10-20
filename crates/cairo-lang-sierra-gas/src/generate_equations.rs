@@ -1,3 +1,4 @@
+use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -99,27 +100,14 @@ impl StatementFutureCost for EquationGenerator {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum TopologicalOrderStatus {
-    /// The computation for that statement did not start.
-    NotStarted,
-    /// The computation is in progress.
-    InProgress,
-    /// The computation was completed, and all the children were visited.
-    Done,
-}
-
 /// Returns the reverse topological ordering of the program statements.
 fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementIdx>, CostError> {
-    let mut ordering = vec![];
-    let mut status = vec![TopologicalOrderStatus::NotStarted; program.statements.len()];
-    for f in &program.funcs {
-        calculate_reverse_topological_ordering(
-            &mut ordering,
-            &mut status,
-            &f.entry_point,
-            false,
-            |idx| match program.get_statement(idx).unwrap() {
+    get_topological_ordering(
+        false,
+        program.funcs.iter().map(|f| f.entry_point),
+        program.statements.len(),
+        |idx| {
+            Ok(match program.get_statement(&idx).unwrap() {
                 cairo_lang_sierra::program::Statement::Invocation(invocation) => invocation
                     .branches
                     .iter()
@@ -129,71 +117,9 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
                 cairo_lang_sierra::program::Statement::Return(_) => {
                     vec![]
                 }
-            },
-        )?;
-    }
-    Ok(ordering)
-}
-
-/// Recursively calculates the topological ordering of the program.
-pub fn calculate_reverse_topological_ordering(
-    ordering: &mut Vec<StatementIdx>,
-    status: &mut [TopologicalOrderStatus],
-    idx0: &StatementIdx,
-    detect_cycles: bool,
-    children_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
-) -> Result<(), CostError> {
-    // A stack of statements to visit.
-    // When the pair is popped out of the stack, `is_done=true` means that we've already visited
-    // all of its children, and we just need to add it to the ordering.
-    let mut stack = vec![*idx0];
-
-    while let Some(idx) = stack.pop() {
-        match status.get(idx.0) {
-            Some(TopologicalOrderStatus::NotStarted) => {
-                // Mark the statement as `InProgress`.
-                status[idx.0] = TopologicalOrderStatus::InProgress;
-
-                // Push the statement back to the stack, so that after visiting all
-                // of its children, we would add it to the ordering.
-                // Add the missing children on top of it.
-                stack.push(idx);
-                for child in children_callback(&idx) {
-                    match status.get(child.0) {
-                        Some(TopologicalOrderStatus::InProgress) => {
-                            if detect_cycles {
-                                return Err(CostError::UnexpectedCycle);
-                            }
-                            continue;
-                        }
-                        Some(TopologicalOrderStatus::Done) => {
-                            continue;
-                        }
-                        Some(TopologicalOrderStatus::NotStarted) => {
-                            stack.push(child);
-                        }
-                        None => {
-                            return Err(CostError::StatementOutOfBounds(child));
-                        }
-                    }
-                }
-            }
-            Some(TopologicalOrderStatus::InProgress) => {
-                // Mark the statement as `Done`.
-                status[idx.0] = TopologicalOrderStatus::Done;
-
-                // Add the element to the ordering after visiting all its children.
-                // This gives us reverse topological ordering.
-                ordering.push(idx);
-            }
-            Some(TopologicalOrderStatus::Done) => {
-                // Do nothing.
-            }
-            None => {
-                return Err(CostError::StatementOutOfBounds(idx));
-            }
-        }
-    }
-
-    Ok(())
+            })
+        },
+        CostError::StatementOutOfBounds,
+        |_| unreachable!("Cycles are not detected."),
+    )
 }

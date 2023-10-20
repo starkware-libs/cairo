@@ -31,8 +31,8 @@ felt252_const<26>() -> ([2])
 u128_const<12>() -> ([3])
 u128_const<18>() -> ([4])
 struct_construct<Tuple<felt252, felt252, felt252, u128, u128>>([0], [1], [2], [3], [4]) -> ([5])
-PushValues([5]: Tuple<felt252, felt252, felt252, u128, u128>) -> ([6])
-return([6])
+PushValues([5]: Tuple<felt252, felt252, felt252, u128, u128>) -> ([5])
+return([5])
 
 //! > lowering_flat
 Parameters:

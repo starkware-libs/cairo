@@ -23,8 +23,8 @@ libfunc upcast<u16, u64> = upcast<u16, u64>;
 libfunc store_temp<u64> = store_temp<u64>;
 
 upcast<u16, u64>([0]) -> ([1]); // 0
-store_temp<u64>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<u64>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: u16) -> (u64);
 
@@ -54,8 +54,8 @@ libfunc upcast<u64, u64> = upcast<u64, u64>;
 libfunc store_temp<u64> = store_temp<u64>;
 
 upcast<u64, u64>([0]) -> ([1]); // 0
-store_temp<u64>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<u64>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: u64) -> (u64);
 
@@ -106,8 +106,6 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
 
 downcast<u64, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -120,9 +118,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
@@ -172,8 +168,6 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
 
 downcast<u64, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -186,9 +180,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u64>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u64>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
@@ -231,8 +223,6 @@ libfunc store_temp<core::option::Option::<core::integer::i64>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i64>, 1> = enum_init<core::option::Option::<core::integer::i64>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::i64>> = rename<core::option::Option::<core::integer::i64>>;
 
 downcast<i64, i64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -245,9 +235,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::i64>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::i64>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::i64>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i64>);
 
@@ -291,8 +279,6 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
 
 downcast<u32, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -305,9 +291,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u64>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u64>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
@@ -365,8 +349,6 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
 
 downcast<i64, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -379,9 +361,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
@@ -432,8 +412,6 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
 
 downcast<u64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -446,9 +424,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
 
@@ -506,8 +482,6 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
 
 downcast<i64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -520,9 +494,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
 
@@ -573,8 +545,6 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
 
 downcast<i16, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -587,9 +557,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u64>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u64>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
@@ -640,8 +608,6 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
 
 downcast<i16, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -654,9 +620,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::u16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::u16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
@@ -707,8 +671,6 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
 
 downcast<u16, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -721,8 +683,6 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<core::integer::i16>);
