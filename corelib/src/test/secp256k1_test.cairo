@@ -4,7 +4,8 @@ use starknet::{
 use starknet::secp256_trait::{
     Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature
 };
-use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl, verify_eth_signature};
+use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl};
+use starknet::eth_signature::verify_eth_signature;
 
 #[test]
 fn test_secp256k1_recover_public_key() {
