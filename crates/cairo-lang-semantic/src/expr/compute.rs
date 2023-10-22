@@ -562,6 +562,8 @@ fn compute_expr_function_call_semantic(
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
     let args_syntax = syntax.arguments(syntax_db);
+    // TODO(Gil): Consider not invoking the TraitFunction inference below if there were errors in
+    // argument semantics, in order to avoid unnecessary diagnostics.
     let named_args: Vec<_> = args_syntax
         .args(syntax_db)
         .elements(syntax_db)

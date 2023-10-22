@@ -38,6 +38,9 @@ use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_starknet::inline_macros::get_dep_component::{
+    GetDepComponentMacro, GetDepComponentMutMacro,
+};
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -86,6 +89,8 @@ pub async fn serve_language_service() {
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .with_macro_plugin(Arc::new(TestPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
+        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 
