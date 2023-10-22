@@ -1,26 +1,3 @@
-<<<<<<< HEAD
-#[test]
-#[should_panic(expected: "")]
-fn test_panic_with_byte_array_empty() {
-    let ba: ByteArray = Default::default();
-    panics::panic_with_byte_array(@ba);
-}
-
-#[test]
-#[should_panic(expected: "error")]
-fn test_panic_with_byte_array_short() {
-    let ba: ByteArray = "error";
-    panics::panic_with_byte_array(@ba);
-}
-
-#[test]
-#[should_panic(expected: "long error with more than 31 characters")]
-fn test_panic_with_byte_array_long() {
-    let ba: ByteArray = "long error with more than 31 characters";
-    panics::panic_with_byte_array(@ba);
-}
-||||||| 1937daaef
-=======
 use panics::BYTE_ARRAY_PANIC_MAGIC;
 
 #[test]
@@ -148,4 +125,3 @@ fn test_panic_with_byte_array_invalid_pending_word() {
     ];
     panic(error);
 }
->>>>>>> origin/main
