@@ -1,46 +1,4 @@
-<<<<<<< HEAD
-#[test]
-#[should_panic(expected: "")]
-fn test_panic_with_byte_array_empty() {
-    let ba: ByteArray = Default::default();
-    panics::panic_with_byte_array(@ba);
-}
-
-#[test]
-#[should_panic(expected: "error")]
-fn test_panic_with_byte_array_short() {
-    let ba: ByteArray = "error";
-    panics::panic_with_byte_array(@ba);
-}
-
-#[test]
-#[should_panic(expected: "long error with more than 31 characters")]
-fn test_panic_with_byte_array_long() {
-    let ba: ByteArray = "long error with more than 31 characters";
-    panics::panic_with_byte_array(@ba);
-}
-||||||| 1937daaef
-=======
 use panics::BYTE_ARRAY_PANIC_MAGIC;
-
-#[test]
-#[should_panic(expected: 'short_string')]
-fn test_panic_with_short_string() {
-    panic_with_felt252('short_string');
-}
-
-#[test]
-#[should_panic(expected: 1)]
-fn test_panic_with_felt252() {
-    panic_with_felt252(1);
-}
-
-#[test]
-#[should_panic(expected: "")]
-fn test_panic_with_byte_array_empty() {
-    let ba: ByteArray = Default::default();
-    panics::panic_with_byte_array(@ba);
-}
 
 #[test]
 #[should_panic(expected: "error")]
@@ -87,7 +45,26 @@ fn test_panic_with_byte_array_null_in_beginning() {
 }
 
 #[test]
-#[should_panic(expected: ("error", 11, "hello", 5, 'short_string'))]
+#[should_panic(expected: ('short_string',))]
+fn test_panic_with_short_string() {
+    panic_with_felt252('short_string');
+}
+
+#[test]
+#[should_panic(expected: (1,))]
+fn test_panic_with_felt252() {
+    panic_with_felt252(1);
+}
+
+#[test]
+#[should_panic(expected: "")]
+fn test_panic_with_byte_array_empty() {
+    let ba: ByteArray = Default::default();
+    panics::panic_with_byte_array(@ba);
+}
+
+#[test]
+#[should_panic(expected: ("error", 11, "hello", 5, 'short_string',))]
 fn test_panic_with_stacked_errors() {
     let mut error = array![];
     let ba: ByteArray = "error";
@@ -148,4 +125,3 @@ fn test_panic_with_byte_array_invalid_pending_word() {
     ];
     panic(error);
 }
->>>>>>> origin/main
