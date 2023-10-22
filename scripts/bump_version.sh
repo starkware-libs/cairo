@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CURRENT_VERSION='2.3.0-rc0'
+CURRENT_VERSION='2.3.0'
 NEW_VERSION="$@"
 sed -i "s/$CURRENT_VERSION/$NEW_VERSION/g" \
     $(find . -type f -iname "*.toml") \
