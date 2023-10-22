@@ -444,6 +444,7 @@ fn test_reverse() {
     assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 }
 
+<<<<<<< HEAD
 #[test]
 fn test_serde() {
     let mut serialized = array![];
@@ -495,6 +496,39 @@ fn test_panic_with_byte_array_long() {
     byte_array::panic_with_byte_array(@ba);
 }
 
+||||||| 1937daaef
+=======
+#[test]
+fn test_serde() {
+    let mut serialized = array![];
+    let ba: ByteArray = "";
+    let expected_serialized = array![0, 0, 0];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+
+    let mut serialized = array![];
+    let ba: ByteArray = "hello";
+    let expected_serialized = array![
+        0, // data len
+         0x68656c6c6f, // pending_word
+         5 // pending_word_len
+    ];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+
+    let mut serialized = array![];
+    let ba: ByteArray = "Long string, more than 31 characters.";
+    let expected_serialized = array![
+        1, // data len
+        0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
+        0x63746572732e, // pending_word
+        6 // pending_word_len
+    ];
+    ba.serialize(ref serialized);
+    compare_spans(serialized.span(), expected_serialized.span());
+}
+
+>>>>>>> origin/main
 // ========= Test helper functions =========
 
 use debug::PrintTrait;

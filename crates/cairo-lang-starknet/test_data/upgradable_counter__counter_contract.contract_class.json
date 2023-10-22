@@ -2335,10 +2335,42 @@
       ],
       [
         171,
+<<<<<<< HEAD
         "enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>>"
       ],
       [
         172,
+||||||| 1937daaef
+        "function_call<user@core::result::ResultTraitImpl::<(), core::array::Array::<core::felt252>>::unwrap::<core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>"
+      ],
+      [
+        172,
+        "struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>"
+      ],
+      [
+        173,
+        "snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>"
+      ],
+      [
+        174,
+        "store_temp<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>"
+      ],
+      [
+        175,
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read>"
+      ],
+      [
+        176,
+        "enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>>"
+      ],
+      [
+        177,
+=======
+        "enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>>"
+      ],
+      [
+        172,
+>>>>>>> origin/main
         "struct_deconstruct<Tuple<ClassHash>>"
       ],
       [

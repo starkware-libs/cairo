@@ -54,8 +54,16 @@ impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
     }
 }
 
+<<<<<<< HEAD
 impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
+||||||| 1937daaef
+// TODO(yuval): implement all `into`s using `integer::upcast(self)`.
+=======
+impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
+
+// TODO(yuval): implement all `into`s using `integer::upcast(self)`.
+>>>>>>> origin/main
 impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
         integer::upcast(self)
