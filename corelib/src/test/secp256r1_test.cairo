@@ -37,18 +37,6 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
 }
 
 #[test]
-<<<<<<< HEAD
-#[available_gas(100000000)]
-fn test_verify_eth_signature() {
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-||||||| parent of df22d0880... add verify_signature function for secp curves (#4120)
-fn test_verify_eth_signature() {
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-=======
 #[available_gas(100000000)]
 fn test_verify_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
@@ -56,26 +44,9 @@ fn test_verify_signature() {
         Secp256r1Point
     >(msg_hash, signature.r, signature.s, public_key);
     assert(is_valid, 'Signature should be valid');
->>>>>>> df22d0880... add verify_signature function for secp curves (#4120)
 }
 
 #[test]
-<<<<<<< HEAD
-#[should_panic(expected: ('Invalid signature',))]
-#[available_gas(100000000)]
-fn test_verify_eth_signature_wrong_eth_address() {
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    let eth_address = (eth_address.into() + 1).try_into().unwrap();
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-||||||| parent of df22d0880... add verify_signature function for secp curves (#4120)
-#[should_panic(expected: ('Invalid signature',))]
-fn test_verify_eth_signature_wrong_eth_address() {
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    let eth_address = (eth_address.into() + 1).try_into().unwrap();
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-=======
 #[available_gas(100000000)]
 fn test_verify_signature_invalid_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
@@ -83,26 +54,9 @@ fn test_verify_signature_invalid_signature() {
         Secp256r1Point
     >(msg_hash, signature.r + 1, signature.s, public_key);
     assert(!is_valid, 'Signature should be invalid');
->>>>>>> df22d0880... add verify_signature function for secp curves (#4120)
 }
 
 #[test]
-<<<<<<< HEAD
-#[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
-fn test_verify_eth_signature_overflowing_signature_r() {
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    signature.r = Secp256r1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-||||||| parent of df22d0880... add verify_signature function for secp curves (#4120)
-#[should_panic(expected: ('Signature out of range',))]
-fn test_verify_eth_signature_overflowing_signature_r() {
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    signature.r = Secp256r1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-=======
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_r() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
@@ -110,26 +64,9 @@ fn test_verify_signature_overflowing_signature_r() {
         Secp256r1Point
     >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key);
     assert(!is_valid, 'Signature out of range');
->>>>>>> df22d0880... add verify_signature function for secp curves (#4120)
 }
 
 #[test]
-<<<<<<< HEAD
-#[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
-fn test_verify_eth_signature_overflowing_signature_s() {
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    signature.s = Secp256r1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-||||||| parent of df22d0880... add verify_signature function for secp curves (#4120)
-#[should_panic(expected: ('Signature out of range',))]
-fn test_verify_eth_signature_overflowing_signature_s() {
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature();
-    signature.s = Secp256r1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
-=======
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_s() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
@@ -137,7 +74,6 @@ fn test_verify_signature_overflowing_signature_s() {
         Secp256r1Point
     >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key);
     assert(!is_valid, 'Signature out of range');
->>>>>>> df22d0880... add verify_signature function for secp curves (#4120)
 }
 
 
