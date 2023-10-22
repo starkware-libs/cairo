@@ -1014,6 +1014,7 @@ dependencies = [
  "cairo-lang-utils",
  "colored",
  "itertools 0.11.0",
+ "num-bigint",
  "num-traits 0.2.15",
  "rayon",
  "serde",
