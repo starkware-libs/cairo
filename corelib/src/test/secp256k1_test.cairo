@@ -2,9 +2,10 @@ use starknet::{
     eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait
 };
 use starknet::secp256_trait::{
-    Signature, recover_public_key, verify_eth_signature, Secp256PointTrait, signature_from_vrs
+    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature
 };
 use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl};
+use starknet::eth_signature::verify_eth_signature;
 
 #[test]
 #[available_gas(100000000)]
@@ -70,7 +71,7 @@ fn test_verify_eth_signature() {
         get_message_and_signature(
         :y_parity
     );
-    verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
+    verify_eth_signature(:msg_hash, :signature, :eth_address);
 }
 
 #[test]
@@ -83,7 +84,7 @@ fn test_verify_eth_signature_wrong_eth_address() {
         :y_parity
     );
     let eth_address = (eth_address.into() + 1).try_into().unwrap();
-    verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
+    verify_eth_signature(:msg_hash, :signature, :eth_address);
 }
 
 #[test]
@@ -96,7 +97,7 @@ fn test_verify_eth_signature_overflowing_signature_r() {
         :y_parity
     );
     signature.r = Secp256k1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
+    verify_eth_signature(:msg_hash, :signature, :eth_address);
 }
 
 #[test]
@@ -109,5 +110,35 @@ fn test_verify_eth_signature_overflowing_signature_s() {
         :y_parity
     );
     signature.s = Secp256k1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
+    verify_eth_signature(:msg_hash, :signature, :eth_address);
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_verify_signature() {
+    let (msg_hash, signature, public_key_x, public_key_y, _) = get_message_and_signature(false);
+
+    let public_key = Secp256k1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
+        .unwrap_syscall()
+        .unwrap();
+
+    let is_valid = is_valid_signature::<
+        Secp256k1Point
+    >(msg_hash, signature.r, signature.s, public_key);
+    assert(is_valid, 'Signature should be valid');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_verify_signature_invalid_signature() {
+    let (msg_hash, signature, public_key_x, public_key_y, _) = get_message_and_signature(false);
+
+    let public_key = Secp256k1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
+        .unwrap_syscall()
+        .unwrap();
+
+    let is_valid = is_valid_signature::<
+        Secp256k1Point
+    >(msg_hash, signature.r + 1, signature.s, public_key);
+    assert(!is_valid, 'Signature should be invalid');
 }
