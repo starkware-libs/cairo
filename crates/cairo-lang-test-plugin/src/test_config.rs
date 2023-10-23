@@ -3,6 +3,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::OptionHelper;
 use itertools::chain;
 use num_bigint::{BigInt, Sign};
@@ -10,10 +11,6 @@ use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
-
-pub const BYTE_ARRAY_PANIC_MAGIC: &str =
-    "46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3";
-pub const BYTES_IN_WORD: usize = 31;
 
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -220,7 +217,7 @@ fn extract_string_panic_bytes(
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
     chain!(
-        [felt_str!(BYTE_ARRAY_PANIC_MAGIC, 16), num_full_words],
+        [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
         full_words.into_iter(),
         [pending_word, pending_word_len]
     )
