@@ -24,19 +24,21 @@ impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     }
 }
 
-impl ContractAddressZeroable of Zeroable<ContractAddress> {
+impl ContractAddressZero of num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
     #[inline(always)]
-    fn is_zero(self: ContractAddress) -> bool {
-        contract_address_to_felt252(self).is_zero()
+    fn is_zero(self: @ContractAddress) -> bool {
+        felt_252::Felt252Zero::is_zero(@contract_address_to_felt252(*self))
     }
     #[inline(always)]
-    fn is_non_zero(self: ContractAddress) -> bool {
+    fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
     }
 }
+
+impl ContractAddressZeroable = zeroable::TZeroableImpl<ContractAddress>;
 
 impl ContractAddressSerde of serde::Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
