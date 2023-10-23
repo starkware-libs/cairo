@@ -131,6 +131,49 @@ mod callable {
 
 //! > ==========================================================================
 
+//! > Calling a method of a trait from a generic argument, after an unresolved generic argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T,
+        impl X: unknown,
+        impl CallableImpl: callable::CallableTrait<T>
+     >(x: T) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:2:17
+        impl X: unknown,
+                ^*****^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:16:5
+    bar(3_u8);
+    ^*^
+
+
+//! > ==========================================================================
+
 //! > Test calling a method of a trait from an impl in the module.
 
 //! > test_runner_name

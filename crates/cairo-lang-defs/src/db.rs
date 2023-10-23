@@ -279,7 +279,11 @@ pub struct GeneratedFileInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
+    /// The list of IDs of all items in the module. Each ID here is guaranteed to be a key in one
+    /// of the specific-item-kind maps.
     items: Arc<Vec<ModuleItemId>>,
+
+    // Specific-item-kind maps
     constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
     submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
     uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
@@ -292,6 +296,7 @@ pub struct ModuleData {
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
     generated_file_infos: Vec<Option<GeneratedFileInfo>>,

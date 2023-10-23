@@ -25,7 +25,8 @@ IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
-    fn empty(self: T, );
+
+    fn empty(self: T);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -51,7 +52,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
         )
     }
 
-    fn empty(self: IContractDispatcher, ) {
+    fn empty(self: IContractDispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -88,7 +89,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
         )
     }
 
-    fn empty(self: IContractLibraryDispatcher, ) {
+    fn empty(self: IContractLibraryDispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -104,7 +105,8 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
 trait IContractSafeDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252>;
-    fn empty(self: T, ) -> starknet::SyscallResult<()>;
+
+    fn empty(self: T) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -132,7 +134,7 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
         )
     }
 
-    fn empty(self: IContractSafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+    fn empty(self: IContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -172,7 +174,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
         )
     }
 
-    fn empty(self: IContractSafeDispatcher, ) -> starknet::SyscallResult<()> {
+    fn empty(self: IContractSafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -420,7 +422,6 @@ trait IContract<T> {
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
-
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -442,7 +443,6 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 }
 
 trait IContractSafeDispatcherTrait<T> {
-
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
