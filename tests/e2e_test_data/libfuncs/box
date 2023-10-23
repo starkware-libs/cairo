@@ -157,7 +157,7 @@ test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
@@ -189,7 +189,7 @@ ret;
 test::foo: OrderedHashMap({})
 
 //! > sierra_code
-type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<Unit> = unbox<Unit>;
@@ -223,7 +223,7 @@ test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
-type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc struct_construct<test::Empty> = struct_construct<test::Empty>;
 libfunc store_temp<test::Empty> = store_temp<test::Empty>;
@@ -256,7 +256,7 @@ ret;
 test::foo: OrderedHashMap({})
 
 //! > sierra_code
-type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<test::Empty> = unbox<test::Empty>;

@@ -19,10 +19,10 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { storable, droppable, duplicatable, .. }: TypeInfo,
+        TypeInfo { storable, droppable, duplicatable, zero_sized, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable {
-            Ok(TypeInfo { long_id, zero_sized: false, storable, droppable, duplicatable })
+            Ok(TypeInfo { long_id, zero_sized, storable, droppable, duplicatable })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
