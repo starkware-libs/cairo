@@ -1,4 +1,3 @@
-use zeroable::Zeroable;
 use serde::Serde;
 use hash::{Hash, HashStateTrait};
 
@@ -30,7 +29,7 @@ impl ClassHashZeroable of Zeroable<ClassHash> {
     }
     #[inline(always)]
     fn is_zero(self: ClassHash) -> bool {
-        class_hash_to_felt252(self).is_zero()
+        felt_252::Felt252Zeroable::is_zero(class_hash_to_felt252(self))
     }
     #[inline(always)]
     fn is_non_zero(self: ClassHash) -> bool {

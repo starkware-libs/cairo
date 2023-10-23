@@ -30,7 +30,7 @@ impl ContractAddressZeroable of Zeroable<ContractAddress> {
     }
     #[inline(always)]
     fn is_zero(self: ContractAddress) -> bool {
-        contract_address_to_felt252(self).is_zero()
+        felt_252::Felt252Zeroable::is_zero(contract_address_to_felt252(self))
     }
     #[inline(always)]
     fn is_non_zero(self: ContractAddress) -> bool {

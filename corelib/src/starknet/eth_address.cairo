@@ -3,7 +3,7 @@ use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
 use option::{Option, OptionTrait};
 use serde::Serde;
 use traits::{Into, TryInto};
-use zeroable::Zeroable;
+use felt_252::Felt252Zeroable;
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
@@ -50,7 +50,7 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
     }
     #[inline(always)]
     fn is_zero(self: EthAddress) -> bool {
-        self.address.is_zero()
+        felt_252::Felt252Zeroable::is_zero(self.address)
     }
     #[inline(always)]
     fn is_non_zero(self: EthAddress) -> bool {
