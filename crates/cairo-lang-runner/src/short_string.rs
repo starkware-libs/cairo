@@ -1,4 +1,5 @@
 use cairo_felt::Felt252;
+use num_traits::Zero;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.
 pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
@@ -7,10 +8,12 @@ pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     for byte in value.to_bytes_be() {
         if byte == 0 {
             is_end = true;
-        } else if is_end || !byte.is_ascii_graphic() {
+        } else if is_end {
             return None;
-        } else {
+        } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
             as_string.push(byte as char);
+        } else {
+            return None;
         }
     }
     Some(as_string)
@@ -20,7 +23,7 @@ pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
 /// Nulls are allowed and length must be <= 31.
 pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String> {
     if length == 0 {
-        return Some("".to_string());
+        return if value.is_zero() { Some("".to_string()) } else { None };
     }
     if length > 31 {
         // A short string can't be longer than 31 bytes.
@@ -38,10 +41,10 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     for byte in bytes {
         if byte == 0 {
             as_string.push_str(r"\0");
-        } else if byte.is_ascii_graphic() {
+        } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
             as_string.push(byte as char);
         } else {
-            return None;
+            as_string.push_str(format!(r"\x{:02x}", byte).as_str());
         }
     }
 
