@@ -171,7 +171,6 @@ error: Type annotations needed. Failed to infer ?0
     bar(3_u8);
     ^*^
 
-
 //! > ==========================================================================
 
 //! > Test calling a method of a trait from an impl in the module.

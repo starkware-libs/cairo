@@ -293,9 +293,6 @@ libfunc store_temp<System> = store_temp<System>;
 libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
 
 get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6], [7]) }; // 0
 branch_align() -> (); // 1
@@ -309,10 +306,7 @@ enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::Exec
 store_temp<GasBuiltin>([5]) -> ([9]); // 9
 store_temp<System>([6]) -> ([10]); // 10
 store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 11
-rename<GasBuiltin>([9]) -> ([13]); // 12
-rename<System>([10]) -> ([14]); // 13
-rename<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([11]) -> ([15]); // 14
-return([13], [14], [15]); // 15
+return([9], [10], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>);
 

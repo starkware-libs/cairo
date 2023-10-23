@@ -56,6 +56,11 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
             )
             .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
             .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
+            .with_inline_macro_plugin(
+                GetDepComponentMutMacro::NAME,
+                Arc::new(GetDepComponentMutMacro),
+            )
             .build()
             .unwrap(),
     )
