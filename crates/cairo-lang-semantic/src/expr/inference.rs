@@ -157,13 +157,23 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound { concrete_trait_id } => {
-                if concrete_trait_id.trait_id(db) == get_core_trait(db, "NumericLiteral".into()) {
+                let trait_id = concrete_trait_id.trait_id(db);
+                if trait_id == get_core_trait(db, "NumericLiteral".into()) {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
                     );
                     return format!(
                         "Mismatched types. The type {:?} cannot be created from a numeric literal.",
+                        generic_type.debug(db)
+                    );
+                } else if trait_id == get_core_trait(db, "StringLiteral".into()) {
+                    let generic_type = extract_matches!(
+                        concrete_trait_id.generic_args(db)[0],
+                        GenericArgumentId::Type
+                    );
+                    return format!(
+                        "Mismatched types. The type {:?} cannot be created from a string literal.",
                         generic_type.debug(db)
                     );
                 }
@@ -385,26 +395,33 @@ impl<'db> Inference<'db> {
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
-            let solution = match self.impl_var_solution_set(var)? {
-                SolutionSet::None => {
-                    self.refuted.push(var);
-                    continue;
-                }
-                SolutionSet::Ambiguous(ambiguity) => {
-                    self.ambiguous.push((var, ambiguity));
-                    continue;
-                }
-                SolutionSet::Unique(solution) => solution,
-            };
-
-            // Solution found. Assign it.
-            self.assign_local_impl(var, solution)?;
-
-            // Something changed.
-            self.solved.push(var);
-            let mut ambiguous = std::mem::take(&mut self.ambiguous);
-            self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+            // First inference error stops inference.
+            self.solve_single_pending(var)?;
         }
+        Ok(())
+    }
+
+    fn solve_single_pending(&mut self, var: LocalImplVarId) -> InferenceResult<()> {
+        let solution = match self.impl_var_solution_set(var)? {
+            SolutionSet::None => {
+                self.refuted.push(var);
+                return Ok(());
+            }
+            SolutionSet::Ambiguous(ambiguity) => {
+                self.ambiguous.push((var, ambiguity));
+                return Ok(());
+            }
+            SolutionSet::Unique(solution) => solution,
+        };
+
+        // Solution found. Assign it.
+        self.assign_local_impl(var, solution)?;
+
+        // Something changed.
+        self.solved.push(var);
+        let mut ambiguous = std::mem::take(&mut self.ambiguous);
+        self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+
         Ok(())
     }
 
@@ -509,7 +526,7 @@ impl<'db> Inference<'db> {
         if let Some(other_impl) = self.impl_assignment(var) {
             return self.conform_impl(impl_id, other_impl);
         }
-        if self.impl_contains_var(&impl_id, InferenceVar::Impl(var))? {
+        if self.impl_contains_var(&impl_id, InferenceVar::Impl(var)) {
             return Err(InferenceError::Cycle { var: InferenceVar::Impl(var) });
         }
         self.impl_assignment.insert(var, impl_id);
@@ -539,7 +556,7 @@ impl<'db> Inference<'db> {
         }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
-        if self.ty_contains_var(ty, inference_var)? {
+        if self.ty_contains_var(ty, inference_var) {
             return Err(InferenceError::Cycle { var: inference_var });
         }
         self.type_assignment.insert(var.id, ty);

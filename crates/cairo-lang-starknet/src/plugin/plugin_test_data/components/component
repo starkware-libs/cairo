@@ -138,7 +138,8 @@ impl StoreMyType of starknet::Store::<MyType> {
 MyTraitDispatcherTrait:
 
 trait MyTraitDispatcherTrait<T> {
-    fn get(self: T, addr: ContractAddress) -> u32;    fn set(self: T, addr: ContractAddress, value: u32);
+    fn get(self: T, addr: ContractAddress) -> u32;
+    fn set(self: T, addr: ContractAddress, value: u32);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -216,7 +217,8 @@ impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispat
 }
 
 trait MyTraitSafeDispatcherTrait<T> {
-    fn get(self: T, addr: ContractAddress) -> starknet::SyscallResult<u32>;    fn set(self: T, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()>;
+    fn get(self: T, addr: ContractAddress) -> starknet::SyscallResult<u32>;
+    fn set(self: T, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -591,12 +593,12 @@ impl MyImpl<
     
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = HasComponent::get_component(self);
-        MyInnerImpl::get(component, addr, )
+        MyInnerImpl::get(component, addr)
     }
     
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = HasComponent::get_component_mut(ref self);
-        MyInnerImpl::set(ref component, addr, value, )
+        MyInnerImpl::set(ref component, addr, value)
     }
 }
 

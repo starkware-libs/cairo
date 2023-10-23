@@ -49,3 +49,87 @@ error: Mismatched types. The type core::bool cannot be created from a numeric li
  --> lib.cairo:7:17
     let mut x = 1;
                 ^
+
+//! > ==========================================================================
+
+//! > Test a valid let statement with a string literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x: ByteArray = "error";
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch of a string literal in a let statement.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x: felt252 = "error";
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Mismatched types. The type core::felt252 cannot be created from a string literal.
+ --> lib.cairo:2:22
+    let x: felt252 = "error";
+                     ^*****^
+
+//! > ==========================================================================
+
+//! > Test a valid let statement with a numeric literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x: felt252 = 252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch of a numeric literal in a let statement.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x: ByteArray = 252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Mismatched types. The type core::byte_array::ByteArray cannot be created from a numeric literal.
+ --> lib.cairo:2:24
+    let x: ByteArray = 252;
+                       ^*^

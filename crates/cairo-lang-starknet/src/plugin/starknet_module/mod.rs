@@ -186,7 +186,7 @@ pub(super) fn handle_module_by_storage(
     }
 
     if !has_event {
-        common_data.event_code = RewriteNode::Text(EMPTY_EVENT_CODE.to_string());
+        common_data.event_code = RewriteNode::text(EMPTY_EVENT_CODE);
     }
 
     common_data.extra_uses_node = RewriteNode::new_modified(

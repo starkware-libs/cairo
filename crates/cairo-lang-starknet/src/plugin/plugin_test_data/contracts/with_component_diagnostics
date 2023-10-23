@@ -1547,10 +1547,10 @@ error: Plugin diagnostic: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:38:79
-                    starknet::Store::<super::super::test_component::Storage>::read(
-                                                                              ^**^
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo[contract]:37:27
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                          ^********************^
 
 error: Plugin diagnostic: Type not found.
  --> lib.cairo:14:56
