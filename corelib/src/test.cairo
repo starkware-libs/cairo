@@ -13,6 +13,7 @@ mod math_test;
 mod nullable_test;
 mod panics_test;
 mod plugins_test;
+mod print_test;
 mod secp256k1_test;
 mod secp256r1_test;
 mod test_utils;

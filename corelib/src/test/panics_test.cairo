@@ -1,4 +1,4 @@
-use panics::BYTE_ARRAY_PANIC_MAGIC;
+use byte_array::BYTE_ARRAY_MAGIC;
 
 #[test]
 #[should_panic(expected: 'short_string')]
@@ -68,13 +68,13 @@ fn test_panic_with_byte_array_null_in_beginning() {
 fn test_panic_with_stacked_errors() {
     let mut error = array![];
     let ba: ByteArray = "error";
-    error.append(BYTE_ARRAY_PANIC_MAGIC);
+    error.append(BYTE_ARRAY_MAGIC);
     ba.serialize(ref error);
 
     error.append(11);
 
     let ba: ByteArray = "hello";
-    error.append(BYTE_ARRAY_PANIC_MAGIC);
+    error.append(BYTE_ARRAY_MAGIC);
     ba.serialize(ref error);
 
     error.append(5);
@@ -86,7 +86,7 @@ fn test_panic_with_stacked_errors() {
 #[test]
 #[should_panic(
     expected: (
-        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_PANIC_MAGIC
+        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
         1,
         0x161616161616161616161616161616161616161616161616161616161616161,
         0,
@@ -96,7 +96,7 @@ fn test_panic_with_stacked_errors() {
 fn test_panic_with_byte_array_invalid_full_word() {
     // This is a serialized ByteArray, but the full word is an invalid short string (> 2^248).
     let mut error = array![
-        BYTE_ARRAY_PANIC_MAGIC,
+        BYTE_ARRAY_MAGIC,
         1, // A single full word.
         0x161616161616161616161616161616161616161616161616161616161616161, // The invalid full word.
         0,
@@ -108,7 +108,7 @@ fn test_panic_with_byte_array_invalid_full_word() {
 #[test]
 #[should_panic(
     expected: (
-        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_PANIC_MAGIC
+        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
         0,
         'aa',
         1
@@ -118,7 +118,7 @@ fn test_panic_with_byte_array_invalid_pending_word() {
     // This is a serialized ByteArray, but the pending word length < the actual data in the pending
     // word.
     let mut error = array![
-        BYTE_ARRAY_PANIC_MAGIC,
+        BYTE_ARRAY_MAGIC,
         0, // No full words.
         'aa',
         1 // pending word length. Smaller than the actual data in the pending word.

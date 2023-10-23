@@ -122,3 +122,12 @@ impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
         print(self);
     }
 }
+
+impl ByteArrayPrintImpl of PrintTrait<@ByteArray> {
+    fn print(self: @ByteArray) {
+        let mut serialized = array![byte_array::BYTE_ARRAY_MAGIC];
+        self.serialize(ref serialized);
+        print(serialized)
+    }
+}
+
