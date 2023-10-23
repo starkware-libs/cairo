@@ -8,7 +8,6 @@ use cairo_lang_utils::Upcast;
 
 use crate::diagnostic::ParserDiagnostic;
 use crate::parser::Parser;
-use crate::validation::validate;
 
 #[cfg(test)]
 #[path = "db_test.rs"]
@@ -38,7 +37,7 @@ pub struct SyntaxData {
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let syntax = db.file_content(file_id).to_maybe().and_then(|s| {
+    let syntax = db.file_content(file_id).to_maybe().map(|s| {
         let node = match file_id.kind(db.upcast()) {
             FileKind::Module => {
                 Parser::parse_file(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
@@ -47,8 +46,7 @@ pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxDat
                 Parser::parse_file_expr(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
             }
         };
-        validate(node.clone(), db.upcast(), &mut diagnostics, file_id)?;
-        Ok(node)
+        node
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
 }

@@ -12,6 +12,7 @@ pub mod parser;
 pub mod printer;
 pub mod recovery;
 pub mod utils;
+#[allow(dead_code)]
 mod validation;
 
 #[cfg(any(feature = "testing", test))]

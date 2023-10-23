@@ -134,6 +134,11 @@ StatementList
 ExprPath
 
 //! > expected_diagnostics
+error: Literal is not a valid number.
+ --> dummy_file.cairo:3:21
+    let illegal_bin = 0b2;
+                    ^^
+
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:25
     let illegal_bin = 0b2;
@@ -143,6 +148,11 @@ error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:4:26
     let illegal_bin = 0b12;
                          ^
+
+error: Literal is not a valid number.
+ --> dummy_file.cairo:6:21
+    let illegal_oct = 0o8;
+                    ^^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:6:25
@@ -154,6 +164,11 @@ error: Missing token TerminalSemicolon.
     let illegal_oct = 0o78;
                          ^
 
+error: Literal is not a valid number.
+ --> dummy_file.cairo:9:21
+    let illegal_hex = 0xg;
+                    ^^
+
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:9:25
     let illegal_hex = 0xg;
@@ -163,21 +178,6 @@ error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:10:26
     let illegal_hex = 0xfg;
                          ^
-
-error: Literal is not a valid number.
- --> dummy_file.cairo:3:23
-    let illegal_bin = 0b2;
-                      ^^
-
-error: Literal is not a valid number.
- --> dummy_file.cairo:6:23
-    let illegal_oct = 0o8;
-                      ^^
-
-error: Literal is not a valid number.
- --> dummy_file.cairo:9:23
-    let illegal_hex = 0xg;
-                      ^^
 
 //! > expected_tree
 └── Top level kind: StatementList
