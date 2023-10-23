@@ -14,6 +14,7 @@ use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
+use crate::validation::validate_literal_number;
 use crate::ParserDiagnostic;
 
 #[cfg(test)]
@@ -975,7 +976,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalFalse => Ok(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Ok(self.take::<TerminalTrue>().into()),
-            SyntaxKind::TerminalLiteralNumber => Ok(self.take::<TerminalLiteralNumber>().into()),
+            SyntaxKind::TerminalLiteralNumber => Ok(self.try_terminal_literal_number().into()),
             SyntaxKind::TerminalShortString => Ok(self.take::<TerminalShortString>().into()),
             SyntaxKind::TerminalString => Ok(self.take::<TerminalString>().into()),
             SyntaxKind::TerminalLParen => {
@@ -1443,7 +1444,7 @@ impl<'a> Parser<'a> {
 
         // TODO(yuval): Support "Or" patterns.
         Ok(match self.peek().kind {
-            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalLiteralNumber => self.try_terminal_literal_number().into(),
             SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalIdentifier => {
@@ -1898,6 +1899,15 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn try_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen {
+        let text = self.peek().text.clone();
+        let green = self.take::<TerminalLiteralNumber>();
+        let span = TextSpan { start: self.offset, end: self.offset.add_width(self.current_width) };
+
+        validate_literal_number(self.diagnostics, text, span, self.file_id);
+        green
+    }
+
     /// Returns a GreenId of a node with an
     /// ExprLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or TryParseFailure if
     /// such an expression can't be parsed.
@@ -1908,7 +1918,7 @@ impl<'a> Parser<'a> {
         }
 
         let expr = match self.peek().kind {
-            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalLiteralNumber => self.try_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
                 let op = self.take::<TerminalMinus>().into();
                 let expr = self.parse_token::<TerminalLiteralNumber>().into();
