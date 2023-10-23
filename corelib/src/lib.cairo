@@ -103,6 +103,8 @@ extern type RangeCheck;
 extern type SegmentArena;
 
 // felt252.
+mod felt_252;
+
 #[derive(Copy, Drop)]
 extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
