@@ -9,6 +9,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
+use syntax::node::ids::GreenId;
 
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
@@ -224,7 +225,7 @@ impl<'a> Parser<'a> {
                     SyntaxKind::TerminalLParen
                     | SyntaxKind::TerminalLBrace
                     | SyntaxKind::TerminalLBrack => {
-                        // This case is treated as a item inline macro with a missing bang ('!').
+                        // This case is treated as an item inline macro with a missing bang ('!').
                         self.diagnostics.add(ParserDiagnostic {
                             file_id: self.file_id,
                             kind: ParserDiagnosticKind::ItemInlineMacroWithoutBang {
@@ -263,7 +264,8 @@ impl<'a> Parser<'a> {
             }
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<Item>(
+                    Ok(self.skip_node_and_return_missing::<Item>(
+                        TriviumSkippedNode::new_green(self.db, attributes.into()),
                         ParserDiagnosticKind::AttributesWithoutItem,
                     ))
                 } else {
@@ -674,7 +676,8 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<TraitItem>(
+                    Ok(self.skip_node_and_return_missing::<TraitItem>(
+                        TriviumSkippedNode::new_green(self.db, attributes.into()),
                         ParserDiagnosticKind::AttributesWithoutTraitItem,
                     ))
                 } else {
@@ -789,7 +792,8 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalImpl => Ok(self.expect_impl_item_impl(attributes)),
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<ImplItem>(
+                    Ok(self.skip_node_and_return_missing::<ImplItem>(
+                        TriviumSkippedNode::new_green(self.db, attributes.into()),
                         ParserDiagnosticKind::AttributesWithoutImplItem,
                     ))
                 } else {
@@ -2141,9 +2145,9 @@ impl<'a> Parser<'a> {
         std::mem::replace(&mut self.next_terminal, next_terminal)
     }
 
-    /// Skips a token. A skipped token is a token which is not expected where it is found. Skipping
-    /// this token means reporting an error and ignoring it and continuing the compilation as if it
-    /// wasn't there.
+    /// Skips the next, non-taken, token. A skipped token is a token which is not expected where it
+    /// is found. Skipping this token means reporting an error, appending the token to the
+    /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
             self.diagnostics.add(ParserDiagnostic {
@@ -2182,6 +2186,30 @@ impl<'a> Parser<'a> {
         });
     }
 
+    /// Skips a given node, which is already taken and built as a SkippedNode. A skipped node is a
+    /// node which is not expected where it is found. Skipping this node means reporting an
+    /// error, appending the node to the current trivia as skipped, and continuing the
+    /// compilation as if it wasn't there.
+    fn skip_taken_node(
+        &mut self,
+        node_to_skip: TriviumSkippedNodeGreen,
+        diagnostic_kind: ParserDiagnosticKind,
+    ) {
+        let orig_offset = self.offset;
+        let diag_start = self.offset.add_width(leading_trivia_width(self.db, node_to_skip.0));
+        let diag_end = diag_start.add_width(node_to_skip.0.width(self.db));
+
+        // Add to pending trivia.
+        self.pending_trivia.push(node_to_skip.into());
+
+        self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
+            kind: diagnostic_kind,
+            span: TextSpan { start: diag_start, end: diag_end },
+            leading_trivia_start: orig_offset,
+            trailing_trivia_end: diag_end.add_width(trailing_trivia_width(self.db, node_to_skip.0)),
+        });
+    }
+
     /// Skips the current token, reports the given diagnostic and returns missing kind of the
     /// expected terminal.
     fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal>(
@@ -2192,6 +2220,16 @@ impl<'a> Parser<'a> {
         ExpectedTerminal::missing(self.db)
     }
 
+    /// Skips a given SkippedNode, reports the given diagnostic and returns missing kind of the
+    /// expected node.
+    fn skip_node_and_return_missing<ExpectedNode: TypedSyntaxNode>(
+        &mut self,
+        node_to_skip: TriviumSkippedNodeGreen,
+        diagnostic: ParserDiagnosticKind,
+    ) -> ExpectedNode::Green {
+        self.skip_taken_node(node_to_skip, diagnostic);
+        ExpectedNode::missing(self.db)
+    }
     /// Skips terminals until `should_stop` returns `true`.
     ///
     /// Returns the span of the skipped terminals, if any.
@@ -2370,4 +2408,41 @@ pub struct PendingParserDiagnostic {
 /// Returns the total width of the given trivia list.
 fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidth {
     trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
+}
+
+/// The width of the leading trivia, traversing the tree to the bottom left node.
+pub fn leading_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> TextWidth {
+    let node = db.lookup_intern_green(green_id);
+    if node.kind == SyntaxKind::Trivia {
+        println!("trivia width: {:?}", node.width());
+        return node.width();
+    }
+    match &node.details {
+        GreenNodeDetails::Token(text) => TextWidth::default(),
+        GreenNodeDetails::Node { children, .. } => {
+            if let Some(child) = children.first() {
+                leading_trivia_width(db, *child)
+            } else {
+                TextWidth::default()
+            }
+        },
+    }
+}
+
+/// The width of the trailing trivia, traversing the tree to the bottom right node.
+pub fn trailing_trivia_width(db: &dyn SyntaxGroup, green_id: GreenId) -> TextWidth {
+    let node = db.lookup_intern_green(green_id);
+    if node.kind == SyntaxKind::Trivia {
+        return node.width();
+    }
+    match &node.details {
+        GreenNodeDetails::Token(text) => TextWidth::default(),
+        GreenNodeDetails::Node { children, .. } => {
+            if let Some(child) = children.last() {
+                trailing_trivia_width(db, *child)
+            } else {
+                TextWidth::default()
+            }
+        },
+    }
 }
