@@ -177,7 +177,6 @@ cairo_lang_test_utils::test_file_test!(
         literal: "literal",
         string_literal: "string_literal",
         logical_operator: "logical_operator",
-        attribute_errors: "attribute_errors",
         module: "module",
         op_eq: "op_eq",
         array: "array",
@@ -194,6 +193,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         path: "path",
         path_compat: "path_compat",
+        attribute_errors: "attribute_errors",
     },
     test_partial_parser_tree_with_trivia
 );
