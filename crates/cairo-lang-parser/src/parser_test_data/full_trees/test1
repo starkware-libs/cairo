@@ -38,6 +38,11 @@ error: Missing tokens. Expected an item after attributes.
 #[attribute_without_item]
                          ^
 
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro.
+ --> src/parser_test_data/cairo_test_files/test1.cairo:62:1
+#[attribute_without_item]
+^***********************^
+
 //! > expected_tree
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
@@ -824,6 +829,11 @@ error: Missing tokens. Expected an item after attributes.
  --> src/parser_test_data/cairo_test_files/test1.cairo:62:26
 #[attribute_without_item]
                          ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro.
+ --> src/parser_test_data/cairo_test_files/test1.cairo:62:1
+#[attribute_without_item]
+^***********************^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -2834,6 +2844,30 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   └── child #12: Missing []
     └── eof (kind: TerminalEndOfFile)
-        ├── leading_trivia (kind: Trivia) []
+        ├── leading_trivia (kind: Trivia)
+        │   └── child #0 (kind: TriviumSkippedNode)
+        │       └── node (kind: AttributeList)
+        │           └── child #0 (kind: Attribute)
+        │               ├── hash (kind: TerminalHash)
+        │               │   ├── leading_trivia (kind: Trivia)
+        │               │   │   └── child #0 (kind: TokenNewline).
+        │               │   ├── token (kind: TokenHash): '#'
+        │               │   └── trailing_trivia (kind: Trivia) []
+        │               ├── lbrack (kind: TerminalLBrack)
+        │               │   ├── leading_trivia (kind: Trivia) []
+        │               │   ├── token (kind: TokenLBrack): '['
+        │               │   └── trailing_trivia (kind: Trivia) []
+        │               ├── attr (kind: ExprPath)
+        │               │   └── item #0 (kind: PathSegmentSimple)
+        │               │       └── ident (kind: TerminalIdentifier)
+        │               │           ├── leading_trivia (kind: Trivia) []
+        │               │           ├── token (kind: TokenIdentifier): 'attribute_without_item'
+        │               │           └── trailing_trivia (kind: Trivia) []
+        │               ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │               └── rbrack (kind: TerminalRBrack)
+        │                   ├── leading_trivia (kind: Trivia) []
+        │                   ├── token (kind: TokenRBrack): ']'
+        │                   └── trailing_trivia (kind: Trivia)
+        │                       └── child #0 (kind: TokenNewline).
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
