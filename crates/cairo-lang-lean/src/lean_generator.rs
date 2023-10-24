@@ -3,6 +3,7 @@ use std::cmp::{min, max};
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
+use num_bigint::BigInt;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -383,6 +384,12 @@ impl VarRebind {
                 .or_insert((*count, cell_expr.clone()));
         }
     }
+
+    pub fn reset_counts(&mut self) {
+        for (_, (count, _)) in &mut self.vars {
+            *count = 0;
+        }
+    }
 }
 
 /// Expression formatting.
@@ -547,6 +554,14 @@ impl<'a> LeanFuncInfo<'a> {
         }
     }
 
+    pub fn get_block_by_label(&self, label: &str) -> Option<&FuncBlock> {
+        self.blocks.iter().find(|block|
+            match &block.label {
+                Some(name) => name == label,
+                _ => false
+            })
+    }
+
     pub fn is_range_check_var(&self, name: &str) -> bool {
         name == "range_check"
     }
@@ -679,6 +694,21 @@ impl<'a> LeanFuncInfo<'a> {
         if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
             if self.is_range_check_var(str) { Some(str) } else { None }
         } else { None }
+    }
+
+    /// Returns the offset in *() operations.
+    pub fn get_offset_at(&self, expr: &ExprDesc) -> Option<BigInt> {
+        if expr.op != "*()" {
+            return None;
+        }
+
+        if let CellExpression::BinOp { op: _, a: _, b } = &expr.var_a.var_expr {
+            if let DerefOrImmediate::Immediate(value) = b {
+                return Some(value.value.clone());
+            }
+        }
+
+        None
     }
 
     // True if this expression increments the range check pointer.
@@ -1027,7 +1057,7 @@ fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from(""));
     prelude.push(format!("open {}", lean_code_name(main_func_name)));
     prelude.push(String::from(""));
-    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] {mem : F → F} (σ : RegisterState F)"));
+    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)"));
     prelude.push(String::from(""));
 
     prelude
@@ -1083,6 +1113,7 @@ trait LeanGenerator {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     );
 
@@ -1176,6 +1207,16 @@ trait LeanGenerator {
         indent: usize,
     );
 
+    fn generate_label_block(
+        &mut self,
+        func_name: &str,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        calling_block: &FuncBlock,
+        rebind: &VarRebind,
+        indent: usize,
+    );
+
     /// Returns the indentation after the branch intro.
     fn generate_branch_intro(
         &mut self,
@@ -1202,8 +1243,10 @@ trait LeanGenerator {
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
+        // The function block in which the return block was called.
+        block: &FuncBlock,
         rebind: &VarRebind,
-        rc_checks: usize,
+        max_rc_count: usize,
         indent: usize,
     );
 
@@ -1330,6 +1373,7 @@ impl LeanGenerator for AutoSpecs {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     ) {
         // Does nothing here.
@@ -1467,6 +1511,32 @@ impl LeanGenerator for AutoSpecs {
         indent + 2
     }
 
+    fn generate_label_block(
+        &mut self,
+        func_name: &str,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        calling_block: &FuncBlock,
+        rebind: &VarRebind,
+        indent: usize,
+    ) {
+        self.push_spec(
+            indent,
+            &format!(
+                "∃ (κ₁ : ℕ), auto_spec_{func_name}{block_suffix} κ₁",
+                block_suffix = block.block_suffix())
+        );
+
+        let args_str = block.args.iter().chain(
+            lean_info.get_explicit_ret_arg_names().iter()
+        ).map(|arg| { rebind.get_var_name(arg) }).join(" ");
+
+        let indent = indent + 2;
+        self.push(indent, &args_str);
+
+        // TO DO (yoavseginer): add the condition on the kappas.
+    }
+
     fn generate_branch_close(
         &mut self,
         is_eq: bool,
@@ -1492,8 +1562,9 @@ impl LeanGenerator for AutoSpecs {
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         rebind: &VarRebind,
-        rc_checks: usize,
+        max_rc_count: usize,
         indent: usize,
     ) {
         let mut ret_arg_start = 0;
@@ -1755,6 +1826,53 @@ impl AutoProof {
             self.push_final4(0, &format!("use_only {var_name},"), &format!("use_only {var_name}"));
         }
     }
+
+    /// Generates the final part of the proof.
+    fn generate_final(&mut self, lean_info: &LeanFuncInfo, block: &FuncBlock, rc_cond_hyp: &str, rc_bound: Option<&str>, indent: usize) {
+
+        // Range check condition
+
+        if lean_info.has_range_check_arg() {
+            self.push_main(indent, "-- range check condition");
+            if block.label.is_none() {
+                self.push_main(indent, &format!("use_only {}", lean_info.max_rc_count));
+            }
+            self.push_main(indent, "constructor");
+            if let Some(rc_bound) = rc_bound {
+                self.push_main(indent, &format!("apply le_trans {rc_bound} (Nat.le_add_right _ _)"));
+            } else {
+                self.push_main(indent, "norm_num1");
+            }
+            self.push_main(indent, "constructor");
+            self.push_main(indent, &format!("· arith_simps ; exact {rc_cond_hyp}"));
+            self.push_main(indent, "intro rc_h_range_check");
+        }
+
+        if block.label.is_none() {
+            let suffices_str4: String = format!(
+                "suffices auto_spec : auto_spec_{func_name} _ {args} {ret_args}",
+                func_name = lean_info.func_name,
+                args = lean_info.get_arg_names().join(" "),
+                ret_args = iter::repeat('_').take(lean_info.explicit_ret_arg_num()).join(" ")
+            );
+            let suffices_copy: String = suffices_str4.clone();
+
+            self.push_main4(indent, &(suffices_str4 + ","), &(suffices_copy + " by"));
+            self.push_main4(indent, &format!(
+                "{{ apply sound_{func_name}, apply auto_spec }},",
+                func_name = lean_info.func_name),
+            &format!(
+                "  apply sound_{func_name} ; apply auto_spec",
+                func_name = lean_info.func_name));
+        }
+
+        // As a last step, add the final proof to the main proof (with indentation).
+        for line in self.final_proof.clone() {
+            self.push_main(indent, &line);
+        }
+    }
+
+
 }
 
 impl LeanGenerator for AutoProof {
@@ -1834,7 +1952,7 @@ impl LeanGenerator for AutoProof {
                 ": EnsuresRet mem σ (fun κ τ =>");
         } else {
             self.push_statement4(indent, ": ensures_ret νbound mem",
-                ": EnsuresRet νbound mem");
+                ": EnsuresbRet νbound mem");
             self.push_statement(
                 indent + 2,
                 &format!(
@@ -1853,15 +1971,15 @@ impl LeanGenerator for AutoProof {
         if let Some(rc_name) = range_check_arg_name {
             indent += 2;
             let rc_value: String = if block.label.is_none() { "μ".into() } else { lean_info.max_rc_count.to_string() };
-            let rc_exists: String = if block.label.is_none() { format!("∃ {rc_value}") } else { rc_value.clone() };
+            let rc_bound: String = if block.label.is_none() { format!("∃ {rc_value} ≤ κ,") } else { format!("{rc_value} ≤ κ ∧") };
             self.push_statement4(
                 indent,
                 &format!(
-                    "{rc_exists} ≤ κ, rc_ensures mem (rc_bound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
+                    "{rc_bound} rc_ensures mem (rc_bound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
                     rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()),
                 &format!(
-                    "{rc_exists} ≤ κ, RcEnsures mem (rcBound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
+                    "{rc_bound} RcEnsures mem (rcBound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
                     rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()));
         }
@@ -1869,8 +1987,10 @@ impl LeanGenerator for AutoProof {
         indent += 2;
 
         let spec_str: String = format!(
-                "{open_par}spec_{func_name} κ{sep}{args_str}{ret_arg_offsets}{close_par}) :=",
+                "{open_par}{auto_prefix}spec_{func_name}{block_suffix} κ{sep}{args_str}{ret_arg_offsets}{close_par}) :=",
                 open_par = if has_rc { "(" } else { "" },
+                auto_prefix = if block.label.is_some() { "auto_" } else { "" },
+                block_suffix = block.block_suffix(),
                 sep = if 0 < args_str.len() { " " } else { "" },
                 func_name = func_name,
                 ret_arg_offsets = (0..lean_info.explicit_ret_arg_num()).rev()
@@ -1887,10 +2007,14 @@ impl LeanGenerator for AutoProof {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     ) {
-        self.push_main4(indent, "apply ensures_of_ensuresb, intro νbound,",
-            "apply ensures_of_ensuresb; intro νbound");
+        if block.label.is_none() {
+            // Only needed in the main function theorem.
+            self.push_main4(indent, "apply ensures_of_ensuresb, intro νbound,",
+                "apply ensures_of_ensuresb; intro νbound");
+        }
         // Only in Lean 3 we unpack the memory at the beginning. In Lean 4 we unpack each
         // instruction as we are about to use it.
         if lean_info.is_lean3 {
@@ -2004,12 +2128,16 @@ impl LeanGenerator for AutoProof {
                     codes = self.make_codes(pc, op_size)));
 
             let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
+            let rc_offset = lean_info.get_offset_at(&assert.expr).unwrap_or(0.into());
 
-            //     rc_app rc_h_range_check' 0 hl_sqrt0 rc_sqrt0
-            self.push_final4(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"),
-                &format!("rc_app rc_h_{rc_ptr}' {rc_checks} htv_{lhs} rc_{lhs}"));
-            self.push_final4(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"), "");
-
+            self.push_final4(
+                0,
+                &format!("cases rc_h_{rc_ptr}' ({rc_offset}) (by norm_num1) with n hn, arith_simps at hn,"),
+                &format!("rc_app rc_h_range_check {rc_offset} htv_{lhs} rc_{lhs}"));
+            self.push_final4(
+                0,
+                &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"),
+                "");
             *rc_checks += 1;
         } else {
             self.push_main(indent, "-- assert");
@@ -2086,6 +2214,60 @@ impl LeanGenerator for AutoProof {
         indent
     }
 
+    fn generate_label_block(
+        &mut self,
+        func_name: &str,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        calling_block: &FuncBlock,
+        rebind: &VarRebind,
+        indent: usize,
+    ) {
+        // lean_info.has_range_check_arg()
+
+        self.push_main(indent, "arith_simps");
+        self.push_main(
+            indent,
+            &format!(
+                "apply ensuresbRet_trans (auto_sound_{func_name}{block_suffix} mem σ",
+                block_suffix = block.block_suffix())
+        );
+
+        let arg_strs: Vec<String> = block.args.iter().map(
+            |arg| { rebind.get_var_name(arg) }
+        ).collect();
+
+        {
+            let indent = indent + 2;
+            self.push_main(indent, &arg_strs.join(" "));
+            self.push_main(indent, "hmem");
+            for arg in arg_strs {
+                self.push_main(indent, &format!("htv_{arg}"));
+            }
+            self.push_main(indent, "νbound)");
+        }
+
+        let suffix = block.block_suffix();
+        self.push_main(indent, &format!("intros κ{suffix} _ h{suffix}"));
+        if lean_info.has_range_check_arg() {
+            self.push_main(
+                indent,
+                &format!("rcases h{suffix} with ⟨rc_m_le{suffix}, hblk_range_check_ptr, h{suffix}⟩")
+            );
+            self.push_final4_with_comma(0, &format!("use_only κ{suffix}"));
+            self.push_final4_with_comma(0, &format!("apply h{suffix} rc_h_range_check"));
+        }
+
+        self.generate_final(
+            lean_info,
+            calling_block,
+            "hblk_range_check_ptr",
+            Some(&format!("rc_m_le{suffix}")),
+            indent
+        );
+
+    }
+
     fn generate_branch_close(
         &mut self,
         is_eq: bool,
@@ -2108,8 +2290,9 @@ impl LeanGenerator for AutoProof {
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         rebind: &VarRebind,
-        rc_checks: usize,
+        max_rc_count: usize,
         indent: usize,
     ) {
         let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
@@ -2137,10 +2320,26 @@ impl LeanGenerator for AutoProof {
             }
         }
 
-        for ret_name in ret_arg_names {
+        if 0 < ret_arg_names.len() {
+            self.push_final4_with_comma(0, "arith_simps");
+        }
+
+        // For the explicit return arguments we use the last return arg names and the first
+        // return expressions. Here, we determine the number of explicit arguments (at the end of
+        // the argument list).
+        let explicit_len = min(
+            ret_exprs.len(),
+            // One argument may be the branch ID argument.
+            ret_arg_names.len() - if lean_info.ret_args.branch_id_pos.is_some() { 1 } else { 0 }
+        ) - lean_info.ret_args.num_implicit_ret_args;
+
+        let first_explicit_name = ret_arg_names.len() - explicit_len;
+        let first_explicit_expr = lean_info.ret_args.num_implicit_ret_args;
+
+        for (pos, ret_name) in ret_arg_names.iter().enumerate() {
             let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
             let mut ret_name: String = ret_name.strip_prefix("ρ_").unwrap_or(ret_name).into();
-            let is_rc = 0 < rc_checks && rc_arg_name == ret_name;
+            let is_rc = 0 < max_rc_count && rc_arg_name == ret_name;
             if is_rc {
                 ret_name = rebind.get_next_name(&ret_name);
                 self.push_main(indent, "--   range check return value");
@@ -2148,8 +2347,9 @@ impl LeanGenerator for AutoProof {
 
             self.push_main4_with_comma(indent, &format!("step_assert_eq' {codes} with ret_{ret_name}",
                     codes = self.make_codes(pc, op_size)));
+            let is_last = pos == ret_arg_names.len() - 1;
             if is_rc {
-                self.push_main4_with_comma(indent, &format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {rc_checks}"));
+                self.push_main4_with_comma(indent, &format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {max_rc_count}"));
 
                 let htv_str4: String = format!("have htv_{ret_name} : {ret_name} = _");
                 let htv_copy: String = htv_str4.clone();
@@ -2160,9 +2360,21 @@ impl LeanGenerator for AutoProof {
                     &format!("  simp only [hl_{ret_name}, htv_{rc_arg_name}]"));
 
                 rc_ret_name = ret_name;
+            } else if (pos < first_explicit_name) {
+                if is_last {
+                    self.push_final4_with_comma(0,  &format!("exact ret_{ret_name}"));
+                } else {
+                    self.push_final4_with_comma(0,  &format!("use_only ret_{ret_name}"));
+                }
             } else {
-                self.push_final4(0, &format!("use_only [ret_{ret_name}],"),
-                    &format!("use_only ret_{ret_name}"));
+                let ret_expr = &ret_exprs[pos - first_explicit_name + first_explicit_expr];
+                if is_last {
+                    self.push_final4(0, &format!("rw [htv_{ret_expr}], exact ret_{ret_name},"),
+                        &format!("rw [htv_{ret_expr}] ; exact ret_{ret_name}"));
+                } else {
+                    self.push_final4(0, &format!("split, rw [htv_{ret_expr}], exact ret_{ret_name},"),
+                        &format!("constructor ; rw [htv_{ret_expr}] ; exact ret_{ret_name}"));
+                }
             }
 
             casm_pos += 1;
@@ -2186,38 +2398,7 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, "step_done");
         self.push_main4(indent, "use_only [rfl, rfl],", "use_only rfl, rfl");
 
-        if 0 < rc_checks {
-            self.push_main(indent, "-- range check condition");
-            self.push_main4(indent, &format!("use_only ({rc_checks} + 0), split, norm_num1,"),
-                &format!("use_only ({rc_checks} + 0); constructor; norm_num1"));
-            self.push_main4(indent, "split,", "constructor");
-            self.push_main4(indent, &format!("arith_simps, use_only ret_{rc_ret_name},"),
-                &format!("· arith_simps; exact ret_{rc_ret_name}"));
-            self.push_main4_with_comma(indent, &format!("intro rc_h_{rc_arg_name}"));
-            self.push_main4(indent, &format!("have rc_h_{rc_arg_name}' := range_checked_add_right rc_h_{rc_arg_name},"),
-            &format!("have rc_h_{rc_arg_name}' := rangeChecked_add_right rc_h_{rc_arg_name}"));
-        }
-
-        let suffices_str4: String = format!(
-            "suffices auto_spec : auto_spec_{func_name} mem _ {args} {ret_args}",
-            func_name = lean_info.func_name,
-            args = lean_info.get_arg_names().join(" "),
-            ret_args = iter::repeat('_').take(lean_info.explicit_ret_arg_num()).join(" ")
-        );
-        let suffices_copy: String = suffices_str4.clone();
-
-        self.push_main4(indent, &(suffices_str4 + ","), &(suffices_copy + " by"));
-        self.push_main4(indent, &format!(
-            "{{ apply sound_{func_name}, apply auto_spec }},",
-            func_name = lean_info.func_name),
-        &format!(
-            "  apply sound_{func_name}; apply auto_spec",
-            func_name = lean_info.func_name));
-
-        // As a last step, add the final proof to the main proof (with indentation).
-        for line in self.final_proof.clone() {
-            self.push_main(indent, &line);
-        }
+        self.generate_final(lean_info, block, &format!("ret_{rc_ret_name}"), None, indent);
     }
 
     fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
@@ -2230,7 +2411,7 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, &format!("step_assert_eq' {codes} with ha_fail",
                 codes = self.make_codes(pc, op_size)));
         self.push_main4(indent, "exfalso, apply zero_ne_one (add_left_cancel (eq.trans _ ha_fail)), rw add_zero,",
-            "exfalso; apply zero_ne_one (add_left_cancel (Eq.trans ha_fail)); rw [add_zero]");
+            "exfalso; apply zero_ne_one (add_left_cancel (Eq.trans _ ha_fail)); rw [add_zero]");
     }
 
     fn generate_advance_pc(
@@ -2247,8 +2428,8 @@ impl LeanGenerator for AutoProof {
 
         // First pc after the jump instruction.
         let start_pc = lean_info.get_pc_at(casm_pos + 1);
-        self.push_main(indent, &format!("rcases hmem with  ⟨{skip}, hmem⟩ -- Skip pc memory to jump target.",
-            skip = (start_pc .. pc + pc_jump).map(|_| format!("-")).join(", ")));
+        //self.push_main(indent, &format!("rcases hmem with  ⟨{skip}, hmem⟩ -- Skip pc memory to jump target.",
+        //    skip = (start_pc .. pc + pc_jump).map(|_| format!("-")).join(", ")));
 
 
 
@@ -2275,6 +2456,7 @@ fn generate_soundness_auto_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
     auto_specs.is_lean3 = lean_info.is_lean3;
     for block in lean_info.blocks.iter().rev() {
         generate_auto(&mut auto_specs, lean_info, &block);
+        auto_specs.push(0, "");
     }
 
     auto_specs.specs
@@ -2287,7 +2469,6 @@ fn generate_user_soundness_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
 
     let mut user_theorem: Vec<String> = Vec::new();
     user_theorem.push(format!("theorem sound_{func_name}"));
-    user_theorem.push(String::from("    {mem : F → F}"));
     user_theorem.push(String::from("    (κ : ℕ)"));
     if 0 < args_str.len() {
         user_theorem.push(format!("    ({args_str} : F)"));
@@ -2308,32 +2489,50 @@ fn generate_user_soundness_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
 }
 
 fn generate_soundness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
-    let mut auto_theorem = AutoProof::new();
-    auto_theorem.is_lean3 = lean_info.is_lean3;
+
+    let mut auto_theorems: Vec<String> = Vec::new();
+
     for block in lean_info.blocks.iter().rev() {
+        let mut auto_theorem = AutoProof::new();
+        auto_theorem.is_lean3 = lean_info.is_lean3;
         generate_auto(&mut auto_theorem, lean_info, &block);
+        auto_theorems.append(auto_theorem.get_full_proof().as_mut());
+        auto_theorems.push("".into());
     }
 
-
-    auto_theorem.get_full_proof()
+    auto_theorems
 }
 
 fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo, block: &FuncBlock) {
-    let mut rebind = VarRebind::new();
-    for (arg_name, arg_expr) in lean_info.get_arg_names_and_cell_expr() {
-        rebind.rebind(&arg_name, arg_expr);
-    }
+    let mut rebind = match &block.label {
+        Some(label) => {
+            if let Some(mut prev_rebind) = lean_info.get_rebinds_before_label(label, 0) {
+                prev_rebind.reset_counts();
+                prev_rebind
+            } else {
+                VarRebind::new()
+            }
+        },
+        _ => {
+            let mut rebind = VarRebind::new();
+            for (arg_name, arg_expr) in lean_info.get_arg_names_and_cell_expr() {
+                rebind.rebind(&arg_name, arg_expr);
+            }
+            rebind
+        }
+    };
 
     lean_gen.generate_statement(&lean_info.main_func_name, &lean_info.func_name, lean_info, block, 0);
-    lean_gen.generate_intro(&lean_info.main_func_name, &lean_info.func_name, lean_info, 2);
+    lean_gen.generate_intro(&lean_info.main_func_name, &lean_info.func_name, lean_info, block, 2);
     generate_auto_block(
         lean_gen,
         lean_info,
+        block,
         &mut rebind,
         0,
-        0,
-        lean_info.casm_start,
-        lean_info.get_pc_at(lean_info.casm_start),
+        block.start_pos,
+        block.casm_start_pos,
+        block.pc_start_pos,
         2
     );
 }
@@ -2341,6 +2540,7 @@ fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo, blo
 fn generate_auto_block(
     lean_gen: &mut dyn LeanGenerator,
     lean_info: &LeanFuncInfo,
+    block: &FuncBlock,
     rebind: &mut VarRebind,
     mut rc_checks: usize,
     block_start: usize,
@@ -2404,6 +2604,7 @@ fn generate_auto_block(
                         generate_auto_block(
                                 &mut *branch,
                                 lean_info,
+                                block,
                                 &mut rebind.clone(),
                                 rc_checks,
                                 block_start + i + 1,
@@ -2422,7 +2623,7 @@ fn generate_auto_block(
                             cond_var, false, lean_info, rebind, pc, indent);
 
                         generate_jump_to_label(
-                            lean_gen, lean_info, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
+                            lean_gen, lean_info, block, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
 
                         lean_gen.generate_branch_close(
                             false, lean_info, rebind, indent);
@@ -2432,7 +2633,7 @@ fn generate_auto_block(
                         lean_gen.generate_jmp(pc, op_size, indent);
 
                         generate_jump_to_label(
-                            lean_gen, lean_info, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
+                            lean_gen, lean_info, block, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
                     }
                 };
                 return; // Remaining code handled already in the branches.
@@ -2447,19 +2648,29 @@ fn generate_auto_block(
                 pc += op_size;
             }, // Do nothing
             StatementDesc::Label(desc) => {
-                // xxxxxxxxxxxxxxxxx call block with arguments.
-                let args = lean_info.get_block_args(block_start + i + 1);
-                println!("args at {}: {}", desc.label, args.iter().join(", "));
-            }, // Do nothing
+                // Fallthrough to next block.
+                if let Some(target_block) = lean_info.get_block_by_label(&desc.label) {
+                    lean_gen.generate_label_block(
+                        &lean_info.func_name,
+                        lean_info,
+                        target_block,
+                        block,
+                        rebind,
+                        indent,
+                    );
+                    return;
+                }
+            },
         }
     }
 
-    generate_auto_ret_block(lean_gen, lean_info, rebind, rc_checks, "Fallthrough", indent);
+    generate_auto_ret_block(lean_gen, lean_info, block, rebind, "Fallthrough", indent);
 }
 
 fn generate_jump_to_label(
     lean_gen: &mut dyn LeanGenerator,
     lean_info: &LeanFuncInfo,
+    block: &FuncBlock,
     rebind: &mut VarRebind,
     rc_checks: usize,
     jump: &JumpDesc, // The jump instruction.
@@ -2473,7 +2684,7 @@ fn generate_jump_to_label(
     // The jump target may be a return branch name.
     if pos.is_none() {
         generate_auto_ret_block(
-            lean_gen, lean_info, rebind, rc_checks, &jump.target, indent);
+            lean_gen, lean_info, block, rebind, &jump.target, indent);
         return;
     }
 
@@ -2485,22 +2696,34 @@ fn generate_jump_to_label(
 
     lean_gen.generate_advance_pc(lean_info, casm_pos, pc, pc_jump, indent);
 
-    generate_auto_block(
-        lean_gen,
-        lean_info,
-        rebind,
-        rc_checks,
-        target + 1,
-        casm_pos + casm_jump,
-        pc + pc_jump,
-        indent);
+    if let Some(target_block) = lean_info.get_block_by_label(&jump.target) {
+        lean_gen.generate_label_block(
+            &lean_info.func_name,
+            lean_info,
+            target_block,
+            block,
+            rebind,
+            indent,
+        );
+    } else {
+        generate_auto_block(
+            lean_gen,
+            lean_info,
+            block,
+            rebind,
+            rc_checks,
+            target + 1,
+            casm_pos + casm_jump,
+            pc + pc_jump,
+            indent);
+    }
 }
 
 fn generate_auto_ret_block(
     lean_gen: &mut dyn LeanGenerator,
     lean_info: &LeanFuncInfo,
+    block: &FuncBlock,
     rebind: &VarRebind,
-    rc_checks: usize,
     ret_block_name: &str,
     indent: usize
 ) {
@@ -2512,7 +2735,7 @@ fn generate_auto_ret_block(
     let flat_exprs = lean_info.aux_info.return_branches[branch_id].flat_exprs();
 
     lean_gen.generate_return_args(
-        branch_id, &ret_arg_names, &flat_exprs, lean_info, rebind, rc_checks, indent);
+        branch_id, &ret_arg_names, &flat_exprs, lean_info, block, rebind, lean_info.max_rc_count, indent);
 }
 
 /*fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> bool {

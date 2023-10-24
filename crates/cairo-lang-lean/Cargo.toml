@@ -11,5 +11,6 @@ cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.3.0-rc0" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.3.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.0-rc0" }
 itertools.workspace = true
+num-bigint.workspace = true
 
 [dev-dependencies]

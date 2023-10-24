@@ -672,6 +672,7 @@ dependencies = [
  "cairo-lang-sierra-to-casm",
  "cairo-lang-utils",
  "itertools 0.12.1",
+ "num-bigint",
 ]
 
 [[package]]
