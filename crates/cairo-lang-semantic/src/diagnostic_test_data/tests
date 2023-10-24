@@ -226,3 +226,33 @@ error: Identifier not found.
  --> lib.cairo:1:5
 use bad_module_name;
     ^*************^
+
+//! > ==========================================================================
+
+//! > Test diagnostic after skipped attribute
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let x = y;
+}
+
+//! > module_code
+mod mod1{
+  #[aaa]
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> lib.cairo:2:3
+  #[aaa]
+  ^****^
+
+error: Identifier not found.
+ --> lib.cairo:6:11
+  let x = y;
+          ^
