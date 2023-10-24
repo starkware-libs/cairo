@@ -730,6 +730,9 @@ impl<'a> FormatterImpl<'a> {
                 ast::Trivium::Skipped(_) => {
                     self.format_token(&trivium.as_syntax_node(), false);
                 }
+                ast::Trivium::SkippedNode(node) => {
+                    self.format_node(&node.as_syntax_node(), false);
+                }
             }
         }
     }
