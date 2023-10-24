@@ -1,0 +1,401 @@
+//! > Test attributes without an item.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+#[aaa]
+3
+
+//! > top_level_kind
+
+//! > ignored_kinds
+Attribute
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:7
+#[aaa]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:2:1
+3
+^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0: Missing []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: SkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       └── child #0 (kind: Attribute) <ignored>
+        │   └── child #1 (kind: TokenSkipped): '3'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test attributes without a trait item.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+trait Abc {
+    #[aaa]
+    3
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+Attribute
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:3:5
+    3
+    ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0 (kind: ItemTrait)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── trait_kw (kind: TerminalTrait)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenTrait): 'trait'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── name (kind: TerminalIdentifier)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenIdentifier): 'Abc'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       └── body (kind: TraitBody)
+    │           ├── lbrace (kind: TerminalLBrace)
+    │           │   ├── leading_trivia (kind: Trivia) []
+    │           │   ├── token (kind: TokenLBrace): '{'
+    │           │   └── trailing_trivia (kind: Trivia)
+    │           │       └── child #0 (kind: TokenNewline).
+    │           ├── items (kind: TraitItemList)
+    │           │   └── child #0: Missing []
+    │           └── rbrace (kind: TerminalRBrace)
+    │               ├── leading_trivia (kind: Trivia)
+    │               │   ├── child #0 (kind: SkippedNode)
+    │               │   │   └── node (kind: AttributeList)
+    │               │   │       └── child #0 (kind: Attribute) <ignored>
+    │               │   ├── child #1 (kind: TokenWhitespace).
+    │               │   ├── child #2 (kind: TokenSkipped): '3'
+    │               │   └── child #3 (kind: TokenNewline).
+    │               ├── token (kind: TokenRBrace): '}'
+    │               └── trailing_trivia (kind: Trivia) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test attributes without an impl item.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+impl Abc of Def {
+    #[aaa]
+    3
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+Attribute
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
+error: Skipped tokens. Expected: impl item or an attribute.
+ --> dummy_file.cairo:3:5
+    3
+    ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0 (kind: ItemImpl)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── impl_kw (kind: TerminalImpl)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenImpl): 'impl'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── name (kind: TerminalIdentifier)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenIdentifier): 'Abc'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       ├── of_kw (kind: TerminalOf)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenOf): 'of'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── trait_path (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TerminalIdentifier)
+    │       │           ├── leading_trivia (kind: Trivia) []
+    │       │           ├── token (kind: TokenIdentifier): 'Def'
+    │       │           └── trailing_trivia (kind: Trivia)
+    │       │               └── child #0 (kind: TokenWhitespace).
+    │       └── body (kind: ImplBody)
+    │           ├── lbrace (kind: TerminalLBrace)
+    │           │   ├── leading_trivia (kind: Trivia) []
+    │           │   ├── token (kind: TokenLBrace): '{'
+    │           │   └── trailing_trivia (kind: Trivia)
+    │           │       └── child #0 (kind: TokenNewline).
+    │           ├── items (kind: ImplItemList)
+    │           │   └── child #0: Missing []
+    │           └── rbrace (kind: TerminalRBrace)
+    │               ├── leading_trivia (kind: Trivia)
+    │               │   ├── child #0 (kind: SkippedNode)
+    │               │   │   └── node (kind: AttributeList)
+    │               │   │       └── child #0 (kind: Attribute) <ignored>
+    │               │   ├── child #1 (kind: TokenWhitespace).
+    │               │   ├── child #2 (kind: TokenSkipped): '3'
+    │               │   └── child #3 (kind: TokenNewline).
+    │               ├── token (kind: TokenRBrace): '}'
+    │               └── trailing_trivia (kind: Trivia) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test repeated attributes without an item.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+#[aaa]
+#[bbb]
+2
+
+//! > top_level_kind
+
+//! > ignored_kinds
+Attribute
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:2:7
+#[bbb]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:3:1
+2
+^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0: Missing []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: SkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       ├── child #0 (kind: Attribute) <ignored>
+        │   │       └── child #1 (kind: Attribute) <ignored>
+        │   └── child #1 (kind: TokenSkipped): '2'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test repeated attributed literals.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+#[aaa]
+[bbb]
+#[ccc]
+fn foo() {}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+FunctionDeclaration
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:7
+#[aaa]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:2:1
+[bbb]
+^***^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   ├── child #0: Missing []
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList)
+    │       │   └── child #0 (kind: Attribute)
+    │       │       ├── hash (kind: TerminalHash)
+    │       │       │   ├── leading_trivia (kind: Trivia)
+    │       │       │   │   ├── child #0 (kind: SkippedNode)
+    │       │       │   │   │   └── node (kind: AttributeList)
+    │       │       │   │   │       └── child #0 (kind: Attribute)
+    │       │       │   │   │           ├── hash (kind: TerminalHash)
+    │       │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │       │       │   │   │           │   ├── token (kind: TokenHash): '#'
+    │       │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │       │       │   │   │           ├── lbrack (kind: TerminalLBrack)
+    │       │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │       │       │   │   │           │   ├── token (kind: TokenLBrack): '['
+    │       │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │       │       │   │   │           ├── attr (kind: ExprPath)
+    │       │       │   │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │   │           │       └── ident (kind: TerminalIdentifier)
+    │       │       │   │   │           │           ├── leading_trivia (kind: Trivia) []
+    │       │       │   │   │           │           ├── token (kind: TokenIdentifier): 'aaa'
+    │       │       │   │   │           │           └── trailing_trivia (kind: Trivia) []
+    │       │       │   │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       │       │   │   │           └── rbrack (kind: TerminalRBrack)
+    │       │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │       │       │   │   │               ├── token (kind: TokenRBrack): ']'
+    │       │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │       │       │   │   │                   └── child #0 (kind: TokenNewline).
+    │       │       │   │   ├── child #1 (kind: TokenSkipped): '['
+    │       │       │   │   ├── child #2 (kind: TokenSkipped): 'bbb'
+    │       │       │   │   ├── child #3 (kind: TokenSkipped): ']'
+    │       │       │   │   └── child #4 (kind: TokenNewline).
+    │       │       │   ├── token (kind: TokenHash): '#'
+    │       │       │   └── trailing_trivia (kind: Trivia) []
+    │       │       ├── lbrack (kind: TerminalLBrack)
+    │       │       │   ├── leading_trivia (kind: Trivia) []
+    │       │       │   ├── token (kind: TokenLBrack): '['
+    │       │       │   └── trailing_trivia (kind: Trivia) []
+    │       │       ├── attr (kind: ExprPath)
+    │       │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       │       └── ident (kind: TerminalIdentifier)
+    │       │       │           ├── leading_trivia (kind: Trivia) []
+    │       │       │           ├── token (kind: TokenIdentifier): 'ccc'
+    │       │       │           └── trailing_trivia (kind: Trivia) []
+    │       │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       │       └── rbrack (kind: TerminalRBrack)
+    │       │           ├── leading_trivia (kind: Trivia) []
+    │       │           ├── token (kind: TokenRBrack): ']'
+    │       │           └── trailing_trivia (kind: Trivia)
+    │       │               └── child #0 (kind: TokenNewline).
+    │       ├── declaration (kind: FunctionDeclaration) <ignored>
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TerminalLBrace)
+    │           │   ├── leading_trivia (kind: Trivia) []
+    │           │   ├── token (kind: TokenLBrace): '{'
+    │           │   └── trailing_trivia (kind: Trivia) []
+    │           ├── statements (kind: StatementList) []
+    │           └── rbrace (kind: TerminalRBrace)
+    │               ├── leading_trivia (kind: Trivia) []
+    │               ├── token (kind: TokenRBrace): '}'
+    │               └── trailing_trivia (kind: Trivia) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test skipped inside a module.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+mod mod1{
+    #[aaa]
+    fn foo() {}
+    #[bbb]
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+Attribute
+FunctionDeclaration
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:4:11
+    #[bbb]
+          ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0 (kind: ItemModule)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── module_kw (kind: TerminalModule)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenModule): 'mod'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── name (kind: TerminalIdentifier)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenIdentifier): 'mod1'
+    │       │   └── trailing_trivia (kind: Trivia) []
+    │       └── body (kind: ModuleBody)
+    │           ├── lbrace (kind: TerminalLBrace)
+    │           │   ├── leading_trivia (kind: Trivia) []
+    │           │   ├── token (kind: TokenLBrace): '{'
+    │           │   └── trailing_trivia (kind: Trivia)
+    │           │       └── child #0 (kind: TokenNewline).
+    │           ├── items (kind: ItemList)
+    │           │   ├── child #0 (kind: FunctionWithBody)
+    │           │   │   ├── attributes (kind: AttributeList)
+    │           │   │   │   └── child #0 (kind: Attribute) <ignored>
+    │           │   │   ├── declaration (kind: FunctionDeclaration) <ignored>
+    │           │   │   └── body (kind: ExprBlock)
+    │           │   │       ├── lbrace (kind: TerminalLBrace)
+    │           │   │       │   ├── leading_trivia (kind: Trivia) []
+    │           │   │       │   ├── token (kind: TokenLBrace): '{'
+    │           │   │       │   └── trailing_trivia (kind: Trivia) []
+    │           │   │       ├── statements (kind: StatementList) []
+    │           │   │       └── rbrace (kind: TerminalRBrace)
+    │           │   │           ├── leading_trivia (kind: Trivia) []
+    │           │   │           ├── token (kind: TokenRBrace): '}'
+    │           │   │           └── trailing_trivia (kind: Trivia)
+    │           │   │               └── child #0 (kind: TokenNewline).
+    │           │   └── child #1: Missing []
+    │           └── rbrace (kind: TerminalRBrace)
+    │               ├── leading_trivia (kind: Trivia)
+    │               │   └── child #0 (kind: SkippedNode)
+    │               │       └── node (kind: AttributeList)
+    │               │           └── child #0 (kind: Attribute) <ignored>
+    │               ├── token (kind: TokenRBrace): '}'
+    │               └── trailing_trivia (kind: Trivia) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []

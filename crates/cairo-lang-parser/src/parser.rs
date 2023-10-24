@@ -224,7 +224,7 @@ impl<'a> Parser<'a> {
                     SyntaxKind::TerminalLParen
                     | SyntaxKind::TerminalLBrace
                     | SyntaxKind::TerminalLBrack => {
-                        // This case is treated as a item inline macro with a missing bang ('!').
+                        // This case is treated as an item inline macro with a missing bang ('!').
                         self.diagnostics.add(ParserDiagnostic {
                             file_id: self.file_id,
                             kind: ParserDiagnosticKind::ItemInlineMacroWithoutBang {
@@ -263,7 +263,8 @@ impl<'a> Parser<'a> {
             }
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<Item>(
+                    Ok(self.skip_node_and_return_missing::<Item>(
+                        SkippedNode::new_green(self.db, attributes.into()),
                         ParserDiagnosticKind::AttributesWithoutItem,
                     ))
                 } else {
@@ -674,8 +675,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<TraitItem>(
-                        ParserDiagnosticKind::AttributesWithoutTraitItem,
+                    Ok(self.skip_node_and_return_missing::<TraitItem>(
+                        SkippedNode::new_green(self.db, attributes.into()),
+                        ParserDiagnosticKind::AttributesWithoutItem,
                     ))
                 } else {
                     Err(TryParseFailure::SkipToken)
@@ -789,8 +791,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalImpl => Ok(self.expect_impl_item_impl(attributes)),
             _ => {
                 if has_attrs {
-                    Ok(self.create_and_report_missing::<ImplItem>(
-                        ParserDiagnosticKind::AttributesWithoutImplItem,
+                    Ok(self.skip_node_and_return_missing::<ImplItem>(
+                        SkippedNode::new_green(self.db, attributes.into()),
+                        ParserDiagnosticKind::AttributesWithoutItem,
                     ))
                 } else {
                     Err(TryParseFailure::SkipToken)
@@ -2182,6 +2185,24 @@ impl<'a> Parser<'a> {
         });
     }
 
+    /// Skips a node. A skipped node is a node which is not expected where it is found. Skipping
+    /// this node means reporting an error, appending it to the current trivia, and continuing the
+    /// compilation as if it wasn't there.
+    fn skip_node(&mut self, node_to_skip: SkippedNodeGreen, diagnostic_kind: ParserDiagnosticKind) {
+        // Add to pending trivia.
+        self.pending_trivia.push(node_to_skip.into());
+        let orig_offset = self.offset;
+        let diag_start = self.offset.add_width(self.last_trivia_length);
+        let diag_end = diag_start.add_width(node_to_skip.0.width(self.db));
+
+        self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
+            kind: diagnostic_kind,
+            span: TextSpan { start: diag_start, end: diag_end },
+            leading_trivia_start: orig_offset,
+            trailing_trivia_end: diag_end,
+        });
+    }
+
     /// Skips the current token, reports the given diagnostic and returns missing kind of the
     /// expected terminal.
     fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal>(
@@ -2192,6 +2213,16 @@ impl<'a> Parser<'a> {
         ExpectedTerminal::missing(self.db)
     }
 
+    /// Skips a given SkippedNode, reports the given diagnostic and returns missing kind of the
+    /// expected node.
+    fn skip_node_and_return_missing<ExpectedNode: TypedSyntaxNode>(
+        &mut self,
+        node_to_skip: SkippedNodeGreen,
+        diagnostic: ParserDiagnosticKind,
+    ) -> ExpectedNode::Green {
+        self.skip_node(node_to_skip, diagnostic);
+        ExpectedNode::missing(self.db)
+    }
     /// Skips terminals until `should_stop` returns `true`.
     ///
     /// Returns the span of the skipped terminals, if any.

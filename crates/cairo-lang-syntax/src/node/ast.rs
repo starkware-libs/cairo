@@ -78,6 +78,7 @@ pub enum Trivium {
     Whitespace(TokenWhitespace),
     Newline(TokenNewline),
     Skipped(TokenSkipped),
+    SkippedNode(SkippedNode),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumPtr(pub SyntaxStablePtrId);
@@ -109,6 +110,11 @@ impl From<TokenSkippedPtr> for TriviumPtr {
         Self(value.0)
     }
 }
+impl From<SkippedNodePtr> for TriviumPtr {
+    fn from(value: SkippedNodePtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenSingleLineCommentGreen> for TriviumGreen {
     fn from(value: TokenSingleLineCommentGreen) -> Self {
         Self(value.0)
@@ -126,6 +132,11 @@ impl From<TokenNewlineGreen> for TriviumGreen {
 }
 impl From<TokenSkippedGreen> for TriviumGreen {
     fn from(value: TokenSkippedGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<SkippedNodeGreen> for TriviumGreen {
+    fn from(value: SkippedNodeGreen) -> Self {
         Self(value.0)
     }
 }
@@ -149,6 +160,9 @@ impl TypedSyntaxNode for Trivium {
             }
             SyntaxKind::TokenNewline => Trivium::Newline(TokenNewline::from_syntax_node(db, node)),
             SyntaxKind::TokenSkipped => Trivium::Skipped(TokenSkipped::from_syntax_node(db, node)),
+            SyntaxKind::SkippedNode => {
+                Trivium::SkippedNode(SkippedNode::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Trivium"),
         }
     }
@@ -158,6 +172,7 @@ impl TypedSyntaxNode for Trivium {
             Trivium::Whitespace(x) => x.as_syntax_node(),
             Trivium::Newline(x) => x.as_syntax_node(),
             Trivium::Skipped(x) => x.as_syntax_node(),
+            Trivium::SkippedNode(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -172,6 +187,7 @@ impl Trivium {
             SyntaxKind::TokenWhitespace => true,
             SyntaxKind::TokenNewline => true,
             SyntaxKind::TokenSkipped => true,
+            SyntaxKind::SkippedNode => true,
             _ => false,
         }
     }
@@ -13512,6 +13528,134 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericParamImplAnonymousPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct SkippedNode {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl SkippedNode {
+    pub const INDEX_NODE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, node: SkippedNodeInnerGreen) -> SkippedNodeGreen {
+        let children: Vec<GreenId> = vec![node.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        SkippedNodeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::SkippedNode,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl SkippedNode {
+    pub fn node(&self, db: &dyn SyntaxGroup) -> SkippedNodeInner {
+        SkippedNodeInner::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodePtr(pub SyntaxStablePtrId);
+impl SkippedNodePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> SkippedNode {
+        SkippedNode::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodeGreen(pub GreenId);
+impl TypedSyntaxNode for SkippedNode {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::SkippedNode);
+    type StablePtr = SkippedNodePtr;
+    type Green = SkippedNodeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        SkippedNodeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::SkippedNode,
+            details: GreenNodeDetails::Node {
+                children: vec![SkippedNodeInner::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::SkippedNode,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::SkippedNode
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SkippedNodePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum SkippedNodeInner {
+    AttributeList(AttributeList),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodeInnerPtr(pub SyntaxStablePtrId);
+impl SkippedNodeInnerPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> SkippedNodeInner {
+        SkippedNodeInner::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AttributeListPtr> for SkippedNodeInnerPtr {
+    fn from(value: AttributeListPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AttributeListGreen> for SkippedNodeInnerGreen {
+    fn from(value: AttributeListGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodeInnerGreen(pub GreenId);
+impl TypedSyntaxNode for SkippedNodeInner {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = SkippedNodeInnerPtr;
+    type Green = SkippedNodeInnerGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::AttributeList => {
+                SkippedNodeInner::AttributeList(AttributeList::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "SkippedNodeInner"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            SkippedNodeInner::AttributeList(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SkippedNodeInnerPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl SkippedNodeInner {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::AttributeList => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

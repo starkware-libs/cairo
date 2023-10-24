@@ -9,7 +9,8 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("SingleLineComment", "TokenSingleLineComment")
             .node_with_explicit_kind("Whitespace", "TokenWhitespace")
             .node_with_explicit_kind("Newline", "TokenNewline")
-            .node_with_explicit_kind("Skipped", "TokenSkipped"),
+            .node_with_explicit_kind("Skipped", "TokenSkipped")
+            .node_with_explicit_kind("SkippedNode", "SkippedNode"),
     )
     // --- Expressions ---
     .add_enum(EnumBuilder::new("Expr")
@@ -656,6 +657,14 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("GenericParamImplAnonymous")
         .node("plus", "TerminalPlus")
         .node("trait_path", "ExprPath")
+    )
+    // --- Skipped nodes ---
+    .add_struct(StructBuilder::new("SkippedNode")
+    .node("node", "SkippedNodeInner")
+    )
+    // An enum of all nodes that can be skipped while parsing.
+    .add_enum(EnumBuilder::new("SkippedNodeInner")
+        .node_with_explicit_kind("AttributeList", "AttributeList")
     )
     // --- Tokens + Terminals ---
     .add_token_and_terminal("Identifier")
