@@ -5,8 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
+    FilesGroup, FilesGroupEx, CORELIB_CRATE_NAME,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -149,7 +149,7 @@ impl RootDatabaseBuilder {
 
             if let Some(corelib) = config.corelib {
                 let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
-                db.set_crate_root(core_crate, Some(corelib));
+                db.set_crate_config(core_crate, Some(CrateConfiguration::new(corelib)));
             }
         }
 

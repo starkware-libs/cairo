@@ -16,6 +16,19 @@ mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
 
+/// A configuration per crate.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct CrateConfiguration {
+    /// The root directry of the crate.
+    pub root: Directory,
+}
+impl CrateConfiguration {
+    /// Returns a new configuration.
+    pub fn new(root: Directory) -> Self {
+        Self { root }
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
 pub trait FilesGroup {
@@ -26,9 +39,9 @@ pub trait FilesGroup {
     #[salsa::interned]
     fn intern_flag(&self, flag: FlagLongId) -> FlagId;
 
-    /// Main input of the project. Lists all the crates.
+    /// Main input of the project. Lists all the crates configurations.
     #[salsa::input]
-    fn crate_roots(&self) -> Arc<OrderedHashMap<CrateId, Directory>>;
+    fn crate_configs(&self) -> Arc<OrderedHashMap<CrateId, CrateConfiguration>>;
 
     /// Overrides for file content. Mostly used by language server and tests.
     /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
@@ -48,8 +61,8 @@ pub trait FilesGroup {
 
     /// List of crates in the project.
     fn crates(&self) -> Vec<CrateId>;
-    /// Root directory of the crate.
-    fn crate_root_dir(&self, crate_id: CrateId) -> Option<Directory>;
+    /// Configuration of the crate.
+    fn crate_config(&self, crate_id: CrateId) -> Option<CrateConfiguration>;
 
     /// Query for raw file contents. Private.
     fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
@@ -64,7 +77,7 @@ pub trait FilesGroup {
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
     db.set_file_overrides(Arc::new(OrderedHashMap::default()));
-    db.set_crate_roots(Arc::new(OrderedHashMap::default()));
+    db.set_crate_configs(Arc::new(OrderedHashMap::default()));
     db.set_flags(Arc::new(OrderedHashMap::default()));
     db.set_cfg_set(Arc::new(CfgSet::new()));
 }
@@ -72,7 +85,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
     let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
     let core_root_dir = Directory::Real(path);
-    db.set_crate_root(core_crate, Some(core_root_dir));
+    db.set_crate_config(core_crate, Some(CrateConfiguration::new(core_root_dir)));
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {
@@ -92,13 +105,13 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
         self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
     }
     /// Sets the root directory of the crate. None value removes the crate.
-    fn set_crate_root(&mut self, crt: CrateId, root: Option<Directory>) {
-        let mut crate_roots = Upcast::upcast(self).crate_roots().as_ref().clone();
+    fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
+        let mut crate_configs = Upcast::upcast(self).crate_configs().as_ref().clone();
         match root {
-            Some(root) => crate_roots.insert(crt, root),
-            None => crate_roots.swap_remove(&crt),
+            Some(root) => crate_configs.insert(crt, root),
+            None => crate_configs.swap_remove(&crt),
         };
-        self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
+        self.as_files_group_mut().set_crate_configs(Arc::new(crate_configs));
     }
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, id: FlagId, value: Option<Arc<Flag>>) {
@@ -124,12 +137,12 @@ pub trait AsFilesGroupMut {
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     // TODO(spapini): Sort for stability.
-    db.crate_roots().keys().copied().collect()
+    db.crate_configs().keys().copied().collect()
 }
-fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<Directory> {
+fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match db.lookup_intern_crate(crt) {
-        CrateLongId::Real(_) => db.crate_roots().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, root } => Some(root),
+        CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Virtual { name: _, root } => Some(CrateConfiguration::new(root)),
     }
 }
 
