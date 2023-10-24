@@ -71,10 +71,10 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
     let locked_db = test_lock(&SHARED_DB_WITH_CONTRACTS);
     let db = locked_db.snapshot();
     drop(locked_db);
-    let crate_roots = db.crate_roots();
-    let contracts_crate = crate_roots
+    let crate_configs = db.crate_configs();
+    let contracts_crate = crate_configs
         .iter()
-        .filter(|(_, dir)| match dir {
+        .filter(|(_, config)| match &config.root {
             Directory::Real(path) => path.starts_with(CONTRACTS_CRATE_DIR),
             Directory::Virtual { .. } => false,
         })
