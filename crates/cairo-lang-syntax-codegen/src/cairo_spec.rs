@@ -9,7 +9,8 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("SingleLineComment", "TokenSingleLineComment")
             .node_with_explicit_kind("Whitespace", "TokenWhitespace")
             .node_with_explicit_kind("Newline", "TokenNewline")
-            .node_with_explicit_kind("Skipped", "TokenSkipped"),
+            .node_with_explicit_kind("Skipped", "TokenSkipped")
+            .node("SkippedNode"),
     )
     // --- Expressions ---
     .add_enum(EnumBuilder::new("Expr")
@@ -656,6 +657,15 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("GenericParamImplAnonymous")
         .node("plus", "TerminalPlus")
         .node("trait_path", "ExprPath")
+    )
+    // --- Skipped nodes ---
+    // A wrapper for the skipped node enum as the enum nodes (Trivium) can't have enum as a child directly.
+    .add_struct(StructBuilder::new("TriviumSkippedNode")
+        .node("node", "SkippedNode")
+    )
+    // An enum of all nodes that can be skipped while parsing, new nodes can be added here if needed to be skipped.
+    .add_enum(EnumBuilder::new("SkippedNode")
+        .node_with_explicit_kind("AttributeList", "AttributeList")
     )
     // --- Tokens + Terminals ---
     .add_token_and_terminal("Identifier")
