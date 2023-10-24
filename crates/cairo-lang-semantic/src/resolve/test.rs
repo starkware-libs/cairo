@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
@@ -61,7 +61,7 @@ fn test_resolve_path_super() {
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(

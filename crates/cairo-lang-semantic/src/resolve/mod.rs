@@ -761,7 +761,7 @@ impl<'db> Resolver<'db> {
         // module.
         let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
         // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
-        if self.db.crate_root_dir(crate_id).is_some() {
+        if self.db.crate_config(crate_id).is_some() {
             return None;
         }
 
