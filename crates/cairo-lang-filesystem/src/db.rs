@@ -21,11 +21,34 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
+    /// The cairo edition of the crate.
+    pub edition: Edition,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root }
+        Self { root, edition: Edition::default() }
+    }
+}
+
+/// The Cairo edition of a crate.
+/// Editions are a mechanism to allow breaking changes in the compiler.
+/// Compiler minor version updates will always support all editions supported by the previous
+/// updates with the same major version. Compiler major version updates may remove support for older
+/// editions. Editions may be added to provide features that are not backwards compatible, while
+/// allowing user to opt-in to them, and be ready for later compiler updates.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
+pub enum Edition {
+    /// The base edition, dated for the first release of the compiler.
+    #[default]
+    V2023_01,
+}
+impl Edition {
+    /// The name of the prelude submodule of `core::prelude` for this compatibility version.
+    pub fn prelude_submodule_name(&self) -> &str {
+        match self {
+            Self::V2023_01 => "v2023_01",
+        }
     }
 }
 
