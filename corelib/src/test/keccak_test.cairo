@@ -1,5 +1,5 @@
 use starknet::SyscallResultTrait;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_keccak_syscall() {

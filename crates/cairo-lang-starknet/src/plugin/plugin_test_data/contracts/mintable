@@ -252,7 +252,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
         ContractStateEventEmitter::emit(ref contract, Event::Mintable(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -434,15 +434,15 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
-impl GetSupplyDispatcherCopy of Copy::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherDrop of Drop::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherSerde of Serde::<GetSupplyDispatcher> {
-    fn serialize(self: @GetSupplyDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl GetSupplyDispatcherCopy of core::traits::Copy::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherDrop of core::traits::Drop::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherSerde of core::serde::Serde::<GetSupplyDispatcher> {
+    fn serialize(self: @GetSupplyDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyDispatcher> {
-        Option::Some(GetSupplyDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyDispatcher> {
+        core::option::Option::Some(GetSupplyDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -477,15 +477,15 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-impl GetSupplyLibraryDispatcherCopy of Copy::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherDrop of Drop::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherSerde of Serde::<GetSupplyLibraryDispatcher> {
-    fn serialize(self: @GetSupplyLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
+    fn serialize(self: @GetSupplyLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyLibraryDispatcher> {
-        Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyLibraryDispatcher> {
+        core::option::Option::Some(GetSupplyLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -520,15 +520,15 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl GetSupplySafeLibraryDispatcherCopy of Copy::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherDrop of Drop::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherSerde of Serde::<GetSupplySafeLibraryDispatcher> {
-    fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
+    fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeLibraryDispatcher> {
-        Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeLibraryDispatcher> {
+        core::option::Option::Some(GetSupplySafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -563,15 +563,15 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl GetSupplySafeDispatcherCopy of Copy::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherDrop of Drop::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherSerde of Serde::<GetSupplySafeDispatcher> {
-    fn serialize(self: @GetSupplySafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherDrop of core::traits::Drop::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatcher> {
+    fn serialize(self: @GetSupplySafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeDispatcher> {
-        Option::Some(GetSupplySafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeDispatcher> {
+        core::option::Option::Some(GetSupplySafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -845,7 +845,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
         ContractStateEventEmitter::emit(ref contract, Event::Mintable(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>

@@ -21,8 +21,8 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                     indent_by(4,
                     variants.iter().enumerate().map(|(idx, variant)| formatdoc!{"
                             {ty}::{variant}(x) => {{
-                                let state = hash::Hash::update_state(state, {idx});
-                                hash::Hash::update_state(state, x)
+                                let state = core::hash::Hash::update_state(state, {idx});
+                                core::hash::Hash::update_state(state, x)
                             }},",
                             variant=variant.name,
                         }
@@ -35,7 +35,7 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                     .iter()
                     .map(|member| {
                         format!(
-                            "let state = hash::Hash::update_state(state, value.{});",
+                            "let state = core::hash::Hash::update_state(state, value.{});",
                             member.name
                         )
                     })
@@ -47,15 +47,15 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
         },
     );
     let impl_additional_generics = info.generics.format_generics_with_trait_params_only(|t| {
-        vec![format!("impl {t}Hash: Hash<{t}>"), format!("impl {t}Drop: Drop<{t}>")]
+        vec![format!("+core::hash::Hash<{t}, __State, __SHashState>"), format!("+Drop<{t}>")]
     });
     let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
     result.impls.push(formatdoc! {"
         impl {ty}Hash<
             __State,
-            impl __SHashState: hash::HashStateTrait<__State>,
-            impl SDrop: Drop<__State>{extra_comma}{impl_additional_generics}
-        > of hash::Hash<{full_typename}, __State, __SHashState> {{
+            impl __SHashState: core::hash::HashStateTrait<__State>,
+            +Drop<__State>{extra_comma}{impl_additional_generics}
+        > of core::hash::Hash<{full_typename}, __State, __SHashState> {{
             #[inline(always)]
             fn update_state(state: __State, value: {full_typename}) -> __State {{
                 {body}

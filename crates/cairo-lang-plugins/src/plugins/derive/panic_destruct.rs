@@ -12,7 +12,8 @@ pub fn handle_panic_destruct(
     stable_ptr: SyntaxStablePtrId,
     result: &mut DeriveResult,
 ) {
-    let header = info.format_impl_header("PanicDestruct", &["PanicDestruct"]);
+    let header =
+        info.format_impl_header("core::traits", "PanicDestruct", &["core::traits::PanicDestruct"]);
     let full_typename = info.full_typename();
     let ty = &info.name;
     let body = indent_by(
@@ -26,7 +27,7 @@ pub fn handle_panic_destruct(
                 variants.iter().map(|variant| {
                     format!(
                         "{ty}::{}(x) => \
-                        traits::PanicDestruct::panic_destruct(x, ref panic),",
+                        core::traits::PanicDestruct::panic_destruct(x, ref panic),",
                         variant.name,
                     )
                 }).join("\n    ")}
@@ -38,7 +39,7 @@ pub fn handle_panic_destruct(
                     members
                         .iter()
                         .map(|member| format!(
-                            "\ntraits::PanicDestruct::panic_destruct({}, ref panic);",
+                            "\ncore::traits::PanicDestruct::panic_destruct({}, ref panic);",
                             member.name
                         ))
                         .join(""),

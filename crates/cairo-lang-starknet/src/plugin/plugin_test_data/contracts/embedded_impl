@@ -226,7 +226,7 @@ impl ContractStateOutsideImpl of
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -498,7 +498,7 @@ impl ContractStateOutsideImplWithPanicDestruct of
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -696,7 +696,7 @@ impl ContractStateOutsideImplWithDrop of
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
