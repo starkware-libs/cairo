@@ -2329,7 +2329,7 @@ impl U128Zeroable = zeroable::zero_based::ZeroableImpl<u128, integer::U128Zero>;
 impl U256Zeroable = zeroable::zero_based::ZeroableImpl<u256, integer::U256Zero>;
 
 // Zero trait implementations
-impl U8Zero of num::traits::Zero<u8> {
+impl U8Zero of core::num::traits::Zero<u8> {
     fn zero() -> u8 {
         0
     }
@@ -2343,7 +2343,7 @@ impl U8Zero of num::traits::Zero<u8> {
     }
 }
 
-impl U16Zero of num::traits::Zero<u16> {
+impl U16Zero of core::num::traits::Zero<u16> {
     fn zero() -> u16 {
         0
     }
@@ -2357,7 +2357,7 @@ impl U16Zero of num::traits::Zero<u16> {
     }
 }
 
-impl U32Zero of num::traits::Zero<u32> {
+impl U32Zero of core::num::traits::Zero<u32> {
     fn zero() -> u32 {
         0
     }
@@ -2371,7 +2371,7 @@ impl U32Zero of num::traits::Zero<u32> {
     }
 }
 
-impl U64Zero of num::traits::Zero<u64> {
+impl U64Zero of core::num::traits::Zero<u64> {
     fn zero() -> u64 {
         0
     }
@@ -2385,7 +2385,7 @@ impl U64Zero of num::traits::Zero<u64> {
     }
 }
 
-impl U128Zero of num::traits::Zero<u128> {
+impl U128Zero of core::num::traits::Zero<u128> {
     fn zero() -> u128 {
         0
     }
@@ -2399,7 +2399,7 @@ impl U128Zero of num::traits::Zero<u128> {
     }
 }
 
-impl U256Zero of num::traits::Zero<u256> {
+impl U256Zero of core::num::traits::Zero<u256> {
     fn zero() -> u256 {
         0
     }
@@ -2413,7 +2413,7 @@ impl U256Zero of num::traits::Zero<u256> {
     }
 }
 
-impl I8Zero of num::traits::Zero<i8> {
+impl I8Zero of core::num::traits::Zero<i8> {
     fn zero() -> i8 {
         0
     }
@@ -2427,7 +2427,7 @@ impl I8Zero of num::traits::Zero<i8> {
     }
 }
 
-impl I16Zero of num::traits::Zero<i16> {
+impl I16Zero of core::num::traits::Zero<i16> {
     fn zero() -> i16 {
         0
     }
@@ -2441,7 +2441,7 @@ impl I16Zero of num::traits::Zero<i16> {
     }
 }
 
-impl I32Zero of num::traits::Zero<i32> {
+impl I32Zero of core::num::traits::Zero<i32> {
     fn zero() -> i32 {
         0
     }
@@ -2455,7 +2455,7 @@ impl I32Zero of num::traits::Zero<i32> {
     }
 }
 
-impl I64Zero of num::traits::Zero<i64> {
+impl I64Zero of core::num::traits::Zero<i64> {
     fn zero() -> i64 {
         0
     }
@@ -2469,7 +2469,7 @@ impl I64Zero of num::traits::Zero<i64> {
     }
 }
 
-impl I128Zero of num::traits::Zero<i128> {
+impl I128Zero of core::num::traits::Zero<i128> {
     fn zero() -> i128 {
         0
     }
@@ -2485,7 +2485,7 @@ impl I128Zero of num::traits::Zero<i128> {
 
 
 // One trait implementations
-impl U8One of num::traits::One<u8> {
+impl U8One of core::num::traits::One<u8> {
     fn one() -> u8 {
         1
     }
@@ -2499,7 +2499,7 @@ impl U8One of num::traits::One<u8> {
     }
 }
 
-impl U16One of num::traits::One<u16> {
+impl U16One of core::num::traits::One<u16> {
     fn one() -> u16 {
         1
     }
@@ -2513,7 +2513,7 @@ impl U16One of num::traits::One<u16> {
     }
 }
 
-impl U32One of num::traits::One<u32> {
+impl U32One of core::num::traits::One<u32> {
     fn one() -> u32 {
         1
     }
@@ -2527,7 +2527,7 @@ impl U32One of num::traits::One<u32> {
     }
 }
 
-impl U64One of num::traits::One<u64> {
+impl U64One of core::num::traits::One<u64> {
     fn one() -> u64 {
         1
     }
@@ -2541,7 +2541,7 @@ impl U64One of num::traits::One<u64> {
     }
 }
 
-impl U128One of num::traits::One<u128> {
+impl U128One of core::num::traits::One<u128> {
     fn one() -> u128 {
         1
     }
@@ -2555,7 +2555,7 @@ impl U128One of num::traits::One<u128> {
     }
 }
 
-impl U256One of num::traits::One<u256> {
+impl U256One of core::num::traits::One<u256> {
     fn one() -> u256 {
         1
     }
@@ -2569,7 +2569,7 @@ impl U256One of num::traits::One<u256> {
     }
 }
 
-impl I8One of num::traits::One<i8> {
+impl I8One of core::num::traits::One<i8> {
     fn one() -> i8 {
         1
     }
@@ -2585,7 +2585,7 @@ impl I8One of num::traits::One<i8> {
     }
 }
 
-impl I16One of num::traits::One<i16> {
+impl I16One of core::num::traits::One<i16> {
     fn one() -> i16 {
         1
     }
@@ -2601,7 +2601,7 @@ impl I16One of num::traits::One<i16> {
     }
 }
 
-impl I32One of num::traits::One<i32> {
+impl I32One of core::num::traits::One<i32> {
     fn one() -> i32 {
         1
     }
@@ -2617,7 +2617,7 @@ impl I32One of num::traits::One<i32> {
     }
 }
 
-impl I64One of num::traits::One<i64> {
+impl I64One of core::num::traits::One<i64> {
     fn one() -> i64 {
         1
     }
@@ -2633,7 +2633,7 @@ impl I64One of num::traits::One<i64> {
     }
 }
 
-impl I128One of num::traits::One<i128> {
+impl I128One of core::num::traits::One<i128> {
     fn one() -> i128 {
         1
     }
