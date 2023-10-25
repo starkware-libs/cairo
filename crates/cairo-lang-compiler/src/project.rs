@@ -67,14 +67,20 @@ pub fn setup_single_file_project(
 
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
+    let crate_config = config.content.crate_config;
     for (crate_name, directory_path) in config.content.crate_roots {
+        let compatibility_version = crate_config
+            .crate_override
+            .get(&crate_name)
+            .unwrap_or(&crate_config.global)
+            .compatibility;
         let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
         let mut path = PathBuf::from(&directory_path);
         if path.is_relative() {
             path = PathBuf::from(&config.base_path).join(path);
         }
         let root = Directory::Real(path);
-        db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+        db.set_crate_config(crate_id, Some(CrateConfiguration { root, compatibility_version }));
     }
 }
 

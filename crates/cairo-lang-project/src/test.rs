@@ -1,18 +1,33 @@
 use indoc::indoc;
 
-use crate::ProjectConfigContent;
+use crate::{CrateConfigContent, CratesConfigContent, ProjectConfigContent};
 
 #[test]
 fn test_serde() {
     let config = ProjectConfigContent {
-        crate_roots: [("crate".into(), "dir".into())].into_iter().collect(),
+        crate_roots: [("crate_name".into(), "dir".into())].into_iter().collect(),
+        crate_config: CratesConfigContent {
+            global: CrateConfigContent { compatibility: Default::default() },
+            crate_override: [(
+                "crate_name".into(),
+                CrateConfigContent { compatibility: Default::default() },
+            )]
+            .into_iter()
+            .collect(),
+        },
     };
     let serialized = toml::to_string(&config).unwrap();
     assert_eq!(
         serialized,
         indoc! { r#"
             [crate_roots]
-            crate = "dir"
+            crate_name = "dir"
+            
+            [crate_config.global]
+            compatibility = "0"
+
+            [crate_config.crate_override.crate_name]
+            compatibility = "0"
         "# }
     );
     assert_eq!(config, toml::from_str(&serialized).unwrap());
