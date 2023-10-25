@@ -130,7 +130,7 @@ trait Oneable<T> {
 
 mod one_based {
     impl OneableImpl<
-        T, impl OneImpl: num::traits::One<T>, +Drop<T>, +Copy<T>
+        T, impl OneImpl: core::num::traits::One<T>, +Drop<T>, +Copy<T>
     > of super::Oneable<T> {
         fn one() -> T {
             OneImpl::one()

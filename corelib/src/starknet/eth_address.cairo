@@ -43,13 +43,13 @@ impl EthAddressSerde of Serde<EthAddress> {
         Serde::<felt252>::deserialize(ref serialized)?.try_into()
     }
 }
-impl EthAddressZero of num::traits::Zero<EthAddress> {
+impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
         0.try_into().unwrap()
     }
     #[inline(always)]
     fn is_zero(self: @EthAddress) -> bool {
-        felt_252::Felt252Zero::is_zero(self.address)
+        core::felt_252::Felt252Zero::is_zero(self.address)
     }
     #[inline(always)]
     fn is_non_zero(self: @EthAddress) -> bool {

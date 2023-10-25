@@ -21,11 +21,32 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
+    /// The compatibility version for the crate.
+    pub compatibility_version: CompatibilityVersion,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root }
+        Self { root, compatibility_version: CompatibilityVersion::default() }
+    }
+}
+
+/// The versions for compatibilty.
+/// Allows configuring a crate to be compatible with an older version of the compiler, to enable
+/// major compiler changes without breaking existing crates. On major compiler updates, old
+/// compatibility versions may be removed, and default may be updated to a newer version.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
+pub enum CompatibilityVersion {
+    /// The base version for compatibility.
+    #[default]
+    V0,
+}
+impl CompatibilityVersion {
+    /// The name of the prelude submodule of `core::prelude` for this compatibility version.
+    pub fn prelude_submodule_name(&self) -> &str {
+        match self {
+            Self::V0 => "v0",
+        }
     }
 }
 

@@ -25,13 +25,13 @@ impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
 }
 
 
-impl ContractAddressZero of num::traits::Zero<ContractAddress> {
+impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
     #[inline(always)]
     fn is_zero(self: @ContractAddress) -> bool {
-        felt_252::Felt252Zero::is_zero(@contract_address_to_felt252(*self))
+        core::felt_252::Felt252Zero::is_zero(@contract_address_to_felt252(*self))
     }
     #[inline(always)]
     fn is_non_zero(self: @ContractAddress) -> bool {
