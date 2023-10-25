@@ -39,7 +39,8 @@ impl ContractAddressZero of num::traits::Zero<ContractAddress> {
     }
 }
 
-impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<ContractAddress,ContractAddressZero>;
+impl ContractAddressZeroable =
+    zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
 
 impl ContractAddressSerde of serde::Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
