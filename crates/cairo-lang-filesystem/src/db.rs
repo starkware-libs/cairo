@@ -21,11 +21,32 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
+    /// The cairo edition of the trait.
+    pub edition: Edition,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root }
+        Self { root, edition: Edition::default() }
+    }
+}
+
+/// The Cairo edition of a crate.
+/// Allows configuring a crate to be compatible with an older editions of the compiler, to enable
+/// major compiler changes without breaking existing crates. On major compiler updates, old
+/// editions may be removed, and default may be updated to a newer edition.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
+pub enum Edition {
+    /// The base edition.
+    #[default]
+    V0,
+}
+impl Edition {
+    /// The name of the prelude submodule of `core::prelude` for this compatibility version.
+    pub fn prelude_submodule_name(&self) -> &str {
+        match self {
+            Self::V0 => "v0",
+        }
     }
 }
 
