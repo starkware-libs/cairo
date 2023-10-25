@@ -1,2 +1,5 @@
 [crate_roots]
 core = "src"
+
+[config.all]
+edition = "2023_10"

@@ -18,7 +18,7 @@ impl PedersenImpl of PedersenTrait {
     }
 }
 
-impl HashStateImpl of hash::HashStateTrait<HashState> {
+impl HashStateImpl of core::hash::HashStateTrait<HashState> {
     #[inline(always)]
     fn update(self: HashState, value: felt252) -> HashState {
         HashState { state: pedersen(self.state, value) }

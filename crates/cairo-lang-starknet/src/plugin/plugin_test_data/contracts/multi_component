@@ -486,12 +486,12 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
 impl GetSupplyDispatcherCopy of Copy::<GetSupplyDispatcher>;
 impl GetSupplyDispatcherDrop of Drop::<GetSupplyDispatcher>;
 impl GetSupplyDispatcherSerde of Serde::<GetSupplyDispatcher> {
-    fn serialize(self: @GetSupplyDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @GetSupplyDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<GetSupplyDispatcher> {
         Option::Some(GetSupplyDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -529,12 +529,12 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
 impl GetSupplyLibraryDispatcherCopy of Copy::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherDrop of Drop::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherSerde of Serde::<GetSupplyLibraryDispatcher> {
-    fn serialize(self: @GetSupplyLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @GetSupplyLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<GetSupplyLibraryDispatcher> {
         Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -572,12 +572,12 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
 impl GetSupplySafeLibraryDispatcherCopy of Copy::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherDrop of Drop::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherSerde of Serde::<GetSupplySafeLibraryDispatcher> {
-    fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<GetSupplySafeLibraryDispatcher> {
         Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -615,12 +615,12 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
 impl GetSupplySafeDispatcherCopy of Copy::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherDrop of Drop::<GetSupplySafeDispatcher>;
 impl GetSupplySafeDispatcherSerde of Serde::<GetSupplySafeDispatcher> {
-    fn serialize(self: @GetSupplySafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @GetSupplySafeDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<GetSupplySafeDispatcher> {
         Option::Some(GetSupplySafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }

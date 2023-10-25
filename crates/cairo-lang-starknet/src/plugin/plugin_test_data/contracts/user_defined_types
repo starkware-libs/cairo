@@ -337,12 +337,12 @@ impls:
 impl WrappedFelt252Drop of Drop::<WrappedFelt252>;
 impl WrappedFelt252Hash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<WrappedFelt252, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<WrappedFelt252, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: WrappedFelt252) -> __State {
-        let state = hash::Hash::update_state(state, value.value);
+        let state = core::hash::Hash::update_state(state, value.value);
         state
     }
 }
@@ -388,9 +388,9 @@ impls:
 impl ZeroSizeDrop of Drop::<ZeroSize>;
 impl ZeroSizeHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<ZeroSize, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<ZeroSize, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: ZeroSize) -> __State {
         
@@ -398,10 +398,10 @@ impl ZeroSizeHash<
     }
 }
 impl ZeroSizeSerde of Serde::<ZeroSize> {
-    fn serialize(self: @ZeroSize, ref output: array::Array<felt252>) {
+    fn serialize(self: @ZeroSize, ref output: Array<felt252>) {
         
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ZeroSize> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ZeroSize> {
         Option::Some(ZeroSize {
             
         })
@@ -448,17 +448,17 @@ impls:
 
 impl SimpleEnumDrop of Drop::<SimpleEnum>;
 impl SimpleEnumSerde of Serde::<SimpleEnum> {
-    fn serialize(self: @SimpleEnum, ref output: array::Array<felt252>) {
+    fn serialize(self: @SimpleEnum, ref output: Array<felt252>) {
         match self {
-            SimpleEnum::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            SimpleEnum::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+            SimpleEnum::A(x) => { Serde::serialize(@0, ref output); Serde::serialize(x, ref output); },
+            SimpleEnum::B(x) => { Serde::serialize(@1, ref output); Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<SimpleEnum> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+    fn deserialize(ref serialized: Span<felt252>) -> Option<SimpleEnum> {
+        let idx: felt252 = Serde::deserialize(ref serialized)?;
         Option::Some(
-            if idx == 0 { SimpleEnum::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { SimpleEnum::B(serde::Serde::deserialize(ref serialized)?) }
+            if idx == 0 { SimpleEnum::A(Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { SimpleEnum::B(Serde::deserialize(ref serialized)?) }
             else { return Option::None; }
         )
     }
@@ -546,19 +546,19 @@ impls:
 
 impl EnumWithDefaultDrop of Drop::<EnumWithDefault>;
 impl EnumWithDefaultSerde of Serde::<EnumWithDefault> {
-    fn serialize(self: @EnumWithDefault, ref output: array::Array<felt252>) {
+    fn serialize(self: @EnumWithDefault, ref output: Array<felt252>) {
         match self {
-            EnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::A(x) => { Serde::serialize(@0, ref output); Serde::serialize(x, ref output); },
+            EnumWithDefault::B(x) => { Serde::serialize(@1, ref output); Serde::serialize(x, ref output); },
+            EnumWithDefault::C(x) => { Serde::serialize(@2, ref output); Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<EnumWithDefault> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+    fn deserialize(ref serialized: Span<felt252>) -> Option<EnumWithDefault> {
+        let idx: felt252 = Serde::deserialize(ref serialized)?;
         Option::Some(
-            if idx == 0 { EnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { EnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { EnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
+            if idx == 0 { EnumWithDefault::A(Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { EnumWithDefault::B(Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { EnumWithDefault::C(Serde::deserialize(ref serialized)?) }
             else { return Option::None; }
         )
     }
@@ -668,19 +668,19 @@ impls:
 
 impl BadEnumWithDefaultDrop of Drop::<BadEnumWithDefault>;
 impl BadEnumWithDefaultSerde of Serde::<BadEnumWithDefault> {
-    fn serialize(self: @BadEnumWithDefault, ref output: array::Array<felt252>) {
+    fn serialize(self: @BadEnumWithDefault, ref output: Array<felt252>) {
         match self {
-            BadEnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::A(x) => { Serde::serialize(@0, ref output); Serde::serialize(x, ref output); },
+            BadEnumWithDefault::B(x) => { Serde::serialize(@1, ref output); Serde::serialize(x, ref output); },
+            BadEnumWithDefault::C(x) => { Serde::serialize(@2, ref output); Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<BadEnumWithDefault> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+    fn deserialize(ref serialized: Span<felt252>) -> Option<BadEnumWithDefault> {
+        let idx: felt252 = Serde::deserialize(ref serialized)?;
         Option::Some(
-            if idx == 0 { BadEnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { BadEnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { BadEnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
+            if idx == 0 { BadEnumWithDefault::A(Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { BadEnumWithDefault::B(Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { BadEnumWithDefault::C(Serde::deserialize(ref serialized)?) }
             else { return Option::None; }
         )
     }
