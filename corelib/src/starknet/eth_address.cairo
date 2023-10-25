@@ -57,7 +57,7 @@ impl EthAddressZero of num::traits::Zero<EthAddress> {
     }
 }
 
-impl EthAddressZeroable = zeroable::TZeroableImpl<EthAddress>;
+impl EthAddressZeroable = zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
 impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {

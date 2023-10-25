@@ -29,5 +29,3 @@ impl Felt252One of num::traits::One<felt252> {
         !self.is_one()
     }
 }
-
-impl Felt252Zeroable = zeroable::TZeroableImpl<felt252>;
