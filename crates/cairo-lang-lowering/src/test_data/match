@@ -58,14 +58,13 @@ test_function_lowering
 
 //! > function
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
-  array_get(a, 0_u32)
+  core::array::array_get(a, 0_u32)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-use array::array_get;
 
 //! > semantic_diagnostics
 

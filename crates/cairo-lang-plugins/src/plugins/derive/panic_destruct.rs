@@ -26,7 +26,7 @@ pub fn handle_panic_destruct(
                 variants.iter().map(|variant| {
                     format!(
                         "{ty}::{}(x) => \
-                        traits::PanicDestruct::panic_destruct(x, ref panic),",
+                        core::traits::PanicDestruct::panic_destruct(x, ref panic),",
                         variant.name,
                     )
                 }).join("\n    ")}

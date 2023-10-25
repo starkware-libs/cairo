@@ -1,5 +1,5 @@
-use serde::Serde;
-use hash::{Hash, HashStateTrait};
+use core::serde::Serde;
+use core::hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
 extern type ClassHash;
@@ -37,17 +37,14 @@ impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     }
 }
 
-impl ClassHashZeroable = zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+impl ClassHashZeroable = core::zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
 
-
-impl ClassHashSerde of serde::Serde<ClassHash> {
+impl ClassHashSerde of Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {
         class_hash_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
-        Option::Some(
-            class_hash_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
-        )
+        Option::Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
 }
 
