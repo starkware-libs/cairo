@@ -38,6 +38,8 @@ pub enum VarState {
     Deferred { info: DeferredVariableInfo },
     /// The variable is a local variable.
     LocalVar,
+    /// The variable is of size 0.
+    ZeroSizedVar,
     /// The variable was consumed and can no longer be used.
     /// This state is used because there is no efficent way of removing variables
     /// from [VariablesState::variables] without effecting thier order.
@@ -118,8 +120,8 @@ impl VariablesState {
                 let ty = output_info.ty.clone();
                 match &arg_states[*param_idx] {
                     VarState::TempVar { .. } => {
-                        // A partial paramater may be smaller than its parent so it can't replace it
-                        // on the stack.
+                        // A partial paramater may be smaller than its parent so it can't
+                        // replace it on the stack.
                         if matches!(
                             output_info.ref_info,
                             OutputVarReferenceInfo::SameAsParam { .. }
@@ -132,11 +134,13 @@ impl VariablesState {
                         VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
                     VarState::LocalVar => VarState::LocalVar,
+                    VarState::ZeroSizedVar => VarState::ZeroSizedVar,
                     VarState::Removed => {
                         unreachable!("Unexpected var state.")
                     }
                 }
             }
+            OutputVarReferenceInfo::ZeroSized => VarState::ZeroSizedVar,
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
         };
         self.variables.insert(res.clone(), var_state);

@@ -112,15 +112,13 @@ libfunc drop<felt252> = drop<felt252>;
 libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
 felt252_dict_entry_get<felt252>([0], [1]) -> ([3], [4]); // 0
 drop<felt252>([4]) -> (); // 1
 felt252_dict_entry_finalize<felt252>([3], [2]) -> ([5]); // 2
 struct_construct<Unit>() -> ([6]); // 3
 store_temp<Felt252Dict<felt252>>([5]) -> ([5]); // 4
-store_temp<Unit>([6]) -> ([6]); // 5
-return([5], [6]); // 6
+return([5], [6]); // 5
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Dict<felt252>, Unit);
 
@@ -262,7 +260,6 @@ libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt2
 libfunc drop<felt252> = drop<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
 dup<felt252>([1]) -> ([1], [2]); // 0
 felt252_dict_entry_get<felt252>([0], [2]) -> ([3], [4]); // 1
@@ -283,8 +280,7 @@ drop<felt252>([17]) -> (); // 15
 felt252_dict_entry_finalize<felt252>([16], [8]) -> ([18]); // 16
 struct_construct<Unit>() -> ([19]); // 17
 store_temp<Felt252Dict<felt252>>([18]) -> ([18]); // 18
-store_temp<Unit>([19]) -> ([19]); // 19
-return([18], [19]); // 20
+return([18], [19]); // 19
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, Unit);
 
