@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
@@ -33,16 +34,29 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     ModuleId::CrateRoot(core_crate)
 }
 
-pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
-    let core_module = core_module(db);
-    let submodules = db.module_submodules(core_module).unwrap();
+/// Returns the submodule of `base_module`, named `submodule_name`, if exists.
+/// If the submodule is invalid, panics.
+pub fn get_submodule(
+    db: &dyn SemanticGroup,
+    base_module: ModuleId,
+    submodule_name: &str,
+) -> Option<ModuleId> {
+    let submodules = db.module_submodules(base_module).unwrap_or_else(|_| {
+        panic!("Module {:?} is not a valid module.", base_module.debug(db.upcast()))
+    });
     let syntax_db = db.upcast();
     for (submodule_id, submodule) in submodules.iter() {
         if submodule.name(syntax_db).text(syntax_db) == submodule_name {
-            return ModuleId::Submodule(*submodule_id);
+            return Some(ModuleId::Submodule(*submodule_id));
         }
     }
-    unreachable!("Requested core submodule not found");
+    None
+}
+
+/// Returns a submodule of the corelib named `submodule_name`.
+/// If no such submodule exists, panics.
+pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
+    get_submodule(db, core_module(db), submodule_name).expect("Requested core submodule not found")
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
