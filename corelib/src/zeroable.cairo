@@ -25,7 +25,7 @@ mod zero_based {
     }
 }
 
-impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<felt252, felt_252::Felt252Zero>;
+impl Felt252Zeroable = zeroable::zero_based::ZeroableImpl<felt252, felt_252::Felt252Zero>;
 
 // === NonZero ===
 

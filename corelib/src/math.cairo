@@ -128,16 +128,28 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-impl TOneableImpl<T, impl OneImpl: num::traits::One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
-    fn one() -> T {
-        OneImpl::one()
-    }
-    #[inline(always)]
-    fn is_one(self: T) -> bool {
-        OneImpl::is_one(@self)
-    }
-    #[inline(always)]
-    fn is_non_one(self: T) -> bool {
-        OneImpl::is_non_one(@self)
+mod one_based {
+    impl OneableImpl<
+        T, impl OneImpl: num::traits::One<T>, +Drop<T>, +Copy<T>
+    > of super::Oneable<T> {
+        fn one() -> T {
+            OneImpl::one()
+        }
+        #[inline(always)]
+        fn is_one(self: T) -> bool {
+            OneImpl::is_one(@self)
+        }
+        #[inline(always)]
+        fn is_non_one(self: T) -> bool {
+            OneImpl::is_non_one(@self)
+        }
     }
 }
+
+// Oneable impls
+impl U8Oneable = math::one_based::OneableImpl<u8, integer::U8One>;
+impl U16Oneable = math::one_based::OneableImpl<u16, integer::U16One>;
+impl U32Oneable = math::one_based::OneableImpl<u32, integer::U32One>;
+impl U64Oneable = math::one_based::OneableImpl<u64, integer::U64One>;
+impl U128Oneable = math::one_based::OneableImpl<u128, integer::U128One>;
+impl U256Oneable = math::one_based::OneableImpl<u256, integer::U256One>;
