@@ -10,7 +10,9 @@ trait Zeroable<T> {
 }
 
 mod zero_based {
-    impl ZeroableImpl<T, impl ZeroImpl: num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
+    impl ZeroableImpl<
+        T, impl ZeroImpl: core::num::traits::Zero<T>, +Drop<T>, +Copy<T>
+    > of Zeroable<T> {
         fn zero() -> T {
             ZeroImpl::zero()
         }
@@ -25,7 +27,7 @@ mod zero_based {
     }
 }
 
-impl Felt252Zeroable = zeroable::zero_based::ZeroableImpl<felt252, felt_252::Felt252Zero>;
+impl Felt252Zeroable = zeroable::zero_based::ZeroableImpl<felt252, core::felt_252::Felt252Zero>;
 
 // === NonZero ===
 
