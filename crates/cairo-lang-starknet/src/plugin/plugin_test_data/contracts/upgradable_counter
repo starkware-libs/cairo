@@ -614,12 +614,12 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
 impl ICounterContractDispatcherCopy of Copy::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherDrop of Drop::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherSerde of Serde::<ICounterContractDispatcher> {
-    fn serialize(self: @ICounterContractDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @ICounterContractDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ICounterContractDispatcher> {
         Option::Some(ICounterContractDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -657,12 +657,12 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
 impl ICounterContractLibraryDispatcherCopy of Copy::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherDrop of Drop::<ICounterContractLibraryDispatcher>;
 impl ICounterContractLibraryDispatcherSerde of Serde::<ICounterContractLibraryDispatcher> {
-    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ICounterContractLibraryDispatcher> {
         Option::Some(ICounterContractLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -700,12 +700,12 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
 impl ICounterContractSafeLibraryDispatcherCopy of Copy::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherDrop of Drop::<ICounterContractSafeLibraryDispatcher>;
 impl ICounterContractSafeLibraryDispatcherSerde of Serde::<ICounterContractSafeLibraryDispatcher> {
-    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ICounterContractSafeLibraryDispatcher> {
         Option::Some(ICounterContractSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -743,12 +743,12 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
 impl ICounterContractSafeDispatcherCopy of Copy::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherDrop of Drop::<ICounterContractSafeDispatcher>;
 impl ICounterContractSafeDispatcherSerde of Serde::<ICounterContractSafeDispatcher> {
-    fn serialize(self: @ICounterContractSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @ICounterContractSafeDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ICounterContractSafeDispatcher> {
         Option::Some(ICounterContractSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }

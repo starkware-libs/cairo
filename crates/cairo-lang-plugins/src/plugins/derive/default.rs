@@ -44,7 +44,7 @@ pub fn handle_default(
                     });
                 }
                 let default_variant = &default_variant.name;
-                formatdoc!("{ty}::{default_variant}(traits::Default::default())")
+                formatdoc!("{ty}::{default_variant}(core::traits::Default::default())")
             }
             TypeVariantInfo::Struct(members) => {
                 formatdoc! {"
@@ -53,7 +53,7 @@ pub fn handle_default(
                     }}",
                     indent_by(4, members.iter().map(|member| {
                         format!(
-                            "{member}: traits::Default::default(),",
+                            "{member}: core::traits::Default::default(),",
                             member=member.name,
                         )
                     }).join("\n"))

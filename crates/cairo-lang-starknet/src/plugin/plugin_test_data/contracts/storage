@@ -80,12 +80,12 @@ impls:
 impl OuterTypeDrop of Drop::<OuterType>;
 impl OuterTypeHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<OuterType, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<OuterType, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: OuterType) -> __State {
-        let state = hash::Hash::update_state(state, value.x);
+        let state = core::hash::Hash::update_state(state, value.x);
         state
     }
 }
