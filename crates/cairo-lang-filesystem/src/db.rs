@@ -41,12 +41,14 @@ pub enum CompatibilityVersion {
     /// The base version for compatibility.
     #[default]
     V0,
+    V2023_10,
 }
 impl CompatibilityVersion {
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
     pub fn prelude_submodule_name(&self) -> &str {
         match self {
             Self::V0 => "v0",
+            Self::V2023_10 => "v2023_10",
         }
     }
 }
