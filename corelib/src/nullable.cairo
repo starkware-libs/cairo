@@ -1,6 +1,6 @@
-use box::BoxTrait;
-use traits::Default;
-use traits::Felt252DictValue;
+use core::box::BoxTrait;
+use core::traits::Default;
+use core::traits::Felt252DictValue;
 
 #[derive(Copy, Drop)]
 extern type Nullable<T>;

@@ -1,9 +1,9 @@
-use option::OptionTrait;
-use result::ResultTrait;
-use traits::{Into, TryInto, Default, Felt252DictValue};
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use array::ArrayTrait;
-use array::SpanTrait;
+use core::option::OptionTrait;
+use core::result::ResultTrait;
+use core::traits::{Into, TryInto, Default, Felt252DictValue};
+use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use core::array::ArrayTrait;
+use core::array::SpanTrait;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -2321,12 +2321,12 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 // Zeroable impls
-impl U8Zeroable = zeroable::zero_based::ZeroableImpl<u8, integer::U8Zero>;
-impl U16Zeroable = zeroable::zero_based::ZeroableImpl<u16, integer::U16Zero>;
-impl U32Zeroable = zeroable::zero_based::ZeroableImpl<u32, integer::U32Zero>;
-impl U64Zeroable = zeroable::zero_based::ZeroableImpl<u64, integer::U64Zero>;
-impl U128Zeroable = zeroable::zero_based::ZeroableImpl<u128, integer::U128Zero>;
-impl U256Zeroable = zeroable::zero_based::ZeroableImpl<u256, integer::U256Zero>;
+impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
+impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
+impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
+impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
+impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
+impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
 
 // Zero trait implementations
 impl U8Zero of core::num::traits::Zero<u8> {

@@ -205,9 +205,9 @@ Block(
 
 //! > semantic_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo[array_inline_macro]:2:54
-            let mut __array_builder_macro_result__ = ArrayTrait::new();
-                                                     ^********^
+ --> lib.cairo[array_inline_macro]:2:67
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                                  ^********^
 
 //! > ==========================================================================
 
@@ -217,7 +217,6 @@ error: Type annotations needed. Failed to infer ?0
 test_expr_semantics
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > expr_code
 array![10, 11, 12].span()

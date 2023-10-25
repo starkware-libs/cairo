@@ -1,4 +1,5 @@
-use byte_array::BYTE_ARRAY_MAGIC;
+use core::byte_array::BYTE_ARRAY_MAGIC;
+use core::panics;
 
 #[test]
 #[should_panic(expected: 'short_string')]

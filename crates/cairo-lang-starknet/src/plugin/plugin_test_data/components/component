@@ -306,12 +306,12 @@ impls:
 impl MyTraitDispatcherCopy of Copy::<MyTraitDispatcher>;
 impl MyTraitDispatcherDrop of Drop::<MyTraitDispatcher>;
 impl MyTraitDispatcherSerde of Serde::<MyTraitDispatcher> {
-    fn serialize(self: @MyTraitDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @MyTraitDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<MyTraitDispatcher> {
         Option::Some(MyTraitDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -357,12 +357,12 @@ impls:
 impl MyTraitLibraryDispatcherCopy of Copy::<MyTraitLibraryDispatcher>;
 impl MyTraitLibraryDispatcherDrop of Drop::<MyTraitLibraryDispatcher>;
 impl MyTraitLibraryDispatcherSerde of Serde::<MyTraitLibraryDispatcher> {
-    fn serialize(self: @MyTraitLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @MyTraitLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<MyTraitLibraryDispatcher> {
         Option::Some(MyTraitLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -408,12 +408,12 @@ impls:
 impl MyTraitSafeLibraryDispatcherCopy of Copy::<MyTraitSafeLibraryDispatcher>;
 impl MyTraitSafeLibraryDispatcherDrop of Drop::<MyTraitSafeLibraryDispatcher>;
 impl MyTraitSafeLibraryDispatcherSerde of Serde::<MyTraitSafeLibraryDispatcher> {
-    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<MyTraitSafeLibraryDispatcher> {
         Option::Some(MyTraitSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -459,12 +459,12 @@ impls:
 impl MyTraitSafeDispatcherCopy of Copy::<MyTraitSafeDispatcher>;
 impl MyTraitSafeDispatcherDrop of Drop::<MyTraitSafeDispatcher>;
 impl MyTraitSafeDispatcherSerde of Serde::<MyTraitSafeDispatcher> {
-    fn serialize(self: @MyTraitSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @MyTraitSafeDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<MyTraitSafeDispatcher> {
         Option::Some(MyTraitSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }

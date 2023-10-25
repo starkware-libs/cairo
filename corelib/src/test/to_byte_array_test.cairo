@@ -1,5 +1,5 @@
-use test::test_utils::assert_eq;
-use to_byte_array::{FormatAsByteArray, AppendFormattedToByteArray};
+use core::test::test_utils::assert_eq;
+use core::to_byte_array::{FormatAsByteArray, AppendFormattedToByteArray};
 
 #[test]
 fn test_to_string_hex() {
