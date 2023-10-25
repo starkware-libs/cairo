@@ -1,7 +1,7 @@
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use traits::{Into, TryInto};
-use option::OptionTrait;
-use integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
+use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use core::traits::{Into, TryInto};
+use core::option::OptionTrait;
+use core::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
@@ -147,9 +147,9 @@ mod one_based {
 }
 
 // Oneable impls
-impl U8Oneable = math::one_based::OneableImpl<u8, integer::U8One>;
-impl U16Oneable = math::one_based::OneableImpl<u16, integer::U16One>;
-impl U32Oneable = math::one_based::OneableImpl<u32, integer::U32One>;
-impl U64Oneable = math::one_based::OneableImpl<u64, integer::U64One>;
-impl U128Oneable = math::one_based::OneableImpl<u128, integer::U128One>;
-impl U256Oneable = math::one_based::OneableImpl<u256, integer::U256One>;
+impl U8Oneable = math::one_based::OneableImpl<u8, core::integer::U8One>;
+impl U16Oneable = math::one_based::OneableImpl<u16, core::integer::U16One>;
+impl U32Oneable = math::one_based::OneableImpl<u32, core::integer::U32One>;
+impl U64Oneable = math::one_based::OneableImpl<u64, core::integer::U64One>;
+impl U128Oneable = math::one_based::OneableImpl<u128, core::integer::U128One>;
+impl U256Oneable = math::one_based::OneableImpl<u256, core::integer::U256One>;

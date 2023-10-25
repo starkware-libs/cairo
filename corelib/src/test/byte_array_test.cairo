@@ -1,4 +1,4 @@
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_append_byte() {
@@ -476,7 +476,7 @@ fn test_serde() {
 
 // ========= Test helper functions =========
 
-use debug::PrintTrait;
+use core::debug::PrintTrait;
 fn compare_byte_array(
     mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252
 ) {

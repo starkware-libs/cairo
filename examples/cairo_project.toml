@@ -1,2 +1,5 @@
 [crate_roots]
 examples = "."
+
+[crate_config.global]
+compatibility = "V2023_10"

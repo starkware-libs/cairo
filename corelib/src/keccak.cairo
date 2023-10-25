@@ -1,7 +1,7 @@
-use array::{Span, ArrayTrait, SpanTrait};
-use integer::TryInto;
-use option::OptionTrait;
-use starknet::SyscallResultTrait;
+use core::array::{Span, ArrayTrait, SpanTrait};
+use core::integer::TryInto;
+use core::option::OptionTrait;
+use core::starknet::SyscallResultTrait;
 
 const KECCAK_FULL_RATE_IN_BYTES: usize = 136;
 const KECCAK_FULL_RATE_IN_U64S: usize = 17;
@@ -13,7 +13,7 @@ fn u128_to_u64(input: u128) -> u64 {
 }
 
 fn u128_split(input: u128) -> (u64, u64) {
-    let (high, low) = integer::u128_safe_divmod(
+    let (high, low) = core::integer::u128_safe_divmod(
         input, 0x10000000000000000_u128.try_into().unwrap()
     );
 
@@ -48,10 +48,10 @@ fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
 }
 
 fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
-    let (high, low) = u128_split(integer::u128_byte_reverse(v.high));
+    let (high, low) = u128_split(core::integer::u128_byte_reverse(v.high));
     keccak_input.append(low);
     keccak_input.append(high);
-    let (high, low) = u128_split(integer::u128_byte_reverse(v.low));
+    let (high, low) = u128_split(core::integer::u128_byte_reverse(v.low));
     keccak_input.append(low);
     keccak_input.append(high);
 }
@@ -92,7 +92,7 @@ fn cairo_keccak(ref input: Array<u64>, last_input_word: u64, last_input_num_byte
 fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize) {
     let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
     // `last_block_num_full_words` is in range [0, KECCAK_FULL_RATE_IN_U64S - 1]
-    let (_, last_block_num_full_words) = integer::u32_safe_divmod(input.len(), words_divisor);
+    let (_, last_block_num_full_words) = core::integer::u32_safe_divmod(input.len(), words_divisor);
     // `last_block_num_bytes` is in range [0, KECCAK_FULL_RATE_IN_BYTES - 1]
     let last_block_num_bytes = last_block_num_full_words * BYTES_IN_U64_WORD + last_input_num_bytes;
 
@@ -121,7 +121,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
         } else {
             panic_with_felt252('Keccak last input word >7b')
         };
-        let (_, r) = integer::u64_safe_divmod(
+        let (_, r) = core::integer::u64_safe_divmod(
             last_input_word, first_padding_byte_part.try_into().unwrap()
         );
         first_padding_byte_part + r

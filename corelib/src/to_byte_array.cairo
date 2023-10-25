@@ -1,7 +1,7 @@
-use byte_array::ByteArrayTrait;
-use traits::{Into, TryInto};
-use option::OptionTrait;
-use zeroable::Zeroable;
+use core::byte_array::ByteArrayTrait;
+use core::traits::{Into, TryInto};
+use core::option::OptionTrait;
+use core::zeroable::Zeroable;
 
 /// Formats a type that behaves like uint to its Ascii representation and appends the formatted
 /// result into the given ByteArray.

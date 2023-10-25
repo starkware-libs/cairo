@@ -1,7 +1,8 @@
-use ec::{EcPointTrait, EcPointTryIntoNonZero, EcStateTrait};
-use option::OptionTrait;
-use test::test_utils::{assert_eq, assert_ne};
-use traits::{Into, TryInto};
+use core::ec::{EcPoint, EcPointTrait, EcPointTryIntoNonZero, EcStateTrait};
+use core::ecdsa;
+use core::option::OptionTrait;
+use core::test::test_utils::{assert_eq, assert_ne};
+use core::traits::{Into, TryInto};
 
 #[test]
 #[should_panic]

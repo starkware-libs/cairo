@@ -1,4 +1,4 @@
-use test::test_utils::{assert_eq, assert_ne, assert_gt};
+use core::test::test_utils::{assert_eq, assert_ne, assert_gt};
 
 #[test]
 #[should_panic(expected: ('panic_with_felt252()',))]

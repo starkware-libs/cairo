@@ -1,3 +1,5 @@
+use core::math;
+
 /// Helper for making a non-zero value.
 fn nz<N, +TryInto<N, NonZero<N>>>(n: N) -> NonZero<N> {
     n.try_into().unwrap()

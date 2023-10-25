@@ -1,10 +1,10 @@
-use array::ArrayTrait;
-use traits::Into;
-use option::Option;
+use core::array::ArrayTrait;
+use core::traits::Into;
+use core::option::Option;
 
 // Usage:
 //
-// use debug::PrintTrait;
+// use core::debug::PrintTrait;
 //
 // 1.print();
 //
@@ -125,7 +125,7 @@ impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
 
 /// Prints a byte array as a string.
 fn print_byte_array_as_string(self: @ByteArray) {
-    let mut serialized = array![byte_array::BYTE_ARRAY_MAGIC];
+    let mut serialized = array![core::byte_array::BYTE_ARRAY_MAGIC];
     self.serialize(ref serialized);
     print(serialized)
 }
