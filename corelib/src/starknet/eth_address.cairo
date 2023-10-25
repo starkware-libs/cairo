@@ -1,8 +1,8 @@
-use debug::PrintTrait;
-use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
-use option::{Option, OptionTrait};
-use serde::Serde;
-use traits::{Into, TryInto};
+use core::debug::PrintTrait;
+use core::integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use core::option::{Option, OptionTrait};
+use core::serde::Serde;
+use core::traits::{Into, TryInto};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
@@ -57,7 +57,7 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     }
 }
 
-impl EthAddressZeroable = zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
+impl EthAddressZeroable = core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
 impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {

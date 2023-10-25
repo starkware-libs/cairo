@@ -194,12 +194,12 @@ impls:
 impl IContractDispatcherCopy of Copy::<IContractDispatcher>;
 impl IContractDispatcherDrop of Drop::<IContractDispatcher>;
 impl IContractDispatcherSerde of Serde::<IContractDispatcher> {
-    fn serialize(self: @IContractDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @IContractDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractDispatcher> {
         Option::Some(IContractDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -245,12 +245,12 @@ impls:
 impl IContractLibraryDispatcherCopy of Copy::<IContractLibraryDispatcher>;
 impl IContractLibraryDispatcherDrop of Drop::<IContractLibraryDispatcher>;
 impl IContractLibraryDispatcherSerde of Serde::<IContractLibraryDispatcher> {
-    fn serialize(self: @IContractLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @IContractLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractLibraryDispatcher> {
         Option::Some(IContractLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -296,12 +296,12 @@ impls:
 impl IContractSafeLibraryDispatcherCopy of Copy::<IContractSafeLibraryDispatcher>;
 impl IContractSafeLibraryDispatcherDrop of Drop::<IContractSafeLibraryDispatcher>;
 impl IContractSafeLibraryDispatcherSerde of Serde::<IContractSafeLibraryDispatcher> {
-    fn serialize(self: @IContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @IContractSafeLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractSafeLibraryDispatcher> {
         Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -347,12 +347,12 @@ impls:
 impl IContractSafeDispatcherCopy of Copy::<IContractSafeDispatcher>;
 impl IContractSafeDispatcherDrop of Drop::<IContractSafeDispatcher>;
 impl IContractSafeDispatcherSerde of Serde::<IContractSafeDispatcher> {
-    fn serialize(self: @IContractSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @IContractSafeDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractSafeDispatcher> {
         Option::Some(IContractSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -470,12 +470,12 @@ impls:
 impl IContractDispatcherCopy of Copy::<IContractDispatcher>;
 impl IContractDispatcherDrop of Drop::<IContractDispatcher>;
 impl IContractDispatcherSerde of Serde::<IContractDispatcher> {
-    fn serialize(self: @IContractDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @IContractDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractDispatcher> {
         Option::Some(IContractDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -521,12 +521,12 @@ impls:
 impl IContractLibraryDispatcherCopy of Copy::<IContractLibraryDispatcher>;
 impl IContractLibraryDispatcherDrop of Drop::<IContractLibraryDispatcher>;
 impl IContractLibraryDispatcherSerde of Serde::<IContractLibraryDispatcher> {
-    fn serialize(self: @IContractLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @IContractLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractLibraryDispatcher> {
         Option::Some(IContractLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -572,12 +572,12 @@ impls:
 impl IContractSafeLibraryDispatcherCopy of Copy::<IContractSafeLibraryDispatcher>;
 impl IContractSafeLibraryDispatcherDrop of Drop::<IContractSafeLibraryDispatcher>;
 impl IContractSafeLibraryDispatcherSerde of Serde::<IContractSafeLibraryDispatcher> {
-    fn serialize(self: @IContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+    fn serialize(self: @IContractSafeLibraryDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeLibraryDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractSafeLibraryDispatcher> {
         Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+            class_hash: Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -623,12 +623,12 @@ impls:
 impl IContractSafeDispatcherCopy of Copy::<IContractSafeDispatcher>;
 impl IContractSafeDispatcherDrop of Drop::<IContractSafeDispatcher>;
 impl IContractSafeDispatcherSerde of Serde::<IContractSafeDispatcher> {
-    fn serialize(self: @IContractSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+    fn serialize(self: @IContractSafeDispatcher, ref output: Array<felt252>) {
+        Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeDispatcher> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<IContractSafeDispatcher> {
         Option::Some(IContractSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+            contract_address: Serde::deserialize(ref serialized)?,
         })
     }
 }

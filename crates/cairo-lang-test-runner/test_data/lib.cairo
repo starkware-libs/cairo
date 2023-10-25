@@ -8,8 +8,6 @@ trait IBalance<T> {
 
 #[starknet::contract]
 mod Balance {
-    use traits::Into;
-
     #[storage]
     struct Storage {
         value: u128,
@@ -33,12 +31,7 @@ mod Balance {
 
 #[cfg(test)]
 mod tests {
-    use array::ArrayTrait;
-    use core::result::ResultTrait;
-    use core::traits::Into;
-    use option::OptionTrait;
     use starknet::syscalls::deploy_syscall;
-    use traits::TryInto;
 
     use test::test_utils::assert_eq;
 

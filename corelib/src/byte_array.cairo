@@ -1,15 +1,15 @@
-use array::{ArrayTrait, SpanTrait};
-use bytes_31::{
+use core::array::{ArrayTrait, SpanTrait};
+use core::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
     POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
-use clone::Clone;
-use cmp::min;
-use integer::{u128_safe_divmod, U32TryIntoNonZero};
-use option::OptionTrait;
-use traits::{Into, TryInto};
-use serde::Serde;
-use zeroable::NonZeroIntoImpl;
+use core::clone::Clone;
+use core::cmp::min;
+use core::integer::{u128_safe_divmod, U32TryIntoNonZero};
+use core::option::OptionTrait;
+use core::traits::{Into, TryInto};
+use core::serde::Serde;
+use core::zeroable::NonZeroIntoImpl;
 
 /// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
 /// magic as one of the felt252s indicates that right after it you should expect a serialized
@@ -34,7 +34,7 @@ struct ByteArray {
     pending_word_len: usize,
 }
 
-impl ByteArrayStringLiteral of string::StringLiteral<ByteArray>;
+impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
 
 #[generate_trait]
 impl ByteArrayImpl of ByteArrayTrait {
