@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::db::CompatibilityVersion;
 use indoc::indoc;
 
 use crate::{AllCratesConfig, ProjectConfigContent, SingleCrateConfig};
@@ -15,7 +16,10 @@ fn test_serde() {
         crate_config: AllCratesConfig {
             global: SingleCrateConfig { compatibility: Default::default() },
             crate_override: [
-                ("crate1".into(), SingleCrateConfig { compatibility: Default::default() }),
+                (
+                    "crate1".into(),
+                    SingleCrateConfig { compatibility: CompatibilityVersion::V2023_10 },
+                ),
                 ("crate3".into(), SingleCrateConfig { compatibility: Default::default() }),
             ]
             .into_iter()
@@ -35,7 +39,7 @@ fn test_serde() {
             compatibility = "0"
 
             [crate_config.crate_override.crate1]
-            compatibility = "0"
+            compatibility = "2023_10"
 
             [crate_config.crate_override.crate3]
             compatibility = "0"
