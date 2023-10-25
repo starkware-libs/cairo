@@ -12,7 +12,7 @@ pub fn handle_partial_eq(
     stable_ptr: SyntaxStablePtrId,
     result: &mut DeriveResult,
 ) {
-    let header = info.format_impl_header("PartialEq", &["PartialEq"]);
+    let header = info.format_impl_header("core::traits", "PartialEq", &["core::traits::PartialEq"]);
     let full_typename = info.full_typename();
     let body = indent_by(
         8,

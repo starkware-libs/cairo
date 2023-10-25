@@ -1,6 +1,6 @@
-use box::BoxTrait;
-use traits::Default;
-use traits::Felt252DictValue;
+use core::box::BoxTrait;
+use core::traits::Default;
+use core::traits::Felt252DictValue;
 
 #[derive(Copy, Drop)]
 extern type Nullable<T>;
@@ -19,7 +19,7 @@ extern fn match_nullable_snapshot<T>(value: @Nullable<T>) -> FromNullableResult<
 impl NullableImpl<T> of NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T {
         match match_nullable(self) {
-            FromNullableResult::Null => panic_with_felt252('Attempted to deref null value'),
+            FromNullableResult::Null => core::panic_with_felt252('Attempted to deref null value'),
             FromNullableResult::NotNull(value) => value.unbox(),
         }
     }

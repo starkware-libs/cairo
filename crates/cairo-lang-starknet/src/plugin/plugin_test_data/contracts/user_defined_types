@@ -334,15 +334,15 @@ const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420
 
 impls:
 
-impl WrappedFelt252Drop of Drop::<WrappedFelt252>;
+impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
 impl WrappedFelt252Hash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<WrappedFelt252, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<WrappedFelt252, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: WrappedFelt252) -> __State {
-        let state = hash::Hash::update_state(state, value.value);
+        let state = core::hash::Hash::update_state(state, value.value);
         state
     }
 }
@@ -385,24 +385,24 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 
 impls:
 
-impl ZeroSizeDrop of Drop::<ZeroSize>;
+impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
 impl ZeroSizeHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<ZeroSize, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<ZeroSize, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: ZeroSize) -> __State {
         
         state
     }
 }
-impl ZeroSizeSerde of Serde::<ZeroSize> {
-    fn serialize(self: @ZeroSize, ref output: array::Array<felt252>) {
+impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
+    fn serialize(self: @ZeroSize, ref output: core::array::Array<felt252>) {
         
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ZeroSize> {
-        Option::Some(ZeroSize {
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ZeroSize> {
+        core::option::Option::Some(ZeroSize {
             
         })
     }
@@ -446,20 +446,20 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 
 impls:
 
-impl SimpleEnumDrop of Drop::<SimpleEnum>;
-impl SimpleEnumSerde of Serde::<SimpleEnum> {
-    fn serialize(self: @SimpleEnum, ref output: array::Array<felt252>) {
+impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
+impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
+    fn serialize(self: @SimpleEnum, ref output: core::array::Array<felt252>) {
         match self {
-            SimpleEnum::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            SimpleEnum::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+            SimpleEnum::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
+            SimpleEnum::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<SimpleEnum> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-        Option::Some(
-            if idx == 0 { SimpleEnum::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { SimpleEnum::B(serde::Serde::deserialize(ref serialized)?) }
-            else { return Option::None; }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<SimpleEnum> {
+        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        core::option::Option::Some(
+            if idx == 0 { SimpleEnum::A(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { SimpleEnum::B(core::serde::Serde::deserialize(ref serialized)?) }
+            else { return core::option::Option::None; }
         )
     }
 }
@@ -544,22 +544,22 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 
 impls:
 
-impl EnumWithDefaultDrop of Drop::<EnumWithDefault>;
-impl EnumWithDefaultSerde of Serde::<EnumWithDefault> {
-    fn serialize(self: @EnumWithDefault, ref output: array::Array<felt252>) {
+impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
+impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
+    fn serialize(self: @EnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            EnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<EnumWithDefault> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-        Option::Some(
-            if idx == 0 { EnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { EnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { EnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
-            else { return Option::None; }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<EnumWithDefault> {
+        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        core::option::Option::Some(
+            if idx == 0 { EnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { EnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { EnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?) }
+            else { return core::option::Option::None; }
         )
     }
 }
@@ -666,22 +666,22 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 
 impls:
 
-impl BadEnumWithDefaultDrop of Drop::<BadEnumWithDefault>;
-impl BadEnumWithDefaultSerde of Serde::<BadEnumWithDefault> {
-    fn serialize(self: @BadEnumWithDefault, ref output: array::Array<felt252>) {
+impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
+impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
+    fn serialize(self: @BadEnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            BadEnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<BadEnumWithDefault> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-        Option::Some(
-            if idx == 0 { BadEnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { BadEnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { BadEnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
-            else { return Option::None; }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<BadEnumWithDefault> {
+        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        core::option::Option::Some(
+            if idx == 0 { BadEnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { BadEnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { BadEnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?) }
+            else { return core::option::Option::None; }
         )
     }
 }
@@ -689,7 +689,7 @@ impl BadEnumWithDefaultSerde of Serde::<BadEnumWithDefault> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:

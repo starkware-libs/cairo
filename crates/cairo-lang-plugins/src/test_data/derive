@@ -76,89 +76,89 @@ enum TwoVariantEnum {
 
 #[derive(Copy, Drop)]
 extern type ExternType;
-impl ACopy of Copy::<A>;
-impl ADefault of Default::<A> {
+impl ACopy of core::traits::Copy::<A>;
+impl ADefault of core::traits::Default::<A> {
     fn default() -> A {
         A {
             
         }
     }
 }
-impl ADrop of Drop::<A>;
+impl ADrop of core::traits::Drop::<A>;
 impl AHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<A, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<A, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: A) -> __State {
         
         state
     }
 }
-impl BCopy of Copy::<B>;
-impl BDefault of Default::<B> {
+impl BCopy of core::traits::Copy::<B>;
+impl BDefault of core::traits::Default::<B> {
     fn default() -> B {
         B {
             
         }
     }
 }
-impl BDrop of Drop::<B>;
+impl BDrop of core::traits::Drop::<B>;
 impl BHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<B, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<B, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: B) -> __State {
         
         state
     }
 }
-impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
+impl TwoMemberStructClone of core::clone::Clone::<TwoMemberStruct> {
     fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
         TwoMemberStruct {
-            a: Clone::clone(self.a),
-            b: Clone::clone(self.b),
+            a: core::clone::Clone::clone(self.a),
+            b: core::clone::Clone::clone(self.b),
         }
     }
 }
-impl TwoMemberStructDefault of Default::<TwoMemberStruct> {
+impl TwoMemberStructDefault of core::traits::Default::<TwoMemberStruct> {
     fn default() -> TwoMemberStruct {
         TwoMemberStruct {
-            a: traits::Default::default(),
-            b: traits::Default::default(),
+            a: core::traits::Default::default(),
+            b: core::traits::Default::default(),
         }
     }
 }
-impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
+impl TwoMemberStructDestruct of core::traits::Destruct::<TwoMemberStruct> {
     fn destruct(self: TwoMemberStruct) nopanic {
         let TwoMemberStruct { a, b } = self;
-        traits::Destruct::destruct(a);
-        traits::Destruct::destruct(b);
+        core::traits::Destruct::destruct(a);
+        core::traits::Destruct::destruct(b);
     }
 }
 impl TwoMemberStructHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<TwoMemberStruct, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<TwoMemberStruct, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberStruct) -> __State {
-        let state = hash::Hash::update_state(state, value.a);
-        let state = hash::Hash::update_state(state, value.b);
+        let state = core::hash::Hash::update_state(state, value.a);
+        let state = core::hash::Hash::update_state(state, value.b);
         state
     }
 }
-impl TwoMemberStructPanicDestruct of PanicDestruct::<TwoMemberStruct> {
+impl TwoMemberStructPanicDestruct of core::traits::PanicDestruct::<TwoMemberStruct> {
     fn panic_destruct(self: TwoMemberStruct, ref panic: Panic) nopanic {
         let TwoMemberStruct { a, b } = self;
-        traits::PanicDestruct::panic_destruct(a, ref panic);
-        traits::PanicDestruct::panic_destruct(b, ref panic);
+        core::traits::PanicDestruct::panic_destruct(a, ref panic);
+        core::traits::PanicDestruct::panic_destruct(b, ref panic);
     }
 }
-impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
+impl TwoMemberStructPartialEq of core::traits::PartialEq::<TwoMemberStruct> {
     fn eq(lhs: @TwoMemberStruct, rhs: @TwoMemberStruct) -> bool {
         lhs.a == rhs.a && lhs.b == rhs.b
     }
@@ -167,60 +167,60 @@ impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
         !(lhs == rhs)
     }
 }
-impl TwoMemberStructSerde of Serde::<TwoMemberStruct> {
-    fn serialize(self: @TwoMemberStruct, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.a, ref output);
-        serde::Serde::serialize(self.b, ref output)
+impl TwoMemberStructSerde of core::serde::Serde::<TwoMemberStruct> {
+    fn serialize(self: @TwoMemberStruct, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.a, ref output);
+        core::serde::Serde::serialize(self.b, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct> {
-        Option::Some(TwoMemberStruct {
-            a: serde::Serde::deserialize(ref serialized)?,
-            b: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberStruct> {
+        core::option::Option::Some(TwoMemberStruct {
+            a: core::serde::Serde::deserialize(ref serialized)?,
+            b: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
-impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T>>;
-impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T>> {
+impl GenericStructCopy<T, +core::traits::Copy<T>> of core::traits::Copy::<GenericStruct<T>>;
+impl GenericStructDestruct<T, +core::traits::Destruct<T>> of core::traits::Destruct::<GenericStruct<T>> {
     fn destruct(self: GenericStruct<T>) nopanic {
         let GenericStruct { a } = self;
-        traits::Destruct::destruct(a);
+        core::traits::Destruct::destruct(a);
     }
 }
-impl GenericStructPanicDestruct<T, impl TPanicDestruct: PanicDestruct<T>> of PanicDestruct::<GenericStruct<T>> {
+impl GenericStructPanicDestruct<T, +core::traits::PanicDestruct<T>> of core::traits::PanicDestruct::<GenericStruct<T>> {
     fn panic_destruct(self: GenericStruct<T>, ref panic: Panic) nopanic {
         let GenericStruct { a } = self;
-        traits::PanicDestruct::panic_destruct(a, ref panic);
+        core::traits::PanicDestruct::panic_destruct(a, ref panic);
     }
 }
-impl GenericStructDefault<T, impl TDefault: Default<T>, impl TDestruct: Destruct<T>> of Default::<GenericStruct<T>> {
+impl GenericStructDefault<T, +core::traits::Default<T>, +core::traits::Destruct<T>> of core::traits::Default::<GenericStruct<T>> {
     fn default() -> GenericStruct<T> {
         GenericStruct {
-            a: traits::Default::default(),
+            a: core::traits::Default::default(),
         }
     }
 }
 impl GenericStructHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>,
-    T, +Hash<T, __State, __SHashState>, +Drop<T>
-> of hash::Hash<GenericStruct<T>, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>,
+    T, +core::hash::Hash<T, __State, __SHashState>, +Drop<T>
+> of core::hash::Hash<GenericStruct<T>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
-        let state = hash::Hash::update_state(state, value.a);
+        let state = core::hash::Hash::update_state(state, value.a);
         state
     }
 }
-impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, impl TDrop: Drop<T>, impl UDrop: Drop<U>> of Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
-impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TClone: Clone<T>, impl TDestruct: Destruct<T>, impl UClone: Clone<U>, impl UDestruct: Destruct<U>> of Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::Drop<T>, +core::traits::Drop<U>> of core::traits::Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
+impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, +core::clone::Clone<T>, +Destruct<T>, +core::clone::Clone<U>, +Destruct<U>> of core::clone::Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn clone(self: @TwoMemberGenericStruct<T, U, USomeTrait>) -> TwoMemberGenericStruct<T, U, USomeTrait> {
         TwoMemberGenericStruct {
-            a: Clone::clone(self.a),
-            b: Clone::clone(self.b),
+            a: core::clone::Clone::clone(self.a),
+            b: core::clone::Clone::clone(self.b),
         }
     }
 }
-impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl TPartialEq: PartialEq<T>, impl UPartialEq: PartialEq<U>> of PartialEq::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::PartialEq<T>, +core::traits::PartialEq<U>> of core::traits::PartialEq::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn eq(lhs: @TwoMemberGenericStruct<T, U, USomeTrait>, rhs: @TwoMemberGenericStruct<T, U, USomeTrait>) -> bool {
         lhs.a == rhs.a && lhs.b == rhs.b
     }
@@ -229,80 +229,80 @@ impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, imp
         !(lhs == rhs)
     }
 }
-impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TSerde: Serde<T>, impl TDestruct: Destruct<T>, impl USerde: Serde<U>, impl UDestruct: Destruct<U>> of Serde::<TwoMemberGenericStruct<T, U, USomeTrait>> {
-    fn serialize(self: @TwoMemberGenericStruct<T, U, USomeTrait>, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.a, ref output);
-        serde::Serde::serialize(self.b, ref output)
+impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, +core::serde::Serde<T>, +core::traits::Destruct<T>, +core::serde::Serde<U>, +core::traits::Destruct<U>> of core::serde::Serde::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+    fn serialize(self: @TwoMemberGenericStruct<T, U, USomeTrait>, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.a, ref output);
+        core::serde::Serde::serialize(self.b, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberGenericStruct<T, U, USomeTrait>> {
-        Option::Some(TwoMemberGenericStruct {
-            a: serde::Serde::deserialize(ref serialized)?,
-            b: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberGenericStruct<T, U, USomeTrait>> {
+        core::option::Option::Some(TwoMemberGenericStruct {
+            a: core::serde::Serde::deserialize(ref serialized)?,
+            b: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
 impl TwoMemberGenericStructHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>,
-    T, U, impl USomeTrait: SomeTrait<U, T>, +Hash<T, __State, __SHashState>, +Drop<T>, +Hash<U, __State, __SHashState>, +Drop<U>
-> of hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>,
+    T, U, impl USomeTrait: SomeTrait<U, T>, +core::hash::Hash<T, __State, __SHashState>, +Drop<T>, +core::hash::Hash<U, __State, __SHashState>, +Drop<U>
+> of core::hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
-        let state = hash::Hash::update_state(state, value.a);
-        let state = hash::Hash::update_state(state, value.b);
+        let state = core::hash::Hash::update_state(state, value.a);
+        let state = core::hash::Hash::update_state(state, value.b);
         state
     }
 }
-impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
+impl TwoVariantEnumClone of core::clone::Clone::<TwoVariantEnum> {
     fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
         match self {
-            TwoVariantEnum::First(x) => TwoVariantEnum::First(Clone::clone(x)),
-            TwoVariantEnum::Second(x) => TwoVariantEnum::Second(Clone::clone(x)),
+            TwoVariantEnum::First(x) => TwoVariantEnum::First(core::clone::Clone::clone(x)),
+            TwoVariantEnum::Second(x) => TwoVariantEnum::Second(core::clone::Clone::clone(x)),
         }
     }
 }
-impl TwoVariantEnumDefault of Default::<TwoVariantEnum> {
+impl TwoVariantEnumDefault of core::traits::Default::<TwoVariantEnum> {
     fn default() -> TwoVariantEnum {
-        TwoVariantEnum::Second(traits::Default::default())
+        TwoVariantEnum::Second(core::traits::Default::default())
     }
 }
-impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
+impl TwoVariantEnumDestruct of core::traits::Destruct::<TwoVariantEnum> {
     fn destruct(self: TwoVariantEnum) nopanic {
         match self {
-            TwoVariantEnum::First(x) => traits::Destruct::destruct(x),
-            TwoVariantEnum::Second(x) => traits::Destruct::destruct(x),
+            TwoVariantEnum::First(x) => core::traits::Destruct::destruct(x),
+            TwoVariantEnum::Second(x) => core::traits::Destruct::destruct(x),
         }
     }
 }
 impl TwoVariantEnumHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<TwoVariantEnum, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<TwoVariantEnum, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
-                let state = hash::Hash::update_state(state, 0);
-                hash::Hash::update_state(state, x)
+                let state = core::hash::Hash::update_state(state, 0);
+                core::hash::Hash::update_state(state, x)
             },
             TwoVariantEnum::Second(x) => {
-                let state = hash::Hash::update_state(state, 1);
-                hash::Hash::update_state(state, x)
+                let state = core::hash::Hash::update_state(state, 1);
+                core::hash::Hash::update_state(state, x)
             },
         }
     }
 }
-impl TwoVariantEnumPanicDestruct of PanicDestruct::<TwoVariantEnum> {
+impl TwoVariantEnumPanicDestruct of core::traits::PanicDestruct::<TwoVariantEnum> {
     fn panic_destruct(self: TwoVariantEnum, ref panic: Panic) nopanic {
         match self {
-            TwoVariantEnum::First(x) => traits::PanicDestruct::panic_destruct(x, ref panic),
-            TwoVariantEnum::Second(x) => traits::PanicDestruct::panic_destruct(x, ref panic),
+            TwoVariantEnum::First(x) => core::traits::PanicDestruct::panic_destruct(x, ref panic),
+            TwoVariantEnum::Second(x) => core::traits::PanicDestruct::panic_destruct(x, ref panic),
         }
     }
 }
-impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
+impl TwoVariantEnumPartialEq of core::traits::PartialEq::<TwoVariantEnum> {
     fn eq(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         match lhs {
             TwoVariantEnum::First(x) => match rhs {
@@ -320,24 +320,24 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
         !(lhs == rhs)
     }
 }
-impl TwoVariantEnumSerde of Serde::<TwoVariantEnum> {
-    fn serialize(self: @TwoVariantEnum, ref output: array::Array<felt252>) {
+impl TwoVariantEnumSerde of core::serde::Serde::<TwoVariantEnum> {
+    fn serialize(self: @TwoVariantEnum, ref output: core::array::Array<felt252>) {
         match self {
-            TwoVariantEnum::First(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
-            TwoVariantEnum::Second(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::First(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::Second(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {
-        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-        Option::Some(
-            if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref serialized)?) }
-            else { return Option::None; }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoVariantEnum> {
+        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        core::option::Option::Some(
+            if idx == 0 { TwoVariantEnum::First(core::serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { TwoVariantEnum::Second(core::serde::Serde::deserialize(ref serialized)?) }
+            else { return core::option::Option::None; }
         )
     }
 }
-impl ExternTypeCopy of Copy::<ExternType>;
-impl ExternTypeDrop of Drop::<ExternType>;
+impl ExternTypeCopy of core::traits::Copy::<ExternType>;
+impl ExternTypeDrop of core::traits::Drop::<ExternType>;
 
 //! > expected_diagnostics
 
@@ -407,9 +407,9 @@ enum TooManyDefaultValues {
     #[default]
     Second,
 }
-impl TooManyDefaultValuesDefault of Default::<TooManyDefaultValues> {
+impl TooManyDefaultValuesDefault of core::traits::Default::<TooManyDefaultValues> {
     fn default() -> TooManyDefaultValues {
-        TooManyDefaultValues::First(traits::Default::default())
+        TooManyDefaultValues::First(core::traits::Default::default())
     }
 }
 

@@ -1,9 +1,9 @@
-use array::ArrayTrait;
-use math::{u256_mul_mod_n, inv_mod};
-use option::OptionTrait;
+use core::array::ArrayTrait;
+use core::math::{u256_mul_mod_n, inv_mod};
+use core::option::OptionTrait;
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
-use traits::{Into, TryInto};
-use integer::U256TryIntoNonZero;
+use core::traits::{Into, TryInto};
+use core::integer::U256TryIntoNonZero;
 
 /// Secp256{k/r}1 ECDSA signature.
 #[derive(Copy, Drop, PartialEq, Serde, starknet::Store, Hash)]

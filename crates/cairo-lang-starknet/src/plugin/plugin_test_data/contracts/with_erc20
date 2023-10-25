@@ -150,7 +150,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
         ContractStateEventEmitter::emit(ref contract, Event::ERC20Token(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -333,7 +333,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
         ContractStateEventEmitter::emit(ref contract, Event::ERC20Token(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>

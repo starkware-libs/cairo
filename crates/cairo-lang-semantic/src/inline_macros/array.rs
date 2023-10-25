@@ -19,11 +19,11 @@ impl InlineMacroExprPlugin for ArrayMacro {
         let mut builder = PatchBuilder::new(db);
         builder.add_str(
             "{
-            let mut __array_builder_macro_result__ = ArrayTrait::new();",
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();",
         );
         for arg in args.arguments(db).elements(db) {
             builder.add_str(
-                "\n            array::ArrayTrait::append(ref __array_builder_macro_result__, ",
+                "\n            core::array::ArrayTrait::append(ref __array_builder_macro_result__,",
             );
             builder.add_node(arg.as_syntax_node());
             builder.add_str(");");

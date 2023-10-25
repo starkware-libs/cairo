@@ -124,8 +124,8 @@ mod counter_contract {
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -291,7 +291,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -374,7 +374,7 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
         Event::OwnableEvent(self)
     }
 }
-impl CounterIncreasedDrop of Drop::<CounterIncreased>;
+impl CounterIncreasedDrop of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
         self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -390,7 +390,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
         Option::Some(CounterIncreased {amount, })
     }
 }
-impl CounterDecreasedDrop of Drop::<CounterDecreased>;
+impl CounterDecreasedDrop of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
         self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -611,15 +611,15 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     }
 
 }
-impl ICounterContractDispatcherCopy of Copy::<ICounterContractDispatcher>;
-impl ICounterContractDispatcherDrop of Drop::<ICounterContractDispatcher>;
-impl ICounterContractDispatcherSerde of Serde::<ICounterContractDispatcher> {
-    fn serialize(self: @ICounterContractDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl ICounterContractDispatcherCopy of core::traits::Copy::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherDrop of core::traits::Drop::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherSerde of core::serde::Serde::<ICounterContractDispatcher> {
+    fn serialize(self: @ICounterContractDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractDispatcher> {
-        Option::Some(ICounterContractDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractDispatcher> {
+        core::option::Option::Some(ICounterContractDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -654,15 +654,15 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-impl ICounterContractLibraryDispatcherCopy of Copy::<ICounterContractLibraryDispatcher>;
-impl ICounterContractLibraryDispatcherDrop of Drop::<ICounterContractLibraryDispatcher>;
-impl ICounterContractLibraryDispatcherSerde of Serde::<ICounterContractLibraryDispatcher> {
-    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl ICounterContractLibraryDispatcherCopy of core::traits::Copy::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherDrop of core::traits::Drop::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherSerde of core::serde::Serde::<ICounterContractLibraryDispatcher> {
+    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractLibraryDispatcher> {
-        Option::Some(ICounterContractLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractLibraryDispatcher> {
+        core::option::Option::Some(ICounterContractLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -697,15 +697,15 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl ICounterContractSafeLibraryDispatcherCopy of Copy::<ICounterContractSafeLibraryDispatcher>;
-impl ICounterContractSafeLibraryDispatcherDrop of Drop::<ICounterContractSafeLibraryDispatcher>;
-impl ICounterContractSafeLibraryDispatcherSerde of Serde::<ICounterContractSafeLibraryDispatcher> {
-    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl ICounterContractSafeLibraryDispatcherCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherSerde of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
+    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeLibraryDispatcher> {
-        Option::Some(ICounterContractSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeLibraryDispatcher> {
+        core::option::Option::Some(ICounterContractSafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -740,15 +740,15 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl ICounterContractSafeDispatcherCopy of Copy::<ICounterContractSafeDispatcher>;
-impl ICounterContractSafeDispatcherDrop of Drop::<ICounterContractSafeDispatcher>;
-impl ICounterContractSafeDispatcherSerde of Serde::<ICounterContractSafeDispatcher> {
-    fn serialize(self: @ICounterContractSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl ICounterContractSafeDispatcherCopy of core::traits::Copy::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherDrop of core::traits::Drop::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherSerde of core::serde::Serde::<ICounterContractSafeDispatcher> {
+    fn serialize(self: @ICounterContractSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeDispatcher> {
-        Option::Some(ICounterContractSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeDispatcher> {
+        core::option::Option::Some(ICounterContractSafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -891,8 +891,8 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -1058,7 +1058,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1141,7 +1141,7 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
         Event::OwnableEvent(self)
     }
 }
-impl CounterIncreasedDrop of Drop::<CounterIncreased>;
+impl CounterIncreasedDrop of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
         self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1157,7 +1157,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
         Option::Some(CounterIncreased {amount, })
     }
 }
-impl CounterDecreasedDrop of Drop::<CounterDecreased>;
+impl CounterDecreasedDrop of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
         self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>

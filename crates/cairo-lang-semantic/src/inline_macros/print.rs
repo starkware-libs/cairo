@@ -70,7 +70,7 @@ fn generate_code_inner(
             "{{
                 let{maybe_mut} ba = format!($format_string$, $arg$);
                 {maybe_append_newline}
-                debug::print_byte_array_as_string(@ba);
+                core::debug::print_byte_array_as_string(@ba);
             }}"
         ),
         &[

@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
-use array::ArrayTrait;
-use array::SpanTrait;
-use traits::Into;
+use core::array::ArrayTrait;
+use core::array::SpanTrait;
+use core::traits::Into;
 
 // A general cheatcode function used to simplify implementation of Starknet testing functions.
 // External users of the cairo crates can also implement their own cheatcodes
@@ -73,7 +73,7 @@ fn set_signature(signature: Span<felt252>) {
 // Pop the earliest unpopped logged event for the contract.
 fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>)> {
     let mut log = cheatcode::<'pop_log'>(array![address.into()].span());
-    Option::Some((serde::Serde::deserialize(ref log)?, serde::Serde::deserialize(ref log)?,))
+    Option::Some((Serde::deserialize(ref log)?, Serde::deserialize(ref log)?,))
 }
 
 // Pop the earliest unpopped logged event for the contract as the requested type.
@@ -87,9 +87,6 @@ fn pop_log<T, +starknet::Event<T>>(address: ContractAddress) -> Option<T> {
 fn pop_l2_to_l1_message(address: ContractAddress) -> Option<(felt252, Span<felt252>)> {
     let mut l2_to_l1_message = cheatcode::<'pop_l2_to_l1_message'>(array![address.into()].span());
     Option::Some(
-        (
-            serde::Serde::deserialize(ref l2_to_l1_message)?,
-            serde::Serde::deserialize(ref l2_to_l1_message)?,
-        )
+        (Serde::deserialize(ref l2_to_l1_message)?, Serde::deserialize(ref l2_to_l1_message)?,)
     )
 }
