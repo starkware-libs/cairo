@@ -314,6 +314,8 @@ use poseidon::Poseidon;
 // Debug.
 mod debug;
 
+mod fmt;
+
 // Starknet
 mod starknet;
 use starknet::System;

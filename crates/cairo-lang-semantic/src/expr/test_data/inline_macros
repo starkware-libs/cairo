@@ -107,7 +107,7 @@ error: Only literal constants are currently supported.
 const e: felt252 = consteval_int!(234 < 5);
                    ^*********************^
 
-error: Plugin diagnostic: Macro consteval_int does not support this bracket type
+error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type
  --> lib.cairo:11:20
 const e: felt252 = consteval_int![4 + 5];
                    ^*******************^
@@ -122,7 +122,7 @@ error: Only literal constants are currently supported.
 const e: felt252 = consteval_int![4 + 5];
                    ^*******************^
 
-error: Plugin diagnostic: Macro consteval_int does not support this bracket type
+error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type
  --> lib.cairo:13:20
 const f: felt252 = consteval_int!{4 + 5};
                    ^*******************^
@@ -161,7 +161,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Macro array does not support this bracket type
+error: Plugin diagnostic: Macro `array` does not support this bracket type
  --> lib.cairo:2:13
     let x = array!(0);
             ^*******^
@@ -175,6 +175,146 @@ error: Plugin diagnostic: Unexpected argument type. Expected: "core::felt252", f
  --> lib.cairo:3:31
     let x = array![0_felt252, 1_u8];
                               ^**^
+
+//! > ==========================================================================
+
+//! > Test bad format! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "hello";
+
+   // Bad brackets.
+   format!["{}", ba];
+
+   // Less than 2 arguments.
+   format!(ba);
+
+   // More than 2 arguments.
+   format!("{}", ba, 1);
+
+   // First argument is not "{}".
+   format!("{}{}", ba);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `format` does not support this bracket type
+ --> lib.cairo:6:4
+   format!["{}", ba];
+   ^***************^
+
+error: Inline macro `format` failed.
+ --> lib.cairo:6:4
+   format!["{}", ba];
+   ^***************^
+
+error: Plugin diagnostic: Currently `format` macro must have exactly two unnamed arguments.
+ --> lib.cairo:9:4
+   format!(ba);
+   ^*********^
+
+error: Inline macro `format` failed.
+ --> lib.cairo:9:4
+   format!(ba);
+   ^*********^
+
+error: Plugin diagnostic: Currently `format` macro must have exactly two unnamed arguments.
+ --> lib.cairo:12:4
+   format!("{}", ba, 1);
+   ^******************^
+
+error: Inline macro `format` failed.
+ --> lib.cairo:12:4
+   format!("{}", ba, 1);
+   ^******************^
+
+error: Plugin diagnostic: Currently, the `format` macro only supports `"{}"` as the first argument (format string).
+ --> lib.cairo:15:4
+   format!("{}{}", ba);
+   ^*****************^
+
+error: Inline macro `format` failed.
+ --> lib.cairo:15:4
+   format!("{}{}", ba);
+   ^*****************^
+
+//! > ==========================================================================
+
+//! > Test bad print! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "hello";
+
+   // Bad brackets.
+   print!["{}", ba];
+
+   // Less than 2 arguments.
+   print!(ba);
+
+   // More than 2 arguments.
+   print!("{}", ba, 1);
+
+   // First argument is not "{}".
+   print!("{}{}", ba);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `print` does not support this bracket type
+ --> lib.cairo:6:4
+   print!["{}", ba];
+   ^**************^
+
+error: Inline macro `print` failed.
+ --> lib.cairo:6:4
+   print!["{}", ba];
+   ^**************^
+
+error: Plugin diagnostic: Currently `print` macro must have exactly two unnamed arguments.
+ --> lib.cairo:9:4
+   print!(ba);
+   ^********^
+
+error: Inline macro `print` failed.
+ --> lib.cairo:9:4
+   print!(ba);
+   ^********^
+
+error: Plugin diagnostic: Currently `print` macro must have exactly two unnamed arguments.
+ --> lib.cairo:12:4
+   print!("{}", ba, 1);
+   ^*****************^
+
+error: Inline macro `print` failed.
+ --> lib.cairo:12:4
+   print!("{}", ba, 1);
+   ^*****************^
+
+error: Plugin diagnostic: Currently, the `print` macro only supports `"{}"` as the first argument (format string).
+ --> lib.cairo:15:4
+   print!("{}{}", ba);
+   ^****************^
+
+error: Inline macro `print` failed.
+ --> lib.cairo:15:4
+   print!("{}{}", ba);
+   ^****************^
 
 //! > ==========================================================================
 
