@@ -21,11 +21,28 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
+    /// The compatibility version for the crate.
+    pub compatibility_version: CompatibilityVersion,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root }
+        Self { root, compatibility_version: CompatibilityVersion::default() }
+    }
+}
+
+/// The versions of compatibilty.
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
+pub enum CompatibilityVersion {
+    /// The base version for compatibility.
+    #[default]
+    V0,
+}
+impl CompatibilityVersion {
+    pub fn prelude_submodule(&self) -> &str {
+        match self {
+            Self::V0 => "v0",
+        }
     }
 }
 
