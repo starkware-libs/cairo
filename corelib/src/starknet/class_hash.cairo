@@ -23,13 +23,13 @@ impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     }
 }
 
-impl ClassHashZero of num::traits::Zero<ClassHash> {
+impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
     #[inline(always)]
     fn is_zero(self: @ClassHash) -> bool {
-        felt_252::Felt252Zero::is_zero(@class_hash_to_felt252(*self))
+        core::felt_252::Felt252Zero::is_zero(@class_hash_to_felt252(*self))
     }
     #[inline(always)]
     fn is_non_zero(self: @ClassHash) -> bool {
