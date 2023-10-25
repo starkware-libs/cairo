@@ -42,12 +42,15 @@ pub enum Edition {
     #[default]
     #[serde(rename = "0")]
     V0,
+    #[serde(rename = "2023_10")]
+    V2023_10,
 }
 impl Edition {
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
     pub fn prelude_submodule_name(&self) -> &str {
         match self {
             Self::V0 => "v0",
+            Self::V2023_10 => "v2023_10",
         }
     }
 }
