@@ -37,7 +37,8 @@ impl ClassHashZero of num::traits::Zero<ClassHash> {
     }
 }
 
-impl ClassHashZeroable = zeroable::TZeroableImpl<ClassHash>;
+impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+
 
 impl ClassHashSerde of serde::Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {

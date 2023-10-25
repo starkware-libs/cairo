@@ -2320,6 +2320,14 @@ impl I128PartialOrd of PartialOrd<i128> {
     }
 }
 
+// Zeroable impls
+impl U8Zeroable = zeroable::zero_based::ZeroableImpl<u8, integer::U8Zero>;
+impl U16Zeroable = zeroable::zero_based::ZeroableImpl<u16, integer::U16Zero>;
+impl U32Zeroable = zeroable::zero_based::ZeroableImpl<u32, integer::U32Zero>;
+impl U64Zeroable = zeroable::zero_based::ZeroableImpl<u64, integer::U64Zero>;
+impl U128Zeroable = zeroable::zero_based::ZeroableImpl<u128, integer::U128Zero>;
+impl U256Zeroable = zeroable::zero_based::ZeroableImpl<u256, integer::U256Zero>;
+
 // Zero trait implementations
 impl U8Zero of num::traits::Zero<u8> {
     fn zero() -> u8 {

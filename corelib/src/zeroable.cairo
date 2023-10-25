@@ -9,19 +9,23 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl TZeroableImpl<T, impl ZeroImpl: num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
-    fn zero() -> T {
-        ZeroImpl::zero()
-    }
-    #[inline(always)]
-    fn is_zero(self: T) -> bool {
-        ZeroImpl::is_zero(@self)
-    }
-    #[inline(always)]
-    fn is_non_zero(self: T) -> bool {
-        ZeroImpl::is_non_zero(@self)
+mod zero_based {
+    impl ZeroableImpl<T, impl ZeroImpl: num::traits::Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
+        fn zero() -> T {
+            ZeroImpl::zero()
+        }
+        #[inline(always)]
+        fn is_zero(self: T) -> bool {
+            ZeroImpl::is_zero(@self)
+        }
+        #[inline(always)]
+        fn is_non_zero(self: T) -> bool {
+            ZeroImpl::is_non_zero(@self)
+        }
     }
 }
+
+impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<felt252, felt_252::Felt252Zero>;
 
 // === NonZero ===
 

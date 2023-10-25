@@ -24,6 +24,7 @@ impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     }
 }
 
+
 impl ContractAddressZero of num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
@@ -38,7 +39,7 @@ impl ContractAddressZero of num::traits::Zero<ContractAddress> {
     }
 }
 
-impl ContractAddressZeroable = zeroable::TZeroableImpl<ContractAddress>;
+impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<ContractAddress,ContractAddressZero>;
 
 impl ContractAddressSerde of serde::Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
