@@ -10,6 +10,7 @@ use std::sync::Arc;
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use cairo_lang_compiler::{with_inline_macro_plugin, with_macro_plugin};
 use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -84,15 +85,14 @@ pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
-    let db = RootDatabase::builder()
-        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_macro_plugin(Arc::new(TestPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
-        .build()
-        .expect("Failed to initialize Cairo compiler database.");
+    let mut builder = RootDatabase::builder();
+    builder.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+    with_macro_plugin!(builder, StarkNetPlugin);
+    with_macro_plugin!(builder, TestPlugin);
+    with_inline_macro_plugin!(builder, SelectorMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
+    let db = builder.build().expect("Failed to initialize Cairo compiler database.");
 
     let (service, socket) = LspService::build(|client| Backend::new(client, db))
         .custom_method("vfs/provide", Backend::vfs_provide)

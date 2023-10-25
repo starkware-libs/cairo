@@ -7,6 +7,9 @@ use super::unsupported_bracket_diagnostic;
 
 #[derive(Debug)]
 pub struct ArrayMacro;
+impl ArrayMacro {
+    pub const NAME: &'static str = "array";
+}
 impl InlineMacroExprPlugin for ArrayMacro {
     fn generate_code(
         &self,

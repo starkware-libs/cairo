@@ -7,6 +7,7 @@ use cairo_felt::{felt_str, Felt252};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::{with_inline_macro_plugin, with_macro_plugin};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
@@ -215,25 +216,18 @@ impl TestCompiler {
     /// * `starknet` - Add the starknet plugin to run the tests
     pub fn try_new(path: &Path, starknet: bool) -> Result<Self> {
         let db = &mut {
-            let mut b = RootDatabase::builder();
-            b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
-            b.with_macro_plugin(Arc::new(TestPlugin::default()));
+            let mut builder = RootDatabase::builder();
+            builder.detect_corelib().with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            with_macro_plugin!(builder, TestPlugin);
 
             if starknet {
-                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-                    .with_inline_macro_plugin(
-                        GetDepComponentMacro::NAME,
-                        Arc::new(GetDepComponentMacro),
-                    )
-                    .with_inline_macro_plugin(
-                        GetDepComponentMutMacro::NAME,
-                        Arc::new(GetDepComponentMutMacro),
-                    );
+                with_macro_plugin!(builder, StarkNetPlugin);
+                with_inline_macro_plugin!(builder, SelectorMacro);
+                with_inline_macro_plugin!(builder, GetDepComponentMacro);
+                with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
             }
 
-            b.build()?
+            builder.build()?
         };
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;

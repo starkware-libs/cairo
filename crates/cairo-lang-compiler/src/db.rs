@@ -157,6 +157,21 @@ impl RootDatabaseBuilder {
     }
 }
 
+/// Macro for adding a macro plugin to the builder.
+#[macro_export]
+macro_rules! with_macro_plugin {
+    ($builder:ident, $macro:ident) => {
+        $builder.with_macro_plugin(Arc::new($macro::default()));
+    };
+}
+/// Macro for adding an inline macro plugin to the builder.
+#[macro_export]
+macro_rules! with_inline_macro_plugin {
+    ($builder:ident, $macro:ident) => {
+        $builder.with_inline_macro_plugin($macro::NAME, Arc::new($macro));
+    };
+}
+
 impl AsFilesGroupMut for RootDatabase {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
