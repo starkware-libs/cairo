@@ -21,11 +21,27 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
+    /// The prelude version for the crate.
+    pub prelude_submodule: PreludeSubmodule,
 }
 impl CrateConfiguration {
-    /// Returns a new configuration.
+    /// Returns a new configuration with the default prelude.
     pub fn new(root: Directory) -> Self {
-        Self { root }
+        Self { root, prelude_submodule: PreludeSubmodule::default() }
+    }
+}
+
+/// The options for prelude support.
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
+pub enum PreludeSubmodule {
+    #[default]
+    BackwardCompatibility,
+}
+impl PreludeSubmodule {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::BackwardCompatibility => "prelude_v0",
+        }
     }
 }
 

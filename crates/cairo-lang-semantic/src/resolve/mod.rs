@@ -22,7 +22,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 
-use crate::corelib::core_module;
+use crate::corelib::core_submodule;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -763,9 +763,14 @@ impl<'db> Resolver<'db> {
         if self.db.crate_config(crate_id).is_some() {
             return None;
         }
-
-        // Last resort, use the `core` crate root module as the base module.
-        Some(core_module(self.db))
+        // Last resort, use the `prelude` module as the base module.
+        let owning_crate = self.module_file_id.0.owning_crate(self.db.upcast());
+        let prelude_submodule = self
+            .db
+            .crate_config(owning_crate)
+            .map(|config| config.prelude_submodule)
+            .unwrap_or_default();
+        Some(core_submodule(self.db, prelude_submodule.name()))
     }
 
     /// Specializes a trait.
