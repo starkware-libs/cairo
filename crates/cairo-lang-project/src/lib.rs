@@ -4,6 +4,7 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::db::CompatibilityVersion;
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,26 @@ pub struct ProjectConfig {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
     pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    #[serde(default)]
+    pub crate_config: CratesConfigContent,
+}
+
+/// Additional configurations for all crates.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CratesConfigContent {
+    /// The configuration for non overriden crates.
+    #[serde(default)]
+    pub global: CrateConfigContent,
+    /// Configuration override per crate.
+    #[serde(default)]
+    pub crate_override: OrderedHashMap<SmolStr, CrateConfigContent>,
+}
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrateConfigContent {
+    /// The compatibility version.
+    pub compatibility: CompatibilityVersion,
 }
 
 impl ProjectConfig {
