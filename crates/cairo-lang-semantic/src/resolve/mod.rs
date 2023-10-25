@@ -45,7 +45,6 @@ use crate::{
 mod test;
 
 mod item;
-pub mod scope;
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
