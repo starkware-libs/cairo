@@ -20,7 +20,7 @@ const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-#[derive(Drop, Clone, PartialEq, Serde)]
+#[derive(Drop, Clone, PartialEq, Serde, Default)]
 struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
@@ -35,12 +35,6 @@ struct ByteArray {
 }
 
 impl ByteArrayStringLiteral of string::StringLiteral<ByteArray>;
-
-impl ByteArrayDefault of Default<ByteArray> {
-    fn default() -> ByteArray {
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-    }
-}
 
 #[generate_trait]
 impl ByteArrayImpl of ByteArrayTrait {
