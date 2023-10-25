@@ -37,7 +37,7 @@ impl ClassHashZero of num::traits::Zero<ClassHash> {
     }
 }
 
-impl ContractAddressZeroable = zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+impl ClassHashZeroable = zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
 
 
 impl ClassHashSerde of serde::Serde<ClassHash> {
