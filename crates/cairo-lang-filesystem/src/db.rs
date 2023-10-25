@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
+use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -33,12 +34,13 @@ impl CrateConfiguration {
 
 /// The Cairo edition of a crate.
 /// Allows configuring a crate to be compatible with an older editions of the compiler, to enable
-/// major compiler changes without breaking existing crates. On major compiler updates, old
-/// editions may be removed, and default may be updated to a newer edition.
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
+/// major compiler changes without breaking existing crates. On major compiler updates, old editions
+/// may be removed, and default may be updated to a newer edition.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Edition {
     /// The base edition.
     #[default]
+    #[serde(rename = "0")]
     V0,
 }
 impl Edition {

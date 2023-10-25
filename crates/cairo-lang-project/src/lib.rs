@@ -4,6 +4,7 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
@@ -29,10 +30,39 @@ pub struct ProjectConfig {
     pub corelib: Option<Directory>,
     pub content: ProjectConfigContent,
 }
+
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
     pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    #[serde(default)]
+    #[serde(rename = "config")]
+    pub crate_config: AllCratesConfig,
+}
+
+/// Additional configurations for all crates.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AllCratesConfig {
+    /// The configuration for non overriden crates.
+    #[serde(default)]
+    pub global: SingleCrateConfig,
+    /// Configuration override per crate.
+    #[serde(default)]
+    #[serde(rename = "override")]
+    pub crate_override: OrderedHashMap<SmolStr, SingleCrateConfig>,
+}
+impl AllCratesConfig {
+    /// Returns the configuration for the given crate.
+    pub fn get(&self, crate_name: &str) -> &SingleCrateConfig {
+        self.crate_override.get(crate_name).unwrap_or(&self.global)
+    }
+}
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SingleCrateConfig {
+    /// The crate's Cairo edition.
+    pub edition: Edition,
 }
 
 impl ProjectConfig {
