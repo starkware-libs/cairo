@@ -11,6 +11,10 @@ use traits::{Into, TryInto};
 use serde::Serde;
 use zeroable::NonZeroIntoImpl;
 
+/// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
+/// magic as one of the felt252s indicates that right after it you should expect a serialized
+/// ByteArray. This is currently used mainly for prints and panics.
+const BYTE_ARRAY_MAGIC: felt252 = 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
