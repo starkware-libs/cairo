@@ -81,43 +81,43 @@ impl ContractStateTransfer of
 }
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_name = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_name = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_symbol = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_symbol = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    let __arg_decimals = option::OptionTraitImpl::expect(
-        serde::Serde::<u8>::deserialize(ref data),
+    let __arg_decimals = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u8>::deserialize(ref data),
         'Failed to deserialize param #3'
     );
-    let __arg_initial_supply = option::OptionTraitImpl::expect(
-        serde::Serde::<u256>::deserialize(ref data),
+    let __arg_initial_supply = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
         'Failed to deserialize param #4'
     );
-    let __arg_recipient = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    let __arg_recipient = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #5'
     );
-    let __arg_owner = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    let __arg_owner = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #6'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableERC20Impl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -134,17 +134,17 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -163,8 +163,8 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_contract_mut(ref self: erc20_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
-        let event: erc20_comp::Event = traits::Into::into(event);
+    fn emit<S, impl IntoImp: core::traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
+        let event: erc20_comp::Event = core::traits::Into::into(event);
         let mut contract = erc20_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::ERC20(event));
     }
@@ -182,8 +182,8 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
     fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
-        let event: ownable_comp::Event = traits::Into::into(event);
+    fn emit<S, impl IntoImp: core::traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = core::traits::Into::into(event);
         let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
@@ -195,13 +195,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::ERC20(val) => {
-                array::ArrayTrait::append(ref keys, selector!("ERC20"));
+                core::array::ArrayTrait::append(ref keys, selector!("ERC20"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             Event::Ownable(val) => {
-                array::ArrayTrait::append(ref keys, selector!("Ownable"));
+                core::array::ArrayTrait::append(ref keys, selector!("Ownable"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -211,7 +211,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -322,43 +322,43 @@ impl ContractStateTransfer of
 }
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_name = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_name = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_symbol = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_symbol = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    let __arg_decimals = option::OptionTraitImpl::expect(
-        serde::Serde::<u8>::deserialize(ref data),
+    let __arg_decimals = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u8>::deserialize(ref data),
         'Failed to deserialize param #3'
     );
-    let __arg_initial_supply = option::OptionTraitImpl::expect(
-        serde::Serde::<u256>::deserialize(ref data),
+    let __arg_initial_supply = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
         'Failed to deserialize param #4'
     );
-    let __arg_recipient = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    let __arg_recipient = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #5'
     );
-    let __arg_owner = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    let __arg_owner = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #6'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableERC20Impl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -375,17 +375,17 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -404,8 +404,8 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_contract_mut(ref self: erc20_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
-        let event: erc20_comp::Event = traits::Into::into(event);
+    fn emit<S, impl IntoImp: core::traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
+        let event: erc20_comp::Event = core::traits::Into::into(event);
         let mut contract = erc20_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::ERC20(event));
     }
@@ -423,8 +423,8 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
     fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
-        let event: ownable_comp::Event = traits::Into::into(event);
+    fn emit<S, impl IntoImp: core::traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = core::traits::Into::into(event);
         let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
@@ -436,13 +436,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::ERC20(val) => {
-                array::ArrayTrait::append(ref keys, selector!("ERC20"));
+                core::array::ArrayTrait::append(ref keys, selector!("ERC20"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             Event::Ownable(val) => {
-                array::ArrayTrait::append(ref keys, selector!("Ownable"));
+                core::array::ArrayTrait::append(ref keys, selector!("Ownable"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -452,7 +452,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

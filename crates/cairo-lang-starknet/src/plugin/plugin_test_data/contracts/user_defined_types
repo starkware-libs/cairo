@@ -225,7 +225,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+                    core::hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
             }
             fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
@@ -269,7 +269,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<ZeroSize>::hash(0x18a905aad30d0632877f9b37c338ceaaa98ea40758006e286f2104428beedab, key))
+                    core::hash::LegacyHash::<ZeroSize>::hash(0x18a905aad30d0632877f9b37c338ceaaa98ea40758006e286f2104428beedab, key))
             }
             fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize {
                 // Only address_domain 0 is currently supported.
@@ -314,17 +314,17 @@ const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -537,7 +537,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     }
     #[inline(always)]
     fn size() -> u8 {
-        1_u8 + cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size())
+        1_u8 + core::cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size())
     }
 }
 
@@ -659,7 +659,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     }
     #[inline(always)]
     fn size() -> u8 {
-        1_u8 + cmp::max(starknet::Store::<u32>::size(), cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size()))
+        1_u8 + core::cmp::max(starknet::Store::<u32>::size(), core::cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size()))
     }
 }
 
@@ -704,7 +704,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

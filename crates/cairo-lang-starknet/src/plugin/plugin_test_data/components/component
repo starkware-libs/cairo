@@ -149,29 +149,29 @@ struct MyTraitDispatcher {
 
 impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
     fn get(self: MyTraitDispatcher, addr: ContractAddress) -> u32 {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        option::OptionTrait::expect(
-            serde::Serde::<u32>::deserialize(ref ret_data),
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u32>::deserialize(ref ret_data),
             'Returned data too short',
         )
     }
     fn set(self: MyTraitDispatcher, addr: ContractAddress, value: u32) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
-        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("set"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -186,29 +186,29 @@ struct MyTraitLibraryDispatcher {
 
 impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
     fn get(self: MyTraitLibraryDispatcher, addr: ContractAddress) -> u32 {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        option::OptionTrait::expect(
-            serde::Serde::<u32>::deserialize(ref ret_data),
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u32>::deserialize(ref ret_data),
             'Returned data too short',
         )
     }
     fn set(self: MyTraitLibraryDispatcher, addr: ContractAddress, value: u32) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
-        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("set"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -228,31 +228,31 @@ struct MyTraitSafeLibraryDispatcher {
 
 impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
     fn get(self: MyTraitSafeLibraryDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(
-            option::OptionTrait::expect(
-                serde::Serde::<u32>::deserialize(ref ret_data),
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u32>::deserialize(ref ret_data),
                 'Returned data too short',
             )
         )
     }
     fn set(self: MyTraitSafeLibraryDispatcher, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
-        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("set"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -268,31 +268,31 @@ struct MyTraitSafeDispatcher {
 
 impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
     fn get(self: MyTraitSafeDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(
-            option::OptionTrait::expect(
-                serde::Serde::<u32>::deserialize(ref ret_data),
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u32>::deserialize(ref ret_data),
                 'Returned data too short',
             )
         )
     }
     fn set(self: MyTraitSafeDispatcher, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
-        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("set"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -555,7 +555,7 @@ component:
         impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState, u32, u32> {
             fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
+                    core::hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
             }
         }
     }
@@ -583,7 +583,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 #[starknet::embeddable]
@@ -615,7 +615,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::Log(val) => {
-                array::ArrayTrait::append(ref keys, selector!("Log"));
+                core::array::ArrayTrait::append(ref keys, selector!("Log"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -625,7 +625,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("Log") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -671,49 +671,49 @@ trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_addr = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_addr = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = MyImpl::<TContractState, X, TContractStateDrop>::get(@contract_state, __arg_addr);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    serde::Serde::<u32>::serialize(@res, ref arr);
-    array::ArrayTrait::span(@arr)
+    core::serde::Serde::<u32>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_addr = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_addr = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_value = option::OptionTraitImpl::expect(
-        serde::Serde::<u32>::deserialize(ref data),
+    let __arg_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u32>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, TContractStateDrop>::set(ref contract_state, __arg_addr, __arg_value);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 

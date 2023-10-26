@@ -20,6 +20,7 @@ mod test_contract {
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait, MyType
     };
+    use core::dict::{felt252_dict_new, Felt252DictTrait};
 
     #[storage]
     struct Storage {
