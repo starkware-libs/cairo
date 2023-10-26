@@ -33,7 +33,7 @@ mod Balance {
 mod tests {
     use starknet::syscalls::deploy_syscall;
 
-    use test::test_utils::assert_eq;
+    use core::test::test_utils::assert_eq;
 
     use super::{Balance, IBalance, IBalanceDispatcher, IBalanceDispatcherTrait};
 

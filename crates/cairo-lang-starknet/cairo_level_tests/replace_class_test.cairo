@@ -1,5 +1,5 @@
 use starknet::syscalls::{deploy_syscall, replace_class_syscall};
-use test::test_utils::assert_eq;
+use core::test::test_utils::assert_eq;
 use starknet::class_hash::ClassHash;
 
 #[starknet::interface]

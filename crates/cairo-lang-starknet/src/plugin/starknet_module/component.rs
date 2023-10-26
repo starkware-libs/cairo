@@ -457,7 +457,7 @@ fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData)
          @{GENERIC_CONTRACT_STATE_NAME};
             fn get_contract_mut(ref self: {GENERIC_COMPONENT_STATE_NAME}) -> \
          {GENERIC_CONTRACT_STATE_NAME};
-            fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
+            fn emit<S, impl IntoImp: core::traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
          {GENERIC_COMPONENT_STATE_NAME}, event: S);
         }}"
     ));
