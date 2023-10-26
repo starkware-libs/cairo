@@ -2,9 +2,10 @@ use starknet::{
     ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
     storage_address_to_felt252, storage_address_try_from_felt252
 };
-use test::test_utils::assert_eq;
+use core::test::test_utils::assert_eq;
 use super::utils::serialized;
-use integer::BoundedInt;
+use core::integer::BoundedInt;
+use core::zeroable::Zeroable;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {

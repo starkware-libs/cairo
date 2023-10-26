@@ -1,4 +1,4 @@
-use ecdsa::check_ecdsa_signature;
+use core::ecdsa::check_ecdsa_signature;
 
 const message_hash: felt252 = 0x2d6479c0758efbb5aa07d35ed5454d728637fceab7ba544d3ea95403a5630a8;
 

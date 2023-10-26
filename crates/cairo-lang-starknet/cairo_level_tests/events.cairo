@@ -1,5 +1,5 @@
 use core::debug::PrintTrait;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
 
@@ -64,7 +64,7 @@ use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
 
 #[test]
 fn test_events() {
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
         contract_with_event::TEST_CLASS_HASH.try_into().unwrap(),

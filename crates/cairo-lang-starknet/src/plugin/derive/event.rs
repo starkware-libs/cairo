@@ -209,7 +209,7 @@ fn handle_enum(
             ""
         } else {
             "
-                array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
+                core::array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
         };
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
@@ -310,8 +310,8 @@ fn handle_enum(
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {{
-                    $deserialize_flat_variants$let selector = *array::SpanTrait::pop_front(ref \
-             keys)?;
+                    $deserialize_flat_variants$let selector = \
+             *core::array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_nested_variants$Option::None
                 }}
             }}
@@ -348,12 +348,12 @@ fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode 
         ),
         EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($field$, ref keys);",
+                core::serde::Serde::serialize($field$, ref keys);",
             &[("field".to_string(), field)].into(),
         ),
         EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($field$, ref data);",
+            core::serde::Serde::serialize($field$, ref data);",
             &[("field".to_string(), field)].into(),
         ),
     }
@@ -370,13 +370,13 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
             }
             EventFieldKind::KeySerde => {
                 "
-                let $member_name$ = serde::Serde::deserialize(
+                let $member_name$ = core::serde::Serde::deserialize(
                     ref keys
                 )?;"
             }
             EventFieldKind::DataSerde => {
                 "
-                let $member_name$ = serde::Serde::deserialize(
+                let $member_name$ = core::serde::Serde::deserialize(
                     ref data
                 )?;"
             }
@@ -390,7 +390,7 @@ fn try_deserialize_field(member_kind: EventFieldKind) -> RewriteNode {
         EventFieldKind::Nested | EventFieldKind::Flat => {
             "starknet::Event::deserialize(ref keys, ref data)"
         }
-        EventFieldKind::KeySerde => "serde::Serde::deserialize(ref keys)",
-        EventFieldKind::DataSerde => "serde::Serde::deserialize(ref data)",
+        EventFieldKind::KeySerde => "core::serde::Serde::deserialize(ref keys)",
+        EventFieldKind::DataSerde => "core::serde::Serde::deserialize(ref data)",
     })
 }

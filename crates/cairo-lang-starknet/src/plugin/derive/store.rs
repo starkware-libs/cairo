@@ -224,7 +224,8 @@ fn handle_enum(
         if match_size.is_empty() {
             match_size = format!("{STORE_TRAIT}::<{variant_type}>::size()");
         } else {
-            match_size = format!("cmp::max({STORE_TRAIT}::<{variant_type}>::size(), {match_size})");
+            match_size =
+                format!("core::cmp::max({STORE_TRAIT}::<{variant_type}>::size(), {match_size})");
         }
     }
 
