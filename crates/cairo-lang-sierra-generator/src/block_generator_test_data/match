@@ -39,8 +39,8 @@ drop<NonZero<felt252>>([1]) -> ()
 felt252_const<4>() -> ([4])
 PushValues([4]: felt252) -> ([3])
 label_test::foo::2:
-PushValues([3]: felt252) -> ([5])
-return([5])
+PushValues([3]: felt252) -> ([3])
+return([3])
 label_test::foo::1:
 
 //! > lowering_flat
@@ -112,8 +112,8 @@ drop<felt252>([0]) -> ()
 felt252_const<7>() -> ([4])
 PushValues([4]: felt252) -> ([3])
 label_test::foo::2:
-PushValues([3]: felt252) -> ([5])
-return([5])
+PushValues([3]: felt252) -> ([3])
+return([3])
 label_test::foo::1:
 
 //! > lowering_flat
@@ -181,8 +181,8 @@ drop<Unit>([2]) -> ()
 felt252_const<0>() -> ([5])
 PushValues([5]: felt252) -> ([4])
 label_test::foo::2:
-PushValues([4]: felt252) -> ([6])
-return([6])
+PushValues([4]: felt252) -> ([4])
+return([4])
 label_test::foo::1:
 
 //! > lowering_flat

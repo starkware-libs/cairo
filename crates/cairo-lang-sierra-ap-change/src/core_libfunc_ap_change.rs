@@ -254,6 +254,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::EmitEvent(_)
             | StarkNetConcreteLibfunc::GetBlockHash(_)
             | StarkNetConcreteLibfunc::GetExecutionInfo(_)
+            | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
             | StarkNetConcreteLibfunc::Deploy(_)
             | StarkNetConcreteLibfunc::Keccak(_)
             | StarkNetConcreteLibfunc::LibraryCall(_)
@@ -269,7 +270,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
             NullableConcreteLibfunc::NullableFromBox(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::MatchNullable(_) => {
+            NullableConcreteLibfunc::MatchNullable(_)
+            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },

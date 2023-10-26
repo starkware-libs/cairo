@@ -8,7 +8,6 @@ use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
-use crate::items::imp::ImplId;
 use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
 
 pub type PatternId = Id<Pattern>;
@@ -392,8 +391,6 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
 pub struct ExprLiteral {
     #[dont_rewrite]
     pub value: BigInt,
-    #[hide_field_debug_with_db]
-    pub numeric_impl: ImplId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

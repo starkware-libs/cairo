@@ -1,4 +1,5 @@
 use std::iter::Peekable;
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut, Neg};
 
 use cairo_lang_defs::ids::{
@@ -44,7 +45,6 @@ use crate::{
 mod test;
 
 mod item;
-pub mod scope;
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -194,6 +194,72 @@ impl<'db> Resolver<'db> {
         }
     }
 
+    /// Resolves an item, given a path.
+    /// Guaranteed to result in at most one diagnostic.
+    fn resolve_path_inner<ResolvedItem: Clone>(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        path: impl AsSegments,
+        item_type: NotFoundItemType,
+        mut callbacks: ResolvePathInnerCallbacks<
+            ResolvedItem,
+            impl FnMut(
+                &mut Resolver<'_>,
+                &mut SemanticDiagnostics,
+                &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+            ) -> Maybe<ResolvedItem>,
+            impl FnMut(
+                &mut Resolver<'_>,
+                &mut SemanticDiagnostics,
+                &ResolvedItem,
+                &ast::TerminalIdentifier,
+                Option<Vec<ast::GenericArg>>,
+                NotFoundItemType,
+            ) -> Maybe<ResolvedItem>,
+            impl FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
+            impl FnMut(
+                &mut ResolvedItems,
+                &dyn SemanticGroup,
+                &syntax::node::ast::PathSegment,
+                ResolvedItem,
+            ),
+        >,
+    ) -> Maybe<ResolvedItem> {
+        let db = self.db;
+        let syntax_db = db.upcast();
+        let elements_vec = path.to_segments(syntax_db);
+        let mut segments = elements_vec.iter().peekable();
+
+        // Find where the first segment lies in.
+        let mut item: ResolvedItem =
+            (callbacks.resolve_path_first_segment)(self, diagnostics, &mut segments)?;
+
+        // Follow modules.
+        while segments.peek().is_some() {
+            let segment = segments.next().unwrap();
+            (callbacks.validate_segment)(diagnostics, segment)?;
+            let identifier = segment.identifier_ast(syntax_db);
+            let generic_args = segment.generic_args(syntax_db);
+
+            // If this is not the last segment, set the expected type to
+            // [NotFoundItemType::Identifier].
+            let cur_item_type =
+                if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
+            // `?` is ok here as the rest of the segments have no meaning if the current one can't
+            // be resolved.
+            item = (callbacks.resolve_path_next_segment)(
+                self,
+                diagnostics,
+                &item,
+                &identifier,
+                generic_args,
+                cur_item_type,
+            )?;
+            (callbacks.mark)(&mut self.resolved_items, db, segment, item.clone());
+        }
+        Ok(item)
+    }
+
     /// Resolves a concrete item, given a path.
     /// Guaranteed to result in at most one diagnostic.
     pub fn resolve_concrete_path(
@@ -202,34 +268,35 @@ impl<'db> Resolver<'db> {
         path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
-        let db = self.db;
-        let syntax_db = db.upcast();
-        let elements_vec = path.to_segments(syntax_db);
-        let mut segments = elements_vec.iter().peekable();
-
-        // Find where the first segment lies in.
-        let mut item = self.resolve_concrete_path_first_segment(diagnostics, &mut segments)?;
-
-        // Follow modules.
-        while segments.peek().is_some() {
-            let segment = segments.next().unwrap();
-            let identifier = segment.identifier_ast(syntax_db);
-            let generic_args = segment.generic_args(syntax_db);
-
-            // If this is not the last segment, set the expected type to
-            // [NotFoundItemType::Identifier].
-            let cur_item_type =
-                if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
-            item = self.resolve_next_concrete(
-                diagnostics,
-                &item,
-                &identifier,
-                generic_args,
-                cur_item_type,
-            )?;
-            self.resolved_items.mark_concrete(db, segment, item.clone());
-        }
-        Ok(item)
+        self.resolve_path_inner::<ResolvedConcreteItem>(
+            diagnostics,
+            path,
+            item_type,
+            ResolvePathInnerCallbacks {
+                resolved_item_type: PhantomData,
+                resolve_path_first_segment: |resolver, diagnostics, segments| {
+                    resolver.resolve_concrete_path_first_segment(diagnostics, segments)
+                },
+                resolve_path_next_segment: |resolver,
+                                            diagnostics,
+                                            item,
+                                            identifier,
+                                            generic_args_syntax,
+                                            item_type| {
+                    resolver.resolve_path_next_segment_concrete(
+                        diagnostics,
+                        item,
+                        identifier,
+                        generic_args_syntax,
+                        item_type,
+                    )
+                },
+                validate_segment: |_, _| Ok(()),
+                mark: |resolved_items, db, segment, item| {
+                    resolved_items.mark_concrete(db, segment, item.clone());
+                },
+            },
+        )
     }
 
     /// Resolves the first segment of a concrete path.
@@ -307,40 +374,45 @@ impl<'db> Resolver<'db> {
         item_type: NotFoundItemType,
         allow_generic_args: bool,
     ) -> Maybe<ResolvedGenericItem> {
-        let db = self.db;
-        let syntax_db = db.upcast();
-        let elements_vec = path.to_segments(syntax_db);
-        let mut segments = elements_vec.iter().peekable();
-
-        // Find where the first segment lies in.
-        let mut item = self.resolve_generic_path_first_segment(
-            diagnostics,
-            &mut segments,
-            allow_generic_args,
-        )?;
-
-        // Follow modules.
-        while segments.peek().is_some() {
-            let segment = segments.next().unwrap();
-            let identifier = match segment {
-                syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
-                    if !allow_generic_args {
-                        return Err(diagnostics
-                            .report(&segment.generic_args(syntax_db), UnexpectedGenericArgs));
-                    }
-                    segment.ident(syntax_db)
+        let validate_segment =
+            |diagnostics: &mut SemanticDiagnostics, segment: &ast::PathSegment| match segment {
+                ast::PathSegment::WithGenericArgs(generic_args) if !allow_generic_args => {
+                    Err(diagnostics.report(generic_args, UnexpectedGenericArgs))
                 }
-                syntax::node::ast::PathSegment::Simple(segment) => segment.ident(syntax_db),
+                _ => Ok(()),
             };
-
-            // If this is not the last segment, set the expected type to
-            // [NotFoundItemType::Identifier].
-            let cur_item_type =
-                if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
-            item = self.resolve_next_generic(diagnostics, &item, &identifier, cur_item_type)?;
-            self.resolved_items.mark_generic(db, segment, item.clone());
-        }
-        Ok(item)
+        self.resolve_path_inner::<ResolvedGenericItem>(
+            diagnostics,
+            path,
+            item_type,
+            ResolvePathInnerCallbacks {
+                resolved_item_type: PhantomData,
+                resolve_path_first_segment: |resolver, diagnostics, segments| {
+                    resolver.resolve_generic_path_first_segment(
+                        diagnostics,
+                        segments,
+                        allow_generic_args,
+                    )
+                },
+                resolve_path_next_segment: |resolver,
+                                            diagnostics,
+                                            item,
+                                            identifier,
+                                            _generic_args_syntax,
+                                            item_type| {
+                    resolver.resolve_path_next_segment_generic(
+                        diagnostics,
+                        item,
+                        identifier,
+                        item_type,
+                    )
+                },
+                validate_segment,
+                mark: |resolved_items, db, segment, item| {
+                    resolved_items.mark_generic(db, segment, item.clone());
+                },
+            },
+        )
     }
 
     /// Resolves the first segment of a generic path.
@@ -416,7 +488,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Given the current resolved item, resolves the next segment.
-    fn resolve_next_concrete(
+    fn resolve_path_next_segment_concrete(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         item: &ResolvedConcreteItem,
@@ -613,7 +685,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Given the current resolved item, resolves the next segment.
-    fn resolve_next_generic(
+    fn resolve_path_next_segment_generic(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         item: &ResolvedGenericItem,
@@ -955,4 +1027,40 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+}
+
+/// The callbacks to be used by `resolve_path_inner`.
+struct ResolvePathInnerCallbacks<ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
+where
+    ResolveFirst: FnMut(
+        &mut Resolver<'_>,
+        &mut SemanticDiagnostics,
+        &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+    ) -> Maybe<ResolvedItem>,
+    ResolveNext: FnMut(
+        &mut Resolver<'_>,
+        &mut SemanticDiagnostics,
+        &ResolvedItem,
+        &ast::TerminalIdentifier,
+        Option<Vec<ast::GenericArg>>,
+        NotFoundItemType,
+    ) -> Maybe<ResolvedItem>,
+    Validate: FnMut(&mut SemanticDiagnostics, &ast::PathSegment) -> Maybe<()>,
+    Mark: FnMut(
+        &mut ResolvedItems,
+        &dyn SemanticGroup,
+        &syntax::node::ast::PathSegment,
+        ResolvedItem,
+    ),
+{
+    /// Type for the resolved item pointed by the path segments.
+    resolved_item_type: PhantomData<ResolvedItem>,
+    /// Resolves the first segment of a path.
+    resolve_path_first_segment: ResolveFirst,
+    /// Given the current resolved item, resolves the next segment.
+    resolve_path_next_segment: ResolveNext,
+    /// An additional validation to perform for each segment. If it fails, the whole resolution
+    /// fails.
+    validate_segment: Validate,
+    mark: Mark,
 }

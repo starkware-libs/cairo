@@ -331,7 +331,7 @@ impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
     }
 }
 trait GetSupplyDispatcherTrait<T> {
-    fn get_total_supply_plus_1(self: T, ) -> u256;
+    fn get_total_supply_plus_1(self: T) -> u256;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -340,7 +340,7 @@ struct GetSupplyDispatcher {
 }
 
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplyDispatcher, ) -> u256 {
+    fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -363,7 +363,7 @@ struct GetSupplyLibraryDispatcher {
 }
 
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher, ) -> u256 {
+    fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -381,7 +381,7 @@ impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibrary
 }
 
 trait GetSupplySafeDispatcherTrait<T> {
-    fn get_total_supply_plus_1(self: T, ) -> starknet::SyscallResult<u256>;
+    fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -390,7 +390,7 @@ struct GetSupplySafeLibraryDispatcher {
 }
 
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -416,7 +416,7 @@ struct GetSupplySafeDispatcher {
 }
 
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplySafeDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply_plus_1(self: GetSupplySafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(

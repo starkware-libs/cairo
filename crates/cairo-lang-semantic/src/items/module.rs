@@ -47,8 +47,10 @@ pub fn priv_module_semantic_data(
         };
 
         if items.insert(name.clone(), *item).is_some() {
+            // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
+            // guaranteed to succeed.
             let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item)?);
+                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item).unwrap());
             let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
             diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }
@@ -88,25 +90,37 @@ pub fn module_usable_trait_ids(
         OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
     // Add traits from impls in the module.
     for imp in db.module_impls_ids(module_id)?.iter().copied() {
-        let trait_id = db.impl_def_trait(imp)?;
+        let Ok(trait_id) = db.impl_def_trait(imp) else {
+            continue;
+        };
         module_traits.insert(trait_id);
     }
     // Add traits from impl aliases in the module.
     for alias in db.module_impl_aliases_ids(module_id)?.iter().copied() {
-        let impl_id = db.impl_alias_impl_def(alias)?;
-        let trait_id = db.impl_def_trait(impl_id)?;
+        let Ok(impl_id) = db.impl_alias_impl_def(alias) else {
+            continue;
+        };
+        let Ok(trait_id) = db.impl_def_trait(impl_id) else {
+            continue;
+        };
         module_traits.insert(trait_id);
     }
     // Add traits from uses in the module.
     for use_id in db.module_uses_ids(module_id)?.iter().copied() {
-        match db.use_resolved_item(use_id)? {
+        let Ok(resolved_item) = db.use_resolved_item(use_id) else {
+            continue;
+        };
+        match resolved_item {
             // use of a trait.
             ResolvedGenericItem::Trait(trait_id) => {
                 module_traits.insert(trait_id);
             }
             // use of an impl from which we get the trait.
             ResolvedGenericItem::Impl(impl_def_id) => {
-                module_traits.insert(db.impl_def_trait(impl_def_id)?);
+                let Ok(trait_id) = db.impl_def_trait(impl_def_id) else {
+                    continue;
+                };
+                module_traits.insert(trait_id);
             }
             _ => {}
         };

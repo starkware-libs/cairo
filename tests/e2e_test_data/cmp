@@ -42,8 +42,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
 branch_align() -> (); // 1
@@ -59,9 +57,7 @@ struct_construct<Unit>() -> ([11]); // 10
 enum_init<core::bool, 1>([11]) -> ([12]); // 11
 store_temp<RangeCheck>([5]) -> ([9]); // 12
 store_temp<core::bool>([12]) -> ([10]); // 13
-rename<RangeCheck>([9]) -> ([13]); // 14
-rename<core::bool>([10]) -> ([14]); // 15
-return([13], [14]); // 16
+return([9], [10]); // 14
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
@@ -111,8 +107,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 u32_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
 branch_align() -> (); // 1
@@ -128,9 +122,7 @@ struct_construct<Unit>() -> ([11]); // 10
 enum_init<core::bool, 1>([11]) -> ([12]); // 11
 store_temp<RangeCheck>([5]) -> ([9]); // 12
 store_temp<core::bool>([12]) -> ([10]); // 13
-rename<RangeCheck>([9]) -> ([13]); // 14
-rename<core::bool>([10]) -> ([14]); // 15
-return([13], [14]); // 16
+return([9], [10]); // 14
 
 test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
 
@@ -180,8 +172,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 u128_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
 branch_align() -> (); // 1
@@ -197,9 +187,7 @@ struct_construct<Unit>() -> ([11]); // 10
 enum_init<core::bool, 0>([11]) -> ([12]); // 11
 store_temp<RangeCheck>([5]) -> ([9]); // 12
 store_temp<core::bool>([12]) -> ([10]); // 13
-rename<RangeCheck>([9]) -> ([13]); // 14
-rename<core::bool>([10]) -> ([14]); // 15
-return([13], [14]); // 16
+return([9], [10]); // 14
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
@@ -249,8 +237,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 
 u32_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
 branch_align() -> (); // 1
@@ -266,8 +252,6 @@ struct_construct<Unit>() -> ([11]); // 10
 enum_init<core::bool, 0>([11]) -> ([12]); // 11
 store_temp<RangeCheck>([5]) -> ([9]); // 12
 store_temp<core::bool>([12]) -> ([10]); // 13
-rename<RangeCheck>([9]) -> ([13]); // 14
-rename<core::bool>([10]) -> ([14]); // 15
-return([13], [14]); // 16
+return([9], [10]); // 14
 
 test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);

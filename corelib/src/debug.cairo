@@ -122,3 +122,11 @@ impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
         print(self);
     }
 }
+
+/// Prints a byte array as a string.
+fn print_byte_array_as_string(self: @ByteArray) {
+    let mut serialized = array![byte_array::BYTE_ARRAY_MAGIC];
+    self.serialize(ref serialized);
+    print(serialized)
+}
+

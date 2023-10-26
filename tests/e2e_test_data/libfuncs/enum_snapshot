@@ -35,8 +35,8 @@ enum_match<test::SingleVariant>([0]) -> ([1]); // 0
 branch_align() -> (); // 1
 drop<felt252>([1]) -> (); // 2
 felt252_const<0>() -> ([2]); // 3
-store_temp<felt252>([2]) -> ([3]); // 4
-return([3]); // 5
+store_temp<felt252>([2]) -> ([2]); // 4
+return([2]); // 5
 
 test::foo@0([0]: test::SingleVariant) -> (felt252);
 
@@ -83,7 +83,6 @@ libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc jump = jump;
 libfunc drop<Unit> = drop<Unit>;
 libfunc felt252_const<1> = felt252_const<1>;
-libfunc rename<felt252> = rename<felt252>;
 
 enum_match<test::Option>([0]) { fallthrough([1]) 6([2]) }; // 0
 branch_align() -> (); // 1
@@ -95,8 +94,7 @@ branch_align() -> (); // 6
 drop<Unit>([2]) -> (); // 7
 felt252_const<1>() -> ([5]); // 8
 store_temp<felt252>([5]) -> ([4]); // 9
-rename<felt252>([4]) -> ([6]); // 10
-return([6]); // 11
+return([4]); // 10
 
 test::foo@0([0]: test::Option) -> (felt252);
 
@@ -148,7 +146,6 @@ libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc jump = jump;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_const<2> = felt252_const<2>;
-libfunc rename<felt252> = rename<felt252>;
 
 enum_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) }; // 0
 branch_align() -> (); // 1
@@ -165,8 +162,7 @@ branch_align() -> (); // 11
 drop<felt252>([3]) -> (); // 12
 felt252_const<2>() -> ([7]); // 13
 store_temp<felt252>([7]) -> ([5]); // 14
-rename<felt252>([5]) -> ([8]); // 15
-return([8]); // 16
+return([5]); // 15
 
 test::foo@0([0]: test::Color) -> (felt252);
 
@@ -223,7 +219,6 @@ libfunc jump = jump;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc felt252_const<2> = felt252_const<2>;
-libfunc rename<felt252> = rename<felt252>;
 
 enum_snapshot_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) }; // 0
 branch_align() -> (); // 1
@@ -240,7 +235,6 @@ branch_align() -> (); // 11
 drop<Snapshot<Array<felt252>>>([3]) -> (); // 12
 felt252_const<2>() -> ([7]); // 13
 store_temp<felt252>([7]) -> ([5]); // 14
-rename<felt252>([5]) -> ([8]); // 15
-return([8]); // 16
+return([5]); // 15
 
 test::foo@0([0]: Snapshot<test::Color>) -> (felt252);

@@ -1,4 +1,4 @@
-use cairo_felt::Felt252;
+use cairo_felt::{felt_str, Felt252};
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
 use cairo_vm::vm::runners::cairo_runner::RunResources;
@@ -8,6 +8,7 @@ use num_traits::ToPrimitive;
 use test_case::test_case;
 
 use crate::casm_run::run_function;
+use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
 
 #[test_case(
@@ -160,4 +161,70 @@ fn test_allocate_segment() {
         .to_usize()
         .expect("Number not in index range.");
     assert_eq!(memory[ptr], Some(Felt252::from(1337)));
+}
+
+#[test]
+fn test_as_cairo_short_string() {
+    // Simple short strings.
+    assert_eq!(as_cairo_short_string(&Felt252::from(0)), Some("".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x61)), Some("a".to_string()));
+    assert_eq!(
+        as_cairo_short_string(&felt_str!(
+            "30313233343536373839303132333435363738393031323334353637383930",
+            16
+        )),
+        Some("0123456789012345678901234567890".to_string())
+    );
+
+    // With whitespace.
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x612062)), Some("a b".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x610962)), Some("a\tb".to_string()));
+
+    // With null in the middle.
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x610062)), None);
+
+    // Nulls in the end are OK.
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x6100)), Some("a".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x61000000)), Some("a".to_string()));
+
+    // With a non printable character.
+    assert_eq!(as_cairo_short_string(&Felt252::from(0x610162)), None);
+}
+
+#[test]
+fn test_as_cairo_short_string_ex() {
+    // Simple short strings.
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0), 0), Some("".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x61), 1), Some("a".to_string()));
+    assert_eq!(
+        as_cairo_short_string_ex(
+            &felt_str!("30313233343536373839303132333435363738393031323334353637383930", 16),
+            31
+        ),
+        Some("0123456789012345678901234567890".to_string())
+    );
+
+    // With whitespace.
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x612062), 3), Some("a b".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610962), 3), Some("a\tb".to_string()));
+
+    // Nulls are OK.
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x6100), 2), Some(r"a\0".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610062), 3), Some(r"a\0b".to_string()));
+
+    // With a non printable character.
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610162), 3), Some(r"a\x01b".to_string()));
+
+    // More data than expected.
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x61), 0), None);
+    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x6161), 1), None);
+
+    // length > 31.
+    assert_eq!(
+        as_cairo_short_string_ex(
+            &felt_str!("100000000000000000000000000000000000000000000000000000000000000", 16),
+            32
+        ),
+        None
+    );
 }

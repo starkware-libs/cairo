@@ -18,9 +18,9 @@ enum bool {
 impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
         if *self {
-            1
+            1_felt252
         } else {
-            0
+            0_felt252
         }.serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
@@ -329,7 +329,11 @@ use bytes_31::{
 
 // BytesArray.
 mod byte_array;
-use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
+
+// String.
+mod string;
+use string::StringLiteral;
 
 // to_byte_array.
 mod to_byte_array;

@@ -11,6 +11,7 @@
 
 use lalrpop_util::lalrpop_mod;
 
+pub mod algorithm;
 pub mod debug_info;
 pub mod edit_state;
 pub mod extensions;
