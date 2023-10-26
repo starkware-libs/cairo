@@ -1,10 +1,10 @@
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 fn foo() -> usize {
     let mut x = 0_usize;
     let mut y = 0_usize;
     loop {
-        gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()).expect('Out of gas');
         if x == 10_usize {
             break y;
         }

@@ -1,5 +1,5 @@
 use super::utils::serialized;
-use test::test_utils::assert_eq;
+use core::test::test_utils::assert_eq;
 use cairo_level_tests::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
 use cairo_level_tests::contracts::multi_component::{
     contract_with_4_components, GetSupplyDispatcher, GetSupplyDispatcherTrait

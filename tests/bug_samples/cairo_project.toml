@@ -1,2 +1,5 @@
 [crate_roots]
 bug_samples = "."
+
+[crate_config.global]
+compatibility = "V2023_10"

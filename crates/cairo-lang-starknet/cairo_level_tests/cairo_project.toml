@@ -1,2 +1,5 @@
 [crate_roots]
 cairo_level_tests = "."
+
+[crate_config.global]
+compatibility = "V2023_10"

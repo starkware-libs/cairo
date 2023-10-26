@@ -1,5 +1,6 @@
 use starknet::StorageAddress;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
+
 use super::utils::serialized;
 
 #[starknet::interface]
@@ -329,7 +330,7 @@ fn test_dispatcher_serde() {
 
     // Serialize
     let mut calldata = Default::default();
-    serde::Serde::serialize(@contract0, ref calldata);
+    Serde::serialize(@contract0, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == contract_address.into(),
@@ -338,7 +339,7 @@ fn test_dispatcher_serde() {
 
     // Deserialize
     let mut serialized = calldata.span();
-    let contract0: ITestContractDispatcher = serde::Serde::deserialize(ref serialized).unwrap();
+    let contract0: ITestContractDispatcher = Serde::deserialize(ref serialized).unwrap();
     assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
 
     // Library Dispatcher
@@ -347,7 +348,7 @@ fn test_dispatcher_serde() {
 
     // Serialize
     let mut calldata = Default::default();
-    serde::Serde::serialize(@contract1, ref calldata);
+    Serde::serialize(@contract1, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == class_hash.into(),
@@ -356,7 +357,6 @@ fn test_dispatcher_serde() {
 
     // Deserialize
     let mut serialized = calldata.span();
-    let contract1: ITestContractLibraryDispatcher = serde::Serde::deserialize(ref serialized)
-        .unwrap();
+    let contract1: ITestContractLibraryDispatcher = Serde::deserialize(ref serialized).unwrap();
     assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
 }
