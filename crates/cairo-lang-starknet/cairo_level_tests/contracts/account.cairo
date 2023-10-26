@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod account {
-    use ecdsa::check_ecdsa_signature;
+    use core::ecdsa::check_ecdsa_signature;
     use starknet::{account::Call, ContractAddress, call_contract_syscall, SyscallResultTrait};
 
     #[storage]

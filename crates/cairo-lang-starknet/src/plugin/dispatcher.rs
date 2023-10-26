@@ -158,8 +158,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
-                            "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
-                             {CALLDATA_PARAM_NAME});\n"
+                            "        core::serde::Serde::<{type_name}>::serialize(@$arg_name$, \
+                             ref {CALLDATA_PARAM_NAME});\n"
                         ),
                         &[(
                             "arg_name".to_string(),
@@ -182,8 +182,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
                         format!(
                             "\
-        option::OptionTrait::expect(
-            serde::Serde::<{type_name}>::deserialize(ref ret_data),
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<{type_name}>::deserialize(ref ret_data),
             'Returned data too short',
         )"
                         )
@@ -368,12 +368,12 @@ fn declaration_method_impl(
     RewriteNode::interpolate_patched(
         &formatdoc!(
             "$func_decl$ {{
-                    let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
+                    let mut {CALLDATA_PARAM_NAME} = core::traits::Default::default();
             $serialization_code$
                     let mut ret_data = starknet::$syscall$(
                         self.$member$,
                         $entry_point_selector$,
-                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                        core::array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
                     );
                     $return_code$
                 }}
