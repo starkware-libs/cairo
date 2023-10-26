@@ -7,7 +7,7 @@ fn get_one() -> u32 {
 fn ap_tracked_for_wrong_vars() {
     let mut a: u32 = get_one();
     if (a == 1) {
-        internal::revoke_ap_tracking();
+        core::internal::revoke_ap_tracking();
     }
     if (a > 0 && a != 2) {
         a += 1;

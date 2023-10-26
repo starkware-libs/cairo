@@ -1,4 +1,4 @@
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 struct SimpleStruct {
@@ -21,9 +21,7 @@ fn main() {
     let mut serialized = Default::default();
     a.serialize(ref serialized);
     let mut as_span = serialized.span();
-    let deserialized = serde::Serde::<
-        GenericStruct<SimpleStruct, SimpleStruct>
-    >::deserialize(ref as_span)
+    let deserialized = Serde::<GenericStruct<SimpleStruct, SimpleStruct>>::deserialize(ref as_span)
         .unwrap();
     assert_eq(@a, @deserialized, 'Bad Serde');
 }
