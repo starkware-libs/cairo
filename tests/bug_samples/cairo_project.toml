@@ -1,2 +1,5 @@
 [crate_roots]
 bug_samples = "."
+
+[config.all]
+edition = "2023_10"

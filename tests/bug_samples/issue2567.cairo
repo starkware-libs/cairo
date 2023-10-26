@@ -1,4 +1,4 @@
-fn throw(err_code: felt252) -> never {
+fn throw(err_code: felt252) -> core::never {
     let mut data = array![];
     data.append(err_code);
     panic(data)

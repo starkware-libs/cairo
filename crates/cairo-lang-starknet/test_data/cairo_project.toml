@@ -1,2 +1,5 @@
 [crate_roots]
 contracts = "."
+
+[config.all]
+edition = "2023_10"

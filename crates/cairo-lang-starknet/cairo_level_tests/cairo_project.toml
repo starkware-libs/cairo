@@ -1,2 +1,5 @@
 [crate_roots]
 cairo_level_tests = "."
+
+[config.all]
+edition = "2023_10"

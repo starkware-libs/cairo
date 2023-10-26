@@ -72,17 +72,17 @@ const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -107,7 +107,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -182,20 +182,20 @@ const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     invalid_constructor_name(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -212,17 +212,17 @@ fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -247,7 +247,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -328,17 +328,17 @@ const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -363,7 +363,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -460,65 +460,65 @@ const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<(felt252, felt252)>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     foo_v0(ref contract_state, __arg_x);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<(felt252, felt252)>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<(felt252, felt252)>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     foo_v1(ref contract_state, __arg_x);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -537,17 +537,17 @@ fn __wrapper__foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -572,7 +572,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -656,23 +656,23 @@ const TEST_CLASS_HASH: felt252 = 0xd3b97940b766b03f59196c092939b4f964559ef1cd235
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<super::MyType>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<super::MyType>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -689,17 +689,17 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -724,16 +724,16 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>
- --> lib.cairo[contract]:33:40
-        serde::Serde::<super::MyType>::deserialize(ref data),
-                                       ^*********^
+ --> lib.cairo[contract]:33:46
+        core::serde::Serde::<super::MyType>::deserialize(ref data),
+                                             ^*********^
 
 //! > ==========================================================================
 
@@ -794,21 +794,21 @@ const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = foo(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
-    array::ArrayTrait::span(@arr)
+    core::serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -825,17 +825,17 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -860,7 +860,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -930,23 +930,23 @@ const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e107681498
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<T>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<T>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -963,17 +963,17 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -998,7 +998,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1010,14 +1010,14 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^*^
 
 error: Type not found.
- --> lib.cairo[contract]:33:24
-        serde::Serde::<T>::deserialize(ref data),
-                       ^
+ --> lib.cairo[contract]:33:30
+        core::serde::Serde::<T>::deserialize(ref data),
+                             ^
 
 error: Type annotations needed. Failed to infer ?2
- --> lib.cairo[contract]:32:27
-    let __arg_x = option::OptionTraitImpl::expect(
-                          ^*************^
+ --> lib.cairo[contract]:32:33
+    let __arg_x = core::option::OptionTraitImpl::expect(
+                                ^*************^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -1085,28 +1085,28 @@ const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_x = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<(felt252, felt252)>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_y = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+    let __arg_y = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<(felt252, felt252)>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = foo(ref contract_state, __arg_x, __arg_y);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
-    array::ArrayTrait::span(@arr)
+    core::serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -1123,17 +1123,17 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -1158,7 +1158,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1238,74 +1238,74 @@ const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     __validate__(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     __validate_declare__(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     __validate_deploy__(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     __execute__(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -1325,17 +1325,17 @@ fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -1360,7 +1360,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1485,17 +1485,17 @@ const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -1520,7 +1520,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1674,17 +1674,17 @@ const TEST_CLASS_HASH: felt252 = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -1709,7 +1709,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1868,17 +1868,17 @@ const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18c
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -1913,7 +1913,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2098,34 +2098,34 @@ struct InterfaceTraitDispatcher {
 
 impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitDispatcher> {
     fn foo_external1(self: InterfaceTraitDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_external1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo_l1_handler1(self: InterfaceTraitDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_l1_handler1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo_constructor1(self: InterfaceTraitDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_constructor1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -2140,34 +2140,34 @@ struct InterfaceTraitLibraryDispatcher {
 
 impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitLibraryDispatcher> {
     fn foo_external1(self: InterfaceTraitLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_external1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo_l1_handler1(self: InterfaceTraitLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_l1_handler1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo_constructor1(self: InterfaceTraitLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_constructor1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -2188,34 +2188,34 @@ struct InterfaceTraitSafeLibraryDispatcher {
 
 impl InterfaceTraitSafeLibraryDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeLibraryDispatcher> {
     fn foo_external1(self: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_external1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo_l1_handler1(self: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_l1_handler1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo_constructor1(self: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo_constructor1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -2231,34 +2231,34 @@ struct InterfaceTraitSafeDispatcher {
 
 impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeDispatcher> {
     fn foo_external1(self: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_external1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo_l1_handler1(self: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_l1_handler1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo_constructor1(self: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo_constructor1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -2501,110 +2501,110 @@ const TEST_CLASS_HASH: felt252 = 0xf88f1c8a0a8d514425e46be98fb5ba0ba2db1093397ff
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_external1(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_l1_handler1(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_constructor1(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_external2(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_l1_handler2(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_constructor2(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -2626,17 +2626,17 @@ fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt2
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -2670,7 +2670,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2746,17 +2746,17 @@ const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71d
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -2781,7 +2781,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2868,17 +2868,17 @@ const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b08175
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -2903,7 +2903,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<MyEvent> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2927,7 +2927,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -4245,34 +4245,34 @@ struct InterfaceDispatcher {
 
 impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo2(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo3(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -4287,34 +4287,34 @@ struct InterfaceLibraryDispatcher {
 
 impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
     fn foo1(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo2(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo3(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -4335,34 +4335,34 @@ struct InterfaceSafeLibraryDispatcher {
 
 impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
     fn foo1(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo2(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo3(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -4378,34 +4378,34 @@ struct InterfaceSafeDispatcher {
 
 impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
     fn foo1(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo2(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo3(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -4422,56 +4422,56 @@ trait UnsafeNewContractStateTraitForEmbeddableImpl<TContractState> {
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo1(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo2(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__EmbeddableImpl__foo3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo3(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -4818,34 +4818,34 @@ struct InterfaceDispatcher {
 
 impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo2(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo3(self: InterfaceDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -4860,34 +4860,34 @@ struct InterfaceLibraryDispatcher {
 
 impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
     fn foo1(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo2(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
     fn foo3(self: InterfaceLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -4908,34 +4908,34 @@ struct InterfaceSafeLibraryDispatcher {
 
 impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
     fn foo1(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo2(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo3(self: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -4951,34 +4951,34 @@ struct InterfaceSafeDispatcher {
 
 impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
     fn foo1(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo2(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
     fn foo3(self: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -5222,7 +5222,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 #[starknet::embeddable]
@@ -5263,7 +5263,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -5278,56 +5278,56 @@ trait UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState> {
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo1(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo2(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo3(@contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -5391,17 +5391,17 @@ impl ContractStateMyEmbeddableImpl of
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -5420,8 +5420,8 @@ impl HasComponentImpl_component of super::component::HasComponent<ContractState>
     fn get_contract_mut(ref self: super::component::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, super::component::Event>>(ref self: super::component::ComponentState<ContractState>, event: S) {
-        let event: super::component::Event = traits::Into::into(event);
+    fn emit<S, impl IntoImp: core::traits::Into<S, super::component::Event>>(ref self: super::component::ComponentState<ContractState>, event: S) {
+        let event: super::component::Event = core::traits::Into::into(event);
         let mut contract = super::component::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::CompEvent(event));
     }
@@ -5441,7 +5441,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::CompEvent(val) => {
-                array::ArrayTrait::append(ref keys, selector!("CompEvent"));
+                core::array::ArrayTrait::append(ref keys, selector!("CompEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -5451,7 +5451,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("CompEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -5573,17 +5573,17 @@ const TEST_CLASS_HASH: felt252 = 0x7bfb361123ab6c75c9b1db29acd3b69ea425da0db9432
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -5608,7 +5608,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -5825,12 +5825,12 @@ struct Comp3TraitDispatcher {
 
 impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
     fn foo3(self: Comp3TraitDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -5845,12 +5845,12 @@ struct Comp3TraitLibraryDispatcher {
 
 impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
     fn foo3(self: Comp3TraitLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -5869,12 +5869,12 @@ struct Comp3TraitSafeLibraryDispatcher {
 
 impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
     fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -5890,12 +5890,12 @@ struct Comp3TraitSafeDispatcher {
 
 impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
     fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -6139,7 +6139,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 
@@ -6170,7 +6170,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -6217,7 +6217,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 #[starknet::embeddable]
@@ -6253,7 +6253,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -6272,20 +6272,20 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
         +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -6528,12 +6528,12 @@ struct Comp3TraitDispatcher {
 
 impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
     fn foo3(self: Comp3TraitDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -6548,12 +6548,12 @@ struct Comp3TraitLibraryDispatcher {
 
 impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
     fn foo3(self: Comp3TraitLibraryDispatcher) {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
@@ -6572,12 +6572,12 @@ struct Comp3TraitSafeLibraryDispatcher {
 
 impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
     fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -6593,12 +6593,12 @@ struct Comp3TraitSafeDispatcher {
 
 impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
     fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
+        let mut __calldata__ = core::traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
-            array::ArrayTrait::span(@__calldata__),
+            core::array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
         Result::Ok(())
@@ -6842,7 +6842,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 
@@ -6873,7 +6873,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -6920,7 +6920,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 #[starknet::embeddable]
@@ -6956,7 +6956,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -6975,20 +6975,20 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
         +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
     
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
