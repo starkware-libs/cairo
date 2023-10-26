@@ -981,8 +981,13 @@ fn compute_expr_error_propagate_semantic(
             },
         )
     })?;
+    let conformed_err_variant_ty =
+        ctx.resolver.inference().conform_ty(func_err_variant.ty, err_variant.ty);
+    // If conforming the types failed, the next check will fail and a better diagnostic will be
+    // added.
+    let err_variant_ty = conformed_err_variant_ty.unwrap_or(err_variant.ty);
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
-    if func_err_variant.ty != err_variant.ty
+    if func_err_variant.ty != err_variant_ty
         || func_err_variant.concrete_enum_id.enum_id(ctx.db)
             != err_variant.concrete_enum_id.enum_id(ctx.db)
     {
