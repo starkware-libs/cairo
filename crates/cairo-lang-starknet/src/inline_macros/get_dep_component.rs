@@ -2,10 +2,10 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::inline_macros::unsupported_bracket_diagnostic;
+use cairo_lang_semantic::extract_macro_unnamed_args;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use itertools::Itertools;
+use cairo_lang_utils::extract_matches;
 
 /// Macro for getting a component given a contract state that has it.
 #[derive(Debug, Default)]
@@ -46,28 +46,19 @@ fn get_dep_component_generate_code_helper(
     syntax: &ast::ExprInlineMacro,
     is_mut: bool,
 ) -> InlinePluginResult {
-    let macro_args = if let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) {
-        args.arguments(db)
-    } else {
-        return unsupported_bracket_diagnostic(db, syntax);
-    };
+    let [contract_arg, component_impl_arg] =
+        extract_macro_unnamed_args!(db, syntax, 2, ast::WrappedArgList::ParenthesizedArgList(_));
 
-    let arguments = macro_args.elements(db).iter().map(|arg| arg.arg_clause(db)).collect_vec();
-    let [ast::ArgClause::Unnamed(contract_arg), ast::ArgClause::Unnamed(component_impl_arg)] =
-        arguments.as_slice()
-    else {
-        let diagnostics = vec![PluginDiagnostic {
-            stable_ptr: syntax.stable_ptr().untyped(),
-            message: format!(
-                "`{}` macro must have exactly two unnamed arguments.",
-                if is_mut { GetDepComponentMutMacro::NAME } else { GetDepComponentMacro::NAME }
-            ),
-        }];
-        return InlinePluginResult { code: None, diagnostics };
-    };
     if is_mut {
-        // Verify the first element has  only a `ref` modifier.
-        let contract_arg_modifiers = macro_args.elements(db)[0].modifiers(db).elements(db);
+        // `extract_macro_unnamed_args` above guarantees that we have `ParenthesizedArgList`.
+        let contract_arg_modifiers =
+            extract_matches!(syntax.arguments(db), ast::WrappedArgList::ParenthesizedArgList)
+                .args(db)
+                .elements(db)[0]
+                .modifiers(db)
+                .elements(db);
+
+        // Verify the first element has only a `ref` modifier.
         if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
@@ -95,13 +86,10 @@ fn get_dep_component_generate_code_helper(
             }}
             "),
         &[
-            (
-                "contract_path".to_string(),
-                RewriteNode::new_trimmed(contract_arg.value(db).as_syntax_node()),
-            ),
+            ("contract_path".to_string(), RewriteNode::new_trimmed(contract_arg.as_syntax_node())),
             (
                 "component_impl_path".to_string(),
-                RewriteNode::new_trimmed(component_impl_arg.value(db).as_syntax_node()),
+                RewriteNode::new_trimmed(component_impl_arg.as_syntax_node()),
             ),
         ]
         .into(),
