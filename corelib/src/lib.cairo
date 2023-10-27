@@ -210,39 +210,6 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
     }
 }
 
-
-impl Felt252Zero of Zero<felt252> {
-    fn zero() -> felt252 {
-        0
-    }
-
-    #[inline(always)]
-    fn is_zero(self: @felt252) -> bool {
-        *self == Zero::zero()
-    }
-
-    #[inline(always)]
-    fn is_non_zero(self: @felt252) -> bool {
-        !self.is_zero()
-    }
-}
-
-impl Felt252One of One<felt252> {
-    fn one() -> felt252 {
-        1
-    }
-
-    #[inline(always)]
-    fn is_one(self: @felt252) -> bool {
-        *self == One::one()
-    }
-
-    #[inline(always)]
-    fn is_non_one(self: @felt252) -> bool {
-        !self.is_one()
-    }
-}
-
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
