@@ -13,8 +13,7 @@ use once_cell::sync::Lazy;
 
 use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use crate::contract_class::compile_contract_in_prepared_db;
-use crate::inline_macros::get_dep_component::{GetDepComponentMacro, GetDepComponentMutMacro};
-use crate::inline_macros::selector::SelectorMacro;
+use crate::inline_macros::get_starknet_inline_macro_plugins;
 use crate::plugin::StarkNetPlugin;
 
 /// Returns a path to example contract that matches `name`.
@@ -31,12 +30,7 @@ pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
         RootDatabase::builder()
             .detect_corelib()
             .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
+            .with_inline_macro_plugins(get_starknet_inline_macro_plugins())
             .build()
             .unwrap(),
     )
@@ -55,12 +49,7 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
                 ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
             )
             .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
+            .with_inline_macro_plugins(get_starknet_inline_macro_plugins())
             .build()
             .unwrap(),
     )

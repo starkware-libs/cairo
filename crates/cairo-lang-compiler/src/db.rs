@@ -107,6 +107,16 @@ impl RootDatabaseBuilder {
         self
     }
 
+    pub fn with_inline_macro_plugins(
+        &mut self,
+        plugins: impl IntoIterator<Item = (impl AsRef<str>, Arc<dyn InlineMacroExprPlugin>)>,
+    ) -> &mut Self {
+        for (name, plugin) in plugins {
+            self.with_inline_macro_plugin(name.as_ref(), plugin);
+        }
+        self
+    }
+
     pub fn clear_plugins(&mut self) -> &mut Self {
         self.plugins.clear();
         self

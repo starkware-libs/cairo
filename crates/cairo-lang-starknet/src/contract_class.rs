@@ -31,8 +31,7 @@ use crate::contract::{
     ContractDeclaration,
 };
 use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
-use crate::inline_macros::get_dep_component::{GetDepComponentMacro, GetDepComponentMutMacro};
-use crate::inline_macros::selector::SelectorMacro;
+use crate::inline_macros::get_starknet_inline_macro_plugins;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::plugin::StarkNetPlugin;
 
@@ -112,9 +111,7 @@ pub fn compile_path(
     let mut db = RootDatabase::builder()
         .detect_corelib()
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
+        .with_inline_macro_plugins(get_starknet_inline_macro_plugins())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;

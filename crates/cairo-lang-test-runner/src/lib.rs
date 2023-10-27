@@ -16,10 +16,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
-use cairo_lang_starknet::inline_macros::get_dep_component::{
-    GetDepComponentMacro, GetDepComponentMutMacro,
-};
-use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
+use cairo_lang_starknet::inline_macros::get_starknet_inline_macro_plugins;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{compile_test_prepared_db, TestCompilation, TestConfig, TestPlugin};
@@ -221,15 +218,7 @@ impl TestCompiler {
 
             if starknet {
                 b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-                    .with_inline_macro_plugin(
-                        GetDepComponentMacro::NAME,
-                        Arc::new(GetDepComponentMacro),
-                    )
-                    .with_inline_macro_plugin(
-                        GetDepComponentMutMacro::NAME,
-                        Arc::new(GetDepComponentMutMacro),
-                    );
+                    .with_inline_macro_plugins(get_starknet_inline_macro_plugins());
             }
 
             b.build()?
