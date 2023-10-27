@@ -5,7 +5,6 @@ use traits::{
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
-use num::traits::{Zero, One};
 
 type usize = u32;
 
