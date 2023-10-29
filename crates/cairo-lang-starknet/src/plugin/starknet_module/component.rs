@@ -93,7 +93,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
         return None;
     };
 
-    let [arg] = &attribute_args.args(db).elements(db)[..] else {
+    let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
         return None;
     };
     let AttributeArgVariant::Unnamed { value: attr_arg_value, .. } =

@@ -47,7 +47,7 @@ fn get_dep_component_generate_code_helper(
     is_mut: bool,
 ) -> InlinePluginResult {
     let macro_args = if let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) {
-        args.args(db)
+        args.arguments(db)
     } else {
         return unsupported_bracket_diagnostic(db, syntax);
     };

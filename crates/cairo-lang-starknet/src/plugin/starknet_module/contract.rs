@@ -548,7 +548,7 @@ pub fn handle_component_inline_macro(
     data: &mut ContractSpecificGenerationData,
 ) {
     let macro_args = match component_macro_ast.arguments(db) {
-        ast::WrappedArgList::ParenthesizedArgList(args) => args.args(db),
+        ast::WrappedArgList::ParenthesizedArgList(args) => args.arguments(db),
         _ => {
             diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
             return;

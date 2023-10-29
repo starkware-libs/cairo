@@ -126,7 +126,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("ArgListParenthesized")
         .node("lparen", "TerminalLParen")
-        .node("args", "ArgList")
+        .node("arguments", "ArgList")
         .node("rparen", "TerminalRParen")
     )
     .add_option("ArgListParenthesized")
