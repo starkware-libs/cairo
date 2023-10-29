@@ -297,7 +297,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'calc_with_error'
     │   │       │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
     │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -360,7 +360,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'method'
     │   │       │   │   │   │       └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │   │           ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │           ├── args (kind: ArgList) []
+    │   │       │   │   │   │           ├── arguments (kind: ArgList) []
     │   │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -388,7 +388,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'func1'
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
     │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
     │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -414,7 +414,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │           └── rangle (kind: TokenGT): '>'
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
     │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
     │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -553,7 +553,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │       │       └── ident (kind: TokenIdentifier): 'annot'
     │   │   │       │       ├── arguments (kind: ArgListParenthesized)
     │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
-    │   │   │       │       │   ├── args (kind: ArgList)
+    │   │   │       │       │   ├── arguments (kind: ArgList)
     │   │   │       │       │   │   └── item #0 (kind: Arg)
     │   │   │       │       │   │       ├── modifiers (kind: ModifierList) []
     │   │   │       │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -757,7 +757,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── bang (kind: TokenNot): '!'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── args (kind: ArgList)
+    │   │   │   ├── arguments (kind: ArgList)
     │   │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -1572,7 +1572,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
     │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -1719,7 +1719,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │           │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │           │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │   │           │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │           ├── args (kind: ArgList) []
+    │   │       │   │   │   │           ├── arguments (kind: ArgList) []
     │   │       │   │   │   │           └── rparen (kind: TerminalRParen)
     │   │       │   │   │   │               ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │               ├── token (kind: TokenRParen): ')'
@@ -1805,7 +1805,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
     │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
     │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -1860,7 +1860,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── args (kind: ArgList)
+    │   │       │   │   │       ├── arguments (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
     │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
     │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -2224,7 +2224,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │       │       │   │   ├── token (kind: TokenLParen): '('
     │   │   │       │       │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │       │       │   ├── args (kind: ArgList)
+    │   │   │       │       │   ├── arguments (kind: ArgList)
     │   │   │       │       │   │   └── item #0 (kind: Arg)
     │   │   │       │       │   │       ├── modifiers (kind: ModifierList) []
     │   │   │       │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
@@ -2785,7 +2785,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenLParen): '('
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   ├── args (kind: ArgList)
+    │   │   │   ├── arguments (kind: ArgList)
     │   │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)

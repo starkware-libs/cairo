@@ -322,7 +322,7 @@ skipped tokens
     │           │   │       │       │           │       └── ident (kind: TokenIdentifier): 'foo'
     │           │   │       │       │           └── arguments (kind: ArgListParenthesized)
     │           │   │       │       │               ├── lparen (kind: TokenLParen): '('
-    │           │   │       │       │               ├── args (kind: ArgList)
+    │           │   │       │       │               ├── arguments (kind: ArgList)
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
     │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -1136,7 +1136,7 @@ skipped tokens
     │           │   │       │       │               │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   ├── token (kind: TokenLParen): '('
     │           │   │       │       │               │   └── trailing_trivia (kind: Trivia) []
-    │           │   │       │       │               ├── args (kind: ArgList)
+    │           │   │       │       │               ├── arguments (kind: ArgList)
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
     │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
