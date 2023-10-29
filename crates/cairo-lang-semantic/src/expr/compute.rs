@@ -565,7 +565,7 @@ fn compute_expr_function_call_semantic(
     // TODO(Gil): Consider not invoking the TraitFunction inference below if there were errors in
     // argument semantics, in order to avoid unnecessary diagnostics.
     let named_args: Vec<_> = args_syntax
-        .args(syntax_db)
+        .arguments(syntax_db)
         .elements(syntax_db)
         .into_iter()
         .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
@@ -1687,7 +1687,7 @@ fn method_call_expr(
     let named_args: Vec<_> = chain!(
         [NamedArg(fixed_lexpr, None, mutability)],
         expr.arguments(syntax_db)
-            .args(syntax_db)
+            .arguments(syntax_db)
             .elements(syntax_db)
             .into_iter()
             .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
