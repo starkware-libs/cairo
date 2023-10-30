@@ -29,6 +29,7 @@ num-traits.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+indoc.workspace = true
 test-case.workspace = true
 
 [package.metadata.cargo-machete]

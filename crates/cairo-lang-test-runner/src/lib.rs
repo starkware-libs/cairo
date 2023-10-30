@@ -3,13 +3,13 @@ use std::sync::{Arc, Mutex};
 use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
-use cairo_felt::{felt_str, Felt252};
+use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_runner::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
+use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -23,7 +23,6 @@ use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{compile_test_prepared_db, TestCompilation, TestConfig, TestPlugin};
-use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
@@ -112,17 +111,7 @@ impl CompiledTestRunner {
                         println!("expected panic but finished successfully.");
                     }
                     RunResultValue::Panic(values) => {
-                        print!("panicked with ");
-                        let mut values_iter = values.into_iter();
-                        let mut items = Vec::new();
-                        while let Some(item) = next_printed_item(&mut values_iter) {
-                            items.push(item);
-                        }
-                        if items.len() == 1 {
-                            println!("{}.", items[0]);
-                        } else {
-                            println!("({}).", items.join(", "));
-                        }
+                        println!("{}", format_for_panic(values.into_iter()));
                     }
                 }
             }
@@ -138,55 +127,15 @@ impl CompiledTestRunner {
     }
 }
 
-/// Formats a string or a `Felt252`.
-fn next_printed_item(values: &mut IntoIter<Felt252>) -> Option<String> {
-    let Some(first_felt) = values.next() else {
-        return None;
-    };
-
-    Some(if first_felt == felt_str!(BYTE_ARRAY_MAGIC, 16) {
-        match get_formatted_string(values) {
-            Some(string) => string,
-            None => get_formatted_short_string(&first_felt),
-        }
-    } else {
-        get_formatted_short_string(&first_felt)
-    })
-}
-
-/// Formats a `Felt252`, as a short string if possible.
-fn get_formatted_short_string(value: &Felt252) -> String {
-    let hex_value = value.to_biguint();
-    match as_cairo_short_string(value) {
-        Some(as_string) => format!("{hex_value:#x} ('{as_string}')"),
-        None => format!("{hex_value:#x}"),
+/// Formats the given felts as a panic string.
+fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
+    let mut items = Vec::new();
+    while let Some(item) = format_next_item(&mut felts) {
+        items.push(item.quote_if_string());
     }
-}
-
-/// Formats a string, represented as a sequence of `Felt252`s.
-/// Assumes the sequence is a valid serialization of a ByteArray.
-fn get_formatted_string(values: &mut IntoIter<Felt252>) -> Option<String> {
-    // Clone the iterator and work with the clone. If the extraction of the string is successful,
-    // change the original iterator to the one we worked with. If not, continue with the
-    // original iterator at the original point.
-    let mut cloned_values_iter = values.clone();
-
-    let num_full_words = cloned_values_iter.next().unwrap().to_usize().unwrap();
-    let full_words = cloned_values_iter.by_ref().take(num_full_words).collect_vec();
-    let pending_word = cloned_values_iter.next().unwrap();
-    let pending_word_len = cloned_values_iter.next().unwrap().to_usize().unwrap();
-
-    let full_words_string = full_words
-        .into_iter()
-        .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
-        .collect::<Option<Vec<String>>>()?
-        .join("");
-    let pending_word_string = as_cairo_short_string_ex(&pending_word, pending_word_len)?;
-
-    // Extraction was successful, change the original iterator to the one we worked with.
-    *values = cloned_values_iter;
-
-    Some(format!("\"{full_words_string}{pending_word_string}\""))
+    let panic_values_string =
+        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
+    format!("Panicked with {panic_values_string}.")
 }
 
 /// Configuration of compiled tests runner.
