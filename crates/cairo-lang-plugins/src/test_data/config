@@ -42,6 +42,10 @@ fn f9() -> felt252 { 0 }
 #[cfg(b)]
 fn f10() -> felt252 { 0 }
 
+#[cfg(no_cfg)]
+#[unsupported_attr]
+fn f11() -> felt252 { 0 }
+
 trait RemoveTraitItem {
     fn f0();
     #[cfg(a)]
