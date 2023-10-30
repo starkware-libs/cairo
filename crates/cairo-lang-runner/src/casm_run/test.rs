@@ -1,12 +1,15 @@
 use cairo_felt::{felt_str, Felt252};
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
+use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
 use cairo_vm::vm::vm_core::VirtualMachine;
+use indoc::indoc;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use test_case::test_case;
 
+use super::format_for_debug;
 use crate::casm_run::run_function;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
@@ -226,5 +229,213 @@ fn test_as_cairo_short_string_ex() {
             32
         ),
         None
+    );
+}
+
+#[test]
+fn test_format_for_debug() {
+    // Valid short string.
+    let felts = vec![felt_str!("68656c6c6f", 16)];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t0x68656c6c6f ('hello')\n");
+
+    // felt252
+    let felts = vec![Felt252::from(1)];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t0x1\n");
+
+    // Valid string with < 31 characters (no full words).
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from(0),                                    // No full words.
+        felt_str!("73686f72742c2062757420737472696e67", 16), // 'short, but string'
+        Felt252::from(17),                                   // pending word length
+    ];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t\"short, but string\"\n");
+
+    // Valid string with > 31 characters (with a full word).
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // A single full word.
+        Felt252::from(1),
+        // full word: 'This is a long string with more'
+        felt_str!("546869732069732061206c6f6e6720737472696e672077697468206d6f7265", 16),
+        // pending word: ' than 31 characters.'
+        felt_str!("207468616e20333120636861726163746572732e", 16),
+        // pending word length
+        Felt252::from(20),
+    ];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        "[DEBUG]\t\"This is a long string with more than 31 characters.\"\n"
+    );
+
+    // Only magic.
+    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16)];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3\n"
+    );
+
+    // num_full_words > usize.
+    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), felt_str!("100000000", 16)];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3
+                [DEBUG]\t0x100000000
+                "
+        )
+    );
+
+    // Not enough data after num_full_words.
+    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(0)];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3\n[DEBUG]\t0x0 \
+         ('')\n"
+    );
+
+    // Not enough full words.
+    let felts =
+        vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(1), Felt252::from(0), Felt252::from(0)];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3
+            [DEBUG]\t0x1
+            [DEBUG]\t0x0 ('')\n[DEBUG]\t0x0 ('')
+            "
+        )
+    );
+
+    // Too much data in full word.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from(1),
+        felt_str!("161616161616161616161616161616161616161616161616161616161616161", 16),
+        Felt252::from(0),
+        Felt252::from(0),
+    ];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3
+            [DEBUG]\t0x1
+            [DEBUG]\t0x161616161616161616161616161616161616161616161616161616161616161
+            [DEBUG]\t0x0 ('')
+            [DEBUG]\t0x0 ('')
+            "
+        )
+    );
+
+    // num_pending_bytes > usize.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from(0),
+        Felt252::from(0),
+        felt_str!("100000000", 16),
+    ];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3
+            [DEBUG]\t0x0 ('')
+            [DEBUG]\t0x0 ('')
+            [DEBUG]\t0x100000000
+            "
+        )
+    );
+
+    // "Not enough" data in pending_word (nulls in the beginning).
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // No full words.
+        Felt252::from(0),
+        // 'a'
+        felt_str!("61", 16),
+        // pending word length. Bigger than the actual data in the pending word.
+        Felt252::from(2),
+    ];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t\"\\0a\"\n");
+
+    // Too much data in pending_word.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // No full words.
+        Felt252::from(0),
+        // 'aa'
+        felt_str!("6161", 16),
+        // pending word length. Smaller than the actual data in the pending word.
+        Felt252::from(1),
+    ];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3
+            [DEBUG]\t0x0 ('')
+            [DEBUG]\t0x6161 ('aa')
+            [DEBUG]\t0x1
+            "
+        )
+    );
+
+    // Valid string with Null.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // No full word.
+        Felt252::from(0),
+        // pending word: 'Hello\0world'
+        felt_str!("48656c6c6f00776f726c64", 16),
+        // pending word length
+        Felt252::from(11),
+    ];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t\"Hello\\0world\"\n");
+
+    // Valid string with a non printable character.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // No full word.
+        Felt252::from(0),
+        // pending word: 'Hello\x11world'
+        felt_str!("48656c6c6f11776f726c64", 16),
+        // pending word length
+        Felt252::from(11),
+    ];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t\"Hello\\x11world\"\n");
+
+    // Valid string with a newline.
+    let felts = vec![
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        // No full word.
+        Felt252::from(0),
+        // pending word: 'Hello\nworld'
+        felt_str!("48656c6c6f0a776f726c64", 16),
+        // pending word length
+        Felt252::from(11),
+    ];
+    assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t\"Hello\nworld\"\n");
+
+    // Multiple values: (felt, string, short_string, felt)
+    let felts = vec![
+        // felt: 0x9999
+        Felt252::from(0x9999),
+        // String: "hello"
+        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        Felt252::from(0),
+        felt_str!("68656c6c6f", 16),
+        Felt252::from(5),
+        // Short string: 'world'
+        felt_str!("776f726c64", 16),
+        // felt: 0x8888
+        Felt252::from(0x8888),
+    ];
+    assert_eq!(
+        format_for_debug(felts.into_iter()),
+        indoc!(
+            "[DEBUG]\t0x9999
+            [DEBUG]\t\"hello\"
+            [DEBUG]\t0x776f726c64 ('world')
+            [DEBUG]\t0x8888
+            "
+        )
     );
 }
