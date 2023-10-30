@@ -20,7 +20,8 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx,
+    PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
@@ -1299,7 +1300,7 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId
 
     for (crate_id, crate_root, _file_stem) in source_paths.clone() {
         let crate_root = Directory::Real(crate_root);
-        db.set_crate_root(crate_id, Some(crate_root));
+        db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(crate_root)));
     }
 
     let source_paths = source_paths
