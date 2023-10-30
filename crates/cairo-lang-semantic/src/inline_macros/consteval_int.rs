@@ -11,7 +11,9 @@ use super::{extract_single_unnamed_arg, unsupported_bracket_diagnostic};
 
 #[derive(Debug)]
 pub struct ConstevalIntMacro;
-
+impl ConstevalIntMacro {
+    pub const NAME: &'static str = "consteval_int";
+}
 impl InlineMacroExprPlugin for ConstevalIntMacro {
     fn generate_code(
         &self,
@@ -27,8 +29,10 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: args.stable_ptr().untyped(),
-                    message: "consteval_int macro must have exactly one unnamed argument."
-                        .to_string(),
+                    message: format!(
+                        "{} macro must have exactly one unnamed argument.",
+                        Self::NAME
+                    ),
                 }],
             };
         };
@@ -100,19 +104,25 @@ pub fn compute_constant_expr(
             _ => {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: bin_expr.stable_ptr().untyped(),
-                    message: "Unsupported binary operator in consteval_int macro".to_string(),
+                    message: format!(
+                        "Unsupported binary operator in {} macro",
+                        ConstevalIntMacro::NAME
+                    ),
                 });
                 None
             }
         },
-        ast::Expr::Unary(un_expr) => match un_expr.op(db) {
+        ast::Expr::Unary(unary_expr) => match unary_expr.op(db) {
             ast::UnaryOperator::Minus(_) => {
-                Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics)?)
+                Some(-compute_constant_expr(db, &unary_expr.expr(db), diagnostics)?)
             }
             _ => {
                 diagnostics.push(PluginDiagnostic {
-                    stable_ptr: un_expr.stable_ptr().untyped(),
-                    message: "Unsupported unary operator in consteval_int macro".to_string(),
+                    stable_ptr: unary_expr.stable_ptr().untyped(),
+                    message: format!(
+                        "Unsupported unary operator in {} macro",
+                        ConstevalIntMacro::NAME
+                    ),
                 });
                 None
             }
@@ -123,7 +133,7 @@ pub fn compute_constant_expr(
         _ => {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: value.stable_ptr().untyped(),
-                message: "Unsupported expression in consteval_int macro".to_string(),
+                message: format!("Unsupported expression in {} macro", ConstevalIntMacro::NAME),
             });
             None
         }

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::{with_inline_macro_plugin, with_macro_plugin};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -18,23 +19,23 @@ pub fn test_abi_failure(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut RootDatabase::builder()
-        .detect_corelib()
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
-        .build()
-        .unwrap();
+    let mut builder = RootDatabase::builder();
+    builder.detect_corelib();
+    with_macro_plugin!(builder, StarkNetPlugin);
+    with_inline_macro_plugin!(builder, SelectorMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
+    let db = builder.build().unwrap();
+
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let (module, diagnostics) = setup_test_module(db, &cairo_code).split();
+    let (module, diagnostics) = setup_test_module(&db, &cairo_code).split();
 
     let submodules = db.module_submodules_ids(module.module_id).unwrap();
     let contract_submodule = submodules
         .iter()
-        .find(|submodule| submodule.has_attr(db, "starknet::contract").unwrap())
+        .find(|submodule| submodule.has_attr(&db, "starknet::contract").unwrap())
         .expect("No starknet::contract found in input code.");
-    let abi_error = AbiBuilder::submodule_as_contract_abi(db, *contract_submodule).unwrap_err();
+    let abi_error = AbiBuilder::submodule_as_contract_abi(&db, *contract_submodule).unwrap_err();
 
     let test_error = verify_diagnostics_expectation(args, &diagnostics);
 

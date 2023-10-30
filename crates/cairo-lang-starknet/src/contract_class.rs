@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
-use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_compiler::{with_inline_macro_plugin, with_macro_plugin, CompilerConfig};
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -109,13 +109,13 @@ pub fn compile_path(
     contract_path: Option<&str>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let mut db = RootDatabase::builder()
-        .detect_corelib()
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
-        .build()?;
+    let mut builder = RootDatabase::builder();
+    builder.detect_corelib();
+    with_macro_plugin!(builder, StarkNetPlugin);
+    with_inline_macro_plugin!(builder, SelectorMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
+    let mut db = builder.build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 

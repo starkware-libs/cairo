@@ -12,12 +12,19 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
+/// Adds an inline macro plugin to the map.
+macro_rules! add_inline_macro {
+    ($map:ident, $macro:ident) => {
+        $map.insert($macro::NAME.to_string(), Arc::new($macro));
+    };
+}
+
 /// Gets the default plugins to load into the Cairo compiler.
 pub fn get_default_inline_macro_plugins() -> OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>
 {
     let mut res = OrderedHashMap::<String, Arc<dyn InlineMacroExprPlugin>>::default();
-    res.insert("array".to_string(), Arc::new(ArrayMacro));
-    res.insert("consteval_int".to_string(), Arc::new(ConstevalIntMacro));
+    add_inline_macro!(res, ArrayMacro);
+    add_inline_macro!(res, ConstevalIntMacro);
     res
 }
 

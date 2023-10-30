@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::ProjectConfig;
-use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_compiler::{with_inline_macro_plugin, with_macro_plugin, CompilerConfig};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_test_utils::test_lock;
@@ -27,19 +27,13 @@ pub fn get_example_file_path(file_name: &str) -> PathBuf {
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
-    Mutex::new(
-        RootDatabase::builder()
-            .detect_corelib()
-            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
-            .build()
-            .unwrap(),
-    )
+    let mut builder = RootDatabase::builder();
+    builder.detect_corelib();
+    with_macro_plugin!(builder, StarkNetPlugin);
+    with_inline_macro_plugin!(builder, SelectorMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
+    Mutex::new(builder.build().unwrap())
 });
 
 const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
@@ -48,22 +42,15 @@ const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
 /// tests should be able to use the cached queries that rely on the corelib's or the contracts
 /// crates code, which vastly reduces the tests runtime.
 pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
-    Mutex::new(
-        RootDatabase::builder()
-            .detect_corelib()
-            .with_project_config(
-                ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
-            )
-            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
-            .build()
-            .unwrap(),
-    )
+    let mut builder = RootDatabase::builder();
+    builder.detect_corelib().with_project_config(
+        ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
+    );
+    with_macro_plugin!(builder, StarkNetPlugin);
+    with_inline_macro_plugin!(builder, SelectorMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMacro);
+    with_inline_macro_plugin!(builder, GetDepComponentMutMacro);
+    Mutex::new(builder.build().unwrap())
 });
 
 /// Returns the compiled test contract from the contracts crate, with replaced ids.

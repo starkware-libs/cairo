@@ -89,6 +89,10 @@ pub struct InlinePluginResult {
     pub diagnostics: Vec<PluginDiagnostic>,
 }
 
+// An associated const `NAME` can't be added as it would prevent using it as an object (with dyn),
+// which is needed in this case. Thus we define `NAME` outside the impl for each type implementing
+// this trait.
+/// A trait for inline macros that evaluate to some Expr.
 pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
