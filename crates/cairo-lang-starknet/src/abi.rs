@@ -102,6 +102,15 @@ impl Contract {
     }
 }
 
+impl IntoIterator for Contract {
+    type Item = Item;
+    type IntoIter = <OrderedHashSet<Item> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
 /// Event information.
 enum EventInfo {
     /// The event is a struct.
