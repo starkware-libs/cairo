@@ -909,15 +909,9 @@ fn compute_expr_loop_semantic(
 
         let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
-        let tail = get_tail_expression(syntax_db, statements.as_slice())
-            .map(|tail| compute_expr_semantic(new_ctx, &tail));
-        if let Some(tail) = &tail {
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
+        if tail.is_some() {
             statements.pop();
-            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
-                new_ctx
-                    .diagnostics
-                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
-            }
         }
 
         // Convert statements to semantic model.
@@ -927,6 +921,14 @@ fn compute_expr_loop_semantic(
                 compute_statement_semantic(new_ctx, statement_syntax).to_option()
             })
             .collect();
+        let tail = tail.map(|tail| compute_expr_semantic(new_ctx, &tail));
+        if let Some(tail) = &tail {
+            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
+                new_ctx
+                    .diagnostics
+                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
+            }
+        }
 
         let new_flow_merge =
             std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
