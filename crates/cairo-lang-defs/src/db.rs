@@ -362,13 +362,6 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         files.push(module_file);
 
         for item_ast in item_asts.elements(syntax_db) {
-            validate_attributes(
-                syntax_db,
-                &allowed_attributes,
-                module_file_id,
-                &item_ast,
-                &mut plugin_diagnostics,
-            );
             let mut remove_original_item = false;
             // Iterate the plugins by their order. The first one to change something (either
             // generate new code, remove the original code, or both), breaks the loop. If more
@@ -405,6 +398,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 // Don't add the original item to the module data.
                 continue;
             }
+            validate_attributes(
+                syntax_db,
+                &allowed_attributes,
+                module_file_id,
+                &item_ast,
+                &mut plugin_diagnostics,
+            );
             match item_ast {
                 ast::Item::Constant(constant) => {
                     let item_id =
