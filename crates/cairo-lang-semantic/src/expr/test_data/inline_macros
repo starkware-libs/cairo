@@ -318,6 +318,76 @@ error: Inline macro `print` failed.
 
 //! > ==========================================================================
 
+//! > Test bad println! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "hello";
+
+   // Bad brackets.
+   println!["{}", ba];
+
+   // Less than 2 arguments.
+   println!(ba);
+
+   // More than 2 arguments.
+   println!("{}", ba, 1);
+
+   // First argument is not "{}".
+   println!("{}{}", ba);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `println` does not support this bracket type.
+ --> lib.cairo:5:4
+   println!["{}", ba];
+   ^****************^
+
+error: Inline macro `println` failed.
+ --> lib.cairo:5:4
+   println!["{}", ba];
+   ^****************^
+
+error: Plugin diagnostic: Macro `println` must have exactly 2 unnamed arguments.
+ --> lib.cairo:8:4
+   println!(ba);
+   ^**********^
+
+error: Inline macro `println` failed.
+ --> lib.cairo:8:4
+   println!(ba);
+   ^**********^
+
+error: Plugin diagnostic: Macro `println` must have exactly 2 unnamed arguments.
+ --> lib.cairo:11:4
+   println!("{}", ba, 1);
+   ^*******************^
+
+error: Inline macro `println` failed.
+ --> lib.cairo:11:4
+   println!("{}", ba, 1);
+   ^*******************^
+
+error: Plugin diagnostic: Currently, the `println` macro only supports `"{}"` as the first argument (format string).
+ --> lib.cairo:14:4
+   println!("{}{}", ba);
+   ^******************^
+
+error: Inline macro `println` failed.
+ --> lib.cairo:14:4
+   println!("{}{}", ba);
+   ^******************^
+
+//! > ==========================================================================
+
 //! > Test unknown macro
 
 //! > test_runner_name
