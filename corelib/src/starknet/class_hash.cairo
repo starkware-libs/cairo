@@ -1,4 +1,3 @@
-use zeroable::Zeroable;
 use serde::Serde;
 use hash::{Hash, HashStateTrait};
 
@@ -24,19 +23,22 @@ impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     }
 }
 
-impl ClassHashZeroable of Zeroable<ClassHash> {
+impl ClassHashZero of num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
     #[inline(always)]
-    fn is_zero(self: ClassHash) -> bool {
-        class_hash_to_felt252(self).is_zero()
+    fn is_zero(self: @ClassHash) -> bool {
+        felt_252::Felt252Zero::is_zero(@class_hash_to_felt252(*self))
     }
     #[inline(always)]
-    fn is_non_zero(self: ClassHash) -> bool {
+    fn is_non_zero(self: @ClassHash) -> bool {
         !self.is_zero()
     }
 }
+
+impl ClassHashZeroable = zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+
 
 impl ClassHashSerde of serde::Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {

@@ -22,7 +22,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
-        let Some(constant_expression) = extract_single_unnamed_arg(db, args.args(db)) else {
+        let Some(constant_expression) = extract_single_unnamed_arg(db, args.arguments(db)) else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {

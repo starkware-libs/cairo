@@ -4,6 +4,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,8 +29,12 @@ impl RewriteNode {
         Self::Modified(ModifiedNode { children: Some(children) })
     }
 
+    pub fn text(text: &str) -> Self {
+        Self::Text(text.to_string())
+    }
+
     pub fn empty() -> Self {
-        Self::Text("".to_string())
+        Self::text("")
     }
 
     /// Creates a rewrite node from an AST object.
@@ -50,7 +55,6 @@ impl RewriteNode {
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
-
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
                 let children = db.get_children(node.clone());
                 let num_children = children.len();
@@ -164,7 +168,7 @@ impl RewriteNode {
             // If the string wasn't empty and there is some pending text, first flush it as a text
             // child.
             if !pending_text.is_empty() {
-                children.push(RewriteNode::Text(pending_text.clone()));
+                children.push(RewriteNode::text(&pending_text));
                 pending_text.clear();
             }
             // Replace the substring with the relevant rewrite node.
@@ -175,10 +179,18 @@ impl RewriteNode {
         }
         // Flush the remaining text as a text child.
         if !pending_text.is_empty() {
-            children.push(RewriteNode::Text(pending_text.clone()));
+            children.push(RewriteNode::text(&pending_text));
         }
 
         RewriteNode::new_modified(children)
+    }
+
+    /// Creates a new Rewrite node by inserting a `separator` between each two given children.
+    pub fn interspersed(
+        children: impl IntoIterator<Item = RewriteNode>,
+        separator: RewriteNode,
+    ) -> RewriteNode {
+        RewriteNode::new_modified(itertools::intersperse(children, separator).collect_vec())
     }
 }
 impl Default for RewriteNode {
@@ -197,8 +209,8 @@ impl From<SyntaxNode> for RewriteNode {
 pub struct ModifiedNode {
     /// Children of the node.
     /// Can be None, in which case this is an empty node (of width 0). It's not the same as
-    /// Some(vec![]) - None can be (idempotently) modified, whereas modifying Some(vec![]) would
-    /// panic.
+    /// Some(vec![]) - A child can be (idempotently) modified for None, whereas modifying a child
+    /// for Some(vec![]) would panic.
     pub children: Option<Vec<RewriteNode>>,
 }
 

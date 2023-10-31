@@ -79,7 +79,7 @@ impl AttributeStructurize for ast::Attribute {
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
                     attribute_args
-                        .args(db)
+                        .arguments(db)
                         .elements(db)
                         .into_iter()
                         .map(|arg| AttributeArg::from_ast(arg, db))

@@ -188,7 +188,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
     Ok(match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            db.crate_root_dir(crate_id).to_maybe()?.file(db.upcast(), "lib.cairo".into())
+            db.crate_config(crate_id).to_maybe()?.root.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
@@ -219,7 +219,9 @@ fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     match module_id {
-        ModuleId::CrateRoot(crate_id) => db.crate_root_dir(crate_id).to_maybe(),
+        ModuleId::CrateRoot(crate_id) => {
+            db.crate_config(crate_id).to_maybe().map(|config| config.root)
+        }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
@@ -279,7 +281,11 @@ pub struct GeneratedFileInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
+    /// The list of IDs of all items in the module. Each ID here is guaranteed to be a key in one
+    /// of the specific-item-kind maps.
     items: Arc<Vec<ModuleItemId>>,
+
+    // Specific-item-kind maps
     constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
     submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
     uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
@@ -292,6 +298,7 @@ pub struct ModuleData {
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
     generated_file_infos: Vec<Option<GeneratedFileInfo>>,

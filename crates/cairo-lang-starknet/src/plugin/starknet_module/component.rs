@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::{formatdoc, indoc};
-use itertools::{chain, Itertools};
+use itertools::chain;
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
@@ -93,7 +93,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
         return None;
     };
 
-    let [arg] = &attribute_args.args(db).elements(db)[..] else {
+    let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
         return None;
     };
     let AttributeArgVariant::Unnamed { value: attr_arg_value, .. } =
@@ -251,7 +251,7 @@ fn handle_component_impl(
         ) else {
             continue;
         };
-        impl_functions.push(RewriteNode::Text("\n    ".to_string()));
+        impl_functions.push(RewriteNode::text("\n    "));
         impl_functions.push(impl_function);
     }
     let has_drop_impl = params
@@ -301,15 +301,13 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
     let elements = trait_path.elements(db);
     let (last, prefix) = elements.split_last().unwrap();
     let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
-    RewriteNode::new_modified(
-        itertools::Itertools::intersperse(
-            chain!(
-                prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
-                [last_without_generics]
-            ),
-            RewriteNode::Text("::".to_string()),
-        )
-        .collect_vec(),
+
+    RewriteNode::interspersed(
+        chain!(
+            prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
+            [last_without_generics]
+        ),
+        RewriteNode::text("::"),
     )
 }
 
@@ -358,21 +356,15 @@ fn handle_component_embeddable_as_impl_item(
     let rest_params_node = RewriteNode::new_modified(
         rest_params
             .iter()
-            .flat_map(|p| {
-                vec![RewriteNode::Text(", ".to_string()), RewriteNode::Copied(p.as_syntax_node())]
-            })
+            .flat_map(|p| vec![RewriteNode::text(", "), RewriteNode::Copied(p.as_syntax_node())])
             .collect(),
     );
-    let args_node = RewriteNode::new_modified(
-        rest_params
-            .iter()
-            .flat_map(|p| {
-                vec![
-                    RewriteNode::Copied(p.name(db).as_syntax_node()),
-                    RewriteNode::Text(", ".to_string()),
-                ]
-            })
-            .collect(),
+    let args_node = RewriteNode::interspersed(
+        chain!(
+            [RewriteNode::Text(format!("{callsite_modifier}component"))],
+            rest_params.iter().map(|p| RewriteNode::Copied(p.name(db).as_syntax_node()))
+        ),
+        RewriteNode::text(", "),
     );
     let ret_ty = match signature.ret_ty(db) {
         ast::OptionReturnTypeClause::Empty(_) => RewriteNode::empty(),
@@ -397,7 +389,7 @@ fn handle_component_embeddable_as_impl_item(
         &format!(
             "$generated_function_sig$ {{
         {get_component_call}
-        $impl_path$::$function_name$({callsite_modifier}component, $args_node$)
+        $impl_path$::$function_name$($args_node$)
     }}"
         ),
         &[

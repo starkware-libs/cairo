@@ -41,8 +41,8 @@ pub enum VarState {
     /// The variable is of size 0.
     ZeroSizedVar,
     /// The variable was consumed and can no longer be used.
-    /// This state is used because there is no efficent way of removing variables
-    /// from [VariablesState::variables] without effecting thier order.
+    /// This state is used because there is no efficient way of removing variables
+    /// from [VariablesState::variables] without effecting their order.
     Removed,
 }
 

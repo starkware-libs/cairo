@@ -14,6 +14,7 @@ use cairo_lang_casm::operand::{
 };
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
+use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
@@ -37,7 +38,7 @@ use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
-use crate::short_string::as_cairo_short_string;
+use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
@@ -179,6 +180,7 @@ struct ExecutionInfo {
     tx_info: TxInfo,
     caller_address: Felt252,
     contract_address: Felt252,
+    entry_point_selector: Felt252,
 }
 
 /// Copy of the cairo `BlockInfo` struct.
@@ -199,7 +201,22 @@ struct TxInfo {
     transaction_hash: Felt252,
     chain_id: Felt252,
     nonce: Felt252,
+    resource_bounds: Vec<ResourceBounds>,
+    tip: Felt252,
+    paymaster_data: Vec<Felt252>,
+    nonce_data_availabilty_mode: Felt252,
+    fee_data_availabilty_mode: Felt252,
+    account_deployment_data: Vec<Felt252>,
 }
+
+/// Copy of the cairo `ResourceBounds` struct.
+#[derive(Clone, Default)]
+struct ResourceBounds {
+    resource: Felt252,
+    max_amount: Felt252,
+    max_price_per_unit: Felt252,
+}
+
 /// Execution scope for constant memory allocation.
 struct MemoryExecScope {
     /// The first free address in the segment.
@@ -838,6 +855,19 @@ impl<'a> CairoHintProcessor<'a> {
         let signature_start = res_segment.ptr;
         res_segment.write_data(tx_info.signature.iter().cloned())?;
         let signature_end = res_segment.ptr;
+        let resource_bounds_start = res_segment.ptr;
+        for value in &tx_info.resource_bounds {
+            res_segment.write(&value.resource)?;
+            res_segment.write(&value.max_amount)?;
+            res_segment.write(&value.max_price_per_unit)?;
+        }
+        let resource_bounds_end = res_segment.ptr;
+        let paymaster_data_start = res_segment.ptr;
+        res_segment.write_data(tx_info.paymaster_data.iter().cloned())?;
+        let paymaster_data_end = res_segment.ptr;
+        let account_deployment_data_start = res_segment.ptr;
+        res_segment.write_data(tx_info.account_deployment_data.iter().cloned())?;
+        let account_deployment_data_end = res_segment.ptr;
         let tx_info_ptr = res_segment.ptr;
         res_segment.write(tx_info.version.clone())?;
         res_segment.write(tx_info.account_contract_address.clone())?;
@@ -847,6 +877,15 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info.transaction_hash.clone())?;
         res_segment.write(tx_info.chain_id.clone())?;
         res_segment.write(tx_info.nonce.clone())?;
+        res_segment.write(resource_bounds_start)?;
+        res_segment.write(resource_bounds_end)?;
+        res_segment.write(tx_info.tip.clone())?;
+        res_segment.write(paymaster_data_start)?;
+        res_segment.write(paymaster_data_end)?;
+        res_segment.write(tx_info.nonce_data_availabilty_mode.clone())?;
+        res_segment.write(tx_info.fee_data_availabilty_mode.clone())?;
+        res_segment.write(account_deployment_data_start)?;
+        res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
         res_segment.write(block_info.block_number.clone())?;
         res_segment.write(block_info.block_timestamp.clone())?;
@@ -856,6 +895,7 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info_ptr)?;
         res_segment.write(exec_info.caller_address.clone())?;
         res_segment.write(exec_info.contract_address.clone())?;
+        res_segment.write(exec_info.entry_point_selector.clone())?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
@@ -1028,6 +1068,15 @@ impl<'a> CairoHintProcessor<'a> {
         new_class: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, REPLACE_CLASS);
+        // Validating the class hash was declared as one of the starknet contracts.
+        if !self
+            .runner
+            .expect("Runner is needed for starknet.")
+            .starknet_contracts_info
+            .contains_key(&new_class)
+        {
+            fail_syscall!(b"CLASS_HASH_NOT_FOUND");
+        };
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
@@ -1887,13 +1936,9 @@ pub fn execute_core_hint(
             let mut curr = extract_relocatable(vm, start)?;
             let end = extract_relocatable(vm, end)?;
             while curr != end {
-                let value = vm.get_integer(curr)?;
-                if let Some(shortstring) = as_cairo_short_string(&value) {
-                    println!("[DEBUG]\t{shortstring: <31}\t(raw: {:#x}", value.to_bigint());
-                } else {
-                    println!("[DEBUG]\t{:<31}\t(raw: {:#x} ", ' ', value.to_bigint());
-                }
-                curr += 1;
+                let (string, next) = format_next(vm, curr, end)?;
+                println!("[DEBUG]\t{string}");
+                curr = next;
             }
             println!();
         }
@@ -1964,6 +2009,82 @@ pub fn execute_core_hint(
         }
     };
     Ok(())
+}
+
+// Returns the formatted debug string for the next value (a string or a single byte).
+fn format_next(
+    vm: &mut VirtualMachine,
+    curr: Relocatable,
+    end: Relocatable,
+) -> Result<(String, Relocatable), HintError> {
+    let value = vm.get_integer(curr)?.deref().clone();
+    let curr_plus_one = (curr + 1)?;
+    let (string, next) = if value == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
+        let Ok(num_full_words) = vm.get_integer(curr_plus_one) else {
+            return Ok((format_single_byte(value), curr_plus_one));
+        };
+        let Some(num_full_words) = num_full_words.to_usize() else {
+            return Ok((format_single_byte(value), curr_plus_one));
+        };
+        let Ok(next) = curr + (num_full_words + 4) else {
+            return Ok((format_single_byte(value), curr_plus_one));
+        };
+        if next > end {
+            // Not enough data for a string, handle as a single byte.
+            (format_single_byte(value), curr_plus_one)
+        } else {
+            // Print string.
+            match format_string(vm, curr_plus_one, num_full_words) {
+                Some(string) => (string, next),
+                // Could not parse as a string, print a single byte.
+                None => (format_single_byte(value), curr_plus_one),
+            }
+        }
+    } else {
+        (format_single_byte(value), curr_plus_one)
+    };
+    Ok((string, next))
+}
+
+/// Returns the formatted debug string for a string, assuming previous 2 bytes were the ByteArray
+/// string magic and the number of full words, which is passed here by `num_full_words`.
+/// Assumes also that `curr + (num_full_words + 3)` does not overflow.
+/// `pointer` points to the beginning of the full words.
+/// If can't parse a string, returns None.
+fn format_string(
+    vm: &mut VirtualMachine,
+    mut pointer: Relocatable,
+    num_full_words: usize,
+) -> Option<String> {
+    let mut full_words = vec![];
+
+    let full_words_end = (pointer + (num_full_words + 1)).unwrap();
+    pointer += 1;
+    while pointer != full_words_end {
+        let full_word = vm.get_integer(pointer).ok()?;
+        full_words.push(full_word);
+        pointer += 1;
+    }
+    let pending_word = vm.get_integer(pointer).ok()?;
+    pointer += 1;
+    let pending_word_len = vm.get_integer(pointer).ok()?.to_usize()?;
+
+    let full_words_string = full_words
+        .into_iter()
+        .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
+        .collect::<Option<Vec<String>>>()?
+        .join("");
+    let pending_word_string = as_cairo_short_string_ex(&pending_word, pending_word_len)?;
+    Some(format!("\"{full_words_string}{pending_word_string}\""))
+}
+
+/// Returns the formatted debug string for a single byte (the given `value`).
+fn format_single_byte(value: Felt252) -> String {
+    if let Some(shortstring) = as_cairo_short_string(&value) {
+        format!("{shortstring: <31}\t(raw: {:#x})", value.to_bigint())
+    } else {
+        format!("{:<31}\t(raw: {:#x})", ' ', value.to_bigint())
+    }
 }
 
 /// Reads the result of a function call that returns `Array<felt252>`.

@@ -657,3 +657,27 @@ error: Not a trait.
  --> lib.cairo:1:16
 impl MyImpl of NonExistingTrait {
                ^**************^
+
+//! > ==========================================================================
+
+//! > Test type inference not stopping on missing type.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut data_hash = 0;
+    data_hash = unknown_return_unknown();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Function not found.
+ --> lib.cairo:3:17
+    data_hash = unknown_return_unknown();
+                ^********************^

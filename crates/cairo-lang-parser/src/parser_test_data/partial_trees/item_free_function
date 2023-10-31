@@ -39,7 +39,7 @@ FunctionSignature
     │   │   │       └── ident (kind: TokenIdentifier): 'with_args'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── args (kind: ArgList)
+    │   │   │   ├── arguments (kind: ArgList)
     │   │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)

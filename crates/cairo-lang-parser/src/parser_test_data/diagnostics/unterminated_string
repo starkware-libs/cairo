@@ -9,6 +9,11 @@ fn f() {
 }
 
 //! > expected_diagnostics
+error: Unterminated short string literal.
+ --> dummy_file.cairo:2:27
+   let unterminated_str = 'abc;
+                          ^***^
+
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:2
 }
@@ -18,11 +23,6 @@ error: Missing token TerminalRBrace.
  --> dummy_file.cairo:3:2
 }
  ^
-
-error: Unterminated short string literal.
- --> dummy_file.cairo:2:27
-   let unterminated_str = 'abc;
-                          ^***^
 
 //! > ==========================================================================
 
@@ -37,6 +37,11 @@ fn f() {
 }
 
 //! > expected_diagnostics
+error: Unterminated string literal.
+ --> dummy_file.cairo:2:27
+   let unterminated_str = "abc;
+                          ^***^
+
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:2
 }
@@ -46,8 +51,3 @@ error: Missing token TerminalRBrace.
  --> dummy_file.cairo:3:2
 }
  ^
-
-error: Unterminated string literal.
- --> dummy_file.cairo:2:27
-   let unterminated_str = "abc;
-                          ^***^

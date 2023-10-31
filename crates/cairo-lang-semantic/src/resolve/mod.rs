@@ -45,7 +45,6 @@ use crate::{
 mod test;
 
 mod item;
-pub mod scope;
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -760,8 +759,7 @@ impl<'db> Resolver<'db> {
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
-        // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
-        if self.db.crate_root_dir(crate_id).is_some() {
+        if self.db.crate_config(crate_id).is_some() {
             return None;
         }
 

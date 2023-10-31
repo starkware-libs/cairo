@@ -273,21 +273,16 @@ fn get_substorage_member_code(
                 ast::PathSegment::Simple(segment)
                     if segment.ident(db).text(db) == STORAGE_STRUCT_NAME =>
                 {
-                    let component_path = RewriteNode::new_modified(
+                    let component_path = RewriteNode::interspersed(
                         path_prefix
                             .iter()
-                            .flat_map(|segment| {
-                                vec![
-                                    RewriteNode::new_trimmed(segment.as_syntax_node()),
-                                    RewriteNode::Text("::".to_string()),
-                                ]
-                            })
-                            .collect(),
+                            .map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
+                        RewriteNode::text("::"),
                     );
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            &format!("\n$name$: $component_path${CONCRETE_COMPONENT_STATE_NAME},"),
+                            &format!("\n$name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
                             &[
                                 (
                                     "name".to_string(),
@@ -299,7 +294,7 @@ fn get_substorage_member_code(
                         ),
                         RewriteNode::interpolate_patched(
                             &format!("\n    $name$: \
-                             $component_path$unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
+                             $component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
                              "),
                             &[
                                 (
