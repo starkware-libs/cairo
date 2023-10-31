@@ -265,7 +265,8 @@ pub trait SemanticGroup:
 
     // Impl Alias.
     // ====
-    /// Returns the impl definition pointed to by the impl alias.
+    /// Returns the impl definition pointed to by the impl alias, or an error if it points to
+    /// something else.
     #[salsa::invoke(items::impl_alias::impl_alias_impl_def)]
     fn impl_alias_impl_def(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId>;
     /// Private query to compute data about a type alias.
@@ -503,7 +504,8 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
-    /// Returns the trait that is implemented by the impl.
+    /// Returns the trait that is implemented by the impl, or an error if the RHS of the `of` is not
+    /// a trait.
     #[salsa::invoke(items::imp::impl_def_trait)]
     fn impl_def_trait(&self, impl_def_id: ImplDefId) -> Maybe<TraitId>;
     /// Private query to compute declaration data about an impl.

@@ -170,7 +170,7 @@ impl GenericParamEx for ast::GenericParam {
 pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
-            matches!(&args.args(db).elements(db)[..],
+            matches!(&args.arguments(db).elements(db)[..],
                     [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,

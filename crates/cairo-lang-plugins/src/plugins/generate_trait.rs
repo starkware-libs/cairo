@@ -54,14 +54,14 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         .leading_trivia(db)
         .as_syntax_node()
         .get_text(db);
-    let extra_ident = leading_trivia.lines().last().unwrap_or_default();
+    let extra_ident = leading_trivia.split('\n').last().unwrap_or_default();
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
             AttributeArgVariant::Unnamed { value: ast::Expr::FunctionCall(attr_arg), .. }
                 if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
                     == "trait_attrs" =>
             {
-                for arg in attr_arg.arguments(db).args(db).elements(db) {
+                for arg in attr_arg.arguments(db).arguments(db).elements(db) {
                     builder.add_modified(RewriteNode::interpolate_patched(
                         &format!("{extra_ident}#[$attr$]\n"),
                         &[("attr".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))]

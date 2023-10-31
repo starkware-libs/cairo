@@ -32,7 +32,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let impl_name = item_impl.name(db);
     let impl_name_str = impl_name.text(db);
     let impl_name = RewriteNode::new_trimmed(impl_name.as_syntax_node());
-    let (is_valid_params, generic_args, generic_params_node) = match &generic_params {
+    let (is_valid_params, maybe_generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
             (false, RewriteNode::empty(), RewriteNode::empty())
         }
@@ -61,19 +61,21 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             let is_valid_params = first_generic_param
                 .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
                 .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
-            let generic_args = RewriteNode::new_modified(
+            let generic_args = RewriteNode::interspersed(
                 chain!(
-                    [RewriteNode::Text(format!("::<{GENERIC_CONTRACT_STATE_NAME}"))],
-                    elements.flat_map(|param| [
-                        RewriteNode::Text(", ".to_string()),
+                    [RewriteNode::text(GENERIC_CONTRACT_STATE_NAME)],
+                    elements.map(|param| {
                         param
                             .name(db)
                             .map(|name| RewriteNode::new_trimmed(name.as_syntax_node()))
-                            .unwrap_or_else(|| RewriteNode::Text("_".into()))
-                    ]),
-                    [RewriteNode::Text(">".to_string())],
-                )
-                .collect(),
+                            .unwrap_or_else(|| RewriteNode::text("_"))
+                    })
+                ),
+                RewriteNode::text(", "),
+            );
+            let generic_args = RewriteNode::interpolate_patched(
+                "::<$generic_args$>",
+                &[("generic_args".to_string(), generic_args)].into(),
             );
             let maybe_comma = if generic_params_node.has_tail(db) { ", " } else { "" };
             let maybe_drop_impl = if has_drop_impl {
@@ -119,11 +121,11 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         let function_name_str = function_name.text(db);
         let function_name = RewriteNode::new_trimmed(function_name.as_syntax_node());
         let function_path = RewriteNode::interpolate_patched(
-            "$impl_name$$generic_args$::$func_name$",
+            "$impl_name$$maybe_generic_args$::$func_name$",
             &[
                 ("impl_name".to_string(), impl_name.clone()),
                 ("func_name".to_string(), function_name),
-                ("generic_args".to_string(), generic_args.clone()),
+                ("maybe_generic_args".to_string(), maybe_generic_args.clone()),
             ]
             .into(),
         );

@@ -2559,15 +2559,15 @@ pub struct ArgListParenthesized {
 }
 impl ArgListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
-    pub const INDEX_ARGS: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 1;
     pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
-        args: ArgListGreen,
+        arguments: ArgListGreen,
         rparen: TerminalRParenGreen,
     ) -> ArgListParenthesizedGreen {
-        let children: Vec<GreenId> = vec![lparen.0, args.0, rparen.0];
+        let children: Vec<GreenId> = vec![lparen.0, arguments.0, rparen.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ArgListParenthesizedGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::ArgListParenthesized,
@@ -2579,7 +2579,7 @@ impl ArgListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
         TerminalLParen::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn args(&self, db: &dyn SyntaxGroup) -> ArgList {
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
         ArgList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {

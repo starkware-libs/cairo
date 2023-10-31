@@ -1,6 +1,5 @@
 use starknet::StorageAddress;
 use test::test_utils::{assert_eq, assert_ne};
-
 use super::utils::serialized;
 
 #[starknet::interface]

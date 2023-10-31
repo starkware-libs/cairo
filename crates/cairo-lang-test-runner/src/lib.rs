@@ -16,12 +16,14 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
+use cairo_lang_starknet::inline_macros::get_dep_component::{
+    GetDepComponentMacro, GetDepComponentMutMacro,
+};
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
-use cairo_lang_test_plugin::test_config::{
-    PanicExpectation, TestExpectation, BYTES_IN_WORD, BYTE_ARRAY_PANIC_MAGIC,
-};
+use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{compile_test_prepared_db, TestCompilation, TestConfig, TestPlugin};
+use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
@@ -142,7 +144,7 @@ fn next_printed_item(values: &mut IntoIter<Felt252>) -> Option<String> {
         return None;
     };
 
-    Some(if first_felt == felt_str!(BYTE_ARRAY_PANIC_MAGIC, 16) {
+    Some(if first_felt == felt_str!(BYTE_ARRAY_MAGIC, 16) {
         match get_formatted_string(values) {
             Some(string) => string,
             None => get_formatted_short_string(&first_felt),
@@ -219,7 +221,15 @@ impl TestCompiler {
 
             if starknet {
                 b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro));
+                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+                    .with_inline_macro_plugin(
+                        GetDepComponentMacro::NAME,
+                        Arc::new(GetDepComponentMacro),
+                    )
+                    .with_inline_macro_plugin(
+                        GetDepComponentMutMacro::NAME,
+                        Arc::new(GetDepComponentMutMacro),
+                    );
             }
 
             b.build()?

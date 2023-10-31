@@ -25,7 +25,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
             return unsupported_bracket_diagnostic(db, syntax);
         };
 
-        let Some(arg) = extract_single_unnamed_arg(db, args.args(db)) else {
+        let Some(arg) = extract_single_unnamed_arg(db, args.arguments(db)) else {
             let diagnostics = vec![PluginDiagnostic {
                 stable_ptr: syntax.stable_ptr().untyped(),
                 message: format!(

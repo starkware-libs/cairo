@@ -19,7 +19,6 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use lsp::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 
 use crate::{find_node_module, from_pos};
@@ -32,7 +31,7 @@ pub fn generic_completions(
     let mut completions = vec![];
 
     // Crates.
-    completions.extend(db.crate_roots().keys().map(|crate_id| CompletionItem {
+    completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
         label: db.lookup_intern_crate(*crate_id).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
@@ -216,8 +215,11 @@ pub fn dot_completions(
         find_node_module(db, file_id, expr.as_syntax_node())
     {
         let module_def_ast = submodule_id.stable_ptr(db.upcast()).lookup(syntax_db);
-        let body = extract_matches!(module_def_ast.body(syntax_db), ast::MaybeModuleBody::Some);
-        body.items(syntax_db).as_syntax_node().span_start_without_trivia(syntax_db)
+        if let ast::MaybeModuleBody::Some(body) = module_def_ast.body(syntax_db) {
+            body.items(syntax_db).as_syntax_node().span_start_without_trivia(syntax_db)
+        } else {
+            TextOffset::default()
+        }
     } else {
         TextOffset::default()
     };

@@ -103,6 +103,8 @@ extern type RangeCheck;
 extern type SegmentArena;
 
 // felt252.
+mod felt_252;
+
 #[derive(Copy, Drop)]
 extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
@@ -264,6 +266,9 @@ use integer::{
 // Math.
 mod math;
 
+// Num.
+mod num;
+
 // Cmp.
 mod cmp;
 
@@ -309,6 +314,8 @@ use poseidon::Poseidon;
 // Debug.
 mod debug;
 
+mod fmt;
+
 // Starknet
 mod starknet;
 use starknet::System;
@@ -329,7 +336,11 @@ use bytes_31::{
 
 // BytesArray.
 mod byte_array;
-use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
+
+// String.
+mod string;
+use string::StringLiteral;
 
 // to_byte_array.
 mod to_byte_array;

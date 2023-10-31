@@ -190,12 +190,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     }
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "$func_decl$;",
+                    "\n$func_decl$;",
                     &[("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
                         .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "$func_decl$;",
+                    "\n$func_decl$;",
                     &[(
                         "func_decl".to_string(),
                         dispatcher_signature(db, &declaration, "T", false),
@@ -249,8 +249,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_trait_name}<T> {{
-            $dispatcher_signatures$
+            "trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
@@ -271,8 +270,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $library_caller_method_impls$
             }}
 
-            trait {safe_dispatcher_trait_name}<T> {{
-            $safe_dispatcher_signatures$
+            trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
@@ -346,7 +344,7 @@ fn declaration_method_impl(
     unwrap: bool,
 ) -> RewriteNode {
     let deserialization_code = if ret_decode.is_empty() {
-        RewriteNode::Text("()".to_string())
+        RewriteNode::text("()")
     } else {
         RewriteNode::Text(if unwrap {
             ret_decode.clone()
@@ -384,8 +382,8 @@ fn declaration_method_impl(
         &[
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
-            ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
-            ("member".to_string(), RewriteNode::Text(member.to_string())),
+            ("syscall".to_string(), RewriteNode::text(syscall)),
+            ("member".to_string(), RewriteNode::text(member)),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
             ("return_code".to_string(), return_code),
         ]
@@ -408,10 +406,10 @@ fn dispatcher_signature(
         .children
         .as_mut()
         .unwrap();
-    drop(params.drain(0..std::cmp::min(2, params.len())));
+    let maybe_comma = if params.len() > 2 { ", " } else { "" };
     params.splice(
-        0..0,
-        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
+        0..std::cmp::min(2, params.len()),
+        [RewriteNode::Text(format!("self: {self_type_name}{maybe_comma}"))],
     );
     if unwrap {
         return func_declaration;
@@ -425,7 +423,7 @@ fn dispatcher_signature(
         .unwrap();
 
     if return_type.is_empty() {
-        let new_ret_type = RewriteNode::Text(String::from(" -> starknet::SyscallResult<()>"));
+        let new_ret_type = RewriteNode::text(" -> starknet::SyscallResult<()>");
         return_type.splice(0..0, [new_ret_type]);
     } else {
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());

@@ -871,21 +871,32 @@ pub fn find_candidates_at_context(
         if !matches!(generic_param_id.kind(db.upcast()), GenericKind::Impl) {
             continue;
         };
-        let trait_id = db.generic_impl_param_trait(*generic_param_id)?;
+        let Ok(trait_id) = db.generic_impl_param_trait(*generic_param_id) else {
+            continue;
+        };
         if filter.trait_id != trait_id {
             continue;
         }
-        let param =
-            extract_matches!(db.generic_param_semantic(*generic_param_id)?, GenericParam::Impl);
+        let Ok(generic_param_semantic) = db.generic_param_semantic(*generic_param_id) else {
+            continue;
+        };
+        let param = extract_matches!(generic_param_semantic, GenericParam::Impl);
         let Ok(imp_concrete_trait_id) = param.concrete_trait else { continue };
-        if !concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)? {
+        let Ok(trait_fits_filter) =
+            concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)
+        else {
+            continue;
+        };
+        if !trait_fits_filter {
             continue;
         }
         res.insert(UninferredImpl::GenericParam(*generic_param_id));
     }
     let core_module = core_module(db);
     for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
-        let imps = db.module_impl_ids_for_trait_filter(*module_id, filter.clone())?;
+        let Ok(imps) = db.module_impl_ids_for_trait_filter(*module_id, filter.clone()) else {
+            continue;
+        };
         for imp in imps {
             res.insert(imp);
         }
@@ -987,7 +998,10 @@ pub fn filter_candidate_traits(
 ) -> Maybe<Vec<TraitFunctionId>> {
     let mut candidates = Vec::new();
     for trait_id in candidate_traits.iter().copied() {
-        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
+        let Ok(trait_functions) = ctx.db.trait_functions(trait_id) else {
+            continue;
+        };
+        for (name, trait_function) in trait_functions {
             if name == function_name
                 && can_infer_impl_by_self(ctx, trait_function, self_ty, stable_ptr)
             {

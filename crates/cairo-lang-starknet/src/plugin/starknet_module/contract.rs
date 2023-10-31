@@ -515,21 +515,14 @@ fn handle_embed_impl_alias(
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
-    let impl_module = RewriteNode::new_modified(
-        impl_module
-            .iter()
-            .flat_map(|segment| {
-                vec![
-                    RewriteNode::new_trimmed(segment.as_syntax_node()),
-                    RewriteNode::Text("::".to_string()),
-                ]
-            })
-            .collect(),
+    let impl_module = RewriteNode::interspersed(
+        impl_module.iter().map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
+        RewriteNode::text("::"),
     );
     data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
         &formatdoc! {"
         impl ContractState$impl_name$ of
-            $impl_module$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+            $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
             fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                 unsafe_new_contract_state()
             }}
@@ -555,7 +548,7 @@ pub fn handle_component_inline_macro(
     data: &mut ContractSpecificGenerationData,
 ) {
     let macro_args = match component_macro_ast.arguments(db) {
-        ast::WrappedArgList::ParenthesizedArgList(args) => args.args(db),
+        ast::WrappedArgList::ParenthesizedArgList(args) => args.arguments(db),
         _ => {
             diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
             return;

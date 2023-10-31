@@ -37,17 +37,13 @@ pub trait InferenceConform {
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
     ) -> Result<ConcreteTraitId, InferenceError>;
-    fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> InferenceResult<bool>;
+    fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool;
     fn generic_args_contain_var(
         &mut self,
         generic_args: &[GenericArgumentId],
         var: InferenceVar,
-    ) -> InferenceResult<bool>;
-    fn impl_contains_var(
-        &mut self,
-        impl_id: &ImplId,
-        var: InferenceVar,
-    ) -> Result<bool, InferenceError>;
+    ) -> bool;
+    fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool;
 }
 
 impl<'db> InferenceConform for Inference<'db> {
@@ -68,7 +64,7 @@ impl<'db> InferenceConform for Inference<'db> {
     ) -> Result<(TypeId, usize), InferenceError> {
         let ty0 = self.rewrite(ty0).no_err();
         let ty1 = self.rewrite(ty1).no_err();
-        if ty0 == never_ty(self.db) {
+        if ty0 == never_ty(self.db) || ty0.is_missing(self.db) {
             return Ok((ty1, 0));
         }
         if ty0 == ty1 {
@@ -253,22 +249,19 @@ impl<'db> InferenceConform for Inference<'db> {
 
     /// Checks if a type tree contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
-    fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> InferenceResult<bool> {
-        Ok(match self.db.lookup_intern_type(self.rewrite(ty).no_err()) {
+    fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool {
+        match self.db.lookup_intern_type(self.rewrite(ty).no_err()) {
             TypeLongId::Concrete(concrete) => {
                 let generic_args = concrete.generic_args(self.db);
-                self.generic_args_contain_var(&generic_args, var)?
+                self.generic_args_contain_var(&generic_args, var)
             }
-            TypeLongId::Tuple(tys) => tys
-                .into_iter()
-                .map(|ty| self.ty_contains_var(ty, var))
-                .collect::<InferenceResult<Vec<_>>>()?
-                .into_iter()
-                .any(|x| x),
-            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var)?,
+            TypeLongId::Tuple(tys) => {
+                tys.into_iter().map(|ty| self.ty_contains_var(ty, var)).any(|x| x)
+            }
+            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
             TypeLongId::Var(new_var) => {
                 if InferenceVar::Type(new_var.id) == var {
-                    return Ok(true);
+                    return true;
                 }
                 if let Some(ty) = self.type_assignment.get(&new_var.id) {
                     return self.ty_contains_var(*ty, var);
@@ -276,7 +269,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 false
             }
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
-        })
+        }
     }
 
     /// Checks if a slice of generics arguments contain a certain [InferenceVar] somewhere. Used to
@@ -285,41 +278,37 @@ impl<'db> InferenceConform for Inference<'db> {
         &mut self,
         generic_args: &[GenericArgumentId],
         var: InferenceVar,
-    ) -> InferenceResult<bool> {
+    ) -> bool {
         for garg in generic_args {
             if match garg {
-                GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var)?,
+                GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
                 GenericArgumentId::Literal(_) => false,
-                GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var)?,
+                GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
             } {
-                return Ok(true);
+                return true;
             }
         }
-        Ok(false)
+        false
     }
 
     /// Checks if an impl contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
-    fn impl_contains_var(
-        &mut self,
-        impl_id: &ImplId,
-        var: InferenceVar,
-    ) -> Result<bool, InferenceError> {
-        Ok(match impl_id {
+    fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool {
+        match impl_id {
             ImplId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
                 &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
                 var,
-            )?,
+            ),
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
                 if InferenceVar::Impl(new_var.get(self.db).id) == var {
-                    return Ok(true);
+                    return true;
                 }
                 if let Some(impl_id) = self.impl_assignment(new_var.get(self.db).id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
                 false
             }
-        })
+        }
     }
 }

@@ -188,7 +188,7 @@ pub fn handle_entry_point(
     ) {
         Ok(generated_function) => {
             data.generated_wrapper_functions.push(generated_function);
-            data.generated_wrapper_functions.push(RewriteNode::Text("\n".to_string()));
+            data.generated_wrapper_functions.push(RewriteNode::text("\n"));
             let generated = match entry_point_kind {
                 EntryPointKind::Constructor => &mut data.constructor_functions,
                 EntryPointKind::L1Handler => {
