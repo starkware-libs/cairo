@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::format::FormatMacro;
-use self::print::PrintMacro;
+use self::print::{PrintMacro, PrintlnMacro};
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
@@ -24,6 +24,7 @@ pub fn get_default_inline_macro_plugins() -> OrderedHashMap<String, Arc<dyn Inli
     res.insert("consteval_int".to_string(), Arc::new(ConstevalIntMacro));
     res.insert("format".to_string(), Arc::new(FormatMacro));
     res.insert("print".to_string(), Arc::new(PrintMacro));
+    res.insert("println".to_string(), Arc::new(PrintlnMacro));
     res
 }
 
