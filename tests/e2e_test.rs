@@ -21,10 +21,16 @@ use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
-/// Salsa database configured to find the corelib, when reused by different tests should be able to
+/// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB: Lazy<Mutex<RootDatabase>> =
+static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> =
     Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
+static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    Mutex::new(db)
+});
 
 cairo_lang_test_utils::test_file_test_with_runner!(
     general_e2e,
@@ -161,12 +167,8 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let mut locked_db = test_lock(&SHARED_DB);
-    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
-    locked_db.set_flag(
-        add_withdraw_gas_flag_id,
-        Some(Arc::new(Flag::AddWithdrawGas(params.add_withdraw_gas))),
-    );
+    let mut locked_db =
+        test_lock(if params.add_withdraw_gas { &SHARED_DB_WITH_GAS } else { &SHARED_DB_NO_GAS });
     // Parse code and create semantic model.
     let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
     let db = locked_db.snapshot();
