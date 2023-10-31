@@ -5,19 +5,9 @@
     "0x0",
     "0x2",
     "0x3",
-<<<<<<< HEAD:crates/cairo-lang-starknet/test_data/account__account.contract_class.json
-    "0x0",
+    "0x1",
     "0x270",
     "0x190",
-||||||| 0c67a87fb:crates/cairo-lang-starknet/test_data/account.contract_class.json
-    "0x0",
-    "0x274",
-    "0x18c",
-=======
-    "0x1",
-    "0x274",
-    "0x18c",
->>>>>>> origin/dev-v2.3.1:crates/cairo-lang-starknet/test_data/account.contract_class.json
     "0x56",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
