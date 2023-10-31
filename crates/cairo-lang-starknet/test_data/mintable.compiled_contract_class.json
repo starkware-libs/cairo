@@ -1932,24 +1932,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-<<<<<<< HEAD
     "0xffffffffffffffffffffffffffffed5e",
-||||||| 101126fb8
-    "0xfffffffffffffffffffffffffffcee6a",
-=======
-    "0xfffffffffffffffffffffffffffceda2",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x8c",
     "0x4825800180007ffa",
-<<<<<<< HEAD
     "0x12a2",
-||||||| 101126fb8
-    "0x31196",
-=======
-    "0x3125e",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -8001,13 +7989,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-<<<<<<< HEAD
               "Immediate": "0x12a2"
-||||||| 101126fb8
-              "Immediate": "0x31196"
-=======
-              "Immediate": "0x3125e"
->>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -9851,13 +9833,7 @@
     [
       1927,
       [
-<<<<<<< HEAD
         "memory[ap + 0] = 4770 <= memory[fp + -6]"
-||||||| 101126fb8
-        "memory[ap + 0] = 201110 <= memory[fp + -6]"
-=======
-        "memory[ap + 0] = 201310 <= memory[fp + -6]"
->>>>>>> origin/main
       ]
     ],
     [

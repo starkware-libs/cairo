@@ -5,24 +5,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-<<<<<<< HEAD
     "0x100000000000000000000000000000000",
-||||||| 101126fb8
-    "0xffffffffffffffffffffffffffffa9e8",
-=======
-    "0xffffffffffffffffffffffffffff902a",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x88",
     "0x4825800180007ffa",
-<<<<<<< HEAD
     "0x0",
-||||||| 101126fb8
-    "0x5618",
-=======
-    "0x6fd6",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -83,39 +71,19 @@
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
-<<<<<<< HEAD
-    "0x4824800180007fe8",
-    "0x5618",
-||||||| 101126fb8
-    "0x4824800180007fe8",
-    "0x0",
-=======
     "0x4824800180007fe2",
-    "0x0",
->>>>>>> origin/main
+    "0x6fd6",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff27fff",
     "0x10780017fff7fff",
     "0x20",
-<<<<<<< HEAD
-    "0x4824800180007fe8",
-    "0x5618",
-    "0x400080007ff77fff",
-    "0x48127fff7fff8000",
-||||||| 101126fb8
-    "0x4824800180007fe8",
-    "0x0",
-    "0x400080007ff77fff",
-    "0x48127fff7fff8000",
-=======
     "0x4824800180007fe2",
-    "0x0",
+    "0x6fd6",
     "0x400080007ff37fff",
     "0x482480017ff38000",
     "0x1",
     "0x48127ffe7fff8000",
->>>>>>> origin/main
     "0x480a7ffb7fff8000",
     "0x48127ff27fff8000",
     "0x1104800180018000",
@@ -193,24 +161,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-<<<<<<< HEAD
     "0x100000000000000000000000000000000",
-||||||| 101126fb8
-    "0xffffffffffffffffffffffffffffe2f0",
-=======
-    "0xffffffffffffffffffffffffffffdb7a",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x58",
     "0x4825800180007ffa",
-<<<<<<< HEAD
     "0x0",
-||||||| 101126fb8
-    "0x1d10",
-=======
-    "0x2486",
->>>>>>> origin/main
     "0x400280007ff97fff",
     "0x48297ffc80007ffd",
     "0x482680017ff98000",
@@ -243,14 +199,14 @@
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007ff7",
-    "0x1d10",
+    "0x2486",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff77fff",
     "0x10780017fff7fff",
     "0x21",
     "0x4824800180007ff7",
-    "0x1d10",
+    "0x2486",
     "0x400080007ff87fff",
     "0x482480017ff88000",
     "0x1",
@@ -659,13 +615,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-<<<<<<< HEAD
               "Immediate": "0x0"
-||||||| 101126fb8
-              "Immediate": "0x5618"
-=======
-              "Immediate": "0x6fd6"
->>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -700,7 +650,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x5618"
+              "Immediate": "0x6fd6"
             },
             "rhs": {
               "Deref": {
@@ -774,13 +724,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-<<<<<<< HEAD
               "Immediate": "0x0"
-||||||| 101126fb8
-              "Immediate": "0x1d10"
-=======
-              "Immediate": "0x2486"
->>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -815,7 +759,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x1d10"
+              "Immediate": "0x2486"
             },
             "rhs": {
               "Deref": {
@@ -1013,13 +957,7 @@
     [
       0,
       [
-<<<<<<< HEAD
         "memory[ap + 0] = 0 <= memory[fp + -6]"
-||||||| 101126fb8
-        "memory[ap + 0] = 22040 <= memory[fp + -6]"
-=======
-        "memory[ap + 0] = 28630 <= memory[fp + -6]"
->>>>>>> origin/main
       ]
     ],
     [
@@ -1031,13 +969,7 @@
     [
       67,
       [
-<<<<<<< HEAD
-        "memory[ap + 0] = 22040 <= memory[ap + -23]"
-||||||| 101126fb8
-        "memory[ap + 0] = 0 <= memory[ap + -23]"
-=======
-        "memory[ap + 0] = 0 <= memory[ap + -29]"
->>>>>>> origin/main
+        "memory[ap + 0] = 28630 <= memory[ap + -29]"
       ]
     ],
     [
@@ -1067,13 +999,7 @@
     [
       156,
       [
-<<<<<<< HEAD
         "memory[ap + 0] = 0 <= memory[fp + -6]"
-||||||| 101126fb8
-        "memory[ap + 0] = 7440 <= memory[fp + -6]"
-=======
-        "memory[ap + 0] = 9350 <= memory[fp + -6]"
->>>>>>> origin/main
       ]
     ],
     [
@@ -1085,7 +1011,7 @@
     [
       194,
       [
-        "memory[ap + 0] = 7440 <= memory[ap + -8]"
+        "memory[ap + 0] = 9350 <= memory[ap + -8]"
       ]
     ],
     [
