@@ -51,7 +51,6 @@ libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState> = store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>;
 
 revoke_ap_tracking() -> (); // 0
 withdraw_gas([0], [1]) { fallthrough([4], [5]) 61([6], [7]) }; // 1
@@ -129,8 +128,7 @@ store_temp<System>([2]) -> ([2]); // 72
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([48]) -> ([48]); // 73
 return([6], [7], [2], [48]); // 74
 struct_construct<Unit>() -> ([1]); // 75
-store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([0]) -> ([0]); // 76
-return([0], [1]); // 77
+return([0], [1]); // 76
 
 cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::minimal_contract::minimal_contract::empty@75([0]: cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState) -> (cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState, Unit);

@@ -1,4 +1,5 @@
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -7,6 +8,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use super::{LibfuncInfo, LocalVariables};
@@ -219,12 +221,17 @@ fn test_add_store_statements(
     local_variables: LocalVariables,
     params: &[&str],
 ) -> Vec<String> {
+    let felt252_ty =
+        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     add_store_statements(
         db,
         statements,
         &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
         local_variables,
-        &as_var_id_vec(params),
+        &as_var_id_vec(params)
+            .into_iter()
+            .map(|id| cairo_lang_sierra::program::Param { id, ty: felt252_ty.clone() })
+            .collect_vec(),
     )
     .iter()
     .map(|statement| replace_sierra_ids(db, statement).to_string(db))
