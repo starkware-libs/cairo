@@ -130,113 +130,113 @@ const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5a
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let mut __arg_arg = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let mut __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_num = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_something(@contract_state, ref __arg_arg, __arg_num);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
-            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
+            core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
-    serde::Serde::<felt252>::serialize(@res, ref arr);
-    array::ArrayTrait::span(@arr)
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let mut __arg_arg = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let mut __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_num = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     set_something(ref contract_state, ref __arg_arg, __arg_num);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
-            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
+            core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_from_address = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_from_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_arg = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    let __arg_num = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #3'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_contract_address = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_contract_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_class_hash = option::OptionTraitImpl::expect(
-        serde::Serde::<ClassHash>::deserialize(ref data),
+    let __arg_class_hash = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ClassHash>::deserialize(ref data),
         'Failed to deserialize param #2'
     );
-    let __arg_storage_address = option::OptionTraitImpl::expect(
-        serde::Serde::<StorageAddress>::deserialize(ref data),
+    let __arg_storage_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<StorageAddress>::deserialize(ref data),
         'Failed to deserialize param #3'
     );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
     test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
-    let mut arr = array::array_new();
+    let mut arr = core::array::array_new();
     // References.
     // Result.
-    array::ArrayTrait::span(@arr)
+    core::array::ArrayTrait::span(@arr)
 }
 
 
@@ -256,17 +256,17 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -287,13 +287,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::AwesomeEvent(val) => {
-                array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
+                core::array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             Event::BestEventEver(val) => {
-                array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
+                core::array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -303,7 +303,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -343,16 +343,16 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     fn append_keys_and_data(
         self: @AwesomeEvent, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref data);
-                serde::Serde::serialize(self.data, ref data);
+            core::serde::Serde::serialize(self.x, ref data);
+            core::serde::Serde::serialize(self.data, ref data);
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<AwesomeEvent> {
-                let x = serde::Serde::deserialize(
+                let x = core::serde::Serde::deserialize(
                     ref data
                 )?;
-                let data = serde::Serde::deserialize(
+                let data = core::serde::Serde::deserialize(
                     ref data
                 )?;
         Option::Some(AwesomeEvent {x, data, })

@@ -88,9 +88,10 @@ impl ComponentsGenerationData {
                      {CONTRACT_STATE_NAME} {{
                unsafe_new_contract_state()
            }}
-           fn emit<S, impl IntoImp: traits::Into<S, $component_path$::{EVENT_TYPE_NAME}>>(ref \
-                     self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: S) {{
-               let event: $component_path$::{EVENT_TYPE_NAME} = traits::Into::into(event);
+           fn emit<S, impl IntoImp: core::traits::Into<S, \
+                     $component_path$::{EVENT_TYPE_NAME}>>(ref self: \
+                     $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: S) {{
+               let event: $component_path$::{EVENT_TYPE_NAME} = core::traits::Into::into(event);
                let mut contract = $component_path$::{HAS_COMPONENT_TRAIT}::get_contract_mut(ref \
                      self);
                ContractStateEventEmitter::emit(ref contract, Event::$event_name$(event));
@@ -176,17 +177,17 @@ const EVENT_EMITTER_CODE: &str = formatcp! {
 "    impl {CONTRACT_STATE_NAME}EventEmitter of starknet::event::EventEmitter<
         {CONTRACT_STATE_NAME}, {EVENT_TYPE_NAME}
     > {{
-        fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, {EVENT_TYPE_NAME}>>(
             ref self: {CONTRACT_STATE_NAME}, event: S
         ) {{
-            let event: {EVENT_TYPE_NAME} = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: {EVENT_TYPE_NAME} = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }}

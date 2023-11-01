@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized;
 
