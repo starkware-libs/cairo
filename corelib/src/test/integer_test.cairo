@@ -1580,6 +1580,10 @@ fn test_i128_operators() {
         @-0x80000000000000000000000000000000_i128,
         'failed MIN_I128 as mul result'
     );
+    assert_eq(@(4_i128 / 2_i128), @2_i128, '4 / 2 == 2');
+    assert_eq(@(4_i128 / -2_i128), @-2_i128, '4 / -2 == -2');
+    assert_eq(@(-4_i128 / 2_i128), @-2_i128, '-4 / 2 == -2');
+    assert_eq(@(-4_i128 / -2_i128), @2_i128, '-4 / -2 == 2');
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
     assert(!(4_i128 < 4_i128), '!(4 < 4)');
@@ -1655,6 +1659,11 @@ fn test_i128_mul_overflow_2() {
 #[should_panic]
 fn test_i128_mul_overflow_3() {
     2_i128 * 0x40000000000000000000000000000000_i128;
+}
+#[test]
+#[should_panic]
+fn test_i128_div_by_zero() {
+    2_i128 / 0_i128;
 }
 
 #[test]
