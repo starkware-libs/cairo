@@ -2302,8 +2302,8 @@ impl I128MulEq of MulEq<i128> {
 impl I128Div of Div<i128> {
     fn div(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
-            Result::Ok(v) => (v, true),
-            Result::Err(v) => (~v + 1, false),
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
         };
         let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
             Result::Ok(v) => (v, lhs_neg),
