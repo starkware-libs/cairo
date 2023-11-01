@@ -1,9 +1,9 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type cairo_level_tests::components::mintable::mintable::Event = Enum<ut@[895513665397569759553217404811098769719086235772006579959914877553537052472]> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::components::ownable::ownable::Event = Enum<ut@[159242497304001286940502695884045556513608061648114012756954426931007373496]> [storable: true, drop: true, dup: true, zero_sized: false];
-type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::v2::ExecutionInfo> = Box<core::starknet::info::v2::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@[1257518009720519585285637338408389618956030011120420360206100431616276923554], Box<core::starknet::info::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@[450414084234761711845349855430839784931369788210255124891804828605909834090], Box<core::starknet::info::v2::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::pedersen::HashState = Struct<ut@[491955706759561834887485461628902547533157229384102161868363599263592668322], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -23,16 +23,21 @@ type Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMem
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())> = Enum<ut@[644859415249159740123570576340589195922246384074613306937599290618274562404], Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::v2::TxInfo> = Box<core::starknet::info::v2::TxInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::info::TxInfo = Struct<ut@[1311591681366727100053328626396740590119038174476558212695017318172456171879], felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<core::starknet::info::v2::ResourceBounds> = Array<core::starknet::info::v2::ResourceBounds> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<core::starknet::info::v2::ResourceBounds>> = Snapshot<Array<core::starknet::info::v2::ResourceBounds>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::starknet::info::v2::ResourceBounds> = Struct<ut@[610414687265092333515030097572820485100775140138339320017824976575632481516], Snapshot<Array<core::starknet::info::v2::ResourceBounds>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::v2::TxInfo = Struct<ut@[1485298396456562585458258705735398759980834552075423021701728656790685322041], felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252, core::array::Span::<core::starknet::info::v2::ResourceBounds>, u128, core::array::Span::<core::felt252>, u32, u32, core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::starknet::info::BlockInfo = Struct<ut@[1584064236820419267635853880275057357497142966426465622513080398763825874917], u64, u64, ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::info::ExecutionInfo = Struct<ut@[712752056230952147112465546512164546685036797379963700882913452643338533978], Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-type Tuple<Box<core::starknet::info::ExecutionInfo>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Box<core::starknet::info::ExecutionInfo>> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)> = Enum<ut@[1610115061431780440449149778549249095459846971933617693367594909981543979942], Tuple<Box<core::starknet::info::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::starknet::info::v2::ResourceBounds = Struct<ut@[1449063728204456669537166935530586908681132053296035067898008429082243872008], felt252, u64, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::v2::ExecutionInfo = Struct<ut@[221391467073327924041011052339733471441050020995554893254144785727444530663], Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::v2::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<core::starknet::info::v2::ExecutionInfo>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Box<core::starknet::info::v2::ExecutionInfo>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)> = Enum<ut@[1261927754835514914776054027365235561646535770460075557734124965374903769288], Tuple<Box<core::starknet::info::v2::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>> = Enum<ut@[1686776504318576349617790826926349831519127596918854083900978058033064710828], u8, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@[255862409632268709382876667385135391700507824083520182711692061443766480604], felt252, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -96,7 +101,6 @@ type core::panics::PanicResult::<(core::integer::u256,)> = Enum<ut@[126906084497
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
@@ -415,12 +419,12 @@ libfunc function_call<user@cairo_level_tests::components::erc20::erc20::balances
 libfunc store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState> = store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>;
 libfunc function_call<user@cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address> = function_call<user@cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address>;
 libfunc function_call<user@core::starknet::info::get_execution_info> = function_call<user@core::starknet::info::get_execution_info>;
-libfunc enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>> = enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>;
-libfunc struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>> = struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>;
-libfunc unbox<core::starknet::info::ExecutionInfo> = unbox<core::starknet::info::ExecutionInfo>;
-libfunc struct_deconstruct<core::starknet::info::ExecutionInfo> = struct_deconstruct<core::starknet::info::ExecutionInfo>;
+libfunc enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>> = enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>;
+libfunc struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>> = struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>;
+libfunc unbox<core::starknet::info::v2::ExecutionInfo> = unbox<core::starknet::info::v2::ExecutionInfo>;
+libfunc struct_deconstruct<core::starknet::info::v2::ExecutionInfo> = struct_deconstruct<core::starknet::info::v2::ExecutionInfo>;
 libfunc drop<Box<core::starknet::info::BlockInfo>> = drop<Box<core::starknet::info::BlockInfo>>;
-libfunc drop<Box<core::starknet::info::TxInfo>> = drop<Box<core::starknet::info::TxInfo>>;
+libfunc drop<Box<core::starknet::info::v2::TxInfo>> = drop<Box<core::starknet::info::v2::TxInfo>>;
 libfunc felt252_const<25936191677694277552149992725516921697451103245639728> = felt252_const<25936191677694277552149992725516921697451103245639728>;
 libfunc felt252_const<395754877894504967531585582359572169455970492464> = felt252_const<395754877894504967531585582359572169455970492464>;
 libfunc u128_const<340282366920938463463374607431768211455> = u128_const<340282366920938463463374607431768211455>;
@@ -522,15 +526,15 @@ libfunc pedersen = pedersen;
 libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
 libfunc struct_deconstruct<Tuple<ContractAddress, ContractAddress>> = struct_deconstruct<Tuple<ContractAddress, ContractAddress>>;
 libfunc felt252_const<337994139936370667767799129369552596157394447336989834104582481799883947719> = felt252_const<337994139936370667767799129369552596157394447336989834104582481799883947719>;
-libfunc get_execution_info_syscall = get_execution_info_syscall;
-libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
-libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>;
-libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>;
-libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>;
-libfunc struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>> = struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>;
-libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>> = store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>;
-libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>;
+libfunc get_execution_info_v2_syscall = get_execution_info_v2_syscall;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>;
+libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>;
+libfunc struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>> = struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>> = store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>;
+libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>;
 libfunc struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>;
@@ -544,7 +548,7 @@ libfunc snapshot_take<cairo_level_tests::contracts::mintable::mintable_erc20_own
 libfunc drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
 libfunc function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::EventIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::EventIsEvent::append_keys_and_data>;
 libfunc emit_event_syscall = emit_event_syscall;
-libfunc enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>;
+libfunc enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
 libfunc enum_init<cairo_level_tests::components::erc20::erc20::Event, 1> = enum_init<cairo_level_tests::components::erc20::erc20::Event, 1>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
@@ -4900,13 +4904,13 @@ return([10], [11], [7], [12], [24]); // 4327
 store_temp<GasBuiltin>([0]) -> ([0]); // 4328
 store_temp<System>([1]) -> ([1]); // 4329
 function_call<user@core::starknet::info::get_execution_info>([0], [1]) -> ([2], [3], [4]); // 4330
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) { fallthrough([5]) 4346([6]) }; // 4331
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) { fallthrough([5]) 4346([6]) }; // 4331
 branch_align() -> (); // 4332
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([5]) -> ([7]); // 4333
-unbox<core::starknet::info::ExecutionInfo>([7]) -> ([8]); // 4334
-struct_deconstruct<core::starknet::info::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 4335
+struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([5]) -> ([7]); // 4333
+unbox<core::starknet::info::v2::ExecutionInfo>([7]) -> ([8]); // 4334
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 4335
 drop<Box<core::starknet::info::BlockInfo>>([9]) -> (); // 4336
-drop<Box<core::starknet::info::TxInfo>>([10]) -> (); // 4337
+drop<Box<core::starknet::info::v2::TxInfo>>([10]) -> (); // 4337
 drop<ContractAddress>([12]) -> (); // 4338
 drop<felt252>([13]) -> (); // 4339
 struct_construct<Tuple<ContractAddress>>([11]) -> ([14]); // 4340
@@ -6110,33 +6114,33 @@ store_temp<RangeCheck>([19]) -> ([19]); // 5537
 store_temp<Pedersen>([15]) -> ([15]); // 5538
 store_temp<StorageBaseAddress>([20]) -> ([20]); // 5539
 return([19], [15], [20]); // 5540
-get_execution_info_syscall([0], [1]) { fallthrough([2], [3], [4]) 5548([5], [6], [7]) }; // 5541
+get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 5548([5], [6], [7]) }; // 5541
 branch_align() -> (); // 5542
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 5543
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 5543
 store_temp<GasBuiltin>([2]) -> ([9]); // 5544
 store_temp<System>([3]) -> ([10]); // 5545
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 5546
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 5546
 jump() { 5553() }; // 5547
 branch_align() -> (); // 5548
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 5549
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 5549
 store_temp<GasBuiltin>([5]) -> ([9]); // 5550
 store_temp<System>([6]) -> ([10]); // 5551
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 5552
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 5553
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([13]) { fallthrough([14]) 5563([15]) }; // 5554
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 5552
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 5553
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([13]) { fallthrough([14]) 5563([15]) }; // 5554
 branch_align() -> (); // 5555
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([14]) -> ([16]); // 5556
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([16]) -> ([17]); // 5557
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 5558
+struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([14]) -> ([16]); // 5556
+struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([16]) -> ([17]); // 5557
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 5558
 store_temp<GasBuiltin>([9]) -> ([9]); // 5559
 store_temp<System>([10]) -> ([10]); // 5560
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([18]) -> ([18]); // 5561
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([18]) -> ([18]); // 5561
 return([9], [10], [18]); // 5562
 branch_align() -> (); // 5563
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 5564
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 5564
 store_temp<GasBuiltin>([9]) -> ([9]); // 5565
 store_temp<System>([10]) -> ([10]); // 5566
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([19]) -> ([19]); // 5567
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([19]) -> ([19]); // 5567
 return([9], [10], [19]); // 5568
 snapshot_take<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([4]) -> ([7], [8]); // 5569
 store_temp<RangeCheck>([0]) -> ([0]); // 5570
@@ -6352,17 +6356,17 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::
 return([25], [26], [35]); // 5780
 store_temp<cairo_level_tests::components::erc20::erc20::Event>([0]) -> ([0]); // 5781
 return([0]); // 5782
-enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 5789([2]) }; // 5783
+enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 5789([2]) }; // 5783
 branch_align() -> (); // 5784
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([1]) -> ([3]); // 5785
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 5786
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) -> ([4]); // 5787
+struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([1]) -> ([3]); // 5785
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 5786
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) -> ([4]); // 5787
 return([4]); // 5788
 branch_align() -> (); // 5789
 struct_construct<core::panics::Panic>() -> ([5]); // 5790
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 5791
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 5792
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([7]) -> ([7]); // 5793
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 5792
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([7]) -> ([7]); // 5793
 return([7]); // 5794
 enum_init<cairo_level_tests::components::erc20::erc20::Event, 1>([0]) -> ([1]); // 5795
 store_temp<cairo_level_tests::components::erc20::erc20::Event>([1]) -> ([1]); // 5796
@@ -6628,7 +6632,7 @@ core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@5481([0]
 core::starknet::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall@5493([0]: core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u8,)>);
 cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl::address@5505([0]: RangeCheck, [1]: Pedersen, [2]: cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, [3]: ContractAddress) -> (RangeCheck, Pedersen, StorageBaseAddress);
 cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address@5520([0]: RangeCheck, [1]: Pedersen, [2]: cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, [3]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, Pedersen, StorageBaseAddress);
-core::starknet::info::get_execution_info@5541([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
+core::starknet::info::get_execution_info@5541([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
 core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write@5569([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, [5]: Tuple<ContractAddress, ContractAddress>, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>);
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::ApprovalEvent, cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent>@5603([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, [3]: cairo_level_tests::components::erc20::erc20::ApprovalEvent) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>);
 core::integer::u256_checked_sub@5638([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::option::Option::<core::integer::u256>);
@@ -6639,7 +6643,7 @@ core::integer::Storeu256::write@5694([0]: GasBuiltin, [1]: System, [2]: u32, [3]
 cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent::into@5729([0]: cairo_level_tests::components::erc20::erc20::TransferEvent) -> (cairo_level_tests::components::erc20::erc20::Event);
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>>@5732([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, [3]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>);
 core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>::into@5781([0]: cairo_level_tests::components::erc20::erc20::Event) -> (cairo_level_tests::components::erc20::erc20::Event);
-core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall@5783([0]: core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
+core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@5783([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
 cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent::into@5795([0]: cairo_level_tests::components::erc20::erc20::ApprovalEvent) -> (cairo_level_tests::components::erc20::erc20::Event);
 core::integer::u256_overflow_sub@5798([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, Tuple<core::integer::u256, core::bool>);
 core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>::into@5843([0]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event) -> (cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event);

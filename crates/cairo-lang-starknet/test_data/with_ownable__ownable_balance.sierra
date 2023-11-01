@@ -1,22 +1,27 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::v2::ExecutionInfo> = Box<core::starknet::info::v2::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@[1257518009720519585285637338408389618956030011120420360206100431616276923554], Box<core::starknet::info::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
-type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@[450414084234761711845349855430839784931369788210255124891804828605909834090], Box<core::starknet::info::v2::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Box<core::starknet::info::v2::TxInfo> = Box<core::starknet::info::v2::TxInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::info::TxInfo = Struct<ut@[1311591681366727100053328626396740590119038174476558212695017318172456171879], felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<core::starknet::info::v2::ResourceBounds> = Array<core::starknet::info::v2::ResourceBounds> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<core::starknet::info::v2::ResourceBounds>> = Snapshot<Array<core::starknet::info::v2::ResourceBounds>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::starknet::info::v2::ResourceBounds> = Struct<ut@[610414687265092333515030097572820485100775140138339320017824976575632481516], Snapshot<Array<core::starknet::info::v2::ResourceBounds>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::v2::TxInfo = Struct<ut@[1485298396456562585458258705735398759980834552075423021701728656790685322041], felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252, core::array::Span::<core::starknet::info::v2::ResourceBounds>, u128, core::array::Span::<core::felt252>, u32, u32, core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::starknet::info::BlockInfo = Struct<ut@[1584064236820419267635853880275057357497142966426465622513080398763825874917], u64, u64, ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::starknet::info::ExecutionInfo = Struct<ut@[712752056230952147112465546512164546685036797379963700882913452643338533978], Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-type Tuple<Box<core::starknet::info::ExecutionInfo>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Box<core::starknet::info::ExecutionInfo>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::v2::ResourceBounds = Struct<ut@[1449063728204456669537166935530586908681132053296035067898008429082243872008], felt252, u64, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::v2::ExecutionInfo = Struct<ut@[221391467073327924041011052339733471441050020995554893254144785727444530663], Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::v2::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<core::starknet::info::v2::ExecutionInfo>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Box<core::starknet::info::v2::ExecutionInfo>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
-type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)> = Enum<ut@[1610115061431780440449149778549249095459846971933617693367594909981543979942], Tuple<Box<core::starknet::info::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)> = Enum<ut@[1261927754835514914776054027365235561646535770460075557734124965374903769288], Tuple<Box<core::starknet::info::v2::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>> = Enum<ut@[1066622978309758327526672597483202623059871376667747795906567598633136308279], ContractAddress, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState = Struct<ut@[158193660642562149932434882246085179036223866843151123481256396986298184290]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -51,7 +56,6 @@ type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@[133256219229
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
@@ -233,12 +237,12 @@ libfunc felt252_const<1749165063169615148890104124711417950509560691> = felt252_
 libfunc enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1>;
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>;
 libfunc function_call<user@core::starknet::info::get_execution_info> = function_call<user@core::starknet::info::get_execution_info>;
-libfunc enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>> = enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>;
-libfunc struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>> = struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>;
-libfunc unbox<core::starknet::info::ExecutionInfo> = unbox<core::starknet::info::ExecutionInfo>;
-libfunc struct_deconstruct<core::starknet::info::ExecutionInfo> = struct_deconstruct<core::starknet::info::ExecutionInfo>;
+libfunc enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>> = enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>;
+libfunc struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>> = struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>;
+libfunc unbox<core::starknet::info::v2::ExecutionInfo> = unbox<core::starknet::info::v2::ExecutionInfo>;
+libfunc struct_deconstruct<core::starknet::info::v2::ExecutionInfo> = struct_deconstruct<core::starknet::info::v2::ExecutionInfo>;
 libfunc drop<Box<core::starknet::info::BlockInfo>> = drop<Box<core::starknet::info::BlockInfo>>;
-libfunc drop<Box<core::starknet::info::TxInfo>> = drop<Box<core::starknet::info::TxInfo>>;
+libfunc drop<Box<core::starknet::info::v2::TxInfo>> = drop<Box<core::starknet::info::v2::TxInfo>>;
 libfunc enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>;
 libfunc snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
 libfunc struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>;
@@ -246,16 +250,16 @@ libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ow
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>;
 libfunc enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>;
-libfunc get_execution_info_syscall = get_execution_info_syscall;
-libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
-libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>;
-libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>;
-libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>;
-libfunc struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>> = struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>;
-libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>> = store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>;
-libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>;
-libfunc enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>;
+libfunc get_execution_info_v2_syscall = get_execution_info_v2_syscall;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>;
+libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>;
+libfunc struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>> = struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>> = store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>;
+libfunc enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1> = enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>;
+libfunc enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
 
 revoke_ap_tracking() -> (); // 0
 withdraw_gas([0], [1]) { fallthrough([4], [5]) 82([6], [7]) }; // 1
@@ -1435,13 +1439,13 @@ return([18], [19], [20], [35]); // 1174
 store_temp<GasBuiltin>([0]) -> ([0]); // 1175
 store_temp<System>([1]) -> ([1]); // 1176
 function_call<user@core::starknet::info::get_execution_info>([0], [1]) -> ([2], [3], [4]); // 1177
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) { fallthrough([5]) 1193([6]) }; // 1178
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) { fallthrough([5]) 1193([6]) }; // 1178
 branch_align() -> (); // 1179
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([5]) -> ([7]); // 1180
-unbox<core::starknet::info::ExecutionInfo>([7]) -> ([8]); // 1181
-struct_deconstruct<core::starknet::info::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 1182
+struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([5]) -> ([7]); // 1180
+unbox<core::starknet::info::v2::ExecutionInfo>([7]) -> ([8]); // 1181
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([8]) -> ([9], [10], [11], [12], [13]); // 1182
 drop<Box<core::starknet::info::BlockInfo>>([9]) -> (); // 1183
-drop<Box<core::starknet::info::TxInfo>>([10]) -> (); // 1184
+drop<Box<core::starknet::info::v2::TxInfo>>([10]) -> (); // 1184
 drop<ContractAddress>([12]) -> (); // 1185
 drop<felt252>([13]) -> (); // 1186
 struct_construct<Tuple<ContractAddress>>([11]) -> ([14]); // 1187
@@ -1530,45 +1534,45 @@ struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]);
 enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([7]); // 1270
 store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) -> ([7]); // 1271
 return([7]); // 1272
-get_execution_info_syscall([0], [1]) { fallthrough([2], [3], [4]) 1280([5], [6], [7]) }; // 1273
+get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 1280([5], [6], [7]) }; // 1273
 branch_align() -> (); // 1274
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 1275
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 1275
 store_temp<GasBuiltin>([2]) -> ([9]); // 1276
 store_temp<System>([3]) -> ([10]); // 1277
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 1278
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 1278
 jump() { 1285() }; // 1279
 branch_align() -> (); // 1280
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 1281
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 1281
 store_temp<GasBuiltin>([5]) -> ([9]); // 1282
 store_temp<System>([6]) -> ([10]); // 1283
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 1284
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 1285
-enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([13]) { fallthrough([14]) 1295([15]) }; // 1286
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 1284
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 1285
+enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([13]) { fallthrough([14]) 1295([15]) }; // 1286
 branch_align() -> (); // 1287
-struct_deconstruct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([14]) -> ([16]); // 1288
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([16]) -> ([17]); // 1289
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 1290
+struct_deconstruct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([14]) -> ([16]); // 1288
+struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([16]) -> ([17]); // 1289
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([17]) -> ([18]); // 1290
 store_temp<GasBuiltin>([9]) -> ([9]); // 1291
 store_temp<System>([10]) -> ([10]); // 1292
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([18]) -> ([18]); // 1293
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([18]) -> ([18]); // 1293
 return([9], [10], [18]); // 1294
 branch_align() -> (); // 1295
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 1296
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([15]) -> ([19]); // 1296
 store_temp<GasBuiltin>([9]) -> ([9]); // 1297
 store_temp<System>([10]) -> ([10]); // 1298
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([19]) -> ([19]); // 1299
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([19]) -> ([19]); // 1299
 return([9], [10], [19]); // 1300
-enum_match<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1307([2]) }; // 1301
+enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1307([2]) }; // 1301
 branch_align() -> (); // 1302
-struct_construct<Tuple<Box<core::starknet::info::ExecutionInfo>>>([1]) -> ([3]); // 1303
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 1304
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([4]) -> ([4]); // 1305
+struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([1]) -> ([3]); // 1303
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 1304
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) -> ([4]); // 1305
 return([4]); // 1306
 branch_align() -> (); // 1307
 struct_construct<core::panics::Panic>() -> ([5]); // 1308
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 1309
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 1310
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>([7]) -> ([7]); // 1311
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 1310
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([7]) -> ([7]); // 1311
 return([7]); // 1312
 
 cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__get_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -1600,5 +1604,5 @@ core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1199([0]: core::res
 core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write@1211([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>);
 core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1249([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@1261([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::starknet::info::get_execution_info@1273([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
-core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall@1301([0]: core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
+core::starknet::info::get_execution_info@1273([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
+core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@1301([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);

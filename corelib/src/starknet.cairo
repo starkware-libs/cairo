@@ -54,7 +54,7 @@ use class_hash::{
 
 mod info;
 use info::{
-    ExecutionInfo, BlockInfo, TxInfo, get_execution_info, get_caller_address, get_contract_address,
+    v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info, get_caller_address, get_contract_address,
     get_block_info, get_tx_info, get_block_timestamp
 };
 
