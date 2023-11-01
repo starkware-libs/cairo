@@ -216,7 +216,7 @@ error: Inline macro `format` failed.
    format!["{}", ba];
    ^***************^
 
-error: Plugin diagnostic: Currently `format` macro must have exactly two unnamed arguments.
+error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
  --> lib.cairo:8:4
    format!(ba);
    ^*********^
@@ -226,7 +226,7 @@ error: Inline macro `format` failed.
    format!(ba);
    ^*********^
 
-error: Plugin diagnostic: Currently `format` macro must have exactly two unnamed arguments.
+error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
  --> lib.cairo:11:4
    format!("{}", ba, 1);
    ^******************^
@@ -286,7 +286,7 @@ error: Inline macro `print` failed.
    print!["{}", ba];
    ^**************^
 
-error: Plugin diagnostic: Currently `print` macro must have exactly two unnamed arguments.
+error: Plugin diagnostic: Macro `print` must have exactly 2 unnamed arguments.
  --> lib.cairo:8:4
    print!(ba);
    ^********^
@@ -296,7 +296,7 @@ error: Inline macro `print` failed.
    print!(ba);
    ^********^
 
-error: Plugin diagnostic: Currently `print` macro must have exactly two unnamed arguments.
+error: Plugin diagnostic: Macro `print` must have exactly 2 unnamed arguments.
  --> lib.cairo:11:4
    print!("{}", ba, 1);
    ^*****************^
