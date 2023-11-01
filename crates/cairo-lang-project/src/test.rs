@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::db::Edition;
 use indoc::indoc;
 
 use crate::{AllCratesConfig, ProjectConfigContent, SingleCrateConfig};
@@ -15,7 +16,7 @@ fn test_serde() {
         crates_config: AllCratesConfig {
             global: SingleCrateConfig { edition: Default::default() },
             override_map: [
-                ("crate1".into(), SingleCrateConfig { edition: Default::default() }),
+                ("crate1".into(), SingleCrateConfig { edition: Edition::V2023_10 }),
                 ("crate3".into(), SingleCrateConfig { edition: Default::default() }),
             ]
             .into_iter()
@@ -35,7 +36,7 @@ fn test_serde() {
             edition = "2023_01"
 
             [config.override.crate1]
-            edition = "2023_01"
+            edition = "2023_10"
 
             [config.override.crate3]
             edition = "2023_01"
