@@ -1,5 +1,5 @@
 use std::{fs, iter};
-use std::cmp::{min, max};
+use std::cmp::{min, Ordering};
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
@@ -70,6 +70,8 @@ struct FuncBlock {
     ap_offset: usize,
     label: Option<String>,
     args: Vec<String>,
+    // Reachable return blocks.
+    ret_labels: HashSet<String>,
 }
 
 impl FuncBlock {
@@ -125,6 +127,36 @@ impl RetArgs {
 
     }
 
+    /// Returns the argument name at the given position from the end of the name list.
+    fn get_arg_name_at_pos_from_end(branch_desc: &Vec<RetBranchDesc>, pos: usize) -> String {
+        if branch_desc.len() == 0 {
+            return String::from("ρ");
+        }
+
+        let mut arg_name: String = String::new();
+
+        for branch in branch_desc {
+            if let Some(name) = branch.get_expr_at_pos_from_end(pos) {
+                if name.is_empty() {
+                    return String::from("ρ");
+                }
+                if arg_name.is_empty() {
+                    arg_name = name;
+                } else {
+                    if arg_name.find(&name).is_some() {
+                        arg_name = name;
+                    } else if name.find(&arg_name).is_some() {
+                        continue;
+                    } else {
+                        arg_name.push_str(&format!("_or_{name}"));
+                    }
+                }
+            }
+        }
+
+        if arg_name.is_empty() { String::from("ρ") } else { arg_name }
+    }
+
     fn set_arg_names(&mut self, branch_desc: &Vec<RetBranchDesc>) {
         if self.branch_num == 0 {
             return;
@@ -137,7 +169,7 @@ impl RetArgs {
                     } else if pos < branch_id_pos {
                         RetArgs::get_arg_name_at_pos(branch_desc, pos)
                     } else {
-                        RetArgs::get_arg_name_at_pos(branch_desc, pos - 1)
+                        RetArgs::get_arg_name_at_pos_from_end(branch_desc, self.arg_num - pos - 1)
                     }
                 } else {
                     RetArgs::get_arg_name_at_pos(branch_desc, pos)
@@ -338,7 +370,15 @@ impl VarRebind {
         }
     }
 
-    pub fn get_expr(&self, name: &str) -> String {
+    pub fn get_expr(&self, name: &str) -> Option<CellExpression> {
+        if let Some(entry) = self.vars.get(name) {
+            Some(entry.1.clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_expr_str(&self, name: &str) -> String {
         if let Some(entry) = self.vars.get(name) {
             cell_expr_to_lean(&entry.1, false)
         } else {
@@ -452,6 +492,16 @@ fn deref_or_imm_to_lean(expr: &DerefOrImmediate, paren: bool) -> String {
     }
 }
 
+/// If the epression is a deref, return the register name and offset.
+fn get_ref_from_deref(expr: CellExpression) -> Option<(String, i16)> {
+    match expr {
+        CellExpression::Deref(cell_ref) => {
+            Some((format!("{}", cell_ref.register), cell_ref.offset))
+        },
+        _ => None
+    }
+}
+
 /// All the information needed to generate the Lean code for a single function.
 struct LeanFuncInfo<'a> {
     main_func_name: String,
@@ -463,7 +513,7 @@ struct LeanFuncInfo<'a> {
     ret_args: RetArgs,
     ret_branch_ap_steps: Vec<bool>,
     blocks: Vec<FuncBlock>,
-    max_rc_count: usize,
+    max_rc_counts: HashMap<String, usize>,
     is_lean3: bool,
 }
 
@@ -489,12 +539,12 @@ impl<'a> LeanFuncInfo<'a> {
             ret_args,
             ret_branch_ap_steps,
             blocks: Vec::new(),
-            max_rc_count: 0,
+            max_rc_counts: HashMap::new(),
             is_lean3
         };
 
         lean_info.make_blocks();
-        lean_info.max_rc_count = lean_info.get_max_rc_checks(0);
+        lean_info.max_rc_counts = lean_info.make_max_rc_checks(0);
 
         lean_info
     }
@@ -530,7 +580,8 @@ impl<'a> LeanFuncInfo<'a> {
                 pc_start_pos: 0,
                 ap_offset: 0,
                 label: None,
-                args: self.get_arg_names()
+                args: self.get_arg_names(),
+                ret_labels: self.make_ret_labels(0),
             }
         );
 
@@ -545,13 +596,91 @@ impl<'a> LeanFuncInfo<'a> {
                             pc_start_pos: self.get_pc_at(casm_start_pos),
                             ap_offset: desc.ap_change,
                             label: Some(desc.label.clone()),
-                            args: Vec::from_iter(self.get_block_args(i)),
+                            args: Vec::from_iter(self.get_sorted_block_args(i, &desc.label)),
+                            ret_labels: self.make_ret_labels(i),
                         }
                     )
                 },
                 _ => {}
             }
         }
+    }
+
+    /// For each return label reachable from the given start position, returns
+    /// the maximal number of range checks performed by any of the branches
+    /// starting at the given start position and ending at that return label.
+    fn make_max_rc_checks(&self, start_pos: usize) -> HashMap<String, usize> {
+
+        // Accumulated rc count
+        let mut rc_count: usize = 0;
+
+        for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
+            match statement {
+                StatementDesc::Assert(assign) => {
+                    if self.is_range_check(&assign.expr) {
+                        rc_count += 1;
+                    }
+                },
+                StatementDesc::Jump(jump) => {
+                    let mut rc_counts = if let Some(target) = self.get_jump_target_pos(jump) {
+                        self.make_max_rc_checks(target + 1)
+                    } else {
+                        // This is a return label.
+                        HashMap::from([(jump.target.clone(), 0)])
+                    };
+                    if jump.cond_var.is_some() {
+                        // Take the maximum between the jmp branch and the continuation branch.
+                        for (name, count) in self.make_max_rc_checks(start_pos + i + 1).iter() {
+                            rc_counts.entry(name.clone()).and_modify(|c| if *c < *count { *c = *count; }).or_insert(*count);
+                        }
+                    };
+                    // Add the accumulated count up to this point to all return branches.
+                    for (_, count) in rc_counts.iter_mut() {
+                        *count += rc_count;
+                    }
+                    return rc_counts;
+                },
+                StatementDesc::Fail => {
+                    // Empty counts. In a failed branch, there is no need to range checks.
+                    return HashMap::new();
+                },
+                _ => {}
+            }
+        }
+
+        // Fallthrough branch
+        HashMap::from([("Fallthrough".into(), 0)])
+    }
+
+    /// Constructs the set of labels of all return blocks reachable from the given position.
+    fn make_ret_labels(&self, start_pos: usize) -> HashSet<String> {
+
+        for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
+            match statement {
+                StatementDesc::Jump(jump) => {
+                    let mut ret_labels = if let Some(target) = self.get_jump_target_pos(jump) {
+                        self.make_ret_labels(target + 1)
+                    } else {
+                        // This is a return label.
+                        HashSet::from([jump.target.clone()])
+                    };
+                    if jump.cond_var.is_some() {
+                        for label in self.make_ret_labels(start_pos + i + 1).iter() {
+                            ret_labels.insert(label.clone());
+                        }
+                    };
+                    return ret_labels;
+                },
+                StatementDesc::Fail => {
+                    // Empty counts. A failed branch does not reach a return block.
+                    return HashSet::new();
+                },
+                _ => {}
+            }
+        }
+
+        // Fallthrough branch
+        HashSet::from(["Fallthrough".into()])
     }
 
     pub fn get_block_by_label(&self, label: &str) -> Option<&FuncBlock> {
@@ -719,6 +848,58 @@ impl<'a> LeanFuncInfo<'a> {
         } else { false }
     }
 
+    /// If a block has a single maximal number of range checks (same for all
+    /// return blocks reachable fro the block) then this number is returned.
+    /// Otherwise, None is returned.
+    fn get_block_max_rc(&self, block: &FuncBlock) -> Option<usize> {
+
+        if self.max_rc_counts.len() == 0 {
+            return Some(0);
+        }
+
+        let mut rc_count: Option<usize> = None;
+
+        for label in block.ret_labels.iter() {
+            if let Some(max_count) = self.max_rc_counts.get(label) {
+                if let Some(count) = rc_count {
+                    if count != *max_count{
+                        return None
+                    }
+                } else {
+                    rc_count = Some(*max_count);
+                }
+            }
+        }
+
+        rc_count
+    }
+
+
+    /// Returns the smallest of the maximal number of rabge checks for the
+    /// return branches reachable from this block.
+    fn get_block_min_max_rc(&self, block: &FuncBlock) -> usize {
+
+        if self.max_rc_counts.len() == 0 {
+            return 0;
+        }
+
+        let mut rc_count: Option<usize> = None;
+
+        for label in block.ret_labels.iter() {
+            if let Some(max_count) = self.max_rc_counts.get(label) {
+                if let Some(min_count) = &mut rc_count {
+                    if *max_count < *min_count {
+                        *min_count = *max_count;
+                    }
+                } else {
+                    rc_count = Some(*max_count);
+                }
+            }
+        }
+
+        if let Some(min_count) = rc_count { min_count } else { 0 }
+    }
+
     pub fn get_code_len(&self) -> usize {
         self.casm_instructions.iter().fold(0, |len, instr| len + instr.body.op_size())
     }
@@ -867,6 +1048,49 @@ impl<'a> LeanFuncInfo<'a> {
         vars
     }
 
+    fn get_sorted_block_args(&self, block_start: usize, label: &String) -> Vec<String> {
+        let vars = self.get_block_args(block_start);
+        let bindings = self.get_rebinds_before_label(label, 0);
+        let mut vars_with_ref: Vec<(String, Option<(String, i16)>)> = Vec::from_iter(
+            vars.iter().map(
+                |name| {
+                    if let Some(bindings) = &bindings {
+                        if let Some(expr) = bindings.get_expr(name) {
+                            (name.clone(), get_ref_from_deref(expr))
+                        } else {
+                            (name.clone(), None)
+                        }
+                    } else {
+                        (name.clone(), None)
+                    }
+                }
+            )
+        );
+
+        // Sort by the reference ('fp' before 'ap' with increasing offset). If could not find the reference,
+        // sort alphabetically after the variables with a reference.
+        vars_with_ref.sort_by(|a, b| {
+            if let Some(a_ref) = &a.1 {
+                if let Some(b_ref) = &b.1 {
+                    if a_ref.0 == b_ref.0 {
+                        a_ref.1.cmp(&b_ref.1)
+                    } else {
+                        b_ref.0.cmp(&a_ref.0)
+                    }
+                } else {
+                    Ordering::Less
+                }
+            } else if b.1.is_none() {
+                // Reverse the comparison, as we want 'fp' before 'ap'
+                a.0.cmp(&b.0)
+            } else {
+                Ordering::Greater
+            }
+        });
+
+        vars_with_ref.iter().map(|v| v.0.clone()).collect()
+    }
+
     fn add_ret_block_args(&self, label: &str, declared: &HashSet<String>, block_args: &mut HashSet<String>) {
 
         if let Some(branch) =
@@ -928,42 +1152,6 @@ impl<'a> LeanFuncInfo<'a> {
         }
 
         None // Did not reach the label.
-    }
-
-    /// Returns the maximal number of range checks performed by any of the branches
-    /// starting at the given start position.
-    fn get_max_rc_checks(&self, start_pos: usize) -> usize {
-
-        let mut rc_count = 0;
-
-        for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
-            match statement {
-                StatementDesc::Assert(assign) => {
-                    if self.is_range_check(&assign.expr) {
-                        rc_count += 1;
-                    }
-                },
-                StatementDesc::Jump(jump) => {
-                    let jmp_rc_count = if let Some(target) = self.get_jump_target_pos(jump) {
-                        self.get_max_rc_checks(target + 1)
-                    } else {
-                        0
-                    };
-                    let cont_rc_count =  if jump.cond_var.is_none() {
-                        0
-                    } else {
-                        self.get_max_rc_checks(start_pos + i + 1)
-                    };
-                    return rc_count + max(jmp_rc_count, cont_rc_count);
-                },
-                StatementDesc::Fail => {
-                    return rc_count;
-                },
-                _ => {}
-            }
-        }
-
-        rc_count
     }
 }
 
@@ -1184,7 +1372,6 @@ trait LeanGenerator {
         assign: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
-        rc_checks: &mut usize,
         pc: usize,
         op_size: usize,
         indent: usize,
@@ -1239,6 +1426,7 @@ trait LeanGenerator {
 
     fn generate_return_args(
         &mut self,
+        ret_block_name: &str,
         branch_id: usize,
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
@@ -1246,7 +1434,6 @@ trait LeanGenerator {
         // The function block in which the return block was called.
         block: &FuncBlock,
         rebind: &VarRebind,
-        max_rc_count: usize,
         indent: usize,
     );
 
@@ -1446,7 +1633,6 @@ impl LeanGenerator for AutoSpecs {
         assert: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
-        rc_checks: &mut usize,
         pc: usize,
         op_size: usize,
         indent: usize,
@@ -1458,7 +1644,6 @@ impl LeanGenerator for AutoSpecs {
                     var_name = rebind.get_var_name(&assert.lhs.name)),
                 &format!("IsRangeChecked (rcBound F) {var_name}",
                     var_name = rebind.get_var_name(&assert.lhs.name)));
-            *rc_checks += 1;
         } else {
             self.push_spec( indent, &format!("{var_name} = {expr}",
                     var_name = rebind.get_var_name(&assert.lhs.name),
@@ -1558,13 +1743,13 @@ impl LeanGenerator for AutoSpecs {
 
     fn generate_return_args(
         &mut self,
+        ret_block_name: &str,
         branch_id: usize,
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
         block: &FuncBlock,
         rebind: &VarRebind,
-        max_rc_count: usize,
         indent: usize,
     ) {
         let mut ret_arg_start = 0;
@@ -1828,23 +2013,66 @@ impl AutoProof {
     }
 
     /// Generates the final part of the proof.
-    fn generate_final(&mut self, lean_info: &LeanFuncInfo, block: &FuncBlock, rc_cond_hyp: &str, rc_bound: Option<&str>, indent: usize) {
+    fn generate_final(
+        &mut self,
+        lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
+        // If before returning another block is called, this is the called block object.
+        return_block: Option<&FuncBlock>,
+        // If before returning no block was called, this is the name of the return block.
+        ret_block_name: Option<&str>,
+        rc_cond_hyp: &str,
+        rc_bound: Option<&str>,
+        indent: usize
+    ) {
 
         // Range check condition
 
         if lean_info.has_range_check_arg() {
             self.push_main(indent, "-- range check condition");
-            if block.label.is_none() {
-                self.push_main(indent, &format!("use_only {}", lean_info.max_rc_count));
+            let max_rc_count = lean_info.get_block_max_rc(block);
+            // If the return block has a single max rc count, we use that.
+            let ret_max_rc = if let Some(ret_block_name) = ret_block_name {
+                Some(*lean_info.max_rc_counts.get(ret_block_name).expect("Count not find max rc for return block."))
+            } else {
+                lean_info.get_block_max_rc(return_block.expect("Return block info or name expected."))
+            };
+
+            if max_rc_count.is_none() {
+                // The block may return with different rc counts.
+                if let Some(ret_max_rc) = ret_max_rc {
+                    self.push_main(indent, &format!("use_only {ret_max_rc}"));
+                } else {
+                    let suffix = return_block.expect("Return block expected.").block_suffix();
+                    self.push_main(indent, &format!("use_only rc{suffix}"));
+                }
             }
+
             self.push_main(indent, "constructor");
+
+            if max_rc_count.is_none() && ret_max_rc.is_none() {
+                // If the return block has return branches with different maximal rc counts, some extra Lean code
+                // must be generated.
+                let min_rc_count = if ret_max_rc.is_some() {
+                    None
+                } else {
+                    Some(lean_info.get_block_min_max_rc(return_block.expect("Return block expected.")))
+                };
+                self.push_main(indent, "-- Something extra is needed here, but not yet implemented. Search for this comment in the generator.");
+            }
+
             if let Some(rc_bound) = rc_bound {
                 self.push_main(indent, &format!("apply le_trans {rc_bound} (Nat.le_add_right _ _)"));
             } else {
                 self.push_main(indent, "norm_num1");
             }
+            if max_rc_count.is_none() {
+                // There is also a claim about the minimal value of the number of rc steps.
+                self.push_main(indent, "constructor ; norm_num1");
+            }
             self.push_main(indent, "constructor");
             self.push_main(indent, &format!("· arith_simps ; exact {rc_cond_hyp}"));
+
             self.push_main(indent, "intro rc_h_range_check");
         }
 
@@ -1929,7 +2157,7 @@ impl LeanGenerator for AutoProof {
             let args_with_exprs = if let Some(label) = &block.label {
                 let arg_rebinds = lean_info.get_rebinds_before_label(&label, 0).expect("Failed to reach label.");
                 block.args.iter().map(|name| {
-                    (name.clone(), arg_rebinds.get_expr(name))
+                    (name.clone(), arg_rebinds.get_expr_str(name))
                 }).collect_vec()
             } else {
                 lean_info.get_arg_names_and_expr()
@@ -1970,8 +2198,20 @@ impl LeanGenerator for AutoProof {
 
         if let Some(rc_name) = range_check_arg_name {
             indent += 2;
-            let rc_value: String = if block.label.is_none() { "μ".into() } else { lean_info.max_rc_count.to_string() };
-            let rc_bound: String = if block.label.is_none() { format!("∃ {rc_value} ≤ κ,") } else { format!("{rc_value} ≤ κ ∧") };
+            let max_rc = lean_info.get_block_max_rc(block);
+            let rc_value: String = if let Some(max_rc) = max_rc {
+                    max_rc.to_string()
+                } else {
+                    "μ".into()
+                };
+            let rc_bound: String = if let Some(max_rc) = max_rc {
+                format!("{rc_value} ≤ κ ∧")
+            } else {
+                format!(
+                    "∃ {rc_value} ≤ κ, {min_max_rc} ≤ {rc_value} ∧",
+                    min_max_rc = lean_info.get_block_min_max_rc(block)
+                )
+            };
             self.push_statement4(
                 indent,
                 &format!(
@@ -2107,6 +2347,22 @@ impl LeanGenerator for AutoProof {
         let mkdef_str4: String = format!("mkdef hl_{lhs} : {lhs} = {rhs}");
         let mkdef_str_copy: String = mkdef_str4.clone();
         self.push_main4(indent, &(mkdef_str4 + ","), &mkdef_str_copy);
+
+        // Assumes that all let expressions are 'let x = y'.
+        let have_htv_str4: String = format!(
+            "have htv_{lhs} : {lhs} = {cell_a}",
+            cell_a = cell_expr_to_lean(&assign.expr.var_a.var_expr, false),
+        );
+        let have_htv_copy: String = have_htv_str4.clone();
+        self.push_main4(indent, &(have_htv_str4 + ","), &(have_htv_copy + " := by"));
+
+        // Proof
+        if lean_info.is_lean3 {
+            self.push_main(indent, "{ sorry },");
+        } else {
+            self.push_main(indent + 2, &format!("rw [hl_{lhs}, htv_{rhs}]"));
+        }
+
         self.push_final4(0, &format!("use_only [{lhs}, hl_{lhs}],"),
             &format!("use_only {lhs}, hl_{lhs}"));
     }
@@ -2116,7 +2372,6 @@ impl LeanGenerator for AutoProof {
         assert: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
-        rc_checks: &mut usize,
         pc: usize,
         op_size: usize,
         indent: usize,
@@ -2138,7 +2393,6 @@ impl LeanGenerator for AutoProof {
                 0,
                 &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"),
                 "");
-            *rc_checks += 1;
         } else {
             self.push_main(indent, "-- assert");
             self.push_main4_with_comma(indent, &format!("step_assert_eq' {codes} with ha{pc}",
@@ -2250,10 +2504,17 @@ impl LeanGenerator for AutoProof {
         let suffix = block.block_suffix();
         self.push_main(indent, &format!("intros κ{suffix} _ h{suffix}"));
         if lean_info.has_range_check_arg() {
-            self.push_main(
-                indent,
-                &format!("rcases h{suffix} with ⟨rc_m_le{suffix}, hblk_range_check_ptr, h{suffix}⟩")
-            );
+            if lean_info.get_block_max_rc(block).is_none() {
+                self.push_main(
+                    indent,
+                    &format!("rcases h{suffix} with ⟨rc{suffix}, rc_m_le{suffix}, h_rc_min{suffix}, hblk_range_check_ptr, h{suffix}⟩")
+                );
+            } else {
+                self.push_main(
+                    indent,
+                    &format!("rcases h{suffix} with ⟨rc_m_le{suffix}, hblk_range_check_ptr, h{suffix}⟩")
+                );
+            }
             self.push_final4_with_comma(0, &format!("use_only κ{suffix}"));
             self.push_final4_with_comma(0, &format!("apply h{suffix} rc_h_range_check"));
         }
@@ -2261,6 +2522,8 @@ impl LeanGenerator for AutoProof {
         self.generate_final(
             lean_info,
             calling_block,
+            Some(block),
+            None,
             "hblk_range_check_ptr",
             Some(&format!("rc_m_le{suffix}")),
             indent
@@ -2286,13 +2549,13 @@ impl LeanGenerator for AutoProof {
 
     fn generate_return_args(
         &mut self,
+        ret_block_name: &str,
         branch_id: usize,
         ret_arg_names: &Vec<String>,
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
         block: &FuncBlock,
         rebind: &VarRebind,
-        max_rc_count: usize,
         indent: usize,
     ) {
         let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
@@ -2335,6 +2598,10 @@ impl LeanGenerator for AutoProof {
 
         let first_explicit_name = ret_arg_names.len() - explicit_len;
         let first_explicit_expr = lean_info.ret_args.num_implicit_ret_args;
+        // If there is no branch ID position, set it to be a position beyond the end of the return arguments.
+        let branch_id_pos = if let Some(pos) = lean_info.ret_args.branch_id_pos { pos } else { ret_arg_names.len() };
+
+        let max_rc_count = *lean_info.max_rc_counts.get(ret_block_name).unwrap_or(&0);
 
         for (pos, ret_name) in ret_arg_names.iter().enumerate() {
             let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
@@ -2360,13 +2627,13 @@ impl LeanGenerator for AutoProof {
                     &format!("  simp only [hl_{ret_name}, htv_{rc_arg_name}]"));
 
                 rc_ret_name = ret_name;
-            } else if (pos < first_explicit_name) {
+            } else if pos == branch_id_pos {
                 if is_last {
                     self.push_final4_with_comma(0,  &format!("exact ret_{ret_name}"));
                 } else {
                     self.push_final4_with_comma(0,  &format!("use_only ret_{ret_name}"));
                 }
-            } else {
+            } else if (first_explicit_name <= pos) {
                 let ret_expr = &ret_exprs[pos - first_explicit_name + first_explicit_expr];
                 if is_last {
                     self.push_final4(0, &format!("rw [htv_{ret_expr}], exact ret_{ret_name},"),
@@ -2398,7 +2665,14 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, "step_done");
         self.push_main4(indent, "use_only [rfl, rfl],", "use_only rfl, rfl");
 
-        self.generate_final(lean_info, block, &format!("ret_{rc_ret_name}"), None, indent);
+        self.generate_final(
+            lean_info, block,
+            None,
+            Some(ret_block_name),
+            &format!("ret_{rc_ret_name}"),
+            None,
+            indent
+        );
     }
 
     fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
@@ -2529,7 +2803,6 @@ fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo, blo
         lean_info,
         block,
         &mut rebind,
-        0,
         block.start_pos,
         block.casm_start_pos,
         block.pc_start_pos,
@@ -2542,7 +2815,6 @@ fn generate_auto_block(
     lean_info: &LeanFuncInfo,
     block: &FuncBlock,
     rebind: &mut VarRebind,
-    mut rc_checks: usize,
     block_start: usize,
     // Position in the list of casm instructions (this is not the same as the pc,
     // as all instructions, whether they are compiled into one or two field
@@ -2580,7 +2852,7 @@ fn generate_auto_block(
                 // If the variables used here were not yet declared, add them.
                 lean_gen.generate_assert_missing_vars(assert, lean_info, rebind, pc, op_size, indent);
                 // Generate the assert.
-                lean_gen.generate_assert(assert, lean_info, rebind, &mut rc_checks, pc, op_size, indent);
+                lean_gen.generate_assert(assert, lean_info, rebind, pc, op_size, indent);
                 pc += op_size;
                 casm_pos += 1;
             },
@@ -2606,7 +2878,6 @@ fn generate_auto_block(
                                 lean_info,
                                 block,
                                 &mut rebind.clone(),
-                                rc_checks,
                                 block_start + i + 1,
                                 casm_pos + 1,
                                 pc + op_size,
@@ -2623,7 +2894,7 @@ fn generate_auto_block(
                             cond_var, false, lean_info, rebind, pc, indent);
 
                         generate_jump_to_label(
-                            lean_gen, lean_info, block, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
+                            lean_gen, lean_info, block, rebind, jump, block_start + i, casm_pos, pc, indent);
 
                         lean_gen.generate_branch_close(
                             false, lean_info, rebind, indent);
@@ -2633,7 +2904,7 @@ fn generate_auto_block(
                         lean_gen.generate_jmp(pc, op_size, indent);
 
                         generate_jump_to_label(
-                            lean_gen, lean_info, block, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
+                            lean_gen, lean_info, block, rebind, jump, block_start + i, casm_pos, pc, indent);
                     }
                 };
                 return; // Remaining code handled already in the branches.
@@ -2672,7 +2943,6 @@ fn generate_jump_to_label(
     lean_info: &LeanFuncInfo,
     block: &FuncBlock,
     rebind: &mut VarRebind,
-    rc_checks: usize,
     jump: &JumpDesc, // The jump instruction.
     instr_pos: usize, // position of the Jump instruction in the aux_info instruction list
     casm_pos: usize,
@@ -2711,7 +2981,6 @@ fn generate_jump_to_label(
             lean_info,
             block,
             rebind,
-            rc_checks,
             target + 1,
             casm_pos + casm_jump,
             pc + pc_jump,
@@ -2735,7 +3004,15 @@ fn generate_auto_ret_block(
     let flat_exprs = lean_info.aux_info.return_branches[branch_id].flat_exprs();
 
     lean_gen.generate_return_args(
-        branch_id, &ret_arg_names, &flat_exprs, lean_info, block, rebind, lean_info.max_rc_count, indent);
+        ret_block_name,
+         branch_id,
+         &ret_arg_names,
+         &flat_exprs,
+         lean_info,
+         block,
+         rebind,
+         indent
+    );
 }
 
 /*fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> bool {

@@ -789,6 +789,20 @@ impl RetBranchDesc {
         None
     }
 
+    /// Returns the name at the given position from the end: 0 is the last
+    /// name, 1 the one before it, etc.
+    pub fn get_expr_at_pos_from_end(&self, pos: usize) -> Option<String> {
+        let mut skipped: usize = 0;
+        for expr in self.exprs.iter().rev() {
+            let names_len = expr.names.len();
+            if skipped + names_len > pos {
+                return Some(expr.names[names_len - 1 - (pos - skipped)].clone());
+            }
+            skipped += expr.names.len();
+        }
+        None
+    }
+
     pub fn flat_exprs(&self) -> Vec<String> {
         self.exprs.iter().flat_map(|exprs| exprs.names.iter().map(|s| s.clone())).collect()
     }
