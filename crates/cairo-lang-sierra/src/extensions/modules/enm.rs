@@ -19,6 +19,8 @@ use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 
+use super::felt252::Felt252Type;
+use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -108,6 +110,7 @@ impl ConcreteType for EnumConcreteType {
 define_libfunc_hierarchy! {
     pub enum EnumLibfunc {
         Init(EnumInitLibfunc),
+        FromFelt(EnumFromFelt252Libfunc),
         Match(EnumMatchLibfunc),
         SnapshotMatch(EnumSnapshotMatchLibfunc),
     }, EnumConcreteLibfunc
@@ -175,6 +178,106 @@ impl EnumInitLibfunc {
 impl NamedLibfunc for EnumInitLibfunc {
     type Concrete = EnumInitConcreteLibfunc;
     const STR_ID: &'static str = "enum_init";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(self.specialize_concrete_lib_func(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        self.specialize_concrete_lib_func(context.upcast(), args)
+    }
+}
+
+pub struct EnumFromFelt252ConcreteLibfunc {
+    pub signature: LibfuncSignature,
+    /// The number of variants of the enum.
+    pub num_variants: usize,
+}
+impl SignatureBasedConcreteLibfunc for EnumFromFelt252ConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+#[derive(Default)]
+pub struct EnumFromFelt252Libfunc {}
+impl EnumFromFelt252Libfunc {
+    /// Creates the specialization of the enum-from-felt libfunc with the given template
+    /// arguments.
+    fn specialize_concrete_lib_func(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<EnumFromFelt252ConcreteLibfunc, SpecializationError> {
+        let enum_type = match args {
+            [GenericArg::Type(enum_type)] => enum_type.clone(),
+            [_] => return Err(SpecializationError::UnsupportedGenericArg),
+            _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
+        };
+        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
+        let variant_types =
+            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
+                .variants;
+        let num_variants = variant_types.len();
+
+        for v in variant_types {
+            if !context.get_type_info(v)?.zero_sized {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        }
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+
+        Ok(EnumFromFelt252ConcreteLibfunc {
+            signature: LibfuncSignature {
+                param_signatures: vec![
+                    ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                    // TODO(tomerstarkware): Consider changing input to u128.
+                    ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
+                ],
+                branch_signatures: vec![
+                    BranchSignature {
+                        vars: vec![
+                            OutputVarInfo {
+                                ty: range_check_type.clone(),
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::AddConst { param_idx: 0 },
+                                ),
+                            },
+                            OutputVarInfo {
+                                ty: enum_type,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::Generic,
+                                ),
+                            },
+                        ],
+                        ap_change: SierraApChange::Known { new_vars_only: false },
+                    },
+                    BranchSignature {
+                        vars: vec![OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        }],
+                        ap_change: SierraApChange::Known { new_vars_only: false },
+                    },
+                ],
+                fallthrough: Some(0),
+            },
+            num_variants,
+        })
+    }
+}
+impl NamedLibfunc for EnumFromFelt252Libfunc {
+    type Concrete = EnumFromFelt252ConcreteLibfunc;
+    const STR_ID: &'static str = "enum_from_felt252";
 
     fn specialize_signature(
         &self,

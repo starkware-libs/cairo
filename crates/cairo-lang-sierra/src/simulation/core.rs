@@ -270,6 +270,7 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Enum(EnumConcreteLibfunc::FromFelt(_)) => todo!(),
         Enum(EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_)) => {
             match &inputs[..] {
                 [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
