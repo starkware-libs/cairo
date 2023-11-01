@@ -42,6 +42,48 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     }
 }
 
+impl StorageAddressIntoU256 of Into<StorageAddress, u256> {
+    fn into(self: StorageAddress) -> u256 {
+        let self: felt252 = self.into();
+        self.into()
+    }
+}
+
+impl StorageBaseAddressIntoFelt252 of Into<StorageBaseAddress, felt252> {
+    fn into(self: StorageBaseAddress) -> felt252 {
+        storage_address_from_base(self).into()
+    }
+}
+
+impl StorageBaseAddressIntoU256 of Into<StorageBaseAddress, u256> {
+    fn into(self: StorageBaseAddress) -> u256 {
+        let self: felt252 = self.into();
+        self.into()
+    }
+}
+
+impl StorageAddressPartialEq of PartialEq<StorageAddress> {
+    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
+    }
+    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
+impl StorageBaseAddressPartialEq of PartialEq<StorageBaseAddress> {
+    fn eq(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
+    }
+    fn ne(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
 impl StorageAddressSerde of serde::Serde<StorageAddress> {
     fn serialize(self: @StorageAddress, ref output: Array<felt252>) {
         storage_address_to_felt252(*self).serialize(ref output);

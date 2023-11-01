@@ -283,3 +283,37 @@ fn test_max_foo() {
     assert_eq(@max(a, a).val, @a.val, 'a == a');
     assert_eq(@max(b, b).val, @b.val, 'b == b');
 }
+
+// StorageAddress and StorageBaseAddress
+
+use starknet::{storage_address_try_from_felt252, storage_base_address_from_felt252};
+
+#[test]
+#[available_gas(200000)]
+fn test_eq_storage_address() {
+    let val_1 = storage_address_try_from_felt252(0x01).unwrap();
+    assert_eq(@val_1, @val_1, 'expected equality')
+}
+
+#[test]
+fn test_ne_storage_address() {
+    let val_1 = storage_address_try_from_felt252(0x01).unwrap();
+    let val_2 = storage_address_try_from_felt252(0x02).unwrap();
+
+    assert_ne(@val_1, @val_2, 'expected inequality')
+}
+
+#[test]
+fn test_eq_storage_base_address() {
+    let val_1 = storage_base_address_from_felt252(0x01);
+
+    assert_eq(@val_1, @val_1, 'expected equality')
+}
+
+#[test]
+fn test_ne_storage_base_address() {
+    let val_1 = storage_base_address_from_felt252(0x01);
+    let val_2 = storage_base_address_from_felt252(0x02);
+
+    assert_ne(@val_1, @val_2, 'expected inequality')
+}
