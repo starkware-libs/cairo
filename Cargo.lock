@@ -713,6 +713,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-utils",
  "cairo-vm",
+ "indoc",
  "itertools 0.11.0",
  "keccak",
  "num-bigint",
