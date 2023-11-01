@@ -50,16 +50,23 @@ pub fn add_store_statements<GetLibfuncSignature>(
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
-    params: &[sierra::ids::VarId],
+    params: &[sierra::program::Param],
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
     let mut handler = AddStoreVariableStatements::new(db, local_variables);
     let mut state_opt = Some(VariablesState {
-        variables: OrderedHashMap::from_iter(
-            params.iter().map(|var| (var.clone(), VarState::LocalVar)),
-        ),
+        variables: OrderedHashMap::from_iter(params.iter().map(|param| {
+            (
+                param.id.clone(),
+                if db.get_type_info(param.ty.clone()).unwrap().zero_sized {
+                    VarState::ZeroSizedVar
+                } else {
+                    VarState::LocalVar
+                },
+            )
+        })),
         known_stack: Default::default(),
     });
     // Go over the statements, restarting whenever we see a branch or a label.
