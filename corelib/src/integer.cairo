@@ -2301,15 +2301,15 @@ impl I128MulEq of MulEq<i128> {
 
 impl I128Div of Div<i128> {
     fn div(lhs: i128, rhs: i128) -> i128 {
-        let (rhs_u127, rhs_neg) = match i128_diff(rhs, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
+            Result::Ok(v) => (v, true),
+            Result::Err(v) => (~v + 1, false),
         };
-        assert(rhs_u127 != 0, 'i128_div DivideByZero');
-        let (lhs_u127, res_neg) = match i128_diff(lhs, 0) {
-            Result::Ok(v) => (v, rhs_neg),
-            Result::Err(v) => (~v + 1, !rhs_neg),
+        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
+            Result::Ok(v) => (v, lhs_neg),
+            Result::Err(v) => (~v + 1, !lhs_neg),
         };
+        // The u128 div handles the case where rhs is 0.
         let res_as_u128 = lhs_u127 / rhs_u127;
         let res_as_felt252: felt252 = if res_neg {
             -res_as_u128.into()
