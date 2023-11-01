@@ -4,6 +4,15 @@ enum Option<T> {
     None,
 }
 
+impl OptionDestruct<T, +Destruct<T>> of Destruct<Option<T>> {
+    fn destruct(self: Option<T>) nopanic {
+        match self {
+            Option::Some(x) => x.destruct(),
+            Option::None => (),
+        }
+    }
+}
+
 trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option<T>, err: felt252) -> T;
