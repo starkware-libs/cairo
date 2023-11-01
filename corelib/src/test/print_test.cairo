@@ -101,3 +101,31 @@ fn test_prints() {
     let x = array![0x9999, BYTE_ARRAY_MAGIC, 0, 'hello', 5, 'world', 0x8888];
     x.print();
 }
+
+#[ignore]
+#[test]
+fn test_print_macro() {
+    // With a ByteArray.
+    let ba: ByteArray = "hello";
+    print!("{}", ba);
+
+    // With a felt252.
+    print!("{}", 97_felt252);
+
+    // With an integer.
+    print!("{}", 97_usize);
+}
+
+#[ignore]
+#[test]
+fn test_println_macro() {
+    // With a ByteArray.
+    let ba: ByteArray = "hello";
+    println!("{}", ba);
+
+    // With a felt252.
+    println!("{}", 97_felt252);
+
+    // With an integer.
+    println!("{}", 97_usize);
+}
