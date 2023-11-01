@@ -6,7 +6,8 @@ use itertools::Itertools;
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::infers::InferenceEmbeddings;
 use super::{
-    InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
+    InferenceContextFilter, InferenceData, InferenceError, InferenceId, InferenceResult,
+    InferenceVar, LocalImplVarId,
 };
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
@@ -67,8 +68,9 @@ pub fn canonic_trait_solutions(
     db: &dyn SemanticGroup,
     canonical_trait: CanonicalTrait,
     lookup_context: ImplLookupContext,
+    inference_filter: InferenceContextFilter,
 ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-    let mut solver = Solver::new(db, canonical_trait, lookup_context);
+    let mut solver = Solver::new(db, canonical_trait, lookup_context, inference_filter);
     Ok(solver.solution_set(db))
 }
 
@@ -78,6 +80,7 @@ pub fn canonic_trait_solutions_cycle(
     _cycle: &[String],
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
+    _inference_filter: &InferenceContextFilter,
 ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
     Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
 }
@@ -113,10 +116,12 @@ impl Solver {
         db: &dyn SemanticGroup,
         canonical_trait: CanonicalTrait,
         lookup_context: ImplLookupContext,
+        inference_filter: InferenceContextFilter,
     ) -> Self {
         let filter = canonical_trait.0.filter(db);
         let candidates =
-            find_candidates_at_context(db, &lookup_context, filter).unwrap_or_default();
+            find_candidates_at_context(db, &lookup_context, filter.clone(), inference_filter)
+                .unwrap_or_default();
         let candidate_solvers = candidates
             .into_iter()
             .filter_map(|candidate| {

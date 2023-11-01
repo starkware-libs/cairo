@@ -43,7 +43,7 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
-use crate::expr::inference::{ImplVarId, InferenceId};
+use crate::expr::inference::{ImplVarId, InferenceContextFilter, InferenceId};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -253,6 +253,19 @@ pub fn impl_def_concrete_trait(
     db.priv_impl_declaration_data(impl_def_id)?.concrete_trait
 }
 
+/// Cycle implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
+pub fn impl_def_concrete_trait_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_def_id: &ImplDefId,
+) -> Maybe<ConcreteTraitId> {
+    // let module_file_id = impl_def_id.module_file_id(db.upcast());
+    // let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    // let module_impls = db.module_impls(module_file_id.0)?;
+    // Err(diagnostics.report(module_impls.get(impl_def_id).to_maybe()?, NotATrait))
+    priv_impl_declaration_data_inner(db, *impl_def_id, false)?.concrete_trait
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
 pub fn impl_def_attributes(
     db: &dyn SemanticGroup,
@@ -370,7 +383,9 @@ pub fn priv_impl_declaration_data_inner(
     .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) =
+        resolver.inference().finalize_with_filter(InferenceContextFilter::ImplDef(impl_def_id))
+    {
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
@@ -700,6 +715,7 @@ pub fn module_impl_ids_for_trait_filter(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     trait_filter: TraitFilter,
+    inference_filter: InferenceContextFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
     let mut uninferred_impls = Vec::new();
     for impl_def_id in db.module_impls_ids(module_id).unwrap_or_default().iter().copied() {
@@ -715,6 +731,11 @@ pub fn module_impl_ids_for_trait_filter(
     }
     let mut res = Vec::new();
     for uninferred_impl in uninferred_impls {
+        if let InferenceContextFilter::ImplDef(ignored_impl) = inference_filter {
+            if uninferred_impl == UninferredImpl::Def(ignored_impl) {
+                continue;
+            }
+        }
         let Ok(trait_id) = uninferred_impl.trait_id(db) else { continue };
         if trait_id != trait_filter.trait_id {
             continue;
@@ -865,6 +886,7 @@ pub fn find_candidates_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
     filter: TraitFilter,
+    inference_filter: InferenceContextFilter,
 ) -> Maybe<OrderedHashSet<UninferredImpl>> {
     let mut res = OrderedHashSet::default();
     for generic_param_id in &lookup_context.generic_params {
@@ -894,7 +916,9 @@ pub fn find_candidates_at_context(
     }
     let core_module = core_module(db);
     for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
-        let Ok(imps) = db.module_impl_ids_for_trait_filter(*module_id, filter.clone()) else {
+        let Ok(imps) =
+            db.module_impl_ids_for_trait_filter(*module_id, filter.clone(), inference_filter.clone())
+        else {
             continue;
         };
         for imp in imps {

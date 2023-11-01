@@ -239,7 +239,21 @@ pub struct InferenceData {
     solved: Vec<LocalImplVarId>,
     /// Inference variables that are currently ambiguous. May be solved later.
     ambiguous: Vec<(LocalImplVarId, Ambiguity)>,
+    /// The current filter for the impls being resolved.
+    filter: InferenceContextFilter,
 }
+
+/// A filter for the current impl trying to be resolved, this filter should not be accounted for
+/// when trying to infer generic impls.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum InferenceContextFilter {
+    /// The infered generic item is not an impl.
+    NoFilter,
+    /// The infered generic item is an impl, and should be ignored when trying to infer generic
+    /// impls.
+    ImplDef(ImplDefId),
+}
+
 impl InferenceData {
     pub fn new(inference_id: InferenceId) -> Self {
         Self {
@@ -253,6 +267,7 @@ impl InferenceData {
             refuted: Vec::new(),
             solved: Vec::new(),
             ambiguous: Vec::new(),
+            filter: InferenceContextFilter::NoFilter,
         }
     }
     pub fn inference<'db, 'b: 'db>(&'db mut self, db: &'b dyn SemanticGroup) -> Inference<'db> {
@@ -276,6 +291,7 @@ impl InferenceData {
             refuted: inference_id_replacer.rewrite(self.refuted.clone()).no_err(),
             solved: inference_id_replacer.rewrite(self.solved.clone()).no_err(),
             ambiguous: inference_id_replacer.rewrite(self.ambiguous.clone()).no_err(),
+            filter: self.filter.clone(),
         }
     }
     pub fn temporary_clone(&self) -> InferenceData {
@@ -290,6 +306,7 @@ impl InferenceData {
             refuted: self.refuted.clone(),
             solved: self.solved.clone(),
             ambiguous: self.ambiguous.clone(),
+            filter: self.filter.clone(),
         }
     }
 }
@@ -437,6 +454,16 @@ impl<'db> Inference<'db> {
         }
         assert!(self.pending.is_empty(), "solution() called on an unsolved solver");
         Ok(SolutionSet::Unique(()))
+    }
+
+    pub fn finalize_with_filter(
+        &mut self,
+        filter: InferenceContextFilter,
+    ) -> Option<(Option<SyntaxStablePtrId>, InferenceError)> {
+        self.filter = filter;
+        let res = self.finalize();
+        self.filter = InferenceContextFilter::NoFilter;
+        res
     }
 
     /// Finalizes an inference by inferring uninferred numeric literals as felt252.
@@ -613,7 +640,7 @@ impl<'db> Inference<'db> {
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
-        match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
+        match self.db.canonic_trait_solutions(canonical_trait, lookup_context, self.filter.clone())? {
             SolutionSet::None => Ok(SolutionSet::None),
             SolutionSet::Unique(canonical_impl) => {
                 Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
