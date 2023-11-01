@@ -128,7 +128,7 @@ impl RetArgs {
     }
 
     /// Returns the argument name at the given position from the end of the name list.
-    fn get_arg_name_at_pos_from_end(branch_desc: &Vec<RetBranchDesc>, pos: usize) -> String {
+    fn get_arg_name_at_pos_from_end(branch_desc: &Vec<RetBranchDesc>, pos: usize, ignore_at_start: usize) -> String {
         if branch_desc.len() == 0 {
             return String::from("ρ");
         }
@@ -136,7 +136,7 @@ impl RetArgs {
         let mut arg_name: String = String::new();
 
         for branch in branch_desc {
-            if let Some(name) = branch.get_expr_at_pos_from_end(pos) {
+            if let Some(name) = branch.get_expr_at_pos_from_end(pos, ignore_at_start) {
                 if name.is_empty() {
                     return String::from("ρ");
                 }
@@ -169,7 +169,11 @@ impl RetArgs {
                     } else if pos < branch_id_pos {
                         RetArgs::get_arg_name_at_pos(branch_desc, pos)
                     } else {
-                        RetArgs::get_arg_name_at_pos_from_end(branch_desc, self.arg_num - pos - 1)
+                        RetArgs::get_arg_name_at_pos_from_end(
+                            branch_desc,
+                            self.arg_num - pos - 1,
+                            branch_id_pos,
+                        )
                     }
                 } else {
                     RetArgs::get_arg_name_at_pos(branch_desc, pos)
