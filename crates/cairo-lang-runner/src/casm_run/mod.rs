@@ -2161,7 +2161,10 @@ impl FormattedItem {
 
 /// Formats a string or a short string / `felt252`. Returns the formatted string and a boolean
 /// indicating whether it's a string. If can't format the item, returns None.
-pub fn format_next_item(values: &mut IntoIter<Felt252>) -> Option<FormattedItem> {
+pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
+where
+    T: Iterator<Item = Felt252> + Clone,
+{
     let Some(first_felt) = values.next() else {
         return None;
     };
@@ -2186,7 +2189,10 @@ fn format_short_string(value: &Felt252) -> String {
 /// Tries to format a string, represented as a sequence of `Felt252`s.
 /// If the sequence is not a valid serialization of a ByteArray, returns None and doesn't change the
 /// given iterator (`values`).
-fn try_format_string(values: &mut IntoIter<Felt252>) -> Option<String> {
+fn try_format_string<T>(values: &mut T) -> Option<String>
+where
+    T: Iterator<Item = Felt252> + Clone,
+{
     // Clone the iterator and work with the clone. If the extraction of the string is successful,
     // change the original iterator to the one we worked with. If not, continue with the
     // original iterator at the original point.
