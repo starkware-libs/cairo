@@ -55,7 +55,7 @@ mod test_contract {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -113,7 +113,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 impls:
 
-impl AwesomeEventDrop of Drop::<AwesomeEvent>;
+impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 
 starknet_derive:
@@ -133,7 +133,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 impls:
 
-impl BestEventEverDrop of Drop::<BestEventEver>;
+impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 
 starknet_derive:

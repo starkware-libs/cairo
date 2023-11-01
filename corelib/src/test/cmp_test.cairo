@@ -1,5 +1,5 @@
-use cmp::{max, min};
-use test::test_utils::{assert_eq, assert_ne};
+use core::cmp::{max, min};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 // Integer tests
 

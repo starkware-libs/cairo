@@ -1,4 +1,4 @@
-use traits::Into;
+use core::traits::Into;
 
 /// A trait for hash state accumulators.
 trait HashStateTrait<S> {
@@ -20,10 +20,10 @@ trait LegacyHash<T> {
 }
 
 /// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
-impl LegacyHashForHash<T, +Hash<T, pedersen::HashState>> of LegacyHash<T> {
+impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> {
     #[inline(always)]
     fn hash(state: felt252, value: T) -> felt252 {
-        pedersen::HashState { state }.update_with(value).state
+        core::pedersen::HashState { state }.update_with(value).state
     }
 }
 

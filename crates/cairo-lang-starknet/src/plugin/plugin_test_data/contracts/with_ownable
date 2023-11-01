@@ -99,8 +99,8 @@ mod ownable_balance {
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -229,7 +229,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -357,8 +357,8 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -487,7 +487,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
 }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>

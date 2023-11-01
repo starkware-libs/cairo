@@ -77,15 +77,15 @@ mod test_contract {
 
 impls:
 
-impl OuterTypeDrop of Drop::<OuterType>;
+impl OuterTypeDrop of core::traits::Drop::<OuterType>;
 impl OuterTypeHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<OuterType, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<OuterType, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: OuterType) -> __State {
-        let state = hash::Hash::update_state(state, value.x);
+        let state = core::hash::Hash::update_state(state, value.x);
         state
     }
 }
@@ -752,7 +752,7 @@ const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:

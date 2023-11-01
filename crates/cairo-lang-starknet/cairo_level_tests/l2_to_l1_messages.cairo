@@ -1,18 +1,18 @@
-use traits::{Into, TryInto, PartialEq};
-use array::{ArrayTrait, SpanTrait, SpanPartialEq};
-use option::OptionTrait;
-use result::ResultTrait;
+use core::traits::{Into, TryInto, PartialEq};
+use core::array::{ArrayTrait, SpanTrait, SpanPartialEq};
+use core::option::OptionTrait;
+use core::result::ResultTrait;
 use starknet::{testing, SyscallResultTrait};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::class_hash::Felt252TryIntoClassHash;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
-    use traits::Into;
-    use array::ArrayTrait;
+    use core::traits::Into;
+    use core::array::ArrayTrait;
 
     use super::generate_payload;
 

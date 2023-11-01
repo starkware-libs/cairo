@@ -1,11 +1,11 @@
-use test::test_utils::{assert_eq, assert_ne};
-use hash::{HashStateTrait, HashStateExTrait};
-use poseidon::PoseidonTrait;
+use core::test::test_utils::{assert_eq, assert_ne};
+use core::hash::{HashStateTrait, HashStateExTrait};
+use core::poseidon::PoseidonTrait;
 
 #[test]
 fn test_pedersen_hash() {
     assert_eq(
-        @pedersen::pedersen(1, 2),
+        @core::pedersen::pedersen(1, 2),
         @2592987851775965742543459319508348457290966253241455514226127639100457844774,
         'Wrong hash value'
     );
@@ -13,7 +13,7 @@ fn test_pedersen_hash() {
 
 #[test]
 fn test_poseidon_hades_permutation() {
-    let (s0, s1, s2) = poseidon::hades_permutation(1, 2, 3);
+    let (s0, s1, s2) = core::poseidon::hades_permutation(1, 2, 3);
     assert_eq(
         @s0,
         @442682200349489646213731521593476982257703159825582578145778919623645026501,
@@ -35,14 +35,14 @@ fn test_poseidon_hades_permutation() {
 fn test_poseidon_hash_span() {
     // Test odd number of inputs.
     assert_eq(
-        @poseidon::poseidon_hash_span(array![1, 2, 3].span()),
+        @core::poseidon::poseidon_hash_span(array![1, 2, 3].span()),
         @0x2f0d8840bcf3bc629598d8a6cc80cb7c0d9e52d93dab244bbf9cd0dca0ad082,
         'wrong result'
     );
 
     // Test even number of inputs.
     assert_eq(
-        @poseidon::poseidon_hash_span(array![1, 2, 3, 4].span()),
+        @core::poseidon::poseidon_hash_span(array![1, 2, 3, 4].span()),
         @0x26e3ad8b876e02bc8a4fc43dad40a8f81a6384083cabffa190bcf40d512ae1d,
         'wrong result'
     );

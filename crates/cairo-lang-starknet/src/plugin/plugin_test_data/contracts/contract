@@ -276,7 +276,7 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -334,7 +334,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 impls:
 
-impl AwesomeEventDrop of Drop::<AwesomeEvent>;
+impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 
 starknet_derive:
@@ -362,7 +362,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 impls:
 
-impl BestEventEverDrop of Drop::<BestEventEver>;
+impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 
 starknet_derive:

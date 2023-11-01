@@ -97,7 +97,7 @@ trait MyTrait<T> {
 
 impls:
 
-impl MyTypeDrop of Drop::<MyType>;
+impl MyTypeDrop of core::traits::Drop::<MyType>;
 
 
 starknet_derive:
@@ -303,15 +303,15 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
 
 impls:
 
-impl MyTraitDispatcherCopy of Copy::<MyTraitDispatcher>;
-impl MyTraitDispatcherDrop of Drop::<MyTraitDispatcher>;
-impl MyTraitDispatcherSerde of Serde::<MyTraitDispatcher> {
-    fn serialize(self: @MyTraitDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl MyTraitDispatcherCopy of core::traits::Copy::<MyTraitDispatcher>;
+impl MyTraitDispatcherDrop of core::traits::Drop::<MyTraitDispatcher>;
+impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
+    fn serialize(self: @MyTraitDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitDispatcher> {
-        Option::Some(MyTraitDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitDispatcher> {
+        core::option::Option::Some(MyTraitDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -354,15 +354,15 @@ impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
 
 impls:
 
-impl MyTraitLibraryDispatcherCopy of Copy::<MyTraitLibraryDispatcher>;
-impl MyTraitLibraryDispatcherDrop of Drop::<MyTraitLibraryDispatcher>;
-impl MyTraitLibraryDispatcherSerde of Serde::<MyTraitLibraryDispatcher> {
-    fn serialize(self: @MyTraitLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl MyTraitLibraryDispatcherCopy of core::traits::Copy::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherDrop of core::traits::Drop::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatcher> {
+    fn serialize(self: @MyTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitLibraryDispatcher> {
-        Option::Some(MyTraitLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitLibraryDispatcher> {
+        core::option::Option::Some(MyTraitLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -405,15 +405,15 @@ impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher
 
 impls:
 
-impl MyTraitSafeLibraryDispatcherCopy of Copy::<MyTraitSafeLibraryDispatcher>;
-impl MyTraitSafeLibraryDispatcherDrop of Drop::<MyTraitSafeLibraryDispatcher>;
-impl MyTraitSafeLibraryDispatcherSerde of Serde::<MyTraitSafeLibraryDispatcher> {
-    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl MyTraitSafeLibraryDispatcherCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibraryDispatcher> {
+    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeLibraryDispatcher> {
-        Option::Some(MyTraitSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitSafeLibraryDispatcher> {
+        core::option::Option::Some(MyTraitSafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -456,15 +456,15 @@ impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDi
 
 impls:
 
-impl MyTraitSafeDispatcherCopy of Copy::<MyTraitSafeDispatcher>;
-impl MyTraitSafeDispatcherDrop of Drop::<MyTraitSafeDispatcher>;
-impl MyTraitSafeDispatcherSerde of Serde::<MyTraitSafeDispatcher> {
-    fn serialize(self: @MyTraitSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl MyTraitSafeDispatcherCopy of core::traits::Copy::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherDrop of core::traits::Drop::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
+    fn serialize(self: @MyTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeDispatcher> {
-        Option::Some(MyTraitSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitSafeDispatcher> {
+        core::option::Option::Some(MyTraitSafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -604,7 +604,7 @@ impl MyImpl<
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -645,7 +645,7 @@ impl EventLogIntoEvent of Into<Log, Event> {
 
 impls:
 
-impl LogDrop of Drop::<Log>;
+impl LogDrop of core::traits::Drop::<Log>;
 
 
 starknet_derive:

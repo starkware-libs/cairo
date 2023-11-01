@@ -144,7 +144,7 @@ fn __wrapper__good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt2
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:

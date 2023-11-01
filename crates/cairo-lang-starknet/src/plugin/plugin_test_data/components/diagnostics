@@ -79,7 +79,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -188,7 +188,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -297,7 +297,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -404,7 +404,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -511,7 +511,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -618,7 +618,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -725,7 +725,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -824,7 +824,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -939,7 +939,7 @@ impl MyImpl<
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -1083,7 +1083,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -1192,7 +1192,7 @@ trait HasComponent<TContractState> {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:

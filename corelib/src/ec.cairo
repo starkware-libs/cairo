@@ -1,9 +1,9 @@
 //! This module contains functions and constructs related to elliptic curve operations on the Stark
 //! curve.
 
-use array::ArrayTrait;
-use traits::{Into, TryInto};
-use zeroable::IsZeroResult;
+use core::array::ArrayTrait;
+use core::traits::{Into, TryInto};
+use core::zeroable::IsZeroResult;
 
 mod stark_curve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.

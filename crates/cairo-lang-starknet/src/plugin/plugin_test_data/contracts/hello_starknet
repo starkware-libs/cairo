@@ -80,8 +80,8 @@ enum Event {}
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -158,7 +158,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
             )
         }
     }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -340,15 +340,15 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     }
 
 }
-impl HelloStarknetTraitDispatcherCopy of Copy::<HelloStarknetTraitDispatcher>;
-impl HelloStarknetTraitDispatcherDrop of Drop::<HelloStarknetTraitDispatcher>;
-impl HelloStarknetTraitDispatcherSerde of Serde::<HelloStarknetTraitDispatcher> {
-    fn serialize(self: @HelloStarknetTraitDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl HelloStarknetTraitDispatcherCopy of core::traits::Copy::<HelloStarknetTraitDispatcher>;
+impl HelloStarknetTraitDispatcherDrop of core::traits::Drop::<HelloStarknetTraitDispatcher>;
+impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTraitDispatcher> {
+    fn serialize(self: @HelloStarknetTraitDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<HelloStarknetTraitDispatcher> {
-        Option::Some(HelloStarknetTraitDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitDispatcher> {
+        core::option::Option::Some(HelloStarknetTraitDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -383,15 +383,15 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
-impl HelloStarknetTraitLibraryDispatcherCopy of Copy::<HelloStarknetTraitLibraryDispatcher>;
-impl HelloStarknetTraitLibraryDispatcherDrop of Drop::<HelloStarknetTraitLibraryDispatcher>;
-impl HelloStarknetTraitLibraryDispatcherSerde of Serde::<HelloStarknetTraitLibraryDispatcher> {
-    fn serialize(self: @HelloStarknetTraitLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl HelloStarknetTraitLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
+impl HelloStarknetTraitLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
+impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
+    fn serialize(self: @HelloStarknetTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<HelloStarknetTraitLibraryDispatcher> {
-        Option::Some(HelloStarknetTraitLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitLibraryDispatcher> {
+        core::option::Option::Some(HelloStarknetTraitLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -426,15 +426,15 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl HelloStarknetTraitSafeLibraryDispatcherCopy of Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
-impl HelloStarknetTraitSafeLibraryDispatcherDrop of Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
-impl HelloStarknetTraitSafeLibraryDispatcherSerde of Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
-    fn serialize(self: @HelloStarknetTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
+impl HelloStarknetTraitSafeLibraryDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
+impl HelloStarknetTraitSafeLibraryDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
+impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
+    fn serialize(self: @HelloStarknetTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<HelloStarknetTraitSafeLibraryDispatcher> {
-        Option::Some(HelloStarknetTraitSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeLibraryDispatcher> {
+        core::option::Option::Some(HelloStarknetTraitSafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -469,15 +469,15 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
-impl HelloStarknetTraitSafeDispatcherCopy of Copy::<HelloStarknetTraitSafeDispatcher>;
-impl HelloStarknetTraitSafeDispatcherDrop of Drop::<HelloStarknetTraitSafeDispatcher>;
-impl HelloStarknetTraitSafeDispatcherSerde of Serde::<HelloStarknetTraitSafeDispatcher> {
-    fn serialize(self: @HelloStarknetTraitSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
+impl HelloStarknetTraitSafeDispatcherCopy of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
+impl HelloStarknetTraitSafeDispatcherDrop of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
+impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
+    fn serialize(self: @HelloStarknetTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<HelloStarknetTraitSafeDispatcher> {
-        Option::Some(HelloStarknetTraitSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeDispatcher> {
+        core::option::Option::Some(HelloStarknetTraitSafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -576,8 +576,8 @@ enum Event {}
                 )
             }
         }
-impl ContractMemberStateCopy of Copy::<ContractMemberState>;
-impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+impl ContractMemberStateCopy of core::traits::Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of core::traits::Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
@@ -654,7 +654,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
             )
         }
     }
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
