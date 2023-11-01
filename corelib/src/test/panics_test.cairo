@@ -125,3 +125,37 @@ fn test_panic_with_byte_array_invalid_pending_word() {
     ];
     panic(error);
 }
+
+#[test]
+#[should_panic(expected: "")]
+fn test_panic_macro_no_args() {
+    panic!();
+}
+
+#[test]
+#[should_panic(expected: "panic data")]
+fn test_panic_macro_single_arg() {
+    let ba: ByteArray = "panic data";
+    panic!(ba);
+}
+
+#[test]
+#[should_panic(expected: "panic data")]
+fn test_panic_macro_two_args_byte_array() {
+    let ba: ByteArray = "panic data";
+    panic!("{}", ba);
+}
+
+#[test]
+#[should_panic(expected: "97")]
+fn test_panic_macro_two_args_usize() {
+    let ba: ByteArray = "panic data";
+    panic!("{}", 97_usize);
+}
+
+#[test]
+#[should_panic(expected: "97")]
+fn test_panic_macro_two_args_felt252() {
+    let ba: ByteArray = "panic data";
+    panic!("{}", 97_felt252);
+}

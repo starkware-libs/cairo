@@ -318,6 +318,37 @@ error: Inline macro `print` failed.
 
 //! > ==========================================================================
 
+//! > Test bad panic! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "panic data";
+
+   // Bad brackets.
+   panic!["{}", ba];
+
+   // Single argument which is not a ByteArray.
+   panic!(ba);
+
+   // More than 2 arguments.
+   panic!("{}", ba, 1);
+
+   // 2 arguments but first argument is not "{}".
+   panic!("{}{}", ba);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test unknown macro
 
 //! > test_runner_name
