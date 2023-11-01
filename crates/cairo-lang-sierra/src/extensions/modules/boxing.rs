@@ -4,6 +4,7 @@ use crate::extensions::lib_func::{
     SignatureAndTypeGenericLibfunc, SignatureSpecializationContext,
     WrapSignatureAndTypeGenericLibfunc,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
@@ -18,6 +19,7 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
 
     fn calc_info(
         &self,
+        _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
         TypeInfo { storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {

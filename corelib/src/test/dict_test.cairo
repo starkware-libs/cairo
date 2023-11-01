@@ -123,15 +123,28 @@ fn test_dict_of_nullable() {
         'default_val == null'
     );
 }
-// TODO(lior): Re-enable the test once Dict of bools are supported.
-// #[test]
-// fn test_bool_dict() {
-//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-//     let squashed_dict = bool_dict.squash();
-//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-//     assert(!bool_dict.get(0), 'default_val != false');
-//     bool_dict.insert(1, true);
-//     assert(bool_dict.get(1), 'bool_dict[1] != true');
-// }
 
+#[test]
+fn test_bool_dict() {
+    let mut bool_dict: Felt252Dict<bool> = Default::default();
+    let squashed_dict = bool_dict.squash();
+    let mut bool_dict: Felt252Dict<bool> = Default::default();
+    assert(!bool_dict.get(0), 'default_val != false');
+    bool_dict.insert(1, true);
+    assert(bool_dict.get(1), 'bool_dict[1] != true');
+}
+
+#[test]
+fn test_array_dict() {
+    let mut dict = Default::default();
+    dict.insert(10, NullableTrait::new(array![1, 2, 3]));
+    let (entry, value) = dict.entry(10);
+    assert_eq(@value.deref(), @array![1, 2, 3], 'dict[10] == [1, 2, 3]');
+    dict = entry.finalize(NullableTrait::new(array![4, 5]));
+    let (entry, value) = dict.entry(10);
+    assert_eq(@value.deref(), @array![4, 5], 'dict[10] == [4, 5]');
+    dict = entry.finalize(nullable::null());
+    let (entry, value) = dict.entry(10);
+    assert(value.is_null(), 'dict[10] == null');
+}
 
