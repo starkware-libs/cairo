@@ -1,3 +1,4 @@
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
@@ -12,6 +13,7 @@ impl GenericTypeArgGenericType for SpanTypeWrapped {
 
     fn calc_info(
         &self,
+        _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
         TypeInfo { storable, duplicatable, droppable, zero_sized, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
