@@ -305,6 +305,32 @@ pub fn core_libfunc_cost(
                     .collect_vec(),
                 }
             }
+            EnumConcreteLibfunc::FromFelt(lib_func) => match lib_func.num_variants {
+                1 => {
+                    vec![
+                        ConstCost { steps: 1, holes: 0, range_checks: 0 }.into(),
+                        ConstCost { steps: 1, holes: 0, range_checks: 0 }.into(),
+                    ]
+                }
+                2 => {
+                    vec![
+                        ConstCost { steps: 3, holes: 0, range_checks: 0 }.into(),
+                        ConstCost { steps: 3, holes: 0, range_checks: 0 }.into(),
+                    ]
+                }
+                3 => {
+                    vec![
+                        ConstCost { steps: 7, holes: 0, range_checks: 0 }.into(),
+                        ConstCost { steps: 5, holes: 0, range_checks: 0 }.into(),
+                    ]
+                }
+                _ => {
+                    vec![
+                        ConstCost { steps: 6, holes: 0, range_checks: 2 }.into(),
+                        ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                    ]
+                }
+            },
         },
         Struct(
             StructConcreteLibfunc::Construct(_)

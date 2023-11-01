@@ -212,6 +212,21 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             EnumConcreteLibfunc::Match(libfunc) | EnumConcreteLibfunc::SnapshotMatch(libfunc) => {
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
+            EnumConcreteLibfunc::FromFelt(libfunc) => match libfunc.num_variants {
+                1 => {
+                    vec![ApChange::Known(0), ApChange::Known(0)]
+                }
+                2 => {
+                    vec![ApChange::Known(2), ApChange::Known(2)]
+                }
+                3 => {
+                    vec![ApChange::Known(4), ApChange::Known(2)]
+                }
+
+                _ => {
+                    vec![ApChange::Known(4), ApChange::Known(7)]
+                }
+            },
         },
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
