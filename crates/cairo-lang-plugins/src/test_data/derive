@@ -203,7 +203,7 @@ impl GenericStructHash<
     __State,
     impl __SHashState: hash::HashStateTrait<__State>,
     impl SDrop: Drop<__State>,
-    T, impl THash: Hash<T>, impl TDrop: Drop<T>
+    T, +Hash<T, __State, __SHashState>, +Drop<T>
 > of hash::Hash<GenericStruct<T>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
@@ -245,7 +245,7 @@ impl TwoMemberGenericStructHash<
     __State,
     impl __SHashState: hash::HashStateTrait<__State>,
     impl SDrop: Drop<__State>,
-    T, U, impl USomeTrait: SomeTrait<U, T>, impl THash: Hash<T>, impl TDrop: Drop<T>, impl UHash: Hash<U>, impl UDrop: Drop<U>
+    T, U, impl USomeTrait: SomeTrait<U, T>, +Hash<T, __State, __SHashState>, +Drop<T>, +Hash<U, __State, __SHashState>, +Drop<U>
 > of hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
