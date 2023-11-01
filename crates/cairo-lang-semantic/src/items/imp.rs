@@ -6,7 +6,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    TopLevelLanguageElementId, TraitAliasId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -536,6 +536,9 @@ pub fn priv_impl_definition_data(
                 }
                 ImplItem::ImplAlias(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
+                }
+                ImplItem::TraitAlias(trt) => {
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
                 }
                 ImplItem::Function(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(

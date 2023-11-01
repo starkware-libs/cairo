@@ -307,6 +307,7 @@ define_language_element_id_as_enum! {
         Enum(EnumId),
         TypeAlias(TypeAliasId),
         ImplAlias(ImplAliasId),
+        TraitAlias(TraitAliasId),
         Trait(TraitId),
         Impl(ImplDefId),
         ExternType(ExternTypeId),
@@ -439,6 +440,13 @@ define_language_element_id!(
     ImplAliasLongId,
     ast::ItemImplAlias,
     lookup_intern_impl_alias,
+    name
+);
+define_language_element_id!(
+    TraitAliasId,
+    TraitAliasLongId,
+    ast::ItemTraitAlias,
+    lookup_intern_trait_alias,
     name
 );
 define_language_element_id!(
@@ -591,6 +599,7 @@ define_language_element_id_as_enum! {
         ExternType(ExternTypeId),
         TypeAlias(TypeAliasId),
         ImplAlias(ImplAliasId),
+        TraitAlias(TraitAliasId),
     }
 }
 impl GenericItemId {
@@ -679,6 +688,9 @@ impl GenericItemId {
             SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
                 ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
             )),
+            SyntaxKind::ItemTraitAlias => GenericItemId::TraitAlias(db.intern_trait_alias(
+                TraitAliasLongId(module_file, ast::ItemTraitAliasPtr(stable_ptr)),
+            )),
             _ => panic!(),
         }
     }
@@ -765,6 +777,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::Submodule(_)
             | ModuleItemId::TypeAlias(_)
             | ModuleItemId::ImplAlias(_)
+            | ModuleItemId::TraitAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)
@@ -791,6 +804,7 @@ impl From<GenericItemId> for LookupItemId {
             GenericItemId::ExternType(id) => LookupItemId::ModuleItem(ModuleItemId::ExternType(id)),
             GenericItemId::TypeAlias(id) => LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id)),
             GenericItemId::ImplAlias(id) => LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id)),
+            GenericItemId::TraitAlias(id) => LookupItemId::ModuleItem(ModuleItemId::TraitAlias(id)),
         }
     }
 }

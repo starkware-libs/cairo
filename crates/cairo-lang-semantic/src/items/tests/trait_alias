@@ -1,0 +1,154 @@
+//! > Test simple trait alias.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> usize {
+    MyTrait1::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo() -> usize;
+}
+impl MyImpl of MyTrait {
+    fn foo() -> usize {
+        0
+    }
+}
+trait MyTrait1 = MyTrait;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test simple trait alias with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> usize {
+    MyTrait1::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo() -> T;
+}
+impl MyImplUsize of MyTrait<usize> {
+    fn foo() -> usize {
+        0
+    }
+}
+trait MyTrait1 = MyTrait<usize>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl inference with trait alias.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> usize {
+    MyTraitAlias::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod other_mod {
+    mod other_other_mod {
+        trait MyTrait {
+            fn foo() -> usize;
+        }
+        impl MyImpl of MyTrait {
+            fn foo() -> usize {
+                0
+            }
+        }
+    }
+}
+trait MyTraitAlias = other_mod::other_other_mod::MyTrait;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test trait alias with generics
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(x: usize) {
+    MyUsizeTraitAlias::foo(x);
+    x.foo();
+    let y = Option::Some(x);
+    MyOptionTraitAlias::<usize>::foo(y);
+    y.foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod other_mod {
+    mod other_other_mod {
+        trait MyTrait<T> {
+            fn foo(self: T);
+        }
+        impl MyImplOptionUsize of MyTrait<Option<usize>> {
+            fn foo(self: Option<usize>) {}
+        }
+        impl MyImplUsize of MyTrait<usize> {
+            fn foo(self: usize) {}
+        }
+    }
+}
+trait MyUsizeTraitAlias = other_mod::other_other_mod::MyTrait<usize>;
+trait MyOptionTraitAlias<T> = other_mod::other_other_mod::MyTrait<Option<T>>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl inference failure with trait alias with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: usize) {
+    MyTraitAlias::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod other_mod {
+    mod other_other_mod {
+        trait MyTrait<T> {
+            fn foo(x: T);
+        }
+    }
+}
+trait MyTraitAlias<usize> = other_mod::other_other_mod::MyTrait<usize>;
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::other_mod::other_other_mod::MyTrait::<core::integer::u32>
+ --> lib.cairo:10:19
+    MyTraitAlias::foo(x)
+                  ^*^

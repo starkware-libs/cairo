@@ -3,8 +3,8 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
     FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitFunctionId, TraitId,
-    TypeAliasId, UseId,
+    ModuleFileId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitAliasId, TraitFunctionId,
+    TraitId, TypeAliasId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -76,6 +76,7 @@ impl HasResolverData for ModuleItemId {
             ModuleItemId::Submodule(item) => item.resolver_data(db),
             ModuleItemId::Use(item) => item.resolver_data(db),
             ModuleItemId::ImplAlias(item) => item.resolver_data(db),
+            ModuleItemId::TraitAlias(item) => item.resolver_data(db),
             ModuleItemId::Impl(item) => item.resolver_data(db),
             ModuleItemId::ExternType(item) => item.resolver_data(db),
             ModuleItemId::ExternFunction(item) => item.resolver_data(db),
@@ -111,6 +112,11 @@ impl HasResolverData for UseId {
 impl HasResolverData for ImplAliasId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_alias_resolver_data(*self)
+    }
+}
+impl HasResolverData for TraitAliasId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.trait_alias_resolver_data(*self)
     }
 }
 impl HasResolverData for ImplDefId {

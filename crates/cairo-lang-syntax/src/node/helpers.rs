@@ -4,8 +4,9 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
+    ItemTraitAlias, ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
+    TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
@@ -254,6 +255,11 @@ impl QueryAttrs for ItemImplAlias {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for ItemTraitAlias {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for ItemStruct {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
@@ -301,6 +307,7 @@ impl QueryAttrs for Item {
             Item::Trait(item) => item.attributes_elements(db),
             Item::Impl(item) => item.attributes_elements(db),
             Item::ImplAlias(item) => item.attributes_elements(db),
+            Item::TraitAlias(item) => item.attributes_elements(db),
             Item::Struct(item) => item.attributes_elements(db),
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
@@ -322,6 +329,7 @@ impl QueryAttrs for ImplItem {
             ImplItem::Trait(item) => item.attributes_elements(db),
             ImplItem::Impl(item) => item.attributes_elements(db),
             ImplItem::ImplAlias(item) => item.attributes_elements(db),
+            ImplItem::TraitAlias(item) => item.attributes_elements(db),
             ImplItem::Struct(item) => item.attributes_elements(db),
             ImplItem::Enum(item) => item.attributes_elements(db),
             ImplItem::TypeAlias(item) => item.attributes_elements(db),

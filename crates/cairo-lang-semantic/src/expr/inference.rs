@@ -8,7 +8,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
-    ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
+    ParamId, StructId, TraitAliasId, TraitFunctionId, TraitId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -66,6 +66,7 @@ pub enum InferenceId {
     LookupItemDefinition(LookupItemId),
     ImplDefTrait(ImplDefId),
     ImplAliasImplDef(ImplAliasId),
+    TraitAliasTrait(TraitAliasId),
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
     Canonical,
@@ -73,7 +74,7 @@ pub enum InferenceId {
     NoContext,
 }
 
-/// An impl variable, created when a generic type argument is not passed, and thus is not known
+/// An impl variable, created when an impl generic argument is not passed, and thus is not known
 /// yet and needs to be inferred.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]

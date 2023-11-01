@@ -174,6 +174,7 @@ cairo_lang_test_utils::test_file_test!(
         let_statement: "let_statement",
         if_else: "if_else",
         impl_alias: "impl_alias",
+        trait_alias: "trait_alias",
         literal: "literal",
         string_literal: "string_literal",
         logical_operator: "logical_operator",
