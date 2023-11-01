@@ -42,8 +42,8 @@ struct TxInfo {
     nonce: felt252,
 }
 
-fn get_execution_info() -> Box<ExecutionInfo> {
-    get_execution_info_syscall().unwrap_syscall()
+fn get_execution_info() -> Box<v2::ExecutionInfo> {
+    starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
 }
 
 fn get_caller_address() -> ContractAddress {
@@ -58,7 +58,7 @@ fn get_block_info() -> Box<BlockInfo> {
     get_execution_info().unbox().block_info
 }
 
-fn get_tx_info() -> Box<TxInfo> {
+fn get_tx_info() -> Box<v2::TxInfo> {
     get_execution_info().unbox().tx_info
 }
 
