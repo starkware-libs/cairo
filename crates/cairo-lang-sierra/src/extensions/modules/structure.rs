@@ -214,10 +214,14 @@ impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
                 .into_iter()
                 .map(|ty| {
                     Ok(OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
-                        // All memory of the deconstruction would have the same lifetime as the
-                        // first param - as it is its deconstruction.
-                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        ty: snapshot_ty(context, ty.clone())?,
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            // All memory of the deconstruction would have the same lifetime as the
+                            // first param - as it is its deconstruction.
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,
