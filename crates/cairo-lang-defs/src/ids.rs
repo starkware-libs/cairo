@@ -514,9 +514,13 @@ impl GenericParamLongId {
         else {
             unreachable!()
         };
-        if kind == SyntaxKind::GenericParamImplAnonymous {
+        if matches!(
+            kind,
+            SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
+        ) {
             return None;
         }
+
         let name_green = TerminalIdentifierGreen(key_fields[0]);
         Some(name_green.identifier(db))
     }

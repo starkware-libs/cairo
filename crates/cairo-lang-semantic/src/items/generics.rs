@@ -337,26 +337,32 @@ pub fn semantic_generic_params(
     generic_params: &ast::OptionWrappedGenericParamList,
 ) -> Maybe<Vec<GenericParam>> {
     let syntax_db = db.upcast();
-    let res = match generic_params {
-        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => Ok(vec![]),
-        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
-            .generic_params(syntax_db)
-            .elements(syntax_db)
-            .iter()
-            .map(|param_syntax| {
+    let mut res = vec![];
+
+    match generic_params {
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => {}
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => {
+            for param_syntax in syntax.generic_params(syntax_db).elements(syntax_db).iter() {
                 let generic_param_id = db.intern_generic_param(GenericParamLongId(
                     module_file_id,
                     param_syntax.stable_ptr(),
                 ));
-                let generic_param_data = db.generic_param_data(generic_param_id)?;
-                let generic_param = generic_param_data.generic_param;
-                diagnostics.diagnostics.extend(generic_param_data.diagnostics);
-                resolver.add_generic_param(generic_param_id);
-                Ok(generic_param)
-            })
-            .collect::<Result<Vec<_>, _>>(),
+                match param_syntax {
+                    ast::GenericParam::NegativeImpl(syntax) => {
+                        diagnostics.report(syntax, SemanticDiagnosticKind::NegImplsNotSupported);
+                    }
+                    _ => {
+                        let generic_param_data = db.generic_param_data(generic_param_id)?;
+                        let generic_param = generic_param_data.generic_param;
+                        diagnostics.diagnostics.extend(generic_param_data.diagnostics);
+                        resolver.add_generic_param(generic_param_id);
+                        res.push(generic_param);
+                    }
+                };
+            }
+        }
     };
-    res
+    Ok(res)
 }
 
 /// Computes the semantic model of a generic parameter give its ast.
@@ -386,6 +392,9 @@ fn semantic_from_generic_param_ast(
         ast::GenericParam::ImplAnonymous(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
             impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id)
+        }
+        ast::GenericParam::NegativeImpl(_) => {
+            unreachable!("This should be unreachable.")
         }
     }
 }

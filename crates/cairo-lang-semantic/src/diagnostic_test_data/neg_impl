@@ -1,0 +1,28 @@
+//! > Test function with return type.
+
+//! > test_comments
+// TODO(spapini): Remove duplicated diagnostics.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+pub trait Bad<T, -NegImpl, +Drop<T>, -Drop<T>> {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Negative impls are not supported in this context.
+ --> lib.cairo:1:18
+pub trait Bad<T, -NegImpl, +Drop<T>, -Drop<T>> {
+                 ^******^
+
+error: Negative impls are not supported in this context.
+ --> lib.cairo:1:38
+pub trait Bad<T, -NegImpl, +Drop<T>, -Drop<T>> {
+                                     ^******^
