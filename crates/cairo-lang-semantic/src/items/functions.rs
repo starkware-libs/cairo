@@ -372,6 +372,9 @@ fn generic_params_to_args(
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }
+            GenericParam::NegativeImpl(param) => {
+                Ok(GenericArgumentId::NegativeImpl(ImplId::GenericParameter(param.id)))
+            }
         })
         .collect::<Maybe<Vec<_>>>()
 }
@@ -713,6 +716,7 @@ pub struct FunctionDeclarationData {
     /// The environment induced by the function's signature.
     pub environment: Environment,
     pub generic_params: Vec<semantic::GenericParam>,
+    pub neg_impls: Vec<semantic::GenericParamImpl>,
     pub attributes: Vec<Attribute>,
     pub resolver_data: Arc<ResolverData>,
     pub inline_config: InlineConfiguration,

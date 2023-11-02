@@ -13126,6 +13126,7 @@ pub enum GenericParam {
     Const(GenericParamConst),
     ImplNamed(GenericParamImplNamed),
     ImplAnonymous(GenericParamImplAnonymous),
+    NegativeImpl(GenericParamNegativeImpl),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericParamPtr(pub SyntaxStablePtrId);
@@ -13157,6 +13158,11 @@ impl From<GenericParamImplAnonymousPtr> for GenericParamPtr {
         Self(value.0)
     }
 }
+impl From<GenericParamNegativeImplPtr> for GenericParamPtr {
+    fn from(value: GenericParamNegativeImplPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<GenericParamTypeGreen> for GenericParamGreen {
     fn from(value: GenericParamTypeGreen) -> Self {
         Self(value.0)
@@ -13174,6 +13180,11 @@ impl From<GenericParamImplNamedGreen> for GenericParamGreen {
 }
 impl From<GenericParamImplAnonymousGreen> for GenericParamGreen {
     fn from(value: GenericParamImplAnonymousGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamNegativeImplGreen> for GenericParamGreen {
+    fn from(value: GenericParamNegativeImplGreen) -> Self {
         Self(value.0)
     }
 }
@@ -13201,6 +13212,9 @@ impl TypedSyntaxNode for GenericParam {
             SyntaxKind::GenericParamImplAnonymous => {
                 GenericParam::ImplAnonymous(GenericParamImplAnonymous::from_syntax_node(db, node))
             }
+            SyntaxKind::GenericParamNegativeImpl => {
+                GenericParam::NegativeImpl(GenericParamNegativeImpl::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericParam"),
         }
     }
@@ -13210,6 +13224,7 @@ impl TypedSyntaxNode for GenericParam {
             GenericParam::Const(x) => x.as_syntax_node(),
             GenericParam::ImplNamed(x) => x.as_syntax_node(),
             GenericParam::ImplAnonymous(x) => x.as_syntax_node(),
+            GenericParam::NegativeImpl(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -13224,6 +13239,7 @@ impl GenericParam {
             SyntaxKind::GenericParamConst => true,
             SyntaxKind::GenericParamImplNamed => true,
             SyntaxKind::GenericParamImplAnonymous => true,
+            SyntaxKind::GenericParamNegativeImpl => true,
             _ => false,
         }
     }
@@ -13564,6 +13580,79 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericParamImplAnonymousPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParamNegativeImpl {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl GenericParamNegativeImpl {
+    pub const INDEX_MINUS: usize = 0;
+    pub const INDEX_TRAIT_PATH: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        minus: TerminalMinusGreen,
+        trait_path: ExprPathGreen,
+    ) -> GenericParamNegativeImplGreen {
+        let children: Vec<GreenId> = vec![minus.0, trait_path.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericParamNegativeImplGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::GenericParamNegativeImpl,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl GenericParamNegativeImpl {
+    pub fn minus(&self, db: &dyn SyntaxGroup) -> TerminalMinus {
+        TerminalMinus::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamNegativeImplPtr(pub SyntaxStablePtrId);
+impl GenericParamNegativeImplPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> GenericParamNegativeImpl {
+        GenericParamNegativeImpl::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamNegativeImplGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParamNegativeImpl {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamNegativeImpl);
+    type StablePtr = GenericParamNegativeImplPtr;
+    type Green = GenericParamNegativeImplGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericParamNegativeImplGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::GenericParamNegativeImpl,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalMinus::missing(db).0, ExprPath::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericParamNegativeImpl,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericParamNegativeImpl
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamNegativeImplPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

@@ -735,6 +735,7 @@ impl<'db> Resolver<'db> {
                 GenericKind::Impl => {
                     ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
+                GenericKind::NegativeImpl => todo!("not supported"),
             };
             return Some(item);
         }
@@ -1040,6 +1041,9 @@ impl<'db> Resolver<'db> {
                     );
                 }
                 GenericArgumentId::Impl(resolved_impl)
+            }
+            GenericParam::NegativeImpl(_) => {
+                unreachable!("Negative params should not accept arguments.")
             }
         })
     }

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -214,7 +215,12 @@ pub fn trait_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
+    Ok(GenericParamsData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        neg_impls: vec![],
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
@@ -442,6 +448,7 @@ pub fn trait_function_generic_params_data(
     Ok(GenericParamsData {
         diagnostics: diagnostics.build(),
         generic_params: function_generic_params,
+        neg_impls: vec![],
         resolver_data,
     })
 }
@@ -547,6 +554,7 @@ pub fn priv_trait_function_declaration_data(
         diagnostics: diagnostics.build(),
         signature,
         generic_params: function_generic_params,
+        neg_impls: vec![],
         environment,
         attributes,
         resolver_data,

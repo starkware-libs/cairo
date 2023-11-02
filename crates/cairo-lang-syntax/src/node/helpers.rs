@@ -164,6 +164,7 @@ impl GenericParamEx for ast::GenericParam {
             ast::GenericParam::Const(c) => Some(c.name(db)),
             ast::GenericParam::ImplNamed(i) => Some(i.name(db)),
             ast::GenericParam::ImplAnonymous(_) => None,
+            ast::GenericParam::NegativeImpl(_) => None,
         }
     }
 }

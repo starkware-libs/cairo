@@ -1,6 +1,5 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -105,7 +104,13 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             UninferredImpl::GenericParam(param_id) => {
                 let param =
                     self.db.generic_param_semantic(param_id).map_err(InferenceError::Failed)?;
-                let param = extract_matches!(param, GenericParam::Impl);
+                // let param = extract_matches!(param, GenericParam::Impl);
+                let param = match param {
+                    GenericParam::Impl(param) => param,
+                    // GenericParam::NegativeImpl(param) => param,
+                    _ => panic!("unexpected param type"),
+                };
+
                 let imp_concrete_trait_id = param.concrete_trait.unwrap();
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
                 ImplId::GenericParameter(param_id)
@@ -195,7 +200,13 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
     ) -> InferenceResult<Vec<GenericArgumentId>> {
         let new_generic_args =
             self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
-        let substitution = GenericSubstitution::new(generic_params, &new_generic_args);
+
+        let generic_params = generic_params
+            .iter()
+            .filter(|param| !matches!(param, GenericParam::NegativeImpl(_)))
+            .cloned()
+            .collect_vec();
+        let substitution = GenericSubstitution::new(&generic_params, &new_generic_args);
         let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
         let generic_args = rewriter.rewrite(generic_args.iter().copied().collect_vec())?;
         self.conform_generic_args(&generic_args, expected_generic_args)?;
@@ -215,6 +226,11 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
                 .rewrite(*generic_param)
                 .map_err(InferenceError::Failed)?;
+
+            // TODO(ilya): Handle negative impls.
+            if let GenericParam::NegativeImpl(_) = generic_param {
+                continue;
+            }
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
             generic_args.push(generic_arg);
@@ -271,6 +287,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 stable_ptr,
                 lookup_context,
             )?)),
+            GenericParam::NegativeImpl(_) => {
+                unreachable!("bad")
+            }
             GenericParam::Const(_) => Err(InferenceError::ConstInferenceNotSupported),
         }
     }

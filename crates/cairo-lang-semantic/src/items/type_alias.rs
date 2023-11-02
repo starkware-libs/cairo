@@ -159,7 +159,12 @@ pub fn type_alias_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
+    Ok(GenericParamsData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        neg_impls: vec![],
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_alias_resolver_data].

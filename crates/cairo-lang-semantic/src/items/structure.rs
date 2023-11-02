@@ -127,7 +127,12 @@ pub fn struct_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
+    Ok(GenericParamsData {
+        generic_params,
+        neg_impls: vec![],
+        diagnostics: diagnostics.build(),
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].

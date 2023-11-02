@@ -32,7 +32,7 @@ use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyDat
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
-use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
+use super::generics::{semantic_generic_params_ex, GenericArgumentHead, GenericParamsData};
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::{copy_trait, core_module, drop_trait};
@@ -206,7 +206,7 @@ pub fn impl_def_generic_params_data(
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    let generic_params = semantic_generic_params(
+    let (generic_params, neg_impls) = semantic_generic_params_ex(
         db,
         &mut diagnostics,
         &mut resolver,
@@ -218,7 +218,12 @@ pub fn impl_def_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
+    Ok(GenericParamsData {
+        generic_params,
+        neg_impls,
+        diagnostics: diagnostics.build(),
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params].
@@ -1094,7 +1099,7 @@ pub fn impl_function_generic_params_data(
     let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
     let mut resolver =
         Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
-    let generic_params = semantic_generic_params(
+    let (generic_params, neg_impls) = semantic_generic_params_ex(
         db,
         &mut diagnostics,
         &mut resolver,
@@ -1106,7 +1111,12 @@ pub fn impl_function_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
+    Ok(GenericParamsData {
+        generic_params,
+        diagnostics: diagnostics.build(),
+        neg_impls,
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_attributes].
@@ -1242,6 +1252,7 @@ pub fn priv_impl_function_declaration_data(
             diagnostics: diagnostics.build(),
             signature,
             generic_params,
+            neg_impls: vec![],
             environment,
             attributes,
             resolver_data,

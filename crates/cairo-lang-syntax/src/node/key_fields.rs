@@ -324,6 +324,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::GenericParamImplAnonymous => {
             vec![]
         }
+        SyntaxKind::GenericParamNegativeImpl => {
+            vec![]
+        }
         SyntaxKind::TriviumSkippedNode => {
             vec![]
         }

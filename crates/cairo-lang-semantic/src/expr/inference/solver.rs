@@ -133,6 +133,28 @@ impl Solver {
             let Ok(candidate_solution_set) = candidate_solver.solution_set(db) else {
                 continue;
             };
+
+            if let ImplId::Concrete(concrete_impl) = candidate_solver.candidate_impl {
+                let neg_impls = db
+                    .impl_def_generic_params_data(concrete_impl.impl_def_id(db.upcast()))
+                    .unwrap()
+                    .neg_impls;
+
+                for neg_impl in neg_impls {
+                    neg_impl.concrete_trait.unwrap();
+
+                    let mut solver = Solver::new(
+                        db,
+                        CanonicalTrait(neg_impl.concrete_trait.unwrap()),
+                        self.lookup_context.clone(),
+                    );
+
+                    if !matches!(solver.solution_set(db), SolutionSet::None) {
+                        continue;
+                    }
+                }
+            }
+
             let candidate_solution = match candidate_solution_set {
                 SolutionSet::None => continue,
                 SolutionSet::Unique(candidate_solution) => candidate_solution,
@@ -199,6 +221,7 @@ impl CandidateSolver {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique(_) => {
                 let candidate_impl = inference.rewrite(self.candidate_impl).no_err();
+
                 let canonical_impl =
                     CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding);
                 match canonical_impl {
