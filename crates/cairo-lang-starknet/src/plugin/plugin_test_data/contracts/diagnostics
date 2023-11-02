@@ -6374,9 +6374,9 @@ mod component3 {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:53:13
+ --> lib.cairo:53:36
             get_dep_component_mut!(Comp1, self).foo1();
-            ^*********************************^
+                                   ^***^
 
 error: Inline macro `get_dep_component_mut` failed.
  --> lib.cairo:53:13
@@ -6404,19 +6404,19 @@ error: Method `foo1` not found on type "test::component2::ComponentState::<TCont
                                                     ^**^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:57:36
+            get_dep_component_mut!(self, Comp1).foo1();
+                                   ^**^
+
+error: Inline macro `get_dep_component_mut` failed.
  --> lib.cairo:57:13
             get_dep_component_mut!(self, Comp1).foo1();
             ^*********************************^
 
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:57:13
-            get_dep_component_mut!(self, Comp1).foo1();
-            ^*********************************^
-
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:58:13
+ --> lib.cairo:58:40
             get_dep_component_mut!(mut self, Comp1).foo1();
-            ^*************************************^
+                                       ^**^
 
 error: Inline macro `get_dep_component_mut` failed.
  --> lib.cairo:58:13
@@ -6424,9 +6424,9 @@ error: Inline macro `get_dep_component_mut` failed.
             ^*************************************^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:59:13
+ --> lib.cairo:59:44
             get_dep_component_mut!(ref ref self, Comp1).foo1();
-            ^*****************************************^
+                                           ^**^
 
 error: Inline macro `get_dep_component_mut` failed.
  --> lib.cairo:59:13
@@ -6434,9 +6434,9 @@ error: Inline macro `get_dep_component_mut` failed.
             ^*****************************************^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
- --> lib.cairo:60:13
+ --> lib.cairo:60:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
-            ^*****************************************^
+                                           ^**^
 
 error: Inline macro `get_dep_component_mut` failed.
  --> lib.cairo:60:13
