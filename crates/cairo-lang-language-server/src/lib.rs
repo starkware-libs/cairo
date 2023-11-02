@@ -87,11 +87,11 @@ pub async fn serve_language_service() {
 
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_macro_plugin(Arc::new(TestPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
+        .with_macro_plugin::<StarkNetPlugin>()
+        .with_macro_plugin::<TestPlugin>()
+        .with_inline_macro_plugin::<SelectorMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMutMacro>()
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 

@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
@@ -30,13 +30,10 @@ pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
-            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
+            .with_macro_plugin::<StarkNetPlugin>()
+            .with_inline_macro_plugin::<SelectorMacro>()
+            .with_inline_macro_plugin::<GetDepComponentMacro>()
+            .with_inline_macro_plugin::<GetDepComponentMutMacro>()
             .build()
             .unwrap(),
     )
@@ -54,13 +51,10 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
             .with_project_config(
                 ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
             )
-            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-            .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-            .with_inline_macro_plugin(
-                GetDepComponentMutMacro::NAME,
-                Arc::new(GetDepComponentMutMacro),
-            )
+            .with_macro_plugin::<StarkNetPlugin>()
+            .with_inline_macro_plugin::<SelectorMacro>()
+            .with_inline_macro_plugin::<GetDepComponentMacro>()
+            .with_inline_macro_plugin::<GetDepComponentMutMacro>()
             .build()
             .unwrap(),
     )

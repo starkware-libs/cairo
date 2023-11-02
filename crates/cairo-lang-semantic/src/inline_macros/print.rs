@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -11,8 +11,8 @@ use crate::extract_macro_unnamed_args;
 /// Macro for printing.
 #[derive(Debug, Default)]
 pub struct PrintMacro;
-impl PrintMacro {
-    pub const NAME: &'static str = "print";
+impl NamedPlugin for PrintMacro {
+    const NAME: &'static str = "print";
 }
 impl InlineMacroExprPlugin for PrintMacro {
     fn generate_code(
@@ -27,8 +27,8 @@ impl InlineMacroExprPlugin for PrintMacro {
 /// Macro for printing with a new line.
 #[derive(Debug, Default)]
 pub struct PrintlnMacro;
-impl PrintlnMacro {
-    pub const NAME: &'static str = "println";
+impl NamedPlugin for PrintlnMacro {
+    const NAME: &'static str = "println";
 }
 impl InlineMacroExprPlugin for PrintlnMacro {
     fn generate_code(

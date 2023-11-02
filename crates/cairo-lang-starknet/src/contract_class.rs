@@ -111,10 +111,10 @@ pub fn compile_path(
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
+        .with_macro_plugin::<StarkNetPlugin>()
+        .with_inline_macro_plugin::<SelectorMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMutMacro>()
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
