@@ -1,6 +1,7 @@
 mod array;
 mod consteval_int;
 mod format;
+mod formatted;
 mod print;
 
 use cairo_lang_defs::plugin::{InlinePluginResult, PluginDiagnostic, PluginSuite};

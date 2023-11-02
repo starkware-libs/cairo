@@ -171,20 +171,20 @@ error: Plugin diagnostic: Macro `format` does not support this bracket type.
    format!["{}", ba];
           ^
 
-error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
- --> lib.cairo:8:4
+error: Plugin diagnostic: Argument must be a string literal.
+ --> lib.cairo:8:12
    format!(ba);
-   ^*********^
+           ^^
 
-error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
- --> lib.cairo:11:4
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:11:22
    format!("{}", ba, 1);
-   ^******************^
+                     ^
 
-error: Plugin diagnostic: Currently `format` macro only supports `"{}"` as the first argument (format string).
- --> lib.cairo:14:4
+error: Plugin diagnostic: More format specifiers than arguments.
+ --> lib.cairo:14:12
    format!("{}{}", ba);
-   ^*****************^
+           ^****^
 
 //! > ==========================================================================
 
@@ -221,20 +221,20 @@ error: Plugin diagnostic: Macro `print` does not support this bracket type.
    print!["{}", ba];
          ^
 
-error: Plugin diagnostic: Macro `print` must have exactly 2 unnamed arguments.
- --> lib.cairo:8:4
+error: Plugin diagnostic: Argument must be a string literal.
+ --> lib.cairo:8:11
    print!(ba);
-   ^********^
+          ^^
 
-error: Plugin diagnostic: Macro `print` must have exactly 2 unnamed arguments.
- --> lib.cairo:11:4
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:11:21
    print!("{}", ba, 1);
-   ^*****************^
+                    ^
 
-error: Plugin diagnostic: Currently, the `print` macro only supports `"{}"` as the first argument (format string).
- --> lib.cairo:14:4
+error: Plugin diagnostic: More format specifiers than arguments.
+ --> lib.cairo:14:11
    print!("{}{}", ba);
-   ^****************^
+          ^****^
 
 //! > ==========================================================================
 
@@ -271,20 +271,20 @@ error: Plugin diagnostic: Macro `println` does not support this bracket type.
    println!["{}", ba];
            ^
 
-error: Plugin diagnostic: Macro `println` must have exactly 2 unnamed arguments.
- --> lib.cairo:8:4
+error: Plugin diagnostic: Argument must be a string literal.
+ --> lib.cairo:8:13
    println!(ba);
-   ^**********^
+            ^^
 
-error: Plugin diagnostic: Macro `println` must have exactly 2 unnamed arguments.
- --> lib.cairo:11:4
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:11:23
    println!("{}", ba, 1);
-   ^*******************^
+                      ^
 
-error: Plugin diagnostic: Currently, the `println` macro only supports `"{}"` as the first argument (format string).
- --> lib.cairo:14:4
+error: Plugin diagnostic: More format specifiers than arguments.
+ --> lib.cairo:14:13
    println!("{}{}", ba);
-   ^******************^
+            ^****^
 
 //! > ==========================================================================
 
