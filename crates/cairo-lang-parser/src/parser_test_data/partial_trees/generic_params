@@ -4,7 +4,7 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn emit<S, +traits::Into<T: S, TEvent>>(ref self: T, event: S) {
+fn emit<S, +traits::Into<T: S, TEvent>, -traits::Into<S, S>>(ref self: T, event: S) {
 
 }
 
@@ -20,8 +20,35 @@ GenericParamList
     ├── item #0 (kind: GenericParamType)
     │   └── name (kind: TokenIdentifier): 'S'
     ├── separator #0 (kind: TokenComma): ','
-    └── item #1 (kind: GenericParamImplAnonymous)
-        ├── plus (kind: TokenPlus): '+'
+    ├── item #1 (kind: GenericParamImplAnonymous)
+    │   ├── plus (kind: TokenPlus): '+'
+    │   └── trait_path (kind: ExprPath)
+    │       ├── item #0 (kind: PathSegmentSimple)
+    │       │   └── ident (kind: TokenIdentifier): 'traits'
+    │       ├── separator #0 (kind: TokenColonColon): '::'
+    │       └── item #1 (kind: PathSegmentWithGenericArgs)
+    │           ├── ident (kind: TokenIdentifier): 'Into'
+    │           ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │           └── generic_args (kind: GenericArgs)
+    │               ├── langle (kind: TokenLT): '<'
+    │               ├── generic_args (kind: GenericArgList)
+    │               │   ├── item #0 (kind: GenericArgNamed)
+    │               │   │   ├── name (kind: TokenIdentifier): 'T'
+    │               │   │   ├── colon (kind: TokenColon): ':'
+    │               │   │   └── value (kind: GenericArgValueExpr)
+    │               │   │       └── expr (kind: ExprPath)
+    │               │   │           └── item #0 (kind: PathSegmentSimple)
+    │               │   │               └── ident (kind: TokenIdentifier): 'S'
+    │               │   ├── separator #0 (kind: TokenComma): ','
+    │               │   └── item #1 (kind: GenericArgUnnamed)
+    │               │       └── value (kind: GenericArgValueExpr)
+    │               │           └── expr (kind: ExprPath)
+    │               │               └── item #0 (kind: PathSegmentSimple)
+    │               │                   └── ident (kind: TokenIdentifier): 'TEvent'
+    │               └── rangle (kind: TokenGT): '>'
+    ├── separator #1 (kind: TokenComma): ','
+    └── item #2 (kind: GenericParamNegativeImpl)
+        ├── minus (kind: TokenMinus): '-'
         └── trait_path (kind: ExprPath)
             ├── item #0 (kind: PathSegmentSimple)
             │   └── ident (kind: TokenIdentifier): 'traits'
@@ -32,9 +59,7 @@ GenericParamList
                 └── generic_args (kind: GenericArgs)
                     ├── langle (kind: TokenLT): '<'
                     ├── generic_args (kind: GenericArgList)
-                    │   ├── item #0 (kind: GenericArgNamed)
-                    │   │   ├── name (kind: TokenIdentifier): 'T'
-                    │   │   ├── colon (kind: TokenColon): ':'
+                    │   ├── item #0 (kind: GenericArgUnnamed)
                     │   │   └── value (kind: GenericArgValueExpr)
                     │   │       └── expr (kind: ExprPath)
                     │   │           └── item #0 (kind: PathSegmentSimple)
@@ -44,5 +69,5 @@ GenericParamList
                     │       └── value (kind: GenericArgValueExpr)
                     │           └── expr (kind: ExprPath)
                     │               └── item #0 (kind: PathSegmentSimple)
-                    │                   └── ident (kind: TokenIdentifier): 'TEvent'
+                    │                   └── ident (kind: TokenIdentifier): 'S'
                     └── rangle (kind: TokenGT): '>'
