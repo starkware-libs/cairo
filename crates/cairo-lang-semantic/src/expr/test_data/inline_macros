@@ -288,6 +288,64 @@ error: Plugin diagnostic: Currently, the `println` macro only supports `"{}"` as
 
 //! > ==========================================================================
 
+//! > Test bad panic! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "panic data";
+
+   // Bad brackets.
+   panic!["{}", ba];
+
+   // Single argument which is not a ByteArray.
+   panic!(ba);
+
+   // Missing positional argument.
+   panic!("{}");
+
+   // Too many positional arguments.
+   panic!("{}", ba, 1);
+
+   // 2 arguments but first argument is not "{}".
+   panic!("{}{}", ba);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `panic` does not support this bracket type.
+ --> lib.cairo:5:10
+   panic!["{}", ba];
+         ^
+
+error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
+ --> lib.cairo[panic_macro]:2:48
+                panics::panic_with_byte_array(@format!(ba));
+                                               ^*********^
+
+error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
+ --> lib.cairo[panic_macro]:2:48
+                panics::panic_with_byte_array(@format!("{}"));
+                                               ^***********^
+
+error: Plugin diagnostic: Macro `format` must have exactly 2 unnamed arguments.
+ --> lib.cairo[panic_macro]:2:48
+                panics::panic_with_byte_array(@format!("{}", ba, 1));
+                                               ^******************^
+
+error: Plugin diagnostic: Currently `format` macro only supports `"{}"` as the first argument (format string).
+ --> lib.cairo[panic_macro]:2:48
+                panics::panic_with_byte_array(@format!("{}{}", ba));
+                                               ^*****************^
+
+//! > ==========================================================================
+
 //! > Test unknown macro
 
 //! > test_runner_name
