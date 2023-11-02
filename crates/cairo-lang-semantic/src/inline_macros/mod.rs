@@ -2,6 +2,7 @@ mod array;
 mod consteval_int;
 mod format;
 mod print;
+mod write;
 
 use cairo_lang_defs::plugin::{InlinePluginResult, PluginDiagnostic, PluginSuite};
 use cairo_lang_plugins::get_base_plugin_suite;
@@ -12,6 +13,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use self::format::FormatMacro;
 use self::print::{PrintMacro, PrintlnMacro};
+use self::write::{WriteMacro, WritelnMacro};
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
@@ -23,7 +25,9 @@ pub fn get_default_plugin_suite() -> PluginSuite {
         .add_inline_macro_plugin::<ConstevalIntMacro>()
         .add_inline_macro_plugin::<FormatMacro>()
         .add_inline_macro_plugin::<PrintMacro>()
-        .add_inline_macro_plugin::<PrintlnMacro>();
+        .add_inline_macro_plugin::<PrintlnMacro>()
+        .add_inline_macro_plugin::<WriteMacro>()
+        .add_inline_macro_plugin::<WritelnMacro>();
     suite
 }
 
