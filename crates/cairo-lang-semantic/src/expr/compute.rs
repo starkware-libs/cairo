@@ -291,14 +291,17 @@ fn compute_expr_inline_macro_semantic(
     };
 
     let result = macro_plugin.generate_code(syntax_db, syntax);
+    let mut diag_added = None;
     for diagnostic in result.diagnostics {
-        ctx.diagnostics.report_by_ptr(diagnostic.stable_ptr, PluginDiagnostic(diagnostic));
+        diag_added = Some(
+            ctx.diagnostics.report_by_ptr(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+        );
     }
 
     let Some(code) = result.code else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax, InlineMacroFailed { macro_name: macro_name.into() }));
+        return Err(diag_added.unwrap_or_else(|| {
+            ctx.diagnostics.report(syntax, InlineMacroFailed { macro_name: macro_name.into() })
+        }));
     };
 
     // Create a file

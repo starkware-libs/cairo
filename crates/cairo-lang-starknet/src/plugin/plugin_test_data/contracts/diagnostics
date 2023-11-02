@@ -6378,11 +6378,6 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
             get_dep_component_mut!(Comp1, self).foo1();
                                    ^***^
 
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:53:13
-            get_dep_component_mut!(Comp1, self).foo1();
-            ^*********************************^
-
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:54:46
             get_dep_component_mut!(ref self, self).foo1();
@@ -6408,40 +6403,20 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
             get_dep_component_mut!(self, Comp1).foo1();
                                    ^**^
 
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:57:13
-            get_dep_component_mut!(self, Comp1).foo1();
-            ^*********************************^
-
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:58:40
             get_dep_component_mut!(mut self, Comp1).foo1();
                                        ^**^
-
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:58:13
-            get_dep_component_mut!(mut self, Comp1).foo1();
-            ^*************************************^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:59:44
             get_dep_component_mut!(ref ref self, Comp1).foo1();
                                            ^**^
 
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:59:13
-            get_dep_component_mut!(ref ref self, Comp1).foo1();
-            ^*****************************************^
-
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:60:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^**^
-
-error: Inline macro `get_dep_component_mut` failed.
- --> lib.cairo:60:13
-            get_dep_component_mut!(ref mut self, Comp1).foo1();
-            ^*****************************************^
 
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo:53:49
