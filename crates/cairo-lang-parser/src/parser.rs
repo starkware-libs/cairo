@@ -2185,6 +2185,11 @@ impl<'a> Parser<'a> {
                 let trait_path = self.parse_type_path();
                 Ok(GenericParamImplAnonymous::new_green(self.db, plus, trait_path).into())
             }
+            SyntaxKind::TerminalMinus => {
+                let minus = self.take::<TerminalMinus>();
+                let trait_path = self.parse_type_path();
+                Ok(GenericParamNegativeImpl::new_green(self.db, minus, trait_path).into())
+            }
             _ => Ok(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }
     }

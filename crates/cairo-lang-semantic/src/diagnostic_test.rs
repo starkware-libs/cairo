@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
         tests: "tests",
         not_found: "not_found",
         missing: "missing",
+        neg_impl: "neg_impl",
         plus_eq: "plus_eq",
         inline: "inline",
     },

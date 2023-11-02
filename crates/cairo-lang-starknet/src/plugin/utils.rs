@@ -175,6 +175,7 @@ impl GenericParamExtract for ast::GenericParam {
             ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
             ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
             ast::GenericParam::ImplAnonymous(i) => Some(i.trait_path(db)),
+            ast::GenericParam::NegativeImpl(i) => Some(i.trait_path(db)),
         }
     }
 }

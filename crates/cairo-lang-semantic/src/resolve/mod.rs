@@ -746,6 +746,7 @@ impl<'db> Resolver<'db> {
                 GenericKind::Impl => {
                     ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
+                GenericKind::NegImpl => return None,
             };
             return Some(item);
         }
@@ -1053,6 +1054,9 @@ impl<'db> Resolver<'db> {
                     );
                 }
                 GenericArgumentId::Impl(resolved_impl)
+            }
+            GenericParam::NegImpl(_) => {
+                return Err(diagnostics.report(generic_arg_syntax, ArgPassedToNegImpl));
             }
         })
     }
