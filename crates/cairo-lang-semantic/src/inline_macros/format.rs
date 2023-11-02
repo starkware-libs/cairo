@@ -1,14 +1,14 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-
-use crate::extract_macro_unnamed_args;
+use indoc::formatdoc;
 
 /// Macro for formatting.
-#[derive(Debug, Default)]
+#[derive(Default, Debug)]
 pub struct FormatMacro;
 impl NamedPlugin for FormatMacro {
     const NAME: &'static str = "format";
@@ -19,34 +19,40 @@ impl InlineMacroExprPlugin for FormatMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        let [format_string, arg] = extract_macro_unnamed_args!(
-            db,
-            syntax,
-            2,
-            ast::WrappedArgList::ParenthesizedArgList(_)
-        );
-
-        // TODO(yuval): allow more
-        if format_string.as_syntax_node().get_text(db) != r#""{}""# {
-            let diagnostics = vec![PluginDiagnostic {
-                stable_ptr: syntax.stable_ptr().untyped(),
-                message: format!(
-                    r#"Currently `{}` macro only supports `"{{}}"` as the first argument (format string)."#,
-                    FormatMacro::NAME
-                ),
-            }];
-            return InlinePluginResult { code: None, diagnostics };
-        }
-
+        let arguments = syntax.arguments(db);
         let mut builder = PatchBuilder::new(db);
         builder.add_modified(RewriteNode::interpolate_patched(
-            "core::fmt::display_format(@$arg$)",
-            &[("arg".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))].into(),
+            &formatdoc! {
+                "
+                    {{
+                        let mut {f}: core::fmt::Formatter = core::traits::Default::default();
+                        core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+                            write!$left_bracket${f}, $args$$right_bracket$
+                        );
+                        {f}.buffer
+                    }}
+                ",
+                f = "__formatter_for_format_macro_",
+            },
+            &[
+                (
+                    "left_bracket".to_string(),
+                    RewriteNode::new_trimmed(arguments.left_bracket_syntax_node(db)),
+                ),
+                (
+                    "right_bracket".to_string(),
+                    RewriteNode::new_trimmed(arguments.right_bracket_syntax_node(db)),
+                ),
+                (
+                    "args".to_string(),
+                    RewriteNode::new_trimmed(arguments.arg_list(db).unwrap().as_syntax_node()),
+                ),
+            ]
+            .into(),
         ));
-
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
-                name: "format_macro".into(),
+                name: format!("{}_macro", Self::NAME).into(),
                 content: builder.code,
                 diagnostics_mappings: builder.diagnostics_mappings,
                 aux_data: None,
