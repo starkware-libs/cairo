@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
@@ -93,17 +93,28 @@ impl RootDatabaseBuilder {
         }
     }
 
-    pub fn with_macro_plugin(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
+    pub fn with_macro_plugin_ex(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
         self.plugins.push(plugin);
         self
     }
 
-    pub fn with_inline_macro_plugin(
+    pub fn with_macro_plugin<T: MacroPlugin + Default + 'static>(&mut self) -> &mut Self {
+        self.with_macro_plugin_ex(Arc::new(T::default()))
+    }
+
+    pub fn with_inline_macro_plugin_ex(
         &mut self,
         name: &str,
         plugin: Arc<dyn InlineMacroExprPlugin>,
     ) -> &mut Self {
         self.inline_macro_plugins.insert(name.into(), plugin);
+        self
+    }
+
+    pub fn with_inline_macro_plugin<T: NamedPlugin + InlineMacroExprPlugin>(
+        &mut self,
+    ) -> &mut Self {
+        self.with_inline_macro_plugin_ex(T::NAME, Arc::new(T::default()));
         self
     }
 

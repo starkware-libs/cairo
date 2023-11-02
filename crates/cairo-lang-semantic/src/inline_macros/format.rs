@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -10,8 +10,8 @@ use crate::extract_macro_unnamed_args;
 /// Macro for formatting.
 #[derive(Debug, Default)]
 pub struct FormatMacro;
-impl FormatMacro {
-    pub const NAME: &'static str = "format";
+impl NamedPlugin for FormatMacro {
+    const NAME: &'static str = "format";
 }
 impl InlineMacroExprPlugin for FormatMacro {
     fn generate_code(

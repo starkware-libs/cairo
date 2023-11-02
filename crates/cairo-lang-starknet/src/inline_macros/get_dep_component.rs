@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_semantic::extract_macro_unnamed_args;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -10,8 +10,8 @@ use cairo_lang_utils::extract_matches;
 /// Macro for getting a component given a contract state that has it.
 #[derive(Debug, Default)]
 pub struct GetDepComponentMacro;
-impl GetDepComponentMacro {
-    pub const NAME: &'static str = "get_dep_component";
+impl NamedPlugin for GetDepComponentMacro {
+    const NAME: &'static str = "get_dep_component";
 }
 impl InlineMacroExprPlugin for GetDepComponentMacro {
     fn generate_code(
@@ -26,8 +26,8 @@ impl InlineMacroExprPlugin for GetDepComponentMacro {
 /// Macro for getting a mutable component given a mutable contract state that has it.
 #[derive(Debug, Default)]
 pub struct GetDepComponentMutMacro;
-impl GetDepComponentMutMacro {
-    pub const NAME: &'static str = "get_dep_component_mut";
+impl NamedPlugin for GetDepComponentMutMacro {
+    const NAME: &'static str = "get_dep_component_mut";
 }
 impl InlineMacroExprPlugin for GetDepComponentMutMacro {
     fn generate_code(

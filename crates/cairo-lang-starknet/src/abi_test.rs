@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -20,10 +18,10 @@ pub fn test_abi_failure(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
+        .with_macro_plugin::<StarkNetPlugin>()
+        .with_inline_macro_plugin::<SelectorMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMacro>()
+        .with_inline_macro_plugin::<GetDepComponentMutMacro>()
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
