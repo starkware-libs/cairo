@@ -3,38 +3,28 @@ mod consteval_int;
 mod format;
 mod print;
 
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic,
-};
+use cairo_lang_defs::plugin::{InlinePluginResult, PluginDiagnostic, PluginSuite};
+use cairo_lang_plugins::get_base_plugin_suite;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::format::FormatMacro;
 use self::print::{PrintMacro, PrintlnMacro};
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
-/// Gets the default plugins to load into the Cairo compiler.
-pub fn get_default_inline_macro_plugins() -> OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>
-{
-    [
-        as_entry::<ArrayMacro>(),
-        as_entry::<ConstevalIntMacro>(),
-        as_entry::<FormatMacro>(),
-        as_entry::<PrintMacro>(),
-        as_entry::<PrintlnMacro>(),
-    ]
-    .into()
-}
-
-/// Helper for adding an inline macro to a map.
-fn as_entry<T: NamedPlugin + InlineMacroExprPlugin>() -> (String, Arc<dyn InlineMacroExprPlugin>) {
-    (T::NAME.to_string(), Arc::new(T::default()))
+/// Gets the default plugin suite to load into the Cairo compiler.
+pub fn get_default_plugin_suite() -> PluginSuite {
+    let mut suite = get_base_plugin_suite();
+    suite
+        .add_inline_macro_plugin::<ArrayMacro>()
+        .add_inline_macro_plugin::<ConstevalIntMacro>()
+        .add_inline_macro_plugin::<FormatMacro>()
+        .add_inline_macro_plugin::<PrintMacro>()
+        .add_inline_macro_plugin::<PrintlnMacro>();
+    suite
 }
 
 pub fn unsupported_bracket_diagnostic(

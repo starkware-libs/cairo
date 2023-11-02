@@ -13,7 +13,6 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.3.1"
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.3.1" }
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.3.1" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.3.1" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.3.1" }
 cairo-lang-project = { path = "../cairo-lang-project", version = "2.3.1" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.3.1" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.1" }

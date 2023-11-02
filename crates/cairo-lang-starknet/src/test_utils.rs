@@ -13,9 +13,7 @@ use once_cell::sync::Lazy;
 
 use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use crate::contract_class::compile_contract_in_prepared_db;
-use crate::inline_macros::get_dep_component::{GetDepComponentMacro, GetDepComponentMutMacro};
-use crate::inline_macros::selector::SelectorMacro;
-use crate::plugin::StarkNetPlugin;
+use crate::starknet_plugin_suite;
 
 /// Returns a path to example contract that matches `name`.
 pub fn get_example_file_path(file_name: &str) -> PathBuf {
@@ -30,10 +28,7 @@ pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
-            .with_macro_plugin::<StarkNetPlugin>()
-            .with_inline_macro_plugin::<SelectorMacro>()
-            .with_inline_macro_plugin::<GetDepComponentMacro>()
-            .with_inline_macro_plugin::<GetDepComponentMutMacro>()
+            .with_plugin_suite(starknet_plugin_suite())
             .build()
             .unwrap(),
     )
@@ -51,10 +46,7 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
             .with_project_config(
                 ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
             )
-            .with_macro_plugin::<StarkNetPlugin>()
-            .with_inline_macro_plugin::<SelectorMacro>()
-            .with_inline_macro_plugin::<GetDepComponentMacro>()
-            .with_inline_macro_plugin::<GetDepComponentMutMacro>()
+            .with_plugin_suite(starknet_plugin_suite())
             .build()
             .unwrap(),
     )
