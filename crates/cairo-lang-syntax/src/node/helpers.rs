@@ -10,7 +10,7 @@ use super::ast::{
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
-use super::{Terminal, TypedSyntaxNode};
+use super::{SyntaxNode, Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
@@ -352,6 +352,10 @@ impl QueryAttrs for Variant {
 pub trait WrappedArgListHelper {
     /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
     fn arg_list(&self, db: &dyn SyntaxGroup) -> Option<ast::ArgList>;
+    /// Gets the syntax node of the right wrapping bracket.
+    fn right_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode;
+    /// Gets the syntax node of the left wrapping bracket.
+    fn left_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode;
     /// Gets a stable pointer to the left wrapping bracket.
     fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId;
 }
@@ -362,6 +366,24 @@ impl WrappedArgListHelper for WrappedArgList {
             WrappedArgList::BracketedArgList(args) => Some(args.arguments(db)),
             WrappedArgList::BracedArgList(args) => Some(args.arguments(db)),
             WrappedArgList::Missing(_) => None,
+        }
+    }
+
+    fn right_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode {
+        match self {
+            WrappedArgList::ParenthesizedArgList(args) => args.rparen(db).as_syntax_node(),
+            WrappedArgList::BracketedArgList(args) => args.rbrack(db).as_syntax_node(),
+            WrappedArgList::BracedArgList(args) => args.rbrace(db).as_syntax_node(),
+            WrappedArgList::Missing(_) => self.as_syntax_node(),
+        }
+    }
+
+    fn left_bracket_syntax_node(&self, db: &dyn SyntaxGroup) -> SyntaxNode {
+        match self {
+            WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).as_syntax_node(),
+            WrappedArgList::BracketedArgList(args) => args.lbrack(db).as_syntax_node(),
+            WrappedArgList::BracedArgList(args) => args.lbrace(db).as_syntax_node(),
+            WrappedArgList::Missing(_) => self.as_syntax_node(),
         }
     }
 
