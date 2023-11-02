@@ -84,6 +84,7 @@ pub struct ImplVar {
     pub concrete_trait_id: ConcreteTraitId,
     #[dont_rewrite]
     pub lookup_context: ImplLookupContext,
+    pub conflict: Vec<ImplVarId>,
 }
 impl ImplVar {
     pub fn intern(&self, db: &dyn SemanticGroup) -> ImplVarId {
@@ -384,8 +385,13 @@ impl<'db> Inference<'db> {
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
         }
-        let var =
-            ImplVar { inference_id: self.inference_id, id, concrete_trait_id, lookup_context };
+        let var = ImplVar {
+            inference_id: self.inference_id,
+            id,
+            concrete_trait_id,
+            lookup_context,
+            conflict: vec![],
+        };
         self.impl_vars.push(var);
         self.pending.push_back(id);
         id
@@ -615,12 +621,20 @@ impl<'db> Inference<'db> {
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
-        match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
-            SolutionSet::None => Ok(SolutionSet::None),
-            SolutionSet::Unique(canonical_impl) => {
-                Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
+
+        match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
+            Ok(solutions_set) => match solutions_set {
+                SolutionSet::None => Ok(SolutionSet::None),
+                SolutionSet::Unique(canonical_impl) => {
+                    Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
+                }
+                SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
+            },
+            Err(InferenceError::Cycle { .. }) => {
+                eprintln!("canonical_trait: {:?}", canonical_trait.0.name(self.db));
+                Ok(SolutionSet::None)
             }
-            SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
+            Err(err) => Err(err),
         }
     }
 }

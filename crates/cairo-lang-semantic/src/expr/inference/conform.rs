@@ -182,6 +182,12 @@ impl<'db> InferenceConform for Inference<'db> {
                 };
                 Ok(GenericArgumentId::Impl(self.conform_impl(impl0, impl1)?))
             }
+            GenericArgumentId::NegativeImpl(impl0) => {
+                let GenericArgumentId::NegativeImpl(impl1) = garg1 else {
+                    return Err(InferenceError::GenericArgMismatch { garg0, garg1 });
+                };
+                Ok(GenericArgumentId::NegativeImpl(self.conform_impl(impl0, impl1)?))
+            }
         }
     }
 
@@ -284,6 +290,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
                 GenericArgumentId::Literal(_) => false,
                 GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
+                GenericArgumentId::NegativeImpl(impl_id) => self.impl_contains_var(impl_id, var),
             } {
                 return true;
             }

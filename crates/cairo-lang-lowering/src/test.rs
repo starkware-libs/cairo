@@ -43,6 +43,7 @@ cairo_lang_test_utils::test_file_test!(
         implicits :"implicits",
         logical_operator :"logical_operator",
         loop_ :"loop",
+        neg_impl :"neg_impl",
         match_ :"match",
         members :"members",
         panic :"panic",

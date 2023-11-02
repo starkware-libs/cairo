@@ -17,7 +17,7 @@ pub use crate::items::function_with_body::FunctionBody;
 pub use crate::items::functions::{
     ConcreteFunction, ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, Signature,
 };
-pub use crate::items::generics::{GenericArgumentId, GenericParam};
+pub use crate::items::generics::{GenericArgumentId, GenericParam, GenericParamImpl};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::structure::Member;
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
