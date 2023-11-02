@@ -17,7 +17,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
-use crate::get_default_plugins;
+use crate::get_base_plugin_suite;
 use crate::test_utils::expand_module_text;
 
 cairo_lang_test_utils::test_file_test!(
@@ -50,7 +50,7 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
+        res.set_macro_plugins(get_base_plugin_suite().plugins);
         res
     }
 }
