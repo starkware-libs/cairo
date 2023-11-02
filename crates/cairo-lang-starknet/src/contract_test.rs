@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_semantic::test_utils::{get_crate_semantic_diagnostics, setup_test_crate};
 use indoc::indoc;
@@ -16,7 +14,7 @@ use crate::plugin::StarkNetPlugin;
 fn test_contract_resolving() {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin::<StarkNetPlugin>()
         .build()
         .unwrap();
     let crate_id = setup_test_crate(

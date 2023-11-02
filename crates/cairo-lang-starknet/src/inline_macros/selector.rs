@@ -1,5 +1,5 @@
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_semantic::extract_macro_single_unnamed_arg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -10,8 +10,8 @@ use crate::contract::starknet_keccak;
 /// Macro for expanding a selector to a string literal.
 #[derive(Debug, Default)]
 pub struct SelectorMacro;
-impl SelectorMacro {
-    pub const NAME: &'static str = "selector";
+impl NamedPlugin for SelectorMacro {
+    const NAME: &'static str = "selector";
 }
 impl InlineMacroExprPlugin for SelectorMacro {
     fn generate_code(
