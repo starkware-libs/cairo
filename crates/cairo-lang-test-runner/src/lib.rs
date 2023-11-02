@@ -16,13 +16,11 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
-use cairo_lang_starknet::inline_macros::get_dep_component::{
-    GetDepComponentMacro, GetDepComponentMutMacro,
-};
-use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
-use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
-use cairo_lang_test_plugin::{compile_test_prepared_db, TestCompilation, TestConfig, TestPlugin};
+use cairo_lang_test_plugin::{
+    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestConfig,
+};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
@@ -166,13 +164,9 @@ impl TestCompiler {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
-            b.with_macro_plugin::<TestPlugin>();
-
+            b.with_plugin_suite(test_plugin_suite());
             if starknet {
-                b.with_macro_plugin::<StarkNetPlugin>()
-                    .with_inline_macro_plugin::<SelectorMacro>()
-                    .with_inline_macro_plugin::<GetDepComponentMacro>()
-                    .with_inline_macro_plugin::<GetDepComponentMutMacro>();
+                b.with_plugin_suite(starknet_plugin_suite());
             }
 
             b.build()?
