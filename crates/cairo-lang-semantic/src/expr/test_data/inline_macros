@@ -33,9 +33,9 @@ const e: felt252 = consteval_int![4 + 5];
       ^
 
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
- --> lib.cairo:1:20
+ --> lib.cairo:1:35
 const a: felt252 = consteval_int!(func_call(24));
-                   ^***************************^
+                                  ^***********^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:1:20
@@ -48,9 +48,9 @@ const a: felt252 = consteval_int!(func_call(24));
                    ^***************************^
 
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
- --> lib.cairo:3:20
+ --> lib.cairo:3:35
 const b: felt252 = consteval_int!('some string');
-                   ^***************************^
+                                  ^***********^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:3:20
@@ -63,9 +63,9 @@ const b: felt252 = consteval_int!('some string');
                    ^***************************^
 
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
- --> lib.cairo:5:20
+ --> lib.cairo:5:35
 const c: felt252 = consteval_int!(*24);
-                   ^*****************^
+                                  ^*^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:5:20
@@ -78,9 +78,9 @@ const c: felt252 = consteval_int!(*24);
                    ^*****************^
 
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
- --> lib.cairo:7:20
+ --> lib.cairo:7:35
 const d: felt252 = consteval_int!(~24);
-                   ^*****************^
+                                  ^*^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:7:20
@@ -93,9 +93,9 @@ const d: felt252 = consteval_int!(~24);
                    ^*****************^
 
 error: Plugin diagnostic: Unsupported binary operator in consteval_int macro
- --> lib.cairo:9:20
+ --> lib.cairo:9:35
 const e: felt252 = consteval_int!(234 < 5);
-                   ^*********************^
+                                  ^*****^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:9:20
@@ -108,9 +108,9 @@ const e: felt252 = consteval_int!(234 < 5);
                    ^*********************^
 
 error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type.
- --> lib.cairo:11:20
+ --> lib.cairo:11:34
 const e: felt252 = consteval_int![4 + 5];
-                   ^*******************^
+                                 ^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:11:20
@@ -123,9 +123,9 @@ const e: felt252 = consteval_int![4 + 5];
                    ^*******************^
 
 error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type.
- --> lib.cairo:13:20
+ --> lib.cairo:13:34
 const f: felt252 = consteval_int!{4 + 5};
-                   ^*******************^
+                                 ^
 
 error: Inline macro `consteval_int` failed.
  --> lib.cairo:13:20
@@ -162,9 +162,9 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `array` does not support this bracket type.
- --> lib.cairo:2:13
+ --> lib.cairo:2:19
     let x = array!(0);
-            ^*******^
+                  ^
 
 error: Inline macro `array` failed.
  --> lib.cairo:2:13
@@ -207,9 +207,9 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `format` does not support this bracket type.
- --> lib.cairo:5:4
+ --> lib.cairo:5:11
    format!["{}", ba];
-   ^***************^
+          ^
 
 error: Inline macro `format` failed.
  --> lib.cairo:5:4
@@ -277,9 +277,9 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `print` does not support this bracket type.
- --> lib.cairo:5:4
+ --> lib.cairo:5:10
    print!["{}", ba];
-   ^**************^
+         ^
 
 error: Inline macro `print` failed.
  --> lib.cairo:5:4
@@ -347,9 +347,9 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `println` does not support this bracket type.
- --> lib.cairo:5:4
+ --> lib.cairo:5:12
    println!["{}", ba];
-   ^****************^
+           ^
 
 error: Inline macro `println` failed.
  --> lib.cairo:5:4

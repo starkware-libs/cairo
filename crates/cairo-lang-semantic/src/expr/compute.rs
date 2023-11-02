@@ -292,7 +292,7 @@ fn compute_expr_inline_macro_semantic(
 
     let result = macro_plugin.generate_code(syntax_db, syntax);
     for diagnostic in result.diagnostics {
-        ctx.diagnostics.report(syntax, PluginDiagnostic(diagnostic));
+        ctx.diagnostics.report_by_ptr(diagnostic.stable_ptr, PluginDiagnostic(diagnostic));
     }
 
     let Some(code) = result.code else {
