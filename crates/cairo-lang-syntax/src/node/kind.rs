@@ -126,6 +126,7 @@ pub enum SyntaxKind {
     GenericParamConst,
     GenericParamImplNamed,
     GenericParamImplAnonymous,
+    GenericParamNegativeImpl,
     TriviumSkippedNode,
     TokenIdentifier,
     TerminalIdentifier,

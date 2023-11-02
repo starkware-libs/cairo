@@ -286,6 +286,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 lookup_context,
             )?)),
             GenericParam::Const(_) => Err(InferenceError::ConstInferenceNotSupported),
+            GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
         }
     }
 
