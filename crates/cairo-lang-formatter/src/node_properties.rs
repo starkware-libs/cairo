@@ -51,6 +51,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenMinus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
+            {
+                true
+            }
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
                     grandparent_kind(db, self),
@@ -98,6 +103,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                         .get_children(self.parent().unwrap())
                         .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
+            {
+                true
+            }
+            SyntaxKind::TokenMinus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
             {
                 true
             }
@@ -438,7 +448,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalPlus
-                    if parent_kind(db, self) != Some(SyntaxKind::GenericParamImplAnonymous) =>
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::GenericParamImplAnonymous)
+                    ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
@@ -448,7 +461,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalMinus
-                    if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) =>
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::ExprUnary | SyntaxKind::GenericParamNegativeImpl)
+                    ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,

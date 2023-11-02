@@ -1620,6 +1620,16 @@ extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 //   will not lead to Sierra errors.
 extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
 
+
+pub trait TypeEq<S, T> {
+
+}
+
+impl ImplTypeEq<T> of TypeEq<T, T> {
+
+}
+
+
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
 trait Upcastable<FromType, ToType>;
@@ -1635,20 +1645,13 @@ impl UpcastableU32U128 of Upcastable<u32, u128> {}
 impl UpcastableU64U128 of Upcastable<u64, u128> {}
 // Marks `FromType` as downcastable to `ToType`.
 // Do not add user code implementing this trait.
-trait Downcastable<FromType, ToType>;
-impl DowncastableU128U64 of Downcastable<u128, u64> {}
-impl DowncastableU128U32 of Downcastable<u128, u32> {}
-impl DowncastableU128U16 of Downcastable<u128, u16> {}
-impl DowncastableU128U8 of Downcastable<u128, u8> {}
+trait Downcastable<Type>;
+impl DowncastableU8 of Downcastable<u8> {}
+impl DowncastableU16 of Downcastable<u16> {}
+impl DowncastableU32 of Downcastable<u32> {}
+impl DowncastableU64 of Downcastable<u64> {}
+impl DowncastableU128 of Downcastable<u128> {}
 
-impl DowncastableU64U32 of Downcastable<u64, u32> {}
-impl DowncastableU64U16 of Downcastable<u64, u16> {}
-impl DowncastableU64U8 of Downcastable<u64, u8> {}
-
-impl DowncastableU32U16 of Downcastable<u32, u16> {}
-impl DowncastableU32U8 of Downcastable<u32, u8> {}
-
-impl DowncastableU16U8 of Downcastable<u16, u8> {}
 
 /// Default values
 impl U8Default of Default<u8> {
@@ -1736,7 +1739,7 @@ impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     }
 }
 
-impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
+impl DowncastableTryInto<From, To, +Downcastable<From>, +Downcastable<To>, -TypeEq<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }

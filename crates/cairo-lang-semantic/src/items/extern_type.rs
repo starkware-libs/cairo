@@ -80,7 +80,12 @@ pub fn extern_type_declaration_generic_params_data(
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
+    Ok(GenericParamsData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        neg_impls: vec![],
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
