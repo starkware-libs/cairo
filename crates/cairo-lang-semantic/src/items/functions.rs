@@ -372,6 +372,7 @@ fn generic_params_to_args(
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }
+            GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
         })
         .collect::<Maybe<Vec<_>>>()
 }

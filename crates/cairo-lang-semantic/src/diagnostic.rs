@@ -592,6 +592,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConstGenericParamNotSupported => {
                 "Const generic args are not allowed in this context.".into()
             }
+            SemanticDiagnosticKind::NegativeImplsNotEnabled => {
+                "Negative impls are not enabled in this context.".into()
+            }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
@@ -625,6 +628,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::GenericArgOutOfOrder { name } => {
                 format!("Generic argument `{}` is out of order.", name)
+            }
+            SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
+                "Only `_` is a valid for negative impls.".into()
             }
         }
     }
@@ -816,6 +822,7 @@ pub enum SemanticDiagnosticKind {
     },
     UnusedVariable,
     ConstGenericParamNotSupported,
+    NegativeImplsNotEnabled,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -874,6 +881,7 @@ pub enum SemanticDiagnosticKind {
         name: SmolStr,
     },
     NamedArgumentsAreNotSupported,
+    ArgPassedToNegativeImpl,
     UnnamedArgumentFollowsNamed,
     NamedArgumentMismatch {
         expected: SmolStr,
