@@ -4,6 +4,8 @@
 //! contracts on a permissionless Layer 2 network, secured by Ethereum using validity proofs.
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
+
+use cairo_lang_defs::plugin::PluginSuite;
 pub mod abi;
 mod aliased;
 pub mod allowed_libfuncs;
@@ -15,6 +17,17 @@ mod felt252_serde;
 mod felt252_vec_compression;
 pub mod inline_macros;
 pub mod plugin;
+
+/// Get the suite of plugins for compilation with StarkNet.
+pub fn starknet_plugin_suite() -> PluginSuite {
+    let mut suite = PluginSuite::default();
+    suite
+        .add_plugin::<plugin::StarkNetPlugin>()
+        .add_inline_macro_plugin::<inline_macros::selector::SelectorMacro>()
+        .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMacro>()
+        .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMutMacro>();
+    suite
+}
 
 #[cfg(test)]
 mod test_utils;

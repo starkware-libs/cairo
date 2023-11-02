@@ -7,9 +7,7 @@ use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expec
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::abi::AbiBuilder;
-use crate::inline_macros::get_dep_component::{GetDepComponentMacro, GetDepComponentMutMacro};
-use crate::inline_macros::selector::SelectorMacro;
-use crate::plugin::StarkNetPlugin;
+use crate::starknet_plugin_suite;
 
 /// Helper function for testing ABI failures.
 pub fn test_abi_failure(
@@ -18,10 +16,7 @@ pub fn test_abi_failure(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_macro_plugin::<StarkNetPlugin>()
-        .with_inline_macro_plugin::<SelectorMacro>()
-        .with_inline_macro_plugin::<GetDepComponentMacro>()
-        .with_inline_macro_plugin::<GetDepComponentMutMacro>()
+        .with_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
