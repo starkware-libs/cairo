@@ -302,10 +302,6 @@ foo
 extern type Array<T, const N: usize>;
 
 //! > semantic_diagnostics
-error: Const generic args are not allowed in this context.
- --> lib.cairo:1:22
-extern type Array<T, const N: usize>;
-                     ^************^
 
 //! > lowering_diagnostics
 error: Variable not dropped.

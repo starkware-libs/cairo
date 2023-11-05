@@ -191,7 +191,8 @@ pub fn generic_param_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let generic_item_id = generic_param_id.generic_item(db.upcast());
     // Right now, generic consts are allowed only in extern types.
-    let allow_consts = matches!(generic_item_id, GenericItemId::ExternFunc(_));
+    let allow_consts =
+        matches!(generic_item_id, GenericItemId::ExternFunc(_) | GenericItemId::ExternType(_));
     let lookup_item: LookupItemId = generic_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
     let inference_id = InferenceId::GenericParam(generic_param_id);
