@@ -2,6 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
@@ -147,12 +148,17 @@ impl FormattingInfo {
     ) {
         let mut arg_iter = self.args.iter().enumerate();
         let mut arg_used = vec![false; self.args.len()];
-        let mut format_iter = self.format_string.chars().peekable();
+        let mut format_iter = self.format_string.chars().enumerate().peekable();
         let mut pending_chars = String::new();
         let mut ident_count = 1;
         let mut missing_args = 0;
+        let format_string_base = self
+            .format_string_arg
+            .as_syntax_node()
+            .span_start_without_trivia(builder.db)
+            .add_width(TextWidth::from_char('"'));
         builder.add_str("{\n");
-        while let Some(c) = format_iter.next() {
+        while let Some((idx, c)) = format_iter.next() {
             if c == '{' {
                 match format_iter.peek() {
                     None => {
@@ -162,12 +168,12 @@ impl FormattingInfo {
                         });
                         return;
                     }
-                    Some(&'{') => {
+                    Some(&(_, '{')) => {
                         pending_chars.push('{');
                         format_iter.next();
                         continue;
                     }
-                    Some(&'}') => {
+                    Some(&(_, '}')) => {
                         if let Some((position, arg)) = arg_iter.next() {
                             arg_used[position] = true;
                             self.append_formatted_arg(
@@ -184,7 +190,7 @@ impl FormattingInfo {
                     }
                     _ => {}
                 }
-                let Some(argument) = extract_argument(&mut format_iter) else {
+                let Some(argument_length) = extract_argument_length(&mut format_iter) else {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
                         message: "Invalid format string: expected `}` or variable name."
@@ -192,6 +198,7 @@ impl FormattingInfo {
                     });
                     return;
                 };
+                let argument = &self.format_string[(idx + 1)..(idx + 1 + argument_length)];
                 if let Ok(positional) = argument.parse::<usize>() {
                     let Some(arg) = self.args.get(positional) else {
                         diagnostics.push(PluginDiagnostic {
@@ -212,15 +219,21 @@ impl FormattingInfo {
                         RewriteNode::new_trimmed(arg.as_syntax_node()),
                     );
                 } else {
+                    let start = format_string_base
+                        .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
+                    let end = start.add_width(TextWidth::from_str(argument));
                     self.append_formatted_arg(
                         builder,
                         &mut ident_count,
                         &mut pending_chars,
-                        RewriteNode::Text(argument),
+                        RewriteNode::RewriteText {
+                            text: argument.to_string(),
+                            origin: TextSpan { start, end },
+                        },
                     );
                 }
             } else if c == '}' {
-                if format_iter.peek() == Some(&'}') {
+                if matches!(format_iter.peek(), Some(&(_, '}'))) {
                     pending_chars.push('}');
                     format_iter.next();
                     continue;
@@ -323,15 +336,17 @@ impl FormattingInfo {
     }
 }
 
-/// Extracts an argument from a format string.
-fn extract_argument(format_iter: &mut std::iter::Peekable<std::str::Chars<'_>>) -> Option<String> {
-    let mut argument = String::new();
-    for c in format_iter.by_ref() {
+/// Extracts the argument length from a format string.
+fn extract_argument_length(
+    format_iter: &mut std::iter::Peekable<std::iter::Enumerate<std::str::Chars<'_>>>,
+) -> Option<usize> {
+    let mut length = 0;
+    for (_, c) in format_iter.by_ref() {
         if c == '}' {
-            return Some(argument);
+            return Some(length);
         }
         if c.is_ascii_alphanumeric() || c == '_' {
-            argument.push(c);
+            length += 1;
         } else {
             return None;
         }
