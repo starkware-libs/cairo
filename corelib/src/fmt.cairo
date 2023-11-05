@@ -30,3 +30,13 @@ impl DisplayInteger<
         Result::Ok(())
     }
 }
+
+impl DisplayBool of Display<bool> {
+    fn fmt(self: @bool, ref f: Formatter) -> Result<(), Error> {
+        if *self {
+            write!(f, "true")
+        } else {
+            write!(f, "false")
+        }
+    }
+}
