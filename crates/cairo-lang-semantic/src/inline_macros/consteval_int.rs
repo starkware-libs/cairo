@@ -1,5 +1,5 @@
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
@@ -9,9 +9,11 @@ use num_bigint::BigInt;
 
 use crate::extract_macro_single_unnamed_arg;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ConstevalIntMacro;
-
+impl NamedPlugin for ConstevalIntMacro {
+    const NAME: &'static str = "consteval_int";
+}
 impl InlineMacroExprPlugin for ConstevalIntMacro {
     fn generate_code(
         &self,

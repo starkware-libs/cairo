@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
@@ -166,19 +166,13 @@ impl TestCompiler {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
-            b.with_macro_plugin(Arc::new(TestPlugin::default()));
+            b.with_macro_plugin::<TestPlugin>();
 
             if starknet {
-                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-                    .with_inline_macro_plugin(
-                        GetDepComponentMacro::NAME,
-                        Arc::new(GetDepComponentMacro),
-                    )
-                    .with_inline_macro_plugin(
-                        GetDepComponentMutMacro::NAME,
-                        Arc::new(GetDepComponentMutMacro),
-                    );
+                b.with_macro_plugin::<StarkNetPlugin>()
+                    .with_inline_macro_plugin::<SelectorMacro>()
+                    .with_inline_macro_plugin::<GetDepComponentMacro>()
+                    .with_inline_macro_plugin::<GetDepComponentMutMacro>();
             }
 
             b.build()?

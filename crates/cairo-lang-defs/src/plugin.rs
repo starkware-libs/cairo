@@ -99,3 +99,8 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
         item_ast: &ast::ExprInlineMacro,
     ) -> InlinePluginResult;
 }
+
+/// A trait for easier addition of macro plugins.
+pub trait NamedPlugin: Default + 'static {
+    const NAME: &'static str;
+}
