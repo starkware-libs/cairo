@@ -790,6 +790,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "itertools 0.11.0",
+ "num-traits 0.2.15",
  "thiserror",
 ]
 
@@ -805,6 +806,7 @@ dependencies = [
  "env_logger",
  "indoc",
  "itertools 0.11.0",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "test-case",
  "test-log",
