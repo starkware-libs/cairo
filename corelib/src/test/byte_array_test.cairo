@@ -386,8 +386,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "rotator";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of length 16
     let ba: ByteArray = "my length is 16.";
@@ -395,8 +395,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "nolemon  nomelon";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of 16 < length < 31
     let ba: ByteArray = "I am a medium byte array";
@@ -404,8 +404,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "nolemon  nomelon";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of length 31
     let ba: ByteArray = "I didn't find a good palindrome";
@@ -413,8 +413,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "kayak level rotator level kayak";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of 31 < length < 47 (31+16)
     let ba: ByteArray = "This time I did find a good palindrome!";
@@ -422,8 +422,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "noitneverpropagatesifisetagaporprevention";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of length 47 (31+16)
     let ba: ByteArray = "I have found a palindrome, exactly 47 in length";
@@ -431,8 +431,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "onacloverifaliveeruptsavastpureevilafirevolcano";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 
     // Arrays of length > 47 (31+16)
     let ba: ByteArray = "This palindrome is not as good, but at least it's long enough";
@@ -440,8 +440,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "docnoteidissentafastneverpreventsafatnessidietoncod";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
-    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
+    assert_eq!(ba, ba_rev.rev());
+    assert_eq!(palindrome.rev(), palindrome);
 }
 
 #[test]

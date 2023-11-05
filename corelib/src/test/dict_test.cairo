@@ -1,5 +1,5 @@
 use core::dict::Felt252DictEntryTrait;
-use core::test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::assert_ne;
 use core::nullable;
 
 #[test]
@@ -17,7 +17,7 @@ fn test_dict_squash_empty() {
 fn test_dict_default_val() {
     let mut dict: Felt252Dict = Default::default();
     let default_val = dict.get(0);
-    assert_eq(@default_val, @0, 'default_val == 0');
+    assert_eq!(default_val, 0);
 }
 
 #[test]
@@ -28,9 +28,9 @@ fn test_dict_write_read() {
     let val10 = dict[10];
     let val11 = dict[11];
     let val12 = dict[12];
-    assert_eq(@val10, @110, 'dict[10] == 110');
-    assert_eq(@val11, @111, 'dict[11] == 111');
-    assert_eq(@val12, @0, 'default_val == 0');
+    assert_eq!(val10, 110);
+    assert_eq!(val11, 111);
+    assert_eq!(val12, 0);
 }
 
 #[test]
@@ -38,18 +38,18 @@ fn test_dict_entry() {
     let mut dict = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
-    assert_eq(@value, @110, 'dict[10] == 110');
+    assert_eq!(value, 110);
     let mut dict = entry.finalize(11);
-    assert_eq(@dict[10], @11, 'dict[10] == 11');
+    assert_eq!(dict[10], 11);
 }
 
 #[test]
 fn test_dict_entry_uninitialized() {
     let mut dict = Default::default();
     let (entry, value) = dict.entry(10);
-    assert_eq(@value, @0_felt252, 'dict[10] == 0');
+    assert_eq!(value, 0_felt252);
     let mut dict = entry.finalize(110);
-    assert_eq(@dict[10], @110, 'dict[10] == 110');
+    assert_eq!(dict[10], 110);
 }
 
 #[test]
@@ -57,13 +57,13 @@ fn test_dict_update_twice() {
     let mut dict = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
-    assert_eq(@value, @110, 'dict[10] == 110');
+    assert_eq!(value, 110);
     dict = entry.finalize(11);
-    assert_eq(@dict[10], @11, 'dict[10] == 11');
+    assert_eq!(dict[10], 11);
     let (entry, value) = dict.entry(10);
-    assert_eq(@value, @11, 'dict[10] == 11');
+    assert_eq!(value, 11);
     dict = entry.finalize(12);
-    assert_eq(@dict[10], @12, 'dict[10] == 12');
+    assert_eq!(dict[10], 12);
 }
 
 
@@ -98,11 +98,11 @@ fn test_dict_big_keys() {
     dict.insert(KEY4, 4);
     dict.insert(KEY5, 5);
 
-    assert_eq(@dict[KEY1], @1, 'KEY1');
-    assert_eq(@dict[KEY2], @2, 'KEY2');
-    assert_eq(@dict[KEY3], @3, 'KEY3');
-    assert_eq(@dict[KEY4], @4, 'KEY4');
-    assert_eq(@dict[KEY5], @5, 'KEY5');
+    assert_eq!(dict[KEY1], 1);
+    assert_eq!(dict[KEY2], 2);
+    assert_eq!(dict[KEY3], 3);
+    assert_eq!(dict[KEY4], 4);
+    assert_eq!(dict[KEY5], 5);
 }
 
 #[test]
@@ -113,8 +113,8 @@ fn test_dict_of_nullable() {
     let val10 = dict[10].deref();
     let val11 = dict[11].deref();
     let val12 = dict[12];
-    assert_eq(@val10, @1, 'dict[10] == 1');
-    assert_eq(@val11, @2, 'dict[11] == 2');
+    assert_eq!(val10, 1);
+    assert_eq!(val11, 2);
     assert(
         match nullable::match_nullable(val12) {
             nullable::FromNullableResult::Null => true,
