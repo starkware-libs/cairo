@@ -18,6 +18,10 @@ pub enum RewriteNode {
     },
     Copied(SyntaxNode),
     Modified(ModifiedNode),
+    RewriteText {
+        origin: TextSpan,
+        text: String,
+    },
     Text(String),
 }
 impl RewriteNode {
@@ -115,7 +119,9 @@ impl RewriteNode {
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Modified(modified) => modified,
-            RewriteNode::Text(_) => panic!("A text node can't be modified"),
+            RewriteNode::Text(_) | RewriteNode::RewriteText { .. } => {
+                panic!("A text node can't be modified")
+            }
         }
     }
 
@@ -235,6 +241,7 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_modified(&mut self, node: RewriteNode) {
         match node {
             RewriteNode::Copied(node) => self.add_node(node),
+            RewriteNode::RewriteText { origin, text } => self.add_node_ex(&text, origin),
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
                 self.add_trimmed_node(node, trim_left, trim_right)
             }
@@ -249,14 +256,21 @@ impl<'a> PatchBuilder<'a> {
         }
     }
 
-    pub fn add_node(&mut self, node: SyntaxNode) {
-        let orig_span = node.span(self.db);
+    pub fn add_node_ex(&mut self, text: &str, orig_span: TextSpan) {
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
         self.diagnostics_mappings.push(DiagnosticMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
-            origin: DiagnosticOrigin::Start(orig_span.start),
+            origin: if orig_span.width() != TextWidth::from_str(text) {
+                DiagnosticOrigin::Span(orig_span)
+            } else {
+                DiagnosticOrigin::Start(orig_span.start)
+            },
         });
-        self.code += node.get_text(self.db).as_str();
+        self.code += text;
+    }
+
+    pub fn add_node(&mut self, node: SyntaxNode) {
+        self.add_node_ex(node.get_text(self.db).as_str(), node.span(self.db))
     }
 
     fn add_trimmed_node(&mut self, node: SyntaxNode, trim_left: bool, trim_right: bool) {
