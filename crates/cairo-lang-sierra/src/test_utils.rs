@@ -1,5 +1,6 @@
 use bimap::BiMap;
 use itertools::chain;
+use num_bigint::BigInt;
 
 use crate::ids::ConcreteTypeId;
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -21,6 +22,11 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("NonZeroFelt252".into(), as_type_long_id("NonZero", &["felt252"]));
     elements.insert("NonZeroU128".into(), as_type_long_id("NonZero", &["u128"]));
     elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
+    elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
+    elements.insert(
+        "Felt252Bounded0-3".into(),
+        as_type_long_id_value_args("felt252_bounded", &[BigInt::from(0), BigInt::from(3)]),
+    );
     elements.insert("ArrayU128".into(), as_type_long_id("Array", &["u128"]));
     elements.insert("BoxU128".into(), as_type_long_id("Box", &["u128"]));
     elements.insert("UninitializedFelt252".into(), as_type_long_id("Uninitialized", &["felt252"]));
@@ -54,9 +60,16 @@ fn as_type_long_id(name: &str, args: &[&str]) -> ConcreteTypeLongId {
     }
 }
 
-fn as_named_type_long_id(genetic_name: &str, user_name: &str, args: &[&str]) -> ConcreteTypeLongId {
+fn as_type_long_id_value_args(name: &str, args: &[BigInt]) -> ConcreteTypeLongId {
     ConcreteTypeLongId {
-        generic_id: genetic_name.into(),
+        generic_id: name.into(),
+        generic_args: args.iter().map(|b| GenericArg::Value(b.clone())).collect(),
+    }
+}
+
+fn as_named_type_long_id(generic_name: &str, user_name: &str, args: &[&str]) -> ConcreteTypeLongId {
+    ConcreteTypeLongId {
+        generic_id: generic_name.into(),
         generic_args: chain!(
             [GenericArg::UserType(user_name.into())],
             args.iter().map(|s| GenericArg::Type(ConcreteTypeId::from(*s)))

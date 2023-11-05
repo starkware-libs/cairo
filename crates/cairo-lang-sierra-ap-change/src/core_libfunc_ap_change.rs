@@ -10,6 +10,7 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
+use cairo_lang_sierra::extensions::felt252_bounded::Felt252BoundedConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
@@ -213,6 +214,20 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
+        CoreConcreteLibfunc::Felt252Bounded(libfunc) => match libfunc {
+            Felt252BoundedConcreteLibfunc::FromFelt(libfunc) => {
+                if libfunc.min != 0.into() {
+                    unreachable!()
+                } else if libfunc.max == 1.into() {
+                    vec![ApChange::Known(0), ApChange::Known(0)]
+                } else if libfunc.max == 2.into() || libfunc.max == 3.into() {
+                    vec![ApChange::Known(2), ApChange::Known(2)]
+                } else {
+                    vec![ApChange::Known(2), ApChange::Known(7)]
+                }
+            }
+        },
+
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)

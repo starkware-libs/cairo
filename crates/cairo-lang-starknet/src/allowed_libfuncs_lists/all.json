@@ -61,6 +61,7 @@
         "felt252_mul_const",
         "felt252_sub",
         "felt252_sub_const",
+        "felt252_bounded_from_felt252",
         "finalize_locals",
         "function_call",
         "get_block_hash_syscall",
