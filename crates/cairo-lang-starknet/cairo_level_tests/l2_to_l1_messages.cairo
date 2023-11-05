@@ -108,12 +108,12 @@ fn test_pop_l2_to_l1_message() {
     starknet::send_message_to_l1_syscall(to_address, payload.span());
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 }

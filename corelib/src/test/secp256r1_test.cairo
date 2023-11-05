@@ -1,7 +1,6 @@
 use starknet::{secp256r1::Secp256r1Impl, SyscallResultTrait};
 use starknet::secp256_trait::{recover_public_key, Secp256PointTrait, Signature, is_valid_signature};
 use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
-use core::test::test_utils::assert_eq;
 
 #[test]
 fn test_secp256r1_recover_public_key() {
@@ -88,5 +87,5 @@ fn test_recover_public_key_y_even() {
         .unwrap();
     let (recovered_x, recovered_y) = recovered.get_coordinates().unwrap_syscall();
 
-    assert_eq(@recovered_x, @x, 'Signature is not valid');
+    assert_eq!(recovered_x, x);
 }
