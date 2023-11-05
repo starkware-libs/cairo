@@ -16,8 +16,8 @@ fn test_secp256k1_recover_public_key() {
     );
     let public_key = recover_public_key::<Secp256k1Point>(msg_hash, signature).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
-    assert(expected_public_key_x == x, 'recover failed 1');
-    assert(expected_public_key_y == y, 'recover failed 2');
+    assert_eq!(expected_public_key_x, x, "recover failed 1");
+    assert_eq!(expected_public_key_y, y, "recover failed 1");
 
     let y_parity = false;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, _) =
@@ -26,8 +26,8 @@ fn test_secp256k1_recover_public_key() {
     );
     let public_key = recover_public_key::<Secp256k1Point>(msg_hash, signature).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
-    assert(expected_public_key_x == x, 'recover failed 3');
-    assert(expected_public_key_y == y, 'recover failed 4');
+    assert_eq!(expected_public_key_x, x, "recover failed 2");
+    assert_eq!(expected_public_key_y, y, "recover failed 2");
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn test_signature_from_vrs() {
     let s = 2;
     let signature = signature_from_vrs(v, r, s);
 
-    assert(signature == Signature { r, s, y_parity: false }, 'Wrong result');
+    assert!(signature == Signature { r, s, y_parity: false });
 }
 
 /// Returns a golden valid message hash and its signature, for testing.
@@ -117,10 +117,7 @@ fn test_verify_signature() {
         .unwrap_syscall()
         .unwrap();
 
-    let is_valid = is_valid_signature::<
-        Secp256k1Point
-    >(msg_hash, signature.r, signature.s, public_key);
-    assert(is_valid, 'Signature should be valid');
+    assert!(is_valid_signature::<Secp256k1Point>(msg_hash, signature.r, signature.s, public_key));
 }
 
 #[test]
@@ -132,8 +129,7 @@ fn test_verify_signature_invalid_signature() {
         .unwrap_syscall()
         .unwrap();
 
-    let is_valid = is_valid_signature::<
-        Secp256k1Point
-    >(msg_hash, signature.r + 1, signature.s, public_key);
-    assert(!is_valid, 'Signature should be invalid');
+    assert!(
+        !is_valid_signature::<Secp256k1Point>(msg_hash, signature.r + 1, signature.s, public_key)
+    );
 }

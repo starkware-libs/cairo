@@ -8,18 +8,18 @@ fn test_bool_operators() {
     assert_eq!(!false, true);
     assert_ne(@true, @false, 't == f');
     assert_ne(@false, @true, 'f == t');
-    assert(!(false & false), '!(f & f)');
-    assert(!(true & false), '!(t & f)');
-    assert(!(false & true), '!(f & t)');
-    assert(true & true, 't & t');
-    assert(!(false | false), '!(f | f)');
-    assert(true | false, 't | f');
-    assert(false | true, 'f | t');
-    assert(true | true, 't | t');
-    assert(!(false ^ false), '!(f ^ f)');
-    assert(true ^ false, 't ^ f');
-    assert(false ^ true, 'f ^ t');
-    assert(!(true ^ true), '!(t ^ t)');
+    assert!(!(false & false));
+    assert!(!(true & false));
+    assert!(!(false & true));
+    assert!(true & true);
+    assert!(!(false | false));
+    assert!(true | false);
+    assert!(false | true);
+    assert!(true | true);
+    assert!(!(false ^ false));
+    assert!(true ^ false);
+    assert!(false ^ true);
+    assert!(!(true ^ true));
 }
 
 #[test]
