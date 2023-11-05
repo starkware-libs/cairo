@@ -30,11 +30,3 @@ impl DisplayInteger<
         Result::Ok(())
     }
 }
-
-/// Formats a generic type using the `Display` trait.
-/// Panics if a formatting trait implementation returns an error.
-fn display_format<T, +Display<T>, +PanicDestruct<T>>(arg: @T) -> ByteArray {
-    let mut f = Default::default();
-    Display::fmt(arg, ref f).unwrap();
-    f.buffer
-}
