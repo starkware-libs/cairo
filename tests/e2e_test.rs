@@ -56,6 +56,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         enum_snapshot: "enum_snapshot",
         felt252_dict: "felt252_dict",
         felt252: "felt252",
+        felt252_bounded: "felt252_bounded",
         i128: "i128",
         i16: "i16",
         i32: "i32",
