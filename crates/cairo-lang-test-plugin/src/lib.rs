@@ -27,6 +27,7 @@ use itertools::{chain, Itertools};
 use serde::{Deserialize, Serialize};
 pub use test_config::{try_extract_test_config, TestConfig};
 
+mod inline_macros;
 pub mod plugin;
 pub mod test_config;
 pub use plugin::TestPlugin;
@@ -164,6 +165,8 @@ fn find_all_tests(
 /// The suite of plugins for compilation for testing.
 pub fn test_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
-    suite.add_plugin::<TestPlugin>();
+    suite
+        .add_plugin::<TestPlugin>()
+        .add_inline_macro_plugin::<inline_macros::assert_eq::AssertEqMacro>();
     suite
 }

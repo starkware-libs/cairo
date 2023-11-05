@@ -1,5 +1,3 @@
-use core::test::test_utils::{assert_eq, assert_ne};
-
 fn foo() -> usize {
     let mut x = 0_usize;
     let mut y = 0_usize;
@@ -21,5 +19,5 @@ fn foo() -> usize {
 
 #[test]
 fn main() {
-    assert_eq(@foo(), @5_usize, 'issue2939');
+    assert_eq!(foo(), 5_usize);
 }
