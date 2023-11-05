@@ -1,3 +1,5 @@
+use std::fmt;
+
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
@@ -160,37 +162,12 @@ impl FormattingInfo {
         builder.add_str("{\n");
         while let Some((idx, c)) = format_iter.next() {
             if c == '{' {
-                match format_iter.peek() {
-                    None => {
-                        diagnostics.push(PluginDiagnostic {
-                            stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                            message: "Opening `{` without a matching `}`.".to_string(),
-                        });
-                        return;
-                    }
-                    Some(&(_, '{')) => {
-                        pending_chars.push('{');
-                        format_iter.next();
-                        continue;
-                    }
-                    Some(&(_, '}')) => {
-                        if let Some((position, arg)) = arg_iter.next() {
-                            arg_used[position] = true;
-                            self.append_formatted_arg(
-                                builder,
-                                &mut ident_count,
-                                &mut pending_chars,
-                                RewriteNode::new_trimmed(arg.as_syntax_node()),
-                            );
-                            format_iter.next();
-                            continue;
-                        } else {
-                            missing_args += 1;
-                        }
-                    }
-                    _ => {}
+                if matches!(format_iter.peek(), Some(&(_, '{'))) {
+                    pending_chars.push('{');
+                    format_iter.next();
+                    continue;
                 }
-                let Some(argument_length) = extract_argument_length(&mut format_iter) else {
+                let Some(argument_info) = extract_argument(&mut format_iter) else {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
                         message: "Invalid format string: expected `}` or variable name."
@@ -198,51 +175,68 @@ impl FormattingInfo {
                     });
                     return;
                 };
-                let argument = &self.format_string[(idx + 1)..(idx + 1 + argument_length)];
-                if let Ok(positional) = argument.parse::<usize>() {
-                    let Some(arg) = self.args.get(positional) else {
-                        diagnostics.push(PluginDiagnostic {
-                            stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                            message: format!(
-                                "Invalid reference to positional argument {positional} (there are \
-                                 {} arguments).",
-                                self.args.len()
-                            ),
-                        });
-                        return;
-                    };
-                    arg_used[positional] = true;
-                    self.append_formatted_arg(
-                        builder,
-                        &mut ident_count,
-                        &mut pending_chars,
-                        RewriteNode::new_trimmed(arg.as_syntax_node()),
-                    );
-                } else {
-                    let start = format_string_base
-                        .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
-                    let end = start.add_width(TextWidth::from_str(argument));
-                    self.append_formatted_arg(
-                        builder,
-                        &mut ident_count,
-                        &mut pending_chars,
-                        RewriteNode::RewriteText {
-                            text: argument.to_string(),
-                            origin: TextSpan { start, end },
-                        },
-                    );
+                match argument_info.source {
+                    ArgumentSource::Positional(positional) => {
+                        let Some(arg) = self.args.get(positional) else {
+                            diagnostics.push(PluginDiagnostic {
+                                stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
+                                message: format!(
+                                    "Invalid reference to positional argument {positional} (there \
+                                     are {} arguments).",
+                                    self.args.len()
+                                ),
+                            });
+                            return;
+                        };
+                        arg_used[positional] = true;
+                        self.append_formatted_arg(
+                            builder,
+                            &mut ident_count,
+                            &mut pending_chars,
+                            RewriteNode::new_trimmed(arg.as_syntax_node()),
+                            argument_info.fmt_type,
+                        );
+                    }
+                    ArgumentSource::Next => {
+                        if let Some((position, arg)) = arg_iter.next() {
+                            arg_used[position] = true;
+                            self.append_formatted_arg(
+                                builder,
+                                &mut ident_count,
+                                &mut pending_chars,
+                                RewriteNode::new_trimmed(arg.as_syntax_node()),
+                                argument_info.fmt_type,
+                            );
+                        } else {
+                            missing_args += 1;
+                        }
+                    }
+                    ArgumentSource::Named(argument) => {
+                        let start = format_string_base
+                            .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
+                        let end = start.add_width(TextWidth::from_str(&argument));
+                        self.append_formatted_arg(
+                            builder,
+                            &mut ident_count,
+                            &mut pending_chars,
+                            RewriteNode::RewriteText {
+                                text: argument,
+                                origin: TextSpan { start, end },
+                            },
+                            argument_info.fmt_type,
+                        );
+                    }
                 }
             } else if c == '}' {
                 if matches!(format_iter.peek(), Some(&(_, '}'))) {
                     pending_chars.push('}');
                     format_iter.next();
-                    continue;
+                } else {
+                    diagnostics.push(PluginDiagnostic {
+                        stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
+                        message: "Closing `}` without a matching `{`.".to_string(),
+                    });
                 }
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                    message: "Closing `}` without a matching `{`.".to_string(),
-                });
-                return;
             } else {
                 pending_chars.push(c);
             }
@@ -300,11 +294,12 @@ impl FormattingInfo {
         ident_count: &mut usize,
         pending_chars: &mut String,
         arg: RewriteNode,
+        fmt_type: FormatType,
     ) {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
         self.add_indentation(builder, *ident_count);
         builder.add_modified(RewriteNode::interpolate_patched(
-            "match core::fmt::Display::fmt(@$arg$, ref $f$) {\n",
+            &format!("match core::fmt::{fmt_type}::fmt(@$arg$, ref $f$) {{\n"),
             &[("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into(),
         ));
         *ident_count += 1;
@@ -336,20 +331,83 @@ impl FormattingInfo {
     }
 }
 
-/// Extracts the argument length from a format string.
-fn extract_argument_length(
+/// Information about the argument to inject into the formatter.
+struct ArgumentInfo {
+    /// The source of the argument.
+    source: ArgumentSource,
+    /// The format type to use.
+    fmt_type: FormatType,
+}
+
+/// The source of an argument.
+enum ArgumentSource {
+    /// The argument is given by a position index.
+    Positional(usize),
+    /// The argument is given by the next argument.
+    Next,
+    /// The argument is given by a name.
+    Named(String),
+}
+
+/// The format type to use.
+enum FormatType {
+    /// Got `{}` and we should use the `Display` trait.
+    Display,
+    /// Got `{:?}` and we should use the `Debug` trait.
+    Debug,
+}
+impl fmt::Display for FormatType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FormatType::Display => write!(f, "Display"),
+            FormatType::Debug => write!(f, "Debug"),
+        }
+    }
+}
+
+/// Extracts an argument from a format string.
+fn extract_argument(
     format_iter: &mut std::iter::Peekable<std::iter::Enumerate<std::str::Chars<'_>>>,
-) -> Option<usize> {
-    let mut length = 0;
+) -> Option<ArgumentInfo> {
+    let mut arg_value = String::new();
+    let mut fmt_value = String::new();
     for (_, c) in format_iter.by_ref() {
         if c == '}' {
-            return Some(length);
+            break;
+        }
+        if c == ':' {
+            for (_, c) in format_iter.by_ref() {
+                if c == '}' {
+                    break;
+                }
+                if c.is_ascii_graphic() {
+                    fmt_value.push(c);
+                } else {
+                    return None;
+                }
+            }
+            break;
         }
         if c.is_ascii_alphanumeric() || c == '_' {
-            length += 1;
+            arg_value.push(c);
         } else {
             return None;
         }
     }
-    None
+    Some(ArgumentInfo {
+        source: if arg_value.is_empty() {
+            ArgumentSource::Next
+        } else if let Ok(positional) = arg_value.parse::<usize>() {
+            ArgumentSource::Positional(positional)
+        } else {
+            ArgumentSource::Named(arg_value)
+        },
+        fmt_type: if fmt_value.is_empty() {
+            FormatType::Display
+        } else if fmt_value == "?" {
+            FormatType::Debug
+        } else {
+            return None;
+        },
+    })
 }
