@@ -13,6 +13,7 @@ use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 mod clone;
+mod debug;
 mod default;
 mod destruct;
 mod hash;
@@ -267,6 +268,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             match derived.as_str() {
                 "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
                 "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),
+                "Debug" => debug::handle_debug(&info, stable_ptr, &mut result),
                 "Default" => default::handle_default(db, &info, stable_ptr, &mut result),
                 "Destruct" => destruct::handle_destruct(&info, stable_ptr, &mut result),
                 "Hash" => hash::handle_hash(&info, stable_ptr, &mut result),
