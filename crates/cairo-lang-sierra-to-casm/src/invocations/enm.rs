@@ -1,6 +1,7 @@
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::CellRef;
-use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -12,7 +13,7 @@ use num_bigint::BigInt;
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
-use crate::invocations::ProgramInfo;
+use crate::invocations::{add_input_variables, CostValidationInfo, ProgramInfo};
 use crate::references::{ReferenceExpression, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -24,6 +25,9 @@ pub fn build(
     match libfunc {
         EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
+        }
+        EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => {
+            build_enum_from_felt252_bounded(builder, libfunc.num_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -107,6 +111,44 @@ fn build_enum_init(
     };
     let output_expressions = [enum_val.to_reference_expression()].into_iter();
     Ok(builder.build_only_reference_changes(output_expressions))
+}
+
+fn build_enum_from_felt252_bounded(
+    builder: CompiledInvocationBuilder<'_>,
+    num_variants: usize,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        const num_limit = num_variants;
+    }
+    let ret_val = match num_variants {
+        1 | 2 => {
+            casm_build_extend! {casm_builder,
+                let ret_val = value;
+            };
+            ret_val
+        }
+        _ => {
+            casm_build_extend! {casm_builder,
+                const minus_two =-2;
+                const one =1;
+                tempvar value_minus_num_variants = value-num_limit;
+                tempvar doubled_num_variants_minus_value= value_minus_num_variants*minus_two;
+                let ret_val = doubled_num_variants_minus_value-one;
+            };
+            ret_val
+        }
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[ret_val]], None)],
+        CostValidationInfo { range_check_info: None, extra_costs: None },
+    ))
 }
 
 /// Handles statement for matching an enum.
