@@ -1,4 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne, assert_gt};
+use core::test::test_utils::assert_gt;
 
 #[test]
 #[should_panic(expected: ('panic_with_felt252()',))]
@@ -19,9 +19,25 @@ fn test_assert_true() {
 }
 
 #[test]
+#[should_panic(expected: "assertion `1 == 2` failed: Description
+1: 1
+2: 2")]
+fn test_assert_eq_with_description() {
+    assert_eq!(1, 2, "Description");
+}
+
+#[test]
+#[should_panic(expected: "assertion failed.
+1: 1
+2: 2")]
+fn test_assert_eq_no_description() {
+    assert_eq!(1, 2);
+}
+
+#[test]
 #[available_gas(static)]
 fn test_get_available_gas_no_gas_supply() {
-    assert_eq(@core::testing::get_available_gas(), @0, 'expected no_gas_supply')
+    assert_eq!(core::testing::get_available_gas(), 0)
 }
 
 #[test]
