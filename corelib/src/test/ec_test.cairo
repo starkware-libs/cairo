@@ -17,7 +17,7 @@ fn test_ec_operations() {
     let p_nz = p.try_into().unwrap();
     let (x, y) = p_nz.coordinates();
     assert_eq!(x, 1);
-    assert(y == beta_p2_root || y == -beta_p2_root, 'y is wrong');
+    assert!(y == beta_p2_root || y == -beta_p2_root);
 
     let mut state = EcStateTrait::init();
     state.add(p_nz);
@@ -44,7 +44,7 @@ fn test_ec_operations() {
         75984168971785666410219869038140038216102669781812169677875295511117260233,
         "bad double x"
     );
-    assert(double_y == expected_double_y || double_y == -expected_double_y, 'bad double y');
+    assert!(double_y == expected_double_y || double_y == -expected_double_y);
 
     // Compute `2p - p`.
     let (sub_x, sub_y) = (double_p - p).try_into().unwrap().coordinates();
@@ -53,7 +53,7 @@ fn test_ec_operations() {
 
     // Compute `p - p`.
     let p_diff: Option<NonZero<EcPoint>> = (p - p).try_into();
-    assert(p_diff.is_none(), 'p - p did not return 0.');
+    assert!(p_diff.is_none());
 
     // Compute `(-p) - p`.
     let (sub2_x, sub2_y) = (-p - p).try_into().unwrap().coordinates();
@@ -71,7 +71,7 @@ fn test_bad_ec_point_creation() {
 fn test_ec_point_finalization_zero() {
     let state = EcStateTrait::init();
     let point_at_infinity = state.finalize_nz();
-    assert(point_at_infinity.is_none(), 'Wrong point');
+    assert!(point_at_infinity.is_none());
 }
 
 #[test]

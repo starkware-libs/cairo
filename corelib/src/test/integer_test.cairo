@@ -28,12 +28,12 @@ fn test_u8_operators() {
     assert_eq(@((3_u8 ^ 6_u8)), @5_u8, '3 ^ 6 == 5');
     assert_lt(1_u8, 4_u8, '1 < 4');
     assert_le(1_u8, 4_u8, '1 <= 4');
-    assert(!(4_u8 < 4_u8), '!(4 < 4)');
+    assert!(!(4_u8 < 4_u8));
     assert_le(5_u8, 5_u8, '5 <= 5');
-    assert(!(5_u8 <= 4_u8), '!(5 <= 8)');
+    assert!(!(5_u8 <= 4_u8));
     assert_gt(5_u8, 2_u8, '5 > 2');
     assert_ge(5_u8, 2_u8, '5 >= 2');
-    assert(!(3_u8 > 3_u8), '!(3 > 3)');
+    assert!(!(3_u8 > 3_u8));
     assert_ge(3_u8, 3_u8, '3 >= 3');
     assert_eq(@u8_sqrt(9), @3, 'u8_sqrt(9) == 3');
     assert_eq(@u8_sqrt(10), @3, 'u8_sqrt(10) == 3');
@@ -132,11 +132,11 @@ fn test_u16_operators() {
     assert_eq(@((3_u16 ^ 6_u16)), @5_u16, '3 ^ 6 == 5');
     assert_lt(1_u16, 4_u16, '1 < 4');
     assert_le(1_u16, 4_u16, '1 <= 4');
-    assert(!(4_u16 < 4_u16), '!(4 < 4)');
+    assert!(!(4_u16 < 4_u16));
     assert_le(4_u16, 4_u16, '4 <= 4');
     assert_gt(5_u16, 2_u16, '5 > 2');
     assert_ge(5_u16, 2_u16, '5 >= 2');
-    assert(!(3_u16 > 3_u16), '!(3 > 3)');
+    assert!(!(3_u16 > 3_u16));
     assert_ge(3_u16, 3_u16, '3 >= 3');
     assert_eq(@u16_sqrt(9), @3, 'u16_sqrt(9) == 3');
     assert_eq(@u16_sqrt(10), @3, 'u16_sqrt(10) == 3');
@@ -235,11 +235,11 @@ fn test_u32_operators() {
     assert_eq(@((3_u32 ^ 6_u32)), @5_u32, '3 ^ 6 == 5');
     assert_lt(1_u32, 4_u32, '1 < 4');
     assert_le(1_u32, 4_u32, '1 <= 4');
-    assert(!(4_u32 < 4_u32), '!(4 < 4)');
+    assert!(!(4_u32 < 4_u32));
     assert_le(4_u32, 4_u32, '4 <= 4');
     assert_gt(5_u32, 2_u32, '5 > 2');
     assert_ge(5_u32, 2_u32, '5 >= 2');
-    assert(!(3_u32 > 3_u32), '!(3 > 3)');
+    assert!(!(3_u32 > 3_u32));
     assert_ge(3_u32, 3_u32, '3 >= 3');
     assert_eq(@u32_sqrt(9), @3, 'u32_sqrt(9) == 3');
     assert_eq(@u32_sqrt(10), @3, 'u32_sqrt(10) == 3');
@@ -340,11 +340,11 @@ fn test_u64_operators() {
     assert_eq(@((3_u64 ^ 6_u64)), @5_u64, '3 ^ 6 == 5');
     assert_lt(1_u64, 4_u64, '1 < 4');
     assert_le(1_u64, 4_u64, '1 <= 4');
-    assert(!(4_u64 < 4_u64), '!(4 < 4)');
+    assert!(!(4_u64 < 4_u64));
     assert_le(4_u64, 4_u64, '4 <= 4');
     assert_gt(5_u64, 2_u64, '5 > 2');
     assert_ge(5_u64, 2_u64, '5 >= 2');
-    assert(!(3_u64 > 3_u64), '!(3 > 3)');
+    assert!(!(3_u64 > 3_u64));
     assert_ge(3_u64, 3_u64, '3 >= 3');
     assert_eq(@u64_sqrt(9), @3, 'u64_sqrt(9) == 3');
     assert_eq(@u64_sqrt(10), @3, 'u64_sqrt(10) == 3');
@@ -438,11 +438,11 @@ fn test_u128_operators() {
     assert_eq(@(7_u128 % 3_u128), @1_u128, '7 % 3 == 1');
     assert_lt(1_u128, 4_u128, '1 < 4');
     assert_le(1_u128, 4_u128, '1 <= 4');
-    assert(!(4_u128 < 4_u128), '!(4 < 4)');
+    assert!(!(4_u128 < 4_u128));
     assert_le(4_u128, 4_u128, '4 <= 4');
     assert_gt(5_u128, 2_u128, '5 > 2');
     assert_ge(5_u128, 2_u128, '5 >= 2');
-    assert(!(3_u128 > 3_u128), '!(3 > 3)');
+    assert!(!(3_u128 > 3_u128));
     assert_ge(3_u128, 3_u128, '3 >= 3');
     assert_eq(@((1_u128 | 2_u128)), @3_u128, '1 | 2 == 3');
     assert_eq(@((1_u128 & 2_u128)), @0_u128, '1 & 2 == 0');
@@ -655,21 +655,21 @@ fn test_u256_operators() {
     assert_eq(@(v2_2 ^ v2_1), @v0_3, '2.2^2.1==0.3');
     assert_lt(v1_2, v2_2, '1.2<2.2');
     assert_lt(v2_1, v2_2, '2.1<2.2');
-    assert(!(v2_2 < v1_2), '2.2<1.2');
-    assert(!(v2_2 < v2_1), '2.2<2.1');
-    assert(!(v2_2 < v2_2), '2.2<2.2');
+    assert!(!(v2_2 < v1_2));
+    assert!(!(v2_2 < v2_1));
+    assert!(!(v2_2 < v2_2));
     assert_le(v1_2, v2_2, '1.2<=2.2');
     assert_le(v2_1, v2_2, '2.1<=2.2');
-    assert(!(v2_2 <= v1_2), '2.2<=1.2');
-    assert(!(v2_2 <= v2_1), '2.2<=2.1');
+    assert!(!(v2_2 <= v1_2));
+    assert!(!(v2_2 <= v2_1));
     assert_le(v2_2, v2_2, '2.2<=2.2');
-    assert(!(v1_2 > v2_2), '1.2>2.2');
-    assert(!(v2_1 > v2_2), '2.1>2.2');
+    assert!(!(v1_2 > v2_2));
+    assert!(!(v2_1 > v2_2));
     assert_gt(v2_2, v1_2, '2.2>1.2');
     assert_gt(v2_2, v2_1, '2.2>2.1');
-    assert(!(v2_2 > v2_2), '2.2>2.2');
-    assert(!(v1_2 >= v2_2), '1.2>=2.2');
-    assert(!(v2_1 >= v2_2), '2.1>=2.2');
+    assert!(!(v2_2 > v2_2));
+    assert!(!(v1_2 >= v2_2));
+    assert!(!(v2_1 >= v2_2));
     assert_ge(v2_2, v1_2, '2.2>=1.2');
     assert_ge(v2_2, v2_1, '2.2>=2.1');
     assert_ge(v2_2, v2_2, '2.2>=2.2');
@@ -772,14 +772,14 @@ fn test_u512_safe_div_rem_by_u256() {
         limb3: 0x1001101111112112
     };
     let (q, r) = u512_safe_div_rem_by_u256(zero, 1_u256.try_into().unwrap());
-    assert(q == zero, '0 / 1 != 0');
-    assert(r == 0, '0 % 1 != 0');
+    assert!(q == zero, "0 / 1 != 0");
+    assert!(r == 0, "0 % 1 != 0");
     let (q, r) = u512_safe_div_rem_by_u256(one, 1_u256.try_into().unwrap());
-    assert(q == one, '1 / 1 != 1');
-    assert(r == 0, '1 % 1 != 0');
+    assert!(q == one, "1 / 1 != 1");
+    assert!(r == 0, "1 % 1 != 0");
     let (q, r) = u512_safe_div_rem_by_u256(large_num, 1_u256.try_into().unwrap());
-    assert(q == large_num, 'LARGE / 1 != LARGE');
-    assert(r == 0, 'LARGE % 1 != 0');
+    assert!(q == large_num, "LARGE / 1 != LARGE");
+    assert!(r == 0, "LARGE % 1 != 0");
     let (q, r) = u512_safe_div_rem_by_u256(
         large_num, 0x33233223222222122112111111011001_u256.try_into().unwrap()
     );
@@ -792,7 +792,7 @@ fn test_u512_safe_div_rem_by_u256() {
         },
         'large div failed'
     );
-    assert(r == 0x1e0eb905027d0150d2618bbd71844d50, 'large rem failed');
+    assert!(r == 0x1e0eb905027d0150d2618bbd71844d50, "large rem failed");
 }
 
 #[test]
@@ -925,13 +925,13 @@ fn test_u256_try_into_felt252() {
     );
     let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256
         .try_into();
-    assert(f.is_none(), 'prime is not felt252');
+    assert!(f.is_none(), "prime is not felt252");
     let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256
         .try_into();
-    assert(f.is_none(), 'prime+1 is not felt252');
+    assert!(f.is_none(), "prime+1 is not felt252");
     let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256
         .try_into();
-    assert(f.is_none(), 'prime+2**128 is not felt252');
+    assert!(f.is_none(), "prime+2**128 is not felt252");
 }
 
 fn cast_must_pass<
@@ -957,16 +957,16 @@ fn cast_must_pass<
 }
 #[test]
 fn proper_cast() {
-    assert(cast_must_pass(0xFF_u8, 0xFF_u16), 'u8 to_and_fro u16');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u32), 'u8 to_and_fro u32');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u64), 'u8 to_and_fro u64');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u128), 'u8 to_and_fro u128');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u32), 'u16 to_and_fro u32');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u64), 'u16 to_and_fro u64');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u128), 'u16 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64), 'u32 to_and_fro u64');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
+    assert!(cast_must_pass(0xFF_u8, 0xFF_u16));
+    assert!(cast_must_pass(0xFF_u8, 0xFF_u32));
+    assert!(cast_must_pass(0xFF_u8, 0xFF_u64));
+    assert!(cast_must_pass(0xFF_u8, 0xFF_u128));
+    assert!(cast_must_pass(0xFFFF_u16, 0xFFFF_u32));
+    assert!(cast_must_pass(0xFFFF_u16, 0xFFFF_u64));
+    assert!(cast_must_pass(0xFFFF_u16, 0xFFFF_u128));
+    assert!(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64));
+    assert!(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128));
+    assert!(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128));
 }
 
 #[test]
@@ -1126,10 +1126,10 @@ fn test_i8_operators() {
     assert_ne(@1_i8, @2_i8, '1 != 2');
     assert_eq(@0x7f_felt252.try_into().unwrap(), @0x7f_i8, '0x7f is not i8');
     let v: Option<i8> = 0x80_felt252.try_into();
-    assert(v.is_none(), '0x80 is i8');
+    assert!(v.is_none(), "0x80 is i8");
     assert_eq(@(-0x80_felt252).try_into().unwrap(), @-0x80_i8, '-0x80 is not i8');
     let v: Option<i8> = (-0x81_felt252).try_into();
-    assert(v.is_none(), '-0x81 is i8');
+    assert!(v.is_none(), "-0x81 is i8");
     assert_eq(@(1_i8 + 3_i8), @4_i8, '1 + 3 == 4');
     assert_eq(@(3_i8 + 6_i8), @9_i8, '3 + 6 == 9');
     assert_eq(@(3_i8 - 1_i8), @2_i8, '3 - 1 == 2');
@@ -1148,12 +1148,12 @@ fn test_i8_operators() {
     assert_eq(@(-2_i8 * -4_i8), @8_i8, '-2 * -4 == 8');
     assert_lt(1_i8, 4_i8, '1 < 4');
     assert_le(1_i8, 4_i8, '1 <= 4');
-    assert(!(4_i8 < 4_i8), '!(4 < 4)');
+    assert!(!(4_i8 < 4_i8));
     assert_le(5_i8, 5_i8, '5 <= 5');
-    assert(!(5_i8 <= 4_i8), '!(5 <= 8)');
+    assert!(!(5_i8 <= 4_i8));
     assert_gt(5_i8, 2_i8, '5 > 2');
     assert_ge(5_i8, 2_i8, '5 >= 2');
-    assert(!(3_i8 > 3_i8), '!(3 > 3)');
+    assert!(!(3_i8 > 3_i8));
     assert_ge(3_i8, 3_i8, '3 >= 3');
 }
 
@@ -1229,10 +1229,10 @@ fn test_i16_operators() {
     assert_ne(@1_i16, @2_i16, '1 != 2');
     assert_eq(@0x7fff_felt252.try_into().unwrap(), @0x7fff_i16, '0x7fff is not i16');
     let v: Option<i16> = 0x8000_felt252.try_into();
-    assert(v.is_none(), '0x8000 is i16');
+    assert!(v.is_none(), "0x8000 is i16");
     assert_eq(@(-0x8000_felt252).try_into().unwrap(), @-0x8000_i16, '-0x8000 is not i16');
     let v: Option<i16> = (-0x8001_felt252).try_into();
-    assert(v.is_none(), '-0x8001 is i16');
+    assert!(v.is_none(), "-0x8001 is i16");
     assert_eq(@(1_i16 + 3_i16), @4_i16, '1 + 3 == 4');
     assert_eq(@(3_i16 + 6_i16), @9_i16, '3 + 6 == 9');
     assert_eq(@(3_i16 - 1_i16), @2_i16, '3 - 1 == 2');
@@ -1251,12 +1251,12 @@ fn test_i16_operators() {
     assert_eq(@(-2_i16 * -4_i16), @8_i16, '-2 * -4 == 8');
     assert_lt(1_i16, 4_i16, '1 < 4');
     assert_le(1_i16, 4_i16, '1 <= 4');
-    assert(!(4_i16 < 4_i16), '!(4 < 4)');
+    assert!(!(4_i16 < 4_i16));
     assert_le(5_i16, 5_i16, '5 <= 5');
-    assert(!(5_i16 <= 4_i16), '!(5 <= 8)');
+    assert!(!(5_i16 <= 4_i16));
     assert_gt(5_i16, 2_i16, '5 > 2');
     assert_ge(5_i16, 2_i16, '5 >= 2');
-    assert(!(3_i16 > 3_i16), '!(3 > 3)');
+    assert!(!(3_i16 > 3_i16));
     assert_ge(3_i16, 3_i16, '3 >= 3');
 }
 
@@ -1332,10 +1332,10 @@ fn test_i32_operators() {
     assert_ne(@1_i32, @2_i32, '1 != 2');
     assert_eq(@0x7fffffff_felt252.try_into().unwrap(), @0x7fffffff_i32, '0x7fffffff is not i32');
     let v: Option<i32> = 0x80000000_felt252.try_into();
-    assert(v.is_none(), '0x80000000 is i32');
+    assert!(v.is_none(), "0x80000000 is i32");
     assert_eq(@(-0x80000000_felt252).try_into().unwrap(), @-0x80000000_i32, '-0x8000 is not i32');
     let v: Option<i32> = (-0x80000001_felt252).try_into();
-    assert(v.is_none(), '-0x80000001 is i32');
+    assert!(v.is_none(), "-0x80000001 is i32");
     assert_eq(@(1_i32 + 3_i32), @4_i32, '1 + 3 == 4');
     assert_eq(@(3_i32 + 6_i32), @9_i32, '3 + 6 == 9');
     assert_eq(@(3_i32 - 1_i32), @2_i32, '3 - 1 == 2');
@@ -1354,12 +1354,12 @@ fn test_i32_operators() {
     assert_eq(@(-2_i32 * -4_i32), @8_i32, '-2 * -4 == 8');
     assert_lt(1_i32, 4_i32, '1 < 4');
     assert_le(1_i32, 4_i32, '1 <= 4');
-    assert(!(4_i32 < 4_i32), '!(4 < 4)');
+    assert!(!(4_i32 < 4_i32));
     assert_le(5_i32, 5_i32, '5 <= 5');
-    assert(!(5_i32 <= 4_i32), '!(5 <= 8)');
+    assert!(!(5_i32 <= 4_i32));
     assert_gt(5_i32, 2_i32, '5 > 2');
     assert_ge(5_i32, 2_i32, '5 >= 2');
-    assert(!(3_i32 > 3_i32), '!(3 > 3)');
+    assert!(!(3_i32 > 3_i32));
     assert_ge(3_i32, 3_i32, '3 >= 3');
 }
 
@@ -1439,14 +1439,14 @@ fn test_i64_operators() {
         '0x7fffffffffffffff is not i64'
     );
     let v: Option<i64> = 0x8000000000000000_felt252.try_into();
-    assert(v.is_none(), '0x8000000000000000 is i64');
+    assert!(v.is_none(), "0x8000000000000000 is i64");
     assert_eq(
         @(-0x8000000000000000_felt252).try_into().unwrap(),
         @-0x8000000000000000_i64,
         '-0x8000000000000000 is not i64'
     );
     let v: Option<i64> = (-0x8000000000000001_felt252).try_into();
-    assert(v.is_none(), '-0x8000000000000001 is i64');
+    assert!(v.is_none(), "-0x8000000000000001 is i64");
     assert_eq(@(1_i64 + 3_i64), @4_i64, '1 + 3 == 4');
     assert_eq(@(3_i64 + 6_i64), @9_i64, '3 + 6 == 9');
     assert_eq(@(3_i64 - 1_i64), @2_i64, '3 - 1 == 2');
@@ -1465,12 +1465,12 @@ fn test_i64_operators() {
     assert_eq(@(-2_i64 * -4_i64), @8_i64, '-2 * -4 == 8');
     assert_lt(1_i64, 4_i64, '1 < 4');
     assert_le(1_i64, 4_i64, '1 <= 4');
-    assert(!(4_i64 < 4_i64), '!(4 < 4)');
+    assert!(!(4_i64 < 4_i64));
     assert_le(5_i64, 5_i64, '5 <= 5');
-    assert(!(5_i64 <= 4_i64), '!(5 <= 8)');
+    assert!(!(5_i64 <= 4_i64));
     assert_gt(5_i64, 2_i64, '5 > 2');
     assert_ge(5_i64, 2_i64, '5 >= 2');
-    assert(!(3_i64 > 3_i64), '!(3 > 3)');
+    assert!(!(3_i64 > 3_i64));
     assert_ge(3_i64, 3_i64, '3 >= 3');
 }
 
@@ -1550,14 +1550,14 @@ fn test_i128_operators() {
         '0x7f..f is not i128'
     );
     let v: Option<i128> = 0x80000000000000000000000000000000_felt252.try_into();
-    assert(v.is_none(), '0x80..0 is i128');
+    assert!(v.is_none(), "0x80..0 is i128");
     assert_eq(
         @(-0x80000000000000000000000000000000_felt252).try_into().unwrap(),
         @-0x80000000000000000000000000000000_i128,
         '-0x80..0 is not i128'
     );
     let v: Option<i128> = (-0x80000000000000000000000000000001_felt252).try_into();
-    assert(v.is_none(), '-0x80..01 is i128');
+    assert!(v.is_none(), "-0x80..01 is i128");
     assert_eq(@(1_i128 + 3_i128), @4_i128, '1 + 3 == 4');
     assert_eq(@(3_i128 + 6_i128), @9_i128, '3 + 6 == 9');
     assert_eq(@(3_i128 - 1_i128), @2_i128, '3 - 1 == 2');
@@ -1582,12 +1582,12 @@ fn test_i128_operators() {
     );
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
-    assert(!(4_i128 < 4_i128), '!(4 < 4)');
+    assert!(!(4_i128 < 4_i128));
     assert_le(5_i128, 5_i128, '5 <= 5');
-    assert(!(5_i128 <= 4_i128), '!(5 <= 8)');
+    assert!(!(5_i128 <= 4_i128));
     assert_gt(5_i128, 2_i128, '5 > 2');
     assert_ge(5_i128, 2_i128, '5 >= 2');
-    assert(!(3_i128 > 3_i128), '!(3 > 3)');
+    assert!(!(3_i128 > 3_i128));
     assert_ge(3_i128, 3_i128, '3 >= 3');
 }
 

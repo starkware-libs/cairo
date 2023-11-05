@@ -131,7 +131,7 @@ fn test_events() {
         @FlatEvent::FlatEvent(StaticEvent {}),
         'event == FlatEvent'
     );
-    assert(starknet::testing::pop_log_raw(contract_address).is_none(), 'no more events');
+    assert!(starknet::testing::pop_log_raw(contract_address).is_none());
 }
 
 #[test]

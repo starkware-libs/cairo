@@ -8,7 +8,7 @@ fn test_panic_with_felt252() {
 }
 
 #[test]
-#[should_panic(expected: ('assert(false)',))]
+#[should_panic(expected: 'assert(false)')]
 fn test_assert_false() {
     assert(false, 'assert(false)');
 }
@@ -16,6 +16,23 @@ fn test_assert_false() {
 #[test]
 fn test_assert_true() {
     assert(true, 'assert(true)');
+}
+
+#[test]
+#[should_panic(expected: "assert(false)")]
+fn test_assert_macro_false() {
+    assert!(false, "assert(false)");
+}
+
+#[test]
+fn test_assert_macro_true() {
+    assert!(true, "assert(true)");
+}
+
+#[test]
+#[should_panic(expected: "assertion failed: `false`.")]
+fn test_assert_macro_no_input() {
+    assert!(false);
 }
 
 #[test]
