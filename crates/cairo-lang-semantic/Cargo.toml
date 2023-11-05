@@ -7,7 +7,7 @@ license-file.workspace = true
 description = "Cairo semantic model."
 
 [features]
-testing = ["dep:cairo-lang-test-utils", "dep:cairo-lang-plugins"]
+testing = ["dep:cairo-lang-test-utils"]
 
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.3.1" }
@@ -15,7 +15,7 @@ cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.3.1" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.3.1" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.3.1" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.3.1" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", optional = true, version = "2.3.1" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.3.1" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.3.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.3.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
