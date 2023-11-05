@@ -40,6 +40,7 @@ mod debug;
 mod ec;
 mod enm;
 mod felt252;
+mod felt252_bounded;
 mod felt252_dict;
 mod function_call;
 mod gas;
@@ -639,6 +640,7 @@ pub fn compile_invocation(
             felt252_dict::build_entry(libfunc, builder)
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Bounded(libfunc) => felt252_bounded::build(libfunc, builder),
     }
 }
 

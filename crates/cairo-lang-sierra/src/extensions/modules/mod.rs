@@ -21,6 +21,7 @@ pub mod duplicate;
 pub mod ec;
 pub mod enm;
 pub mod felt252;
+pub mod felt252_bounded;
 pub mod felt252_dict;
 pub mod function_call;
 pub mod gas;
