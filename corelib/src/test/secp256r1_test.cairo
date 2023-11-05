@@ -8,8 +8,8 @@ fn test_secp256r1_recover_public_key() {
         get_message_and_signature();
     let public_key = recover_public_key::<Secp256r1Point>(msg_hash, signature).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
-    assert(expected_public_key_x == x, 'recover failed 1');
-    assert(expected_public_key_y == y, 'recover failed 2');
+    assert_eq!(expected_public_key_x, x);
+    assert_eq!(expected_public_key_y, y);
 }
 
 
@@ -38,40 +38,38 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
 #[available_gas(100000000)]
 fn test_verify_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = is_valid_signature::<
-        Secp256r1Point
-    >(msg_hash, signature.r, signature.s, public_key);
-    assert(is_valid, 'Signature should be valid');
+    assert!(is_valid_signature::<Secp256r1Point>(msg_hash, signature.r, signature.s, public_key));
 }
 
 #[test]
 #[available_gas(100000000)]
 fn test_verify_signature_invalid_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = is_valid_signature::<
-        Secp256r1Point
-    >(msg_hash, signature.r + 1, signature.s, public_key);
-    assert(!is_valid, 'Signature should be invalid');
+    assert!(
+        !is_valid_signature::<Secp256r1Point>(msg_hash, signature.r + 1, signature.s, public_key)
+    );
 }
 
 #[test]
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_r() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = is_valid_signature::<
-        Secp256r1Point
-    >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key);
-    assert(!is_valid, 'Signature out of range');
+    assert!(
+        !is_valid_signature::<
+            Secp256r1Point
+        >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key)
+    );
 }
 
 #[test]
 #[available_gas(100000000)]
 fn test_verify_signature_overflowing_signature_s() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
-    let is_valid = is_valid_signature::<
-        Secp256r1Point
-    >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key);
-    assert(!is_valid, 'Signature out of range');
+    assert!(
+        !is_valid_signature::<
+            Secp256r1Point
+        >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key)
+    );
 }
 
 

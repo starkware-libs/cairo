@@ -105,6 +105,6 @@ fn write_read_struct() {
         efg2: Efg::G(123_u256)
     };
 
-    assert(test_contract::__external::set_data(serialized(*@x)).is_empty(), 'Not empty');
+    assert!(test_contract::__external::set_data(serialized(*@x)).is_empty());
     assert_eq(@test_contract::__external::get_data(serialized(())), @serialized(x), 'Wrong result');
 }
