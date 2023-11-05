@@ -163,7 +163,7 @@ fn foo() {
    // No format string.
    write!(f, ba);
 
-   // Non existing inline argument. TODO(orizi): Improve diagnostic mapping.
+   // Non existing inline argument.
    write!(f, "{non_existing}");
 
    // Non existing provide argument.
@@ -217,10 +217,10 @@ error: Plugin diagnostic: Argument must be a string literal.
    write!(f, ba);
              ^^
 
-error: Identifier not found.
- --> lib.cairo[write_macro]:2:36
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                                   ^**********^
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:21:16
+   write!(f, "{non_existing}");
+               ^**********^
 
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:24:20
@@ -294,7 +294,7 @@ fn foo() {
    // No format string.
    writeln!(f, ba);
 
-   // Non existing inline argument. TODO(orizi): Improve diagnostic mapping.
+   // Non existing inline argument.
    writeln!(f, "{non_existing}");
 
    // Non existing provide argument.
@@ -344,10 +344,10 @@ error: Plugin diagnostic: Argument must be a string literal.
    writeln!(f, ba);
                ^^
 
-error: Identifier not found.
- --> lib.cairo[writeln_macro]:2:36
-    match core::fmt::Display::fmt(@non_existing, ref f) {
-                                   ^**********^
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:21:18
+   writeln!(f, "{non_existing}");
+                 ^**********^
 
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:24:22
@@ -399,7 +399,7 @@ fn foo() {
    // No format string.
    format!(ba);
 
-   // Non existing inline argument. TODO(orizi): Improve diagnostic mapping.
+   // Non existing inline argument.
    format!("{non_existing}");
 
    // Non existing provide argument.
@@ -439,10 +439,10 @@ error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
    format!(ba);
            ^^
 
-error: Identifier not found.
- --> lib.cairo[format_macro][write_macro]:2:36
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro_) {
-                                   ^**********^
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:14:14
+   format!("{non_existing}");
+             ^**********^
 
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:17:18
@@ -494,7 +494,7 @@ fn foo() {
    // No format string.
    print!(ba);
 
-   // Non existing inline argument. TODO(orizi): Improve diagnostic mapping.
+   // Non existing inline argument.
    print!("{non_existing}");
 
    // Non existing provide argument.
@@ -534,10 +534,10 @@ error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
    print!(ba);
           ^^
 
-error: Identifier not found.
- --> lib.cairo[print_macro][write_macro]:2:36
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros_) {
-                                   ^**********^
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:14:13
+   print!("{non_existing}");
+            ^**********^
 
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:17:17
@@ -589,7 +589,7 @@ fn foo() {
    // No format string.
    println!(ba);
 
-   // Non existing inline argument. TODO(orizi): Improve diagnostic mapping.
+   // Non existing inline argument.
    println!("{non_existing}");
 
    // Non existing provide argument.
@@ -629,10 +629,10 @@ error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
    println!(ba);
             ^^
 
-error: Identifier not found.
- --> lib.cairo[println_macro][writeln_macro]:2:36
-    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros_) {
-                                   ^**********^
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:14:15
+   println!("{non_existing}");
+              ^**********^
 
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:17:19
