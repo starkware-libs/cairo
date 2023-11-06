@@ -69,7 +69,7 @@ error: The name `abc` is defined multiple times.
 impl abc of abc;
      ^*^
 
-error: Not a trait.
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
  --> lib.cairo:22:13
 impl abc of abc;
             ^*^
