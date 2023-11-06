@@ -141,7 +141,7 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
     fn no_ret_ty(ref a: u128) {
                               ^
 
-error: Not a trait.
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
  --> lib.cairo:34:13
 impl abc of abc;
             ^*^

@@ -135,7 +135,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Cycle detected while resolving 'impls alias' items.".into()
             }
             SemanticDiagnosticKind::ImplRequirementCycle => {
-                "Cycle detected while resolving generic param.".into()
+                "Cycle detected while resolving generic param. Try specifying the generic impl \
+                 parameter explicitly to break the cycle."
+                    .into()
             }
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!(r#"Missing member "{member_name}"."#)
