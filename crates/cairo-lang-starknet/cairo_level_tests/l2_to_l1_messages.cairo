@@ -73,7 +73,7 @@ fn test_l2_to_l1_messages() {
     contract.send_message_to_l1();
 
     // Assert other addresses did not sent messages.
-    assert(testing::pop_l2_to_l1_message(other_contract_address).is_none(), 'no messages');
+    assert!(testing::pop_l2_to_l1_message(other_contract_address).is_none());
 
     // Pop messages.
     assert_eq(
@@ -93,7 +93,7 @@ fn test_l2_to_l1_messages() {
     );
 
     // Assert all messages have been popped.
-    assert(testing::pop_l2_to_l1_message(contract_address).is_none(), 'no more messages');
+    assert!(testing::pop_l2_to_l1_message(contract_address).is_none());
 }
 
 #[test]

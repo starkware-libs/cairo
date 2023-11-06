@@ -2,12 +2,13 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::inline_macros::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_semantic::inline_macros::{
+    escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+};
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
-use itertools::Itertools;
 
 /// Macro for equality assertion.
 #[derive(Default, Debug)]
@@ -61,16 +62,8 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             };
         };
         let f = "__formatter_for_assert_eq_macro_";
-        let escape_expr = |expr: &ast::Expr| {
-            expr.as_syntax_node()
-                .get_text_without_trivia(db)
-                .replace('{', "{{")
-                .replace('}', "}}")
-                .escape_unicode()
-                .join("")
-        };
-        let lhs_escaped = escape_expr(&lhs);
-        let rhs_escaped = escape_expr(&rhs);
+        let lhs_escaped = escape_node(db, lhs.as_syntax_node());
+        let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db);
         let (lhs_value, maybe_assign_lhs) = if matches!(lhs, ast::Expr::Path(_)) {
             (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")

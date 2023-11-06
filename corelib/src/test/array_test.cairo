@@ -81,29 +81,29 @@ fn test_equality() {
     let arr4 = array![10, 11];
     let arr5 = array![10, 11, 12, 13];
 
-    assert(arr1 == arr1, 'arr1 != arr1');
-    assert(arr2 == arr2, 'arr2 != arr2');
-    assert(arr3 == arr3, 'arr3 != arr3');
-    assert(arr4 == arr4, 'arr4 != arr4');
-    assert(arr5 == arr5, 'arr5 != arr5');
+    assert!(arr1 == arr1);
+    assert!(arr2 == arr2);
+    assert!(arr3 == arr3);
+    assert!(arr4 == arr4);
+    assert!(arr5 == arr5);
 
-    assert(arr1 != arr2, 'arr1 == arr2');
-    assert(arr1 != arr3, 'arr1 == arr3');
-    assert(arr1 != arr4, 'arr1 == arr4');
-    assert(arr1 != arr5, 'arr1 == arr5');
-    assert(arr2 != arr3, 'arr2 == arr3');
-    assert(arr2 != arr4, 'arr2 == arr4');
-    assert(arr2 != arr5, 'arr2 == arr5');
-    assert(arr3 != arr4, 'arr3 == arr4');
-    assert(arr3 != arr5, 'arr3 == arr5');
-    assert(arr4 != arr5, 'arr4 == arr5');
+    assert!(arr1 != arr2);
+    assert!(arr1 != arr3);
+    assert!(arr1 != arr4);
+    assert!(arr1 != arr5);
+    assert!(arr2 != arr3);
+    assert!(arr2 != arr4);
+    assert!(arr2 != arr5);
+    assert!(arr3 != arr4);
+    assert!(arr3 != arr5);
+    assert!(arr4 != arr5);
 }
 
 #[test]
 fn test_append() {
     let mut arr = array![10, 11, 12];
     arr.append(13);
-    assert(arr.len() == 4, 'Unexpected length');
+    assert!(arr.len() == 4);
     assert_eq!(*arr[3], 13, "Unexpected element");
 }
 
@@ -111,7 +111,7 @@ fn test_append() {
 fn test_append_span() {
     let mut arr = array![10, 11, 12];
     arr.append_span(arr.span());
-    assert(arr.len() == 6, 'Unexpected length');
+    assert!(arr.len() == 6);
     assert_eq!(*arr[3], 10, "Unexpected element");
     assert_eq!(*arr[4], 11, "Unexpected element");
     assert_eq!(*arr[5], 12, "Unexpected element");
