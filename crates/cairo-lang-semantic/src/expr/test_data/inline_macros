@@ -184,6 +184,8 @@ fn foo() {
    // Badly terminated `{`.
     write!(f, "{?}");
     write!(f, "{x|}");
+    write!(f, "{");
+    write!(f, "{x");
 }
 
 //! > function_name
@@ -252,15 +254,25 @@ error: Plugin diagnostic: Unused argument.
    write!(f, "{2}{0}", ba, 2, 1, 4);
                                  ^
 
-error: Plugin diagnostic: Invalid format string: expected `}` or variable name.
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
  --> lib.cairo:39:15
     write!(f, "{?}");
               ^***^
 
-error: Plugin diagnostic: Invalid format string: expected `}` or variable name.
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
  --> lib.cairo:40:15
     write!(f, "{x|}");
               ^****^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:41:15
+    write!(f, "{");
+              ^*^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:42:15
+    write!(f, "{x");
+              ^**^
 
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo[write_macro]:2:22

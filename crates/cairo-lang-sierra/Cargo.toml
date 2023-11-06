@@ -13,7 +13,7 @@ regex = "1"
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.0-rc0" }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true

@@ -1,4 +1,3 @@
-use core::test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
 
@@ -57,20 +56,20 @@ fn test_flow() {
     let mut contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert_eq(@contract0.foo(300), @100, 'contract0.foo(300) == 100');
-    assert_eq(@contract1.foo(300), @200, 'contract1.foo(300) == 200');
-    assert_eq(@contract0.foo(300), @300, 'contract0.foo(300) == 300');
-    assert_eq(@contract1.foo(300), @300, 'contract1.foo(300) == 300');
+    assert_eq!(contract0.foo(300), 100);
+    assert_eq!(contract1.foo(300), 200);
+    assert_eq!(contract0.foo(300), 300);
+    assert_eq!(contract1.foo(300), 300);
 
     // Library calls.
     let mut library = IContractLibraryDispatcher {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert_eq(@library.foo(300), @0, 'library.foo(300) == 0');
+    assert_eq!(library.foo(300), 0);
 }
 
 #[test]
-#[available_gas(860000)]
+#[available_gas(1170000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Set up.
@@ -86,22 +85,22 @@ fn test_flow_out_of_gas() {
     let mut contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert_eq(@contract0.foo(300), @100, 'contract0.foo(300) == 100');
-    assert_eq(@contract1.foo(300), @200, 'contract1.foo(300) == 200');
-    assert_eq(@contract0.foo(300), @300, 'contract0.foo(300) == 300');
-    assert_eq(@contract1.foo(300), @300, 'contract1.foo(300) == 300');
+    assert_eq!(contract0.foo(300), 100);
+    assert_eq!(contract1.foo(300), 200);
+    assert_eq!(contract0.foo(300), 300);
+    assert_eq!(contract1.foo(300), 300);
 
     // Library calls.
     let mut library = IContractLibraryDispatcher {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert_eq(@library.foo(300), @0, 'library.foo(300) == 0');
+    assert_eq!(library.foo(300), 0);
 }
 
 #[test]
 fn test_class_hash_not_found() {
     let mut err = deploy_syscall(5.try_into().unwrap(), 0, array![100].span(), false).unwrap_err();
-    assert_eq(@err.pop_front().unwrap(), @'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
+    assert_eq!(err.pop_front().unwrap(), 'CLASS_HASH_NOT_FOUND');
 }
 
 #[test]
@@ -131,8 +130,8 @@ fn test_failed_constructor() {
         contract_failed_constructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
         .unwrap_err();
-    assert_eq(@err.pop_front().unwrap(), @'Failure', 'err == "Failure"');
-    assert_eq(@err.pop_front().unwrap(), @'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
+    assert_eq!(err.pop_front().unwrap(), 'Failure');
+    assert_eq!(err.pop_front().unwrap(), 'CONSTRUCTOR_FAILED');
 }
 
 #[starknet::contract]
@@ -155,7 +154,7 @@ fn test_non_empty_calldata_nonexistent_constructor() {
         false
     )
         .unwrap_err();
-    assert_eq(@err.pop_front().unwrap(), @'INVALID_CALLDATA_LEN', 'err == "INVALID_CALLDATA_LEN"');
+    assert_eq!(err.pop_front().unwrap(), 'INVALID_CALLDATA_LEN');
 }
 
 #[test]

@@ -253,6 +253,17 @@ pub fn impl_def_concrete_trait(
     db.priv_impl_declaration_data(impl_def_id)?.concrete_trait
 }
 
+/// Cycle handling for [crate::db::SemanticGroup::impl_def_concrete_trait].
+pub fn impl_def_concrete_trait_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &[String],
+    _impl_def_id: &ImplDefId,
+) -> Maybe<ConcreteTraitId> {
+    // The diagnostics will be reported from the calling function, specifically from
+    // `priv_impl_declaration_data_inner`.
+    Err(skip_diagnostic())
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
 pub fn impl_def_attributes(
     db: &dyn SemanticGroup,
@@ -364,10 +375,10 @@ pub fn priv_impl_declaration_data_inner(
             .and_then(|concrete_item| {
                 try_extract_matches!(concrete_item, ResolvedConcreteItem::Trait)
             })
+            .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
     } else {
-        None
-    }
-    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
+        Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
+    };
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
@@ -719,13 +730,27 @@ pub fn module_impl_ids_for_trait_filter(
         if trait_id != trait_filter.trait_id {
             continue;
         }
-        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else { continue };
+        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else {
+            continue;
+        };
         if let Ok(true) = concrete_trait_fits_trait_filter(db, concrete_trait_id, &trait_filter) {
             res.push(uninferred_impl);
         }
     }
 
     Ok(res)
+}
+
+/// Cycle handeling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
+pub fn module_impl_ids_for_trait_filter_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &[String],
+    _module_id: &ModuleId,
+    _trait_filter: &TraitFilter,
+) -> Maybe<Vec<UninferredImpl>> {
+    // The diagnostics will be reported from the calling function, specifically from
+    // `priv_impl_declaration_data_inner`.
+    Err(skip_diagnostic())
 }
 
 /// Checks whether an [ImplDefId] passes a [TraitFilter].

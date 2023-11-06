@@ -33,8 +33,6 @@ mod Balance {
 mod tests {
     use starknet::syscalls::deploy_syscall;
 
-    use core::test::test_utils::assert_eq;
-
     use super::{Balance, IBalance, IBalanceDispatcher, IBalanceDispatcherTrait};
 
     #[test]
@@ -53,10 +51,10 @@ mod tests {
             .unwrap();
         let mut contract1 = IBalanceDispatcher { contract_address: address1 };
 
-        assert_eq(@contract0.get(), @100, 'contract0.get() == 100');
-        assert_eq(@contract1.get(), @200, 'contract1.get() == 200');
+        assert_eq!(contract0.get(), 100);
+        assert_eq!(contract1.get(), 200);
         @contract1.increase(200);
-        assert_eq(@contract0.get(), @100, 'contract0.get() == 100');
-        assert_eq(@contract1.get(), @400, 'contract1.get() == 400');
+        assert_eq!(contract0.get(), 100);
+        assert_eq!(contract1.get(), 400);
     }
 }

@@ -126,3 +126,21 @@ fn test_panic_with_byte_array_invalid_pending_word() {
     ];
     panic(error);
 }
+
+#[test]
+#[should_panic(expected: "")]
+fn test_panic_macro_empty() {
+    panic!()
+}
+
+#[test]
+#[should_panic(expected: "basic")]
+fn test_panic_macro_basic_string() {
+    panic!("basic")
+}
+
+#[test]
+#[should_panic(expected: "some_format(1)")]
+fn test_panic_macro_with_input() {
+    panic!("some_format({})", 1)
+}

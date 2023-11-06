@@ -120,6 +120,7 @@ pub trait GenericTypeArgGenericType: Default {
     /// Returns the type info of the wrapping type.
     fn calc_info(
         &self,
+        context: &dyn TypeSpecializationContext,
         long_id: ConcreteTypeLongId,
         wrapped_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError>;
@@ -140,7 +141,7 @@ impl<T: GenericTypeArgGenericType> NamedType for GenericTypeArgGenericTypeWrappe
         let ty = args_as_single_type(args)?;
         let long_id = Self::concrete_type_long_id(args);
         let wrapped_info = context.get_type_info(ty.clone())?;
-        Ok(Self::Concrete { info: self.0.calc_info(long_id, wrapped_info)?, ty })
+        Ok(Self::Concrete { info: self.0.calc_info(context, long_id, wrapped_info)?, ty })
     }
 }
 
