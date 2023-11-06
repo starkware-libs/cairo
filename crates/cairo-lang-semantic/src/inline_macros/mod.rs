@@ -1,6 +1,8 @@
 mod array;
+mod assert;
 mod consteval_int;
 mod format;
+mod panic;
 mod print;
 mod write;
 
@@ -9,9 +11,12 @@ use cairo_lang_plugins::get_base_plugins;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use itertools::Itertools;
 
+use self::assert::AssertMacro;
 use self::format::FormatMacro;
+use self::panic::PanicMacro;
 use self::print::{PrintMacro, PrintlnMacro};
 use self::write::{WriteMacro, WritelnMacro};
 use super::inline_macros::array::ArrayMacro;
@@ -23,8 +28,10 @@ pub fn get_default_plugin_suite() -> PluginSuite {
         PluginSuite { plugins: get_base_plugins(), inline_macro_plugins: Default::default() };
     suite
         .add_inline_macro_plugin::<ArrayMacro>()
+        .add_inline_macro_plugin::<AssertMacro>()
         .add_inline_macro_plugin::<ConstevalIntMacro>()
         .add_inline_macro_plugin::<FormatMacro>()
+        .add_inline_macro_plugin::<PanicMacro>()
         .add_inline_macro_plugin::<PrintMacro>()
         .add_inline_macro_plugin::<PrintlnMacro>()
         .add_inline_macro_plugin::<WriteMacro>()
@@ -80,6 +87,11 @@ pub fn try_extract_unnamed_arg(db: &dyn SyntaxGroup, arg_ast: &ast::Arg) -> Opti
     } else {
         None
     }
+}
+
+/// Escapes a node for use in a format string.
+pub fn escape_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> String {
+    node.get_text_without_trivia(db).replace('{', "{{").replace('}', "}}").escape_unicode().join("")
 }
 
 /// Macro to extract unnamed arguments of an inline macro.

@@ -957,6 +957,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-utils",
+ "indoc",
  "itertools 0.11.0",
  "num-bigint",
  "num-traits 0.2.15",
