@@ -1,12 +1,17 @@
 use cairo_lang_defs::patcher::PatchBuilder;
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginGeneratedFile};
+use cairo_lang_defs::plugin::{
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
 use super::unsupported_bracket_diagnostic;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ArrayMacro;
+impl NamedPlugin for ArrayMacro {
+    const NAME: &'static str = "array";
+}
 impl InlineMacroExprPlugin for ArrayMacro {
     fn generate_code(
         &self,
@@ -19,11 +24,11 @@ impl InlineMacroExprPlugin for ArrayMacro {
         let mut builder = PatchBuilder::new(db);
         builder.add_str(
             "{
-            let mut __array_builder_macro_result__ = ArrayTrait::new();",
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();",
         );
         for arg in args.arguments(db).elements(db) {
             builder.add_str(
-                "\n            array::ArrayTrait::append(ref __array_builder_macro_result__, ",
+                "\n            core::array::ArrayTrait::append(ref __array_builder_macro_result__,",
             );
             builder.add_node(arg.as_syntax_node());
             builder.add_str(");");

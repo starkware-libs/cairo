@@ -19,7 +19,11 @@ pub fn handle_default(
     stable_ptr: SyntaxStablePtrId,
     result: &mut DeriveResult,
 ) {
-    let header = info.format_impl_header("Default", &["Default", "Destruct"]);
+    let header = info.format_impl_header(
+        "core::traits",
+        "Default",
+        &["core::traits::Default", "core::traits::Destruct"],
+    );
     let full_typename = info.full_typename();
     let ty = &info.name;
     let body = indent_by(
@@ -44,7 +48,7 @@ pub fn handle_default(
                     });
                 }
                 let default_variant = &default_variant.name;
-                formatdoc!("{ty}::{default_variant}(traits::Default::default())")
+                formatdoc!("{ty}::{default_variant}(core::traits::Default::default())")
             }
             TypeVariantInfo::Struct(members) => {
                 formatdoc! {"
@@ -53,7 +57,7 @@ pub fn handle_default(
                     }}",
                     indent_by(4, members.iter().map(|member| {
                         format!(
-                            "{member}: traits::Default::default(),",
+                            "{member}: core::traits::Default::default(),",
                             member=member.name,
                         )
                     }).join("\n"))

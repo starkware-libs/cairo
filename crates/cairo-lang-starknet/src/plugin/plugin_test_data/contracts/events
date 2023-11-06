@@ -67,7 +67,7 @@ enum MyEventEnum {
 
 impls:
 
-impl APartialEq of PartialEq::<A> {
+impl APartialEq of core::traits::PartialEq::<A> {
     fn eq(lhs: @A, rhs: @A) -> bool {
         lhs.x == rhs.x && lhs.data == rhs.data
     }
@@ -76,16 +76,16 @@ impl APartialEq of PartialEq::<A> {
         !(lhs == rhs)
     }
 }
-impl ADrop of Drop::<A>;
-impl ASerde of Serde::<A> {
-    fn serialize(self: @A, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.x, ref output);
-        serde::Serde::serialize(self.data, ref output)
+impl ADrop of core::traits::Drop::<A>;
+impl ASerde of core::serde::Serde::<A> {
+    fn serialize(self: @A, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.x, ref output);
+        core::serde::Serde::serialize(self.data, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<A> {
-        Option::Some(A {
-            x: serde::Serde::deserialize(ref serialized)?,
-            data: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
+        core::option::Option::Some(A {
+            x: core::serde::Serde::deserialize(ref serialized)?,
+            data: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -97,16 +97,16 @@ impl AIsEvent of starknet::Event<A> {
     fn append_keys_and_data(
         self: @A, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref data);
-                serde::Serde::serialize(self.data, ref keys);
+            core::serde::Serde::serialize(self.x, ref data);
+                core::serde::Serde::serialize(self.data, ref keys);
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<A> {
-                let x = serde::Serde::deserialize(
+                let x = core::serde::Serde::deserialize(
                     ref data
                 )?;
-                let data = serde::Serde::deserialize(
+                let data = core::serde::Serde::deserialize(
                     ref keys
                 )?;
         Option::Some(A {x, data, })
@@ -158,7 +158,7 @@ impl StoreA of starknet::Store::<A> {
 
 impls:
 
-impl BPartialEq of PartialEq::<B> {
+impl BPartialEq of core::traits::PartialEq::<B> {
     fn eq(lhs: @B, rhs: @B) -> bool {
         lhs.x == rhs.x
     }
@@ -167,14 +167,14 @@ impl BPartialEq of PartialEq::<B> {
         !(lhs == rhs)
     }
 }
-impl BDrop of Drop::<B>;
-impl BSerde of Serde::<B> {
-    fn serialize(self: @B, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.x, ref output)
+impl BDrop of core::traits::Drop::<B>;
+impl BSerde of core::serde::Serde::<B> {
+    fn serialize(self: @B, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.x, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<B> {
-        Option::Some(B {
-            x: serde::Serde::deserialize(ref serialized)?,
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<B> {
+        core::option::Option::Some(B {
+            x: core::serde::Serde::deserialize(ref serialized)?,
         })
     }
 }
@@ -186,12 +186,12 @@ impl BIsEvent of starknet::Event<B> {
     fn append_keys_and_data(
         self: @B, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref data);
+            core::serde::Serde::serialize(self.x, ref data);
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<B> {
-                let x = serde::Serde::deserialize(
+                let x = core::serde::Serde::deserialize(
                     ref data
                 )?;
         Option::Some(B {x, })
@@ -201,7 +201,7 @@ impl BIsEvent of starknet::Event<B> {
 
 impls:
 
-impl NestedEventEnumPartialEq of PartialEq::<NestedEventEnum> {
+impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
     fn eq(lhs: @NestedEventEnum, rhs: @NestedEventEnum) -> bool {
         match lhs {
             NestedEventEnum::B(x) => match rhs {
@@ -214,7 +214,7 @@ impl NestedEventEnumPartialEq of PartialEq::<NestedEventEnum> {
         !(lhs == rhs)
     }
 }
-impl NestedEventEnumDrop of Drop::<NestedEventEnum>;
+impl NestedEventEnumDrop of core::traits::Drop::<NestedEventEnum>;
 
 
 starknet_derive:
@@ -225,7 +225,7 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
     ) {
         match self {
             NestedEventEnum::B(val) => {
-                array::ArrayTrait::append(ref keys, selector!("B"));
+                core::array::ArrayTrait::append(ref keys, selector!("B"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -235,7 +235,7 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<NestedEventEnum> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("B") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -255,7 +255,7 @@ impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
 
 impls:
 
-impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
+impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
     fn eq(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
         match lhs {
             MyEventEnum::A(x) => match rhs {
@@ -289,7 +289,7 @@ impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
         !(lhs == rhs)
     }
 }
-impl MyEventEnumDrop of Drop::<MyEventEnum>;
+impl MyEventEnumDrop of core::traits::Drop::<MyEventEnum>;
 
 
 starknet_derive:
@@ -300,13 +300,13 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     ) {
         match self {
             MyEventEnum::A(val) => {
-                array::ArrayTrait::append(ref keys, selector!("A"));
+                core::array::ArrayTrait::append(ref keys, selector!("A"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             MyEventEnum::B(val) => {
-                array::ArrayTrait::append(ref keys, selector!("B"));
+                core::array::ArrayTrait::append(ref keys, selector!("B"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -346,7 +346,7 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
                 Option::None => {},
             };
         }
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("A") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

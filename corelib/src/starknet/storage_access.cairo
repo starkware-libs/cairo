@@ -1,12 +1,12 @@
 use core::array::ArrayTrait;
-use traits::{Into, TryInto};
-use option::OptionTrait;
+use core::traits::{Into, TryInto};
+use core::option::OptionTrait;
 use starknet::{
     SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
     contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
     class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
 };
-use serde::Serde;
+use core::serde::Serde;
 
 #[derive(Copy, Drop)]
 extern type StorageAddress;
@@ -42,13 +42,13 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     }
 }
 
-impl StorageAddressSerde of serde::Serde<StorageAddress> {
+impl StorageAddressSerde of Serde<StorageAddress> {
     fn serialize(self: @StorageAddress, ref output: Array<felt252>) {
         storage_address_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
         Option::Some(
-            storage_address_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
+            storage_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?
         )
     }
 }
@@ -581,7 +581,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     }
     #[inline(always)]
     fn size() -> u8 {
-        1 + cmp::max(Store::<T>::size(), Store::<E>::size())
+        1 + core::cmp::max(Store::<T>::size(), Store::<E>::size())
     }
 }
 

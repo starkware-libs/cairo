@@ -441,7 +441,7 @@ fn handle_legacy_mapping_storage_member(
             fn address(self: @{member_state_name}, key: $key_type$) -> \
                  starknet::StorageBaseAddress {{
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<$key_type$>::hash({address}, key))
+                    core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
@@ -480,7 +480,7 @@ fn handle_legacy_mapping_storage_member(
             fn address(self: @{member_state_name}, key: $key_type$) -> \
              starknet::StorageBaseAddress {{
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<$key_type$>::hash({address}, key))
+                    core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
         }}
     }}"

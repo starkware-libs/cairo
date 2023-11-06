@@ -3,6 +3,7 @@ use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
+use cairo_lang_defs::plugin::PluginSuite;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -158,4 +159,11 @@ fn find_all_tests(
         }
     }
     tests
+}
+
+/// The suite of plugins for compilation for testing.
+pub fn test_plugin_suite() -> PluginSuite {
+    let mut suite = PluginSuite::default();
+    suite.add_plugin::<TestPlugin>();
+    suite
 }

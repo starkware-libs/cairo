@@ -1,6 +1,6 @@
-use array::ArrayTrait;
-use serde::Serde;
-use array::SpanTrait;
+use core::array::ArrayTrait;
+use core::serde::Serde;
+use core::array::SpanTrait;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum Result<T, E> {
@@ -14,7 +14,7 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
-            Result::Err(_) => panic_with_felt252(err),
+            Result::Err(_) => core::panic_with_felt252(err),
         }
     }
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
@@ -24,7 +24,7 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect_err<+Drop<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
-            Result::Ok(_) => panic_with_felt252(err),
+            Result::Ok(_) => core::panic_with_felt252(err),
             Result::Err(x) => x,
         }
     }

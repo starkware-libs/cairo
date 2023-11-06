@@ -1,7 +1,3 @@
-// Core lib imports
-use option::OptionTrait;
-use box::Box;
-
 #[derive(Drop)]
 struct Node {
     value: felt252,

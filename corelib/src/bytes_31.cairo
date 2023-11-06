@@ -1,6 +1,6 @@
-use traits::{Into, TryInto};
-use option::OptionTrait;
-use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
+use core::traits::{Into, TryInto};
+use core::option::OptionTrait;
+use core::integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
 
 const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -58,27 +58,27 @@ impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U16IntoBytes31 of Into<u16, bytes31> {
     fn into(self: u16) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U32IntoBytes31 of Into<u32, bytes31> {
     fn into(self: u32) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U64IntoBytes31 of Into<u64, bytes31> {
     fn into(self: u64) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 
@@ -181,7 +181,7 @@ fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
     } else if n_bytes == 15 {
         0x1000000000000000000000000000000_u128
     } else {
-        panic_with_felt252('n_bytes too big')
+        core::panic_with_felt252('n_bytes too big')
     }
 }
 
