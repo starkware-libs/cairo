@@ -141,7 +141,7 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
     fn no_ret_ty(ref a: u128) {
                               ^
 
-error: Not a trait.
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
  --> lib.cairo:34:13
 impl abc of abc;
             ^*^
@@ -619,3 +619,45 @@ error: The number of parameters in the impl function `MyImpl::foo` is incompatib
  --> lib.cairo:7:14
    fn foo<S>(a: felt252, b: S, c: felt252) {}
              ^**************************^
+
+//! > ==========================================================================
+
+//! > Test impl of an impl instead of trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bla() {
+}
+
+//! > function_name
+bla
+
+//! > module_code
+trait t1 {}
+impl imp1 of t1 {}
+impl imp2 of imp1 {}
+impl imp3 of imp3 {}
+mod inner {
+   trait t_inner {}
+   impl imp of t_inner {}
+}
+use inner::imp as inner_imp;
+impl imp4 of inner_imp {}
+
+//! > expected_diagnostics
+error: Not a trait.
+ --> lib.cairo:3:14
+impl imp2 of imp1 {}
+             ^**^
+
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:4:14
+impl imp3 of imp3 {}
+             ^**^
+
+error: Not a trait.
+ --> lib.cairo:10:14
+impl imp4 of inner_imp {}
+             ^*******^
