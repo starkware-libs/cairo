@@ -58,27 +58,27 @@ impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U16IntoBytes31 of Into<u16, bytes31> {
     fn into(self: u16) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U32IntoBytes31 of Into<u32, bytes31> {
     fn into(self: u32) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U64IntoBytes31 of Into<u64, bytes31> {
     fn into(self: u64) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
-        integer::upcast(self)
+        core::integer::upcast(self)
     }
 }
 
