@@ -1,5 +1,5 @@
 use starknet::get_tx_info;
-use core::test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::assert_ne;
 
 fn foo(v: felt252) {
     if v == 1 {

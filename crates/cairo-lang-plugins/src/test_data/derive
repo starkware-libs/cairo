@@ -4,19 +4,19 @@
 test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
-#[derive(Copy, Default, Drop, Hash)]
+#[derive(Copy, Debug, Default, Drop, Hash)]
 struct A{}
 
-#[derive(Copy, Default, Drop, Hash)]
+#[derive(Copy, Debug, Default, Drop, Hash)]
 struct B{}
 
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
+#[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -24,13 +24,13 @@ struct GenericStruct<T> {
 
 trait SomeTrait<T, U> {}
 
-#[derive(Drop, Clone, PartialEq, Serde, Hash)]
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
 struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
 }
 
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     #[default]
@@ -41,19 +41,19 @@ enum TwoVariantEnum {
 extern type ExternType;
 
 //! > expanded_cairo_code
-#[derive(Copy, Default, Drop, Hash)]
+#[derive(Copy, Debug, Default, Drop, Hash)]
 struct A{}
 
-#[derive(Copy, Default, Drop, Hash)]
+#[derive(Copy, Debug, Default, Drop, Hash)]
 struct B{}
 
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
+#[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -61,13 +61,13 @@ struct GenericStruct<T> {
 
 trait SomeTrait<T, U> {}
 
-#[derive(Drop, Clone, PartialEq, Serde, Hash)]
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
 struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
 }
 
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     #[default]
@@ -77,6 +77,12 @@ enum TwoVariantEnum {
 #[derive(Copy, Drop)]
 extern type ExternType;
 impl ACopy of core::traits::Copy::<A>;
+impl ADebug of core::fmt::Debug::<A> {
+    fn fmt(self: @A, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "A {{")?;
+        write!(f, " }}")
+    }
+}
 impl ADefault of core::traits::Default::<A> {
     fn default() -> A {
         A {
@@ -97,6 +103,12 @@ impl AHash<
     }
 }
 impl BCopy of core::traits::Copy::<B>;
+impl BDebug of core::fmt::Debug::<B> {
+    fn fmt(self: @B, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "B {{")?;
+        write!(f, " }}")
+    }
+}
 impl BDefault of core::traits::Default::<B> {
     fn default() -> B {
         B {
@@ -122,6 +134,17 @@ impl TwoMemberStructClone of core::clone::Clone::<TwoMemberStruct> {
             a: core::clone::Clone::clone(self.a),
             b: core::clone::Clone::clone(self.b),
         }
+    }
+}
+impl TwoMemberStructDebug of core::fmt::Debug::<TwoMemberStruct> {
+    fn fmt(self: @TwoMemberStruct, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "TwoMemberStruct {{")?;
+        write!(f, " a: ")?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        write!(f, ",")?;
+        write!(f, " b: ")?;
+        core::fmt::Debug::fmt(self.b, ref f)?;
+        write!(f, " }}")
     }
 }
 impl TwoMemberStructDefault of core::traits::Default::<TwoMemberStruct> {
@@ -180,6 +203,14 @@ impl TwoMemberStructSerde of core::serde::Serde::<TwoMemberStruct> {
     }
 }
 impl GenericStructCopy<T, +core::traits::Copy<T>> of core::traits::Copy::<GenericStruct<T>>;
+impl GenericStructDebug<T, +core::fmt::Debug<T>> of core::fmt::Debug::<GenericStruct<T>> {
+    fn fmt(self: @GenericStruct<T>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "GenericStruct {{")?;
+        write!(f, " a: ")?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        write!(f, " }}")
+    }
+}
 impl GenericStructDestruct<T, +core::traits::Destruct<T>> of core::traits::Destruct::<GenericStruct<T>> {
     fn destruct(self: GenericStruct<T>) nopanic {
         let GenericStruct { a } = self;
@@ -212,6 +243,17 @@ impl GenericStructHash<
     }
 }
 impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::Drop<T>, +core::traits::Drop<U>> of core::traits::Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
+impl TwoMemberGenericStructDebug<T, U, impl USomeTrait: SomeTrait<U, T>, +core::fmt::Debug<T>, +core::fmt::Debug<U>> of core::fmt::Debug::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+    fn fmt(self: @TwoMemberGenericStruct<T, U, USomeTrait>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "TwoMemberGenericStruct {{")?;
+        write!(f, " a: ")?;
+        core::fmt::Debug::fmt(self.a, ref f)?;
+        write!(f, ",")?;
+        write!(f, " b: ")?;
+        core::fmt::Debug::fmt(self.b, ref f)?;
+        write!(f, " }}")
+    }
+}
 impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, +core::clone::Clone<T>, +Destruct<T>, +core::clone::Clone<U>, +Destruct<U>> of core::clone::Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn clone(self: @TwoMemberGenericStruct<T, U, USomeTrait>) -> TwoMemberGenericStruct<T, U, USomeTrait> {
         TwoMemberGenericStruct {
@@ -259,6 +301,24 @@ impl TwoVariantEnumClone of core::clone::Clone::<TwoVariantEnum> {
         match self {
             TwoVariantEnum::First(x) => TwoVariantEnum::First(core::clone::Clone::clone(x)),
             TwoVariantEnum::Second(x) => TwoVariantEnum::Second(core::clone::Clone::clone(x)),
+        }
+    }
+}
+impl TwoVariantEnumDebug of core::fmt::Debug::<TwoVariantEnum> {
+    fn fmt(self: @TwoVariantEnum, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        match self {
+            TwoVariantEnum::First(x) => {
+                write!(f, "TwoVariantEnum::First(")?;
+                core::fmt::Debug::fmt(x, ref f)?;
+                write!(f, ")")
+            },
+
+            TwoVariantEnum::Second(x) => {
+                write!(f, "TwoVariantEnum::Second(")?;
+                core::fmt::Debug::fmt(x, ref f)?;
+                write!(f, ")")
+            },
+
         }
     }
 }

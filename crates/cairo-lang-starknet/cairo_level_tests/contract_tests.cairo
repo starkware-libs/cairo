@@ -176,37 +176,37 @@ fn write_read_large_value() {
 #[test]
 fn test_get_block_info() {
     let info = starknet::get_block_info().unbox();
-    assert_eq(@info.block_number, @0_u64, 'non default block_number');
-    assert_eq(@info.block_timestamp, @0_u64, 'non default block_timestamp');
+    assert_eq!(info.block_number, 0_u64);
+    assert_eq!(info.block_timestamp, 0_u64);
     assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
     starknet::testing::set_block_number(1_u64);
     starknet::testing::set_block_timestamp(2_u64);
     starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
     let info = starknet::get_block_info().unbox();
-    assert_eq(@info.block_number, @1_u64, 'block_number not set');
-    assert_eq(@info.block_timestamp, @2_u64, 'block_timestamp not set');
-    assert_eq(@info.sequencer_address.into(), @3, 'sequencer_address not set');
+    assert_eq!(info.block_number, 1_u64);
+    assert_eq!(info.block_timestamp, 2_u64);
+    assert_eq!(info.sequencer_address.into(), 3);
 }
 
 #[test]
 fn test_get_caller_address() {
     assert(starknet::get_caller_address().is_zero(), 'non default value');
     starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
-    assert_eq(@starknet::get_caller_address().into(), @1, 'not set value');
+    assert_eq!(starknet::get_caller_address().into(), 1);
 }
 
 #[test]
 fn test_get_contract_address() {
     assert(starknet::get_contract_address().is_zero(), 'non default value');
     starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
-    assert_eq(@starknet::get_contract_address().into(), @1, 'not set value');
+    assert_eq!(starknet::get_contract_address().into(), 1);
 }
 
 #[test]
 fn test_get_version() {
     assert(starknet::get_tx_info().unbox().version.is_zero(), 'non default value');
     starknet::testing::set_version(1);
-    assert_eq(@starknet::get_tx_info().unbox().version, @1_felt252, 'not set value');
+    assert_eq!(starknet::get_tx_info().unbox().version, 1_felt252);
 }
 
 #[test]
@@ -220,30 +220,30 @@ fn test_get_account_contract_address() {
 
 #[test]
 fn test_get_max_fee() {
-    assert_eq(@starknet::get_tx_info().unbox().max_fee, @0_u128, 'non default value');
+    assert_eq!(starknet::get_tx_info().unbox().max_fee, 0_u128);
     starknet::testing::set_max_fee(1);
-    assert_eq(@starknet::get_tx_info().unbox().max_fee, @1_u128, 'not set value');
+    assert_eq!(starknet::get_tx_info().unbox().max_fee, 1_u128);
 }
 
 #[test]
 fn test_get_transaction_hash() {
     assert(starknet::get_tx_info().unbox().transaction_hash.is_zero(), 'non default value');
     starknet::testing::set_transaction_hash(1);
-    assert_eq(@starknet::get_tx_info().unbox().transaction_hash, @1_felt252, 'not set value');
+    assert_eq!(starknet::get_tx_info().unbox().transaction_hash, 1_felt252);
 }
 
 #[test]
 fn test_get_chain_id() {
     assert(starknet::get_tx_info().unbox().chain_id.is_zero(), 'non default value');
     starknet::testing::set_chain_id(1);
-    assert_eq(@starknet::get_tx_info().unbox().chain_id, @1_felt252, 'not set value');
+    assert_eq!(starknet::get_tx_info().unbox().chain_id, 1_felt252);
 }
 
 #[test]
 fn test_get_nonce() {
     assert(starknet::get_tx_info().unbox().nonce.is_zero(), 'non default value');
     starknet::testing::set_nonce(1);
-    assert_eq(@starknet::get_tx_info().unbox().nonce, @1_felt252, 'not set value');
+    assert_eq!(starknet::get_tx_info().unbox().nonce, 1_felt252);
 }
 
 #[test]
@@ -251,7 +251,7 @@ fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
     starknet::testing::set_signature(array!['some', 'signature'].span());
     let read_signature = starknet::get_tx_info().unbox().signature;
-    assert_eq(@read_signature.len(), @2, 'unexpected read size');
+    assert_eq!(read_signature.len(), 2);
     assert_eq(read_signature.at(0), @'some', 'unexpected element 0');
     assert_eq(read_signature.at(1), @'signature', 'unexpected element 1');
 }
