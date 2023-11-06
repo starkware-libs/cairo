@@ -73,7 +73,7 @@ fn test_l2_to_l1_messages() {
     contract.send_message_to_l1();
 
     // Assert other addresses did not sent messages.
-    assert(testing::pop_l2_to_l1_message(other_contract_address).is_none(), 'no messages');
+    assert!(testing::pop_l2_to_l1_message(other_contract_address).is_none());
 
     // Pop messages.
     assert_eq(
@@ -93,7 +93,7 @@ fn test_l2_to_l1_messages() {
     );
 
     // Assert all messages have been popped.
-    assert(testing::pop_l2_to_l1_message(contract_address).is_none(), 'no more messages');
+    assert!(testing::pop_l2_to_l1_message(contract_address).is_none());
 }
 
 #[test]
@@ -108,12 +108,12 @@ fn test_pop_l2_to_l1_message() {
     starknet::send_message_to_l1_syscall(to_address, payload.span());
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 }

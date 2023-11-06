@@ -43,7 +43,7 @@ fn test_call_context_new() {
     // When
     let call_context = CallContextTrait::new(bytecode.span(), call_data.span(), value);
     // Then
-    assert(call_context.bytecode() == bytecode.span(), 'wrong bytecode');
-    assert(call_context.call_data() == call_data.span(), 'wrong call data');
-    assert(call_context.value() == value, 'wrong value');
+    assert!(call_context.bytecode() == bytecode.span(), "wrong bytecode");
+    assert!(call_context.call_data() == call_data.span(), "wrong call data");
+    assert!(call_context.value() == value, "wrong value");
 }
