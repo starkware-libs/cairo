@@ -59,7 +59,7 @@ fn test_derive_serde_enum() {
         @a,
         'expected a'
     );
-    assert!(serialized.is_empty());
+    assert(serialized.is_empty(), 'expected empty');
 }
 
 #[test]

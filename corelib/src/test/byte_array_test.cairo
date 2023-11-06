@@ -1,4 +1,4 @@
-use core::test::test_utils::assert_ne;
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_append_byte() {
@@ -257,23 +257,23 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
 #[test]
 fn test_len() {
     let ba: ByteArray = Default::default();
-    assert!(ba.len() == 0);
+    assert(ba.len() == 0, 'wrong ByteArray len');
 
     let mut ba = test_byte_array_33();
-    assert!(ba.len() == 33);
+    assert(ba.len() == 33, 'wrong ByteArray len');
 
     ba.append(@test_byte_array_30());
-    assert!(ba.len() == 63);
+    assert(ba.len() == 63, 'wrong ByteArray len');
 }
 
 #[test]
 fn test_at_empty() {
     let ba: ByteArray = Default::default();
 
-    assert!(ba.at(0) == Option::None);
-    assert!(ba.at(1) == Option::None);
-    assert!(ba.at(30) == Option::None);
-    assert!(ba.at(31) == Option::None);
+    assert(ba.at(0) == Option::None, 'index 0 is not out of bounds');
+    assert(ba.at(1) == Option::None, 'index 1 is not out of bounds');
+    assert(ba.at(30) == Option::None, 'index 30 is not out of bounds');
+    assert(ba.at(31) == Option::None, 'index 31 is not out of bounds');
 }
 
 #[test]
@@ -282,24 +282,24 @@ fn test_at() {
     ba.append(@test_byte_array_31());
     ba.append(@test_byte_array_17());
 
-    assert!(ba.at(0) == Option::Some(0x01));
-    assert!(ba.at(1) == Option::Some(0x02));
-    assert!(ba.at(2) == Option::Some(0x03));
-    assert!(ba.at(14) == Option::Some(0x0f));
-    assert!(ba.at(15) == Option::Some(0x10));
-    assert!(ba.at(16) == Option::Some(0x11));
-    assert!(ba.at(17) == Option::Some(0x12));
-    assert!(ba.at(29) == Option::Some(0x1e));
-    assert!(ba.at(30) == Option::Some(0x1f));
-    assert!(ba.at(31) == Option::Some(0x01));
-    assert!(ba.at(32) == Option::Some(0x02));
-    assert!(ba.at(61) == Option::Some(0x1f));
-    assert!(ba.at(62) == Option::Some(0x01));
-    assert!(ba.at(63) == Option::Some(0x02));
-    assert!(ba.at(76) == Option::Some(0x0f));
-    assert!(ba.at(77) == Option::Some(0x10));
-    assert!(ba.at(78) == Option::Some(0x11));
-    assert!(ba.at(79) == Option::None);
+    assert(ba.at(0) == Option::Some(0x01), 'wrong byte at index 0');
+    assert(ba.at(1) == Option::Some(0x02), 'wrong byte at index 1');
+    assert(ba.at(2) == Option::Some(0x03), 'wrong byte at index 2');
+    assert(ba.at(14) == Option::Some(0x0f), 'wrong byte at index 14');
+    assert(ba.at(15) == Option::Some(0x10), 'wrong byte at index 15');
+    assert(ba.at(16) == Option::Some(0x11), 'wrong byte at index 16');
+    assert(ba.at(17) == Option::Some(0x12), 'wrong byte at index 17');
+    assert(ba.at(29) == Option::Some(0x1e), 'wrong byte at index 29');
+    assert(ba.at(30) == Option::Some(0x1f), 'wrong byte at index 30');
+    assert(ba.at(31) == Option::Some(0x01), 'wrong byte at index 31');
+    assert(ba.at(32) == Option::Some(0x02), 'wrong byte at index 32');
+    assert(ba.at(61) == Option::Some(0x1f), 'wrong byte at index 61');
+    assert(ba.at(62) == Option::Some(0x01), 'wrong byte at index 62');
+    assert(ba.at(63) == Option::Some(0x02), 'wrong byte at index 63');
+    assert(ba.at(76) == Option::Some(0x0f), 'wrong byte at index 76');
+    assert(ba.at(77) == Option::Some(0x10), 'wrong byte at index 77');
+    assert(ba.at(78) == Option::Some(0x11), 'wrong byte at index 78');
+    assert(ba.at(79) == Option::None, 'index 79 is not out of bounds');
 }
 
 // Same as the previous test, but with [] instead of .at() (and without the out-of-bounds case).
@@ -309,23 +309,23 @@ fn test_index_view() {
     ba.append(@test_byte_array_31());
     ba.append(@test_byte_array_17());
 
-    assert!(ba[0] == 0x01);
-    assert!(ba[1] == 0x02);
-    assert!(ba[2] == 0x03);
-    assert!(ba[14] == 0x0f);
-    assert!(ba[15] == 0x10);
-    assert!(ba[16] == 0x11);
-    assert!(ba[17] == 0x12);
-    assert!(ba[29] == 0x1e);
-    assert!(ba[30] == 0x1f);
-    assert!(ba[31] == 0x01);
-    assert!(ba[32] == 0x02);
-    assert!(ba[61] == 0x1f);
-    assert!(ba[62] == 0x01);
-    assert!(ba[63] == 0x02);
-    assert!(ba[76] == 0x0f);
-    assert!(ba[77] == 0x10);
-    assert!(ba[78] == 0x11);
+    assert(ba[0] == 0x01, 'wrong byte at index 0');
+    assert(ba[1] == 0x02, 'wrong byte at index 1');
+    assert(ba[2] == 0x03, 'wrong byte at index 2');
+    assert(ba[14] == 0x0f, 'wrong byte at index 14');
+    assert(ba[15] == 0x10, 'wrong byte at index 15');
+    assert(ba[16] == 0x11, 'wrong byte at index 16');
+    assert(ba[17] == 0x12, 'wrong byte at index 17');
+    assert(ba[29] == 0x1e, 'wrong byte at index 29');
+    assert(ba[30] == 0x1f, 'wrong byte at index 30');
+    assert(ba[31] == 0x01, 'wrong byte at index 31');
+    assert(ba[32] == 0x02, 'wrong byte at index 32');
+    assert(ba[61] == 0x1f, 'wrong byte at index 61');
+    assert(ba[62] == 0x01, 'wrong byte at index 62');
+    assert(ba[63] == 0x02, 'wrong byte at index 63');
+    assert(ba[76] == 0x0f, 'wrong byte at index 76');
+    assert(ba[77] == 0x10, 'wrong byte at index 77');
+    assert(ba[78] == 0x11, 'wrong byte at index 78');
 }
 
 // Test panic with [] in case of out-of-bounds
@@ -353,8 +353,8 @@ fn test_string_literals() {
 #[test]
 fn test_equality() {
     let byte_array: ByteArray = "a";
-    assert!(@byte_array == @"a", "Same strings are not equal");
-    assert!(@byte_array != @"b", "Different strings are equal");
+    assert(@byte_array == @"a", 'Same strings are not equal');
+    assert(@byte_array != @"b", 'Different strings are equal');
 
     let mut ba1 = test_byte_array_2();
     ba1.append(@test_byte_array_31());
@@ -363,19 +363,19 @@ fn test_equality() {
     let mut ba4 = test_byte_array_32();
     ba4.append(@test_byte_array_1());
 
-    assert!(@ba1 == @ba1);
-    assert!(@ba2 == @ba2);
-    assert!(@ba3 == @ba3);
-    assert!(@ba4 == @ba4);
+    assert(@ba1 == @ba1, 'Same ByteArrays are not equal');
+    assert(@ba2 == @ba2, 'Same ByteArrays are not equal');
+    assert(@ba3 == @ba3, 'Same ByteArrays are not equal');
+    assert(@ba4 == @ba4, 'Same ByteArrays are not equal');
 
     // Different data
-    assert!(@ba1 != @ba2);
+    assert(@ba1 != @ba2, 'Different ByteArrays are equal');
 
     // Different pending word length
-    assert!(@ba2 != @ba3);
+    assert(@ba2 != @ba3, 'Different ByteArrays are equal');
 
     // Different pending word
-    assert!(@ba2 != @ba4);
+    assert(@ba2 != @ba4, 'Different ByteArrays are equal');
 }
 
 #[test]
@@ -386,8 +386,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "rotator";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of length 16
     let ba: ByteArray = "my length is 16.";
@@ -395,8 +395,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "nolemon  nomelon";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of 16 < length < 31
     let ba: ByteArray = "I am a medium byte array";
@@ -404,8 +404,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "nolemon  nomelon";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of length 31
     let ba: ByteArray = "I didn't find a good palindrome";
@@ -413,8 +413,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "kayak level rotator level kayak";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of 31 < length < 47 (31+16)
     let ba: ByteArray = "This time I did find a good palindrome!";
@@ -422,8 +422,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "noitneverpropagatesifisetagaporprevention";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of length 47 (31+16)
     let ba: ByteArray = "I have found a palindrome, exactly 47 in length";
@@ -431,8 +431,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "onacloverifaliveeruptsavastpureevilafirevolcano";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 
     // Arrays of length > 47 (31+16)
     let ba: ByteArray = "This palindrome is not as good, but at least it's long enough";
@@ -440,8 +440,8 @@ fn test_reverse() {
     let palindrome: ByteArray = "docnoteidissentafastneverpreventsafatnessidietoncod";
     assert_ne(@ba, @ba.rev(), 'ba == ba.rev()');
     assert_ne(@ba_rev, @ba_rev.rev(), 'ba_rev == ba_rev.rev()');
-    assert_eq!(ba, ba_rev.rev());
-    assert_eq!(palindrome, palindrome.rev());
+    assert_eq(@ba, @ba_rev.rev(), 'ba != ba_rev.rev()');
+    assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 }
 
 #[test]
@@ -480,7 +480,7 @@ use core::debug::PrintTrait;
 fn compare_byte_array(
     mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252
 ) {
-    assert_eq!(ba.data.len(), data.len());
+    assert(ba.data.len() == data.len(), 'wrong data len');
     let mut ba_data = ba.data.span();
 
     let mut data_index = 0;

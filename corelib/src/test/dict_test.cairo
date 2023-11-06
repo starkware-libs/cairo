@@ -1,4 +1,5 @@
 use core::dict::Felt252DictEntryTrait;
+use core::test::test_utils::{assert_eq, assert_ne};
 use core::nullable;
 
 #[test]
@@ -62,7 +63,7 @@ fn test_dict_update_twice() {
     let (entry, value) = dict.entry(10);
     assert_eq!(value, 11);
     dict = entry.finalize(12);
-    assert_eq!(dict[10], 12);
+    assert_eq(@dict[10], @12, 'dict[10] == 12');
 }
 
 
@@ -97,11 +98,11 @@ fn test_dict_big_keys() {
     dict.insert(KEY4, 4);
     dict.insert(KEY5, 5);
 
-    assert_eq!(dict[KEY1], 1);
-    assert_eq!(dict[KEY2], 2);
-    assert_eq!(dict[KEY3], 3);
-    assert_eq!(dict[KEY4], 4);
-    assert_eq!(dict[KEY5], 5);
+    assert_eq(@dict[KEY1], @1, 'KEY1');
+    assert_eq(@dict[KEY2], @2, 'KEY2');
+    assert_eq(@dict[KEY3], @3, 'KEY3');
+    assert_eq(@dict[KEY4], @4, 'KEY4');
+    assert_eq(@dict[KEY5], @5, 'KEY5');
 }
 
 #[test]
@@ -112,8 +113,8 @@ fn test_dict_of_nullable() {
     let val10 = dict[10].deref();
     let val11 = dict[11].deref();
     let val12 = dict[12];
-    assert_eq!(val10, 1);
-    assert_eq!(val11, 2);
+    assert_eq(@val10, @1, 'dict[10] == 1');
+    assert_eq(@val11, @2, 'dict[11] == 2');
     assert(
         match nullable::match_nullable(val12) {
             nullable::FromNullableResult::Null => true,
@@ -128,9 +129,9 @@ fn test_dict_of_nullable() {
 //     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
 //     let squashed_dict = bool_dict.squash();
 //     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-//     assert!(!bool_dict.get(0));
+//     assert(!bool_dict.get(0), 'default_val != false');
 //     bool_dict.insert(1, true);
-//     assert!(bool_dict.get(1));
+//     assert(bool_dict.get(1), 'bool_dict[1] != true');
 // }
 
 
