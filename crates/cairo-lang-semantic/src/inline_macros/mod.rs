@@ -2,6 +2,7 @@ mod array;
 mod assert;
 mod consteval_int;
 mod format;
+mod panic;
 mod print;
 mod write;
 
@@ -15,6 +16,7 @@ use itertools::Itertools;
 
 use self::assert::AssertMacro;
 use self::format::FormatMacro;
+use self::panic::PanicMacro;
 use self::print::{PrintMacro, PrintlnMacro};
 use self::write::{WriteMacro, WritelnMacro};
 use super::inline_macros::array::ArrayMacro;
@@ -29,6 +31,7 @@ pub fn get_default_plugin_suite() -> PluginSuite {
         .add_inline_macro_plugin::<AssertMacro>()
         .add_inline_macro_plugin::<ConstevalIntMacro>()
         .add_inline_macro_plugin::<FormatMacro>()
+        .add_inline_macro_plugin::<PanicMacro>()
         .add_inline_macro_plugin::<PrintMacro>()
         .add_inline_macro_plugin::<PrintlnMacro>()
         .add_inline_macro_plugin::<WriteMacro>()
