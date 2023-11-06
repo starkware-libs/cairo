@@ -1,4 +1,3 @@
-use core::test::test_utils::{assert_eq, assert_ne};
 use core::nullable::null;
 
 #[test]
@@ -6,11 +5,11 @@ fn test_nullable_felt252s() {
     let x = 10;
     let nullable_x = NullableTrait::new(x);
     assert(!nullable_x.is_null(), 'nullable_x.is_null() true');
-    assert_eq(@nullable_x.deref(), @x, '*&x != x');
+    assert_eq!(nullable_x.deref(), x);
     let y = 11;
     let nullable_y = NullableTrait::new(y);
     assert(!nullable_y.is_null(), 'nullable_y.is_null() true');
-    assert_eq(@nullable_y.deref(), @y, '*&y != y');
+    assert_eq!(nullable_y.deref(), y);
     let null: Nullable<felt252> = null();
     assert(null.is_null(), 'null.is_null() false');
 }
@@ -21,11 +20,11 @@ fn test_nullable_u256() {
     let x: u256 = 10;
     let nullable_x = NullableTrait::new(x);
     assert(!nullable_x.is_null(), 'nullable_x.is_null() true');
-    assert_eq(@nullable_x.deref(), @x, '*&x != x');
+    assert_eq!(nullable_x.deref(), x);
     let y: u256 = 11;
     let nullable_y = NullableTrait::new(y);
     assert(!nullable_y.is_null(), 'nullable_y.is_null() true');
-    assert_eq(@nullable_y.deref(), @y, '*&y != y');
+    assert_eq!(nullable_y.deref(), y);
     let null: Nullable<u256> = null();
     assert(null.is_null(), 'null.is_null() false');
 }
