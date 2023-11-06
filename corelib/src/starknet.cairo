@@ -1,9 +1,9 @@
-use box::Box;
-use option::OptionTrait;
-use array::Span;
-use traits::Into;
-use traits::TryInto;
-use zeroable::Zeroable;
+use core::box::Box;
+use core::option::OptionTrait;
+use core::array::Span;
+use core::traits::Into;
+use core::traits::TryInto;
+use core::zeroable::Zeroable;
 
 // Re-imports
 // Store

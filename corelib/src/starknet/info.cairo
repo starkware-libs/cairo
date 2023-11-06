@@ -2,7 +2,7 @@ use starknet::{
     SyscallResultTrait, SyscallResult, syscalls::get_execution_info_syscall,
     contract_address::ContractAddress
 };
-use box::BoxTrait;
+use core::box::BoxTrait;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {

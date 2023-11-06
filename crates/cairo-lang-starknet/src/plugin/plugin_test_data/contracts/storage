@@ -77,15 +77,15 @@ mod test_contract {
 
 impls:
 
-impl OuterTypeDrop of Drop::<OuterType>;
+impl OuterTypeDrop of core::traits::Drop::<OuterType>;
 impl OuterTypeHash<
     __State,
-    impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>
-> of hash::Hash<OuterType, __State, __SHashState> {
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +Drop<__State>
+> of core::hash::Hash<OuterType, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: OuterType) -> __State {
-        let state = hash::Hash::update_state(state, value.x);
+        let state = core::hash::Hash::update_state(state, value.x);
         state
     }
 }
@@ -455,7 +455,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: felt252) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
+                    core::hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
             }
             fn read(self: @ContractMemberState, key: felt252) -> u128 {
                 // Only address_domain 0 is currently supported.
@@ -494,7 +494,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: u128) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
+                    core::hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
             }
             fn read(self: @ContractMemberState, key: u128) -> bool {
                 // Only address_domain 0 is currently supported.
@@ -533,7 +533,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: bool) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
+                    core::hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
             }
             fn read(self: @ContractMemberState, key: bool) -> felt252 {
                 // Only address_domain 0 is currently supported.
@@ -610,7 +610,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<super::super::OuterType>::hash(0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54, key))
+                    core::hash::LegacyHash::<super::super::OuterType>::hash(0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54, key))
             }
             fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType {
                 // Only address_domain 0 is currently supported.
@@ -687,7 +687,7 @@ enum Event {}
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<inner::InnerType>::hash(0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b, key))
+                    core::hash::LegacyHash::<inner::InnerType>::hash(0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b, key))
             }
             fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType {
                 // Only address_domain 0 is currently supported.
@@ -732,17 +732,17 @@ const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }
@@ -752,7 +752,7 @@ const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -767,7 +767,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

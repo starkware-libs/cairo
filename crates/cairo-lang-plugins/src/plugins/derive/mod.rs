@@ -167,13 +167,19 @@ impl DeriveInfo {
     }
 
     /// Formats the header of the impl.
-    fn format_impl_header(&self, derived_trait: &str, dependent_traits: &[&str]) -> String {
+    fn format_impl_header(
+        &self,
+        derived_trait_module: &str,
+        derived_trait_name: &str,
+        dependent_traits: &[&str],
+    ) -> String {
         format!(
-            "impl {name}{derived_trait}{generics_impl} of {derived_trait}::<{full_typename}>",
+            "impl {name}{derived_trait_name}{generics_impl} of \
+             {derived_trait_module}::{derived_trait_name}::<{full_typename}>",
             name = self.name,
             generics_impl = self.generics.format_generics_with_trait(|t| dependent_traits
                 .iter()
-                .map(|d| format!("impl {t}{d}: {d}<{t}>"))
+                .map(|d| format!("+{d}<{t}>"))
                 .collect()),
             full_typename = self.full_typename(),
         )
@@ -293,7 +299,14 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
 }
 
 fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
-    format!("{};\n", info.format_impl_header(derived_trait, &[derived_trait]))
+    format!(
+        "{};\n",
+        info.format_impl_header(
+            "core::traits",
+            derived_trait,
+            &[&format!("core::traits::{derived_trait}")]
+        )
+    )
 }
 
 /// Returns a diagnostic for when a derive is not supported for extern types.

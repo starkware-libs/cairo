@@ -1,28 +1,13 @@
 #[test]
 fn test_format() {
-    // With a ByteArray.
     let ba: ByteArray = "hello";
-    assert(format!("{}", ba) == ba, 'bad formatting');
-
-    // With a felt252.
-    assert(format!("{}", 97_felt252) == "97", 'bad formatting');
-
-    // With an integer.
-    assert(format!("{}", 97_usize) == "97", 'bad formatting');
+    assert(format!("{}", ba) == ba, 'byte array bad formatting');
+    assert(format!("{}", 97_felt252) == "97", 'felt252 bad formatting');
+    assert(format!("{}", 97_usize) == "97", 'usize bad formatting');
+    assert(format!("no_format") == "no_format", 'no args bad formatting');
+    assert(format!("{}{}", 12_usize, 14_u32) == "1214", 'two args bad formatting');
+    assert(format!("{0}{0}", 12_usize) == "1212", 'positional bad formatting');
+    assert(format!("{}{1}", 12_usize, 14_u32) == "1214", 'positional mix bad formatting');
+    assert(format!("{ba}_{}_{}_{1}", 12, 14_u32) == "hello_12_14_14", 'full mix bad formatting');
+    assert(format!("{{{{}}}}") == "{{}}", 'special cases bad formatting');
 }
-
-// TODO(yuval): change these to real tests with a mock VM.
-#[ignore]
-#[test]
-fn test_print() {
-    // With a ByteArray.
-    let ba: ByteArray = "hello";
-    print!("{}", ba);
-
-    // With a felt252.
-    print!("{}", 97_felt252);
-
-    // With an integer.
-    print!("{}", 97_usize);
-}
-

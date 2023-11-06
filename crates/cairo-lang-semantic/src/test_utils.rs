@@ -12,7 +12,6 @@ use cairo_lang_filesystem::ids::{
     CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -22,7 +21,7 @@ use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::inline_macros::get_default_inline_macro_plugins;
+use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
 use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
@@ -40,8 +39,9 @@ impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
-        res.set_inline_macro_plugins(get_default_inline_macro_plugins().into());
+        let suite = get_default_plugin_suite();
+        res.set_macro_plugins(suite.plugins);
+        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res

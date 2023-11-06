@@ -1,5 +1,5 @@
-use array::ArrayTrait;
-use array::SpanTrait;
+use core::array::ArrayTrait;
+use core::array::SpanTrait;
 
 trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
@@ -93,7 +93,7 @@ impl TupleSize4Serde<
 /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
 /// ```
 mod into_felt252_based {
-    use traits::{Into, TryInto};
+    use core::traits::{Into, TryInto};
     use core::array::ArrayTrait;
     impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline(always)]

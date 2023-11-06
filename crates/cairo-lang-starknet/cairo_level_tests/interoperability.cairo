@@ -1,4 +1,4 @@
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
 
@@ -118,7 +118,7 @@ mod contract_failed_constructor {
 
     #[constructor]
     fn constructor(ref self: ContractState, value: u128) {
-        panic_with_felt252('Failure');
+        core::panic_with_felt252('Failure');
     }
 }
 
@@ -142,7 +142,7 @@ mod contract_failed_entrypoint {
 
     #[external(v0)]
     fn foo(ref self: ContractState, value: u128) {
-        panic_with_felt252('Failure');
+        core::panic_with_felt252('Failure');
     }
 }
 

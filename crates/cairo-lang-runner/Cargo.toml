@@ -12,14 +12,14 @@ ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.3.0" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.0" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.3.0" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.3.0" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.3.0" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.3.0" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.3.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.0" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.3.1" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.1" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.3.1" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.3.1" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.3.1" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.3.1" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.3.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 cairo-vm.workspace = true
 itertools.workspace = true
 keccak.workspace = true
@@ -29,6 +29,7 @@ num-traits.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+indoc.workspace = true
 test-case.workspace = true
 
 [package.metadata.cargo-machete]

@@ -1,5 +1,3 @@
-use array::{ArrayTrait, SpanTrait};
-use option::OptionTrait;
 /// The call context.
 #[derive(Destruct)]
 struct CallContext {

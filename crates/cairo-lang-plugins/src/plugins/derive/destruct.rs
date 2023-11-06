@@ -14,7 +14,7 @@ pub fn handle_destruct(
 ) {
     let full_typename = info.full_typename();
     let ty = &info.name;
-    let header = info.format_impl_header("Destruct", &["Destruct"]);
+    let header = info.format_impl_header("core::traits", "Destruct", &["core::traits::Destruct"]);
     let body = indent_by(
         8,
         match &info.specific_info {
@@ -25,7 +25,7 @@ pub fn handle_destruct(
                     }}",
                     variants.iter().map(|variant| {
                         format!(
-                            "{ty}::{}(x) => traits::Destruct::destruct(x),",
+                            "{ty}::{}(x) => core::traits::Destruct::destruct(x),",
                             variant.name,
                         )
                     }).join("\n    ")
@@ -37,7 +37,10 @@ pub fn handle_destruct(
                     members.iter().map(|member| &member.name).join(", "),
                     members
                         .iter()
-                        .map(|member| format!("\ntraits::Destruct::destruct({});", member.name))
+                        .map(|member| format!(
+                            "\ncore::traits::Destruct::destruct({});",
+                            member.name
+                        ))
                         .join(""),
                 )
             }

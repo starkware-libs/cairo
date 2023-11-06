@@ -1,4 +1,4 @@
-use bytes_31::split_bytes31;
+use core::bytes_31::{split_bytes31, bytes31_const};
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
 

@@ -55,7 +55,7 @@ mod test_contract {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of core::traits::Drop::<Event>;
 
 
 starknet_derive:
@@ -66,13 +66,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::AwesomeEvent(val) => {
-                array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
+                core::array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             Event::BestEventEver(val) => {
-                array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
+                core::array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -82,7 +82,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
         if selector == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -113,7 +113,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 impls:
 
-impl AwesomeEventDrop of Drop::<AwesomeEvent>;
+impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 
 starknet_derive:
@@ -133,7 +133,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 impls:
 
-impl BestEventEverDrop of Drop::<BestEventEver>;
+impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 
 starknet_derive:
@@ -189,17 +189,17 @@ const TEST_CLASS_HASH: felt252 = 0x32ff02b6abf104297a08971d16f6970b6530be8e49a83
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
             ref self: ContractState, event: S
         ) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::SyscallResultTraitImpl::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
                 )
             )
         }

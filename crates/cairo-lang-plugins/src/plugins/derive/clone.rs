@@ -8,7 +8,8 @@ use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Clone` trait.
 pub fn handle_clone(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
-    let header = info.format_impl_header("Clone", &["Clone", "Destruct"]);
+    let header =
+        info.format_impl_header("core::clone", "Clone", &["core::clone::Clone", "Destruct"]);
     let full_typename = info.full_typename();
     let name = &info.name;
     let body = indent_by(
@@ -21,7 +22,7 @@ pub fn handle_clone(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 }}",
                 variants.iter().map(|variant|
                     format!(
-                        "{ty}::{variant}(x) => {ty}::{variant}(Clone::clone(x)),",
+                        "{ty}::{variant}(x) => {ty}::{variant}(core::clone::Clone::clone(x)),",
                         ty=info.name,
                         variant=variant.name,
                     )).join("\n    ")}
@@ -33,7 +34,7 @@ pub fn handle_clone(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 }}",
                     indent_by(4, members.iter().map(|member| {
                         format!(
-                            "{member}: Clone::clone(self.{member}),",
+                            "{member}: core::clone::Clone::clone(self.{member}),",
                             member=member.name,
                         )
                     }).join("\n"))
