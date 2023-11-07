@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, StructId, TopLevelLanguageElementId,
@@ -502,8 +503,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Extern items with impl generics are not supported".into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
-            SemanticDiagnosticKind::TraitMismatch => {
-                "Supplied impl does not match the required trait".into()
+            SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {
+                format!(
+                    "Expected an impl of `{:?}`. Got an impl of `{:?}`.",
+                    expected_trt.debug(db),
+                    actual_trt.debug(db),
+                )
             }
             SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
             SemanticDiagnosticKind::DesnapNonSnapshot => {
@@ -837,7 +842,10 @@ pub enum SemanticDiagnosticKind {
     OnlyLiteralConstants,
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
-    TraitMismatch,
+    TraitMismatch {
+        expected_trt: semantic::ConcreteTraitId,
+        actual_trt: semantic::ConcreteTraitId,
+    },
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
     NoImplementationOfIndexOperator(semantic::TypeId),
