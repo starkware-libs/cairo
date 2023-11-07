@@ -162,7 +162,7 @@ error: Extern items with impl generics are not supported
 extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
               ^************************^
 
-error: Supplied impl does not match the required trait
+error: Expected an impl of test::MyTrait::<core::felt252>. Got an impl of test::AnotherTrait::<core::felt252>.
  --> lib.cairo:10:11
     bar::<AnotherImpl>();
           ^*********^
@@ -208,7 +208,7 @@ impl AnotherImpl of AnotherTrait::<felt252> {
 f
 
 //! > expected_diagnostics
-error: Supplied impl does not match the required trait
+error: Expected an impl of test::MyTrait::<core::felt252>. Got an impl of test::MyTrait::<T>.
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();
              ^*********^
