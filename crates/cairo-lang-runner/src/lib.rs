@@ -563,7 +563,7 @@ fn create_metadata(
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, RunnerError> {
     if let Some(metadata_config) = metadata_config {
-        calc_metadata(sierra_program, metadata_config, true).map_err(|err| match err {
+        calc_metadata(sierra_program, metadata_config).map_err(|err| match err {
             MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
             MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
         })

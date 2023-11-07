@@ -188,8 +188,9 @@ fn run_e2e_test(
         };
 
     // Compute the metadata.
-    let metadata_config = MetadataComputationConfig { function_set_costs: enforced_costs };
-    let metadata = calc_metadata(&sierra_program, metadata_config.clone(), false).unwrap();
+    let mut metadata_config =
+        MetadataComputationConfig { function_set_costs: enforced_costs, linear_gas_solver: false };
+    let metadata = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
     // Compile to casm.
     let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
@@ -199,7 +200,8 @@ fn run_e2e_test(
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
     if params.metadata_computation {
-        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config, true).unwrap();
+        metadata_config.linear_gas_solver = true;
+        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config).unwrap();
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
         res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
         res.insert("ap_solution".into(), format!("{}", metadata.ap_change_info));

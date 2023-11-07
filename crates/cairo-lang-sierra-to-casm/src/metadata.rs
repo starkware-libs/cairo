@@ -29,19 +29,24 @@ pub enum MetadataError {
 }
 
 /// Configuration for metadata computation.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MetadataComputationConfig {
+    /// Functions to enforce costs for, as well as the costs to enforce.
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    /// If true, uses a linear-time algorithm for calculating the gas, instead of solving
+    /// equations.
+    pub linear_gas_solver: bool,
+}
+impl Default for MetadataComputationConfig {
+    fn default() -> Self {
+        Self { function_set_costs: Default::default(), linear_gas_solver: true }
+    }
 }
 
 /// Calculates the metadata for a Sierra program.
-///
-/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
-/// equations.
 pub fn calc_metadata(
     program: &Program,
     config: MetadataComputationConfig,
-    no_eq_solver: bool,
 ) -> Result<Metadata, MetadataError> {
     let pre_function_set_costs = config
         .function_set_costs
@@ -82,7 +87,7 @@ pub fn calc_metadata(
             ap_change_info.variable_values.get(&idx).copied().unwrap_or_default()
         })?;
 
-    if no_eq_solver {
+    if config.linear_gas_solver {
         let enforced_function_costs: OrderedHashMap<FunctionId, i32> = config
             .function_set_costs
             .iter()

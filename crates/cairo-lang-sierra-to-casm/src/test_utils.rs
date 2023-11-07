@@ -7,13 +7,12 @@ use cairo_lang_sierra_ap_change::calc_ap_changes;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use itertools::Itertools;
 
-use crate::metadata::{calc_metadata, Metadata, MetadataComputationConfig};
+use crate::metadata::{calc_metadata, Metadata};
 
 /// Builds the metadata for a Sierra program.
 pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
     if calculate_gas_info {
-        calc_metadata(program, MetadataComputationConfig::default(), true)
-            .expect("Failed calculating gas or ap change.")
+        calc_metadata(program, Default::default()).expect("Failed calculating gas or ap change.")
     } else {
         Metadata {
             ap_change_info: calc_ap_changes(program, |_, _| 0).unwrap_or(ApChangeInfo {
