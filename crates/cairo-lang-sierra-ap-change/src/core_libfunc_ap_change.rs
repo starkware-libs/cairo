@@ -211,6 +211,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::UnconditionalJump(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ApChange::Known(0)],
+            EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => match libfunc.num_variants {
+                1 | 2 => vec![ApChange::Known(0)],
+                _ => vec![ApChange::Known(1)],
+            },
             EnumConcreteLibfunc::Match(libfunc) | EnumConcreteLibfunc::SnapshotMatch(libfunc) => {
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
