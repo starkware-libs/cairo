@@ -100,12 +100,12 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 );
 
 cairo_lang_test_utils::test_file_test_with_runner!(
-    cost_computation_e2e,
+    metadata_e2e,
     "e2e_test_data",
     {
-        cost_computation: "cost_computation",
+        metadata_computation: "metadata_computation",
     },
-    SmallE2ETestRunnerCostComputation
+    SmallE2ETestRunnerMetadataComputation
 );
 
 #[derive(Default)]
@@ -133,14 +133,14 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
 }
 
 #[derive(Default)]
-struct SmallE2ETestRunnerCostComputation;
-impl TestFileRunner for SmallE2ETestRunnerCostComputation {
+struct SmallE2ETestRunnerMetadataComputation;
+impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, cost_computation: true })
+        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, metadata_computation: true })
     }
 }
 
@@ -150,15 +150,15 @@ struct E2eTestParams {
     /// that automatically adds `withdraw_gas` calls.
     add_withdraw_gas: bool,
 
-    /// Argument for `run_e2e_test` that controls whether to add cost computation information to
-    /// the test outputs.
-    cost_computation: bool,
+    /// Argument for `run_e2e_test` that controls whether to add metadata computation information
+    /// to the test outputs.
+    metadata_computation: bool,
 }
 
 /// Implements default for `E2eTestParams`.
 impl Default for E2eTestParams {
     fn default() -> Self {
-        Self { add_withdraw_gas: true, cost_computation: false }
+        Self { add_withdraw_gas: true, metadata_computation: false }
     }
 }
 
@@ -198,10 +198,11 @@ fn run_e2e_test(
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
-    if params.cost_computation {
+    if params.metadata_computation {
         let metadata_no_solver = calc_metadata(&sierra_program, metadata_config, true).unwrap();
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
         res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
+        res.insert("ap_solution".into(), format!("{}", metadata.ap_change_info));
 
         // Compile again, this time with the no-solver metadata.
         cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_no_solver, true)
