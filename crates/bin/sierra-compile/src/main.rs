@@ -34,13 +34,7 @@ fn main() -> anyhow::Result<()> {
     let gas_usage_check = true;
     let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
         &program,
-<<<<<<< HEAD
-        &calc_metadata(&program, Default::default(), true)
-||||||| 9abf7c4dc
-        &calc_metadata(&program, Default::default(), false)
-=======
         &calc_metadata(&program, Default::default())
->>>>>>> origin/main
             .with_context(|| "Failed calculating Sierra variables.")?,
         gas_usage_check,
     )

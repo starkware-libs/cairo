@@ -562,19 +562,7 @@ fn create_metadata(
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, RunnerError> {
     if let Some(metadata_config) = metadata_config {
-<<<<<<< HEAD
-        calc_metadata(sierra_program, metadata_config, true).map_err(|err| match err {
-            MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-            MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
-        })
-||||||| 9abf7c4dc
-        calc_metadata(sierra_program, metadata_config, false).map_err(|err| match err {
-            MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-            MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
-        })
-=======
         calc_metadata(sierra_program, metadata_config)
->>>>>>> origin/main
     } else {
         calc_metadata_ap_change_only(sierra_program)
     }
