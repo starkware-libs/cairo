@@ -327,3 +327,196 @@ store_temp<felt252>([7]) -> ([5]); // 14
 return([5]); // 15
 
 test::foo@0([0]: test::Color) -> (felt252);
+
+//! > ==========================================================================
+
+//! > long enum from Felt252Bounded<4>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum IndexEnum5 {
+    Zero,
+    One,
+    Two,
+    Three,
+    Four,
+}
+extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
+
+
+extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0,4>) -> T nopanic;
+
+fn gen_foo<T>(index: Felt252Bounded<0,4>)->T {
+    enum_from_felt252_bounded(index)
+}
+
+fn foo(index: Felt252Bounded<0,4>)->IndexEnum5 {
+
+    gen_foo(index)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 1809251394333065606848661391547535052811553607665798349986546028067936010245, ap++;
+[ap + 0] = [ap + -1] * -2, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type Felt252Bounded<0, 4> = Felt252Bounded<0, 4> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::IndexEnum5 = Enum<ut@test::IndexEnum5, Unit, Unit, Unit, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_from_felt252_bounded<test::IndexEnum5> = enum_from_felt252_bounded<test::IndexEnum5>;
+libfunc store_temp<test::IndexEnum5> = store_temp<test::IndexEnum5>;
+
+enum_from_felt252_bounded<test::IndexEnum5>([0]) -> ([1]); // 0
+store_temp<test::IndexEnum5>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Felt252Bounded<0, 4>) -> (test::IndexEnum5);
+
+//! > ==========================================================================
+
+//! > long enum from Felt252Bounded<2>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum IndexEnum3 {
+    Zero,
+    One,
+    Two,
+}
+extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
+
+
+extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0,2>) -> T nopanic;
+
+fn gen_foo<T>(index: Felt252Bounded<0,2>)->T {
+    enum_from_felt252_bounded(index)
+}
+
+fn foo(index: Felt252Bounded<0,2>)->IndexEnum3 {
+
+    gen_foo(index)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 1809251394333065606848661391547535052811553607665798349986546028067936010243, ap++;
+[ap + 0] = [ap + -1] * -2, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type Felt252Bounded<0, 2> = Felt252Bounded<0, 2> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::IndexEnum3 = Enum<ut@test::IndexEnum3, Unit, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_from_felt252_bounded<test::IndexEnum3> = enum_from_felt252_bounded<test::IndexEnum3>;
+libfunc store_temp<test::IndexEnum3> = store_temp<test::IndexEnum3>;
+
+enum_from_felt252_bounded<test::IndexEnum3>([0]) -> ([1]); // 0
+store_temp<test::IndexEnum3>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Felt252Bounded<0, 2>) -> (test::IndexEnum3);
+
+//! > ==========================================================================
+
+//! > long enum from Felt252Bounded<1>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum IndexEnum2 {
+    Zero,
+    One,
+}
+extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
+
+
+extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0,1>) -> T nopanic;
+
+fn gen_foo<T>(index: Felt252Bounded<0,1>)->T {
+    enum_from_felt252_bounded(index)
+}
+
+fn foo(index: Felt252Bounded<0,1>)->IndexEnum2 {
+
+    gen_foo(index)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Felt252Bounded<0, 1> = Felt252Bounded<0, 1> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::IndexEnum2 = Enum<ut@test::IndexEnum2, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_from_felt252_bounded<test::IndexEnum2> = enum_from_felt252_bounded<test::IndexEnum2>;
+libfunc store_temp<test::IndexEnum2> = store_temp<test::IndexEnum2>;
+
+enum_from_felt252_bounded<test::IndexEnum2>([0]) -> ([1]); // 0
+store_temp<test::IndexEnum2>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Felt252Bounded<0, 1>) -> (test::IndexEnum2);
+
+//! > ==========================================================================
+
+//! > long enum from Felt252Bounded<0>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum IndexEnum1 {
+    Zero,
+}
+extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
+
+
+extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0,0>) -> T nopanic;
+
+fn gen_foo<T>(index: Felt252Bounded<0,0>)->T {
+    enum_from_felt252_bounded(index)
+}
+
+fn foo(index: Felt252Bounded<0,0>)->IndexEnum1 {
+
+    gen_foo(index)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Felt252Bounded<0, 0> = Felt252Bounded<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::IndexEnum1 = Enum<ut@test::IndexEnum1, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_from_felt252_bounded<test::IndexEnum1> = enum_from_felt252_bounded<test::IndexEnum1>;
+libfunc store_temp<test::IndexEnum1> = store_temp<test::IndexEnum1>;
+
+enum_from_felt252_bounded<test::IndexEnum1>([0]) -> ([1]); // 0
+store_temp<test::IndexEnum1>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Felt252Bounded<0, 0>) -> (test::IndexEnum1);
