@@ -1,12 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use cairo_lang_sierra::program::Program;
-use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
-use cairo_lang_sierra_ap_change::calc_ap_changes;
-use cairo_lang_sierra_gas::gas_info::GasInfo;
 use itertools::Itertools;
 
+<<<<<<< HEAD
 use crate::metadata::{calc_metadata, Metadata, MetadataComputationConfig};
 
 /// Builds the metadata for a Sierra program.
@@ -28,6 +25,33 @@ pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
     }
 }
 
+||||||| 9abf7c4dc
+use crate::metadata::{calc_metadata, Metadata, MetadataComputationConfig};
+
+/// Builds the metadata for a Sierra program.
+///
+/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
+/// equations.
+pub fn build_metadata(program: &Program, calculate_gas_info: bool, no_eq_solver: bool) -> Metadata {
+    if calculate_gas_info {
+        calc_metadata(program, MetadataComputationConfig::default(), no_eq_solver)
+            .expect("Failed calculating gas or ap change.")
+    } else {
+        Metadata {
+            ap_change_info: calc_ap_changes(program, |_, _| 0).unwrap_or(ApChangeInfo {
+                function_ap_change: Default::default(),
+                variable_values: Default::default(),
+            }),
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
+        }
+    }
+}
+
+=======
+>>>>>>> origin/main
 /// Reads an example Sierra program that matches `name`.
 pub fn read_sierra_example_file(name: &str) -> String {
     // Pop the "/sierra_to_casm" suffix.
