@@ -262,7 +262,7 @@ pub fn run_tests(
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program,
-        Some(MetadataComputationConfig { function_set_costs }),
+        Some(MetadataComputationConfig { function_set_costs, linear_gas_solver: true }),
         contracts_info,
     )
     .with_context(|| "Failed setting up runner.")?;
