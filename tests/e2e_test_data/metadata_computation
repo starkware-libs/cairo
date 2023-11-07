@@ -1,7 +1,7 @@
 //! > branch_align values are pushed to the end
 
 //! > test_runner_name
-SmallE2ETestRunnerCostComputation
+SmallE2ETestRunnerMetadataComputation
 
 //! > cairo
 // TODO(lior): Use gas::redeposit_gas once it's there.
@@ -59,6 +59,13 @@ test::bar: OrderedHashMap({Const: 10000})
 
 test::foo: OrderedHashMap({Const: 31100})
 test::bar: OrderedHashMap({Const: 10000})
+
+//! > ap_solution
+#2: 3
+#8: 3
+
+test::bar: 1
+test::foo: 13
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -186,7 +193,7 @@ ret;
 //! > branch_align of withdraw_gas
 
 //! > test_runner_name
-SmallE2ETestRunnerCostComputation
+SmallE2ETestRunnerMetadataComputation
 
 //! > cairo
 // TODO(lior): Use gas::redeposit_gas once it's there.
@@ -253,6 +260,14 @@ test::bar: OrderedHashMap({Const: 10000})
 
 test::foo: OrderedHashMap({Const: 21270})
 test::bar: OrderedHashMap({Const: 10000})
+
+//! > ap_solution
+#1: 1
+#13: 4
+#19: 2
+
+test::bar: 1
+test::foo: 12
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -376,7 +391,7 @@ ret;
 //! > withdraw_gas reduces excess
 
 //! > test_runner_name
-SmallE2ETestRunnerCostComputation
+SmallE2ETestRunnerMetadataComputation
 
 //! > cairo
 // TODO(lior): Use gas::redeposit_gas once it's there.
@@ -438,6 +453,14 @@ test::bar: OrderedHashMap({Const: 2000})
 
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
+
+//! > ap_solution
+#12: 4
+#18: 6
+#24: 4
+
+test::bar: 1
+test::foo: 10
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -547,7 +570,7 @@ ret;
 //! > redeposit_gas libfunc
 
 //! > test_runner_name
-SmallE2ETestRunnerCostComputation
+SmallE2ETestRunnerMetadataComputation
 
 //! > cairo
 // TODO(lior): Use gas::redeposit_gas once it's there.
@@ -604,6 +627,13 @@ test::bar: OrderedHashMap({Const: 10000})
 
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
+
+//! > ap_solution
+#15: 2
+#29: 4
+
+test::bar: 1
+test::foo: 9
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
