@@ -4,7 +4,8 @@ use pretty_assertions;
 use test_case::test_case;
 
 use crate::compiler::compile;
-use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments_and_linebreaks};
+use crate::metadata::{calc_metadata, calc_metadata_ap_change_only};
+use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks};
 
 #[test_case(indoc! {"
                 type felt252 = felt252;
@@ -389,9 +390,17 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, &build_metadata(&program, check_gas_usage, false), check_gas_usage)
-            .expect("Compilation failed.")
-            .to_string(),
+        compile(
+            &program,
+            &if check_gas_usage {
+                calc_metadata(&program, Default::default()).unwrap_or_default()
+            } else {
+                calc_metadata_ap_change_only(&program).unwrap_or_default()
+            },
+            check_gas_usage
+        )
+        .expect("Compilation failed.")
+        .to_string(),
         strip_comments_and_linebreaks(expected_casm)
     );
 }
@@ -798,7 +807,7 @@ of the libfunc or return statement.";
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, &build_metadata(&program, false, false), false)
+        compile(&program, &calc_metadata_ap_change_only(&program).unwrap_or_default(), false)
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         expected_result
