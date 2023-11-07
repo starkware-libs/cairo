@@ -1,6 +1,8 @@
+use cairo_felt::Felt252;
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::CellRef;
-use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -12,7 +14,7 @@ use num_bigint::BigInt;
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
-use crate::invocations::ProgramInfo;
+use crate::invocations::{add_input_variables, misc, CostValidationInfo, ProgramInfo};
 use crate::references::{ReferenceExpression, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -24,6 +26,9 @@ pub fn build(
     match libfunc {
         EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
+        }
+        EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => {
+            build_enum_from_felt252_bounded(builder, libfunc.num_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -107,6 +112,37 @@ fn build_enum_init(
     };
     let output_expressions = [enum_val.to_reference_expression()].into_iter();
     Ok(builder.build_only_reference_changes(output_expressions))
+}
+
+fn build_enum_from_felt252_bounded(
+    builder: CompiledInvocationBuilder<'_>,
+    num_variants: usize,
+) -> Result<CompiledInvocation, InvocationError> {
+    if num_variants <= 2 {
+        return misc::build_identity(builder);
+    }
+
+    let [value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref value;
+    };
+
+    // Optimization so the enum value can be calculated using less casm instructions
+    let half_offset = Felt252::from(num_variants * 2 - 1) / Felt252::from(2);
+    let half_offset = half_offset.to_bigint();
+    casm_build_extend! {casm_builder,
+        const half_offset = half_offset;
+        const minus_two = -2;
+        tempvar value_minus_half_offset = value - half_offset;
+        let ret_val = value_minus_half_offset + minus_two;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[ret_val]], None)],
+        CostValidationInfo::default(),
+    ))
 }
 
 /// Handles statement for matching an enum.
