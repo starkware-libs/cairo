@@ -19,7 +19,9 @@ use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 
+use super::felt252_bounded::Felt252BoundedType;
 use super::snapshot::snapshot_ty;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -108,6 +110,7 @@ impl ConcreteType for EnumConcreteType {
 define_libfunc_hierarchy! {
     pub enum EnumLibfunc {
         Init(EnumInitLibfunc),
+        FromFelt252Bounded(EnumFromFelt252BoundedLibfunc),
         Match(EnumMatchLibfunc),
         SnapshotMatch(EnumSnapshotMatchLibfunc),
     }, EnumConcreteLibfunc
@@ -175,6 +178,87 @@ impl EnumInitLibfunc {
 impl NamedLibfunc for EnumInitLibfunc {
     type Concrete = EnumInitConcreteLibfunc;
     const STR_ID: &'static str = "enum_init";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(self.specialize_concrete_lib_func(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        self.specialize_concrete_lib_func(context.upcast(), args)
+    }
+}
+
+pub struct EnumFromFelt252BoundedConcreteLibfunc {
+    pub signature: LibfuncSignature,
+    /// The number of variants of the enum.
+    pub num_variants: usize,
+}
+impl SignatureBasedConcreteLibfunc for EnumFromFelt252BoundedConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+#[derive(Default)]
+pub struct EnumFromFelt252BoundedLibfunc {}
+impl EnumFromFelt252BoundedLibfunc {
+    /// Creates the specialization of the enum-from-felt-bounded libfunc with the given template
+    /// arguments.
+    fn specialize_concrete_lib_func(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<EnumFromFelt252BoundedConcreteLibfunc, SpecializationError> {
+        let enum_type = match args {
+            [GenericArg::Type(enum_type)] => enum_type.clone(),
+            [_] => return Err(SpecializationError::UnsupportedGenericArg),
+            _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
+        };
+        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
+        let variant_types =
+            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
+                .variants;
+        let num_variants = variant_types.len();
+
+        for v in variant_types {
+            if !context.get_type_info(v)?.zero_sized {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        }
+        let bounded_felt_ty = context.get_concrete_type(
+            Felt252BoundedType::id(),
+            &[GenericArg::Value(0.into()), GenericArg::Value(num_variants.into())],
+        )?;
+        if num_variants <= 2 {
+            Ok(EnumFromFelt252BoundedConcreteLibfunc {
+                signature: reinterpret_cast_signature(bounded_felt_ty, enum_type),
+                num_variants,
+            })
+        } else {
+            Ok(EnumFromFelt252BoundedConcreteLibfunc {
+                signature: LibfuncSignature::new_non_branch_ex(
+                    vec![ParamSignature::new(bounded_felt_ty)],
+                    vec![OutputVarInfo {
+                        ty: enum_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    }],
+                    SierraApChange::Known { new_vars_only: false },
+                ),
+                num_variants,
+            })
+        }
+    }
+}
+impl NamedLibfunc for EnumFromFelt252BoundedLibfunc {
+    type Concrete = EnumFromFelt252BoundedConcreteLibfunc;
+    const STR_ID: &'static str = "enum_from_felt252_bounded";
 
     fn specialize_signature(
         &self,
