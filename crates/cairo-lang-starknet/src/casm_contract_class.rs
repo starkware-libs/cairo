@@ -282,12 +282,13 @@ impl CasmContractClass {
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
         //   version 2.
         assert_eq!(sierra_version.major, 1);
+        let no_eq_solver = sierra_version.minor >= 4;
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
                 .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
-            linear_gas_solver: sierra_version.minor >= 4,
-            linear_ap_change_solver: false,
+            linear_gas_solver: no_eq_solver,
+            linear_ap_change_solver: no_eq_solver,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
