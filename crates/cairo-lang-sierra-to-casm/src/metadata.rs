@@ -2,6 +2,7 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_lang_sierra_ap_change::compute::calc_ap_changes as linear_calc_ap_changes;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_gas::{
@@ -11,6 +12,7 @@ use cairo_lang_sierra_gas::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
+#[derive(Default)]
 /// Metadata provided with a Sierra program to simplify the compilation to casm.
 pub struct Metadata {
     /// AP changes information for Sierra user functions.
@@ -31,7 +33,25 @@ pub enum MetadataError {
 /// Configuration for metadata computation.
 #[derive(Clone, Default)]
 pub struct MetadataComputationConfig {
+    /// Functions to enforce costs for, as well as the costs to enforce.
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    /// If true, uses a linear-time algorithm for calculating the gas, instead of solving
+    /// equations.
+    pub linear_gas_solver: bool,
+    /// If true, uses a linear-time algorithm for calculating ap changes, instead of solving
+    /// equations.
+    pub linear_ap_change_solver: bool,
+}
+
+/// Calculates the metadata for a Sierra program, with ap change info only.
+pub fn calc_metadata_ap_change_only(program: &Program) -> Result<Metadata, MetadataError> {
+    Ok(Metadata {
+        ap_change_info: calc_ap_changes(program, |_, _| 0)?,
+        gas_info: GasInfo {
+            variable_values: Default::default(),
+            function_costs: Default::default(),
+        },
+    })
 }
 
 /// Calculates the metadata for a Sierra program.
@@ -41,7 +61,6 @@ pub struct MetadataComputationConfig {
 pub fn calc_metadata(
     program: &Program,
     config: MetadataComputationConfig,
-    no_eq_solver: bool,
 ) -> Result<Metadata, MetadataError> {
     let pre_function_set_costs = config
         .function_set_costs
@@ -60,9 +79,11 @@ pub fn calc_metadata(
     pre_gas_info.assert_eq_variables(&pre_gas_info2);
     pre_gas_info.assert_eq_functions(&pre_gas_info2);
 
-    let ap_change_info = calc_ap_changes(program, |idx, token_type| {
-        pre_gas_info.variable_values[(idx, token_type)] as usize
-    })?;
+    let ap_change_info =
+        if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
+            program,
+            |idx, token_type| pre_gas_info.variable_values[(idx, token_type)] as usize,
+        )?;
 
     let post_function_set_costs = config
         .function_set_costs
@@ -82,7 +103,7 @@ pub fn calc_metadata(
             ap_change_info.variable_values.get(&idx).copied().unwrap_or_default()
         })?;
 
-    if no_eq_solver {
+    if config.linear_gas_solver {
         let enforced_function_costs: OrderedHashMap<FunctionId, i32> = config
             .function_set_costs
             .iter()

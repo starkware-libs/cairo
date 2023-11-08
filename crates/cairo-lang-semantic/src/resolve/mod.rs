@@ -1031,7 +1031,13 @@ impl<'db> Resolver<'db> {
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                     .is_err()
                 {
-                    diagnostics.report(generic_arg_syntax, TraitMismatch);
+                    diagnostics.report(
+                        generic_arg_syntax,
+                        TraitMismatch {
+                            expected_trt: expected_concrete_trait,
+                            actual_trt: impl_def_concrete_trait,
+                        },
+                    );
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }
