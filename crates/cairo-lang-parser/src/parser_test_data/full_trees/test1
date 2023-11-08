@@ -99,6 +99,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -112,6 +113,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── expr (kind: TokenLiteralNumber): '7'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -129,6 +131,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -138,6 +141,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: TokenLiteralNumber): '1'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -158,6 +162,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
@@ -170,6 +175,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -193,6 +199,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
@@ -202,11 +209,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │           │       ├── expr (kind: TokenLiteralNumber): '2'
     │   │       │   │   │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -219,6 +228,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '5'
     │   │       │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
@@ -270,6 +280,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │       │   ├── statements (kind: StatementList)
     │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │       │   │       ├── expr (kind: TokenLiteralNumber): '32'
     │   │       │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
@@ -279,11 +290,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │               │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │               │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │               │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │               └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #6 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -324,6 +337,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #7 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -342,6 +356,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #8 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -365,6 +380,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #9 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -374,6 +390,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #10 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -382,6 +399,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #11 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -398,6 +416,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -424,6 +443,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr_clause (kind: ExprClause)
     │   │       │       │   └── expr (kind: ExprPath)
@@ -650,6 +670,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
     │   │       │       │   ├── expr (kind: ExprPath)
@@ -984,6 +1005,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1025,6 +1047,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// succeeds, ok'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1076,6 +1099,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// succeeds, ok'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1105,6 +1129,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1163,6 +1188,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │       │       │   ├── token (kind: TokenLiteralNumber): '1'
@@ -1210,6 +1236,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #4 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1274,6 +1301,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │       │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1301,6 +1329,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │           │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │           │       │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │           │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1319,6 +1348,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1347,6 +1377,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │       │   ├── token (kind: TokenLiteralNumber): '5'
@@ -1499,6 +1530,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │       │   ├── statements (kind: StatementList)
     │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │       │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │       │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   │       │   ├── token (kind: TokenLiteralNumber): '32'
@@ -1524,6 +1556,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │               │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │               │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │               │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │               │       │   ├── token (kind: TokenLiteralNumber): '1'
@@ -1540,6 +1573,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #6 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1629,6 +1663,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #7 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1676,6 +1711,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #8 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1734,6 +1770,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #9 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1765,6 +1802,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// bla1'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #10 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -1792,6 +1830,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #11 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -1825,6 +1864,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -1877,6 +1917,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               └── child #0 (kind: TokenNewline).
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TerminalReturn)
     │   │       │       │   ├── leading_trivia (kind: Trivia)
     │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -2478,6 +2519,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TerminalMatch)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia)
