@@ -31,7 +31,7 @@ pub enum MetadataError {
 }
 
 /// Configuration for metadata computation.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MetadataComputationConfig {
     /// Functions to enforce costs for, as well as the costs to enforce.
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -41,6 +41,16 @@ pub struct MetadataComputationConfig {
     /// If true, uses a linear-time algorithm for calculating ap changes, instead of solving
     /// equations.
     pub linear_ap_change_solver: bool,
+}
+
+impl Default for MetadataComputationConfig {
+    fn default() -> Self {
+        Self {
+            function_set_costs: Default::default(),
+            linear_gas_solver: true,
+            linear_ap_change_solver: false,
+        }
+    }
 }
 
 /// Calculates the metadata for a Sierra program, with ap change info only.

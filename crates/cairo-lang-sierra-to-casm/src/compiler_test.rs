@@ -436,15 +436,6 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-<<<<<<< HEAD
-        compile(&program, &build_metadata(&program, check_gas_usage), check_gas_usage)
-            .expect("Compilation failed.")
-            .to_string(),
-||||||| 4b74855b0
-        compile(&program, &build_metadata(&program, check_gas_usage, false), check_gas_usage)
-            .expect("Compilation failed.")
-            .to_string(),
-=======
         compile(
             &program,
             &if check_gas_usage {
@@ -456,7 +447,6 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
         )
         .expect("Compilation failed.")
         .to_string(),
->>>>>>> origin/main
         strip_comments_and_linebreaks(expected_casm)
     );
 }
@@ -863,13 +853,7 @@ of the libfunc or return statement.";
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-<<<<<<< HEAD
-        compile(&program, &build_metadata(&program, false), false)
-||||||| 4b74855b0
-        compile(&program, &build_metadata(&program, false, false), false)
-=======
         compile(&program, &calc_metadata_ap_change_only(&program).unwrap_or_default(), false)
->>>>>>> origin/main
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         expected_result
