@@ -4,9 +4,10 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
-    WrappedArgList,
+    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
+    StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
+    TraitItemFunctionPtr, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -349,6 +350,48 @@ impl QueryAttrs for Variant {
     }
 }
 
+impl QueryAttrs for StatementBreak {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementContinue {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementReturn {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementLet {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementExpr {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for Statement {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        match self {
+            Statement::Break(statement) => statement.attributes_elements(db),
+            Statement::Continue(statement) => statement.attributes_elements(db),
+            Statement::Return(statement) => statement.attributes_elements(db),
+            Statement::Let(statement) => statement.attributes_elements(db),
+            Statement::Expr(statement) => statement.attributes_elements(db),
+            Statement::Missing(_) => vec![],
+        }
+    }
+}
 pub trait WrappedArgListHelper {
     /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
     fn arg_list(&self, db: &dyn SyntaxGroup) -> Option<ast::ArgList>;
