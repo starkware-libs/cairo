@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 #[non_exhaustive]
 pub struct FormatterConfigPlugin;
 
-const FMT_SKIP_ATTR: &str = "cairofmt::skip";
+pub const FMT_SKIP_ATTR: &str = "cairofmt::skip";
 
 impl MacroPlugin for FormatterConfigPlugin {
     fn generate_code(&self, _db: &dyn SyntaxGroup, _item_ast: ast::Item) -> PluginResult {

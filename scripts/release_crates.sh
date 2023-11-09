@@ -15,9 +15,9 @@ cargo publish --package cairo-lang-utils &&
     cargo publish --package cairo-lang-syntax &&
     cargo publish --package cairo-lang-syntax-codegen &&
     cargo publish --package cairo-lang-parser &&
-    cargo publish --package cairo-lang-formatter &&
     cargo publish --package cairo-lang-defs &&
     cargo publish --package cairo-lang-plugins &&
+    cargo publish --package cairo-lang-formatter &&
     cargo publish --package cairo-lang-semantic &&
     cargo publish --package cairo-lang-lowering &&
     cargo publish --package cairo-lang-sierra-generator &&

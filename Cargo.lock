@@ -549,6 +549,7 @@ dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
  "cairo-lang-parser",
+ "cairo-lang-plugins",
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "diffy",
