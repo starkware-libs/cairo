@@ -15,6 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 
+use crate::consts::FMT_SKIP_ATTR;
 use crate::ids::*;
 use crate::plugin::{
     DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, PluginDiagnostic,
@@ -75,6 +76,10 @@ pub trait DefsGroup:
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
     fn allowed_attributes(&self) -> Arc<OrderedHashSet<String>>;
+
+    /// Returns the set of attributes allowed on statements.
+    /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
+    fn allowed_statement_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -177,12 +182,18 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
         "inline".into(),
         "implicit_precedence".into(),
+        FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
         "starknet::interface".into(),
     ]);
     for plugin in db.macro_plugins() {
         all_attributes.extend(plugin.declared_attributes());
     }
+    Arc::new(all_attributes)
+}
+
+fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
+    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into()]);
     Arc::new(all_attributes)
 }
 
@@ -527,7 +538,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
-fn validate_attributes_flat(
+pub fn validate_attributes_flat(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
     module_file_id: ModuleFileId,
