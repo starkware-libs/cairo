@@ -33,6 +33,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
+starknet-crypto.workspace = true
 thiserror.workspace = true
 indent.workspace = true
 
