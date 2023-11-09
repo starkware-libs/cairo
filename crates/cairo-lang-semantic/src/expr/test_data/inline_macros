@@ -678,6 +678,96 @@ error: Type annotations needed. Failed to infer ?5
 
 //! > ==========================================================================
 
+//! > Test bad panic! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "hello";
+
+   // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+   panic!["{}", ba];
+
+   // No params.
+   panic!();
+
+   // No format string.
+   panic!(ba);
+
+   // Non existing inline argument.
+   panic!("{non_existing}");
+
+   // Non existing provide argument.
+   panic!("{}", non_existing);
+
+   // Too many arguments.
+   panic!("{}", ba, 1);
+
+   // Too few arguments.
+   panic!("{}{}", ba);
+
+   // Out of range positional argument.
+   panic!("{2}{1}{0}", ba, 1);
+
+   // Unused arguments.
+   panic!("{2}{0}", ba, 2, 1);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `panic` does not support this bracket type.
+ --> lib.cairo:5:10
+   panic!["{}", ba];
+         ^
+
+error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+ --> lib.cairo:11:11
+   panic!(ba);
+          ^^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:14:13
+   panic!("{non_existing}");
+            ^**********^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:17:17
+   panic!("{}", non_existing);
+                ^**********^
+
+error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+ --> lib.cairo:20:21
+   panic!("{}", ba, 1);
+                    ^
+
+error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+ --> lib.cairo:23:11
+   panic!("{}{}", ba);
+          ^****^
+
+error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+ --> lib.cairo:26:11
+   panic!("{2}{1}{0}", ba, 1);
+          ^*********^
+
+error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+ --> lib.cairo:29:25
+   panic!("{2}{0}", ba, 2, 1);
+                        ^
+
+error: Type annotations needed. Failed to infer ?4
+ --> lib.cairo[panic_macro][write_macro]:2:22
+    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
+                     ^*****^
+
+//! > ==========================================================================
+
 //! > Test unknown macro
 
 //! > test_runner_name
