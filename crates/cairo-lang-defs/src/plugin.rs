@@ -66,7 +66,7 @@ pub struct PluginDiagnostic {
     pub message: String,
 }
 
-// TOD(spapini): Move to another place.
+// TODO(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
@@ -80,6 +80,12 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
     fn declared_attributes(&self) -> Vec<String>;
+
+    /// Statement attributes this plugin uses.
+    /// Statement attributes does not trigger the generate_code method, but may be used to control
+    /// external tools (e.g. Cairo formatter). Statement attributes the plugin uses without
+    /// declaring here will cause a compilation error for unknown attribute.
+    fn declared_statement_attributes(&self) -> Vec<String>;
 }
 
 /// Result of plugin code generation.

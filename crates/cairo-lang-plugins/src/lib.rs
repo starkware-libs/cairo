@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginSuite};
 
-use crate::plugins::{ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin};
+use crate::plugins::{
+    ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin,
+};
 
 pub mod plugins;
 #[cfg(any(feature = "testing", test))]

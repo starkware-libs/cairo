@@ -61,6 +61,9 @@ impl MacroPlugin for DerivePlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
     }
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }
 
 /// Information on struct members or enum variants.

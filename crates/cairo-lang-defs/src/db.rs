@@ -178,6 +178,7 @@ pub trait DefsGroup:
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
+        "cairofmt::skip".into(),
         "inline".into(),
         "implicit_precedence".into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
@@ -189,9 +190,11 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     Arc::new(all_attributes)
 }
 
-fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let all_attributes = OrderedHashSet::from_iter(["cairofmt::skip".into()]);
-    // TODO(Gil): Add the attributes from the plugins.
+fn allowed_statement_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
+    let mut all_attributes = OrderedHashSet::from_iter(["cairofmt::skip".into()]);
+    for plugin in db.macro_plugins() {
+        all_attributes.extend(plugin.declared_statement_attributes());
+    }
     Arc::new(all_attributes)
 }
 

@@ -120,6 +120,10 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec!["test_change_return_type".to_string()]
     }
+
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }
 
 #[test]
