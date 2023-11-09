@@ -209,5 +209,70 @@
       ""
     ],
     "description": "Creates a default contract"
+  },
+  "Creates an assertion with macro": {
+    "prefix": "assert",
+    "body": ["assert!($1, '$2');"],
+    "description": "Creates an simple test"
+  },
+  "Creates an equality assertion with macro": {
+    "prefix": "assert",
+    "body": ["assert_eq!($1, $2, '$3');"],
+    "description": "Creates an simple test"
+  },
+  "Creates panic": {
+    "prefix": "panic",
+    "body": ["panic!($1);"],
+    "description": "Creates panic"
+  },
+  "Creates a String using interpolation of expressions": {
+    "prefix": "format",
+    "body": ["format!('$1', $2);"],
+    "description": "Creates a String using interpolation of expressions"
+  },
+  "Constant evaluation": {
+    "prefix": "consteval_int",
+    "body": ["consteval_int!($1);"],
+    "description": "Constant evaluation"
+  },
+  "Print the selected item with marco": {
+    "prefix": "print",
+    "body": ["print!($1, '$2');"],
+    "description": "Print the selected item"
+  },
+  "Print the selected item with a newline": {
+    "prefix": "println",
+    "body": ["println!($1, '$2');"],
+    "description": "Print the selected item with a newline"
+  },
+  "Writes formatted data into a buffer": {
+    "prefix": "write",
+    "body": ["write!($1, '$2');"],
+    "description": "Writes formatted data into a buffer"
+  },
+  "Write formatted data into a buffer, with a newline appended": {
+    "prefix": "writeln",
+    "body": ["writeln!($1, '$2');"],
+    "description": "Write formatted data into a buffer, with a newline appended"
+  },
+  "Creates a selector": {
+    "prefix": "selector",
+    "body": ["selector!($1);"],
+    "description": "Creates a selector"
+  },
+  "Creates a component": {
+    "prefix": "component",
+    "body": ["component!($1, $2);"],
+    "description": "Creates a component"
+  },
+  "Get a component": {
+    "prefix": "get_dep_component",
+    "body": ["get_dep_component!($1, $2);"],
+    "description": "Get a component"
+  },
+  "Get a mutable component": {
+    "prefix": "get_dep_component_mut",
+    "body": ["get_dep_component_mut!($1, $2);"],
+    "description": "Get a mutable component"
   }
 }
