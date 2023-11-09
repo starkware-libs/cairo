@@ -8,6 +8,7 @@ description = "Cairo formatter."
 
 [dependencies]
 anyhow.workspace = true
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.3.1" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.3.1" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.3.1" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.3.1" }
