@@ -7,6 +7,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
+use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, LocalVarLongId, MemberId, TraitFunctionId,
     TraitId,
@@ -2004,6 +2005,9 @@ pub fn compute_statement_semantic(
 ) -> Maybe<StatementId> {
     let db = ctx.db;
     let syntax_db = db.upcast();
+    // As for now, statement attributes does not have any semantic affect, so we only validate they
+    // are allowed.
+    validate_statement_attributes(ctx, &syntax)?;
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
@@ -2141,4 +2145,29 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))
+}
+
+/// Verifies that the statement attributes are valid statements attributes.
+fn validate_statement_attributes(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::Statement,
+) -> Maybe<()> {
+    let allowed_attributes = ctx.db.allowed_statement_attributes();
+    let module_file_id = ctx.resolver.module_file_id;
+    let mut diagnostics = vec![];
+    validate_attributes_flat(
+        ctx.db.upcast(),
+        &allowed_attributes,
+        module_file_id,
+        syntax,
+        &mut diagnostics,
+    );
+    // Translate the plugin diagnostics to semantic diagnostics.
+    for (_, diagnostic) in diagnostics {
+        ctx.diagnostics.report_by_ptr(
+            diagnostic.stable_ptr,
+            SemanticDiagnosticKind::UnknownStatementAttribute,
+        );
+    }
+    Ok(())
 }
