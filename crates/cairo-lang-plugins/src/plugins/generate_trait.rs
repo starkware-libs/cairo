@@ -25,6 +25,9 @@ impl MacroPlugin for GenerateTraitPlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![GENERATE_TRAIT_ATTR.to_string()]
     }
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }
 
 fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {

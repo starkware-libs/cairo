@@ -33,6 +33,10 @@ impl MacroPlugin for PanicablePlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![PANIC_WITH_ATTR.to_string()]
     }
+
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }
 
 /// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.

@@ -47,6 +47,10 @@ impl MacroPlugin for ConfigPlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec![CFG_ATTR.to_string()]
     }
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        // TODO(Gil): consider allowing `cfg` on statements.
+        vec![]
+    }
 }
 
 /// Handles an item that is not dropped from the AST completely due to not matching the config.

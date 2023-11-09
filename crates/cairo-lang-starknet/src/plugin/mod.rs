@@ -75,4 +75,8 @@ impl MacroPlugin for StarkNetPlugin {
             SUBSTORAGE_ATTR.to_string(),
         ]
     }
+
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }

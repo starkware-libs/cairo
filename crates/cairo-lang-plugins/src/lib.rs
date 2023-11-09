@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginSuite};
 
-use crate::plugins::{ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin};
+use crate::plugins::{
+    ConfigPlugin, DerivePlugin, FormatterConfigPlugin, GenerateTraitPlugin, PanicablePlugin,
+};
 
 pub mod plugins;
 #[cfg(any(feature = "testing", test))]
@@ -21,6 +23,7 @@ pub fn get_base_plugins() -> Vec<Arc<dyn MacroPlugin>> {
         .add_plugin::<ConfigPlugin>()
         .add_plugin::<DerivePlugin>()
         .add_plugin::<GenerateTraitPlugin>()
-        .add_plugin::<PanicablePlugin>();
+        .add_plugin::<PanicablePlugin>()
+        .add_plugin::<FormatterConfigPlugin>();
     suite.plugins
 }

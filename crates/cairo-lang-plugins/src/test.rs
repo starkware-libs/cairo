@@ -177,4 +177,8 @@ impl MacroPlugin for DoubleIndirectionPlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec!["first".to_string(), "second".to_string()]
     }
+
+    fn declared_statement_attributes(&self) -> Vec<String> {
+        vec![]
+    }
 }
