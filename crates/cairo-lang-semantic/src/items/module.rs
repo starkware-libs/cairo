@@ -10,15 +10,23 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 use super::us::SemanticUseEx;
+use super::visibility::Visibility;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
 
+/// Information per item in a module.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ItemInfo {
+    pub item_id: ModuleItemId,
+    pub visibility: Visibility,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
     // The items in the module without duplicates.
-    pub items: OrderedHashMap<SmolStr, ModuleItemId>,
+    pub items: OrderedHashMap<SmolStr, ItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -30,27 +38,51 @@ pub fn priv_module_semantic_data(
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
-    for item in db.module_items(module_id)?.iter() {
-        let name = match item {
-            ModuleItemId::Constant(item_id) => item_id.name(def_db),
-            ModuleItemId::Submodule(item_id) => item_id.name(def_db),
-            ModuleItemId::Use(item_id) => item_id.name(def_db),
-            ModuleItemId::FreeFunction(item_id) => item_id.name(def_db),
-            ModuleItemId::Struct(item_id) => item_id.name(def_db),
-            ModuleItemId::Enum(item_id) => item_id.name(def_db),
-            ModuleItemId::TypeAlias(item_id) => item_id.name(def_db),
-            ModuleItemId::ImplAlias(item_id) => item_id.name(def_db),
-            ModuleItemId::Trait(item_id) => item_id.name(def_db),
-            ModuleItemId::Impl(item_id) => item_id.name(def_db),
-            ModuleItemId::ExternType(item_id) => item_id.name(def_db),
-            ModuleItemId::ExternFunction(item_id) => item_id.name(def_db),
+    // let defs_info = def_db.module_constants(module_id)
+    for item_id in db.module_items(module_id)?.iter().copied() {
+        let (name, visibility) = match item_id {
+            ModuleItemId::Constant(item_id) => {
+                (item_id.name(def_db), def_db.constant_visibility(item_id))
+            }
+            ModuleItemId::Submodule(item_id) => {
+                (item_id.name(def_db), def_db.module_visibility(item_id))
+            }
+            ModuleItemId::Use(item_id) => (item_id.name(def_db), def_db.use_visibility(item_id)),
+            ModuleItemId::FreeFunction(item_id) => {
+                (item_id.name(def_db), def_db.free_function_visibility(item_id))
+            }
+            ModuleItemId::Struct(item_id) => {
+                (item_id.name(def_db), def_db.struct_visibility(item_id))
+            }
+            ModuleItemId::Enum(item_id) => (item_id.name(def_db), def_db.enum_visibility(item_id)),
+            ModuleItemId::TypeAlias(item_id) => {
+                (item_id.name(def_db), def_db.type_alias_visibility(item_id))
+            }
+            ModuleItemId::ImplAlias(item_id) => {
+                (item_id.name(def_db), def_db.impl_alias_visibility(item_id))
+            }
+            ModuleItemId::Trait(item_id) => {
+                (item_id.name(def_db), def_db.trait_visibility(item_id))
+            }
+            ModuleItemId::Impl(item_id) => {
+                (item_id.name(def_db), def_db.impl_def_visibility(item_id))
+            }
+            ModuleItemId::ExternType(item_id) => {
+                (item_id.name(def_db), def_db.extern_type_visibility(item_id))
+            }
+            ModuleItemId::ExternFunction(item_id) => {
+                (item_id.name(def_db), def_db.extern_function_visibility(item_id))
+            }
         };
-
-        if items.insert(name.clone(), *item).is_some() {
+        // Defaulting to pub as if diagnostics are added privacy diagnostics are less interesting.
+        let visibility = visibility
+            .map(|v| Visibility::from_ast(db.upcast(), &mut diagnostics, &v))
+            .unwrap_or(Visibility::Public);
+        if items.insert(name.clone(), ItemInfo { item_id, visibility }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item).unwrap());
+                StableLocation::new(db.module_item_name_stable_ptr(module_id, item_id).unwrap());
             let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
             diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }
@@ -64,7 +96,7 @@ pub fn module_item_by_name(
     name: SmolStr,
 ) -> Maybe<Option<ModuleItemId>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
-    Ok(module_data.items.get(&name).copied())
+    Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
