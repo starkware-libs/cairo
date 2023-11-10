@@ -63,6 +63,7 @@ FunctionSignature
     │       │       └── ident (kind: TokenIdentifier): 'attr2'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
+    ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration)
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
@@ -95,6 +96,7 @@ fn foo() -> Aaaaa  Bbb + Cc  {
 //! > expected_tree
 └── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration)
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
@@ -140,6 +142,7 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
 //! > expected_tree
 └── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration) <ignored>
     └── body (kind: ExprBlock)
         ├── lbrace: Missing

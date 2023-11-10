@@ -9,14 +9,14 @@ fn foo (x:T) -> S
     x + y
 }
 
-impl A of B {
+pub impl A of B {
     fn foo() {
         if bla.
         // The module below should parse correctly, not inside this impl.
     }
 }
 
-mod my_mod{
+pub mod my_mod{
     fn bar (x:T0, s: S) -> X {
         x.a *+-. s.s * foo(1,3)
     }
