@@ -594,6 +594,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
+            SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
             SemanticDiagnosticKind::InlineMacroNotFound { macro_name } => {
                 format!("Inline macro `{}` not found.", macro_name)
             }
@@ -888,6 +889,7 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    UnsupportedPubArgument,
     InlineMacroNotFound {
         macro_name: SmolStr,
     },
