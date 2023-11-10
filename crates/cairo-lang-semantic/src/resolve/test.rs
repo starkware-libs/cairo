@@ -96,11 +96,12 @@ fn test_resolve_path_super() {
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
         format!("{:?}", members["a"].debug(db)),
-        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1 }"
+        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
+         Private }"
     );
     assert_eq!(
         format!("{:?}", members["b"].debug(db)),
-        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct }"
+        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
     );
 }
 
