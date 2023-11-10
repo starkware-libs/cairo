@@ -264,6 +264,7 @@ error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/Ex
     │       │           └── trailing_trivia (kind: Trivia) []
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TerminalRBrack) <ignored>
+    ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration) <ignored>
     └── body (kind: ExprBlock) <ignored>
 
@@ -315,6 +316,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │           └── trailing_trivia (kind: Trivia) []
     │   │   │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │   │   │       └── rbrack (kind: TerminalRBrack) <ignored>
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration) <ignored>
     │   │   └── body (kind: ExprBlock) <ignored>
     │   └── child #1: Missing []
@@ -1290,5 +1292,220 @@ error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/Ex
         │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │   │           └── rbrack (kind: TerminalRBrack) <ignored>
         │   └── child #1 (kind: TokenSkipped): 'macro'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test `pub` alone
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: *)
+
+//! > cairo_code
+pub // trailing.
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalLBrace
+TerminalLet
+TerminalLBrack
+TerminalRBrack
+TerminalEq
+TerminalLiteralNumber
+TerminalSemicolon
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after visibility.
+ --> dummy_file.cairo:1:4
+pub // trailing.
+   ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0: Missing []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   └── child #0 (kind: TriviumSkippedNode)
+        │       └── node (kind: VisibilityPub)
+        │           ├── pub_kw (kind: TerminalPub)
+        │           │   ├── leading_trivia (kind: Trivia) []
+        │           │   ├── token (kind: TokenPub): 'pub'
+        │           │   └── trailing_trivia (kind: Trivia)
+        │           │       ├── child #0 (kind: TokenWhitespace).
+        │           │       └── child #1 (kind: TokenSingleLineComment): '// trailing.'
+        │           └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test `pub` with an identifier after.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: *)
+
+//! > cairo_code
+pub macro
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalLBrace
+TerminalLet
+TerminalLBrack
+TerminalRBrack
+TerminalEq
+TerminalLiteralNumber
+TerminalSemicolon
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:1:4
+pub macro
+   ^****^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: VisibilityPub)
+        │   │       ├── pub_kw (kind: TerminalPub)
+        │   │       │   ├── leading_trivia (kind: Trivia) []
+        │   │       │   ├── token (kind: TokenPub): 'pub'
+        │   │       │   └── trailing_trivia (kind: Trivia)
+        │   │       │       └── child #0 (kind: TokenWhitespace).
+        │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+        │   └── child #1 (kind: TokenSkipped): 'macro'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test `pub` and attributes alone.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: *)
+
+//! > cairo_code
+#[attr]
+pub
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalLBrace
+TerminalLet
+TerminalLBrack
+TerminalRBrack
+TerminalEq
+TerminalLiteralNumber
+TerminalSemicolon
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:8
+#[attr]
+       ^
+
+error: Missing tokens. Expected an item after visibility.
+ --> dummy_file.cairo:2:4
+pub
+   ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0: Missing []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       └── child #0 (kind: Attribute)
+        │   │           ├── hash (kind: TerminalHash)
+        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── token (kind: TokenHash): '#'
+        │   │           │   └── trailing_trivia (kind: Trivia) []
+        │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
+        │   │           ├── attr (kind: ExprPath)
+        │   │           │   └── item #0 (kind: PathSegmentSimple)
+        │   │           │       └── ident (kind: TerminalIdentifier)
+        │   │           │           ├── leading_trivia (kind: Trivia) []
+        │   │           │           ├── token (kind: TokenIdentifier): 'attr'
+        │   │           │           └── trailing_trivia (kind: Trivia) []
+        │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │   │           └── rbrack (kind: TerminalRBrack) <ignored>
+        │   └── child #1 (kind: TriviumSkippedNode)
+        │       └── node (kind: VisibilityPub)
+        │           ├── pub_kw (kind: TerminalPub)
+        │           │   ├── leading_trivia (kind: Trivia) []
+        │           │   ├── token (kind: TokenPub): 'pub'
+        │           │   └── trailing_trivia (kind: Trivia) []
+        │           └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test `pub` and attributes with an identifier after.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: *)
+
+//! > cairo_code
+#[attr]
+pub macro
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalLBrace
+TerminalLet
+TerminalLBrack
+TerminalRBrack
+TerminalEq
+TerminalLiteralNumber
+TerminalSemicolon
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:1:8
+#[attr]
+       ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       └── child #0 (kind: Attribute)
+        │   │           ├── hash (kind: TerminalHash)
+        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── token (kind: TokenHash): '#'
+        │   │           │   └── trailing_trivia (kind: Trivia) []
+        │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
+        │   │           ├── attr (kind: ExprPath)
+        │   │           │   └── item #0 (kind: PathSegmentSimple)
+        │   │           │       └── ident (kind: TerminalIdentifier)
+        │   │           │           ├── leading_trivia (kind: Trivia) []
+        │   │           │           ├── token (kind: TokenIdentifier): 'attr'
+        │   │           │           └── trailing_trivia (kind: Trivia) []
+        │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │   │           └── rbrack (kind: TerminalRBrack) <ignored>
+        │   ├── child #1 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: VisibilityPub)
+        │   │       ├── pub_kw (kind: TerminalPub)
+        │   │       │   ├── leading_trivia (kind: Trivia) []
+        │   │       │   ├── token (kind: TokenPub): 'pub'
+        │   │       │   └── trailing_trivia (kind: Trivia)
+        │   │       │       └── child #0 (kind: TokenWhitespace).
+        │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+        │   └── child #2 (kind: TokenSkipped): 'macro'
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []

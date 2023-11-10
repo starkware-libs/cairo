@@ -48,6 +48,7 @@ skipped tokens
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
@@ -207,6 +208,9 @@ skipped tokens
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: ItemImpl)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   ├── pub_kw (kind: TokenPub): 'pub'
+    │   │   │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │   │   ├── impl_kw (kind: TokenImpl): 'impl'
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -219,6 +223,7 @@ skipped tokens
     │   │       ├── items (kind: ImplItemList)
     │   │       │   └── child #0 (kind: FunctionWithBody)
     │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── visibility (kind: VisibilityDefault) []
     │   │       │       ├── declaration (kind: FunctionDeclaration)
     │   │       │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │       │       │   ├── name (kind: TokenIdentifier): 'foo'
@@ -253,6 +258,9 @@ skipped tokens
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #2 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TokenPub): 'pub'
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── module_kw (kind: TokenModule): 'mod'
     │       ├── name (kind: TokenIdentifier): 'my_mod'
     │       └── body (kind: ModuleBody)
@@ -260,6 +268,7 @@ skipped tokens
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │           │   │   │   ├── name (kind: TokenIdentifier): 'bar'
@@ -346,6 +355,7 @@ skipped tokens
     │           │   │       └── rbrace (kind: TokenRBrace): '}'
     │           │   └── child #1 (kind: ItemStruct)
     │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── visibility (kind: VisibilityDefault) []
     │           │       ├── struct_kw (kind: TokenStruct): 'struct'
     │           │       ├── name (kind: TokenIdentifier): 'A'
     │           │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -353,6 +363,7 @@ skipped tokens
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
     │           │       │   │   ├── attributes (kind: AttributeList) []
+    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
     │           │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │           │       │   │   └── type_clause (kind: TypeClause)
     │           │       │   │       ├── colon (kind: TokenColon): ':'
@@ -362,6 +373,7 @@ skipped tokens
     │           │       │   ├── separator #0 (kind: TokenComma): ','
     │           │       │   └── item #1 (kind: Member)
     │           │       │       ├── attributes (kind: AttributeList) []
+    │           │       │       ├── visibility (kind: VisibilityDefault) []
     │           │       │       ├── name (kind: TokenIdentifier): 'y'
     │           │       │       └── type_clause (kind: TypeClause)
     │           │       │           ├── colon (kind: TokenColon): ':'
@@ -424,6 +436,7 @@ skipped tokens
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -853,9 +866,16 @@ skipped tokens
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: ItemImpl)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   ├── pub_kw (kind: TerminalPub)
+    │   │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   │   └── child #0 (kind: TokenNewline).
+    │   │   │   │   ├── token (kind: TokenPub): 'pub'
+    │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │   │   ├── impl_kw (kind: TerminalImpl)
-    │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   └── child #0 (kind: TokenNewline).
+    │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenImpl): 'impl'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
@@ -886,6 +906,7 @@ skipped tokens
     │   │       ├── items (kind: ImplItemList)
     │   │       │   └── child #0 (kind: FunctionWithBody)
     │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── visibility (kind: VisibilityDefault) []
     │   │       │       ├── declaration (kind: FunctionDeclaration)
     │   │       │       │   ├── function_kw (kind: TerminalFunction)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia)
@@ -969,9 +990,16 @@ skipped tokens
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #2 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TerminalPub)
+    │       │   │   ├── leading_trivia (kind: Trivia)
+    │       │   │   │   └── child #0 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenPub): 'pub'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── module_kw (kind: TerminalModule)
-    │       │   ├── leading_trivia (kind: Trivia)
-    │       │   │   └── child #0 (kind: TokenNewline).
+    │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: TokenModule): 'mod'
     │       │   └── trailing_trivia (kind: Trivia)
     │       │       └── child #0 (kind: TokenWhitespace).
@@ -988,6 +1016,7 @@ skipped tokens
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TerminalFunction)
     │           │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -1187,6 +1216,7 @@ skipped tokens
     │           │   │               └── child #0 (kind: TokenNewline).
     │           │   └── child #1 (kind: ItemStruct)
     │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── visibility (kind: VisibilityDefault) []
     │           │       ├── struct_kw (kind: TerminalStruct)
     │           │       │   ├── leading_trivia (kind: Trivia)
     │           │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1206,6 +1236,7 @@ skipped tokens
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
     │           │       │   │   ├── attributes (kind: AttributeList) []
+    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
     │           │       │   │   ├── name (kind: TerminalIdentifier)
     │           │       │   │   │   ├── leading_trivia (kind: Trivia)
     │           │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1232,6 +1263,7 @@ skipped tokens
     │           │       │   │       └── child #2 (kind: TokenNewline).
     │           │       │   └── item #1 (kind: Member)
     │           │       │       ├── attributes (kind: AttributeList) []
+    │           │       │       ├── visibility (kind: VisibilityDefault) []
     │           │       │       ├── name (kind: TerminalIdentifier)
     │           │       │       │   ├── leading_trivia (kind: Trivia)
     │           │       │       │   │   └── child #0 (kind: TokenWhitespace).

@@ -31,6 +31,7 @@ pub enum ParserDiagnosticKind {
     StringMustBeAscii,
     UnterminatedShortString,
     UnterminatedString,
+    VisibilityWithoutItem,
     AttributesWithoutItem,
     AttributesWithoutTraitItem,
     AttributesWithoutImplItem,
@@ -96,6 +97,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "Unterminated short string literal.".into()
             }
             ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
+            ParserDiagnosticKind::VisibilityWithoutItem => {
+                "Missing tokens. Expected an item after visibility.".to_string()
+            }
             ParserDiagnosticKind::AttributesWithoutItem => {
                 "Missing tokens. Expected an item after attributes.".to_string()
             }
