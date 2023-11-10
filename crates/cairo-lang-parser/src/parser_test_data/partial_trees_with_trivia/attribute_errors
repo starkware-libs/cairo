@@ -264,6 +264,7 @@ error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/Ex
     │       │           └── trailing_trivia (kind: Trivia) []
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TerminalRBrack) <ignored>
+    ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration) <ignored>
     └── body (kind: ExprBlock) <ignored>
 
@@ -315,6 +316,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │           └── trailing_trivia (kind: Trivia) []
     │   │   │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │   │   │       └── rbrack (kind: TerminalRBrack) <ignored>
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration) <ignored>
     │   │   └── body (kind: ExprBlock) <ignored>
     │   └── child #1: Missing []
