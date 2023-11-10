@@ -1,24 +1,38 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId, ImplDefId,
+    LanguageElementId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
+};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 use super::us::SemanticUseEx;
+use super::visibility::Visibility;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
 
+/// Information per item in a module.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ItemInfo {
+    pub item_id: ModuleItemId,
+    pub visibility: Visibility,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
     // The items in the module without duplicates.
-    pub items: OrderedHashMap<SmolStr, ModuleItemId>,
+    pub items: OrderedHashMap<SmolStr, ItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -30,32 +44,118 @@ pub fn priv_module_semantic_data(
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
-    for item in db.module_items(module_id)?.iter() {
-        let name = match item {
-            ModuleItemId::Constant(item_id) => item_id.name(def_db),
-            ModuleItemId::Submodule(item_id) => item_id.name(def_db),
-            ModuleItemId::Use(item_id) => item_id.name(def_db),
-            ModuleItemId::FreeFunction(item_id) => item_id.name(def_db),
-            ModuleItemId::Struct(item_id) => item_id.name(def_db),
-            ModuleItemId::Enum(item_id) => item_id.name(def_db),
-            ModuleItemId::TypeAlias(item_id) => item_id.name(def_db),
-            ModuleItemId::ImplAlias(item_id) => item_id.name(def_db),
-            ModuleItemId::Trait(item_id) => item_id.name(def_db),
-            ModuleItemId::Impl(item_id) => item_id.name(def_db),
-            ModuleItemId::ExternType(item_id) => item_id.name(def_db),
-            ModuleItemId::ExternFunction(item_id) => item_id.name(def_db),
+    let visibility_extractor = VisibilityExtractor { db: def_db, module_id };
+    for item_id in db.module_items(module_id)?.iter().copied() {
+        let (name, visibility) = match item_id {
+            ModuleItemId::Constant(item_id) => {
+                (item_id.name(def_db), visibility_extractor.constant(item_id))
+            }
+            ModuleItemId::Submodule(item_id) => {
+                (item_id.name(def_db), visibility_extractor.submodule(item_id))
+            }
+            ModuleItemId::Use(item_id) => {
+                (item_id.name(def_db), visibility_extractor.use_(item_id))
+            }
+            ModuleItemId::FreeFunction(item_id) => {
+                (item_id.name(def_db), visibility_extractor.free_function(item_id))
+            }
+            ModuleItemId::Struct(item_id) => {
+                (item_id.name(def_db), visibility_extractor.struct_(item_id))
+            }
+            ModuleItemId::Enum(item_id) => {
+                (item_id.name(def_db), visibility_extractor.enum_(item_id))
+            }
+            ModuleItemId::TypeAlias(item_id) => {
+                (item_id.name(def_db), visibility_extractor.type_alias(item_id))
+            }
+            ModuleItemId::ImplAlias(item_id) => {
+                (item_id.name(def_db), visibility_extractor.impl_alias(item_id))
+            }
+            ModuleItemId::Trait(item_id) => {
+                (item_id.name(def_db), visibility_extractor.trait_(item_id))
+            }
+            ModuleItemId::Impl(item_id) => {
+                (item_id.name(def_db), visibility_extractor.impl_def(item_id))
+            }
+            ModuleItemId::ExternType(item_id) => {
+                (item_id.name(def_db), visibility_extractor.extern_type(item_id))
+            }
+            ModuleItemId::ExternFunction(item_id) => {
+                (item_id.name(def_db), visibility_extractor.extern_function(item_id))
+            }
         };
-
-        if items.insert(name.clone(), *item).is_some() {
+        // Defaulting to pub as if diagnostics are added privacy diagnostics are less interesting.
+        let visibility = visibility
+            .map(|v| Visibility::from_ast(db.upcast(), &mut diagnostics, &v))
+            .unwrap_or(Visibility::Public);
+        if items.insert(name.clone(), ItemInfo { item_id, visibility }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item).unwrap());
+                StableLocation::new(db.module_item_name_stable_ptr(module_id, item_id).unwrap());
             let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
             diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }
     }
     Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))
+}
+
+/// Extracts the visibility ast of an item from the database.
+struct VisibilityExtractor<'a> {
+    db: &'a dyn DefsGroup,
+    module_id: ModuleId,
+}
+impl<'a> VisibilityExtractor<'a> {
+    fn submodule(&self, item_id: SubmoduleId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_submodules(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn constant(&self, item_id: ConstantId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_constants(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn free_function(&self, item_id: FreeFunctionId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_free_functions(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn enum_(&self, item_id: EnumId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_enums(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn struct_(&self, item_id: StructId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_structs(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn extern_function(&self, item_id: ExternFunctionId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_extern_functions(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn extern_type(&self, item_id: ExternTypeId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_extern_types(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn type_alias(&self, item_id: TypeAliasId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_type_aliases(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn impl_alias(&self, item_id: ImplAliasId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_impl_aliases(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn trait_(&self, item_id: TraitId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_traits(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn impl_def(&self, item_id: ImplDefId) -> Maybe<ast::Visibility> {
+        Ok(self.db.module_impls(self.module_id)?[item_id].visibility(self.db.upcast()))
+    }
+    fn use_(&self, item_id: UseId) -> Maybe<ast::Visibility> {
+        let use_ast = &self.db.module_uses(self.module_id)?[item_id];
+        let use_path = ast::UsePath::Leaf(use_ast.clone());
+        let mut node = use_path.as_syntax_node();
+        let syntax_db = self.db.upcast();
+        while let Some(parent) = node.parent() {
+            match parent.kind(syntax_db) {
+                SyntaxKind::ItemUse => {
+                    return Ok(
+                        ast::ItemUse::from_syntax_node(syntax_db, parent).visibility(syntax_db)
+                    );
+                }
+                _ => node = parent,
+            }
+        }
+        unreachable!("UsePath is not under an ItemUse.");
+    }
 }
 
 pub fn module_item_by_name(
@@ -64,7 +164,7 @@ pub fn module_item_by_name(
     name: SmolStr,
 ) -> Maybe<Option<ModuleItemId>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
-    Ok(module_data.items.get(&name).copied())
+    Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
