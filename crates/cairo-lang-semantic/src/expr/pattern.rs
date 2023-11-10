@@ -15,7 +15,7 @@ use crate::{semantic, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVar
 /// This is used both in let statements and match statements.
 // TODO(spapini): Replace this doc with a reference to the language documentation about patterns,
 // once it is available.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum Pattern {
     Literal(PatternLiteral),
@@ -115,7 +115,7 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 }
 
 /// A pattern that destructures a struct to its fields.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternStruct {
     pub concrete_struct_id: ConcreteStructId,
