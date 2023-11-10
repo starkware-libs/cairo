@@ -16,6 +16,7 @@ ItemModule
 //! > expected_tree
 └── Top level kind: ItemModule
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── module_kw (kind: TokenModule): 'mod'
     ├── name (kind: TokenIdentifier): 'my_mod'
     └── body (kind: TokenSemicolon): ';'
@@ -57,6 +58,7 @@ ItemStruct
 //! > expected_tree
 └── Top level kind: ItemModule
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── module_kw (kind: TokenModule): 'mod'
     ├── name (kind: TokenIdentifier): 'my_mod'
     └── body (kind: ModuleBody)

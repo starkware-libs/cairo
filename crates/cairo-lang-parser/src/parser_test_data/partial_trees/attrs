@@ -69,6 +69,7 @@ VariantList
     │   │       │   │                   └── ident (kind: TokenIdentifier): 'Drop'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── enum_kw (kind: TokenEnum): 'enum'
     │   ├── name (kind: TokenIdentifier): 'bool'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -88,6 +89,7 @@ VariantList
     │   │       │   ├── arguments (kind: ArgList) []
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── module_kw (kind: TokenModule): 'mod'
     │   ├── name (kind: TokenIdentifier): 'empty'
     │   └── body (kind: ModuleBody)
@@ -134,6 +136,7 @@ VariantList
     │   │       │   │                   └── ident (kind: TokenIdentifier): 'Serde'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── struct_kw (kind: TokenStruct): 'struct'
     │   ├── name (kind: TokenIdentifier): 'u256'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -164,6 +167,7 @@ VariantList
     │   │       │   │           └── value (kind: TokenShortString): ''<todo_form>''
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
     │   └── body (kind: ExprBlock) <ignored>
     ├── child #4 (kind: FunctionWithBody)
@@ -198,6 +202,7 @@ VariantList
     │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
     │   └── body (kind: ExprBlock) <ignored>
     ├── child #5 (kind: FunctionWithBody)
@@ -244,6 +249,7 @@ VariantList
     │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
     │   └── body (kind: ExprBlock) <ignored>
     └── child #6 (kind: FunctionWithBody)
@@ -275,5 +281,6 @@ VariantList
         │       │   │                   └── ident (kind: TokenIdentifier): 'qwe'
         │       │   └── rparen (kind: TokenRParen): ')'
         │       └── rbrack (kind: TokenRBrack): ']'
+        ├── visibility (kind: VisibilityDefault) []
         ├── declaration (kind: FunctionDeclaration) <ignored>
         └── body (kind: ExprBlock) <ignored>
