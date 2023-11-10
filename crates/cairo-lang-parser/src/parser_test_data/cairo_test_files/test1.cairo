@@ -35,12 +35,12 @@ extern type S<>;
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
 
 struct A<A, B> {
-    member: bool,
+    pub member: bool,
     #[annot(a)]
     member2: (bool, felt252, ())
 }
 
-enum E<A, B> {
+pub(crate) enum E<A, B> {
     V1: A,
     V2: B,
     VEmpty,
