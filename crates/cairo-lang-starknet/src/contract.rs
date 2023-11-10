@@ -93,8 +93,8 @@ const CONTRACT_ADDRESS_PREFIX: FieldElement = FieldElement::from_mont([
 ]);
 
 fn felt252_to_field_element(input: &Felt252) -> anyhow::Result<FieldElement> {
-    Ok(FieldElement::from_bytes_be(&input.to_be_bytes())
-        .map_err(|_| anyhow::anyhow!("Failed to convert felt252 to field element."))?)
+    FieldElement::from_bytes_be(&input.to_be_bytes())
+        .map_err(|_| anyhow::anyhow!("Failed to convert felt252 to field element."))
 }
 
 /// Calculates the address of a starknet contract, as defined in
@@ -102,7 +102,7 @@ fn felt252_to_field_element(input: &Felt252) -> anyhow::Result<FieldElement> {
 pub fn calculate_contract_address(
     salt: &Felt252,
     class_hash: &Felt252,
-    constructor_calldata: &Vec<Felt252>,
+    constructor_calldata: &[Felt252],
     deployer_address: &Felt252,
 ) -> anyhow::Result<Felt252> {
     let constructor_calldata_hash = pedersen_hash_array(
@@ -111,13 +111,13 @@ pub fn calculate_contract_address(
             .map(|felt| FieldElement::from_bytes_be(&felt.to_be_bytes()).expect("failed"))
             .collect::<Vec<_>>(),
     );
-    let mut address = FieldElement::from(pedersen_hash_array(&[
+    let mut address = pedersen_hash_array(&[
         CONTRACT_ADDRESS_PREFIX,
         felt252_to_field_element(deployer_address)?,
         felt252_to_field_element(salt)?,
         felt252_to_field_element(class_hash)?,
         constructor_calldata_hash,
-    ]));
+    ]);
     address = address % ADDR_BOUND;
 
     Ok(Felt252::from_bytes_be(&address.to_bytes_be()))
