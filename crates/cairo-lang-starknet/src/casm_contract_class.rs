@@ -279,17 +279,18 @@ impl CasmContractClass {
             &contract_class.entry_points_by_type.l1_handler,
         )
         .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
-        let metadata_computation_config = MetadataComputationConfig {
-            function_set_costs: entrypoint_ids
-                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
-                .collect(),
-        };
-
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
         //   version 2.
         assert_eq!(sierra_version.major, 1);
         let no_eq_solver = sierra_version.minor >= 4;
-        let metadata = calc_metadata(&program, metadata_computation_config, no_eq_solver)?;
+        let metadata_computation_config = MetadataComputationConfig {
+            function_set_costs: entrypoint_ids
+                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
+                .collect(),
+            linear_gas_solver: no_eq_solver,
+            linear_ap_change_solver: no_eq_solver,
+        };
+        let metadata = calc_metadata(&program, metadata_computation_config)?;
 
         let gas_usage_check = true;
         let cairo_program =
