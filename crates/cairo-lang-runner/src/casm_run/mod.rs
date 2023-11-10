@@ -14,6 +14,7 @@ use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
 use cairo_lang_sierra::ids::FunctionId;
+use cairo_lang_starknet::contract::calculate_contract_address;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::extract_matches;
@@ -945,7 +946,22 @@ impl<'a> CairoHintProcessor<'a> {
         deduct_gas!(gas_counter, DEPLOY);
 
         // Assign an arbitrary address to the contract.
-        let deployed_contract_address = self.starknet_state.get_next_id();
+        let deployer_address = if deploy_from_zero {
+            Felt252::from(0)
+        } else {
+            self.starknet_state.exec_info.contract_address.clone()
+        };
+        let deployed_contract_address = match calculate_contract_address(
+            &_contract_address_salt,
+            &class_hash,
+            &calldata,
+            &deployer_address,
+        ) {
+            Ok(address) => address,
+            Err(_) => {
+                fail_syscall!(b"Contract address calculation failed");
+            }
+        };
 
         // Prepare runner for running the constructor.
         let runner = self.runner.expect("Runner is needed for starknet.");
