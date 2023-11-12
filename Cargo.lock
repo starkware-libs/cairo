@@ -395,7 +395,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cairo-compile"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -406,9 +406,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-felt"
-version = "0.9.0"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "074959652bb6ba212393f21353fe1d09d31d5b3f7436d4d6fe41c4abe2a8d954"
+checksum = "5972097b8800ca5dffb458040e74c724a2ac4fa4b5b480b50f5b96c7e67d6427"
 dependencies = [
  "lazy_static",
  "num-bigint",
@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-format"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-formatter",
@@ -432,7 +432,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -452,7 +452,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -473,7 +473,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
@@ -484,7 +484,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
@@ -504,7 +504,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -518,7 +518,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -528,7 +528,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-language-server"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -591,7 +591,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -621,7 +621,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -665,7 +665,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "quote",
@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -687,7 +687,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "ark-ff",
  "ark-secp256k1",
@@ -714,7 +714,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -742,7 +742,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "bimap",
@@ -772,7 +772,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -785,7 +785,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -803,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "assert_matches",
  "cairo-felt",
@@ -856,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
@@ -864,7 +864,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -904,7 +904,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "env_logger",
  "genco",
@@ -931,7 +931,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-plugin"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -956,7 +956,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -977,7 +977,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-utils",
  "colored",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "env_logger",
  "indexmap 2.1.0",
@@ -1008,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-language-server"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-language-server",
  "cairo-lang-utils",
@@ -1018,7 +1018,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-run"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1031,7 +1031,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-test"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1041,9 +1041,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "0.9.0"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d907e35a2551c6683a5cccabb7e8328484019985c84a1cf08c744323afbea3f2"
+checksum = "00d9bf139b0fe845627cf09d11af43eec9575dba702033bf6b08050c776b8553"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1530,7 +1530,7 @@ dependencies = [
 
 [[package]]
 name = "generate-syntax"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
@@ -2777,7 +2777,7 @@ dependencies = [
 
 [[package]]
 name = "sierra-compile"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -2856,7 +2856,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-compile"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -2927,7 +2927,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-compile"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -2940,7 +2940,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-extract-code"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "anyhow",
  "cairo-lang-starknet",
@@ -3069,7 +3069,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "2.4.0-rc0"
+version = "2.4.0-rc1"
 dependencies = [
  "assert_matches",
  "cairo-felt",
