@@ -50,7 +50,7 @@ members = [
 ]
 
 [workspace.package]
-version = "2.4.0-rc1"
+version = "2.4.0-rc2"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
