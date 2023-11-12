@@ -10,4 +10,4 @@ description = "Compiler executable for printing Starknet Sierra json included co
 anyhow.workspace = true
 clap.workspace = true
 serde_json.workspace = true
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.0-rc1" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.0-rc2" }
