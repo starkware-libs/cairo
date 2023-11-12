@@ -58,6 +58,7 @@ false
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
     │           │   └── child #0 (kind: StatementReturn)
+    │           │       ├── attributes (kind: AttributeList) []
     │           │       ├── return_kw (kind: TokenReturn): 'return'
     │           │       ├── expr_clause (kind: ExprClause)
     │           │       │   └── expr (kind: ExprPath)
@@ -129,6 +130,7 @@ true
     │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
     │           ├── [36mstatements[0m (kind: StatementList)
     │           │   └── [36mchild #0[0m (kind: StatementReturn)
+    │           │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │           │       ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
     │           │       ├── [36mexpr_clause[0m (kind: ExprClause)
     │           │       │   └── [36mexpr[0m (kind: ExprPath)
