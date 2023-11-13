@@ -26,7 +26,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
-use crate::items::module::ModuleSemanticData;
+use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
@@ -141,6 +141,15 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         name: SmolStr,
     ) -> Maybe<Option<ModuleItemId>>;
+
+    /// Returns [Maybe::Err] if the module was not properly resolved.
+    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    #[salsa::invoke(items::module::module_item_info_by_name)]
+    fn module_item_info_by_name(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> Maybe<Option<ModuleItemInfo>>;
 
     /// Returns the attributes of a module.
     #[salsa::invoke(items::module::module_attributes)]
