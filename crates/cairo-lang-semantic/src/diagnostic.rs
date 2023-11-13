@@ -3,8 +3,8 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, StructId, TopLevelLanguageElementId,
-    TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, StructId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -365,6 +365,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     struct_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::MemberNotVisible { member_name } => {
+                format!(r#"Member "{member_name}" is not visible in this context."#)
+            }
             SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
                 format!(
                     r#"Enum "{}" has no variant "{variant_name}""#,
@@ -408,6 +411,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             },
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
+            }
+            SemanticDiagnosticKind::ItemNotVisible { item_id } => {
+                format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
@@ -783,6 +789,9 @@ pub enum SemanticDiagnosticKind {
         struct_id: StructId,
         member_name: SmolStr,
     },
+    MemberNotVisible {
+        member_name: SmolStr,
+    },
     NoSuchVariant {
         enum_id: EnumId,
         variant_name: SmolStr,
@@ -805,6 +814,9 @@ pub enum SemanticDiagnosticKind {
     InvalidPath,
     PathNotFound(NotFoundItemType),
     SuperUsedInRootModule,
+    ItemNotVisible {
+        item_id: ModuleItemId,
+    },
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,

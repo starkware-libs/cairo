@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, LocalVarLongId, MemberId, TraitFunctionId,
-    TraitId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -52,13 +52,15 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
+use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{
-    GenericArgumentId, Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature,
+    GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral, PatternStruct,
+    Signature,
 };
 
 /// Expression with its id.
@@ -1292,6 +1294,7 @@ fn maybe_compute_pattern_semantic(
                         },
                     );
                 })?;
+                check_struct_member_is_visible(ctx, &member, stable_ptr, &member_name);
                 used_members.insert(member_name);
                 Some(member)
             };
@@ -1451,6 +1454,12 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&arg_identifier, UnknownMember);
             continue;
         };
+        check_struct_member_is_visible(
+            ctx,
+            member,
+            arg_identifier.stable_ptr().untyped(),
+            &arg_name,
+        );
 
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
@@ -1732,15 +1741,21 @@ fn member_access_expr(
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
                 let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-                let member = members.get(&member_name).ok_or_else(|| {
-                    ctx.diagnostics.report(
+                let Some(member) = members.get(&member_name) else {
+                    return Err(ctx.diagnostics.report(
                         &rhs_syntax,
                         NoSuchMember {
                             struct_id: concrete_struct_id.struct_id(ctx.db),
                             member_name,
                         },
-                    )
-                })?;
+                    ));
+                };
+                check_struct_member_is_visible(
+                    ctx,
+                    member,
+                    rhs_syntax.stable_ptr().untyped(),
+                    &member_name,
+                );
                 let member_path = if n_snapshots == 0 {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
@@ -2153,4 +2168,23 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))
+}
+
+/// Validates a struct member is visible and otherwise adds a diagnostic.
+fn check_struct_member_is_visible(
+    ctx: &mut ComputationContext<'_>,
+    member: &Member,
+    stable_ptr: SyntaxStablePtrId,
+    member_name: &SmolStr,
+) {
+    let db = ctx.db.upcast();
+    let parent_module_id = member.id.parent_module(db);
+    if ctx.resolver.ignore_visibility_checks(parent_module_id) {
+        return;
+    }
+    let user_module_id = ctx.resolver.module_file_id.0;
+    if !visibility::peek_visible_in(db, member.visibility, parent_module_id, user_module_id) {
+        ctx.diagnostics
+            .report_by_ptr(stable_ptr, MemberNotVisible { member_name: member_name.clone() });
+    }
 }
