@@ -2397,8 +2397,8 @@ impl<'a> Parser<'a> {
         self.pending_trivia.push(trivium_green);
 
         let start_of_node_offset = end_of_node_offset.sub_width(trivium_green.0.width(self.db));
-        let diag_pos =
-            end_of_node_offset.sub_width(trailing_trivia_width(self.db, trivium_green.0).unwrap_or_default());
+        let diag_pos = end_of_node_offset
+            .sub_width(trailing_trivia_width(self.db, trivium_green.0).unwrap_or_default());
 
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
