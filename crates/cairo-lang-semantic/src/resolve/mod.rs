@@ -7,7 +7,8 @@ use cairo_lang_defs::ids::{
     ModuleId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::Expr;
@@ -32,7 +33,9 @@ use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
+use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::visibility;
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -128,6 +131,7 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    edition: Edition,
 }
 impl Deref for Resolver<'_> {
     type Target = ResolverData;
@@ -163,20 +167,24 @@ impl<'db> Resolver<'db> {
         module_file_id: ModuleFileId,
         inference_id: InferenceId,
     ) -> Self {
-        Self {
+        Self::with_data(
             db,
-            data: ResolverData {
+            ResolverData {
                 module_file_id,
                 generic_param_by_name: Default::default(),
                 generic_params: Default::default(),
                 resolved_items: Default::default(),
                 inference_data: InferenceData::new(inference_id),
             },
-        }
+        )
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
-        Self { db, data }
+        Self {
+            edition: extract_edition(db, data.module_file_id.0.owning_crate(db.upcast())),
+            db,
+            data,
+        }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -503,11 +511,13 @@ impl<'db> Resolver<'db> {
                 if ident == "super" {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
-                let module_item = self
+                let item_info = self
                     .db
-                    .module_item_by_name(*module_id, ident)?
+                    .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                let generic_item = ResolvedGenericItem::from_module_item(self.db, module_item)?;
+                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
+                let generic_item =
+                    ResolvedGenericItem::from_module_item(self.db, item_info.item_id)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
@@ -696,11 +706,12 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match item {
             ResolvedGenericItem::Module(module_id) => {
-                let module_item = self
+                let item_info = self
                     .db
-                    .module_item_by_name(*module_id, ident)?
+                    .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                ResolvedGenericItem::from_module_item(self.db, module_item)
+                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
+                ResolvedGenericItem::from_module_item(self.db, item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
@@ -763,10 +774,7 @@ impl<'db> Resolver<'db> {
             return None;
         }
         // Last resort, use the `prelude` module as the base module.
-        let owning_crate = self.module_file_id.0.owning_crate(self.db.upcast());
-        let edition =
-            self.db.crate_config(owning_crate).map(|config| config.edition).unwrap_or_default();
-        let prelude_submodule_name = edition.prelude_submodule_name();
+        let prelude_submodule_name = self.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         Some(get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
@@ -1043,6 +1051,38 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+
+    /// Should visibility checks not actually happen for lookups in this module.
+    // TODO(orizi): Remove this check when performing a major Cairo update.
+    pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
+        let owning_crate = module_id.owning_crate(self.db.upcast());
+        extract_edition(self.db, owning_crate).ignore_visibility()
+            || self.edition.ignore_visibility() && owning_crate == self.db.core_crate()
+    }
+
+    /// Validates that an item is visible from the current module or adds a diagnostic.
+    fn validate_item_visibility(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        containing_module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+        item_info: &ModuleItemInfo,
+    ) {
+        if self.ignore_visibility_checks(containing_module_id) {
+            return;
+        }
+        let db = self.db.upcast();
+        let user_module = self.module_file_id.0;
+        if !visibility::peek_visible_in(db, item_info.visibility, containing_module_id, user_module)
+        {
+            diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
+        }
+    }
+}
+
+/// Extracts the edition of a crate.
+fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
+    db.crate_config(crate_id).map(|config| config.edition).unwrap_or_default()
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
