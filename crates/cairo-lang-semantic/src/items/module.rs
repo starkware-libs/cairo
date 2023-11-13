@@ -18,7 +18,7 @@ use crate::SemanticDiagnostic;
 
 /// Information per item in a module.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ItemInfo {
+pub struct ModuleItemInfo {
     pub item_id: ModuleItemId,
     pub visibility: Visibility,
 }
@@ -26,7 +26,7 @@ pub struct ItemInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
     // The items in the module without duplicates.
-    pub items: OrderedHashMap<SmolStr, ItemInfo>,
+    pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -78,7 +78,7 @@ pub fn priv_module_semantic_data(
         let visibility = visibility
             .map(|v| Visibility::from_ast(db.upcast(), &mut diagnostics, &v))
             .unwrap_or(Visibility::Public);
-        if items.insert(name.clone(), ItemInfo { item_id, visibility }).is_some() {
+        if items.insert(name.clone(), ModuleItemInfo { item_id, visibility }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             let stable_location =
@@ -97,6 +97,15 @@ pub fn module_item_by_name(
 ) -> Maybe<Option<ModuleItemId>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).map(|info| info.item_id))
+}
+
+pub fn module_info_by_name(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    name: SmolStr,
+) -> Maybe<Option<ModuleItemInfo>> {
+    let module_data = db.priv_module_semantic_data(module_id)?;
+    Ok(module_data.items.get(&name).cloned())
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].

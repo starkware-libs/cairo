@@ -46,6 +46,8 @@ pub enum Edition {
     V2023_01,
     #[serde(rename = "2023_10")]
     V2023_10,
+    #[serde(rename = "2023_11")]
+    V2023_11,
 }
 impl Edition {
     /// Returns the latest stable edition.
@@ -60,7 +62,14 @@ impl Edition {
     pub fn prelude_submodule_name(&self) -> &str {
         match self {
             Self::V2023_01 => "v2023_01",
-            Self::V2023_10 => "v2023_10",
+            Self::V2023_10 | Self::V2023_11 => "v2023_10",
+        }
+    }
+
+    pub fn ignore_visibility(&self) -> bool {
+        match self {
+            Self::V2023_01 | Self::V2023_10 => true,
+            Self::V2023_11 => false,
         }
     }
 }
