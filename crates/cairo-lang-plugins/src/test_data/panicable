@@ -38,7 +38,7 @@ extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
 #[panic_with('5', wrapped_possibly_panic)]
 fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
- fn foo_improved(a: felt252, ref b: other) -> () {
+fn foo_improved(a: felt252, ref b: other) -> () {
     match foo(a, ref b) {
         Option::Some (v) => {
             v
@@ -50,7 +50,7 @@ fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
         },
     }
 }
- fn bar_changed() -> felt252 {
+fn bar_changed() -> felt252 {
     match bar() {
         Result::Ok (v) => {
             v
@@ -62,7 +62,7 @@ fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
         },
     }
 }
- fn non_extern_stuff(_a: some_type) -> (felt252, other) {
+fn non_extern_stuff(_a: some_type) -> (felt252, other) {
     match non_extern(_a) {
         Option::Some (v) => {
             v
@@ -74,7 +74,7 @@ fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
         },
     }
 }
- fn generic_panic<T>(t: T, v: felt252) -> T {
+fn generic_panic<T>(t: T, v: felt252) -> T {
     match generic(t, v) {
         Result::Ok (v) => {
             v
@@ -86,7 +86,7 @@ fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
         },
     }
 }
- fn wrapped_possibly_panic() -> felt252 {
+fn wrapped_possibly_panic() -> felt252 {
     match possibly_panic() {
         Result::Ok (v) => {
             v
