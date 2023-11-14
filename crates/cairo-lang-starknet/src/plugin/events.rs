@@ -61,7 +61,7 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 pub const EMPTY_EVENT_CODE: &str = formatcp! {"\
 #[{EVENT_ATTR}]
 #[derive(Drop, {EVENT_TRAIT})]
-enum {EVENT_TYPE_NAME} {{}}
+pub enum {EVENT_TYPE_NAME} {{}}
 "};
 
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns

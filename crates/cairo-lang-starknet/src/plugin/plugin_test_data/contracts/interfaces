@@ -82,7 +82,7 @@ trait Interface1DispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface1Dispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher> {
@@ -102,7 +102,7 @@ impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher>
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface1LibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl Interface1LibraryDispatcherImpl of Interface1DispatcherTrait<Interface1LibraryDispatcher> {
@@ -126,7 +126,7 @@ trait Interface1SafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface1SafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl Interface1SafeLibraryDispatcherImpl of Interface1SafeDispatcherTrait<Interface1SafeLibraryDispatcher> {
@@ -147,7 +147,7 @@ impl Interface1SafeLibraryDispatcherImpl of Interface1SafeDispatcherTrait<Interf
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface1SafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1SafeDispatcher> {
@@ -174,7 +174,7 @@ trait Interface2DispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface2Dispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher> {
@@ -194,7 +194,7 @@ impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher>
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface2LibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl Interface2LibraryDispatcherImpl of Interface2DispatcherTrait<Interface2LibraryDispatcher> {
@@ -218,7 +218,7 @@ trait Interface2SafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface2SafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl Interface2SafeLibraryDispatcherImpl of Interface2SafeDispatcherTrait<Interface2SafeLibraryDispatcher> {
@@ -239,7 +239,7 @@ impl Interface2SafeLibraryDispatcherImpl of Interface2SafeDispatcherTrait<Interf
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct Interface2SafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl Interface2SafeDispatcherImpl of Interface2SafeDispatcherTrait<Interface2SafeDispatcher> {
@@ -670,20 +670,20 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
+    pub struct ComponentState<TContractState> {
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
@@ -692,7 +692,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -701,7 +701,7 @@ trait HasComponent<TContractState> {
 }
 
 #[starknet::embeddable]
-impl I1I1<
+pub impl I1I1<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
@@ -711,7 +711,7 @@ impl I1I1<
         Interface1_Implementation1::foo(ref component)
     }
 }#[starknet::embeddable]
-impl I1I2<
+pub impl I1I2<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
@@ -721,7 +721,7 @@ impl I1I2<
         Interface1_Implementation2::foo(ref component)
     }
 }#[starknet::embeddable]
-impl I2I<
+pub impl I2I<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface2<TContractState> {
@@ -758,7 +758,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForI1I1<TContractState> {
+pub trait UnsafeNewContractStateTraitForI1I1<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -783,20 +785,22 @@ fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>
 
 
 
-mod __external_I1I1 {
-        use super::__wrapper__I1I1__foo as foo;
+pub mod __external_I1I1 {
+    pub use super::__wrapper__I1I1__foo as foo;
 }
 
-mod __l1_handler_I1I1 {
+pub mod __l1_handler_I1I1 {
 }
 
-mod __constructor_I1I1 {
+pub mod __constructor_I1I1 {
 }
 
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForI1I2<TContractState> {
+pub trait UnsafeNewContractStateTraitForI1I2<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -821,20 +825,22 @@ fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>
 
 
 
-mod __external_I1I2 {
-        use super::__wrapper__I1I2__foo as foo;
+pub mod __external_I1I2 {
+    pub use super::__wrapper__I1I2__foo as foo;
 }
 
-mod __l1_handler_I1I2 {
+pub mod __l1_handler_I1I2 {
 }
 
-mod __constructor_I1I2 {
+pub mod __constructor_I1I2 {
 }
 
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForI2I<TContractState> {
+pub trait UnsafeNewContractStateTraitForI2I<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -859,14 +865,14 @@ fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>
 
 
 
-mod __external_I2I {
-        use super::__wrapper__I2I__foo as foo;
+pub mod __external_I2I {
+    pub use super::__wrapper__I2I__foo as foo;
 }
 
-mod __l1_handler_I2I {
+pub mod __l1_handler_I2I {
 }
 
-mod __constructor_I2I {
+pub mod __constructor_I2I {
 }
 
 
@@ -874,19 +880,19 @@ contract:
 
 
 
-    struct ContractState {
-        comp_storage: super::comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub comp_storage: super::comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             comp_storage: super::comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -895,7 +901,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
+pub const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
 
 impl ContractStateI1I1 of
     super::comp::UnsafeNewContractStateTraitForI1I1<ContractState> {
@@ -934,16 +940,13 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
-    mod __external {
-        use super::__wrapper__foo as foo;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__foo as foo;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
