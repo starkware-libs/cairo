@@ -1,5 +1,5 @@
 use core::array::{Span, ArrayTrait, SpanTrait};
-use core::integer::TryInto;
+use core::traits::TryInto;
 use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 
@@ -33,7 +33,7 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
 // Computes the keccak256 of multiple u256 values.
 // The input values are interpreted as little-endian.
 // The 32-byte result is represented as a little-endian u256.
-fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
+pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
@@ -59,7 +59,7 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
 // Computes the keccak256 of multiple u256 values.
 // The input values are interpreted as big-endian.
 // The 32-byte result is represented as a little-endian u256.
-fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
+pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
@@ -82,7 +82,9 @@ fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 //   560229490 == int.from_bytes(b'rld!', 'little')
 //
 // Returns the hash as a little endian u256.
-fn cairo_keccak(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize) -> u256 {
+pub fn cairo_keccak(
+    ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize
+) -> u256 {
     add_padding(ref input, last_input_word, last_input_num_bytes);
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
 }

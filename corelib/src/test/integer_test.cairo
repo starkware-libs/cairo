@@ -1,8 +1,8 @@
 use core::{
     integer,
     integer::{
-        BoundedInt, u128_as_non_zero, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_as_non_zero,
-        u256_sqrt, u256_wide_mul, u32_sqrt, u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
+        BoundedInt, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_sqrt, u256_wide_mul, u32_sqrt,
+        u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
     }
 };
 use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};

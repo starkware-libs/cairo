@@ -9,40 +9,40 @@ use starknet::{
 use core::serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type StorageAddress;
+pub extern type StorageAddress;
 
 #[derive(Copy, Drop)]
-extern type StorageBaseAddress;
+pub extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
-extern fn storage_base_address_from_felt252(
+pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
-extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
-extern fn storage_address_from_base_and_offset(
+pub (crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
 
-extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
+pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
-extern fn storage_address_try_from_felt252(
+pub (crate) extern fn storage_address_try_from_felt252(
     address: felt252
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoStorageAddress of TryInto<felt252, StorageAddress> {
+pub impl Felt252TryIntoStorageAddress of TryInto<felt252, StorageAddress> {
     fn try_into(self: felt252) -> Option<StorageAddress> {
         storage_address_try_from_felt252(self)
     }
 }
-impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
+pub impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     fn into(self: StorageAddress) -> felt252 {
         storage_address_to_felt252(self)
     }
 }
 
-impl StorageAddressSerde of Serde<StorageAddress> {
+pub impl StorageAddressSerde of Serde<StorageAddress> {
     fn serialize(self: @StorageAddress, ref output: Array<felt252>) {
         storage_address_to_felt252(*self).serialize(ref output);
     }
@@ -54,7 +54,7 @@ impl StorageAddressSerde of Serde<StorageAddress> {
 }
 
 /// Trait for types that can be used as a value in Starknet storage variables.
-trait Store<T> {
+pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     /// Writes a value to storage to domain `address_domain` and base address `base`.
@@ -74,14 +74,14 @@ trait Store<T> {
 
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.
-trait StorePacking<T, PackedT> {
+pub trait StorePacking<T, PackedT> {
     /// Packs a value of type `T` into a value of type `PackedT`.
     fn pack(value: T) -> PackedT;
     /// Unpacks a value of type `PackedT` into a value of type `T`.
     fn unpack(value: PackedT) -> T;
 }
 
-impl StoreUsingPacking<
+pub impl StoreUsingPacking<
     T, PackedT, impl TPacking: StorePacking<T, PackedT>, impl PackedTStore: Store<PackedT>
 > of Store<T> {
     #[inline(always)]
@@ -110,7 +110,7 @@ impl StoreUsingPacking<
     }
 }
 
-impl StoreFelt252 of Store<felt252> {
+pub impl StoreFelt252 of Store<felt252> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
@@ -139,7 +139,7 @@ impl StoreFelt252 of Store<felt252> {
     }
 }
 
-impl StorePackingBool of StorePacking<bool, felt252> {
+pub impl StorePackingBool of StorePacking<bool, felt252> {
     fn pack(value: bool) -> felt252 {
         value.into()
     }
@@ -149,7 +149,7 @@ impl StorePackingBool of StorePacking<bool, felt252> {
     }
 }
 
-impl StorePackingU8 of StorePacking<u8, felt252> {
+pub impl StorePackingU8 of StorePacking<u8, felt252> {
     fn pack(value: u8) -> felt252 {
         value.into()
     }
@@ -159,7 +159,7 @@ impl StorePackingU8 of StorePacking<u8, felt252> {
     }
 }
 
-impl StorePackingI8 of StorePacking<i8, felt252> {
+pub impl StorePackingI8 of StorePacking<i8, felt252> {
     fn pack(value: i8) -> felt252 {
         value.into()
     }
@@ -169,7 +169,7 @@ impl StorePackingI8 of StorePacking<i8, felt252> {
     }
 }
 
-impl StorePackingU16 of StorePacking<u16, felt252> {
+pub impl StorePackingU16 of StorePacking<u16, felt252> {
     fn pack(value: u16) -> felt252 {
         value.into()
     }
@@ -179,7 +179,7 @@ impl StorePackingU16 of StorePacking<u16, felt252> {
     }
 }
 
-impl StorePackingI16 of StorePacking<i16, felt252> {
+pub impl StorePackingI16 of StorePacking<i16, felt252> {
     fn pack(value: i16) -> felt252 {
         value.into()
     }
@@ -189,7 +189,7 @@ impl StorePackingI16 of StorePacking<i16, felt252> {
     }
 }
 
-impl StorePackingU32 of StorePacking<u32, felt252> {
+pub impl StorePackingU32 of StorePacking<u32, felt252> {
     fn pack(value: u32) -> felt252 {
         value.into()
     }
@@ -199,7 +199,7 @@ impl StorePackingU32 of StorePacking<u32, felt252> {
     }
 }
 
-impl StorePackingI32 of StorePacking<i32, felt252> {
+pub impl StorePackingI32 of StorePacking<i32, felt252> {
     fn pack(value: i32) -> felt252 {
         value.into()
     }
@@ -209,7 +209,7 @@ impl StorePackingI32 of StorePacking<i32, felt252> {
     }
 }
 
-impl StorePackingU64 of StorePacking<u64, felt252> {
+pub impl StorePackingU64 of StorePacking<u64, felt252> {
     fn pack(value: u64) -> felt252 {
         value.into()
     }
@@ -219,7 +219,7 @@ impl StorePackingU64 of StorePacking<u64, felt252> {
     }
 }
 
-impl StorePackingI64 of StorePacking<i64, felt252> {
+pub impl StorePackingI64 of StorePacking<i64, felt252> {
     fn pack(value: i64) -> felt252 {
         value.into()
     }
@@ -229,7 +229,7 @@ impl StorePackingI64 of StorePacking<i64, felt252> {
     }
 }
 
-impl StorePackingU128 of StorePacking<u128, felt252> {
+pub impl StorePackingU128 of StorePacking<u128, felt252> {
     fn pack(value: u128) -> felt252 {
         value.into()
     }
@@ -239,7 +239,7 @@ impl StorePackingU128 of StorePacking<u128, felt252> {
     }
 }
 
-impl StorePackingI128 of StorePacking<i128, felt252> {
+pub impl StorePackingI128 of StorePacking<i128, felt252> {
     fn pack(value: i128) -> felt252 {
         value.into()
     }
@@ -249,7 +249,7 @@ impl StorePackingI128 of StorePacking<i128, felt252> {
     }
 }
 
-impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
+pub impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     fn pack(value: bytes31) -> felt252 {
         value.into()
     }
@@ -259,7 +259,7 @@ impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     }
 }
 
-impl StorePackingStorageAddress of StorePacking<StorageAddress, felt252> {
+pub impl StorePackingStorageAddress of StorePacking<StorageAddress, felt252> {
     fn pack(value: StorageAddress) -> felt252 {
         value.into()
     }
@@ -269,7 +269,7 @@ impl StorePackingStorageAddress of StorePacking<StorageAddress, felt252> {
     }
 }
 
-impl StorePackingContractAddress of StorePacking<ContractAddress, felt252> {
+pub impl StorePackingContractAddress of StorePacking<ContractAddress, felt252> {
     fn pack(value: ContractAddress) -> felt252 {
         value.into()
     }
@@ -279,7 +279,7 @@ impl StorePackingContractAddress of StorePacking<ContractAddress, felt252> {
     }
 }
 
-impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
+pub impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
     fn pack(value: ClassHash) -> felt252 {
         value.into()
     }
@@ -289,7 +289,7 @@ impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
     }
 }
 
-impl TupleSize0Store of Store<()> {
+pub impl TupleSize0Store of Store<()> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
         Result::Ok(())
@@ -316,7 +316,7 @@ impl TupleSize0Store of Store<()> {
     }
 }
 
-impl TupleSize1Store<E0, impl E0Store: Store<E0>, +Drop<E0>> of Store<(E0,)> {
+pub impl TupleSize1Store<E0, impl E0Store: Store<E0>, +Drop<E0>> of Store<(E0,)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0,)> {
         Result::Ok((E0Store::read(address_domain, base)?,))
@@ -345,7 +345,7 @@ impl TupleSize1Store<E0, impl E0Store: Store<E0>, +Drop<E0>> of Store<(E0,)> {
     }
 }
 
-impl TupleSize2Store<
+pub impl TupleSize2Store<
     E0, E1, impl E0Store: Store<E0>, +Drop<E0>, impl E1Store: Store<E1>, +Drop<E1>
 > of Store<(E0, E1)> {
     #[inline(always)]
@@ -384,7 +384,7 @@ impl TupleSize2Store<
     }
 }
 
-impl TupleSize3Store<
+pub impl TupleSize3Store<
     E0,
     E1,
     E2,
@@ -443,7 +443,7 @@ impl TupleSize3Store<
     }
 }
 
-impl TupleSize4Store<
+pub impl TupleSize4Store<
     E0,
     E1,
     E2,
@@ -514,7 +514,7 @@ impl TupleSize4Store<
 }
 
 
-impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
+pub impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
@@ -585,7 +585,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     }
 }
 
-impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
+pub impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
