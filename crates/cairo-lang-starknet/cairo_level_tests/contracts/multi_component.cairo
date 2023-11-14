@@ -1,10 +1,10 @@
 #[starknet::interface]
-trait GetSupply<TContractState> {
+pub trait GetSupply<TContractState> {
     fn get_total_supply_plus_1(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
-mod contract_with_4_components {
+pub mod contract_with_4_components {
     use starknet::ContractAddress;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;

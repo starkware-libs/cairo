@@ -45,20 +45,20 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
+    pub struct ComponentState<TContractState> {
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
@@ -67,7 +67,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -76,7 +76,7 @@ trait HasComponent<TContractState> {
 }
 
 #[starknet::embeddable]
-impl MyImpl<
+pub impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
 > of MyTrait<TContractState> {
     
@@ -112,7 +112,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
+pub trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -136,14 +136,14 @@ fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractS
 
 
 
-mod __external_MyImpl {
-        use super::__wrapper__MyImpl__do_nothing as do_nothing;
+pub mod __external_MyImpl {
+    pub use super::__wrapper__MyImpl__do_nothing as do_nothing;
 }
 
-mod __l1_handler_MyImpl {
+pub mod __l1_handler_MyImpl {
 }
 
-mod __constructor_MyImpl {
+pub mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics

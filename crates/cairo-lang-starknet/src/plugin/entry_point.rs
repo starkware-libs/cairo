@@ -87,9 +87,9 @@ impl EntryPointsGenerationData {
         RewriteNode::interpolate_patched(
             indoc! {"
                 $generated_wrapper_functions$
-                    $generated_external_module$
-                    $generated_l1_handler_module$
-                    $generated_constructor_module$"},
+                $generated_external_module$
+                $generated_l1_handler_module$
+                $generated_constructor_module$"},
             &[
                 (
                     "generated_wrapper_functions".to_string(),
@@ -107,12 +107,10 @@ impl EntryPointsGenerationData {
 /// Generates a submodule with the given name, uses and functions.
 fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
     RewriteNode::interpolate_patched(
-        &formatdoc!(
-            "
-            mod {module_name} {{$generated_functions_node$
-                }}
-        "
-        ),
+        &formatdoc! {"
+            pub mod {module_name} {{$generated_functions_node$
+            }}"
+        },
         &[("generated_functions_node".to_string(), generated_functions_node)].into(),
     )
 }
@@ -198,7 +196,7 @@ pub fn handle_entry_point(
                 EntryPointKind::External => &mut data.external_functions,
             };
             generated.push(RewriteNode::interpolate_patched(
-                "\n        use super::$wrapper_function_name$ as $function_name$;",
+                "\n    pub use super::$wrapper_function_name$ as $function_name$;",
                 &[
                     ("wrapper_function_name".into(), wrapper_function_name),
                     ("function_name".into(), function_name),
