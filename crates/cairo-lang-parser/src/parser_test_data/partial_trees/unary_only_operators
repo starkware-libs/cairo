@@ -24,17 +24,21 @@ StatementList
 //! > expected_tree
 └── Top level kind: StatementList
     ├── child #0 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '1'
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     ├── child #1 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprUnary)
     │   │   ├── op (kind: TokenNot): '!'
     │   │   └── expr (kind: TokenLiteralNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #2 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '1'
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     └── child #3 (kind: StatementExpr)
+        ├── attributes (kind: AttributeList) []
         ├── expr (kind: ExprUnary)
         │   ├── op (kind: TokenAt): '@'
         │   └── expr (kind: TokenLiteralNumber): '2'

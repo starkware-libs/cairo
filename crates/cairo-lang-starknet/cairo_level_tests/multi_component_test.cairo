@@ -1,5 +1,4 @@
 use super::utils::serialized;
-use test::test_utils::assert_eq;
 use cairo_level_tests::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
 use cairo_level_tests::contracts::multi_component::{
     contract_with_4_components, GetSupplyDispatcher, GetSupplyDispatcherTrait
@@ -17,9 +16,9 @@ fn test_flow() {
     )
         .unwrap();
     let mut get_supply_dispatcher = GetSupplyDispatcher { contract_address };
-    assert_eq(@get_supply_dispatcher.get_total_supply_plus_1(), @1001, 'get_total_supply_plus_1');
+    assert_eq!(get_supply_dispatcher.get_total_supply_plus_1(), 1001);
     let mut mint_dispatcher = MintTraitDispatcher { contract_address };
     starknet::testing::set_contract_address(recipient);
     mint_dispatcher.mint(recipient, 1999_u256);
-    assert_eq(@get_supply_dispatcher.get_total_supply_plus_1(), @3000, 'get_total_supply_plus_1');
+    assert_eq!(get_supply_dispatcher.get_total_supply_plus_1(), 3000);
 }

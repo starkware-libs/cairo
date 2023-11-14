@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
@@ -126,7 +126,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
 ) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let directory = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(directory));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
@@ -171,7 +171,7 @@ fn test_submodules() {
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "mod submod;");
@@ -264,7 +264,7 @@ fn test_plugin() {
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "struct A{}");
@@ -288,7 +288,7 @@ fn test_plugin_remove_original() {
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "#[remove_original] struct A{}");
@@ -366,7 +366,7 @@ fn test_foo_to_bar() {
     let db = &mut db_val;
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "#[foo_to_bar] fn foo() {}");
@@ -392,7 +392,7 @@ fn test_first_plugin_removes() {
     let db = &mut db_val;
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "#[remove_orig] fn foo() {}");
@@ -416,7 +416,7 @@ fn test_first_plugin_generates() {
     let db = &mut db_val;
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "#[foo_to_bar] #[remove_orig] fn foo() {}");
@@ -440,7 +440,7 @@ fn test_plugin_chain() {
     let db = &mut db_val;
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "#[foo_to_bar] fn foo() {}");
@@ -466,7 +466,7 @@ fn test_unknown_item_macro() {
     let db = &mut db_val;
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "unknown_item_macro!();");

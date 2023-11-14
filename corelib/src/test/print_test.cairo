@@ -1,7 +1,6 @@
-use byte_array::BYTE_ARRAY_MAGIC;
-use debug::{PrintTrait, print_byte_array_as_string};
+use core::byte_array::BYTE_ARRAY_MAGIC;
+use core::debug::{PrintTrait, print_byte_array_as_string};
 
-// TODO(yuval): change these to real tests with a mock VM.
 #[ignore]
 #[test]
 fn test_prints() {
@@ -22,7 +21,7 @@ fn test_prints() {
     // Valid string as an array.
     let x = array![
         BYTE_ARRAY_MAGIC,
-        1, // No full words.
+        1, // A single full word.
         'This is a long string with more',
         ' than 31 characters.',
         20 // pending word length. Bigger than the actual data in the pending word.
@@ -77,24 +76,56 @@ fn test_prints() {
     ];
     x.print();
 
-    // String with Null.
+    // Valid string with Null.
     let mut x: ByteArray = "Hello";
     x.append_byte(0); // '\0'
     let suffix: ByteArray = "world";
     x.append(@suffix);
     print_byte_array_as_string(@x);
 
-    // String with a non printable character.
+    // Valid string with a non printable character.
     let mut x: ByteArray = "Hello";
     x.append_byte(0x11); // Non printable character.
     let suffix: ByteArray = "world";
     x.append(@suffix);
     print_byte_array_as_string(@x);
 
-    // String with a newline.
+    // Valid string with a newline.
     let mut x: ByteArray = "Hello";
     x.append_byte(0xA); // '\n'
     let suffix: ByteArray = "world";
     x.append(@suffix);
     print_byte_array_as_string(@x);
+
+    // Multiple values: (felt, string, short_string, felt)
+    let x = array![0x9999, BYTE_ARRAY_MAGIC, 0, 'hello', 5, 'world', 0x8888];
+    x.print();
+}
+
+#[ignore]
+#[test]
+fn test_print_macro() {
+    // With a ByteArray.
+    let ba: ByteArray = "hello";
+    print!("{}", ba);
+
+    // With a felt252.
+    print!("{}", 97_felt252);
+
+    // With an integer.
+    print!("{}", 97_usize);
+}
+
+#[ignore]
+#[test]
+fn test_println_macro() {
+    // With a ByteArray.
+    let ba: ByteArray = "hello";
+    println!("{}", ba);
+
+    // With a felt252.
+    println!("{}", 97_felt252);
+
+    // With an integer.
+    println!("{}", 97_usize);
 }

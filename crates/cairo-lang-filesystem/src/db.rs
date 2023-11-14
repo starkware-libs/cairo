@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
+use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -16,6 +17,54 @@ mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
 
+/// A configuration per crate.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct CrateConfiguration {
+    /// The root directry of the crate.
+    pub root: Directory,
+    /// The cairo edition of the crate.
+    pub edition: Edition,
+}
+impl CrateConfiguration {
+    /// Returns a new configuration.
+    pub fn default_for_root(root: Directory) -> Self {
+        Self { root, edition: Edition::default() }
+    }
+}
+
+/// The Cairo edition of a crate.
+/// Editions are a mechanism to allow breaking changes in the compiler.
+/// Compiler minor version updates will always support all editions supported by the previous
+/// updates with the same major version. Compiler major version updates may remove support for older
+/// editions. Editions may be added to provide features that are not backwards compatible, while
+/// allowing user to opt-in to them, and be ready for later compiler updates.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Edition {
+    /// The base edition, dated for the first release of the compiler.
+    #[default]
+    #[serde(rename = "2023_01")]
+    V2023_01,
+    #[serde(rename = "2023_10")]
+    V2023_10,
+}
+impl Edition {
+    /// Returns the latest stable edition.
+    ///
+    /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
+    /// to migrate to when possible.
+    pub const fn latest() -> Self {
+        Self::V2023_10
+    }
+
+    /// The name of the prelude submodule of `core::prelude` for this compatibility version.
+    pub fn prelude_submodule_name(&self) -> &str {
+        match self {
+            Self::V2023_01 => "v2023_01",
+            Self::V2023_10 => "v2023_10",
+        }
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
 pub trait FilesGroup {
@@ -26,9 +75,9 @@ pub trait FilesGroup {
     #[salsa::interned]
     fn intern_flag(&self, flag: FlagLongId) -> FlagId;
 
-    /// Main input of the project. Lists all the crates.
+    /// Main input of the project. Lists all the crates configurations.
     #[salsa::input]
-    fn crate_roots(&self) -> Arc<OrderedHashMap<CrateId, Directory>>;
+    fn crate_configs(&self) -> Arc<OrderedHashMap<CrateId, CrateConfiguration>>;
 
     /// Overrides for file content. Mostly used by language server and tests.
     /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
@@ -48,8 +97,8 @@ pub trait FilesGroup {
 
     /// List of crates in the project.
     fn crates(&self) -> Vec<CrateId>;
-    /// Root directory of the crate.
-    fn crate_root_dir(&self, crate_id: CrateId) -> Option<Directory>;
+    /// Configuration of the crate.
+    fn crate_config(&self, crate_id: CrateId) -> Option<CrateConfiguration>;
 
     /// Query for raw file contents. Private.
     fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
@@ -64,7 +113,7 @@ pub trait FilesGroup {
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
     db.set_file_overrides(Arc::new(OrderedHashMap::default()));
-    db.set_crate_roots(Arc::new(OrderedHashMap::default()));
+    db.set_crate_configs(Arc::new(OrderedHashMap::default()));
     db.set_flags(Arc::new(OrderedHashMap::default()));
     db.set_cfg_set(Arc::new(CfgSet::new()));
 }
@@ -72,7 +121,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
     let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
     let core_root_dir = Directory::Real(path);
-    db.set_crate_root(core_crate, Some(core_root_dir));
+    db.set_crate_config(core_crate, Some(CrateConfiguration::default_for_root(core_root_dir)));
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {
@@ -92,13 +141,13 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
         self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
     }
     /// Sets the root directory of the crate. None value removes the crate.
-    fn set_crate_root(&mut self, crt: CrateId, root: Option<Directory>) {
-        let mut crate_roots = Upcast::upcast(self).crate_roots().as_ref().clone();
+    fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
+        let mut crate_configs = Upcast::upcast(self).crate_configs().as_ref().clone();
         match root {
-            Some(root) => crate_roots.insert(crt, root),
-            None => crate_roots.swap_remove(&crt),
+            Some(root) => crate_configs.insert(crt, root),
+            None => crate_configs.swap_remove(&crt),
         };
-        self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
+        self.as_files_group_mut().set_crate_configs(Arc::new(crate_configs));
     }
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, id: FlagId, value: Option<Arc<Flag>>) {
@@ -124,12 +173,12 @@ pub trait AsFilesGroupMut {
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     // TODO(spapini): Sort for stability.
-    db.crate_roots().keys().copied().collect()
+    db.crate_configs().keys().copied().collect()
 }
-fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<Directory> {
+fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match db.lookup_intern_crate(crt) {
-        CrateLongId::Real(_) => db.crate_roots().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, root } => Some(root),
+        CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Virtual { name: _, root } => Some(CrateConfiguration::default_for_root(root)),
     }
 }
 

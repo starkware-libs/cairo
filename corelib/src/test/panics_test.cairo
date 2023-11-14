@@ -1,4 +1,5 @@
-use byte_array::BYTE_ARRAY_MAGIC;
+use core::byte_array::BYTE_ARRAY_MAGIC;
+use core::{panics, panic_with_felt252};
 
 #[test]
 #[should_panic(expected: 'short_string')]
@@ -124,4 +125,22 @@ fn test_panic_with_byte_array_invalid_pending_word() {
         1 // pending word length. Smaller than the actual data in the pending word.
     ];
     panic(error);
+}
+
+#[test]
+#[should_panic(expected: "")]
+fn test_panic_macro_empty() {
+    panic!()
+}
+
+#[test]
+#[should_panic(expected: "basic")]
+fn test_panic_macro_basic_string() {
+    panic!("basic")
+}
+
+#[test]
+#[should_panic(expected: "some_format(1)")]
+fn test_panic_macro_with_input() {
+    panic!("some_format({})", 1)
 }

@@ -31,7 +31,7 @@ pub fn generic_completions(
     let mut completions = vec![];
 
     // Crates.
-    completions.extend(db.crate_roots().keys().map(|crate_id| CompletionItem {
+    completions.extend(db.crate_configs().keys().map(|crate_id| CompletionItem {
         label: db.lookup_intern_crate(*crate_id).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()

@@ -458,6 +458,7 @@ pub trait SemanticGroup:
     // ==============
     /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
     #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
+    #[salsa::cycle(items::imp::module_impl_ids_for_trait_filter_cycle)]
     fn module_impl_ids_for_trait_filter(
         &self,
         module_id: ModuleId,
@@ -497,6 +498,7 @@ pub trait SemanticGroup:
     fn impl_def_resolver_data(&self, impl_def_id: ImplDefId) -> Maybe<Arc<ResolverData>>;
     /// Returns the concrete trait that is implemented by the impl.
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
+    #[salsa::cycle(items::imp::impl_def_concrete_trait_cycle)]
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
     /// Returns the attributes attached to the impl.
     #[salsa::invoke(items::imp::impl_def_attributes)]

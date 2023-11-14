@@ -78,6 +78,7 @@ pub enum Trivium {
     Whitespace(TokenWhitespace),
     Newline(TokenNewline),
     Skipped(TokenSkipped),
+    SkippedNode(TriviumSkippedNode),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumPtr(pub SyntaxStablePtrId);
@@ -109,6 +110,11 @@ impl From<TokenSkippedPtr> for TriviumPtr {
         Self(value.0)
     }
 }
+impl From<TriviumSkippedNodePtr> for TriviumPtr {
+    fn from(value: TriviumSkippedNodePtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenSingleLineCommentGreen> for TriviumGreen {
     fn from(value: TokenSingleLineCommentGreen) -> Self {
         Self(value.0)
@@ -126,6 +132,11 @@ impl From<TokenNewlineGreen> for TriviumGreen {
 }
 impl From<TokenSkippedGreen> for TriviumGreen {
     fn from(value: TokenSkippedGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TriviumSkippedNodeGreen> for TriviumGreen {
+    fn from(value: TriviumSkippedNodeGreen) -> Self {
         Self(value.0)
     }
 }
@@ -149,6 +160,9 @@ impl TypedSyntaxNode for Trivium {
             }
             SyntaxKind::TokenNewline => Trivium::Newline(TokenNewline::from_syntax_node(db, node)),
             SyntaxKind::TokenSkipped => Trivium::Skipped(TokenSkipped::from_syntax_node(db, node)),
+            SyntaxKind::TriviumSkippedNode => {
+                Trivium::SkippedNode(TriviumSkippedNode::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Trivium"),
         }
     }
@@ -158,6 +172,7 @@ impl TypedSyntaxNode for Trivium {
             Trivium::Whitespace(x) => x.as_syntax_node(),
             Trivium::Newline(x) => x.as_syntax_node(),
             Trivium::Skipped(x) => x.as_syntax_node(),
+            Trivium::SkippedNode(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -172,6 +187,7 @@ impl Trivium {
             SyntaxKind::TokenWhitespace => true,
             SyntaxKind::TokenNewline => true,
             SyntaxKind::TokenSkipped => true,
+            SyntaxKind::TriviumSkippedNode => true,
             _ => false,
         }
     }
@@ -2559,15 +2575,15 @@ pub struct ArgListParenthesized {
 }
 impl ArgListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
-    pub const INDEX_ARGS: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 1;
     pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
-        args: ArgListGreen,
+        arguments: ArgListGreen,
         rparen: TerminalRParenGreen,
     ) -> ArgListParenthesizedGreen {
-        let children: Vec<GreenId> = vec![lparen.0, args.0, rparen.0];
+        let children: Vec<GreenId> = vec![lparen.0, arguments.0, rparen.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ArgListParenthesizedGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::ArgListParenthesized,
@@ -2579,7 +2595,7 @@ impl ArgListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
         TerminalLParen::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn args(&self, db: &dyn SyntaxGroup) -> ArgList {
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
         ArgList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
@@ -6532,14 +6548,16 @@ pub struct StatementLet {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementLet {
-    pub const INDEX_LET_KW: usize = 0;
-    pub const INDEX_PATTERN: usize = 1;
-    pub const INDEX_TYPE_CLAUSE: usize = 2;
-    pub const INDEX_EQ: usize = 3;
-    pub const INDEX_RHS: usize = 4;
-    pub const INDEX_SEMICOLON: usize = 5;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_LET_KW: usize = 1;
+    pub const INDEX_PATTERN: usize = 2;
+    pub const INDEX_TYPE_CLAUSE: usize = 3;
+    pub const INDEX_EQ: usize = 4;
+    pub const INDEX_RHS: usize = 5;
+    pub const INDEX_SEMICOLON: usize = 6;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         let_kw: TerminalLetGreen,
         pattern: PatternGreen,
         type_clause: OptionTypeClauseGreen,
@@ -6548,7 +6566,7 @@ impl StatementLet {
         semicolon: TerminalSemicolonGreen,
     ) -> StatementLetGreen {
         let children: Vec<GreenId> =
-            vec![let_kw.0, pattern.0, type_clause.0, eq.0, rhs.0, semicolon.0];
+            vec![attributes.0, let_kw.0, pattern.0, type_clause.0, eq.0, rhs.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementLetGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementLet,
@@ -6557,23 +6575,26 @@ impl StatementLet {
     }
 }
 impl StatementLet {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
-        TerminalLet::from_syntax_node(db, self.children[0].clone())
+        TerminalLet::from_syntax_node(db, self.children[1].clone())
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1].clone())
+        Pattern::from_syntax_node(db, self.children[2].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+        OptionTypeClause::from_syntax_node(db, self.children[3].clone())
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[3].clone())
+        TerminalEq::from_syntax_node(db, self.children[4].clone())
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[4].clone())
+        Expr::from_syntax_node(db, self.children[5].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6605,6 +6626,7 @@ impl TypedSyntaxNode for StatementLet {
             kind: SyntaxKind::StatementLet,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    AttributeList::missing(db).0,
                     TerminalLet::missing(db).0,
                     Pattern::missing(db).0,
                     OptionTypeClause::missing(db).0,
@@ -6777,14 +6799,16 @@ pub struct StatementExpr {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementExpr {
-    pub const INDEX_EXPR: usize = 0;
-    pub const INDEX_SEMICOLON: usize = 1;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         expr: ExprGreen,
         semicolon: OptionTerminalSemicolonGreen,
     ) -> StatementExprGreen {
-        let children: Vec<GreenId> = vec![expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, expr.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementExprGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementExpr,
@@ -6793,11 +6817,14 @@ impl StatementExpr {
     }
 }
 impl StatementExpr {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> OptionTerminalSemicolon {
-        OptionTerminalSemicolon::from_syntax_node(db, self.children[1].clone())
+        OptionTerminalSemicolon::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6820,7 +6847,11 @@ impl TypedSyntaxNode for StatementExpr {
         StatementExprGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementExpr,
             details: GreenNodeDetails::Node {
-                children: vec![Expr::missing(db).0, OptionTerminalSemicolon::missing(db).0],
+                children: vec![
+                    AttributeList::missing(db).0,
+                    Expr::missing(db).0,
+                    OptionTerminalSemicolon::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         })))
@@ -6850,14 +6881,16 @@ pub struct StatementContinue {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementContinue {
-    pub const INDEX_CONTINUE_KW: usize = 0;
-    pub const INDEX_SEMICOLON: usize = 1;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_CONTINUE_KW: usize = 1;
+    pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         continue_kw: TerminalContinueGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementContinueGreen {
-        let children: Vec<GreenId> = vec![continue_kw.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, continue_kw.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementContinueGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementContinue,
@@ -6866,11 +6899,14 @@ impl StatementContinue {
     }
 }
 impl StatementContinue {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn continue_kw(&self, db: &dyn SyntaxGroup) -> TerminalContinue {
-        TerminalContinue::from_syntax_node(db, self.children[0].clone())
+        TerminalContinue::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[1].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6893,7 +6929,11 @@ impl TypedSyntaxNode for StatementContinue {
         StatementContinueGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementContinue,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalContinue::missing(db).0, TerminalSemicolon::missing(db).0],
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalContinue::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         })))
@@ -7124,16 +7164,18 @@ pub struct StatementReturn {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementReturn {
-    pub const INDEX_RETURN_KW: usize = 0;
-    pub const INDEX_EXPR_CLAUSE: usize = 1;
-    pub const INDEX_SEMICOLON: usize = 2;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_RETURN_KW: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         return_kw: TerminalReturnGreen,
         expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementReturnGreen {
-        let children: Vec<GreenId> = vec![return_kw.0, expr_clause.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, return_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementReturnGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementReturn,
@@ -7142,14 +7184,17 @@ impl StatementReturn {
     }
 }
 impl StatementReturn {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
-        TerminalReturn::from_syntax_node(db, self.children[0].clone())
+        TerminalReturn::from_syntax_node(db, self.children[1].clone())
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[1].clone())
+        OptionExprClause::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7173,6 +7218,7 @@ impl TypedSyntaxNode for StatementReturn {
             kind: SyntaxKind::StatementReturn,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    AttributeList::missing(db).0,
                     TerminalReturn::missing(db).0,
                     OptionExprClause::missing(db).0,
                     TerminalSemicolon::missing(db).0,
@@ -7206,16 +7252,18 @@ pub struct StatementBreak {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementBreak {
-    pub const INDEX_BREAK_KW: usize = 0;
-    pub const INDEX_EXPR_CLAUSE: usize = 1;
-    pub const INDEX_SEMICOLON: usize = 2;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_BREAK_KW: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         break_kw: TerminalBreakGreen,
         expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementBreakGreen {
-        let children: Vec<GreenId> = vec![break_kw.0, expr_clause.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, break_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementBreakGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::StatementBreak,
@@ -7224,14 +7272,17 @@ impl StatementBreak {
     }
 }
 impl StatementBreak {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn break_kw(&self, db: &dyn SyntaxGroup) -> TerminalBreak {
-        TerminalBreak::from_syntax_node(db, self.children[0].clone())
+        TerminalBreak::from_syntax_node(db, self.children[1].clone())
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[1].clone())
+        OptionExprClause::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7255,6 +7306,7 @@ impl TypedSyntaxNode for StatementBreak {
             kind: SyntaxKind::StatementBreak,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    AttributeList::missing(db).0,
                     TerminalBreak::missing(db).0,
                     OptionExprClause::missing(db).0,
                     TerminalSemicolon::missing(db).0,
@@ -13512,6 +13564,131 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericParamImplAnonymousPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TriviumSkippedNode {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl TriviumSkippedNode {
+    pub const INDEX_NODE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, node: SkippedNodeGreen) -> TriviumSkippedNodeGreen {
+        let children: Vec<GreenId> = vec![node.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TriviumSkippedNodeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TriviumSkippedNode,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl TriviumSkippedNode {
+    pub fn node(&self, db: &dyn SyntaxGroup) -> SkippedNode {
+        SkippedNode::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TriviumSkippedNodePtr(pub SyntaxStablePtrId);
+impl TriviumSkippedNodePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> TriviumSkippedNode {
+        TriviumSkippedNode::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TriviumSkippedNodeGreen(pub GreenId);
+impl TypedSyntaxNode for TriviumSkippedNode {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TriviumSkippedNode);
+    type StablePtr = TriviumSkippedNodePtr;
+    type Green = TriviumSkippedNodeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TriviumSkippedNodeGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TriviumSkippedNode,
+            details: GreenNodeDetails::Node {
+                children: vec![SkippedNode::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TriviumSkippedNode,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TriviumSkippedNode
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TriviumSkippedNodePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum SkippedNode {
+    AttributeList(AttributeList),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodePtr(pub SyntaxStablePtrId);
+impl SkippedNodePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> SkippedNode {
+        SkippedNode::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AttributeListPtr> for SkippedNodePtr {
+    fn from(value: AttributeListPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AttributeListGreen> for SkippedNodeGreen {
+    fn from(value: AttributeListGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SkippedNodeGreen(pub GreenId);
+impl TypedSyntaxNode for SkippedNode {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = SkippedNodePtr;
+    type Green = SkippedNodeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::AttributeList => {
+                SkippedNode::AttributeList(AttributeList::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "SkippedNode"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            SkippedNode::AttributeList(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SkippedNodePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl SkippedNode {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::AttributeList => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

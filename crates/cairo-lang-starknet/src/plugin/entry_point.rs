@@ -262,8 +262,8 @@ fn generate_entry_point_wrapper(
         let mut_modifier = if is_ref { "mut " } else { "" };
         let arg_definition = formatdoc!(
             "
-            let {mut_modifier}{arg_name} = option::OptionTraitImpl::expect(
-                    serde::Serde::<{type_name}>::deserialize(ref data),
+            let {mut_modifier}{arg_name} = core::option::OptionTraitImpl::expect(
+                    core::serde::Serde::<{type_name}>::deserialize(ref data),
                     'Failed to deserialize param #{param_idx}'
                 );"
         );
@@ -271,7 +271,7 @@ fn generate_entry_point_wrapper(
 
         if is_ref {
             ref_appends.push(RewriteNode::Text(format!(
-                "\n            serde::Serde::<{type_name}>::serialize(@{arg_name}, ref arr);"
+                "\n            core::serde::Serde::<{type_name}>::serialize(@{arg_name}, ref arr);"
             )));
         }
     }
@@ -289,7 +289,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "let res = ",
-                format!("\n    serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
+                format!("\n    core::serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
                 return_ty_is_felt252_span,
                 ret_type_ast.stable_ptr().untyped(),
             )
@@ -313,10 +313,10 @@ fn generate_entry_point_wrapper(
     } else {
         formatdoc! {"
             {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
-                let mut arr = array::array_new();
+                let mut arr = core::array::array_new();
                 // References.$ref_appends$
                 // Result.{append_res}
-                array::ArrayTrait::span(@arr)"
+                core::array::ArrayTrait::span(@arr)"
         }
     };
 
@@ -338,13 +338,13 @@ fn generate_entry_point_wrapper(
         &formatdoc! {"
             $implicit_precedence$
             fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
-                internal::require_implicit::<System>();
-                internal::revoke_ap_tracking();
-                option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+                core::internal::require_implicit::<System>();
+                core::internal::revoke_ap_tracking();
+                core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
                 $arg_definitions$
-                assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-                option::OptionTraitImpl::expect(
-                    gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+                assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+                core::option::OptionTraitImpl::expect(
+                    core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
                 );
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
                 $output_handling$

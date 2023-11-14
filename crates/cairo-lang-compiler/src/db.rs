@@ -2,20 +2,19 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, PluginSuite};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
+    FilesGroup, FilesGroupEx, CORELIB_CRATE_NAME,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
-use cairo_lang_semantic::inline_macros::get_default_inline_macro_plugins;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -75,8 +74,7 @@ impl Default for RootDatabase {
 
 #[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
-    plugins: Vec<Arc<dyn MacroPlugin>>,
-    inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+    plugin_suite: PluginSuite,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
@@ -85,30 +83,20 @@ pub struct RootDatabaseBuilder {
 impl RootDatabaseBuilder {
     fn new() -> Self {
         Self {
-            plugins: get_default_plugins(),
-            inline_macro_plugins: get_default_inline_macro_plugins(),
+            plugin_suite: get_default_plugin_suite(),
             detect_corelib: false,
             project_config: None,
             cfg_set: None,
         }
     }
 
-    pub fn with_macro_plugin(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
-        self.plugins.push(plugin);
-        self
-    }
-
-    pub fn with_inline_macro_plugin(
-        &mut self,
-        name: &str,
-        plugin: Arc<dyn InlineMacroExprPlugin>,
-    ) -> &mut Self {
-        self.inline_macro_plugins.insert(name.into(), plugin);
+    pub fn with_plugin_suite(&mut self, suite: PluginSuite) -> &mut Self {
+        self.plugin_suite.add(suite);
         self
     }
 
     pub fn clear_plugins(&mut self) -> &mut Self {
-        self.plugins.clear();
+        self.plugin_suite = get_default_plugin_suite();
         self
     }
 
@@ -132,7 +120,10 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::new(self.plugins.clone(), self.inline_macro_plugins.clone());
+        let mut db = RootDatabase::new(
+            self.plugin_suite.plugins.clone(),
+            self.plugin_suite.inline_macro_plugins.clone(),
+        );
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
@@ -149,7 +140,10 @@ impl RootDatabaseBuilder {
 
             if let Some(corelib) = config.corelib {
                 let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
-                db.set_crate_root(core_crate, Some(corelib));
+                db.set_crate_config(
+                    core_crate,
+                    Some(CrateConfiguration::default_for_root(corelib)),
+                );
             }
         }
 

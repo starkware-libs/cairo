@@ -1,5 +1,5 @@
 use core::debug::PrintTrait;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
 
@@ -64,7 +64,7 @@ use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
 
 #[test]
 fn test_events() {
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
         contract_with_event::TEST_CLASS_HASH.try_into().unwrap(),
@@ -131,7 +131,7 @@ fn test_events() {
         @FlatEvent::FlatEvent(StaticEvent {}),
         'event == FlatEvent'
     );
-    assert(starknet::testing::pop_log_raw(contract_address).is_none(), 'no more events');
+    assert!(starknet::testing::pop_log_raw(contract_address).is_none());
 }
 
 #[test]
@@ -146,14 +146,14 @@ fn test_pop_log() {
     starknet::emit_event_syscall(keys.span(), data.span());
 
     let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
-    assert_eq(@keys.len(), @1, 'unexpected keys size');
-    assert_eq(@data.len(), @1, 'unexpected data size');
+    assert_eq!(keys.len(), 1);
+    assert_eq!(data.len(), 1);
     assert_eq(keys.at(0), @1234, 'unexpected key');
     assert_eq(data.at(0), @2345, 'unexpected data');
 
     let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
-    assert_eq(@keys.len(), @1, 'unexpected keys size');
-    assert_eq(@data.len(), @1, 'unexpected data size');
+    assert_eq!(keys.len(), 1);
+    assert_eq!(data.len(), 1);
     assert_eq(keys.at(0), @1234, 'unexpected key');
     assert_eq(data.at(0), @2345, 'unexpected data');
 }

@@ -291,14 +291,17 @@ fn compute_expr_inline_macro_semantic(
     };
 
     let result = macro_plugin.generate_code(syntax_db, syntax);
+    let mut diag_added = None;
     for diagnostic in result.diagnostics {
-        ctx.diagnostics.report(syntax, PluginDiagnostic(diagnostic));
+        diag_added = Some(
+            ctx.diagnostics.report_by_ptr(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+        );
     }
 
     let Some(code) = result.code else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax, InlineMacroFailed { macro_name: macro_name.into() }));
+        return Err(diag_added.unwrap_or_else(|| {
+            ctx.diagnostics.report(syntax, InlineMacroFailed { macro_name: macro_name.into() })
+        }));
     };
 
     // Create a file
@@ -565,7 +568,7 @@ fn compute_expr_function_call_semantic(
     // TODO(Gil): Consider not invoking the TraitFunction inference below if there were errors in
     // argument semantics, in order to avoid unnecessary diagnostics.
     let named_args: Vec<_> = args_syntax
-        .args(syntax_db)
+        .arguments(syntax_db)
         .elements(syntax_db)
         .into_iter()
         .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
@@ -909,15 +912,9 @@ fn compute_expr_loop_semantic(
 
         let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
-        let tail = get_tail_expression(syntax_db, statements.as_slice())
-            .map(|tail| compute_expr_semantic(new_ctx, &tail));
-        if let Some(tail) = &tail {
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
+        if tail.is_some() {
             statements.pop();
-            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
-                new_ctx
-                    .diagnostics
-                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
-            }
         }
 
         // Convert statements to semantic model.
@@ -927,6 +924,14 @@ fn compute_expr_loop_semantic(
                 compute_statement_semantic(new_ctx, statement_syntax).to_option()
             })
             .collect();
+        let tail = tail.map(|tail| compute_expr_semantic(new_ctx, &tail));
+        if let Some(tail) = &tail {
+            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
+                new_ctx
+                    .diagnostics
+                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
+            }
+        }
 
         let new_flow_merge =
             std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
@@ -979,8 +984,13 @@ fn compute_expr_error_propagate_semantic(
             },
         )
     })?;
+    let conformed_err_variant_ty =
+        ctx.resolver.inference().conform_ty(func_err_variant.ty, err_variant.ty);
+    // If conforming the types failed, the next check will fail and a better diagnostic will be
+    // added.
+    let err_variant_ty = conformed_err_variant_ty.unwrap_or(err_variant.ty);
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
-    if func_err_variant.ty != err_variant.ty
+    if func_err_variant.ty != err_variant_ty
         || func_err_variant.concrete_enum_id.enum_id(ctx.db)
             != err_variant.concrete_enum_id.enum_id(ctx.db)
     {
@@ -1682,7 +1692,7 @@ fn method_call_expr(
     let named_args: Vec<_> = chain!(
         [NamedArg(fixed_lexpr, None, mutability)],
         expr.arguments(syntax_db)
-            .args(syntax_db)
+            .arguments(syntax_db)
             .elements(syntax_db)
             .into_iter()
             .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))

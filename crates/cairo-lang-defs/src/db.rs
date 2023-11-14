@@ -188,7 +188,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
     Ok(match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            db.crate_root_dir(crate_id).to_maybe()?.file(db.upcast(), "lib.cairo".into())
+            db.crate_config(crate_id).to_maybe()?.root.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
@@ -219,7 +219,9 @@ fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     match module_id {
-        ModuleId::CrateRoot(crate_id) => db.crate_root_dir(crate_id).to_maybe(),
+        ModuleId::CrateRoot(crate_id) => {
+            db.crate_config(crate_id).to_maybe().map(|config| config.root)
+        }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
@@ -362,13 +364,6 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         files.push(module_file);
 
         for item_ast in item_asts.elements(syntax_db) {
-            validate_attributes(
-                syntax_db,
-                &allowed_attributes,
-                module_file_id,
-                &item_ast,
-                &mut plugin_diagnostics,
-            );
             let mut remove_original_item = false;
             // Iterate the plugins by their order. The first one to change something (either
             // generate new code, remove the original code, or both), breaks the loop. If more
@@ -405,6 +400,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 // Don't add the original item to the module data.
                 continue;
             }
+            validate_attributes(
+                syntax_db,
+                &allowed_attributes,
+                module_file_id,
+                &item_ast,
+                &mut plugin_diagnostics,
+            );
             match item_ast {
                 ast::Item::Constant(constant) => {
                     let item_id =

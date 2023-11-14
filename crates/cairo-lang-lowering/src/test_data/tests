@@ -299,24 +299,23 @@ fn foo(a : Array::<felt252, 5>) -> felt252 {
 foo
 
 //! > module_code
-extern type Array<T, const N: usize>;
+type Array<T,const N: usize> = (T,felt252);
 
 //! > semantic_diagnostics
 error: Const generic args are not allowed in this context.
- --> lib.cairo:1:22
-extern type Array<T, const N: usize>;
-                     ^************^
+ --> lib.cairo:1:14
+type Array<T,const N: usize> = (T,felt252);
+             ^************^
 
 //! > lowering_diagnostics
-error: Variable not dropped.
- --> lib.cairo:2:8
-fn foo(a : Array::<felt252, 5>) -> felt252 {
-       ^
-note: Trait has no implementation in context: core::traits::Drop::<test::Array::<core::felt252, 5>>
-note: Trait has no implementation in context: core::traits::Destruct::<test::Array::<core::felt252, 5>>
 
 //! > lowering_flat
-Parameters: v0: test::Array::<core::felt252, 5>
+Parameters: v0: (core::felt252, core::felt252)
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- core::felt252_const::<LiteralLongId { value: 17 }>()
+End:
+  Return(v1)
 
 //! > ==========================================================================
 

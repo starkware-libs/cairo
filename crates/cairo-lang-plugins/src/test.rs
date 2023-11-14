@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
@@ -17,7 +17,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
-use crate::get_default_plugins;
+use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
 
 cairo_lang_test_utils::test_file_test!(
@@ -50,7 +50,7 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
+        res.set_macro_plugins(get_base_plugins());
         res
     }
 }
@@ -112,7 +112,7 @@ pub fn test_expand_plugin_inner(
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
     let root = Directory::Real("test_src".into());
-    db.set_crate_root(crate_id, Some(root));
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
     let file_id = db.intern_file(FileLongId::OnDisk("test_src/lib.cairo".into()));

@@ -1,9 +1,7 @@
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_semantic::inline_macros::{
-    extract_single_unnamed_arg, unsupported_bracket_diagnostic,
-};
+use cairo_lang_semantic::extract_macro_single_unnamed_arg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
@@ -12,8 +10,8 @@ use crate::contract::starknet_keccak;
 /// Macro for expanding a selector to a string literal.
 #[derive(Debug, Default)]
 pub struct SelectorMacro;
-impl SelectorMacro {
-    pub const NAME: &'static str = "selector";
+impl NamedPlugin for SelectorMacro {
+    const NAME: &'static str = "selector";
 }
 impl InlineMacroExprPlugin for SelectorMacro {
     fn generate_code(
@@ -21,20 +19,11 @@ impl InlineMacroExprPlugin for SelectorMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
-        };
-
-        let Some(arg) = extract_single_unnamed_arg(db, args.args(db)) else {
-            let diagnostics = vec![PluginDiagnostic {
-                stable_ptr: syntax.stable_ptr().untyped(),
-                message: format!(
-                    "`{}` macro must have exactly one unnamed argument.",
-                    SelectorMacro::NAME
-                ),
-            }];
-            return InlinePluginResult { code: None, diagnostics };
-        };
+        let arg = extract_macro_single_unnamed_arg!(
+            db,
+            syntax,
+            ast::WrappedArgList::ParenthesizedArgList(_)
+        );
 
         let ast::Expr::String(input_string) = arg else {
             let diagnostics = vec![PluginDiagnostic {

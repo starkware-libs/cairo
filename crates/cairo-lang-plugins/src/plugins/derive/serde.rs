@@ -8,7 +8,11 @@ use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Serde` trait.
 pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
-    let header = info.format_impl_header("Serde", &["Serde", "Destruct"]);
+    let header = info.format_impl_header(
+        "core::serde",
+        "Serde",
+        &["core::serde::Serde", "core::traits::Destruct"],
+    );
     let full_typename = info.full_typename();
     let ty = &info.name;
     let serialize_body = indent_by(
@@ -21,8 +25,8 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 }}",
                     variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{ty}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
-                        serde::Serde::serialize(x, ref output); }},",
+                        "{ty}::{variant}(x) => {{ core::serde::Serde::serialize(@{idx}, ref output); \
+                        core::serde::Serde::serialize(x, ref output); }},",
                         variant=variant.name,
                     )
                 }).join("\n    ")}
@@ -31,7 +35,7 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 .iter()
                 .map(|member| {
                     format!(
-                        "serde::Serde::serialize(self.{member}, ref output)",
+                        "core::serde::Serde::serialize(self.{member}, ref output)",
                         member = member.name
                     )
                 })
@@ -47,15 +51,15 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
         match &info.specific_info {
             TypeVariantInfo::Enum(variants) => {
                 formatdoc! {"
-                    let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-                    Option::Some(
+                    let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+                    core::option::Option::Some(
                         {}
-                        else {{ return Option::None; }}
+                        else {{ return core::option::Option::None; }}
                     )",
                     variants.iter().enumerate().map(|(idx, variant)| {
                         format!(
                             "if idx == {idx} {{ {ty}::{variant}(\
-                                serde::Serde::deserialize(ref serialized)?) }}",
+                                core::serde::Serde::deserialize(ref serialized)?) }}",
                             variant=variant.name,
                         )
                     }).join("\n    else ")
@@ -63,11 +67,11 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
             }
             TypeVariantInfo::Struct(members) => {
                 formatdoc! {"
-                    Option::Some({ty} {{
+                    core::option::Option::Some({ty} {{
                         {}
                     }})",
                     members.iter().map(|member|format!(
-                        "{member}: serde::Serde::deserialize(ref serialized)?,",
+                        "{member}: core::serde::Serde::deserialize(ref serialized)?,",
                         member=member.name
                     )).join("\n    "),
                 }
@@ -80,10 +84,10 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
     );
     result.impls.push(formatdoc! {"
         {header} {{
-            fn serialize(self: @{full_typename}, ref output: array::Array<felt252>) {{
+            fn serialize(self: @{full_typename}, ref output: core::array::Array<felt252>) {{
                 {serialize_body}
             }}
-            fn deserialize(ref serialized: array::Span<felt252>) -> Option<{full_typename}> {{
+            fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<{full_typename}> {{
                 {deserialize_body}
             }}
         }}

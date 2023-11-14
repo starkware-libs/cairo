@@ -22,7 +22,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 
-use crate::corelib::core_module;
+use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -759,13 +759,23 @@ impl<'db> Resolver<'db> {
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
-        // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
-        if self.db.crate_root_dir(crate_id).is_some() {
+        if self.db.crate_config(crate_id).is_some() {
             return None;
         }
-
-        // Last resort, use the `core` crate root module as the base module.
-        Some(core_module(self.db))
+        // Last resort, use the `prelude` module as the base module.
+        let owning_crate = self.module_file_id.0.owning_crate(self.db.upcast());
+        let edition =
+            self.db.crate_config(owning_crate).map(|config| config.edition).unwrap_or_default();
+        let prelude_submodule_name = edition.prelude_submodule_name();
+        let core_prelude_submodule = core_submodule(self.db, "prelude");
+        Some(get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
+            || {
+                panic!(
+                    "expected prelude submodule `{prelude_submodule_name}` not found in \
+                     `core::prelude`."
+                )
+            },
+        ))
     }
 
     /// Specializes a trait.
@@ -1021,7 +1031,13 @@ impl<'db> Resolver<'db> {
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                     .is_err()
                 {
-                    diagnostics.report(generic_arg_syntax, TraitMismatch);
+                    diagnostics.report(
+                        generic_arg_syntax,
+                        TraitMismatch {
+                            expected_trt: expected_concrete_trait,
+                            actual_trt: impl_def_concrete_trait,
+                        },
+                    );
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }

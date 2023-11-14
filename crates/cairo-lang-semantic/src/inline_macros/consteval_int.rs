@@ -1,5 +1,5 @@
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
 use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
@@ -7,31 +7,26 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
 
-use super::{extract_single_unnamed_arg, unsupported_bracket_diagnostic};
+use crate::extract_macro_single_unnamed_arg;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ConstevalIntMacro;
-
+impl NamedPlugin for ConstevalIntMacro {
+    const NAME: &'static str = "consteval_int";
+}
 impl InlineMacroExprPlugin for ConstevalIntMacro {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
+        let constant_expression = extract_macro_single_unnamed_arg!(
+            db,
+            syntax,
+            ast::WrappedArgList::ParenthesizedArgList(_)
+        );
+
         let mut diagnostics = vec![];
-        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
-        };
-        let Some(constant_expression) = extract_single_unnamed_arg(db, args.args(db)) else {
-            return InlinePluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: args.stable_ptr().untyped(),
-                    message: "consteval_int macro must have exactly one unnamed argument."
-                        .to_string(),
-                }],
-            };
-        };
         let code = compute_constant_expr(db, &constant_expression, &mut diagnostics);
         InlinePluginResult {
             code: code.map(|x| {

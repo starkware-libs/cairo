@@ -93,7 +93,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
         return None;
     };
 
-    let [arg] = &attribute_args.args(db).elements(db)[..] else {
+    let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
         return None;
     };
     let AttributeArgVariant::Unnamed { value: attr_arg_value, .. } =
@@ -457,7 +457,7 @@ fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData)
          @{GENERIC_CONTRACT_STATE_NAME};
             fn get_contract_mut(ref self: {GENERIC_COMPONENT_STATE_NAME}) -> \
          {GENERIC_CONTRACT_STATE_NAME};
-            fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
+            fn emit<S, impl IntoImp: core::traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
          {GENERIC_COMPONENT_STATE_NAME}, event: S);
         }}"
     ));

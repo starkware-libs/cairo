@@ -2,6 +2,7 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, Shl};
+use std::vec::IntoIter;
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{BigInteger, Field, PrimeField};
@@ -32,6 +33,7 @@ use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
+use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
@@ -1933,14 +1935,7 @@ pub fn execute_core_hint(
             )?;
         }
         CoreHint::DebugPrint { start, end } => {
-            let mut curr = extract_relocatable(vm, start)?;
-            let end = extract_relocatable(vm, end)?;
-            while curr != end {
-                let (string, next) = format_next(vm, curr, end)?;
-                println!("[DEBUG]\t{string}");
-                curr = next;
-            }
-            println!();
+            print!("{}", format_for_debug(read_felts(vm, start, end)?.into_iter()));
         }
         CoreHint::AllocConstantSize { size, dst } => {
             let object_size = get_val(vm, size)?.to_usize().expect("Object size too large.");
@@ -2011,80 +2006,23 @@ pub fn execute_core_hint(
     Ok(())
 }
 
-// Returns the formatted debug string for the next value (a string or a single byte).
-fn format_next(
+/// Reads a range of `Felt252`s from the VM.
+fn read_felts(
     vm: &mut VirtualMachine,
-    curr: Relocatable,
-    end: Relocatable,
-) -> Result<(String, Relocatable), HintError> {
-    let value = vm.get_integer(curr)?.deref().clone();
-    let curr_plus_one = (curr + 1)?;
-    let (string, next) = if value == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
-        let Ok(num_full_words) = vm.get_integer(curr_plus_one) else {
-            return Ok((format_single_byte(value), curr_plus_one));
-        };
-        let Some(num_full_words) = num_full_words.to_usize() else {
-            return Ok((format_single_byte(value), curr_plus_one));
-        };
-        let Ok(next) = curr + (num_full_words + 4) else {
-            return Ok((format_single_byte(value), curr_plus_one));
-        };
-        if next > end {
-            // Not enough data for a string, handle as a single byte.
-            (format_single_byte(value), curr_plus_one)
-        } else {
-            // Print string.
-            match format_string(vm, curr_plus_one, num_full_words) {
-                Some(string) => (string, next),
-                // Could not parse as a string, print a single byte.
-                None => (format_single_byte(value), curr_plus_one),
-            }
-        }
-    } else {
-        (format_single_byte(value), curr_plus_one)
-    };
-    Ok((string, next))
-}
+    start: &ResOperand,
+    end: &ResOperand,
+) -> Result<Vec<Felt252>, HintError> {
+    let mut curr = extract_relocatable(vm, start)?;
+    let end = extract_relocatable(vm, end)?;
 
-/// Returns the formatted debug string for a string, assuming previous 2 bytes were the ByteArray
-/// string magic and the number of full words, which is passed here by `num_full_words`.
-/// Assumes also that `curr + (num_full_words + 3)` does not overflow.
-/// `pointer` points to the beginning of the full words.
-/// If can't parse a string, returns None.
-fn format_string(
-    vm: &mut VirtualMachine,
-    mut pointer: Relocatable,
-    num_full_words: usize,
-) -> Option<String> {
-    let mut full_words = vec![];
-
-    let full_words_end = (pointer + (num_full_words + 1)).unwrap();
-    pointer += 1;
-    while pointer != full_words_end {
-        let full_word = vm.get_integer(pointer).ok()?;
-        full_words.push(full_word);
-        pointer += 1;
+    let mut felts = Vec::new();
+    while curr != end {
+        let value = vm.get_integer(curr)?.deref().clone();
+        felts.push(value);
+        curr = (curr + 1)?;
     }
-    let pending_word = vm.get_integer(pointer).ok()?;
-    pointer += 1;
-    let pending_word_len = vm.get_integer(pointer).ok()?.to_usize()?;
 
-    let full_words_string = full_words
-        .into_iter()
-        .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
-        .collect::<Option<Vec<String>>>()?
-        .join("");
-    let pending_word_string = as_cairo_short_string_ex(&pending_word, pending_word_len)?;
-    Some(format!("\"{full_words_string}{pending_word_string}\""))
-}
-
-/// Returns the formatted debug string for a single byte (the given `value`).
-fn format_single_byte(value: Felt252) -> String {
-    if let Some(shortstring) = as_cairo_short_string(&value) {
-        format!("{shortstring: <31}\t(raw: {:#x})", value.to_bigint())
-    } else {
-        format!("{:<31}\t(raw: {:#x})", ' ', value.to_bigint())
-    }
+    Ok(felts)
 }
 
 /// Reads the result of a function call that returns `Array<felt252>`.
@@ -2178,4 +2116,102 @@ where
     runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+}
+
+/// Formats the given felts as a debug string.
+fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
+    let mut items = Vec::new();
+    while let Some(item) = format_next_item(&mut felts) {
+        items.push(item);
+    }
+    if let [item] = &items[..] {
+        if item.is_string {
+            return item.item.clone();
+        }
+    }
+    items
+        .into_iter()
+        .map(|item| {
+            if item.is_string {
+                format!("{}\n", item.item)
+            } else {
+                format!("[DEBUG]\t{}\n", item.item)
+            }
+        })
+        .join("")
+}
+
+/// A formatted string representation of anything formattable (e.g. ByteArray, felt, short-string).
+pub struct FormattedItem {
+    /// The formatted string representing the item.
+    item: String,
+    /// Whether the item is a string.
+    is_string: bool,
+}
+impl FormattedItem {
+    /// Returns the formatted item as is.
+    pub fn get(self) -> String {
+        self.item
+    }
+    /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
+    pub fn quote_if_string(self) -> String {
+        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
+    }
+}
+
+/// Formats a string or a short string / `felt252`. Returns the formatted string and a boolean
+/// indicating whether it's a string. If can't format the item, returns None.
+pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
+where
+    T: Iterator<Item = Felt252> + Clone,
+{
+    let Some(first_felt) = values.next() else {
+        return None;
+    };
+
+    if first_felt == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
+        if let Some(string) = try_format_string(values) {
+            return Some(FormattedItem { item: string, is_string: true });
+        }
+    }
+    Some(FormattedItem { item: format_short_string(&first_felt), is_string: false })
+}
+
+/// Formats a `Felt252`, as a short string if possible.
+fn format_short_string(value: &Felt252) -> String {
+    let hex_value = value.to_biguint();
+    match as_cairo_short_string(value) {
+        Some(as_string) => format!("{hex_value:#x} ('{as_string}')"),
+        None => format!("{hex_value:#x}"),
+    }
+}
+
+/// Tries to format a string, represented as a sequence of `Felt252`s.
+/// If the sequence is not a valid serialization of a ByteArray, returns None and doesn't change the
+/// given iterator (`values`).
+fn try_format_string<T>(values: &mut T) -> Option<String>
+where
+    T: Iterator<Item = Felt252> + Clone,
+{
+    // Clone the iterator and work with the clone. If the extraction of the string is successful,
+    // change the original iterator to the one we worked with. If not, continue with the
+    // original iterator at the original point.
+    let mut cloned_values_iter = values.clone();
+
+    let num_full_words = cloned_values_iter.next()?.to_usize()?;
+    let full_words = cloned_values_iter.by_ref().take(num_full_words).collect_vec();
+    let pending_word = cloned_values_iter.next()?;
+    let pending_word_len = cloned_values_iter.next()?.to_usize()?;
+
+    let full_words_string = full_words
+        .into_iter()
+        .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
+        .collect::<Option<Vec<String>>>()?
+        .join("");
+    let pending_word_string = as_cairo_short_string_ex(&pending_word, pending_word_len)?;
+
+    // Extraction was successful, change the original iterator to the one we worked with.
+    *values = cloned_values_iter;
+
+    Some(format!("{full_words_string}{pending_word_string}"))
 }

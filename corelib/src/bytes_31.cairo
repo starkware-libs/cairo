@@ -1,6 +1,6 @@
-use traits::{Into, TryInto};
-use option::OptionTrait;
-use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
+use core::traits::{Into, TryInto};
+use core::option::OptionTrait;
+use core::integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
 
 const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -193,7 +193,7 @@ fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
     } else if n_bytes == 15 {
         0x1000000000000000000000000000000_u128
     } else {
-        panic_with_felt252('n_bytes too big')
+        core::panic_with_felt252('n_bytes too big')
     }
 }
 

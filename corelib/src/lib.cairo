@@ -314,6 +314,8 @@ use poseidon::Poseidon;
 // Debug.
 mod debug;
 
+mod fmt;
+
 // Starknet
 mod starknet;
 use starknet::System;
@@ -348,3 +350,6 @@ mod test;
 
 // Module for testing only.
 mod testing;
+
+// Preludes.
+mod prelude;

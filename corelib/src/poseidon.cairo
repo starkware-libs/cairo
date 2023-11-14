@@ -1,7 +1,7 @@
-use array::Span;
-use array::SpanTrait;
-use option::OptionTrait;
-use hash::HashStateTrait;
+use core::array::Span;
+use core::array::SpanTrait;
+use core::option::OptionTrait;
+use core::hash::HashStateTrait;
 
 extern type Poseidon;
 
@@ -63,12 +63,14 @@ impl HashStateImpl of HashStateTrait<HashState> {
 /// To distinguish between different input sizes always pads with 1, and possibly with another 0 to
 /// complete to an even-sized input.
 fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
-    _poseidon_hash_span_inner(get_builtin_costs(), (0, 0, 0), ref span)
+    _poseidon_hash_span_inner(core::gas::get_builtin_costs(), (0, 0, 0), ref span)
 }
 
 /// Helper function for poseidon_hash_span.
 fn _poseidon_hash_span_inner(
-    builtin_costs: gas::BuiltinCosts, state: (felt252, felt252, felt252), ref span: Span<felt252>
+    builtin_costs: core::gas::BuiltinCosts,
+    state: (felt252, felt252, felt252),
+    ref span: Span<felt252>
 ) -> felt252 {
     let (s0, s1, s2) = state;
     let x = *match span.pop_front() {
@@ -80,6 +82,6 @@ fn _poseidon_hash_span_inner(
         Option::None => { return HashState { s0: s0 + x, s1, s2, odd: true }.finalize(); },
     };
     let next_state = hades_permutation(s0 + x, s1 + y, s2);
-    gas::withdraw_gas_all(builtin_costs).expect('Out of gas');
+    core::gas::withdraw_gas_all(builtin_costs).expect('Out of gas');
     _poseidon_hash_span_inner(builtin_costs, next_state, ref span)
 }

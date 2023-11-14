@@ -15,7 +15,7 @@ use cairo_lang_runner::{token_gas_cost, Arg, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_sierra_to_casm::test_utils::build_metadata;
+use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::{extract_matches, Upcast};
 use itertools::Itertools;
@@ -91,6 +91,7 @@ fn checked_compile_to_sierra(
 #[case::fib_box("fib_box")]
 #[case::fib_array("fib_array")]
 #[case::fib_counter("fib_counter")]
+#[case::fib_match("fib_match")]
 #[case::fib_struct("fib_struct")]
 #[case::fib_u128("fib_u128")]
 #[case::fib_u128_checked("fib_u128_checked")]
@@ -127,6 +128,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::fib_box("fib_box", false)]
 #[case::fib_array("fib_array", false)]
 #[case::fib_counter("fib_counter", false)]
+#[case::fib_match("fib_match", false)]
 #[case::fib_struct("fib_struct", false)]
 #[case::fib_u128("fib_u128", false)]
 #[case::fib_u128_checked("fib_u128_checked", false)]
@@ -149,7 +151,11 @@ fn cairo_to_casm(
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &build_metadata(&program, enable_gas_checks, false),
+            &if enable_gas_checks {
+                calc_metadata(&program, Default::default()).unwrap()
+            } else {
+                calc_metadata_ap_change_only(&program).unwrap()
+            },
             enable_gas_checks,
         )
         .unwrap()
@@ -167,7 +173,7 @@ fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData)
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &build_metadata(&program, true, false),
+            &calc_metadata(&program, Default::default()).unwrap(),
             true,
         )
         .unwrap()
@@ -222,6 +228,11 @@ fn run_function(
     "fib_counter",
     &[1, 1, 8].map(Felt252::from), None, None,
     RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_match(
+    "fib_match",
+    &[9].map(Felt252::from), None, None,
+    RunResultValue::Success([55].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_struct(
     "fib_struct",

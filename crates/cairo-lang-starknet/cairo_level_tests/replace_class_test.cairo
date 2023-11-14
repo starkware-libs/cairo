@@ -1,5 +1,4 @@
 use starknet::syscalls::{deploy_syscall, replace_class_syscall};
-use test::test_utils::assert_eq;
 use starknet::class_hash::ClassHash;
 
 #[starknet::interface]
@@ -65,7 +64,7 @@ fn test_replace_flow() {
 
     // Read the previously stored value.
     let mut contract1 = IWithFooDispatcher { contract_address: address0 };
-    assert_eq(@contract1.foo(), @100, 'contract1.foo() != 100');
+    assert_eq!(contract1.foo(), 100);
 }
 
 #[test]

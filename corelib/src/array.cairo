@@ -1,9 +1,9 @@
-use traits::IndexView;
+use core::traits::IndexView;
 
-use box::BoxTrait;
-use gas::withdraw_gas;
-use option::OptionTrait;
-use serde::Serde;
+use core::box::BoxTrait;
+use core::gas::withdraw_gas;
+use core::option::OptionTrait;
+use core::serde::Serde;
 
 #[derive(Drop)]
 extern type Array<T>;

@@ -157,7 +157,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::StatementLet => {
-            vec![/* pattern */ children[1]]
+            vec![/* pattern */ children[2]]
         }
         SyntaxKind::OptionTerminalSemicolonEmpty => {
             vec![]
@@ -322,6 +322,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* name */ children[1]]
         }
         SyntaxKind::GenericParamImplAnonymous => {
+            vec![]
+        }
+        SyntaxKind::TriviumSkippedNode => {
             vec![]
         }
         SyntaxKind::TokenIdentifier => vec![],

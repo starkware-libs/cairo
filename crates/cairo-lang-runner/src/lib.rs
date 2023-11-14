@@ -18,11 +18,10 @@ use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::program::{Function, GenericArg};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
-use cairo_lang_sierra_gas::gas_info::GasInfo;
+use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_lang_sierra_to_casm::metadata::{
-    calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
+    calc_metadata, calc_metadata_ap_change_only, Metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_starknet::contract::ContractInfo;
@@ -563,17 +562,12 @@ fn create_metadata(
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, RunnerError> {
     if let Some(metadata_config) = metadata_config {
-        calc_metadata(sierra_program, metadata_config, false).map_err(|err| match err {
-            MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-            MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
-        })
+        calc_metadata(sierra_program, metadata_config)
     } else {
-        Ok(Metadata {
-            ap_change_info: calc_ap_changes(sierra_program, |_, _| 0)?,
-            gas_info: GasInfo {
-                variable_values: Default::default(),
-                function_costs: Default::default(),
-            },
-        })
+        calc_metadata_ap_change_only(sierra_program)
     }
+    .map_err(|err| match err {
+        MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
+        MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
+    })
 }

@@ -1,6 +1,7 @@
 [package]
 name = "core"
-version = "2.3.0"
+version = "2.3.1"
+edition = "2023_10"
 
 # NOTE: This is non-public, unstable Scarb's field, which instructs resolver that this package does not
 #   depend on `core`, which is only true for this particular package. Nobody else should use it.

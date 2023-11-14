@@ -33,16 +33,27 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     ModuleId::CrateRoot(core_crate)
 }
 
-pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
-    let core_module = core_module(db);
-    let submodules = db.module_submodules(core_module).unwrap();
+/// Returns the submodule of `base_module`, named `submodule_name`, if exists.
+pub fn get_submodule(
+    db: &dyn SemanticGroup,
+    base_module: ModuleId,
+    submodule_name: &str,
+) -> Option<ModuleId> {
+    let submodules = db.module_submodules(base_module).ok()?;
     let syntax_db = db.upcast();
     for (submodule_id, submodule) in submodules.iter() {
         if submodule.name(syntax_db).text(syntax_db) == submodule_name {
-            return ModuleId::Submodule(*submodule_id);
+            return Some(ModuleId::Submodule(*submodule_id));
         }
     }
-    unreachable!("Requested core submodule not found");
+    None
+}
+
+/// Returns a submodule of the corelib named `submodule_name`.
+/// If no such submodule exists, panics.
+pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
+    get_submodule(db, core_module(db), submodule_name)
+        .unwrap_or_else(|| panic!("`{submodule_name}` is not a core submodule."))
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {

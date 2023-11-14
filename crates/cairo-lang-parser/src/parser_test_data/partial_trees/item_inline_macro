@@ -20,7 +20,7 @@ ItemInlineMacro
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: ArgListParenthesized)
     │   ├── lparen (kind: TokenLParen): '('
-    │   ├── args (kind: ArgList)
+    │   ├── arguments (kind: ArgList)
     │   │   ├── item #0 (kind: Arg)
     │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -140,7 +140,7 @@ ItemInlineMacro
     ├── bang (kind: TokenNot): '!'
     ├── arguments (kind: ArgListParenthesized)
     │   ├── lparen (kind: TokenLParen): '('
-    │   ├── args (kind: ArgList)
+    │   ├── arguments (kind: ArgList)
     │   │   ├── item #0 (kind: Arg)
     │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -182,7 +182,7 @@ inline_macro(1,2);
     ├── bang: Missing
     ├── arguments (kind: ArgListParenthesized)
     │   ├── lparen (kind: TokenLParen): '('
-    │   ├── args (kind: ArgList)
+    │   ├── arguments (kind: ArgList)
     │   │   ├── item #0 (kind: Arg)
     │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -396,7 +396,7 @@ identifier!(1,2
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: ArgListParenthesized)
     │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── args (kind: ArgList)
+    │   │   ├── arguments (kind: ArgList)
     │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -441,7 +441,7 @@ identifier!(1,2)
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: ArgListParenthesized)
     │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── args (kind: ArgList)
+    │   │   ├── arguments (kind: ArgList)
     │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -492,7 +492,7 @@ identifier(x)
     │   ├── bang: Missing
     │   ├── arguments (kind: ArgListParenthesized)
     │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   ├── args (kind: ArgList)
+    │   │   ├── arguments (kind: ArgList)
     │   │   │   └── item #0 (kind: Arg)
     │   │   │       ├── modifiers (kind: ModifierList) []
     │   │   │       └── arg_clause (kind: ArgClauseUnnamed)

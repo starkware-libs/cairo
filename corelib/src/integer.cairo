@@ -1,9 +1,9 @@
-use option::OptionTrait;
-use result::ResultTrait;
-use traits::{Into, TryInto, Default, Felt252DictValue};
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use array::ArrayTrait;
-use array::SpanTrait;
+use core::option::OptionTrait;
+use core::result::ResultTrait;
+use core::traits::{Into, TryInto, Default, Felt252DictValue};
+use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use core::array::ArrayTrait;
+use core::array::SpanTrait;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -1871,8 +1871,8 @@ impl I8Add of Add<i8> {
     fn add(lhs: i8, rhs: i8) -> i8 {
         match i8_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i8_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i8_add Overflow'),
         }
     }
 }
@@ -1886,8 +1886,8 @@ impl I8Sub of Sub<i8> {
     fn sub(lhs: i8, rhs: i8) -> i8 {
         match i8_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i8_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i8_sub Overflow'),
         }
     }
 }
@@ -1978,8 +1978,8 @@ impl I16Add of Add<i16> {
     fn add(lhs: i16, rhs: i16) -> i16 {
         match i16_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i16_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i16_add Overflow'),
         }
     }
 }
@@ -1993,8 +1993,8 @@ impl I16Sub of Sub<i16> {
     fn sub(lhs: i16, rhs: i16) -> i16 {
         match i16_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i16_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i16_sub Overflow'),
         }
     }
 }
@@ -2085,8 +2085,8 @@ impl I32Add of Add<i32> {
     fn add(lhs: i32, rhs: i32) -> i32 {
         match i32_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i32_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i32_add Overflow'),
         }
     }
 }
@@ -2100,8 +2100,8 @@ impl I32Sub of Sub<i32> {
     fn sub(lhs: i32, rhs: i32) -> i32 {
         match i32_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i32_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i32_sub Overflow'),
         }
     }
 }
@@ -2192,8 +2192,8 @@ impl I64Add of Add<i64> {
     fn add(lhs: i64, rhs: i64) -> i64 {
         match i64_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i64_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i64_add Overflow'),
         }
     }
 }
@@ -2207,8 +2207,8 @@ impl I64Sub of Sub<i64> {
     fn sub(lhs: i64, rhs: i64) -> i64 {
         match i64_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i64_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i64_sub Overflow'),
         }
     }
 }
@@ -2299,8 +2299,8 @@ impl I128Add of Add<i128> {
     fn add(lhs: i128, rhs: i128) -> i128 {
         match i128_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i128_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i128_add Overflow'),
         }
     }
 }
@@ -2314,8 +2314,8 @@ impl I128Sub of Sub<i128> {
     fn sub(lhs: i128, rhs: i128) -> i128 {
         match i128_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i128_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i128_sub Overflow'),
         }
     }
 }
@@ -2381,12 +2381,12 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 // Zeroable impls
-impl U8Zeroable = zeroable::zero_based::ZeroableImpl<u8, integer::U8Zero>;
-impl U16Zeroable = zeroable::zero_based::ZeroableImpl<u16, integer::U16Zero>;
-impl U32Zeroable = zeroable::zero_based::ZeroableImpl<u32, integer::U32Zero>;
-impl U64Zeroable = zeroable::zero_based::ZeroableImpl<u64, integer::U64Zero>;
-impl U128Zeroable = zeroable::zero_based::ZeroableImpl<u128, integer::U128Zero>;
-impl U256Zeroable = zeroable::zero_based::ZeroableImpl<u256, integer::U256Zero>;
+impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
+impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
+impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
+impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
+impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
+impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
 
 impl I128BitSize of num::traits::BitSize<i128> {
     fn bits() -> usize {
@@ -2395,7 +2395,7 @@ impl I128BitSize of num::traits::BitSize<i128> {
 }
 
 // Zero trait implementations
-impl U8Zero of num::traits::Zero<u8> {
+impl U8Zero of core::num::traits::Zero<u8> {
     fn zero() -> u8 {
         0
     }
@@ -2409,7 +2409,7 @@ impl U8Zero of num::traits::Zero<u8> {
     }
 }
 
-impl U16Zero of num::traits::Zero<u16> {
+impl U16Zero of core::num::traits::Zero<u16> {
     fn zero() -> u16 {
         0
     }
@@ -2423,7 +2423,7 @@ impl U16Zero of num::traits::Zero<u16> {
     }
 }
 
-impl U32Zero of num::traits::Zero<u32> {
+impl U32Zero of core::num::traits::Zero<u32> {
     fn zero() -> u32 {
         0
     }
@@ -2437,7 +2437,7 @@ impl U32Zero of num::traits::Zero<u32> {
     }
 }
 
-impl U64Zero of num::traits::Zero<u64> {
+impl U64Zero of core::num::traits::Zero<u64> {
     fn zero() -> u64 {
         0
     }
@@ -2451,7 +2451,7 @@ impl U64Zero of num::traits::Zero<u64> {
     }
 }
 
-impl U128Zero of num::traits::Zero<u128> {
+impl U128Zero of core::num::traits::Zero<u128> {
     fn zero() -> u128 {
         0
     }
@@ -2465,7 +2465,7 @@ impl U128Zero of num::traits::Zero<u128> {
     }
 }
 
-impl U256Zero of num::traits::Zero<u256> {
+impl U256Zero of core::num::traits::Zero<u256> {
     fn zero() -> u256 {
         0
     }
@@ -2479,7 +2479,7 @@ impl U256Zero of num::traits::Zero<u256> {
     }
 }
 
-impl I8Zero of num::traits::Zero<i8> {
+impl I8Zero of core::num::traits::Zero<i8> {
     fn zero() -> i8 {
         0
     }
@@ -2493,7 +2493,7 @@ impl I8Zero of num::traits::Zero<i8> {
     }
 }
 
-impl I16Zero of num::traits::Zero<i16> {
+impl I16Zero of core::num::traits::Zero<i16> {
     fn zero() -> i16 {
         0
     }
@@ -2507,7 +2507,7 @@ impl I16Zero of num::traits::Zero<i16> {
     }
 }
 
-impl I32Zero of num::traits::Zero<i32> {
+impl I32Zero of core::num::traits::Zero<i32> {
     fn zero() -> i32 {
         0
     }
@@ -2521,7 +2521,7 @@ impl I32Zero of num::traits::Zero<i32> {
     }
 }
 
-impl I64Zero of num::traits::Zero<i64> {
+impl I64Zero of core::num::traits::Zero<i64> {
     fn zero() -> i64 {
         0
     }
@@ -2535,7 +2535,7 @@ impl I64Zero of num::traits::Zero<i64> {
     }
 }
 
-impl I128Zero of num::traits::Zero<i128> {
+impl I128Zero of core::num::traits::Zero<i128> {
     fn zero() -> i128 {
         0
     }
@@ -2551,7 +2551,7 @@ impl I128Zero of num::traits::Zero<i128> {
 
 
 // One trait implementations
-impl U8One of num::traits::One<u8> {
+impl U8One of core::num::traits::One<u8> {
     fn one() -> u8 {
         1
     }
@@ -2565,7 +2565,7 @@ impl U8One of num::traits::One<u8> {
     }
 }
 
-impl U16One of num::traits::One<u16> {
+impl U16One of core::num::traits::One<u16> {
     fn one() -> u16 {
         1
     }
@@ -2579,7 +2579,7 @@ impl U16One of num::traits::One<u16> {
     }
 }
 
-impl U32One of num::traits::One<u32> {
+impl U32One of core::num::traits::One<u32> {
     fn one() -> u32 {
         1
     }
@@ -2593,7 +2593,7 @@ impl U32One of num::traits::One<u32> {
     }
 }
 
-impl U64One of num::traits::One<u64> {
+impl U64One of core::num::traits::One<u64> {
     fn one() -> u64 {
         1
     }
@@ -2607,7 +2607,7 @@ impl U64One of num::traits::One<u64> {
     }
 }
 
-impl U128One of num::traits::One<u128> {
+impl U128One of core::num::traits::One<u128> {
     fn one() -> u128 {
         1
     }
@@ -2621,7 +2621,7 @@ impl U128One of num::traits::One<u128> {
     }
 }
 
-impl U256One of num::traits::One<u256> {
+impl U256One of core::num::traits::One<u256> {
     fn one() -> u256 {
         1
     }
@@ -2635,7 +2635,7 @@ impl U256One of num::traits::One<u256> {
     }
 }
 
-impl I8One of num::traits::One<i8> {
+impl I8One of core::num::traits::One<i8> {
     fn one() -> i8 {
         1
     }
@@ -2651,7 +2651,7 @@ impl I8One of num::traits::One<i8> {
     }
 }
 
-impl I16One of num::traits::One<i16> {
+impl I16One of core::num::traits::One<i16> {
     fn one() -> i16 {
         1
     }
@@ -2667,7 +2667,7 @@ impl I16One of num::traits::One<i16> {
     }
 }
 
-impl I32One of num::traits::One<i32> {
+impl I32One of core::num::traits::One<i32> {
     fn one() -> i32 {
         1
     }
@@ -2683,7 +2683,7 @@ impl I32One of num::traits::One<i32> {
     }
 }
 
-impl I64One of num::traits::One<i64> {
+impl I64One of core::num::traits::One<i64> {
     fn one() -> i64 {
         1
     }
@@ -2699,7 +2699,7 @@ impl I64One of num::traits::One<i64> {
     }
 }
 
-impl I128One of num::traits::One<i128> {
+impl I128One of core::num::traits::One<i128> {
     fn one() -> i128 {
         1
     }

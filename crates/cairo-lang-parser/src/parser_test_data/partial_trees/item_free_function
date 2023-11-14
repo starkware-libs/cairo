@@ -39,7 +39,7 @@ FunctionSignature
     │   │   │       └── ident (kind: TokenIdentifier): 'with_args'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── args (kind: ArgList)
+    │   │   │   ├── arguments (kind: ArgList)
     │   │   │   │   ├── item #0 (kind: Arg)
     │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
@@ -145,6 +145,7 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
         ├── lbrace: Missing
         ├── statements (kind: StatementList)
         │   └── child #0 (kind: StatementLet)
+        │       ├── attributes (kind: AttributeList) []
         │       ├── let_kw (kind: TokenLet): 'let'
         │       ├── pattern (kind: ExprPath)
         │       │   └── item #0 (kind: PathSegmentSimple)

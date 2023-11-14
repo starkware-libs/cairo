@@ -162,7 +162,7 @@ error: Extern items with impl generics are not supported
 extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
               ^************************^
 
-error: Supplied impl does not match the required trait
+error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
  --> lib.cairo:10:11
     bar::<AnotherImpl>();
           ^*********^
@@ -208,7 +208,7 @@ impl AnotherImpl of AnotherTrait::<felt252> {
 f
 
 //! > expected_diagnostics
-error: Supplied impl does not match the required trait
+error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::MyTrait::<T>`.
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();
              ^*********^
@@ -433,3 +433,37 @@ error: Trait not found.
  --> lib.cairo:1:16
 fn bar<impl X: unknown>() {}
                ^*****^
+
+//! > ==========================================================================
+
+//! > Test impl infernce cycle
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+trait Introspect<T> {
+}
+
+#[derive(Drop)]
+struct Generic<T, +Introspect<T>> {
+    value: T,
+}
+
+fn foo() {
+    let generic = Generic { value: 123 };
+}
+
+impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
+impl Felt252Introspect of Introspect<felt252> {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:13:72
+impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
+                                                                       ^********************^

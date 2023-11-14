@@ -21,10 +21,16 @@ use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
-/// Salsa database configured to find the corelib, when reused by different tests should be able to
+/// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB: Lazy<Mutex<RootDatabase>> =
+static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> =
     Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
+static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    Mutex::new(db)
+});
 
 cairo_lang_test_utils::test_file_test_with_runner!(
     general_e2e,
@@ -94,12 +100,12 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 );
 
 cairo_lang_test_utils::test_file_test_with_runner!(
-    cost_computation_e2e,
+    metadata_e2e,
     "e2e_test_data",
     {
-        cost_computation: "cost_computation",
+        metadata_computation: "metadata_computation",
     },
-    SmallE2ETestRunnerCostComputation
+    SmallE2ETestRunnerMetadataComputation
 );
 
 #[derive(Default)]
@@ -127,14 +133,14 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
 }
 
 #[derive(Default)]
-struct SmallE2ETestRunnerCostComputation;
-impl TestFileRunner for SmallE2ETestRunnerCostComputation {
+struct SmallE2ETestRunnerMetadataComputation;
+impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, cost_computation: true })
+        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, metadata_computation: true })
     }
 }
 
@@ -144,15 +150,15 @@ struct E2eTestParams {
     /// that automatically adds `withdraw_gas` calls.
     add_withdraw_gas: bool,
 
-    /// Argument for `run_e2e_test` that controls whether to add cost computation information to
-    /// the test outputs.
-    cost_computation: bool,
+    /// Argument for `run_e2e_test` that controls whether to add metadata computation information
+    /// to the test outputs.
+    metadata_computation: bool,
 }
 
 /// Implements default for `E2eTestParams`.
 impl Default for E2eTestParams {
     fn default() -> Self {
-        Self { add_withdraw_gas: true, cost_computation: false }
+        Self { add_withdraw_gas: true, metadata_computation: false }
     }
 }
 
@@ -161,12 +167,8 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let mut locked_db = test_lock(&SHARED_DB);
-    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
-    locked_db.set_flag(
-        add_withdraw_gas_flag_id,
-        Some(Arc::new(Flag::AddWithdrawGas(params.add_withdraw_gas))),
-    );
+    let mut locked_db =
+        test_lock(if params.add_withdraw_gas { &SHARED_DB_WITH_GAS } else { &SHARED_DB_NO_GAS });
     // Parse code and create semantic model.
     let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
     let db = locked_db.snapshot();
@@ -186,8 +188,12 @@ fn run_e2e_test(
         };
 
     // Compute the metadata.
-    let metadata_config = MetadataComputationConfig { function_set_costs: enforced_costs };
-    let metadata = calc_metadata(&sierra_program, metadata_config.clone(), false).unwrap();
+    let mut metadata_config = MetadataComputationConfig {
+        function_set_costs: enforced_costs,
+        linear_gas_solver: false,
+        linear_ap_change_solver: false,
+    };
+    let metadata = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
     // Compile to casm.
     let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
@@ -196,10 +202,17 @@ fn run_e2e_test(
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
-    if params.cost_computation {
-        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config, true).unwrap();
+    if params.metadata_computation {
+        metadata_config.linear_gas_solver = true;
+        metadata_config.linear_ap_change_solver = true;
+        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config).unwrap();
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
         res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
+        res.insert("ap_solution".into(), format!("{}", metadata.ap_change_info));
+        res.insert(
+            "ap_solution_no_solver".into(),
+            format!("{}", metadata_no_solver.ap_change_info),
+        );
 
         // Compile again, this time with the no-solver metadata.
         cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_no_solver, true)

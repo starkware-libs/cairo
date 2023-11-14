@@ -20,7 +20,8 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx,
+    PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
@@ -38,11 +39,7 @@ use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
-use cairo_lang_starknet::inline_macros::get_dep_component::{
-    GetDepComponentMacro, GetDepComponentMutMacro,
-};
-use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
-use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
@@ -50,7 +47,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use cairo_lang_test_plugin::TestPlugin;
+use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -86,11 +83,8 @@ pub async fn serve_language_service() {
 
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-        .with_macro_plugin(Arc::new(TestPlugin::default()))
-        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
-        .with_inline_macro_plugin(GetDepComponentMacro::NAME, Arc::new(GetDepComponentMacro))
-        .with_inline_macro_plugin(GetDepComponentMutMacro::NAME, Arc::new(GetDepComponentMutMacro))
+        .with_plugin_suite(starknet_plugin_suite())
+        .with_plugin_suite(test_plugin_suite())
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 
@@ -1299,7 +1293,7 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId
 
     for (crate_id, crate_root, _file_stem) in source_paths.clone() {
         let crate_root = Directory::Real(crate_root);
-        db.set_crate_root(crate_id, Some(crate_root));
+        db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(crate_root)));
     }
 
     let source_paths = source_paths

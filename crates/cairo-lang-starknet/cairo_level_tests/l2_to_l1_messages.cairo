@@ -1,18 +1,18 @@
-use traits::{Into, TryInto, PartialEq};
-use array::{ArrayTrait, SpanTrait, SpanPartialEq};
-use option::OptionTrait;
-use result::ResultTrait;
+use core::traits::{Into, TryInto, PartialEq};
+use core::array::{ArrayTrait, SpanTrait, SpanPartialEq};
+use core::option::OptionTrait;
+use core::result::ResultTrait;
 use starknet::{testing, SyscallResultTrait};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::class_hash::Felt252TryIntoClassHash;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::{assert_eq, assert_ne};
 
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
-    use traits::Into;
-    use array::ArrayTrait;
+    use core::traits::Into;
+    use core::array::ArrayTrait;
 
     use super::generate_payload;
 
@@ -73,7 +73,7 @@ fn test_l2_to_l1_messages() {
     contract.send_message_to_l1();
 
     // Assert other addresses did not sent messages.
-    assert(testing::pop_l2_to_l1_message(other_contract_address).is_none(), 'no messages');
+    assert!(testing::pop_l2_to_l1_message(other_contract_address).is_none());
 
     // Pop messages.
     assert_eq(
@@ -93,7 +93,7 @@ fn test_l2_to_l1_messages() {
     );
 
     // Assert all messages have been popped.
-    assert(testing::pop_l2_to_l1_message(contract_address).is_none(), 'no more messages');
+    assert!(testing::pop_l2_to_l1_message(contract_address).is_none());
 }
 
 #[test]
@@ -108,12 +108,12 @@ fn test_pop_l2_to_l1_message() {
     starknet::send_message_to_l1_syscall(to_address, payload.span());
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
-    assert_eq(@payload.len(), @1, 'unexpected payload size');
-    assert_eq(@to_address, @1234, 'unexpected to_address');
+    assert_eq!(payload.len(), 1);
+    assert_eq!(to_address, 1234);
     assert_eq(payload.at(0), @2345, 'unexpected payload');
 }

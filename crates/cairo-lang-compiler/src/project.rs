@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -42,12 +42,20 @@ pub fn setup_single_file_project(
         let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
         let crate_id = db.intern_crate(CrateLongId::Real(crate_name.into()));
-        db.set_crate_root(crate_id, Some(Directory::Real(file_dir.to_path_buf())));
+        db.set_crate_config(
+            crate_id,
+            Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
+        );
         Ok(crate_id)
     } else {
         // If file_stem is not lib, create a fake lib file.
         let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
-        db.set_crate_root(crate_id, Some(Directory::Real(path.parent().unwrap().to_path_buf())));
+        db.set_crate_config(
+            crate_id,
+            Some(CrateConfiguration::default_for_root(Directory::Real(
+                path.parent().unwrap().to_path_buf(),
+            ))),
+        );
 
         let module_id = ModuleId::CrateRoot(crate_id);
         let file_id = db.module_main_file(module_id).unwrap();
@@ -59,14 +67,16 @@ pub fn setup_single_file_project(
 
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
+    let crates_config = config.content.crates_config;
     for (crate_name, directory_path) in config.content.crate_roots {
+        let edition = crates_config.get(&crate_name).edition;
         let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
         let mut path = PathBuf::from(&directory_path);
         if path.is_relative() {
             path = PathBuf::from(&config.base_path).join(path);
         }
         let root = Directory::Real(path);
-        db.set_crate_root(crate_id, Some(root));
+        db.set_crate_config(crate_id, Some(CrateConfiguration { root, edition }));
     }
 }
 
