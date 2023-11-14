@@ -34,6 +34,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutItem,
     AttributesWithoutTraitItem,
     AttributesWithoutImplItem,
+    AttributesWithoutStatement,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -103,6 +104,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::AttributesWithoutImplItem => {
                 "Missing tokens. Expected an impl item after attributes.".to_string()
+            }
+            ParserDiagnosticKind::AttributesWithoutStatement => {
+                "Missing tokens. Expected a statement after attributes.".to_string()
             }
         }
     }

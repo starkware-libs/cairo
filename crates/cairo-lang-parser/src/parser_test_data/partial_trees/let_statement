@@ -21,6 +21,7 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: PatternTuple)
     │   ├── lparen (kind: TokenLParen): '('
@@ -48,4 +49,44 @@ ExprPath
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprPath) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test a StatementLet with attribute syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[an_attribute]
+    let x = 1;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'an_attribute'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenLiteralNumber): '1'
     └── semicolon (kind: TokenSemicolon): ';'
