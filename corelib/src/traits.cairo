@@ -1,58 +1,58 @@
 use core::panics::Panic;
 
-trait Copy<T>;
-trait Drop<T>;
+pub trait Copy<T>;
+pub trait Drop<T>;
 
-impl SnapshotCopy<T> of Copy<@T>;
-impl SnapshotDrop<T> of Drop<@T>;
+pub impl SnapshotCopy<T> of Copy<@T>;
+pub impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
-trait Add<T> {
+pub trait Add<T> {
     fn add(lhs: T, rhs: T) -> T;
 }
-trait AddEq<T> {
+pub trait AddEq<T> {
     fn add_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
-trait Sub<T> {
+pub trait Sub<T> {
     fn sub(lhs: T, rhs: T) -> T;
 }
-trait SubEq<T> {
+pub trait SubEq<T> {
     fn sub_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
-trait Mul<T> {
+pub trait Mul<T> {
     fn mul(lhs: T, rhs: T) -> T;
 }
-trait MulEq<T> {
+pub trait MulEq<T> {
     fn mul_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Div<X, Y>.
-trait Div<T> {
+pub trait Div<T> {
     fn div(lhs: T, rhs: T) -> T;
 }
-trait DivEq<T> {
+pub trait DivEq<T> {
     fn div_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
-trait Rem<T> {
+pub trait Rem<T> {
     fn rem(lhs: T, rhs: T) -> T;
 }
-trait RemEq<T> {
+pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
 /// Division with remainder.
-trait DivRem<T> {
+pub trait DivRem<T> {
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
-trait PartialEq<T> {
+pub trait PartialEq<T> {
     fn eq(lhs: @T, rhs: @T) -> bool;
     fn ne(lhs: @T, rhs: @T) -> bool;
 }
@@ -66,25 +66,25 @@ impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
-trait BitAnd<T> {
+pub trait BitAnd<T> {
     fn bitand(lhs: T, rhs: T) -> T;
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitOr<X, Y>.
-trait BitOr<T> {
+pub trait BitOr<T> {
     fn bitor(lhs: T, rhs: T) -> T;
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitXor<X, Y>.
-trait BitXor<T> {
+pub trait BitXor<T> {
     fn bitxor(lhs: T, rhs: T) -> T;
 }
 
-trait BitNot<T> {
+pub trait BitNot<T> {
     fn bitnot(a: T) -> T;
 }
 
-trait PartialOrd<T> {
+pub trait PartialOrd<T> {
     fn le(lhs: T, rhs: T) -> bool;
     fn ge(lhs: T, rhs: T) -> bool;
     fn lt(lhs: T, rhs: T) -> bool;
@@ -92,7 +92,7 @@ trait PartialOrd<T> {
 }
 
 /// Trait for conversion between types.
-trait Into<T, S> {
+pub trait Into<T, S> {
     fn into(self: T) -> S;
 }
 
@@ -103,7 +103,7 @@ impl TIntoT<T> of Into<T, T> {
 }
 
 /// Trait for fallible conversion between types.
-trait TryInto<T, S> {
+pub trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
 }
 
@@ -113,26 +113,26 @@ impl TTryIntoT<T> of TryInto<T, T> {
     }
 }
 
-trait Neg<T> {
+pub trait Neg<T> {
     fn neg(a: T) -> T;
 }
 
-trait Not<T> {
+pub trait Not<T> {
     fn not(a: T) -> T;
 }
 
 /// The following two traits are for implementing the [] operator. Only one should be implemented
 /// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
-trait IndexView<C, I, V> {
+pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
-trait Index<C, I, V> {
+pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }
 
-trait Destruct<T> {
+pub trait Destruct<T> {
     fn destruct(self: T) nopanic;
 }
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
@@ -141,7 +141,7 @@ impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
     fn destruct(self: T) nopanic {}
 }
 
-trait PanicDestruct<T> {
+pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
 impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
@@ -151,7 +151,7 @@ impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     }
 }
 
-trait Default<T> {
+pub trait Default<T> {
     fn default() -> T;
 }
 
@@ -163,40 +163,40 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
 }
 
 /// Trait for types allowed as values in a Felt252Dict.
-trait Felt252DictValue<T> {
+pub trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a Felt252Dict.
     /// Should be logically equivalent to 0.
     fn zero_default() -> T nopanic;
 }
 
 // Tuple Copy impls.
-impl TupleSize0Copy of Copy<()>;
+pub impl TupleSize0Copy of Copy<()>;
 
-impl TupleSize1Copy<E0, +Copy<E0>> of Copy<(E0,)>;
+pub impl TupleSize1Copy<E0, +Copy<E0>> of Copy<(E0,)>;
 
-impl TupleSize2Copy<E0, E1, +Copy<E0>, +Copy<E1>> of Copy<(E0, E1)>;
+pub impl TupleSize2Copy<E0, E1, +Copy<E0>, +Copy<E1>> of Copy<(E0, E1)>;
 
-impl TupleSize3Copy<E0, E1, E2, +Copy<E0>, +Copy<E1>, +Copy<E2>> of Copy<(E0, E1, E2)>;
+pub impl TupleSize3Copy<E0, E1, E2, +Copy<E0>, +Copy<E1>, +Copy<E2>> of Copy<(E0, E1, E2)>;
 
-impl TupleSize4Copy<
+pub impl TupleSize4Copy<
     E0, E1, E2, E3, +Copy<E0>, +Copy<E1>, +Copy<E2>, +Copy<E3>
 > of Copy<(E0, E1, E2, E3)>;
 
 // Tuple Drop impls.
-impl TupleSize0Drop of Drop<()>;
+pub impl TupleSize0Drop of Drop<()>;
 
-impl TupleSize1Drop<E0, +Drop<E0>> of Drop<(E0,)>;
+pub impl TupleSize1Drop<E0, +Drop<E0>> of Drop<(E0,)>;
 
-impl TupleSize2Drop<E0, E1, +Drop<E0>, +Drop<E1>> of Drop<(E0, E1)>;
+pub impl TupleSize2Drop<E0, E1, +Drop<E0>, +Drop<E1>> of Drop<(E0, E1)>;
 
-impl TupleSize3Drop<E0, E1, E2, +Drop<E0>, +Drop<E1>, +Drop<E2>> of Drop<(E0, E1, E2)>;
+pub impl TupleSize3Drop<E0, E1, E2, +Drop<E0>, +Drop<E1>, +Drop<E2>> of Drop<(E0, E1, E2)>;
 
-impl TupleSize4Drop<
+pub impl TupleSize4Drop<
     E0, E1, E2, E3, +Drop<E0>, +Drop<E1>, +Drop<E2>, +Drop<E3>
 > of Drop<(E0, E1, E2, E3)>;
 
 // Tuple PartialEq impls.
-impl TupleSize0PartialEq of PartialEq<()> {
+pub impl TupleSize0PartialEq of PartialEq<()> {
     #[inline(always)]
     fn eq(lhs: @(), rhs: @()) -> bool {
         true
@@ -207,7 +207,7 @@ impl TupleSize0PartialEq of PartialEq<()> {
     }
 }
 
-impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
+pub impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
     #[inline(always)]
     fn eq(lhs: @(E0,), rhs: @(E0,)) -> bool {
         let (lhs,) = lhs;
@@ -220,7 +220,7 @@ impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
     }
 }
 
-impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E0, E1)> {
+pub impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E0, E1)> {
     #[inline(always)]
     fn eq(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
         let (lhs0, lhs1) = lhs;
@@ -233,7 +233,7 @@ impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E
     }
 }
 
-impl TupleSize3PartialEq<
+pub impl TupleSize3PartialEq<
     E0, E1, E2, +PartialEq<E0>, +PartialEq<E1>, +PartialEq<E2>
 > of PartialEq<(E0, E1, E2)> {
     #[inline(always)]
@@ -248,7 +248,7 @@ impl TupleSize3PartialEq<
     }
 }
 
-impl TupleSize4PartialEq<
+pub impl TupleSize4PartialEq<
     E0, E1, E2, E3, +PartialEq<E0>, +PartialEq<E1>, +PartialEq<E2>, +PartialEq<E3>
 > of PartialEq<(E0, E1, E2, E3)> {
     #[inline(always)]
@@ -264,25 +264,25 @@ impl TupleSize4PartialEq<
 }
 
 // Tuple Default impls.
-impl TupleSize0Default of Default<()> {
+pub impl TupleSize0Default of Default<()> {
     fn default() -> () {
         ()
     }
 }
 
-impl TupleSize1Default<E0, +Default<E0>> of Default<(E0,)> {
+pub impl TupleSize1Default<E0, +Default<E0>> of Default<(E0,)> {
     fn default() -> (E0,) {
         (Default::default(),)
     }
 }
 
-impl TupleSize2Default<E0, E1, +Default<E0>, +Drop<E0>, +Default<E1>> of Default<(E0, E1)> {
+pub impl TupleSize2Default<E0, E1, +Default<E0>, +Drop<E0>, +Default<E1>> of Default<(E0, E1)> {
     fn default() -> (E0, E1) {
         (Default::default(), Default::default())
     }
 }
 
-impl TupleSize3Default<
+pub impl TupleSize3Default<
     E0, E1, E2, +Default<E0>, +Drop<E0>, +Default<E1>, +Drop<E1>, +Default<E2>
 > of Default<(E0, E1, E2)> {
     fn default() -> (E0, E1, E2) {
@@ -290,7 +290,7 @@ impl TupleSize3Default<
     }
 }
 
-impl TupleSize4Default<
+pub impl TupleSize4Default<
     E0,
     E1,
     E2,

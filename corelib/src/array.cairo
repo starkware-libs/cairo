@@ -6,7 +6,7 @@ use core::option::OptionTrait;
 use core::serde::Serde;
 
 #[derive(Drop)]
-extern type Array<T>;
+pub extern type Array<T>;
 
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -24,7 +24,7 @@ extern fn array_slice<T>(
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 #[generate_trait]
-impl ArrayImpl<T> of ArrayTrait<T> {
+pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     fn new() -> Array<T> {
         array_new()
@@ -77,20 +77,20 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     }
 }
 
-impl ArrayDefault<T> of Default<Array<T>> {
+pub impl ArrayDefault<T> of Default<Array<T>> {
     #[inline(always)]
     fn default() -> Array<T> {
         ArrayTrait::new()
     }
 }
 
-impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
+pub impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
     }
 }
 
-impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
+pub impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     fn serialize(self: @Array<T>, ref output: Array<felt252>) {
         self.len().serialize(ref output);
         serialize_array_helper(self.span(), ref output);
@@ -123,14 +123,14 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
 }
 
 // Span.
-struct Span<T> {
+pub struct Span<T> {
     snapshot: @Array<T>
 }
 
-impl SpanCopy<T> of Copy<Span<T>>;
-impl SpanDrop<T> of Drop<Span<T>>;
+pub impl SpanCopy<T> of Copy<Span<T>>;
+pub impl SpanDrop<T> of Drop<Span<T>>;
 
-impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
+pub impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
     fn serialize(self: @Span<T>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
         serialize_array_helper(*self, ref output)
@@ -144,7 +144,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
 }
 
 #[generate_trait]
-impl SpanImpl<T> of SpanTrait<T> {
+pub impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -187,7 +187,7 @@ impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
-impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
+pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
@@ -195,7 +195,7 @@ impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
+pub impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();
@@ -209,7 +209,7 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     }
 }
 
-impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
+pub impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
     }
@@ -218,7 +218,7 @@ impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     }
 }
 
-impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
+pub impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
         if (*lhs).len() != (*rhs).len() {
             return false;

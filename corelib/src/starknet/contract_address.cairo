@@ -3,29 +3,29 @@ use core::serde::Serde;
 use core::hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
-extern type ContractAddress;
+pub extern type ContractAddress;
 
 
-extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
-extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+pub (crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-extern fn contract_address_try_from_felt252(
+pub (crate) extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
+pub impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
-impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
+pub impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
 
 
-impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
+pub impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
@@ -39,10 +39,10 @@ impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     }
 }
 
-impl ContractAddressZeroable =
+pub (crate) impl ContractAddressZeroable =
     core::zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
 
-impl ContractAddressSerde of Serde<ContractAddress> {
+pub impl ContractAddressSerde of Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
         contract_address_to_felt252(*self).serialize(ref output);
     }
@@ -53,7 +53,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
     }
 }
 
-impl ContractAddressPartialEq of PartialEq<ContractAddress> {
+pub impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     #[inline(always)]
     fn eq(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
         contract_address_to_felt252(*lhs) == contract_address_to_felt252(*rhs)
@@ -64,5 +64,5 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     }
 }
 
-impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
+pub impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
