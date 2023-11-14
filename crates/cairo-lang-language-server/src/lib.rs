@@ -321,7 +321,7 @@ impl Backend {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_source_paths(file_path.into()).await {
+                match self.scarb.crate_source_paths(file_path).await {
                     Ok(source_paths) => {
                         update_crate_roots(db, source_paths.clone());
                     }
