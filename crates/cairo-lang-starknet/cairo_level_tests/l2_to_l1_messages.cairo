@@ -28,7 +28,7 @@ mod contract_with_messages_sent_to_l1 {
 
     #[external(v0)]
     #[generate_trait]
-    impl IContractWithMessagesSentToL1Impl of IContractWithMessagesSentToL1 {
+    pub impl IContractWithMessagesSentToL1Impl of IContractWithMessagesSentToL1 {
         fn send_message_to_l1(ref self: ContractState) {
             let value_ = self.value.read();
 

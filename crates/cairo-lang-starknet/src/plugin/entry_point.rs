@@ -109,7 +109,7 @@ fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) 
     RewriteNode::interpolate_patched(
         &formatdoc!(
             "
-            mod {module_name} {{$generated_functions_node$
+            pub mod {module_name} {{$generated_functions_node$
                 }}
         "
         ),
@@ -198,7 +198,7 @@ pub fn handle_entry_point(
                 EntryPointKind::External => &mut data.external_functions,
             };
             generated.push(RewriteNode::interpolate_patched(
-                "\n        use super::$wrapper_function_name$ as $function_name$;",
+                "\n        pub use super::$wrapper_function_name$ as $function_name$;",
                 &[
                     ("wrapper_function_name".into(), wrapper_function_name),
                     ("function_name".into(), function_name),
@@ -337,7 +337,7 @@ fn generate_entry_point_wrapper(
     Ok(RewriteNode::interpolate_patched(
         &formatdoc! {"
             $implicit_precedence$
-            fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
+            $visibility$fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
                 core::internal::require_implicit::<System>();
                 core::internal::revoke_ap_tracking();
                 core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -356,6 +356,10 @@ fn generate_entry_point_wrapper(
             ("output_handling".to_string(), output_handling),
             ("arg_definitions".to_string(), arg_definitions),
             ("implicit_precedence".to_string(), implicit_precedence),
+            (
+                "visibility".to_string(),
+                RewriteNode::Copied(function.visibility(db).as_syntax_node()),
+            ),
         ]
         .into(),
     ))

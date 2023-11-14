@@ -75,12 +75,12 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn set_data(ref self: ContractState, value: AbcEtc) {
+    pub fn set_data(ref self: ContractState, value: AbcEtc) {
         self.data.write(value);
     }
 
     #[external(v0)]
-    fn get_data(self: @ContractState) -> AbcEtc {
+    pub fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
     }
 }

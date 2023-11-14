@@ -29,15 +29,15 @@ mod hello_starknet {
     }
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             balance: balance::ContractMemberState {},
         }
@@ -47,8 +47,8 @@ enum Event {}
     mod balance {
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
@@ -127,17 +127,13 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     core::serde::Serde::<usize>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-        use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
+mod __external {
+        pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
+        pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
+mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -183,7 +179,7 @@ trait HelloStarknetTraitDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitDispatcher> {
@@ -220,7 +216,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitLibraryDispatcher> {
@@ -264,7 +260,7 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -304,7 +300,7 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeDispatcher> {
@@ -525,15 +521,15 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
     }
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             balance: balance::ContractMemberState {},
         }
@@ -543,8 +539,8 @@ enum Event {}
     mod balance {
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
@@ -623,17 +619,13 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     core::serde::Serde::<usize>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-        use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
+mod __external {
+        pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
+        pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
+mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

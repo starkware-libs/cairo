@@ -45,13 +45,13 @@ mod ownable_balance {
     }
 
 
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+pub         ownable: ownable_comp::ComponentState<ContractState>,
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
             balance: balance::ContractMemberState {},
@@ -66,8 +66,8 @@ mod ownable_balance {
         use super::Event;
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
@@ -177,18 +177,14 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
-        use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
+mod __external {
+        pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
+        pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -303,13 +299,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+pub         ownable: ownable_comp::ComponentState<ContractState>,
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
             balance: balance::ContractMemberState {},
@@ -324,8 +320,8 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         use super::Event;
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
@@ -435,18 +431,14 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
-        use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
+mod __external {
+        pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
+        pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

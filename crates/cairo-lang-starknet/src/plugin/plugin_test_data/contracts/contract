@@ -107,17 +107,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -126,7 +126,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
+pub const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -240,17 +240,17 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
-    mod __external {
-        use super::__wrapper__get_something as get_something;
-        use super::__wrapper__set_something as set_something;
-        use super::__wrapper__test_serde as test_serde;
+    pub mod __external {
+        pub use super::__wrapper__get_something as get_something;
+        pub use super::__wrapper__set_something as set_something;
+        pub use super::__wrapper__test_serde as test_serde;
     }
 
-    mod __l1_handler {
-        use super::__wrapper__l1_handler_func as l1_handler_func;
+    pub mod __l1_handler {
+        pub use super::__wrapper__l1_handler_func as l1_handler_func;
     }
 
-    mod __constructor {
+    pub mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

@@ -49,13 +49,13 @@ mod ownable_erc20_contract {
     }
 
 
-    struct ContractState {
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+pub         ownable_storage: ownable_comp::ComponentState<ContractState>,
+pub         erc20_storage: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
@@ -119,16 +119,12 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
+mod __external {
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__OwnableERC20Impl__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -290,13 +286,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    struct ContractState {
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+pub         ownable_storage: ownable_comp::ComponentState<ContractState>,
+pub         erc20_storage: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
@@ -360,16 +356,12 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
+mod __external {
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__OwnableERC20Impl__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

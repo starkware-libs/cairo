@@ -27,7 +27,7 @@ mod contract_a {
     }
 
     #[generate_trait]
-    impl MyImpl of MyTrait {
+    pub impl MyImpl of MyTrait {
         fn internal_func(self: @ContractState) -> u128 {
             5
         }
