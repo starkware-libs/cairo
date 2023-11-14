@@ -40,6 +40,7 @@ use num_traits::ToPrimitive;
 use thiserror::Error;
 
 pub mod casm_run;
+pub mod contract_address;
 pub mod short_string;
 
 #[derive(Debug, Error)]

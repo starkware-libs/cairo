@@ -35,8 +35,6 @@ sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 indent.workspace = true
-starknet-crypto = "0.6.1"
-hex = "0.4.3"
 
 [dev-dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }

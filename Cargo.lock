@@ -689,6 +689,7 @@ dependencies = [
 name = "cairo-lang-runner"
 version = "2.3.1"
 dependencies = [
+ "anyhow",
  "ark-ff",
  "ark-secp256k1",
  "ark-secp256r1",
@@ -702,12 +703,14 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-utils",
  "cairo-vm",
+ "hex",
  "indoc",
  "itertools 0.11.0",
  "keccak",
  "num-bigint",
  "num-integer",
  "num-traits 0.2.17",
+ "starknet-crypto 0.6.1",
  "test-case",
  "thiserror",
 ]
@@ -885,7 +888,6 @@ dependencies = [
  "const_format",
  "convert_case",
  "env_logger",
- "hex",
  "indent",
  "indoc",
  "itertools 0.11.0",
@@ -898,7 +900,6 @@ dependencies = [
  "serde_json",
  "sha3",
  "smol_str",
- "starknet-crypto 0.6.1",
  "test-case",
  "test-log",
  "thiserror",

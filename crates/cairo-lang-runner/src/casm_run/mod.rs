@@ -14,7 +14,6 @@ use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_starknet::contract::calculate_contract_address;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::extract_matches;
@@ -41,6 +40,7 @@ use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
+use crate::contract_address::calculate_contract_address;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner};
 
@@ -945,9 +945,9 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
-        // Assign an arbitrary address to the contract.
+        // Assign the starknet address of the contract.
         let deployer_address = if deploy_from_zero {
-            Felt252::from(0)
+            Felt252::zero()
         } else {
             self.starknet_state.exec_info.contract_address.clone()
         };
@@ -971,14 +971,9 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            let new_caller_address = if deploy_from_zero {
-                Felt252::zero()
-            } else {
-                self.starknet_state.exec_info.contract_address.clone()
-            };
             let old_addrs = self
                 .starknet_state
-                .open_caller_context((deployed_contract_address.clone(), new_caller_address));
+                .open_caller_context((deployed_contract_address.clone(), deployer_address));
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {

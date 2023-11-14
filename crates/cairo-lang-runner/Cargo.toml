@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Basic cairo runner."
 
 [dependencies]
+anyhow.workspace = true
 ark-ff.workspace = true
 ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
@@ -26,6 +27,8 @@ num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
 thiserror.workspace = true
+starknet-crypto = "0.6.1"
+hex = "0.4.3"
 
 [dev-dependencies]
 indoc.workspace = true
