@@ -35,7 +35,7 @@ impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
     }
 }
 
-impl Bytes31BitSize of num::traits::BitSize<bytes31> {
+impl Bytes31BitSize of core::num::traits::BitSize<bytes31> {
     fn bits() -> usize {
         248
     }

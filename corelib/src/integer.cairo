@@ -259,7 +259,7 @@ impl U128BitNot of BitNot<u128> {
     }
 }
 
-impl U128BitSize of num::traits::BitSize<u128> {
+impl U128BitSize of core::num::traits::BitSize<u128> {
     fn bits() -> usize {
         128
     }
@@ -459,7 +459,7 @@ impl U8BitOr of BitOr<u8> {
     }
 }
 
-impl U8BitSize of num::traits::BitSize<u8> {
+impl U8BitSize of core::num::traits::BitSize<u8> {
     fn bits() -> usize {
         8
     }
@@ -655,7 +655,7 @@ impl U16BitOr of BitOr<u16> {
     }
 }
 
-impl U16BitSize of num::traits::BitSize<u16> {
+impl U16BitSize of core::num::traits::BitSize<u16> {
     fn bits() -> usize {
         16
     }
@@ -851,7 +851,7 @@ impl U32BitOr of BitOr<u32> {
     }
 }
 
-impl U32BitSize of num::traits::BitSize<u32> {
+impl U32BitSize of core::num::traits::BitSize<u32> {
     fn bits() -> usize {
         32
     }
@@ -1047,7 +1047,7 @@ impl U64BitOr of BitOr<u64> {
     }
 }
 
-impl U64BitSize of num::traits::BitSize<u64> {
+impl U64BitSize of core::num::traits::BitSize<u64> {
     fn bits() -> usize {
         64
     }
@@ -1294,7 +1294,7 @@ impl U256BitNot of BitNot<u256> {
     }
 }
 
-impl U256BitSize of num::traits::BitSize<u256> {
+impl U256BitSize of core::num::traits::BitSize<u256> {
     fn bits() -> usize {
         256
     }
@@ -1939,7 +1939,7 @@ impl I8PartialOrd of PartialOrd<i8> {
     }
 }
 
-impl I8BitSize of num::traits::BitSize<i8> {
+impl I8BitSize of core::num::traits::BitSize<i8> {
     fn bits() -> usize {
         8
     }
@@ -2046,7 +2046,7 @@ impl I16PartialOrd of PartialOrd<i16> {
     }
 }
 
-impl I16BitSize of num::traits::BitSize<i16> {
+impl I16BitSize of core::num::traits::BitSize<i16> {
     fn bits() -> usize {
         16
     }
@@ -2153,7 +2153,7 @@ impl I32PartialOrd of PartialOrd<i32> {
     }
 }
 
-impl I32BitSize of num::traits::BitSize<i32> {
+impl I32BitSize of core::num::traits::BitSize<i32> {
     fn bits() -> usize {
         32
     }
@@ -2260,7 +2260,7 @@ impl I64PartialOrd of PartialOrd<i64> {
     }
 }
 
-impl I64BitSize of num::traits::BitSize<i64> {
+impl I64BitSize of core::num::traits::BitSize<i64> {
     fn bits() -> usize {
         64
     }
@@ -2388,7 +2388,7 @@ impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
 impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
 impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
 
-impl I128BitSize of num::traits::BitSize<i128> {
+impl I128BitSize of core::num::traits::BitSize<i128> {
     fn bits() -> usize {
         128
     }
