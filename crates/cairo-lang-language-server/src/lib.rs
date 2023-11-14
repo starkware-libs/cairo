@@ -358,7 +358,7 @@ impl Backend {
 
         // Fallback to a single file.
         if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
-			let file_path_s = file_path.to_string_lossy();
+            let file_path_s = file_path.to_string_lossy();
             eprintln!("Error loading file {file_path_s} as a single crate: {err}");
         }
     }
@@ -369,7 +369,7 @@ impl Backend {
         for file in self.state_mutex.lock().await.open_files.iter() {
             let file = db.lookup_intern_file(*file);
             if let FileLongId::OnDisk(file_path) = file {
-				self.detect_crate_for(&mut db, file_path).await;
+                self.detect_crate_for(&mut db, file_path).await;
             }
         }
         drop(db);
