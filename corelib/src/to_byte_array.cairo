@@ -5,17 +5,17 @@ use core::zeroable::Zeroable;
 
 /// Formats a type that behaves like uint to its Ascii representation and appends the formatted
 /// result into the given ByteArray.
-trait AppendFormattedToByteArray<T> {
+pub trait AppendFormattedToByteArray<T> {
     fn append_formatted_to_byte_array(self: @T, ref byte_array: ByteArray, base: NonZero<T>);
 }
 
 /// Formats the given input of a type that behaves like uint to its Ascii representation in a
 /// ByteArray.
-trait FormatAsByteArray<T> {
+pub trait FormatAsByteArray<T> {
     fn format_as_byte_array(self: @T, base: NonZero<T>) -> ByteArray;
 }
 
-impl FormatAsByteArrayImpl<T, +AppendFormattedToByteArray<T>> of FormatAsByteArray<T> {
+pub impl FormatAsByteArrayImpl<T, +AppendFormattedToByteArray<T>> of FormatAsByteArray<T> {
     fn format_as_byte_array(self: @T, base: NonZero<T>) -> ByteArray {
         let mut byte_array = "";
         self.append_formatted_to_byte_array(ref byte_array, :base);
@@ -25,37 +25,37 @@ impl FormatAsByteArrayImpl<T, +AppendFormattedToByteArray<T>> of FormatAsByteArr
 
 // === Impls of AppendFormattedToByteArray ===
 
-impl U8AppendFormattedToByteArray of AppendFormattedToByteArray<u8> {
+pub impl U8AppendFormattedToByteArray of AppendFormattedToByteArray<u8> {
     fn append_formatted_to_byte_array(self: @u8, ref byte_array: ByteArray, base: NonZero<u8>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl U16AppendFormattedToByteArray of AppendFormattedToByteArray<u16> {
+pub impl U16AppendFormattedToByteArray of AppendFormattedToByteArray<u16> {
     fn append_formatted_to_byte_array(self: @u16, ref byte_array: ByteArray, base: NonZero<u16>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl U32AppendFormattedToByteArray of AppendFormattedToByteArray<u32> {
+pub impl U32AppendFormattedToByteArray of AppendFormattedToByteArray<u32> {
     fn append_formatted_to_byte_array(self: @u32, ref byte_array: ByteArray, base: NonZero<u32>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl U64AppendFormattedToByteArray of AppendFormattedToByteArray<u64> {
+pub impl U64AppendFormattedToByteArray of AppendFormattedToByteArray<u64> {
     fn append_formatted_to_byte_array(self: @u64, ref byte_array: ByteArray, base: NonZero<u64>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl U128AppendFormattedToByteArray of AppendFormattedToByteArray<u128> {
+pub impl U128AppendFormattedToByteArray of AppendFormattedToByteArray<u128> {
     fn append_formatted_to_byte_array(self: @u128, ref byte_array: ByteArray, base: NonZero<u128>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl U256AppendFormattedToByteArray of AppendFormattedToByteArray<u256> {
+pub impl U256AppendFormattedToByteArray of AppendFormattedToByteArray<u256> {
     fn append_formatted_to_byte_array(self: @u256, ref byte_array: ByteArray, base: NonZero<u256>) {
         append_formatted_to_byte_array(self, ref byte_array, base);
     }
 }
-impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
+pub impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
     fn append_formatted_to_byte_array(
         self: @felt252, ref byte_array: ByteArray, base: NonZero<felt252>
     ) {

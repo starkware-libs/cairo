@@ -1,19 +1,19 @@
 use core::array::ArrayTrait;
 use core::array::SpanTrait;
 
-trait Serde<T> {
+pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 
-impl TupleSize0Serde of Serde<()> {
+pub impl TupleSize0Serde of Serde<()> {
     fn serialize(self: @(), ref output: Array<felt252>) {}
     fn deserialize(ref serialized: Span<felt252>) -> Option<()> {
         Option::Some(())
     }
 }
 
-impl TupleSize1Serde<E0, +Serde<E0>> of Serde<(E0,)> {
+pub impl TupleSize1Serde<E0, +Serde<E0>> of Serde<(E0,)> {
     fn serialize(self: @(E0,), ref output: Array<felt252>) {
         let (e0,) = self;
         e0.serialize(ref output)
@@ -23,7 +23,7 @@ impl TupleSize1Serde<E0, +Serde<E0>> of Serde<(E0,)> {
     }
 }
 
-impl TupleSize2Serde<E0, E1, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>> of Serde<(E0, E1)> {
+pub impl TupleSize2Serde<E0, E1, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>> of Serde<(E0, E1)> {
     fn serialize(self: @(E0, E1), ref output: Array<felt252>) {
         let (e0, e1) = self;
         e0.serialize(ref output);
@@ -34,7 +34,7 @@ impl TupleSize2Serde<E0, E1, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>> of Se
     }
 }
 
-impl TupleSize3Serde<
+pub impl TupleSize3Serde<
     E0, E1, E2, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>, +Serde<E2>, +Drop<E2>
 > of Serde<(E0, E1, E2)> {
     fn serialize(self: @(E0, E1, E2), ref output: Array<felt252>) {
@@ -54,7 +54,7 @@ impl TupleSize3Serde<
     }
 }
 
-impl TupleSize4Serde<
+pub impl TupleSize4Serde<
     E0,
     E1,
     E2,
@@ -90,12 +90,12 @@ impl TupleSize4Serde<
 /// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from `felt252` using the `TryInto` trait.
 /// Usage example:
 /// ```ignore
-/// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
+/// pub impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
 /// ```
-mod into_felt252_based {
+pub mod into_felt252_based {
     use core::traits::{Into, TryInto};
     use core::array::ArrayTrait;
-    impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
+    pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline(always)]
         fn serialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
