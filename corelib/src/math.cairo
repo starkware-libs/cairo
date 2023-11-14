@@ -12,7 +12,7 @@ use core::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
 /// `(s, -t)` or `(-s, t)` are the Bezout coefficients (according to `sub_direction`).
 ///
 /// Uses the Extended Euclidean algorithm.
-fn egcd<
+pub fn egcd<
     T,
     +Copy<T>,
     +Drop<T>,
@@ -42,7 +42,7 @@ fn egcd<
 
 // TODO(yuval): use signed integers once supported.
 /// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
-fn inv_mod<
+pub fn inv_mod<
     T,
     +Copy<T>,
     +Drop<T>,
@@ -99,7 +99,7 @@ extern fn u256_guarantee_inv_mod_n(
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
 #[inline(always)]
-fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
+pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
         Result::Ok((inv_a, _, _, _, _, _, _, _, _)) => Option::Some(inv_a),
         Result::Err(_) => Option::None(())
@@ -107,12 +107,12 @@ fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
 }
 
 /// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
-fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
+pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
     Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
 }
 
 /// Returns `a * b (mod n)`.
-fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
+pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
     let (_, r) = u512_safe_div_rem_by_u256(u256_wide_mul(a, b), n);
     r
 }
@@ -128,8 +128,8 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-mod one_based {
-    impl OneableImpl<
+pub (crate) mod one_based {
+    pub (crate) impl OneableImpl<
         T, impl OneImpl: core::num::traits::One<T>, +Drop<T>, +Copy<T>
     > of super::Oneable<T> {
         fn one() -> T {
@@ -147,9 +147,9 @@ mod one_based {
 }
 
 // Oneable impls
-impl U8Oneable = math::one_based::OneableImpl<u8, core::integer::U8One>;
-impl U16Oneable = math::one_based::OneableImpl<u16, core::integer::U16One>;
-impl U32Oneable = math::one_based::OneableImpl<u32, core::integer::U32One>;
-impl U64Oneable = math::one_based::OneableImpl<u64, core::integer::U64One>;
-impl U128Oneable = math::one_based::OneableImpl<u128, core::integer::U128One>;
-impl U256Oneable = math::one_based::OneableImpl<u256, core::integer::U256One>;
+impl U8Oneable = math::one_based::OneableImpl<u8>;
+impl U16Oneable = math::one_based::OneableImpl<u16>;
+impl U32Oneable = math::one_based::OneableImpl<u32>;
+impl U64Oneable = math::one_based::OneableImpl<u64>;
+impl U128Oneable = math::one_based::OneableImpl<u128>;
+impl U256Oneable = math::one_based::OneableImpl<u256>;

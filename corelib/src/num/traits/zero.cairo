@@ -1,5 +1,5 @@
 /// Defines an additive identity element for `T`.
-trait Zero<T> {
+pub trait Zero<T> {
     /// Returns the additive identity element of `T`, `0`.
     fn zero() -> T;
     /// Returns `true` if `self` is equal to the additive identity.

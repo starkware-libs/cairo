@@ -1,1 +1,1 @@
-trait StringLiteral<T>;
+pub trait StringLiteral<T>;

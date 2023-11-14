@@ -1,4 +1,4 @@
-impl Felt252Zero of core::num::traits::Zero<felt252> {
+pub (crate) impl Felt252Zero of core::num::traits::Zero<felt252> {
     fn zero() -> felt252 {
         0
     }
@@ -14,7 +14,7 @@ impl Felt252Zero of core::num::traits::Zero<felt252> {
     }
 }
 
-impl Felt252One of core::num::traits::One<felt252> {
+pub (crate) impl Felt252One of core::num::traits::One<felt252> {
     fn one() -> felt252 {
         1
     }

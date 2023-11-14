@@ -10,9 +10,9 @@ use starknet::{
 };
 
 #[derive(Copy, Drop)]
-extern type Secp256k1Point;
+pub extern type Secp256k1Point;
 
-impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
+pub (crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
         0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
@@ -37,7 +37,7 @@ impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     }
 }
 
-impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
+pub (crate) impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
     fn get_coordinates(self: Secp256k1Point) -> SyscallResult<(u256, u256)> {
         secp256k1_get_xy_syscall(self)
     }

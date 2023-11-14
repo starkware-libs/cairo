@@ -7,14 +7,14 @@ use core::integer::U256TryIntoNonZero;
 
 /// Secp256{k/r}1 ECDSA signature.
 #[derive(Copy, Drop, PartialEq, Serde, starknet::Store, Hash)]
-struct Signature {
-    r: u256,
-    s: u256,
+pub struct Signature {
+    pub r: u256,
+    pub s: u256,
     // The parity of the y coordinate of the ec point whose x coordinate is `r`.
     // `y_parity` == true means that the y coordinate is odd.
     // Some places use non boolean v instead of y_parity.
     // In that case, `signature_from_vrs` should be used.
-    y_parity: bool,
+    pub y_parity: bool,
 }
 
 
@@ -22,11 +22,11 @@ struct Signature {
 /// `v` is the sum of an odd number and the parity of the y coordinate of the ec point whose x
 /// coordinate is `r`.
 /// See https://eips.ethereum.org/EIPS/eip-155 for more details.
-fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
+pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
 
-trait Secp256Trait<Secp256Point> {
+pub trait Secp256Trait<Secp256Point> {
     fn get_curve_size() -> u256;
     fn get_generator_point() -> Secp256Point;
 
@@ -36,14 +36,14 @@ trait Secp256Trait<Secp256Point> {
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
-trait Secp256PointTrait<Secp256Point> {
+pub trait Secp256PointTrait<Secp256Point> {
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
-fn is_signature_entry_valid<
+pub fn is_signature_entry_valid<
     Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
 >(
     value: u256
@@ -51,7 +51,7 @@ fn is_signature_entry_valid<
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
-fn is_valid_signature<
+pub fn is_valid_signature<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
@@ -80,7 +80,7 @@ fn is_valid_signature<
 
 /// Receives a signature and the signed message hash.
 /// Returns the public key associated with the signer, represented as a point on the curve.
-fn recover_public_key<
+pub fn recover_public_key<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
