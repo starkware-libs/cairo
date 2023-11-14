@@ -54,19 +54,20 @@ pub fn handle_storage_struct(
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
-            "    struct {full_state_struct_name} {{$members_code$
+            "    pub struct {full_state_struct_name} {{$members_code$
                  }}
                  impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
              {{}}
                  #[inline(always)]
-                 fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} {{
+                 pub fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} \
+             {{
                      {state_struct_name}{full_generic_arg_str} {{$member_init_code$
                      }}
                  }}
                  #[cfg(test)]
                  #[inline(always)]
-                 fn {module_kind}_state_for_testing{generic_arg_str}() -> {full_state_struct_name} \
-             {{
+                 pub fn {module_kind}_state_for_testing{generic_arg_str}() -> \
+             {full_state_struct_name} {{
                      {unsafe_new_function_name}{full_generic_arg_str}()
                  }}
                  $members_module_code$",
@@ -139,7 +140,7 @@ fn get_simple_storage_member_code(
         &[("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
     );
     let member_code = RewriteNode::interpolate_patched(
-        "\n        $member$,",
+        "\n        pub $member$,",
         &[("member".to_string(), member_node.clone())].into(),
     );
 
@@ -282,7 +283,7 @@ fn get_substorage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            &format!("\n$name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
+                            &format!("\npub $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
                             &[
                                 (
                                     "name".to_string(),
@@ -361,8 +362,8 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
                  $storage_member_name${member_state_name}Trait;
     mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
-        trait Internal{member_state_name}Trait {{
+        pub struct {member_state_name} {{}}
+        pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
             fn read(self: @{member_state_name}) -> $type_path$;
             fn write(ref self: {member_state_name}, value: $type_path$);
@@ -399,9 +400,9 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         }
         StarknetModuleKind::Component => format!(
             "
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
+        pub struct {member_state_name} {{}}
         impl Storage{member_state_name}Impl of \
              starknet::storage::StorageMemberAddressTrait<{member_state_name}, $type_path$> {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress nopanic {{
@@ -427,10 +428,10 @@ fn handle_legacy_mapping_storage_member(
                 "
     use $storage_member_name$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
-        trait Internal{member_state_name}Trait {{
+        pub struct {member_state_name} {{}}
+        pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
                  starknet::StorageBaseAddress;
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
@@ -470,9 +471,9 @@ fn handle_legacy_mapping_storage_member(
         }
         StarknetModuleKind::Component => format!(
             "
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
+        pub struct {member_state_name} {{}}
 
         impl StorageMap{member_state_name}Impl of \
              starknet::storage::StorageMapMemberAddressTrait<{member_state_name}, $key_type$, \

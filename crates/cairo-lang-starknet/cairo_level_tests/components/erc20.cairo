@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait ERC20Trait<TCS> {
+pub trait ERC20Trait<TCS> {
     fn get_name(self: @TCS) -> felt252;
     fn get_symbol(self: @TCS) -> felt252;
     fn get_decimals(self: @TCS) -> u8;
@@ -18,7 +18,7 @@ trait ERC20Trait<TCS> {
 }
 
 #[starknet::component]
-mod erc20 {
+pub mod erc20 {
     use starknet::{ContractAddress, get_caller_address, contract_address_const};
     #[storage]
     struct Storage {
@@ -32,25 +32,25 @@ mod erc20 {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         Transfer: TransferEvent,
         Approval: ApprovalEvent,
     }
     #[derive(Drop, starknet::Event)]
-    struct TransferEvent {
-        from: ContractAddress,
-        to: ContractAddress,
-        value: u256,
+    pub struct TransferEvent {
+        pub from: ContractAddress,
+        pub to: ContractAddress,
+        pub value: u256,
     }
     #[derive(Drop, starknet::Event)]
-    struct ApprovalEvent {
-        owner: ContractAddress,
-        spender: ContractAddress,
-        value: u256,
+    pub struct ApprovalEvent {
+        pub owner: ContractAddress,
+        pub spender: ContractAddress,
+        pub value: u256,
     }
 
     #[embeddable_as(IERC20)]
-    impl ERC20Impl<
+    pub impl ERC20Impl<
         TContractState, +HasComponent<TContractState>
     > of super::ERC20Trait<ComponentState<TContractState>> {
         fn get_name(self: @ComponentState<TContractState>) -> felt252 {
@@ -128,7 +128,7 @@ mod erc20 {
     }
 
     #[generate_trait]
-    impl ERC20HelperImpl<
+    pub impl ERC20HelperImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of ERC20HelperTrait<TContractState, X> {
         fn transfer_helper(

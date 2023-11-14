@@ -57,7 +57,7 @@ trait OutsideTrait<TContractState> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
+pub trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -108,15 +108,15 @@ fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractSt
 
 
 
-mod __external_OutsideImpl {
-        use super::__wrapper__OutsideImpl__ret_3 as ret_3;
-        use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
+pub mod __external_OutsideImpl {
+        pub use super::__wrapper__OutsideImpl__ret_3 as ret_3;
+        pub use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
 }
 
-mod __l1_handler_OutsideImpl {
+pub mod __l1_handler_OutsideImpl {
 }
 
-mod __constructor_OutsideImpl {
+pub mod __constructor_OutsideImpl {
 }
 
 
@@ -124,30 +124,30 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        value: value::ContractMemberState,
+    pub struct ContractState {
+        pub value: value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             value: value::ContractMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
     use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
     mod value {
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
@@ -185,7 +185,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
+pub const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -194,13 +194,13 @@ impl ContractStateOutsideImpl of
     }
 }
 
-    mod __external {
+    pub mod __external {
     }
 
-    mod __l1_handler {
+    pub mod __l1_handler {
     }
 
-    mod __constructor {
+    pub mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -339,7 +339,7 @@ trait OutsideTraitWithDestruct<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState> {
+pub trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -365,14 +365,14 @@ fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
 
 
 
-mod __external_OutsideImplWithDestruct {
-        use super::__wrapper__OutsideImplWithDestruct__ret_3 as ret_3;
+pub mod __external_OutsideImplWithDestruct {
+        pub use super::__wrapper__OutsideImplWithDestruct__ret_3 as ret_3;
 }
 
-mod __l1_handler_OutsideImplWithDestruct {
+pub mod __l1_handler_OutsideImplWithDestruct {
 }
 
-mod __constructor_OutsideImplWithDestruct {
+pub mod __constructor_OutsideImplWithDestruct {
 }
 
 
@@ -388,7 +388,7 @@ trait OutsideTraitWithPanicDestruct<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState> {
+pub trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -414,14 +414,14 @@ fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
 
 
 
-mod __external_OutsideImplWithPanicDestruct {
-        use super::__wrapper__OutsideImplWithPanicDestruct__ret_5 as ret_5;
+pub mod __external_OutsideImplWithPanicDestruct {
+        pub use super::__wrapper__OutsideImplWithPanicDestruct__ret_5 as ret_5;
 }
 
-mod __l1_handler_OutsideImplWithPanicDestruct {
+pub mod __l1_handler_OutsideImplWithPanicDestruct {
 }
 
-mod __constructor_OutsideImplWithPanicDestruct {
+pub mod __constructor_OutsideImplWithPanicDestruct {
 }
 
 
@@ -429,20 +429,20 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -451,7 +451,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
+pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
 
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
@@ -466,13 +466,13 @@ impl ContractStateOutsideImplWithPanicDestruct of
     }
 }
 
-    mod __external {
+    pub mod __external {
     }
 
-    mod __l1_handler {
+    pub mod __l1_handler {
     }
 
-    mod __constructor {
+    pub mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -592,7 +592,7 @@ trait OutsideTraitWithDrop<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState> {
+pub trait UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -618,14 +618,14 @@ fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
 
 
 
-mod __external_OutsideImplWithDrop {
-        use super::__wrapper__OutsideImplWithDrop__ret_8 as ret_8;
+pub mod __external_OutsideImplWithDrop {
+        pub use super::__wrapper__OutsideImplWithDrop__ret_8 as ret_8;
 }
 
-mod __l1_handler_OutsideImplWithDrop {
+pub mod __l1_handler_OutsideImplWithDrop {
 }
 
-mod __constructor_OutsideImplWithDrop {
+pub mod __constructor_OutsideImplWithDrop {
 }
 
 
@@ -633,20 +633,20 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -655,7 +655,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
+pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
 
 impl ContractStateOutsideImplWithDrop of
     super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {
@@ -664,13 +664,13 @@ impl ContractStateOutsideImplWithDrop of
     }
 }
 
-    mod __external {
+    pub mod __external {
     }
 
-    mod __l1_handler {
+    pub mod __l1_handler {
     }
 
-    mod __constructor {
+    pub mod __constructor {
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

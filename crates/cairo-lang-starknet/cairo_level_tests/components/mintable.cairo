@@ -1,12 +1,12 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait MintTrait<TContractState> {
+pub trait MintTrait<TContractState> {
     fn mint(ref self: TContractState, account: ContractAddress, amount: u256);
 }
 
 #[starknet::component]
-mod mintable {
+pub mod mintable {
     use starknet::{ContractAddress, contract_address_const};
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
@@ -16,7 +16,7 @@ mod mintable {
     struct Storage {}
 
     #[embeddable_as(Mint)]
-    impl MintImpl<
+    pub impl MintImpl<
         TContractState,
         +HasComponent<TContractState>,
         impl Ownable: ownable_comp::HasComponent<TContractState>,

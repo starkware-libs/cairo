@@ -2,4 +2,4 @@
 bug_samples = "."
 
 [config.global]
-edition = "2023_10"
+edition = "2023_11"

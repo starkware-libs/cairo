@@ -1,4 +1,4 @@
-mod erc20;
-mod mintable;
-mod ownable;
-mod upgradable;
+pub mod erc20;
+pub mod mintable;
+pub mod ownable;
+pub mod upgradable;

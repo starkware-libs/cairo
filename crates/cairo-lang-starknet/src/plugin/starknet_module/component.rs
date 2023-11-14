@@ -273,7 +273,7 @@ fn handle_component_impl(
         &formatdoc!(
             "
         #[starknet::embeddable]
-        impl $generated_impl_name$<
+        pub impl $generated_impl_name$<
             $generic_params${maybe_drop_impl}
         > of $trait_path$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
         }}"
@@ -431,7 +431,7 @@ fn handle_first_param_for_embeddable_as(
     }
     if param.try_extract_snapshot(db)?.is_name_with_arg(
         db,
-        "ComponentState",
+        COMPONENT_STATE_NAME,
         GENERIC_CONTRACT_STATE_NAME,
     ) {
         Some((
@@ -448,7 +448,7 @@ fn handle_first_param_for_embeddable_as(
 fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData) {
     data.has_component_trait = RewriteNode::Text(formatdoc!(
         "
-        trait {HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}> {{
+        pub trait {HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}> {{
             fn get_component(self: @{GENERIC_CONTRACT_STATE_NAME}) -> \
          @{GENERIC_COMPONENT_STATE_NAME};
             fn get_component_mut(ref self: {GENERIC_CONTRACT_STATE_NAME}) -> \

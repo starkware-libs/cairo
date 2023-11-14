@@ -147,19 +147,19 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
-            trait UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}> {{
+            pub trait UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {GENERIC_CONTRACT_STATE_NAME};
             }}
 
             $generated_wrapper_functions$
 
-            mod {EXTERNAL_MODULE}_$impl_name$ {{$external_functions$
+            pub mod {EXTERNAL_MODULE}_$impl_name$ {{$external_functions$
             }}
 
-            mod {L1_HANDLER_MODULE}_$impl_name$ {{$l1_handler_functions$
+            pub mod {L1_HANDLER_MODULE}_$impl_name$ {{$l1_handler_functions$
             }}
 
-            mod {CONSTRUCTOR_MODULE}_$impl_name$ {{$constructor_functions$
+            pub mod {CONSTRUCTOR_MODULE}_$impl_name$ {{$constructor_functions$
             }}
         "
         ),

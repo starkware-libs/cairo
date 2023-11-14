@@ -67,14 +67,14 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-    struct ContractState {
-        counter: counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub counter: counter::ContractMemberState,
+pub         upgradable: upgradable_comp::ComponentState<ContractState>,
+pub         ownable: ownable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             counter: counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
@@ -91,8 +91,8 @@ mod counter_contract {
         use super::CounterDecreased;
         use super::CounterContract;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
@@ -220,18 +220,15 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-
-    mod __external {
-        use super::__wrapper__CounterContract__get_counter as get_counter;
-        use super::__wrapper__CounterContract__increase_counter as increase_counter;
-        use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
+mod __external {
+        pub use super::__wrapper__CounterContract__get_counter as get_counter;
+        pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
+        pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -415,7 +412,7 @@ trait ICounterContractDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractDispatcher> {
@@ -462,7 +459,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractLibraryDispatcher> {
@@ -515,7 +512,7 @@ trait ICounterContractSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeLibraryDispatcher> {
@@ -565,7 +562,7 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct ICounterContractSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeDispatcher> {
@@ -834,14 +831,14 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-    struct ContractState {
-        counter: counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub counter: counter::ContractMemberState,
+pub         upgradable: upgradable_comp::ComponentState<ContractState>,
+pub         ownable: ownable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             counter: counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
@@ -858,8 +855,8 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         use super::CounterDecreased;
         use super::CounterContract;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
@@ -987,18 +984,15 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-
-    mod __external {
-        use super::__wrapper__CounterContract__get_counter as get_counter;
-        use super::__wrapper__CounterContract__increase_counter as increase_counter;
-        use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
+mod __external {
+        pub use super::__wrapper__CounterContract__get_counter as get_counter;
+        pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
+        pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
     }
-
-    mod __l1_handler {
+mod __l1_handler {
     }
-
-    mod __constructor {
-        use super::__wrapper__constructor as constructor;
+mod __constructor {
+        pub use super::__wrapper__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
