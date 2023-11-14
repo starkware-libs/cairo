@@ -1,4 +1,4 @@
-mod traits;
+pub mod traits;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
@@ -6,16 +6,16 @@ use traits::{
 };
 use serde::Serde;
 
-type usize = u32;
+pub type usize = u32;
 
 #[derive(Copy, Drop, Default)]
-enum bool {
+pub enum bool {
     #[default]
     False,
     True,
 }
 
-impl BoolSerde of Serde<bool> {
+pub impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
         if *self {
             1_felt252
@@ -29,7 +29,7 @@ impl BoolSerde of Serde<bool> {
 }
 
 extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
-impl BoolBitAnd of BitAnd<bool> {
+pub impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
     fn bitand(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_and_impl(lhs, rhs);
@@ -38,7 +38,7 @@ impl BoolBitAnd of BitAnd<bool> {
 }
 
 extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
-impl BoolBitOr of BitOr<bool> {
+pub impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
     fn bitor(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_or_impl(lhs, rhs);
@@ -48,7 +48,7 @@ impl BoolBitOr of BitOr<bool> {
 
 extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
 #[inline(always)]
-impl BoolNot of Not<bool> {
+pub impl BoolNot of Not<bool> {
     #[inline(always)]
     fn not(a: bool) -> bool implicits() nopanic {
         let (r,) = bool_not_impl(a);
@@ -57,7 +57,7 @@ impl BoolNot of Not<bool> {
 }
 
 extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
-impl BoolBitXor of BitXor<bool> {
+pub impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
     fn bitxor(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_xor_impl(lhs, rhs);
@@ -65,7 +65,7 @@ impl BoolBitXor of BitXor<bool> {
     }
 }
 
-impl BoolPartialEq of PartialEq<bool> {
+pub impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
@@ -83,7 +83,7 @@ impl BoolPartialEq of PartialEq<bool> {
 }
 
 /// Default values for felt252_dict values.
-impl BoolFelt252DictValue of Felt252DictValue<bool> {
+pub impl BoolFelt252DictValue of Felt252DictValue<bool> {
     #[inline(always)]
     fn zero_default() -> bool nopanic {
         false
@@ -91,7 +91,7 @@ impl BoolFelt252DictValue of Felt252DictValue<bool> {
 }
 
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
-impl BoolIntoFelt252 of Into<bool, felt252> {
+pub impl BoolIntoFelt252 of Into<bool, felt252> {
     #[inline(always)]
     fn into(self: bool) -> felt252 implicits() nopanic {
         bool_to_felt252(self)
@@ -99,17 +99,17 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
 }
 
 // General purpose implicits.
-extern type RangeCheck;
-extern type SegmentArena;
+pub extern type RangeCheck;
+pub extern type SegmentArena;
 
 // felt252.
-mod felt_252;
+pub mod felt_252;
 
 #[derive(Copy, Drop)]
-extern type felt252;
+pub extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
-impl Felt252Serde of Serde<felt252> {
+pub impl Felt252Serde of Serde<felt252> {
     fn serialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
     }
@@ -118,13 +118,13 @@ impl Felt252Serde of Serde<felt252> {
     }
 }
 
-impl Felt252Add of Add<felt252> {
+pub impl Felt252Add of Add<felt252> {
     #[inline(always)]
     fn add(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_add(lhs, rhs)
     }
 }
-impl Felt252AddEq of AddEq<felt252> {
+pub impl Felt252AddEq of AddEq<felt252> {
     #[inline(always)]
     fn add_eq(ref self: felt252, other: felt252) {
         self = Add::add(self, other);
@@ -132,13 +132,13 @@ impl Felt252AddEq of AddEq<felt252> {
 }
 
 extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
-impl Felt252Sub of Sub<felt252> {
+pub impl Felt252Sub of Sub<felt252> {
     #[inline(always)]
     fn sub(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_sub(lhs, rhs)
     }
 }
-impl Felt252SubEq of SubEq<felt252> {
+pub impl Felt252SubEq of SubEq<felt252> {
     #[inline(always)]
     fn sub_eq(ref self: felt252, other: felt252) {
         self = Sub::sub(self, other);
@@ -146,13 +146,13 @@ impl Felt252SubEq of SubEq<felt252> {
 }
 
 extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
-impl Felt252Mul of Mul<felt252> {
+pub impl Felt252Mul of Mul<felt252> {
     #[inline(always)]
     fn mul(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_mul(lhs, rhs)
     }
 }
-impl Felt252MulEq of MulEq<felt252> {
+pub impl Felt252MulEq of MulEq<felt252> {
     #[inline(always)]
     fn mul_eq(ref self: felt252, other: felt252) {
         self = Mul::mul(self, other);
@@ -161,16 +161,16 @@ impl Felt252MulEq of MulEq<felt252> {
 
 extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 
-impl Felt252Neg of Neg<felt252> {
+pub impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
     fn neg(a: felt252) -> felt252 {
         a * -1
     }
 }
 
-extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
+pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
-impl Felt252PartialEq of PartialEq<felt252> {
+pub impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
     fn eq(lhs: @felt252, rhs: @felt252) -> bool {
         match *lhs - *rhs {
@@ -186,7 +186,7 @@ impl Felt252PartialEq of PartialEq<felt252> {
 
 extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
-impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
+pub impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     fn try_into(self: felt252) -> Option<NonZero<felt252>> {
         match felt252_is_zero(self) {
             zeroable::IsZeroResult::Zero => Option::None,
@@ -195,14 +195,14 @@ impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     }
 }
 
-impl Felt252Default of Default<felt252> {
+pub impl Felt252Default of Default<felt252> {
     #[inline(always)]
     fn default() -> felt252 nopanic {
         0
     }
 }
 
-impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
+pub impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
     #[inline(always)]
     fn zero_default() -> felt252 nopanic {
         0
@@ -214,142 +214,141 @@ extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
 // Boxes.
-mod box;
+pub mod box;
 use box::{Box, BoxTrait};
 
 // Nullable
-mod nullable;
+pub mod nullable;
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
 // Array.
-mod array;
+pub mod array;
 use array::{Array, ArrayTrait};
 
 // Span.
 use array::{Span, SpanTrait};
 
 // Dictionary.
-mod dict;
+pub mod dict;
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
 // Result.
-mod result;
+pub mod result;
 use result::{Result, ResultTrait};
 
 // Option.
-mod option;
+pub mod option;
 use option::{Option, OptionTrait};
 
 // Clone.
-mod clone;
+pub mod clone;
 use clone::Clone;
 
 // EC.
-mod ec;
+pub mod ec;
 use ec::{EcOp, EcPoint, EcState};
 
-mod ecdsa;
+pub mod ecdsa;
 
 // Integer.
-mod integer;
+pub mod integer;
 use integer::{
-    i8, i8_const, I8IntoFelt252, i16, i16_const, I16IntoFelt252, i32, i32_const, I32IntoFelt252,
-    i64, i64_const, I64IntoFelt252, i128, i128_const, I128IntoFelt252, NumericLiteral, u128,
-    u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
-    u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
+    i8, I8IntoFelt252, i16, I16IntoFelt252, i32, I32IntoFelt252, i64, I64IntoFelt252, i128,
+    I128IntoFelt252, NumericLiteral, u128, u128_sqrt, u128_is_zero, u8, u16, u32, u64, u256,
+    u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
     Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
     U128IntoFelt252, Felt252IntoU256, Bitwise
 };
 
 // Math.
-mod math;
+pub mod math;
 
 // Num.
-mod num;
+pub mod num;
 
 // Cmp.
-mod cmp;
+pub mod cmp;
 
 // Gas.
-mod gas;
+pub mod gas;
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
-mod panics;
+pub mod panics;
 use panics::{panic, Panic, PanicResult};
 
-enum never {}
+pub enum never {}
 
 #[inline(always)]
-fn panic_with_felt252(err_code: felt252) -> never {
+pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }
 
 #[inline(always)]
-fn assert(cond: bool, err_code: felt252) {
+pub fn assert(cond: bool, err_code: felt252) {
     if !cond {
         panic_with_felt252(err_code)
     }
 }
 
 // Serialization and Deserialization.
-mod serde;
+pub mod serde;
 
 // Hash functions.
-mod hash;
+pub mod hash;
 
-mod keccak;
+pub mod keccak;
 
 // Pedersen
-mod pedersen;
+pub mod pedersen;
 use pedersen::Pedersen;
 
 // Poseidon
-mod poseidon;
+pub mod poseidon;
 use poseidon::Poseidon;
 
 // Debug.
-mod debug;
+pub mod debug;
 
-mod fmt;
+pub mod fmt;
 
 // Starknet
-mod starknet;
+pub mod starknet;
 use starknet::System;
 
 // Internals.
-mod internal;
+pub mod internal;
 
 // Zeroable.
-mod zeroable;
+pub mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
 // bytes31.
-mod bytes_31;
+pub mod bytes_31;
 use bytes_31::{
     bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
     Felt252TryIntoBytes31
 };
 
 // BytesArray.
-mod byte_array;
+pub mod byte_array;
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
 // String.
-mod string;
+pub mod string;
 use string::StringLiteral;
 
 // to_byte_array.
-mod to_byte_array;
+pub mod to_byte_array;
 
 #[cfg(test)]
 mod test;
 
 // Module for testing only.
-mod testing;
+pub mod testing;
 
 // Preludes.
 mod prelude;
