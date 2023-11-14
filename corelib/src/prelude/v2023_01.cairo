@@ -38,9 +38,8 @@ use core::{
         Bitwise, Felt252IntoU256, Felt252TryIntoU128, Felt252TryIntoU16, Felt252TryIntoU32,
         Felt252TryIntoU64, Felt252TryIntoU8, I128IntoFelt252, I16IntoFelt252, I32IntoFelt252,
         I64IntoFelt252, I8IntoFelt252, NumericLiteral, U128IntoFelt252, U16IntoFelt252,
-        U32IntoFelt252, U64IntoFelt252, U8IntoFelt252, i128, i128_const, i16, i16_const, i32,
-        i32_const, i64, i64_const, i8, i8_const, u128, u128_const, u128_is_zero, u128_sqrt, u16,
-        u16_const, u256, u256_sqrt, u32, u32_const, u64, u64_const, u8, u8_const
+        U32IntoFelt252, U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, u128, u128_is_zero,
+        u128_sqrt, u16, u256, u256_sqrt, u32, u64, u8
     }
 };
 use core::internal;

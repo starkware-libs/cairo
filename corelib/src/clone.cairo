@@ -1,4 +1,4 @@
-trait Clone<T> {
+pub trait Clone<T> {
     fn clone(self: @T) -> T;
 }
 

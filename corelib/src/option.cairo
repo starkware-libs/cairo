@@ -1,10 +1,10 @@
 #[derive(Copy, Drop, Serde, PartialEq)]
-enum Option<T> {
+pub enum Option<T> {
     Some: T,
     None,
 }
 
-trait OptionTrait<T> {
+pub trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option<T>, err: felt252) -> T;
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
@@ -22,7 +22,7 @@ trait OptionTrait<T> {
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
 }
 
-impl OptionTraitImpl<T> of OptionTrait<T> {
+pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
