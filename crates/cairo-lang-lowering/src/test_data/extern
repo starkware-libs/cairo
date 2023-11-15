@@ -13,42 +13,23 @@ fn foo(m: Option<MyStruct>) {
 foo
 
 //! > module_code
-use core::option::DestructOption;
+use core::traits::DestructFromDrop;
 
-#[derive(Destruct)]
+#[derive(Drop)]
 struct MyStruct {
 
 }
 
-fn foo2<T, +Destruct<T>, -Drop<T>>(t: T) {
+fn foo2<T, +Destruct<T>>(t: T) {
     panic_with_felt252('panic')
 }
 
 //! > semantic_diagnostics
+error: Trait `core::traits::Destruct::<core::option::Option::<test::MyStruct>>` has multiple implementations, in: core::traits::DestructFromDrop::<core::option::Option::<test::MyStruct>, core::option::OptionDrop::<test::MyStruct, test::MyStructDrop>>, core::option::DestructOption::<test::MyStruct, core::traits::DestructFromDrop::<test::MyStruct, test::MyStructDrop>>
+ --> lib.cairo:13:4
+   foo2(m)
+   ^**^
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::option::Option::<test::MyStruct>
-blk0 (root):
-Statements:
-  (v2: core::panics::PanicResult::<((),)>) <- test::foo2::<core::option::Option::<test::MyStruct>, core::option::DestructOption::<test::MyStruct, test::MyStructDestruct>>(v0)
-End:
-  Match(match_enum(v2) {
-    PanicResult::Ok(v3) => blk1,
-    PanicResult::Err(v5) => blk2,
-  })
-
-blk1:
-Statements:
-  (v4: ()) <- struct_destructure(v3)
-  (v6: ((),)) <- struct_construct(v4)
-  (v7: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v6)
-End:
-  Return(v7)
-
-blk2:
-Statements:
-  (v8: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v5)
-End:
-  Return(v8)

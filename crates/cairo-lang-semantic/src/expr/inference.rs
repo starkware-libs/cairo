@@ -563,7 +563,6 @@ impl<'db> Inference<'db> {
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var) {
-            eprintln!("assign_ty");
             return Err(InferenceError::Cycle { var: inference_var });
         }
         self.type_assignment.insert(var.id, ty);

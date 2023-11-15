@@ -106,7 +106,7 @@ pub fn enrich_lookup_context(
 pub struct Solver {
     pub canonical_trait: CanonicalTrait,
     pub lookup_context: ImplLookupContext,
-    candidate_solvers: Vec<CandidateSolver>,
+    pub candidate_solvers: Vec<CandidateSolver>,
 }
 impl Solver {
     fn new(
@@ -141,7 +141,12 @@ impl Solver {
                     .neg_impls;
 
                 for neg_impl in neg_impls {
-                    neg_impl.concrete_trait.unwrap();
+                    let concrete_trait = neg_impl.concrete_trait.unwrap();
+
+                    let filter = concrete_trait.filter(db);
+                    let candidates = find_candidates_at_context(db, &self.lookup_context, filter)
+                        .unwrap_or_default();
+                    eprintln!("n_candidates: {:?}", candidates.len());
 
                     let mut solver = Solver::new(
                         db,
@@ -149,8 +154,24 @@ impl Solver {
                         self.lookup_context.clone(),
                     );
 
-                    if !matches!(solver.solution_set(db), SolutionSet::None) {
+                    let candidate_solution_set = solver.solution_set(db);
+
+                    if !matches!(candidate_solution_set, SolutionSet::None) {
                         continue;
+                    }
+
+                    eprintln!("neg impl: {:?}", neg_impl.debug(db.elongate()));
+                    eprintln!(
+                        "neg trait: {:?}",
+                        neg_impl.concrete_trait.unwrap().debug(db.elongate())
+                    );
+                    eprintln!("candidate: {:?}", candidate_solution_set);
+
+                    eprintln!("n_candidates: {:?}", solver.candidate_solvers.len());
+
+                    for candidate in solver.candidate_solvers {
+                        eprintln!("candidate: {:?}", candidate.candidate);
+                        eprintln!("candidate impl: {:?}", candidate.candidate_impl);
                     }
                 }
             }
