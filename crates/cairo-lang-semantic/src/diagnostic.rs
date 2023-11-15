@@ -516,11 +516,26 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
-            SemanticDiagnosticKind::NoImplementationOfIndexOperator(ty) => {
-                format!(
-                    r#"Type "{}" does not implement the "Index" trait nor the "IndexView" trait."#,
-                    ty.format(db)
-                )
+            SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Type `{}` does not implement the `Index` trait nor the `IndexView` trait.",
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Type `{}` could not be indexed.\n{}",
+                        ty.format(db),
+                        inference_errors
+                            .iter()
+                            .map(|(trait_member, err)| format!(
+                                "Candidate `{}` inference failed with: {}",
+                                trait_member.full_path(db.upcast()),
+                                err.format(db)
+                            ))
+                            .join("\n")
+                    )
+                }
             }
             SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
                 format!(
@@ -542,11 +557,30 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
-                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
-                method_name,
-                ty.format(db)
-            ),
+            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Method `{}` not found on type `{}`. Did you import the correct trait and \
+                         impl?",
+                        method_name,
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Method `{}` could not be called on type `{}`.\n{}",
+                        method_name,
+                        ty.format(db),
+                        inference_errors
+                            .iter()
+                            .map(|(trait_member, err)| format!(
+                                "Candidate `{}` inference failed with: {}",
+                                trait_member.full_path(db.upcast()),
+                                err.format(db)
+                            ))
+                            .join("\n")
+                    )
+                }
+            }
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allowed in a `loop` block.".into()
             }
@@ -753,9 +787,10 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
-    NoSuchMethod {
+    CannotCallMethod {
         ty: semantic::TypeId,
         method_name: SmolStr,
+        inference_errors: Vec<(TraitFunctionId, InferenceError)>,
     },
     NoSuchMember {
         struct_id: StructId,
@@ -850,7 +885,10 @@ pub enum SemanticDiagnosticKind {
     },
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
-    NoImplementationOfIndexOperator(semantic::TypeId),
+    NoImplementationOfIndexOperator {
+        ty: semantic::TypeId,
+        inference_errors: Vec<(TraitFunctionId, InferenceError)>,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,

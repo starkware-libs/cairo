@@ -333,6 +333,7 @@ fn find_methods_for_type(
                 ty,
                 &lookup_context,
                 Some(stable_ptr),
+                |_| {},
             ) else {
                 eprintln!("Can't fit");
                 continue;
