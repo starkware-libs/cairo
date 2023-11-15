@@ -128,7 +128,9 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
 }
 
 //! > expected_diagnostics
-error: Type "test::Struct1" does not implement the "Index" trait nor the "IndexView" trait.
+error: Type `test::Struct1` could not be indexed.
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<test::Struct1, ?3, ?4>
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<test::Struct1, ?3, ?4>
  --> lib.cairo:21:14
     let y1 = x1[0];
              ^***^
