@@ -45,7 +45,8 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
-    ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
+    ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
+    UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
@@ -1030,7 +1031,7 @@ fn compute_expr_indexed_semantic(
         expr,
         syntax.stable_ptr().untyped(),
         None,
-        |ty, _| NoImplementationOfIndexOperator(ty),
+        |ty, _, inference_errors| NoImplementationOfIndexOperator { ty, inference_errors },
         |ty, _, _| MultipleImplementationOfIndexOperator(ty),
     )?;
     expr_function_call(
@@ -1056,7 +1057,11 @@ fn compute_method_function_call_data(
     self_expr: ExprAndId,
     method_syntax: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<ast::GenericArg>>,
-    no_implementation_diagnostic: fn(TypeId, SmolStr) -> SemanticDiagnosticKind,
+    no_implementation_diagnostic: fn(
+        TypeId,
+        SmolStr,
+        TraitInferenceErrors,
+    ) -> SemanticDiagnosticKind,
     multiple_trait_diagnostic: fn(
         TypeId,
         TraitFunctionId,
@@ -1064,8 +1069,10 @@ fn compute_method_function_call_data(
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
     let self_ty = self_expr.ty();
+    let mut inference_errors = vec![];
     let candidates = filter_candidate_traits(
         ctx,
+        &mut inference_errors,
         self_ty,
         candidate_traits,
         func_name.clone(),
@@ -1073,9 +1080,14 @@ fn compute_method_function_call_data(
     )?;
     let trait_function_id = match candidates[..] {
         [] => {
-            return Err(ctx
-                .diagnostics
-                .report_by_ptr(method_syntax, no_implementation_diagnostic(self_ty, func_name)));
+            return Err(ctx.diagnostics.report_by_ptr(
+                method_syntax,
+                no_implementation_diagnostic(
+                    self_ty,
+                    func_name,
+                    TraitInferenceErrors { traits_and_errors: inference_errors },
+                ),
+            ));
         }
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -1677,7 +1689,7 @@ fn method_call_expr(
         lexpr,
         path.stable_ptr().untyped(),
         generic_args_syntax,
-        |ty, method_name| NoSuchMethod { ty, method_name },
+        |ty, method_name, inference_errors| CannotCallMethod { ty, method_name, inference_errors },
         |_, trait_function_id0, trait_function_id1| AmbiguousTrait {
             trait_function_id0,
             trait_function_id1,

@@ -516,11 +516,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
-            SemanticDiagnosticKind::NoImplementationOfIndexOperator(ty) => {
-                format!(
-                    r#"Type "{}" does not implement the "Index" trait nor the "IndexView" trait."#,
-                    ty.format(db)
-                )
+            SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Type `{}` does not implement the `Index` trait nor the `IndexView` trait.",
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Type `{}` could not be indexed.\n{}",
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
             }
             SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
                 format!(
@@ -542,11 +550,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
-                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
-                method_name,
-                ty.format(db)
-            ),
+            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Method `{}` not found on type `{}`. Did you import the correct trait and \
+                         impl?",
+                        method_name,
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Method `{}` could not be called on type `{}`.\n{}",
+                        method_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allowed in a `loop` block.".into()
             }
@@ -753,9 +773,10 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
-    NoSuchMethod {
+    CannotCallMethod {
         ty: semantic::TypeId,
         method_name: SmolStr,
+        inference_errors: TraitInferenceErrors,
     },
     NoSuchMember {
         struct_id: StructId,
@@ -850,7 +871,10 @@ pub enum SemanticDiagnosticKind {
     },
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
-    NoImplementationOfIndexOperator(semantic::TypeId),
+    NoImplementationOfIndexOperator {
+        ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
@@ -942,5 +966,30 @@ impl Display for ElementKind {
             ElementKind::Impl => "impl",
         };
         write!(f, "{res}")
+    }
+}
+
+/// A list of trait functions and the inference errors that occurred while trying to infer them.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitInferenceErrors {
+    pub traits_and_errors: Vec<(TraitFunctionId, InferenceError)>,
+}
+impl TraitInferenceErrors {
+    /// Is the error list empty.
+    fn is_empty(&self) -> bool {
+        self.traits_and_errors.is_empty()
+    }
+    /// Format the list of errors.
+    fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        self.traits_and_errors
+            .iter()
+            .map(|(trait_function_id, inference_error)| {
+                format!(
+                    "Candidate `{}` inference failed with: {}",
+                    trait_function_id.full_path(db.upcast()),
+                    inference_error.format(db)
+                )
+            })
+            .join("\n")
     }
 }
