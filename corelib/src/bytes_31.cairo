@@ -35,6 +35,12 @@ impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
     }
 }
 
+impl Bytes31BitSize of core::num::traits::BitSize<bytes31> {
+    fn bits() -> usize {
+        248
+    }
+}
+
 impl Bytes31IntoFelt252 of Into<bytes31, felt252> {
     fn into(self: bytes31) -> felt252 {
         bytes31_to_felt252(self)
