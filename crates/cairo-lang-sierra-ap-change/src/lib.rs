@@ -14,6 +14,8 @@ use itertools::Itertools;
 use thiserror::Error;
 
 pub mod ap_change_info;
+/// Direct linear computation of AP-Changes instead of equation solver.
+pub mod compute;
 pub mod core_libfunc_ap_change;
 mod generate_equations;
 
