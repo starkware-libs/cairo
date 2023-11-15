@@ -340,12 +340,12 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
-        if self.scarb.is_scarb_project(file_path.into()) {
+        if self.scarb.is_scarb_project(file_path.clone()) {
             if self.scarb.is_scarb_found() {
                 // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.into()).await {
+                let corelib = match self.scarb.corelib_path(file_path.clone()).await {
                     Ok(corelib) => corelib,
                     Err(err) => {
                         let err =
@@ -360,7 +360,7 @@ impl Backend {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_source_paths(file_path.into()).await {
+                match self.scarb.crate_source_paths(file_path).await {
                     Ok(source_paths) => {
                         update_crate_roots(db, source_paths.clone());
                     }
@@ -385,7 +385,7 @@ impl Backend {
         }
 
         // Fallback to cairo_project manifest format.
-        let mut path = PathBuf::from(file_path);
+        let mut path = file_path.clone();
         for _ in 0..MAX_CRATE_DETECTION_DEPTH {
             path.pop();
             // Check for a cairo project file.
@@ -396,8 +396,9 @@ impl Backend {
         }
 
         // Fallback to a single file.
-        if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-            eprintln!("Error loading file {file_path} as a single crate: {err}");
+        if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
+            let file_path_s = file_path.to_string_lossy();
+            eprintln!("Error loading file {file_path_s} as a single crate: {err}");
         }
     }
 
@@ -407,9 +408,7 @@ impl Backend {
         for file in self.state_mutex.lock().await.open_files.iter() {
             let file = db.lookup_intern_file(*file);
             if let FileLongId::OnDisk(file_path) = file {
-                if let Some(file_path) = file_path.to_str() {
-                    self.detect_crate_for(&mut db, file_path).await;
-                }
+                self.detect_crate_for(&mut db, file_path).await;
             }
         }
         drop(db);
@@ -586,7 +585,9 @@ impl LanguageServer for Backend {
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
-            let path = uri.path();
+            let Ok(path) = uri.to_file_path() else {
+                return;
+            };
             self.detect_crate_for(&mut db, path).await;
         }
 
