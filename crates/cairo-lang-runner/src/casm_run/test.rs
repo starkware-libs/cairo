@@ -10,8 +10,8 @@ use num_traits::ToPrimitive;
 use test_case::test_case;
 
 use super::format_for_debug;
+use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::run_function;
-use crate::contract_address::calculate_contract_address;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
 
@@ -443,21 +443,16 @@ fn test_format_for_debug() {
 
 #[test]
 fn test_calculate_contract_address() {
-    let salt = Felt252::from_bytes_be(&hex::decode("65766d5f61646472657373").unwrap());
+    let salt = felt_str!("122660764594045088044512115");
     let deployer_address = Felt252::from(0x01);
-    let class_hash = Felt252::from_bytes_be(
-        &hex::decode("03ef34708a5a14ee92cfa571a1afdf331aa231d10d3f2f99ff1f8f7516a8c6d2").unwrap(),
-    );
+    let class_hash =
+        felt_str!("1779576919126046589190499439779938629977579841313883525093195577363779864274");
     let calldata = vec![deployer_address.clone(), salt.clone()];
     let deployed_contract_address =
-        calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address)
-            .expect("calculate_contract_address failed");
+        calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address);
 
     assert_eq!(
-        Felt252::from_bytes_be(
-            &hex::decode("050f2821ed90360ac0508d52f8db1f87e541811773bce3dbcaf863c572cd696f")
-                .unwrap()
-        ),
+        felt_str!("2288343933438457476985546536845198482236255384896285993520343604559094835567"),
         deployed_contract_address
     );
 }

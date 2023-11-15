@@ -12,7 +12,7 @@ pub fn pedersen_hash_array(felts: &[FieldElement]) -> FieldElement {
     pedersen_hash(&current_hash, &data_len)
 }
 
-// 2 ** 251 - 256
+/// 2 ** 251 - 256
 const ADDR_BOUND: FieldElement = FieldElement::from_mont([
     18446743986131443745,
     160989183,
@@ -20,7 +20,7 @@ const ADDR_BOUND: FieldElement = FieldElement::from_mont([
     576459263475590224,
 ]);
 
-// Cairo string of "STARKNET_CONTRACT_ADDRESS"
+/// Cairo string of "STARKNET_CONTRACT_ADDRESS"
 const CONTRACT_ADDRESS_PREFIX: FieldElement = FieldElement::from_mont([
     3829237882463328880,
     17289941567720117366,
@@ -28,9 +28,9 @@ const CONTRACT_ADDRESS_PREFIX: FieldElement = FieldElement::from_mont([
     533439743893157637,
 ]);
 
-fn felt252_to_field_element(input: &Felt252) -> anyhow::Result<FieldElement> {
-    FieldElement::from_bytes_be(&input.to_be_bytes())
-        .map_err(|_| anyhow::anyhow!("Failed to convert felt252 to field element."))
+/// Converts a Felt252 to the FieldElement type used in starknet-crypto.
+fn felt252_to_field_element(input: &Felt252) -> FieldElement {
+    FieldElement::from_bytes_be(&input.to_be_bytes()).unwrap()
 }
 
 /// Calculates the address of a starknet contract, as defined in
@@ -40,21 +40,18 @@ pub fn calculate_contract_address(
     class_hash: &Felt252,
     constructor_calldata: &[Felt252],
     deployer_address: &Felt252,
-) -> anyhow::Result<Felt252> {
+) -> Felt252 {
     let constructor_calldata_hash = pedersen_hash_array(
-        &constructor_calldata
-            .iter()
-            .map(|felt| FieldElement::from_bytes_be(&felt.to_be_bytes()).expect("failed"))
-            .collect::<Vec<_>>(),
+        &constructor_calldata.iter().map(felt252_to_field_element).collect::<Vec<_>>(),
     );
     let mut address = pedersen_hash_array(&[
         CONTRACT_ADDRESS_PREFIX,
-        felt252_to_field_element(deployer_address)?,
-        felt252_to_field_element(salt)?,
-        felt252_to_field_element(class_hash)?,
+        felt252_to_field_element(deployer_address),
+        felt252_to_field_element(salt),
+        felt252_to_field_element(class_hash),
         constructor_calldata_hash,
     ]);
     address = address % ADDR_BOUND;
 
-    Ok(Felt252::from_bytes_be(&address.to_bytes_be()))
+    Felt252::from_bytes_be(&address.to_bytes_be())
 }

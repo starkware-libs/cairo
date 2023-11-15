@@ -39,14 +39,15 @@ use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
+use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
-use crate::contract_address::calculate_contract_address;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
 
+mod contract_address;
 mod dict_manager;
 
 // TODO(orizi): This def is duplicated.
@@ -951,17 +952,12 @@ impl<'a> CairoHintProcessor<'a> {
         } else {
             self.starknet_state.exec_info.contract_address.clone()
         };
-        let deployed_contract_address = match calculate_contract_address(
+        let deployed_contract_address = calculate_contract_address(
             &_contract_address_salt,
             &class_hash,
             &calldata,
             &deployer_address,
-        ) {
-            Ok(address) => address,
-            Err(_) => {
-                fail_syscall!(b"Contract address calculation failed");
-            }
-        };
+        );
 
         // Prepare runner for running the constructor.
         let runner = self.runner.expect("Runner is needed for starknet.");

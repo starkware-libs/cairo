@@ -94,7 +94,6 @@ parity-scale-codec = "3.6.5"
 parity-scale-codec-derive = "3.6.5"
 path-clean = "1.0.1"
 pretty_assertions = "1.4.0"
-proc-macro2 = "1.0"
 quote = "1.0.33"
 rayon = "1.8.0"
 rstest = "0.18.2"
@@ -105,9 +104,9 @@ serde = { version = "1.0.192", features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
+starknet-crypto = "0.6.1"
 syn = { version = "2.0.39", features = ["full", "extra-traits"] }
 test-case = "3.2.1"
-test-case-macros = "3.2.1"
 test-log = "0.2.13"
 thiserror = "1.0.50"
 time = { version = "0.3.30", features = [
