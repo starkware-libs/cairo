@@ -7,9 +7,9 @@ pub extern type ContractAddress;
 
 
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
-pub (crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-pub (crate) extern fn contract_address_try_from_felt252(
+pub(crate) extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
@@ -39,7 +39,7 @@ pub impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     }
 }
 
-pub (crate) impl ContractAddressZeroable =
+pub(crate) impl ContractAddressZeroable =
     core::zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
 
 pub impl ContractAddressSerde of Serde<ContractAddress> {

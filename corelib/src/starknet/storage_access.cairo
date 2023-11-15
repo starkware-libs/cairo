@@ -20,14 +20,14 @@ pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
-pub (crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
 pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
 
 pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
-pub (crate) extern fn storage_address_try_from_felt252(
+pub(crate) extern fn storage_address_try_from_felt252(
     address: felt252
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 

@@ -1,6 +1,6 @@
 // === Zeroable ===
 
-pub (crate) trait Zeroable<T> {
+pub(crate) trait Zeroable<T> {
     /// Returns the additive identity element of Self, 0.
     fn zero() -> T;
     /// Returns whether self is equal to 0, the additive identity element.
@@ -9,8 +9,8 @@ pub (crate) trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-pub (crate) mod zero_based {
-    pub (crate) impl ZeroableImpl<
+pub(crate) mod zero_based {
+    pub(crate) impl ZeroableImpl<
         T, impl ZeroImpl: core::num::traits::Zero<T>, +Drop<T>, +Copy<T>
     > of super::Zeroable<T> {
         fn zero() -> T {
@@ -27,14 +27,14 @@ pub (crate) mod zero_based {
     }
 }
 
-pub (crate) impl Felt252Zeroable = zero_based::ZeroableImpl<felt252, core::felt_252::Felt252Zero>;
+pub(crate) impl Felt252Zeroable = zero_based::ZeroableImpl<felt252, core::felt_252::Felt252Zero>;
 
 // === NonZero ===
 
 #[derive(Copy, Drop)]
 pub extern type NonZero<T>;
 
-pub (crate) enum IsZeroResult<T> {
+pub(crate) enum IsZeroResult<T> {
     Zero,
     NonZero: NonZero<T>,
 }

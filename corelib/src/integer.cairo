@@ -29,7 +29,7 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
     }
 }
 
-pub (crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
+pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
 extern fn u128_overflowing_add(
     lhs: u128, rhs: u128
@@ -258,7 +258,7 @@ pub impl U128BitNot of BitNot<u128> {
     }
 }
 
-pub (crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
+pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
@@ -2317,12 +2317,12 @@ pub impl I128PartialOrd of PartialOrd<i128> {
 }
 
 // Zeroable impls
-pub (crate) impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
-pub (crate) impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
-pub (crate) impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
-pub (crate) impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
-pub (crate) impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
-pub (crate) impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
+pub(crate) impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
+pub(crate) impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
+pub(crate) impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
+pub(crate) impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
+pub(crate) impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
+pub(crate) impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
 
 // Zero trait implementations
 pub impl U8Zero of core::num::traits::Zero<u8> {

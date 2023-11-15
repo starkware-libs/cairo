@@ -28,7 +28,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenLParen
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) | matches!(grandparent_kind(db, self), Some(SyntaxKind::VisibilityPubArgumentClause)) =>
             {
                 true
             }

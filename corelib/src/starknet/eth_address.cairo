@@ -59,7 +59,7 @@ pub impl EthAddressZero of core::num::traits::Zero<EthAddress> {
 
 pub impl EthAddressZeroable = core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
-pub (crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+pub(crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {
         self.address.print();
     }
