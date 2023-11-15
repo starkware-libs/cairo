@@ -689,7 +689,6 @@ dependencies = [
 name = "cairo-lang-runner"
 version = "2.3.1"
 dependencies = [
- "anyhow",
  "ark-ff",
  "ark-secp256k1",
  "ark-secp256r1",
