@@ -204,6 +204,8 @@ impl<'a> Parser<'a> {
             Ok(attributes) => (true, attributes),
             Err(_) => (false, AttributeList::new_green(self.db, vec![])),
         };
+        // Save the current offset for reporting the diagnositc in case there is only an identifier after.
+        let after_attributes_offset = self.offset.add_width(self.current_width);
         match self.peek().kind {
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes).into()),
@@ -255,6 +257,12 @@ impl<'a> Parser<'a> {
                             .into())
                     }
                     _ => {
+                        if has_attrs {
+                            self.skip_taken_node_with_offset(attributes, ParserDiagnosticKind::SkippedElement {
+                                element_name: or_an_attribute!(TOP_LEVEL_ITEM_DESCRIPTION).into(),
+                            },
+                            after_attributes_offset);
+                        }
                         // Complete the `skip`ping of the identifier.
                         self.append_skipped_token_to_pending_trivia(
                             ident,
@@ -2233,22 +2241,32 @@ impl<'a> Parser<'a> {
         });
     }
 
+
+    // Skips a taken node, from the current offset adjusted to include the current token. Use it if the skipped node was the last to be taken.
+    fn skip_taken_node_from_current_offset(
+        &mut self,
+        node_to_skip: impl Into<SkippedNodeGreen>,
+        diagnostic_kind: ParserDiagnosticKind,
+    ) {
+        self.skip_taken_node_with_offset(node_to_skip, diagnostic_kind, self.offset.add_width(self.current_width))
+    }
+
     /// Skips the given node which is a variant of `SkippedNode` and is already taken. A skipped
     /// node is a node which is not expected where it is found. Skipping this node means
     /// reporting the given error (pointing to right after the node), appending the node to the
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
-    fn skip_taken_node(
+    /// `end_of_node_offset` is the offset of the end of the skipped node.
+    fn skip_taken_node_with_offset(
         &mut self,
         node_to_skip: impl Into<SkippedNodeGreen>,
         diagnostic_kind: ParserDiagnosticKind,
+        end_of_node_offset: TextOffset
     ) {
         let trivium_green = TriviumSkippedNode::new_green(self.db, node_to_skip.into()).into();
 
         // Add to pending trivia.
         self.pending_trivia.push(trivium_green);
 
-        // Fix the offset for the last token not being considered in the current offset.
-        let end_of_node_offset = self.offset.add_width(self.current_width);
         let start_of_node_offset = end_of_node_offset.sub_width(trivium_green.0.width(self.db));
         let diag_pos =
             end_of_node_offset.sub_width(trailing_trivia_width(self.db, trivium_green.0));
@@ -2278,7 +2296,7 @@ impl<'a> Parser<'a> {
         node_to_skip: impl Into<SkippedNodeGreen>,
         diagnostic_kind: ParserDiagnosticKind,
     ) -> ExpectedNode::Green {
-        self.skip_taken_node(node_to_skip, diagnostic_kind);
+        self.skip_taken_node_from_current_offset(node_to_skip, diagnostic_kind);
         ExpectedNode::missing(self.db)
     }
 
