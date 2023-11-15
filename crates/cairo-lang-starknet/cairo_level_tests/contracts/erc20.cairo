@@ -21,6 +21,7 @@ trait IERC20<TContractState> {
 
 #[starknet::contract]
 mod erc_20 {
+    use core::num::traits::Zero;
     use starknet::get_caller_address;
     use starknet::contract_address_const;
     use starknet::ContractAddress;

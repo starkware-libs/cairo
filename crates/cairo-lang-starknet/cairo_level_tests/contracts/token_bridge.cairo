@@ -8,6 +8,7 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
+    use core::num::traits::Zero;
     use starknet::{
         ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };
