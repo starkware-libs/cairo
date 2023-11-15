@@ -104,6 +104,7 @@ extern type SegmentArena;
 
 // felt252.
 mod felt_252;
+use felt_252::{Felt252One, Felt252Zero};
 
 #[derive(Copy, Drop)]
 extern type felt252;
