@@ -1236,3 +1236,59 @@ error: Missing tokens. Expected a statement after attributes.
         │   └── child #3 (kind: TokenNewline).
         ├── token (kind: TokenRBrace): '}'
         └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test an attribute with an identifier after.
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: *)
+
+//! > cairo_code
+// TODO(Gil): handle multiline diagnostics.
+#[bbb]
+macro
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalLBrace
+TerminalLet
+TerminalLBrack
+TerminalRBrack
+TerminalEq
+TerminalLiteralNumber
+TerminalSemicolon
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+ --> dummy_file.cairo:2:7
+#[bbb]
+      ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList) []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       └── child #0 (kind: Attribute)
+        │   │           ├── hash (kind: TerminalHash)
+        │   │           │   ├── leading_trivia (kind: Trivia)
+        │   │           │   │   ├── child #0 (kind: TokenSingleLineComment): '// TODO(Gil): handle multiline diagnostics.'
+        │   │           │   │   └── child #1 (kind: TokenNewline).
+        │   │           │   ├── token (kind: TokenHash): '#'
+        │   │           │   └── trailing_trivia (kind: Trivia) []
+        │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
+        │   │           ├── attr (kind: ExprPath)
+        │   │           │   └── item #0 (kind: PathSegmentSimple)
+        │   │           │       └── ident (kind: TerminalIdentifier)
+        │   │           │           ├── leading_trivia (kind: Trivia) []
+        │   │           │           ├── token (kind: TokenIdentifier): 'bbb'
+        │   │           │           └── trailing_trivia (kind: Trivia) []
+        │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │   │           └── rbrack (kind: TerminalRBrack) <ignored>
+        │   └── child #1 (kind: TokenSkipped): 'macro'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
