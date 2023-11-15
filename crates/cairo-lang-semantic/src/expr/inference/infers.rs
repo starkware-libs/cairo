@@ -59,6 +59,7 @@ pub trait InferenceEmbeddings {
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
+        inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)>;
     fn infer_generic_arg(
         &mut self,
@@ -233,6 +234,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         self_ty: TypeId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
+        inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
@@ -242,12 +244,24 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         }
         let generic_params = self.db.trait_generic_params(trait_id).ok()?;
         let generic_args =
-            self.infer_generic_args(&generic_params, lookup_context, stable_ptr).ok()?;
+            match self.infer_generic_args(&generic_params, lookup_context, stable_ptr) {
+                Ok(generic_args) => generic_args,
+                Err(err) => {
+                    inference_error_cb(err);
+                    return None;
+                }
+            };
         let substitution = GenericSubstitution::new(&generic_params, &generic_args);
         let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
 
         let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
-        let (_, n_snapshots) = self.conform_ty_ex(self_ty, fixed_param_ty, true).ok()?;
+        let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
+            Ok(conform) => conform,
+            Err(err) => {
+                inference_error_cb(err);
+                return None;
+            }
+        };
         let generic_args = self.rewrite(generic_args).no_err();
 
         Some((
