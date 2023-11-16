@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::ops::Deref;
 
+use cairo_lang_defs::consts::FMT_SKIP_ATTR;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -9,6 +10,7 @@ use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;
+use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -640,7 +642,9 @@ impl<'a> FormatterImpl<'a> {
         if let Some(precedence) = protected_zone_precedence {
             self.line_state.line_buffer.open_sub_builder(precedence);
         }
-        if syntax_node.kind(self.db).is_terminal() {
+        if self.should_ignore_node_format(syntax_node) {
+            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+        } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node, no_space_after);
         } else {
             self.format_internal(syntax_node, no_space_after);
@@ -759,6 +763,11 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.force_no_space_after = true;
         }
+    }
+
+    /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
+    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
+        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
     }
 }
 

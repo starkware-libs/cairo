@@ -35,6 +35,11 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/use_sorting.cairo",
     true
 )]
+#[test_case(
+    "test_data/cairo_files/fmt_skip.cairo",
+    "test_data/expected_results/fmt_skip.cairo",
+    false
+)]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str, use_sorting: bool) {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
