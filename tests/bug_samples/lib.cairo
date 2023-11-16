@@ -40,3 +40,4 @@ mod inconsistent_gas;
 mod partial_param_local;
 mod loop_break_in_match;
 mod generic_cycles;
+mod zero_sized_locals;
