@@ -17,17 +17,21 @@ const PANIC_WITH_ATTR: &str = "panic_with";
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let (declaration, attributes) = match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => {
-                (extern_func_ast.declaration(db), extern_func_ast.attributes(db))
-            }
-            ast::Item::FreeFunction(free_func_ast) => {
-                (free_func_ast.declaration(db), free_func_ast.attributes(db))
-            }
+        let (declaration, attributes, visibility) = match item_ast {
+            ast::Item::ExternFunction(extern_func_ast) => (
+                extern_func_ast.declaration(db),
+                extern_func_ast.attributes(db),
+                extern_func_ast.visibility(db),
+            ),
+            ast::Item::FreeFunction(free_func_ast) => (
+                free_func_ast.declaration(db),
+                free_func_ast.attributes(db),
+                free_func_ast.visibility(db),
+            ),
             _ => return PluginResult::default(),
         };
 
-        generate_panicable_code(db, declaration, attributes)
+        generate_panicable_code(db, declaration, attributes, visibility)
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -40,6 +44,7 @@ fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
+    visibility: ast::Visibility,
 ) -> PluginResult {
     let mut attrs = attributes.query_attr(db, PANIC_WITH_ATTR);
     if attrs.is_empty() {
@@ -88,6 +93,7 @@ fn generate_panicable_code(
     };
     let generics_params = declaration.generic_params(db).as_syntax_node().get_text(db);
 
+    let visibility = visibility.as_syntax_node().get_text_without_trivia(db);
     let function_name = declaration.name(db).text(db);
     let params = signature.parameters(db).as_syntax_node().get_text(db);
     let args = signature
@@ -108,14 +114,14 @@ fn generate_panicable_code(
             name: "panicable".into(),
             content: indoc::formatdoc!(
                 r#"
-                    fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
+                    {visibility} fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             {success_variant} (v) => {{
                                 v
                             }},
                             {failure_variant} (v) => {{
-                                let mut data = core::array::array_new::<felt252>();
-                                core::array::array_append::<felt252>(ref data, {err_value});
+                                let mut data = core::array::ArrayTrait::<felt252>::new();
+                                core::array::ArrayTrait::<felt252>::append(ref data, {err_value});
                                 panic(data)
                             }},
                         }}

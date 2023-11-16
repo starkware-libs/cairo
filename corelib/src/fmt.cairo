@@ -1,15 +1,15 @@
 #[derive(Drop)]
-struct Error {}
+pub struct Error {}
 
 /// Configuration for formatting.
 #[derive(Default, Drop)]
-struct Formatter {
+pub struct Formatter {
     /// The pending result of formatting.
-    buffer: ByteArray,
+    pub buffer: ByteArray,
 }
 
 /// A trait for standard formatting, using the empty format ("{}").
-trait Display<T> {
+pub trait Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
 }
 
@@ -42,7 +42,7 @@ impl DisplayBool of Display<bool> {
 }
 
 /// A trait for debug formatting, using the empty format ("{:?}").
-trait Debug<T> {
+pub trait Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
 }
 

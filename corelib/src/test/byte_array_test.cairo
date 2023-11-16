@@ -476,7 +476,6 @@ fn test_serde() {
 
 // ========= Test helper functions =========
 
-use core::debug::PrintTrait;
 fn compare_byte_array(
     mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252
 ) {
@@ -489,62 +488,28 @@ fn compare_byte_array(
             Option::Some(x) => {
                 let actual_word = (*x).into();
                 let expected_word = *data.pop_front().unwrap();
-                if actual_word != expected_word {
-                    'data_index:'.print();
-                    data_index.print();
-                    'expected word:'.print();
-                    expected_word.print();
-                    'actual word:'.print();
-                    actual_word.print();
-
-                    core::panic_with_felt252('wrong data');
-                }
+                assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
             },
             Option::None(_) => { break; }
         }
         data_index += 1;
     };
 
-    if *ba.pending_word_len != pending_word_len {
-        'expected pending word len:'.print();
-        pending_word_len.print();
-        'actual pending word len:'.print();
-        (*ba.pending_word_len).print();
-        core::panic_with_felt252('wrong pending_word_len');
-    }
+    assert_eq!(*ba.pending_word_len, pending_word_len);
     let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
-    if ba_pending_word_felt != pending_word {
-        'expected pending word:'.print();
-        pending_word.print();
-        'actual pending word:'.print();
-        ba_pending_word_felt.print();
-        core::panic_with_felt252('wrong pending_word');
-    }
+    assert_eq!(ba_pending_word_felt, pending_word);
 }
 
-fn compare_spans<T, +PrintTrait<T>, +PartialEq<T>, +Copy<T>>(mut a: Span<T>, mut b: Span<T>) {
-    if a.len() != b.len() {
-        'a.len():'.print();
-        a.len().print();
-        'b.len():'.print();
-        b.len().print();
-        core::panic_with_felt252('different lengths');
-    }
+fn compare_spans<T, +core::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
+    mut a: Span<T>, mut b: Span<T>
+) {
+    assert_eq!(a.len(), b.len());
     let mut index = 0;
     loop {
         match a.pop_front() {
             Option::Some(current_a) => {
                 let current_b = b.pop_front().unwrap();
-                if current_a != current_b {
-                    'index:'.print();
-                    index.print();
-                    'a[index]:'.print();
-                    (*current_a).print();
-                    'b[index]:'.print();
-                    (*current_b).print();
-
-                    core::panic_with_felt252('different item');
-                }
+                assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
             },
             Option::None(_) => { break; }
         }
