@@ -33,7 +33,9 @@ use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
+use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::visibility;
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -509,11 +511,13 @@ impl<'db> Resolver<'db> {
                 if ident == "super" {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
-                let module_item = self
+                let item_info = self
                     .db
-                    .module_item_by_name(*module_id, ident)?
+                    .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                let generic_item = ResolvedGenericItem::from_module_item(self.db, module_item)?;
+                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
+                let generic_item =
+                    ResolvedGenericItem::from_module_item(self.db, item_info.item_id)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
@@ -702,11 +706,12 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match item {
             ResolvedGenericItem::Module(module_id) => {
-                let module_item = self
+                let item_info = self
                     .db
-                    .module_item_by_name(*module_id, ident)?
+                    .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                ResolvedGenericItem::from_module_item(self.db, module_item)
+                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
+                ResolvedGenericItem::from_module_item(self.db, item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
@@ -1050,6 +1055,33 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Impl(resolved_impl)
             }
         })
+    }
+
+    /// Should visibility checks not actually happen for lookups in this module.
+    // TODO(orizi): Remove this check when performing a major Cairo update.
+    pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
+        let owning_crate = module_id.owning_crate(self.db.upcast());
+        extract_edition(self.db, owning_crate).ignore_visibility()
+            || self.edition.ignore_visibility() && owning_crate == self.db.core_crate()
+    }
+
+    /// Validates that an item is visible from the current module or adds a diagnostic.
+    fn validate_item_visibility(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        containing_module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+        item_info: &ModuleItemInfo,
+    ) {
+        if self.ignore_visibility_checks(containing_module_id) {
+            return;
+        }
+        let db = self.db.upcast();
+        let user_module = self.module_file_id.0;
+        if !visibility::peek_visible_in(db, item_info.visibility, containing_module_id, user_module)
+        {
+            diagnostics.report(identifier, ItemNotVisible { item_id: item_info.item_id });
+        }
     }
 }
 
