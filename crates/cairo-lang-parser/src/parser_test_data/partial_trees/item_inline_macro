@@ -305,6 +305,7 @@ identifier
     ├── items (kind: ItemList)
     │   └── child #0 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'foo'

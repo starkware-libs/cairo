@@ -16,6 +16,7 @@ ItemImplAlias
 //! > expected_tree
 └── Top level kind: ItemImplAlias
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── impl_kw (kind: TokenImpl): 'impl'
     ├── name (kind: TokenIdentifier): 'MyImplAlias'
     ├── generic_params (kind: WrappedGenericParamList)

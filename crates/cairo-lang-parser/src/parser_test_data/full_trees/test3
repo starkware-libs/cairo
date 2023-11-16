@@ -19,6 +19,7 @@ false
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'main'
@@ -75,6 +76,7 @@ false
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'fib'
@@ -232,6 +234,9 @@ false
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TokenPub): 'pub'
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'fib_tuple'
@@ -440,6 +445,7 @@ false
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -563,6 +569,7 @@ false
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -944,10 +951,17 @@ false
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
-    │       ├── declaration (kind: FunctionDeclaration)
-    │       │   ├── function_kw (kind: TerminalFunction)
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TerminalPub)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   └── child #0 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenPub): 'pub'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TerminalFunction)
+    │       │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   ├── token (kind: TokenFunction): 'fn'
     │       │   │   └── trailing_trivia (kind: Trivia)
     │       │   │       └── child #0 (kind: TokenWhitespace).

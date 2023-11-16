@@ -24,6 +24,7 @@ FunctionWithBody
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemTrait)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │   │   ├── name (kind: TokenIdentifier): 'Foo'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -35,6 +36,7 @@ FunctionWithBody
     │   │   └── body (kind: TokenSemicolon): ';'
     │   └── child #1 (kind: ItemImpl)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── impl_kw (kind: TokenImpl): 'impl'
     │       ├── name (kind: TokenIdentifier): 'FooImpl'
     │       ├── generic_params (kind: WrappedGenericParamList)
@@ -89,6 +91,7 @@ SyntaxFile
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemTrait)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │   │   ├── name (kind: TokenIdentifier): 'Foo'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -139,6 +142,7 @@ SyntaxFile
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemImpl)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── impl_kw (kind: TokenImpl): 'impl'
     │       ├── name (kind: TokenIdentifier): 'FooImpl'
     │       ├── generic_params (kind: WrappedGenericParamList)
@@ -196,6 +200,7 @@ ItemStruct
     ├── items (kind: ItemList)
     │   └── child #0 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── module_kw (kind: TokenModule): 'mod'
     │       ├── name (kind: TokenIdentifier): 'x'
     │       └── body (kind: ModuleBody)
@@ -203,6 +208,7 @@ ItemStruct
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: ItemTrait)
     │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │           │   │   ├── name (kind: TokenIdentifier): 'A'
     │           │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
