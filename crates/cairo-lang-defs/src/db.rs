@@ -162,6 +162,7 @@ pub trait DefsGroup:
     ) -> Maybe<Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId)
     -> Maybe<Arc<Vec<ExternFunctionId>>>;
+    fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_infos(
         &self,
         module_id: ModuleId,
@@ -791,6 +792,17 @@ pub fn module_extern_functions_ids(
     module_id: ModuleId,
 ) -> Maybe<Arc<Vec<ExternFunctionId>>> {
     Ok(Arc::new(db.module_extern_functions(module_id)?.keys().copied().collect()))
+}
+
+pub fn module_ancestors(db: &dyn DefsGroup, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
+    let mut current = module_id;
+    let mut ancestors = OrderedHashSet::new();
+    while let ModuleId::Submodule(submodule_id) = current {
+        let parent = submodule_id.parent_module(db);
+        ancestors.insert(parent);
+        current = parent
+    }
+    ancestors
 }
 
 /// Returns the generated_file_infos of the given module.
