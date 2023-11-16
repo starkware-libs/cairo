@@ -7,7 +7,8 @@ use cairo_lang_defs::ids::{
     ModuleId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::Expr;
@@ -128,6 +129,7 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    edition: Edition,
 }
 impl Deref for Resolver<'_> {
     type Target = ResolverData;
@@ -163,20 +165,24 @@ impl<'db> Resolver<'db> {
         module_file_id: ModuleFileId,
         inference_id: InferenceId,
     ) -> Self {
-        Self {
+        Self::with_data(
             db,
-            data: ResolverData {
+            ResolverData {
                 module_file_id,
                 generic_param_by_name: Default::default(),
                 generic_params: Default::default(),
                 resolved_items: Default::default(),
                 inference_data: InferenceData::new(inference_id),
             },
-        }
+        )
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
-        Self { db, data }
+        Self {
+            edition: extract_edition(db, data.module_file_id.0.owning_crate(db.upcast())),
+            db,
+            data,
+        }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -763,19 +769,21 @@ impl<'db> Resolver<'db> {
             return None;
         }
         // Last resort, use the `prelude` module as the base module.
-        let owning_crate = self.module_file_id.0.owning_crate(self.db.upcast());
-        let edition =
-            self.db.crate_config(owning_crate).map(|config| config.edition).unwrap_or_default();
-        let prelude_submodule_name = edition.prelude_submodule_name();
+        Some(self.prelude_submodule())
+    }
+
+    /// Returns the crate's `prelude` submodule.
+    pub fn prelude_submodule(&self) -> ModuleId {
+        let prelude_submodule_name = self.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
-        Some(get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
+        get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
                 panic!(
                     "expected prelude submodule `{prelude_submodule_name}` not found in \
                      `core::prelude`."
                 )
             },
-        ))
+        )
     }
 
     /// Specializes a trait.
@@ -1043,6 +1051,11 @@ impl<'db> Resolver<'db> {
             }
         })
     }
+}
+
+/// Extracts the edition of a crate.
+fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
+    db.crate_config(crate_id).map(|config| config.edition).unwrap_or_default()
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
