@@ -38,8 +38,8 @@ use super::pattern::{
     PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_module, core_unary_operator, false_literal_expr,
-    get_core_trait, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
+    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
@@ -1644,8 +1644,8 @@ fn dot_expr(
 /// Finds all the trait ids usable in the current context.
 fn traits_in_context(ctx: &mut ComputationContext<'_>) -> Maybe<OrderedHashSet<TraitId>> {
     let mut traits = ctx.db.module_usable_trait_ids(ctx.resolver.module_file_id.0)?.deref().clone();
-    let core_traits = ctx.db.module_usable_trait_ids(core_module(ctx.db))?.deref().clone();
-    traits.extend(core_traits);
+    traits
+        .extend(ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule())?.iter().copied());
     Ok(traits)
 }
 
