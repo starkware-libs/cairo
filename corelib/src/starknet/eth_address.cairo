@@ -9,7 +9,7 @@ use core::traits::{Into, TryInto};
 pub struct EthAddress {
     address: felt252,
 }
-pub (crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
+pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
         let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
@@ -20,12 +20,12 @@ pub (crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         }
     }
 }
-pub (crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
+pub(crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
     }
 }
-pub (crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
+pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
         // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
         let high_32_bits = self.high % 0x100000000_u128;
@@ -35,7 +35,7 @@ pub (crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
         }
     }
 }
-pub (crate) impl EthAddressSerde of Serde<EthAddress> {
+pub(crate) impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(self: @EthAddress, ref output: Array<felt252>) {
         self.address.serialize(ref output);
     }
@@ -57,10 +57,10 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     }
 }
 
-pub (crate) impl EthAddressZeroable =
+pub(crate) impl EthAddressZeroable =
     core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
-pub (crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+pub(crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {
         self.address.print();
     }

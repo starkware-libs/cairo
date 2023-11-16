@@ -2,15 +2,15 @@ use core::traits::{Into, TryInto};
 use core::option::OptionTrait;
 use core::integer::{u128_safe_divmod, u128_to_felt252};
 
-pub (crate) const BYTES_IN_BYTES31: usize = 31;
+pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
-pub (crate) const POW_2_128: felt252 = 0x100000000000000000000000000000000;
-pub (crate) const POW_2_8: u128 = 0x100;
+pub(crate) const POW_2_128: felt252 = 0x100000000000000000000000000000000;
+pub(crate) const POW_2_8: u128 = 0x100;
 
 #[derive(Copy, Drop)]
 pub extern type bytes31;
 
-pub (crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
+pub(crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
 extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 
@@ -29,7 +29,7 @@ pub impl Bytes31Impl of Bytes31Trait {
     }
 }
 
-pub (crate) impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
+pub(crate) impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
     fn index(self: @bytes31, index: usize) -> u8 {
         self.at(index)
     }
@@ -41,20 +41,20 @@ impl Bytes31BitSize of core::num::traits::BitSize<bytes31> {
     }
 }
 
-pub (crate) impl Bytes31IntoFelt252 of Into<bytes31, felt252> {
+pub(crate) impl Bytes31IntoFelt252 of Into<bytes31, felt252> {
     fn into(self: bytes31) -> felt252 {
         bytes31_to_felt252(self)
     }
 }
 
-pub (crate) impl Bytes31IntoU256 of Into<bytes31, u256> {
+pub(crate) impl Bytes31IntoU256 of Into<bytes31, u256> {
     fn into(self: bytes31) -> u256 {
         let as_felt: felt252 = self.into();
         as_felt.into()
     }
 }
 
-pub (crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
+pub(crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
     fn try_into(self: felt252) -> Option<bytes31> {
         bytes31_try_from_felt252(self)
     }
@@ -63,7 +63,7 @@ pub (crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
 impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 // TODO(yuval): implement all `into`s using `integer::upcast(self)`.
-pub (crate) impl U8IntoBytes31 of Into<u8, bytes31> {
+pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
         let as_felt: felt252 = self.into();
         as_felt.try_into().unwrap()
@@ -87,7 +87,7 @@ impl U64IntoBytes31 of Into<u64, bytes31> {
         as_felt.try_into().unwrap()
     }
 }
-pub (crate) impl U128IntoBytes31 of Into<u128, bytes31> {
+pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
         let as_felt: felt252 = self.into();
         as_felt.try_into().unwrap()
@@ -102,7 +102,7 @@ pub (crate) impl U128IntoBytes31 of Into<u128, bytes31> {
 // 3. len <= BYTES_IN_BYTES31.
 // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
 // private function. We could add masking/assertions but it would be more expansive.
-pub (crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
+pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {
         return (0, word);
     }
@@ -147,7 +147,7 @@ pub (crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt25
 // Note: if `n_bytes >= BYTES_IN_BYTES31`, the behavior is undefined. If one wants to assert that in
 // the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31` because if
 // `n_bytes > 31` then `n_bytes - 16 > 15` and `one_shift_left_bytes_u128` would panic.
-pub (crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
+pub(crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
     if n_bytes < BYTES_IN_U128 {
         one_shift_left_bytes_u128(n_bytes).into()
     } else {
@@ -158,7 +158,7 @@ pub (crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
 // Returns 1 << (8 * `n_bytes`) as u128, where `n_bytes` must be < BYTES_IN_U128.
 //
 // Panics if `n_bytes >= BYTES_IN_U128`.
-pub (crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
+pub(crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
     // TODO(yuval): change to match once it's supported for integers.
     if n_bytes == 0 {
         0x1_u128

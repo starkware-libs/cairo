@@ -29,7 +29,7 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
     }
 }
 
-pub (crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
+pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
 extern fn u128_overflowing_add(
     lhs: u128, rhs: u128
@@ -155,7 +155,7 @@ fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     }
 }
 
-pub (crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
+pub(crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
     fn try_into(self: u128) -> Option<NonZero<u128>> {
         Option::Some(u128_as_non_zero(self))
     }
@@ -264,7 +264,7 @@ impl U128BitSize of core::num::traits::BitSize<u128> {
     }
 }
 
-pub (crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
+pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
@@ -785,7 +785,7 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     }
 }
 
-pub (crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
+pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
     fn try_into(self: u32) -> Option<NonZero<u32>> {
         Option::Some(u32_as_non_zero(self))
     }
@@ -1251,7 +1251,7 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     }
 }
 
-pub (crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
+pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
     fn try_into(self: u256) -> Option<NonZero<u256>> {
         Option::Some(u256_as_non_zero(self))
     }
@@ -1489,62 +1489,62 @@ impl BoundedI128 of BoundedInt<i128> {
 }
 
 /// Conversions.
-pub (crate) impl Felt252TryIntoU8 of TryInto<felt252, u8> {
+pub(crate) impl Felt252TryIntoU8 of TryInto<felt252, u8> {
     fn try_into(self: felt252) -> Option<u8> {
         u8_try_from_felt252(self)
     }
 }
-pub (crate) impl U8IntoFelt252 of Into<u8, felt252> {
+pub(crate) impl U8IntoFelt252 of Into<u8, felt252> {
     fn into(self: u8) -> felt252 {
         u8_to_felt252(self)
     }
 }
-pub (crate) impl Felt252TryIntoU16 of TryInto<felt252, u16> {
+pub(crate) impl Felt252TryIntoU16 of TryInto<felt252, u16> {
     fn try_into(self: felt252) -> Option<u16> {
         u16_try_from_felt252(self)
     }
 }
-pub (crate) impl U16IntoFelt252 of Into<u16, felt252> {
+pub(crate) impl U16IntoFelt252 of Into<u16, felt252> {
     fn into(self: u16) -> felt252 {
         u16_to_felt252(self)
     }
 }
-pub (crate) impl Felt252TryIntoU32 of TryInto<felt252, u32> {
+pub(crate) impl Felt252TryIntoU32 of TryInto<felt252, u32> {
     fn try_into(self: felt252) -> Option<u32> {
         u32_try_from_felt252(self)
     }
 }
-pub (crate) impl U32IntoFelt252 of Into<u32, felt252> {
+pub(crate) impl U32IntoFelt252 of Into<u32, felt252> {
     fn into(self: u32) -> felt252 {
         u32_to_felt252(self)
     }
 }
-pub (crate) impl Felt252TryIntoU64 of TryInto<felt252, u64> {
+pub(crate) impl Felt252TryIntoU64 of TryInto<felt252, u64> {
     fn try_into(self: felt252) -> Option<u64> {
         u64_try_from_felt252(self)
     }
 }
-pub (crate) impl U64IntoFelt252 of Into<u64, felt252> {
+pub(crate) impl U64IntoFelt252 of Into<u64, felt252> {
     fn into(self: u64) -> felt252 {
         u64_to_felt252(self)
     }
 }
-pub (crate) impl Felt252TryIntoU128 of TryInto<felt252, u128> {
+pub(crate) impl Felt252TryIntoU128 of TryInto<felt252, u128> {
     fn try_into(self: felt252) -> Option<u128> {
         u128_try_from_felt252(self)
     }
 }
-pub (crate) impl U128IntoFelt252 of Into<u128, felt252> {
+pub(crate) impl U128IntoFelt252 of Into<u128, felt252> {
     fn into(self: u128) -> felt252 {
         u128_to_felt252(self)
     }
 }
-pub (crate) impl Felt252IntoU256 of Into<felt252, u256> {
+pub(crate) impl Felt252IntoU256 of Into<felt252, u256> {
     fn into(self: felt252) -> u256 {
         u256_from_felt252(self)
     }
 }
-pub (crate) impl U256TryIntoFelt252 of TryInto<u256, felt252> {
+pub(crate) impl U256TryIntoFelt252 of TryInto<u256, felt252> {
     fn try_into(self: u256) -> Option<felt252> {
         let FELT252_PRIME_HIGH = 0x8000000000000110000000000000000_u128;
         if self.high > FELT252_PRIME_HIGH {
@@ -1566,7 +1566,7 @@ impl Felt252TryIntoI8 of TryInto<felt252, i8> {
         i8_try_from_felt252(self)
     }
 }
-pub (crate) impl I8IntoFelt252 of Into<i8, felt252> {
+pub(crate) impl I8IntoFelt252 of Into<i8, felt252> {
     fn into(self: i8) -> felt252 {
         i8_to_felt252(self)
     }
@@ -1576,7 +1576,7 @@ impl Felt252TryIntoI16 of TryInto<felt252, i16> {
         i16_try_from_felt252(self)
     }
 }
-pub (crate) impl I16IntoFelt252 of Into<i16, felt252> {
+pub(crate) impl I16IntoFelt252 of Into<i16, felt252> {
     fn into(self: i16) -> felt252 {
         i16_to_felt252(self)
     }
@@ -1586,7 +1586,7 @@ impl Felt252TryIntoI32 of TryInto<felt252, i32> {
         i32_try_from_felt252(self)
     }
 }
-pub (crate) impl I32IntoFelt252 of Into<i32, felt252> {
+pub(crate) impl I32IntoFelt252 of Into<i32, felt252> {
     fn into(self: i32) -> felt252 {
         i32_to_felt252(self)
     }
@@ -1596,7 +1596,7 @@ impl Felt252TryIntoI64 of TryInto<felt252, i64> {
         i64_try_from_felt252(self)
     }
 }
-pub (crate) impl I64IntoFelt252 of Into<i64, felt252> {
+pub(crate) impl I64IntoFelt252 of Into<i64, felt252> {
     fn into(self: i64) -> felt252 {
         i64_to_felt252(self)
     }
@@ -1606,7 +1606,7 @@ impl Felt252TryIntoI128 of TryInto<felt252, i128> {
         i128_try_from_felt252(self)
     }
 }
-pub (crate) impl I128IntoFelt252 of Into<i128, felt252> {
+pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
     fn into(self: i128) -> felt252 {
         i128_to_felt252(self)
     }
@@ -2377,12 +2377,12 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 // Zeroable impls
-pub (crate) impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
-pub (crate) impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
-pub (crate) impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
-pub (crate) impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
-pub (crate) impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
-pub (crate) impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
+pub(crate) impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
+pub(crate) impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
+pub(crate) impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
+pub(crate) impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
+pub(crate) impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
+pub(crate) impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
 
 impl I128BitSize of core::num::traits::BitSize<i128> {
     fn bits() -> usize {

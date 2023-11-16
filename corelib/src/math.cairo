@@ -128,8 +128,8 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-pub (crate) mod one_based {
-    pub (crate) impl OneableImpl<
+pub(crate) mod one_based {
+    pub(crate) impl OneableImpl<
         T, impl OneImpl: core::num::traits::One<T>, +Drop<T>, +Copy<T>
     > of super::Oneable<T> {
         fn one() -> T {
