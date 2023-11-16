@@ -4,6 +4,7 @@
 pub use diagnostic::ParserDiagnostic;
 
 pub mod colored_printer;
+pub mod consts;
 pub mod db;
 pub mod diagnostic;
 pub mod lexer;
