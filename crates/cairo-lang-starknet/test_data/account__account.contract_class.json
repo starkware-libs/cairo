@@ -2385,7 +2385,7 @@
       ],
       [
         149,
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>"
       ],
       [
         150,
@@ -2393,13 +2393,7 @@
       ],
       [
         151,
-<<<<<<< HEAD
         "struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>"
-||||||| parent of f00420ab5... Made auto-available traits be prelude based.
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
-=======
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>"
->>>>>>> f00420ab5... Made auto-available traits be prelude based.
       ],
       [
         152,
