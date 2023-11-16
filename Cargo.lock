@@ -546,7 +546,6 @@ name = "cairo-lang-formatter"
 version = "2.3.1"
 dependencies = [
  "anyhow",
- "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
  "cairo-lang-parser",
