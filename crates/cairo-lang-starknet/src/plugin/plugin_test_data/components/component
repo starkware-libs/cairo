@@ -144,7 +144,7 @@ trait MyTraitDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
@@ -181,7 +181,7 @@ impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
@@ -223,7 +223,7 @@ trait MyTraitSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
@@ -263,7 +263,7 @@ impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeL
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct MyTraitSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
@@ -509,14 +509,14 @@ component:
 
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
-        map: map::ComponentMemberState,
-        my_type_var: my_type_var::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
+        pub map: map::ComponentMemberState,
+        pub my_type_var: my_type_var::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
             map: map::ComponentMemberState {},
@@ -525,32 +525,32 @@ component:
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
         use super::Log;
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
-    mod map {
+    pub mod map {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
         use super::Log;
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
 
         impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState, u32, u32> {
             fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
@@ -559,14 +559,14 @@ component:
             }
         }
     }
-    mod my_type_var {
+    pub mod my_type_var {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
         use super::Log;
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, super::super::MyType> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
@@ -578,7 +578,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -587,7 +587,7 @@ trait HasComponent<TContractState> {
 }
 
 #[starknet::embeddable]
-impl MyImpl<
+pub impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
 > of MyTrait<TContractState> {
     
@@ -665,7 +665,9 @@ impl LogIsEvent of starknet::Event<Log> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
+pub trait UnsafeNewContractStateTraitForMyImpl<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -718,15 +720,15 @@ fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, 
 
 
 
-mod __external_MyImpl {
-        use super::__wrapper__MyImpl__get as get;
-        use super::__wrapper__MyImpl__set as set;
+pub mod __external_MyImpl {
+    pub use super::__wrapper__MyImpl__get as get;
+    pub use super::__wrapper__MyImpl__set as set;
 }
 
-mod __l1_handler_MyImpl {
+pub mod __l1_handler_MyImpl {
 }
 
-mod __constructor_MyImpl {
+pub mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics

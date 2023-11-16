@@ -8,7 +8,7 @@ cairo_level_tests/contracts/multi_component.cairo
 
 //! > generated_cairo_code
 #[starknet::interface]
-trait GetSupply<TContractState> {
+pub trait GetSupply<TContractState> {
     fn get_total_supply_plus_1(self: @TContractState) -> u256;
 }
 
@@ -71,15 +71,15 @@ mod contract_with_4_components {
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
-        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
+        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -176,19 +176,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     core::serde::Serde::<u256>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+mod __l1_handler {
+}
+mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -379,13 +374,13 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
         );
     }
 }
-trait GetSupplyDispatcherTrait<T> {
+pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplyDispatcher {
-    contract_address: starknet::ContractAddress,
+pub struct GetSupplyDispatcher {
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
@@ -407,8 +402,8 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplyLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+pub struct GetSupplyLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
@@ -429,13 +424,13 @@ impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibrary
 
 }
 
-trait GetSupplySafeDispatcherTrait<T> {
+pub trait GetSupplySafeDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplySafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+pub struct GetSupplySafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
@@ -460,8 +455,8 @@ impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSuppl
 
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplySafeDispatcher {
-    contract_address: starknet::ContractAddress,
+pub struct GetSupplySafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
@@ -713,15 +708,15 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
-        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
+        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -818,19 +813,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     core::serde::Serde::<u256>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-
-
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+mod __l1_handler {
+}
+mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {

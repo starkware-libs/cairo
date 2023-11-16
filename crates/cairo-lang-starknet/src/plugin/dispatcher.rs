@@ -249,12 +249,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
+            "$visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {contract_caller_name} {{
-                contract_address: starknet::ContractAddress,
+            $visibility$struct {contract_caller_name} {{
+                pub contract_address: starknet::ContractAddress,
             }}
 
             impl {contract_caller_name}Impl of {dispatcher_trait_name}<{contract_caller_name}> {{
@@ -262,20 +262,20 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {library_caller_name} {{
-                class_hash: starknet::ClassHash,
+            $visibility$struct {library_caller_name} {{
+                pub class_hash: starknet::ClassHash,
             }}
 
             impl {library_caller_name}Impl of {dispatcher_trait_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
 
-            trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
+            $visibility$trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {safe_library_caller_name} {{
-                class_hash: starknet::ClassHash,
+            $visibility$struct {safe_library_caller_name} {{
+                pub class_hash: starknet::ClassHash,
             }}
 
             impl {safe_library_caller_name}Impl of \
@@ -285,8 +285,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {safe_contract_caller_name} {{
-                contract_address: starknet::ContractAddress,
+            $visibility$struct {safe_contract_caller_name} {{
+                pub contract_address: starknet::ContractAddress,
             }}
 
             impl {safe_contract_caller_name}Impl of \
@@ -316,6 +316,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             (
                 "safe_library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(safe_library_caller_method_impls),
+            ),
+            (
+                "visibility".to_string(),
+                RewriteNode::Copied(trait_ast.visibility(db).as_syntax_node()),
             ),
         ]
         .into(),

@@ -31,7 +31,7 @@ trait IContractDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
@@ -68,7 +68,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
@@ -111,7 +111,7 @@ trait IContractSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
@@ -151,7 +151,7 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
@@ -426,7 +426,7 @@ trait IContractDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
@@ -435,7 +435,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
@@ -447,7 +447,7 @@ trait IContractSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
@@ -457,7 +457,7 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct IContractSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
