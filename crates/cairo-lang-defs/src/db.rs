@@ -5,6 +5,9 @@ use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::attribute::consts::{
+    FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, STARKNET_INTERFACE_ATTR,
+};
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
@@ -15,7 +18,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 
-use crate::consts::FMT_SKIP_ATTR;
 use crate::ids::*;
 use crate::plugin::{
     DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, PluginDiagnostic,
@@ -180,11 +182,11 @@ pub trait DefsGroup:
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
-        "inline".into(),
-        "implicit_precedence".into(),
+        INLINE_ATTR.into(),
+        IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
-        "starknet::interface".into(),
+        STARKNET_INTERFACE_ATTR.into(),
     ]);
     for plugin in db.macro_plugins() {
         all_attributes.extend(plugin.declared_attributes());
