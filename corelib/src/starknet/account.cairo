@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 
-#[derive(Drop, Serde)]
+#[derive(Drop, Serde, Hash)]
 struct Call {
     to: ContractAddress,
     selector: felt252,
