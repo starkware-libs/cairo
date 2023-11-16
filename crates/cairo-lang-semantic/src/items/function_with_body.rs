@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -247,7 +248,7 @@ pub fn get_inline_config(
     let mut config = InlineConfiguration::None;
     let mut seen_inline_attr = false;
     for attr in attributes {
-        if attr.id != "inline" {
+        if attr.id != INLINE_ATTR {
             continue;
         }
 
@@ -305,7 +306,7 @@ pub fn get_implicit_precedence<'a>(
 ) -> Maybe<(ImplicitPrecedence, Option<&'a Attribute>)> {
     let syntax_db = db.upcast();
 
-    let mut attributes = attributes.iter().rev().filter(|attr| attr.id == "implicit_precedence");
+    let mut attributes = attributes.iter().rev().filter(|attr| attr.id == IMPLICIT_PRECEDENCE_ATTR);
 
     // Pick the last attribute if any.
     let Some(attr) = attributes.next() else { return Ok((ImplicitPrecedence::UNSPECIFIED, None)) };
