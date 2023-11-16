@@ -170,7 +170,7 @@ pub trait Felt252DictValue<T> {
 }
 
 // Tuple Copy impls.
-pub (crate) impl TupleSize0Copy of Copy<()>;
+pub(crate) impl TupleSize0Copy of Copy<()>;
 
 impl TupleSize1Copy<E0, +Copy<E0>> of Copy<(E0,)>;
 
@@ -183,7 +183,7 @@ impl TupleSize4Copy<
 > of Copy<(E0, E1, E2, E3)>;
 
 // Tuple Drop impls.
-pub (crate) impl TupleSize0Drop of Drop<()>;
+pub(crate) impl TupleSize0Drop of Drop<()>;
 
 impl TupleSize1Drop<E0, +Drop<E0>> of Drop<(E0,)>;
 
