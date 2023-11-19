@@ -39,6 +39,7 @@ use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
+use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner};
@@ -46,6 +47,7 @@ use crate::{Arg, RunResultValue, SierraCasmRunner};
 #[cfg(test)]
 mod test;
 
+mod contract_address;
 mod dict_manager;
 
 // TODO(orizi): This def is duplicated.
@@ -944,8 +946,18 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
-        // Assign an arbitrary address to the contract.
-        let deployed_contract_address = self.starknet_state.get_next_id();
+        // Assign the starknet address of the contract.
+        let deployer_address = if deploy_from_zero {
+            Felt252::zero()
+        } else {
+            self.starknet_state.exec_info.contract_address.clone()
+        };
+        let deployed_contract_address = calculate_contract_address(
+            &_contract_address_salt,
+            &class_hash,
+            &calldata,
+            &deployer_address,
+        );
 
         // Prepare runner for running the constructor.
         let runner = self.runner.expect("Runner is needed for starknet.");
@@ -955,14 +967,9 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            let new_caller_address = if deploy_from_zero {
-                Felt252::zero()
-            } else {
-                self.starknet_state.exec_info.contract_address.clone()
-            };
             let old_addrs = self
                 .starknet_state
-                .open_caller_context((deployed_contract_address.clone(), new_caller_address));
+                .open_caller_context((deployed_contract_address.clone(), deployer_address));
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {

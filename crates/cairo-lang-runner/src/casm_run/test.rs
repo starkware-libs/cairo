@@ -10,6 +10,7 @@ use num_traits::ToPrimitive;
 use test_case::test_case;
 
 use super::format_for_debug;
+use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::run_function;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
@@ -437,5 +438,21 @@ fn test_format_for_debug() {
             [DEBUG]\t0x8888
             "
         )
+    );
+}
+
+#[test]
+fn test_calculate_contract_address() {
+    let salt = felt_str!("122660764594045088044512115");
+    let deployer_address = Felt252::from(0x01);
+    let class_hash =
+        felt_str!("1779576919126046589190499439779938629977579841313883525093195577363779864274");
+    let calldata = vec![deployer_address.clone(), salt.clone()];
+    let deployed_contract_address =
+        calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address);
+
+    assert_eq!(
+        felt_str!("2288343933438457476985546536845198482236255384896285993520343604559094835567"),
+        deployed_contract_address
     );
 }

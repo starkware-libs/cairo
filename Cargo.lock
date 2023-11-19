@@ -708,6 +708,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits 0.2.17",
+ "starknet-crypto 0.6.1",
  "test-case",
  "thiserror",
 ]
@@ -1065,7 +1066,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha3",
- "starknet-crypto",
+ "starknet-crypto 0.5.2",
  "thiserror-no-std",
 ]
 
@@ -2880,6 +2881,26 @@ dependencies = [
  "sha2",
  "starknet-crypto-codegen",
  "starknet-curve 0.3.0",
+ "starknet-ff",
+ "zeroize",
+]
+
+[[package]]
+name = "starknet-crypto"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33c03f5ac70f9b067f48db7d2d70bdf18ee0f731e8192b6cfa679136becfcdb0"
+dependencies = [
+ "crypto-bigint",
+ "hex",
+ "hmac",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.17",
+ "rfc6979",
+ "sha2",
+ "starknet-crypto-codegen",
+ "starknet-curve 0.4.0",
  "starknet-ff",
  "zeroize",
 ]
