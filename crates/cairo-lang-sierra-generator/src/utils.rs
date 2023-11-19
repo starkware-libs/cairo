@@ -181,6 +181,27 @@ pub fn match_enum_libfunc_id(
         get_libfunc_id_with_generic_arg(db, "enum_match", ty)
     })
 }
+pub fn felt252_bounded_from_felt252_libfunc_id(
+    db: &dyn SierraGenGroup,
+    upper_limit: usize,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
+            "felt252_bounded_from_felt252",
+        ),
+        generic_args: vec![
+            cairo_lang_sierra::program::GenericArg::Value(0.into()),
+            cairo_lang_sierra::program::GenericArg::Value(upper_limit.into()),
+        ],
+    })
+}
+
+pub fn enum_from_felt252_bounded_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_with_generic_arg(db, "enum_from_felt252_bounded", ty)
+}
 
 pub fn drop_libfunc_id(
     db: &dyn SierraGenGroup,

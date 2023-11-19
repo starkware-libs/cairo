@@ -23,8 +23,9 @@ use crate::ap_tracking::{get_ap_tracking_configuration, ApTrackingConfiguration}
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    enum_init_libfunc_id, felt252_bounded_from_felt252_libfunc_id, get_concrete_libfunc_id,
+    get_libfunc_signature, match_enum_libfunc_id, struct_construct_libfunc_id,
+    struct_deconstruct_libfunc_id,
 };
 
 /// Information returned by [analyze_ap_changes].
@@ -373,6 +374,11 @@ impl<'a> FindLocalsContext<'a> {
                 let concrete_enum_type = self
                     .db
                     .get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
+                let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
+                get_libfunc_signature(self.db, concrete_function_id)
+            }
+            MatchInfo::Value(s) => {
+                let concrete_enum_type = self.db.get_index_type_id(s.num_of_arms)?;
                 let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }

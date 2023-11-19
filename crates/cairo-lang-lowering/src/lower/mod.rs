@@ -18,7 +18,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    TypeLongId,
+    MatchArmSelector, TypeLongId, ValueSelectorArm,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -39,7 +39,8 @@ use crate::ids::{
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
+    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
+    VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -1071,7 +1072,11 @@ fn lower_expr_match(
         concrete_enum_id,
         input: match_input,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1159,7 +1164,11 @@ fn lower_optimized_extern_match(
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1245,12 +1254,16 @@ fn lower_expr_felt252_arm(
         inputs: vec![if_input],
         arms: vec![
             MatchArm {
-                variant_id: corelib::jump_nz_zero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    semantic_db,
+                )),
                 block_id,
                 var_ids: vec![],
             },
             MatchArm {
-                variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    semantic_db,
+                )),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
@@ -1263,6 +1276,69 @@ fn lower_expr_felt252_arm(
         vec![match_arm_content_block, block_else],
         location,
     )
+}
+
+fn lower_expr_match_index_enum(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprMatch,
+    match_input: VarUsage,
+    mut builder: BlockBuilder,
+) -> LoweringResult<SealedBlockBuilder> {
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let semantic_db = ctx.db.upcast();
+    let unit_type = unit_ty(semantic_db);
+    let mut arm_var_ids = vec![];
+    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = expr
+        .arms
+        .iter()
+        .take(expr.arms.len() - 1)
+        .enumerate()
+        .map(|(index, arm)| {
+            let subscope = create_subscope_with_bound_refs(ctx, &builder);
+            let block_id = subscope.block_id;
+            let pattern = ctx.function_body.patterns[arm.pattern].clone();
+
+            let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern
+            else {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+                ));
+            };
+
+            if literal.value != index.into() {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(literal.stable_ptr.untyped(), UnsupportedMatchArmNonSequential),
+                ));
+            }
+            let var_id = ctx.new_var(VarRequest { ty: unit_type, location });
+            arm_var_ids.push(vec![var_id]);
+
+            // Lower the arm expression.
+            lower_tail_expr(ctx, subscope, arm.expression)
+                .map_err(LoweringFlowError::Failed)
+                .map(|sb| (sb, block_id))
+        })
+        .collect::<LoweringResult<Vec<_>>>()?
+        .into_iter()
+        .unzip();
+
+    let arms = zip_eq(block_ids, arm_var_ids)
+        .enumerate()
+        .map(|(value, (block_id, var_ids))| MatchArm {
+            arm_selector: MatchArmSelector::Value(ValueSelectorArm { value }),
+            block_id,
+            var_ids,
+        })
+        .collect();
+    let match_info = MatchInfo::Value(MatchEnumValue {
+        num_of_arms: expr.arms.len() - 1,
+        arms,
+        input: match_input,
+        location,
+    });
+    let lowered = builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
+    lowered_expr_to_block_scope_end(ctx, builder, lowered).map_err(LoweringFlowError::Failed)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
@@ -1284,7 +1360,72 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(pattern.stable_ptr().untyped(), NonExhaustiveMatchFelt252),
         ));
     };
-    lower_expr_felt252_arm(ctx, expr, match_input, builder, 0)
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+
+    if expr.arms.len() <= 2 {
+        return lower_expr_felt252_arm(ctx, expr, match_input, builder, 0);
+    }
+    let semantic_db = ctx.db.upcast();
+
+    let index_enum = corelib::core_index_enum_ty(semantic_db, (expr.arms.len() - 1).into());
+
+    let function_id = corelib::core_felt252_bounded_from_felt252(
+        semantic_db,
+        0.into(),
+        (expr.arms.len() - 1).into(),
+    )
+    .lowered(ctx.db);
+
+    let otherwise_block_id: BlockId = alloc_empty_block(ctx);
+    let otherwise_arm_content_block = lower_tail_expr(
+        ctx,
+        builder.child_block_builder(otherwise_block_id),
+        expr.arms.last().unwrap().expression,
+    )
+    .map_err(LoweringFlowError::Failed)?;
+
+    let some_block_input_var_id = ctx.new_var(VarRequest { ty: index_enum, location });
+
+    let some_block = create_subscope_with_bound_refs(ctx, builder);
+    let block_some_id = some_block.block_id;
+    let block_some = lower_expr_match_index_enum(
+        ctx,
+        expr,
+        VarUsage { var_id: some_block_input_var_id, location: match_input.location },
+        some_block,
+    )?;
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: function_id,
+        inputs: vec![match_input],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
+                    semantic_db,
+                    GenericArgumentId::Type(index_enum),
+                )),
+                block_id: block_some_id,
+                var_ids: vec![some_block_input_var_id],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
+                    semantic_db,
+                    GenericArgumentId::Type(index_enum),
+                )),
+                block_id: otherwise_block_id,
+                var_ids: vec![],
+            },
+        ],
+        location,
+    });
+    builder.merge_and_end_with_match(
+        ctx,
+        match_info,
+        vec![block_some, otherwise_arm_content_block],
+        location,
+    )
+
+    // lower_expr_felt252_arm(ctx, expr, match_input, builder, 0)
 }
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
@@ -1498,12 +1639,12 @@ fn lower_expr_error_propagate(
         input: match_input,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: vec![expr_var],
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: vec![err_value],
             },
@@ -1564,12 +1705,12 @@ fn lower_optimized_extern_error_propagate(
         inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: block_ok_input_vars,
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: block_err_input_vars,
             },

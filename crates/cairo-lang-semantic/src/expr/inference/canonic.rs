@@ -24,7 +24,7 @@ use crate::{
     add_basic_rewrites, ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId,
     ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     ConcreteVariant, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, Parameter, Signature, TypeId, TypeLongId,
+    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
