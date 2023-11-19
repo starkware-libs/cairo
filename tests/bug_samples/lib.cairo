@@ -1,4 +1,5 @@
 mod ecdsa_completeness;
+mod indirect_impl_alias;
 mod issue2114;
 mod issue2147;
 mod issue2152;
