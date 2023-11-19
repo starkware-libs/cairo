@@ -906,29 +906,30 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v11: core::RangeCheck, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+  Match(match core::internal::constrain_range::<core::felt252, core::internal::BoundedInt::<0, 4>>(v11, v0) {
+    Option::Some(v12, v1) => blk1,
+    Option::None(v13) => blk9,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk4, {})
+  Match(match_enum.(v1) {
+    0(v2) => blk2,
+    1(v3) => blk3,
+    2(v4) => blk5,
+    3(v5) => blk6,
+    4(v6) => blk8,
+  })
 
 blk2:
 Statements:
-  (v2: core::felt252) <- 1u
-  (v15: core::felt252) <- core::felt252_sub(v2, v0)
 End:
-  Match(match core::felt252_is_zero(v15) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v4) => blk5,
-  })
+  Goto(blk4, {})
 
 blk3:
 Statements:
@@ -937,51 +938,41 @@ End:
 
 blk4:
 Statements:
-  (v11: core::felt252) <- 11u
+  (v7: core::felt252) <- 11u
 End:
-  Return(v11)
+  Return(v12, v7)
 
 blk5:
 Statements:
-  (v5: core::felt252) <- 2u
-  (v16: core::felt252) <- core::felt252_sub(v5, v0)
 End:
-  Match(match core::felt252_is_zero(v16) {
-    IsZeroResult::Zero => blk6,
-    IsZeroResult::NonZero(v7) => blk7,
-  })
+  Goto(blk7, {})
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {})
+  Goto(blk7, {})
 
 blk7:
 Statements:
-  (v8: core::felt252) <- 3u
-  (v17: core::felt252) <- core::felt252_sub(v8, v0)
+  (v8: core::felt252) <- 12u
 End:
-  Match(match core::felt252_is_zero(v17) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v10) => blk10,
-  })
+  Return(v12, v8)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {})
+  Goto(blk10, {v12 -> v16})
 
 blk9:
 Statements:
-  (v12: core::felt252) <- 12u
 End:
-  Return(v12)
+  Goto(blk10, {v13 -> v16})
 
 blk10:
 Statements:
-  (v13: core::felt252) <- 13u
+  (v9: core::felt252) <- 13u
 End:
-  Return(v13)
+  Return(v16, v9)
 
 //! > ==========================================================================
 

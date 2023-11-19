@@ -20,6 +20,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
 use crate::items::us::SemanticUseEx;
+use crate::literals::LiteralLongId;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -62,6 +63,20 @@ pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt252".into(), vec![])
+}
+
+/// Returns the concrete type of a bounded int type.with a given min and max.
+pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
+    let internal = core_submodule(db, "internal");
+    let lower_id = db.intern_literal(LiteralLongId { value: min });
+    let upper_id = db.intern_literal(LiteralLongId { value: max });
+    try_get_ty_by_name(
+        db,
+        internal,
+        "BoundedInt".into(),
+        vec![GenericArgumentId::Literal(lower_id), GenericArgumentId::Literal(upper_id)],
+    )
+    .expect("could not find")
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
@@ -467,7 +482,18 @@ pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
     get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
 }
+/// The function `constrain_range` from the `internal` submodule.
+/// Todo(TomerStarkware): use upcast instead.
+pub fn core_constrain_range(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
+    let internal = core_submodule(db, "internal");
 
+    get_function_id(
+        db,
+        internal,
+        "constrain_range".into(),
+        vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
+    )
+}
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,
