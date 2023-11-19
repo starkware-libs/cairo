@@ -268,6 +268,7 @@ pub trait SemanticGroup:
     /// Returns the impl definition pointed to by the impl alias, or an error if it points to
     /// something else.
     #[salsa::invoke(items::impl_alias::impl_alias_impl_def)]
+    #[salsa::cycle(items::impl_alias::impl_alias_impl_def_cycle)]
     fn impl_alias_impl_def(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId>;
     /// Private query to compute data about a type alias.
     #[salsa::invoke(items::impl_alias::priv_impl_alias_semantic_data)]
