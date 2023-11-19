@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, FunctionWithBody, OptionReturnTypeClause, OptionWrappedGenericParamList,
 };
@@ -327,7 +328,7 @@ fn generate_entry_point_wrapper(
         .into(),
     );
 
-    let implicit_precedence = RewriteNode::Text(format!("#[implicit_precedence({})]", {
+    let implicit_precedence = RewriteNode::Text(format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", {
         IMPLICIT_PRECEDENCE.iter().join(", ")
     }));
 

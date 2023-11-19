@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::ops::Deref;
 
-use cairo_lang_defs::consts::FMT_SKIP_ATTR;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
