@@ -385,6 +385,11 @@ impl<'a> FindLocalsContext<'a> {
                 let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }
+            MatchInfo::Value(s) => {
+                let concrete_enum_type = self.db.get_index_enum_type_id(s.num_of_arms)?;
+                let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
+                get_libfunc_signature(self.db, concrete_function_id)
+            }
         })
     }
 }
