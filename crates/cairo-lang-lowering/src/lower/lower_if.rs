@@ -4,7 +4,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
-use semantic::ExprFunctionCallArg;
+use semantic::{ExprFunctionCallArg, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
@@ -108,12 +108,12 @@ pub fn lower_expr_if_bool(
         input: condition,
         arms: vec![
             MatchArm {
-                variant_id: corelib::false_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                variant_id: corelib::true_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -182,12 +182,16 @@ pub fn lower_expr_if_eq(
         inputs: vec![match_input],
         arms: vec![
             MatchArm {
-                variant_id: corelib::jump_nz_zero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    semantic_db,
+                )),
                 block_id: block_main_id,
                 var_ids: vec![],
             },
             MatchArm {
-                variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    semantic_db,
+                )),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },

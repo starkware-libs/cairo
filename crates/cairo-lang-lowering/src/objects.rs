@@ -15,6 +15,7 @@ use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
+use semantic::items::enm::MatchArmSelector;
 use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
@@ -301,7 +302,7 @@ pub struct StatementDesnap {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatchArm {
     /// The id of the arm variant.
-    pub variant_id: ConcreteVariant,
+    pub arm_selector: MatchArmSelector,
 
     /// The block_id where the relevant arm is implemented.
     pub block_id: BlockId,
@@ -338,29 +339,45 @@ pub struct MatchEnumInfo {
     /// Location for the match.
     pub location: LocationId,
 }
+/// A statement that matches an enum, and "calls" a possibly different block for each branch.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatchEnumValue {
+    pub num_of_arms: usize,
+
+    /// A living variable in current scope to match on.
+    pub input: VarUsage,
+    /// Match arms. All blocks should have the same rets.
+    pub arms: Vec<MatchArm>,
+    /// Location for the match.
+    pub location: LocationId,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MatchInfo {
     Enum(MatchEnumInfo),
     Extern(MatchExternInfo),
+    Value(MatchEnumValue),
 }
 impl MatchInfo {
     pub fn inputs(&self) -> Vec<VarUsage> {
         match self {
             MatchInfo::Enum(s) => vec![s.input],
             MatchInfo::Extern(s) => s.inputs.clone(),
+            MatchInfo::Value(s) => vec![s.input],
         }
     }
     pub fn arms(&self) -> &Vec<MatchArm> {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,
+            MatchInfo::Value(s) => &s.arms,
         }
     }
     pub fn location(&self) -> &LocationId {
         match self {
             MatchInfo::Enum(s) => &s.location,
             MatchInfo::Extern(s) => &s.location,
+            MatchInfo::Value(s) => &s.location,
         }
     }
 }
