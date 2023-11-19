@@ -14,5 +14,5 @@ serde_json.workspace = true
 rayon.workspace = true
 indicatif = "0.17.7"
 
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.0-rc2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.0-rc2" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.0-rc3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.0-rc3" }
