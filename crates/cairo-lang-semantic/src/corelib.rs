@@ -20,6 +20,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
 use crate::items::us::SemanticUseEx;
+use crate::literals::LiteralLongId;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -62,6 +63,34 @@ pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt252".into(), vec![])
+}
+
+pub fn core_range_check_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "RangeCheck".into(), vec![])
+}
+
+pub fn core_index_enum_ty(db: &dyn SemanticGroup, num_of_variants: BigInt) -> TypeId {
+    let internal = core_submodule(db, "internal");
+    let literal_id = db.intern_literal(LiteralLongId { value: num_of_variants });
+    try_get_ty_by_name(
+        db,
+        internal,
+        "index_enum_type".into(),
+        vec![GenericArgumentId::Literal(literal_id)],
+    )
+    .expect("could not find")
+}
+pub fn core_bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
+    let internal = core_submodule(db, "internal");
+    let lower_id = db.intern_literal(LiteralLongId { value: min });
+    let upper_id = db.intern_literal(LiteralLongId { value: max });
+    try_get_ty_by_name(
+        db,
+        internal,
+        "BoundedInt".into(),
+        vec![GenericArgumentId::Literal(lower_id), GenericArgumentId::Literal(upper_id)],
+    )
+    .expect("could not find")
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
@@ -468,6 +497,16 @@ pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
     get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
 }
 
+pub fn core_constrain_range(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
+    let internal = core_submodule(db, "internal");
+
+    get_function_id(
+        db,
+        internal,
+        "constrain_range".into(),
+        vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
+    )
+}
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,
