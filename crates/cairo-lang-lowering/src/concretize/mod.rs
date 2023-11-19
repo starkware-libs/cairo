@@ -64,6 +64,7 @@ pub fn concretize_lowered(
                     s.function = concretize_function(db, &mut rewriter, s.function)?;
                     s.arms.iter_mut()
                 }
+                crate::MatchInfo::Value(s) => s.arms.iter_mut(),
             } {
                 *selector = rewriter.rewrite(selector.clone())?;
             }

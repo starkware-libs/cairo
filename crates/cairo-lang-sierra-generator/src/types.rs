@@ -11,6 +11,7 @@ use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGeneric
 use cairo_lang_utils::try_extract_matches;
 use itertools::chain;
 use semantic::items::imp::ImplLookupContext;
+use semantic::TypeId;
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -35,6 +36,27 @@ pub fn get_concrete_type_id(
             db.get_concrete_long_type_id(type_id)?,
         ))),
     }
+}
+
+/// See [SierraGenGroup::get_index_enum_type_id] for documentation.
+pub fn get_index_enum_type_id(
+    db: &dyn SierraGenGroup,
+    index_count: usize,
+) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
+    let unit = db.intern_type(semantic::TypeLongId::Tuple(vec![]));
+    let deps: Arc<Vec<TypeId>> = vec![unit; index_count].into();
+    let generic_args = chain!(
+        [Ok(SierraGenericArg::UserType(format!("index_enum_type<{}>", index_count).into()))],
+        deps.iter().map(|generic_arg_ty| db
+            .get_concrete_type_id(*generic_arg_ty)
+            .map(SierraGenericArg::Type))
+    )
+    .collect::<Maybe<_>>()?;
+    let x = SierraGeneratorTypeLongId::Regular(
+        ConcreteTypeLongId { generic_id: "Enum".into(), generic_args }.into(),
+    );
+
+    Ok(db.intern_concrete_type(x))
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
