@@ -10,11 +10,11 @@ mod impls {
     impl Impl1<T, +Drop<T>> of super::Trait1<T> {
         fn func1(value: T) {}
     }
-    impl ImplAlias1 = Impl1<felt252>;
+    pub impl ImplAlias1 = Impl1<felt252>;
     impl Impl2<T, +Drop<T>> of super::Trait2<T> {
         fn func2(value: T) {}
     }
-    impl ImplAlias2 = Impl2<felt252>;
+    pub impl ImplAlias2 = Impl2<felt252>;
 }
 
 use impls::ImplAlias1;
