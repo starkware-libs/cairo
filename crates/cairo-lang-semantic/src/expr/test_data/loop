@@ -20,7 +20,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Mismatched types. The type core::bool cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:19
             break 0;
                   ^

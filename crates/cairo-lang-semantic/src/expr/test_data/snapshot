@@ -45,7 +45,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
     let y: felt252 = @6;
                      ^^
 
-error: Mismatched types. The type @core::felt252 cannot be created from a numeric literal.
+error: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
  --> lib.cairo:2:23
     let x: @felt252 = 5;
                       ^
