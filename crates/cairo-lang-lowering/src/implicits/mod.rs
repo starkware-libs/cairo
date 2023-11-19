@@ -190,7 +190,7 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
             FlatBlockEnd::Match { info } => {
                 blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
                 match info {
-                    MatchInfo::Enum(_) => {
+                    MatchInfo::Enum(_) | MatchInfo::Value(_) => {
                         for MatchArm { arm_selector: _, block_id, var_ids: _ } in info.arms() {
                             assert!(
                                 ctx.implicit_vars_for_block
