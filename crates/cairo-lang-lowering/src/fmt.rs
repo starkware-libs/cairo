@@ -10,9 +10,9 @@ use crate::objects::{
     StatementStructDestructure, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, VarUsage,
-    Variable,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
+    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    VarRemapping, VarUsage, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -197,6 +197,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
         match self {
             MatchInfo::Extern(s) => s.fmt(f, ctx),
             MatchInfo::Enum(s) => s.fmt(f, ctx),
+            MatchInfo::Value(s) => s.fmt(f, ctx),
         }
     }
 }
@@ -251,7 +252,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
         write!(f, "{enum_name}::{variant_name}")
     }
 }
-
 impl DebugWithDb<LoweredFormatter<'_>> for MatchArmSelector {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         match self {
@@ -288,6 +288,19 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
 impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
+        self.input.fmt(f, ctx)?;
+        writeln!(f, ") {{")?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        write!(f, "  }}")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "match_enum.(")?;
         self.input.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
         for arm in &self.arms {
