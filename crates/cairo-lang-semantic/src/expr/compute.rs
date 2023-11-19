@@ -606,28 +606,6 @@ fn compute_expr_function_call_semantic(
         ResolvedConcreteItem::Function(function) => {
             expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
-        ResolvedConcreteItem::TraitFunction(trait_function) => {
-            let impl_lookup_context = ctx.resolver.impl_lookup_context();
-            let generic_function = ctx
-                .resolver
-                .inference()
-                .infer_trait_generic_function(
-                    trait_function,
-                    &impl_lookup_context,
-                    Some(path.stable_ptr().untyped()),
-                )
-                .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
-            let function_id = ctx
-                .resolver
-                .inference()
-                .infer_generic_function(
-                    generic_function,
-                    &impl_lookup_context,
-                    Some(path.stable_ptr().untyped()),
-                )
-                .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
-            expr_function_call(ctx, function_id, named_args, syntax.stable_ptr().into())
-        }
         _ => Err(ctx.diagnostics.report(
             &path,
             UnexpectedElement { expected: vec![ElementKind::Function], actual: (&item).into() },
@@ -1070,7 +1048,7 @@ fn compute_method_function_call_data(
         candidate_traits,
         func_name.clone(),
         self_expr.stable_ptr().untyped(),
-    )?;
+    );
     let trait_function_id = match candidates[..] {
         [] => {
             return Err(ctx
