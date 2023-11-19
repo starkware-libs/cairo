@@ -56,73 +56,58 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v12: core::RangeCheck, v0: core::felt252
 blk0 (root):
 Statements:
+  (v1: core::internal::index_enum_type::<3>) <- core::internal::felt252_bounded_from_felt252(v0)
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+  Match(match core::internal::felt252_bounded_constrain_range::<LiteralLongId { value: 0 }, LiteralLongId { value: 3618502788666131213697322783095070105623107215331596699973092056135872020481 }, LiteralLongId { value: 0 }, LiteralLongId { value: 3 }>(v12, v1) {
+    Option::Some(v13, v3) => blk1,
+    Option::None(v14) => blk6,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
 End:
-  Goto(blk9, {v2 -> v14})
+  Match(match_enum.(v3) {
+    0(v4) => blk2,
+    1(v6) => blk3,
+    2(v8) => blk4,
+  })
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v15: core::felt252) <- core::felt252_sub(v3, v0)
+  (v5: core::felt252) <- 1u
 End:
-  Match(match core::felt252_is_zero(v15) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v5) => blk4,
-  })
+  Goto(blk5, {v5 -> v10})
 
 blk3:
 Statements:
-  (v6: core::felt252) <- 2u
+  (v7: core::felt252) <- 2u
 End:
-  Goto(blk8, {v6 -> v13})
+  Goto(blk5, {v7 -> v10})
 
 blk4:
 Statements:
-  (v7: core::felt252) <- 2u
-  (v16: core::felt252) <- core::felt252_sub(v7, v0)
+  (v9: core::felt252) <- 3u
 End:
-  Match(match core::felt252_is_zero(v16) {
-    IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v9) => blk6,
-  })
+  Goto(blk5, {v9 -> v10})
 
 blk5:
 Statements:
-  (v10: core::felt252) <- 3u
 End:
-  Goto(blk7, {v10 -> v12})
+  Goto(blk7, {v13 -> v16, v10 -> v11})
 
 blk6:
 Statements:
-  (v11: core::felt252) <- 4u
+  (v2: core::felt252) <- 4u
 End:
-  Goto(blk7, {v11 -> v12})
+  Goto(blk7, {v14 -> v16, v2 -> v11})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v12 -> v13})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {v13 -> v14})
-
-blk9:
-Statements:
-End:
-  Return(v14)
+  Return(v16, v11)
 
 //! > ==========================================================================
 
