@@ -80,9 +80,7 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
     >(
         &mut self,
         reporter: &mut T,
-        vars: impl Iterator<Item = (&'a V, T::UsePosition)>
-        + std::iter::DoubleEndedIterator
-        + std::iter::ExactSizeIterator,
+        vars: impl Iterator<Item = (&'a V, T::UsePosition)> + std::iter::DoubleEndedIterator,
     ) {
         for (var, position) in vars.rev() {
             if let Some(next_usage_position) = self.vars.insert((*var).into(), position) {

@@ -7,39 +7,53 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt252) -> felt252 {
-    let x1 = x + x;
-    let x2 = x1 + x1;
-    // TODO(lior): Replace with let (y, z) = { ... } and make sure z does not appear in the result.
-    let y = {
-        revoke_ap();
-        x1 + x1
-    };
-    // TODO(lior): Replace with "let w = x1 + x2 + z".
-    let w = x1 + x2;
-    revoke_ap();
-    x1 + y
+fn foo(ref value: ZeroSized, array_with_data: Array<felt252>) {
+    if 1 == 0 {
+        use_zero_sized(ref value);
+    }
+    // Unkown ap change tracking, while not using `value`.
+    let mut data_span = array_with_data.span();
+    let a: Option<Array<Array<felt252>>> = Serde::deserialize(ref data_span);
 }
 
 //! > module_code
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
+#[derive(Drop)]
+struct ZeroSized {}
+
+#[inline(never)]
+fn use_zero_sized(ref value: ZeroSized) -> felt252 {
+    0
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v0: test::ZeroSized, v1: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v8: core::felt252) <- core::felt252_add(v0, v0)
-  (v9: core::felt252) <- core::felt252_add(v8, v8)
-  (v3: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::felt252_add(v8, v8)
-  (v11: core::felt252) <- core::felt252_add(v8, v9)
-  (v6: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::felt252_add(v8, v10)
+  (v2: core::felt252) <- 1u
 End:
-  Return(v12)
+  Match(match core::felt252_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::ZeroSized, v3: core::felt252) <- test::use_zero_sized(v0)
+End:
+  Goto(blk3, {v4 -> v6})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v6})
+
+blk3:
+Statements:
+  (v7: core::array::Array::<core::felt252>, v8: @core::array::Array::<core::felt252>) <- snapshot(v1)
+  (v13: core::array::Span::<core::felt252>) <- struct_construct(v8)
+  (v11: core::array::Span::<core::felt252>, v10: core::option::Option::<core::array::Array::<core::array::Array::<core::felt252>>>) <- core::array::ArraySerde::<core::array::Array::<core::felt252>, core::array::ArraySerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>::deserialize(v13)
+  (v12: ()) <- struct_construct()
+End:
+  Return(v6, v12)
 
 //! > local_variables
-v10, v8, v9

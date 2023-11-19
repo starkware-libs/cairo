@@ -155,6 +155,20 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
             return;
         };
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
+
+        for var_id in remapping.keys() {
+            let Ok(ty) = self.db.get_concrete_type_id(self.lowered_function.variables[*var_id].ty)
+            else {
+                continue;
+            };
+            let Ok(info) = self.db.get_type_info(ty) else {
+                continue;
+            };
+            if info.zero_sized {
+                self.non_ap_based.insert(*var_id);
+            }
+        }
+
         info.demand
             .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
