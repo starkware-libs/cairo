@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -83,17 +84,22 @@ pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
+    let db = basic_db();
+
+    let (service, socket) = LspService::build(|client| Backend::new(client, db))
+        .custom_method("vfs/provide", Backend::vfs_provide)
+        .finish();
+    Server::new(stdin, stdout, socket).serve(service).await;
+}
+
+fn basic_db() -> RootDatabase {
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_plugin_suite(starknet_plugin_suite())
         .with_plugin_suite(test_plugin_suite())
         .build()
         .expect("Failed to initialize Cairo compiler database.");
-
-    let (service, socket) = LspService::build(|client| Backend::new(client, db))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
-    Server::new(stdin, stdout, socket).serve(service).await;
+    db
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -133,6 +139,7 @@ pub struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
+    pub last_replace: tokio::sync::Mutex<SystemTime>,
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
     pub notification: NotificationService,
@@ -146,6 +153,7 @@ impl Backend {
         Self {
             client,
             db_mutex: db.into(),
+            last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             notification: notification.clone(),
             state_mutex: State::default().into(),
             scarb: ScarbService::new(notification),
@@ -158,7 +166,14 @@ impl Backend {
     where
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
-        let db_mut = self.db_mutex.lock().await;
+        let mut db_mut = self.db_mutex.lock().await;
+        if let Ok(mut last_replace) = self.last_replace.try_lock() {
+            const REPLACE_INTERVAL: Duration = Duration::from_secs(1800);
+            if last_replace.elapsed().unwrap() > REPLACE_INTERVAL {
+                *db_mut = basic_db();
+                *last_replace = SystemTime::now();
+            }
+        }
         let db = db_mut.snapshot();
         drop(db_mut);
         std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
