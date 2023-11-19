@@ -10,13 +10,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-/// Macro for equality assertion.
-#[derive(Default, Debug)]
-pub struct AssertEqMacro;
-impl NamedPlugin for AssertEqMacro {
-    const NAME: &'static str = "assert_eq";
-}
-impl InlineMacroExprPlugin for AssertEqMacro {
+trait Assertion: NamedPlugin {
+    const OPERATOR: &'static str;
+    const OPP_OPERATOR: &'static str;
+
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
@@ -31,7 +28,7 @@ impl InlineMacroExprPlugin for AssertEqMacro {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: arguments_syntax.lparen(db).stable_ptr().untyped(),
-                    message: format!("Macro `{}` requires at least 2 arguments.", Self::NAME,),
+                    message: format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 }],
             };
         }
@@ -61,7 +58,7 @@ impl InlineMacroExprPlugin for AssertEqMacro {
                 }],
             };
         };
-        let f = "__formatter_for_assert_eq_macro_";
+        let f = format!("__formatter_for_{}_macro_", Self::NAME);
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db);
@@ -71,7 +68,7 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             (
                 RewriteNode::RewriteText {
                     origin: lhs.as_syntax_node().span_without_trivia(db),
-                    text: "__lhs_value_for_assert_eq_macro__".to_string(),
+                    text: format!("__lhs_value_for_{}_macro__", Self::NAME),
                 },
                 "let $lhs_value$ = $lhs$;",
             )
@@ -82,21 +79,23 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             (
                 RewriteNode::RewriteText {
                     origin: rhs.as_syntax_node().span_without_trivia(db),
-                    text: "__rhs_value_for_assert_eq_macro__".to_string(),
+                    text: format!("__rhs_value_for_{}_macro__", Self::NAME),
                 },
                 "let $rhs_value$ = $rhs$;",
             )
         };
+        let operator = Self::OPERATOR;
+        let opp_operator = Self::OPP_OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if @$lhs_value$ != @$rhs_value$ {{
+                    if @$lhs_value$ {opp_operator} @$rhs_value$ {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-                            write!({f}, "assertion `{lhs_escaped} == {rhs_escaped}` failed")
+                            write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
                         );
             "#,
             },
@@ -174,5 +173,49 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             }),
             diagnostics: vec![],
         }
+    }
+}
+
+/// Macro for equality assertion.
+#[derive(Default, Debug)]
+pub struct AssertEqMacro;
+impl NamedPlugin for AssertEqMacro {
+    const NAME: &'static str = "assert_eq";
+}
+
+impl Assertion for AssertEqMacro {
+    const OPERATOR: &'static str = "==";
+    const OPP_OPERATOR: &'static str = "!=";
+}
+
+impl InlineMacroExprPlugin for AssertEqMacro {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro,
+    ) -> InlinePluginResult {
+        Assertion::generate_code(self, db, syntax)
+    }
+}
+
+/// Macro for not equality assertion.
+#[derive(Default, Debug)]
+pub struct AssertNeMacro;
+impl NamedPlugin for AssertNeMacro {
+    const NAME: &'static str = "assert_ne";
+}
+
+impl Assertion for AssertNeMacro {
+    const OPERATOR: &'static str = "!=";
+    const OPP_OPERATOR: &'static str = "==";
+}
+
+impl InlineMacroExprPlugin for AssertNeMacro {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        syntax: &ast::ExprInlineMacro,
+    ) -> InlinePluginResult {
+        Assertion::generate_code(self, db, syntax)
     }
 }

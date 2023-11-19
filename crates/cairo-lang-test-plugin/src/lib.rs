@@ -167,6 +167,7 @@ pub fn test_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
         .add_plugin::<TestPlugin>()
-        .add_inline_macro_plugin::<inline_macros::assert_eq::AssertEqMacro>();
+        .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>();
     suite
 }

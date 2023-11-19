@@ -105,6 +105,7 @@ serde = { version = "1.0.192", features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
+starknet-crypto = "0.6.1"
 syn = { version = "2.0.39", features = ["full", "extra-traits"] }
 test-case = "3.2.1"
 test-case-macros = "3.2.1"
