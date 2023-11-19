@@ -169,6 +169,20 @@ pub struct ConcreteVariant {
     pub idx: usize,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ValueSelectorArm {
+    #[dont_rewrite]
+    pub value: usize,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum MatchArmSelector {
+    VariantId(ConcreteVariant),
+    Value(ValueSelectorArm),
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
 pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,

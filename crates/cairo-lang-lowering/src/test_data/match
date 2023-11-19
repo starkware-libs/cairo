@@ -56,73 +56,57 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v11: core::RangeCheck, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+  Match(match core::internal::felt252_bounded_from_felt252::<LiteralLongId { value: 0 }, LiteralLongId { value: 3 }>(v11, v0) {
+    Option::Some(v12, v2) => blk1,
+    Option::None(v13) => blk6,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
 End:
-  Goto(blk9, {v2 -> v14})
+  Match(match_enum.(v2) {
+    0(v3) => blk2,
+    1(v5) => blk3,
+    2(v7) => blk4,
+  })
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v15: core::felt252) <- core::felt252_sub(v3, v0)
+  (v4: core::felt252) <- 1u
 End:
-  Match(match core::felt252_is_zero(v15) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v5) => blk4,
-  })
+  Goto(blk5, {v4 -> v9})
 
 blk3:
 Statements:
   (v6: core::felt252) <- 2u
 End:
-  Goto(blk8, {v6 -> v13})
+  Goto(blk5, {v6 -> v9})
 
 blk4:
 Statements:
-  (v7: core::felt252) <- 2u
-  (v16: core::felt252) <- core::felt252_sub(v7, v0)
+  (v8: core::felt252) <- 3u
 End:
-  Match(match core::felt252_is_zero(v16) {
-    IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v9) => blk6,
-  })
+  Goto(blk5, {v8 -> v9})
 
 blk5:
 Statements:
-  (v10: core::felt252) <- 3u
 End:
-  Goto(blk7, {v10 -> v12})
+  Goto(blk7, {v12 -> v15, v9 -> v10})
 
 blk6:
 Statements:
-  (v11: core::felt252) <- 4u
+  (v1: core::felt252) <- 4u
 End:
-  Goto(blk7, {v11 -> v12})
+  Goto(blk7, {v13 -> v15, v1 -> v10})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v12 -> v13})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {v13 -> v14})
-
-blk9:
-Statements:
-End:
-  Return(v14)
+  Return(v15, v10)
 
 //! > ==========================================================================
 
