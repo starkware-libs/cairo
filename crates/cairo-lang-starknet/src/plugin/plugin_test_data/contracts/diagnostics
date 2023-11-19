@@ -5667,7 +5667,7 @@ error: Plugin diagnostic: Expected variable or constant, found impl.
                                ^***^
 
 error: Method `foo1` could not be called on type `@test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: test::component2::ComponentState::<TContractState> and test::component1::ComponentState::<?9>
+Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `test::component1::ComponentState::<?9>`
  --> lib.cairo:61:45
             get_dep_component!(self, Comp2).foo1();
                                             ^**^
@@ -6350,7 +6350,7 @@ error: Plugin diagnostic: ref argument must be a variable.
                                        ^***^
 
 error: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: test::component2::ComponentState::<TContractState> and @test::component1::ComponentState::<?8>
+Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`
  --> lib.cairo:56:53
             get_dep_component_mut!(ref self, Comp2).foo1();
                                                     ^**^

@@ -167,7 +167,7 @@ Candidate `MyTrait::baz` inference failed with: Trait has no implementation in c
     d.baz();
       ^*^
 
-error: Mismatched types. The type test::MyStruct cannot be created from a numeric literal.
+error: Mismatched types. The type `test::MyStruct` cannot be created from a numeric literal.
  --> lib.cairo:15:9
     d + 0;
         ^

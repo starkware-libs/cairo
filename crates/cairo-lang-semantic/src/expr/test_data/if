@@ -29,7 +29,7 @@ error: Unexpected return type. Expected: "()", found: "core::bool".
 fn foo() {
          ^
 
-error: Mismatched types. The type core::bool cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:9
         0
         ^
