@@ -44,7 +44,7 @@
     "body": ["struct $1 {", "\t$2: ${3},", "}"],
     "description": "Creates a struct"
   },
-  "Creates the event dictionary": {
+  "Creates the contract's event set": {
     "prefix": "event",
     "body": [
       "#[event]",
@@ -53,7 +53,7 @@
       "\t$2: $2,",
       "}"
     ],
-    "description": "Creates an event"
+    "description": "Creates the contract's event set"
   },
   "Creates an event": {
     "prefix": "event",
@@ -83,7 +83,7 @@
       "\t$2",
       "}"
     ],
-    "description": "Creates an interface"
+    "description": "Creates a starknet interface"
   },
   "Creates a view function": {
     "prefix": ["view", "fn"],
@@ -132,7 +132,7 @@
       "\tfn $6(self: @TContractState, $7: ${8}) -> ${9};",
       "}"
     ],
-    "description": "Creates a trait"
+    "description": "Creates a trait for ContractState"
   },
   "Impl a trait": {
     "prefix": "impl",
@@ -190,7 +190,7 @@
   "Creates an assertion": {
     "prefix": "assert",
     "body": ["assert($1, '$2');"],
-    "description": "Creates an simple test"
+    "description": "Creates an assertion"
   },
   "Creates a default contract": {
     "prefix": "contract",
@@ -213,7 +213,7 @@
   "Creates an assertion with macro": {
     "prefix": "assert!",
     "body": ["assert!($1);"],
-    "description": "Creates an simple test"
+    "description": "Creates an assert! macro"
   },
   "Creates an equality assertion with macro": {
     "prefix": "assert_eq!",
@@ -228,7 +228,7 @@
   "Creates panic": {
     "prefix": "panic!",
     "body": ["panic!(\"$1\");"],
-    "description": "Creates panic"
+    "description": "Creates a panic! macro"
   },
   "Creates a String using interpolation of expressions": {
     "prefix": "format!",
