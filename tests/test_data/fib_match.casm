@@ -20,7 +20,7 @@ jmp rel 26;
 [ap + 0] = 4, ap++;
 [ap + -1] = [ap + 0] + [fp + -3], ap++;
 jmp rel 6 if [ap + -1] != 0;
-[ap + 0] = 5, ap++;
+[ap + 0] = 500, ap++;
 jmp rel 17;
 [fp + -3] = [ap + 0] + 4, ap++;
 call rel -46;
