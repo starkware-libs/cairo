@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
+/// A trait for compare assertion plugin.
 trait CompareAssertionPlugin: NamedPlugin {
     const OPERATOR: &'static str;
 
