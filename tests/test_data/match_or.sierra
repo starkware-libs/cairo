@@ -1,0 +1,97 @@
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::match_or::P = Struct<ut@examples::match_or::P, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u8, u8, u8> = Struct<ut@Tuple, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::match_or::MyEnum = Enum<ut@examples::match_or::MyEnum, Tuple<felt252, felt252>, Tuple<felt252, felt252>, Tuple<u8, u8, u8>, examples::match_or::P> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc felt252_const<2> = felt252_const<2>;
+libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
+libfunc enum_init<examples::match_or::MyEnum, 0> = enum_init<examples::match_or::MyEnum, 0>;
+libfunc store_temp<examples::match_or::MyEnum> = store_temp<examples::match_or::MyEnum>;
+libfunc function_call<user@examples::match_or::foo> = function_call<user@examples::match_or::foo>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc enum_init<examples::match_or::MyEnum, 1> = enum_init<examples::match_or::MyEnum, 1>;
+libfunc u8_const<1> = u8_const<1>;
+libfunc u8_const<2> = u8_const<2>;
+libfunc u8_const<3> = u8_const<3>;
+libfunc struct_construct<Tuple<u8, u8, u8>> = struct_construct<Tuple<u8, u8, u8>>;
+libfunc enum_init<examples::match_or::MyEnum, 2> = enum_init<examples::match_or::MyEnum, 2>;
+libfunc u8_const<9> = u8_const<9>;
+libfunc struct_construct<examples::match_or::P> = struct_construct<examples::match_or::P>;
+libfunc enum_init<examples::match_or::MyEnum, 3> = enum_init<examples::match_or::MyEnum, 3>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc enum_match<examples::match_or::MyEnum> = enum_match<examples::match_or::MyEnum>;
+libfunc branch_align = branch_align;
+libfunc struct_deconstruct<Tuple<felt252, felt252>> = struct_deconstruct<Tuple<felt252, felt252>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc jump = jump;
+libfunc struct_deconstruct<Tuple<u8, u8, u8>> = struct_deconstruct<Tuple<u8, u8, u8>>;
+libfunc drop<u8> = drop<u8>;
+libfunc u8_to_felt252 = u8_to_felt252;
+libfunc struct_deconstruct<examples::match_or::P> = struct_deconstruct<examples::match_or::P>;
+
+felt252_const<1>() -> ([0]); // 0
+felt252_const<2>() -> ([1]); // 1
+struct_construct<Tuple<felt252, felt252>>([0], [1]) -> ([2]); // 2
+enum_init<examples::match_or::MyEnum, 0>([2]) -> ([3]); // 3
+store_temp<examples::match_or::MyEnum>([3]) -> ([3]); // 4
+function_call<user@examples::match_or::foo>([3]) -> ([4]); // 5
+drop<felt252>([4]) -> (); // 6
+felt252_const<1>() -> ([5]); // 7
+felt252_const<2>() -> ([6]); // 8
+struct_construct<Tuple<felt252, felt252>>([5], [6]) -> ([7]); // 9
+enum_init<examples::match_or::MyEnum, 1>([7]) -> ([8]); // 10
+store_temp<examples::match_or::MyEnum>([8]) -> ([8]); // 11
+function_call<user@examples::match_or::foo>([8]) -> ([9]); // 12
+drop<felt252>([9]) -> (); // 13
+u8_const<1>() -> ([10]); // 14
+u8_const<2>() -> ([11]); // 15
+u8_const<3>() -> ([12]); // 16
+struct_construct<Tuple<u8, u8, u8>>([10], [11], [12]) -> ([13]); // 17
+enum_init<examples::match_or::MyEnum, 2>([13]) -> ([14]); // 18
+store_temp<examples::match_or::MyEnum>([14]) -> ([14]); // 19
+function_call<user@examples::match_or::foo>([14]) -> ([15]); // 20
+drop<felt252>([15]) -> (); // 21
+u8_const<1>() -> ([16]); // 22
+u8_const<2>() -> ([17]); // 23
+u8_const<9>() -> ([18]); // 24
+struct_construct<examples::match_or::P>([16], [17], [18]) -> ([19]); // 25
+enum_init<examples::match_or::MyEnum, 3>([19]) -> ([20]); // 26
+store_temp<examples::match_or::MyEnum>([20]) -> ([20]); // 27
+function_call<user@examples::match_or::foo>([20]) -> ([21]); // 28
+drop<felt252>([21]) -> (); // 29
+struct_construct<Unit>() -> ([22]); // 30
+store_temp<Unit>([22]) -> ([22]); // 31
+return([22]); // 32
+enum_match<examples::match_or::MyEnum>([0]) { fallthrough([1]) 39([2]) 44([3]) 51([4]) }; // 33
+branch_align() -> (); // 34
+struct_deconstruct<Tuple<felt252, felt252>>([1]) -> ([5], [6]); // 35
+drop<felt252>([5]) -> (); // 36
+store_temp<felt252>([6]) -> ([7]); // 37
+jump() { 57() }; // 38
+branch_align() -> (); // 39
+struct_deconstruct<Tuple<felt252, felt252>>([2]) -> ([8], [9]); // 40
+drop<felt252>([9]) -> (); // 41
+store_temp<felt252>([8]) -> ([7]); // 42
+jump() { 57() }; // 43
+branch_align() -> (); // 44
+struct_deconstruct<Tuple<u8, u8, u8>>([3]) -> ([10], [11], [12]); // 45
+drop<u8>([10]) -> (); // 46
+drop<u8>([11]) -> (); // 47
+u8_to_felt252([12]) -> ([13]); // 48
+store_temp<felt252>([13]) -> ([7]); // 49
+jump() { 57() }; // 50
+branch_align() -> (); // 51
+struct_deconstruct<examples::match_or::P>([4]) -> ([14], [15], [16]); // 52
+drop<u8>([14]) -> (); // 53
+drop<u8>([15]) -> (); // 54
+u8_to_felt252([16]) -> ([17]); // 55
+store_temp<felt252>([17]) -> ([7]); // 56
+return([7]); // 57
+
+examples::match_or::main@0() -> (Unit);
+examples::match_or::foo@33([0]: examples::match_or::MyEnum) -> (felt252);

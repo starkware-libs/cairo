@@ -103,6 +103,7 @@ fn checked_compile_to_sierra(
 #[case::hash_chain("hash_chain")]
 #[case::hash_chain_gas("hash_chain_gas")]
 #[case::pedersen_test("pedersen_test")]
+#[case::match_or("match_or")]
 fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
     compare_contents_or_fix(
         name,
@@ -140,6 +141,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::hash_chain("hash_chain", false)]
 #[case::hash_chain_gas("hash_chain_gas", true)]
 #[case::pedersen_test("pedersen_test", false)]
+#[case::match_or("match_or", false)]
 fn cairo_to_casm(
     #[case] name: &str,
     #[case] enable_gas_checks: bool,
