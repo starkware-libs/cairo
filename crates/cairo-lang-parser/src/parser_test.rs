@@ -168,6 +168,7 @@ cairo_lang_test_utils::test_file_test!(
         item_free_function: "item_free_function",
         function_signature: "function_signature",
         function_call: "function_call",
+        match1: "match",
         unary_only_operators: "unary_only_operators",
         item_trait: "item_trait",
         item_inline_macro: "item_inline_macro",

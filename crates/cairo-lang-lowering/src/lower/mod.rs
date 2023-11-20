@@ -1368,6 +1368,7 @@ fn lower_expr_enum_ctor(
     expr: &semantic::ExprEnumVariantCtor,
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
+    
     log::trace!(
         "Started lowering of an enum c'tor expression: {:?}",
         expr.debug(&ctx.expr_formatter)
