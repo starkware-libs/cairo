@@ -795,8 +795,16 @@ fn compute_expr_match_semantic(
                 // Typecheck pattern, and introduce the new variables to the subscope.
                 // Note that if the arm expr is a block, there will be *another* subscope
                 // for it.
-                let pattern =
-                    compute_pattern_semantic(new_ctx, &syntax_arm.pattern(syntax_db), expr.ty());
+
+                if syntax_arm.patterns(syntax_db).elements(syntax_db).len() != 1 {
+                    new_ctx.diagnostics.report(syntax, Unsupported);
+                }
+
+                let pattern = compute_pattern_semantic(
+                    new_ctx,
+                    syntax_arm.patterns(syntax_db).elements(syntax_db).first().unwrap(),
+                    expr.ty(),
+                );
                 let variables = pattern.variables(&new_ctx.patterns);
                 for v in variables {
                     let var_def = Variable::Local(v.var.clone());

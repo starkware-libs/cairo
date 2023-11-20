@@ -1566,10 +1566,21 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
     /// parsed.
     pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {
-        let pattern = self.try_parse_pattern()?;
+        let pattern_list = self
+            .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
+                Self::try_parse_pattern,
+                is_of_kind!(match_arrow, rparen, block, rbrace, top_level),
+                "pattern",Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
+            );
+        if pattern_list.is_empty() {
+            return Err(TryParseFailure::SkipToken);
+        }
+
+        let pattern_list_green = PatternListOr::new_green(self.db, pattern_list);
+
         let arrow = self.parse_token::<TerminalMatchArrow>();
         let expr = self.parse_expr();
-        Ok(MatchArm::new_green(self.db, pattern, arrow, expr))
+        Ok(MatchArm::new_green(self.db, pattern_list_green, arrow, expr))
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see
