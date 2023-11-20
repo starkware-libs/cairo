@@ -119,11 +119,13 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -355,11 +357,13 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
