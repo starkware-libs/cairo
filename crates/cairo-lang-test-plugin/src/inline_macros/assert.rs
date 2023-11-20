@@ -10,9 +10,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-trait Assertion: NamedPlugin {
+trait CompareAssertionPlugin: NamedPlugin {
     const OPERATOR: &'static str;
-    const OPP_OPERATOR: &'static str;
 
     fn generate_code(
         &self,
@@ -85,14 +84,13 @@ trait Assertion: NamedPlugin {
             )
         };
         let operator = Self::OPERATOR;
-        let opp_operator = Self::OPP_OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if @$lhs_value$ {opp_operator} @$rhs_value$ {{
+                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
@@ -176,46 +174,41 @@ trait Assertion: NamedPlugin {
     }
 }
 
-/// Macro for equality assertion.
-#[derive(Default, Debug)]
-pub struct AssertEqMacro;
-impl NamedPlugin for AssertEqMacro {
-    const NAME: &'static str = "assert_eq";
+macro_rules! define_compare_assert_macro {
+    ($(#[$attr:meta])* $ident:ident, $name:tt, $operator:tt) => {
+        $(#[$attr])*
+        #[derive(Default, Debug)]
+        pub struct $ident;
+        impl NamedPlugin for $ident {
+            const NAME: &'static str = $name;
+        }
+
+        impl CompareAssertionPlugin for $ident {
+            const OPERATOR: &'static str = $operator;
+        }
+
+        impl InlineMacroExprPlugin for $ident {
+            fn generate_code(
+                &self,
+                db: &dyn SyntaxGroup,
+                syntax: &ast::ExprInlineMacro,
+            ) -> InlinePluginResult {
+                CompareAssertionPlugin::generate_code(self, db, syntax)
+            }
+        }
+    };
 }
 
-impl Assertion for AssertEqMacro {
-    const OPERATOR: &'static str = "==";
-    const OPP_OPERATOR: &'static str = "!=";
-}
+define_compare_assert_macro!(
+    /// Macro for equality assertion.
+    AssertEqMacro,
+    "assert_eq",
+    "=="
+);
 
-impl InlineMacroExprPlugin for AssertEqMacro {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
-    ) -> InlinePluginResult {
-        Assertion::generate_code(self, db, syntax)
-    }
-}
-
-/// Macro for not equality assertion.
-#[derive(Default, Debug)]
-pub struct AssertNeMacro;
-impl NamedPlugin for AssertNeMacro {
-    const NAME: &'static str = "assert_ne";
-}
-
-impl Assertion for AssertNeMacro {
-    const OPERATOR: &'static str = "!=";
-    const OPP_OPERATOR: &'static str = "==";
-}
-
-impl InlineMacroExprPlugin for AssertNeMacro {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        syntax: &ast::ExprInlineMacro,
-    ) -> InlinePluginResult {
-        Assertion::generate_code(self, db, syntax)
-    }
-}
+define_compare_assert_macro!(
+    /// Macro for not equality assertion.
+    AssertNeMacro,
+    "assert_ne",
+    "!="
+);
