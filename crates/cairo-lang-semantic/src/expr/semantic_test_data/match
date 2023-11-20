@@ -54,3 +54,820 @@ Match(
 )
 
 //! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match_or
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+enum A {
+    A,
+    B,
+    C
+}
+
+//! > function_body
+let a: A = A::A;
+
+//! > expr_code
+match a {
+    A::A | A::B => 0,
+    A::C => 1,
+}
+
+//! > expected
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::A,
+                            id: VariantId(test::A),
+                            ty: (),
+                            idx: 0,
+                        },
+                        inner_pattern: None,
+                        ty: test::A,
+                    },
+                ),
+                expression: Literal(
+                    ExprLiteral {
+                        value: 0,
+                        ty: core::felt252,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::A,
+                            id: VariantId(test::B),
+                            ty: (),
+                            idx: 1,
+                        },
+                        inner_pattern: None,
+                        ty: test::A,
+                    },
+                ),
+                expression: Literal(
+                    ExprLiteral {
+                        value: 0,
+                        ty: core::felt252,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::A,
+                            id: VariantId(test::C),
+                            ty: (),
+                            idx: 2,
+                        },
+                        inner_pattern: None,
+                        ty: test::A,
+                    },
+                ),
+                expression: Literal(
+                    ExprLiteral {
+                        value: 1,
+                        ty: core::felt252,
+                    },
+                ),
+            },
+        ],
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match_or_variables
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+struct P {
+    x: u8,
+    y: u8,
+    z: u8
+}
+enum MyEnum<T> {
+    A: felt252,
+    B: (felt252, felt252),
+    C: (T, u8, u8),
+    D: P,
+}
+
+//! > function_body
+let a: MyEnum<u8> = MyEnum::A(9);
+
+//! > expr_code
+match a {
+    MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+}
+
+//! > expected
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::A),
+                            ty: core::felt252,
+                            idx: 0,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::B),
+                            ty: (core::felt252, core::felt252),
+                            idx: 1,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                    ],
+                                    ty: (core::felt252, core::felt252),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::C),
+                            ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                            idx: 2,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::integer::u8,
+                                            },
+                                        ),
+                                        Variable(
+                                            t,
+                                        ),
+                                    ],
+                                    ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::D),
+                            ty: test::P,
+                            idx: 3,
+                        },
+                        inner_pattern: Some(
+                            Struct(
+                                PatternStruct {
+                                    concrete_struct_id: test::P,
+                                    field_patterns: [
+                                        (
+                                            Member {
+                                                id: MemberId(test::x),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                x,
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::y),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::z),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                t,
+                                            ),
+                                        ),
+                                    ],
+                                    ty: test::P,
+                                    n_snapshots: 0,
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+        ],
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+error: Match arms have incompatible types: "core::felt252" and "?2"
+ --> lib.cairo:15:60
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                           ^***^
+
+error: Match arms have incompatible types: "core::felt252" and "?3"
+ --> lib.cairo:15:60
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                           ^***^
+
+//! > ==========================================================================
+
+//! > Test match_or_missing_variables
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+struct P {
+    x: u8,
+    y: u8,
+    z: u8
+}
+enum MyEnum<T> {
+    A: felt252,
+    B: (felt252, felt252),
+    C: (T, u8, u8),
+    D: P,
+}
+
+//! > function_body
+let a: MyEnum<u8> = MyEnum::A(9);
+
+//! > expr_code
+match a {
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+}
+
+//! > expected
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::A),
+                            ty: core::felt252,
+                            idx: 0,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: Missing(
+                    ExprMissing {
+                        ty: <missing>,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::B),
+                            ty: (core::felt252, core::felt252),
+                            idx: 1,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            t,
+                                        ),
+                                        Variable(
+                                            y,
+                                        ),
+                                    ],
+                                    ty: (core::felt252, core::felt252),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: Missing(
+                    ExprMissing {
+                        ty: <missing>,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::C),
+                            ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                            idx: 2,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::integer::u8,
+                                            },
+                                        ),
+                                        Variable(
+                                            t,
+                                        ),
+                                    ],
+                                    ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::D),
+                            ty: test::P,
+                            idx: 3,
+                        },
+                        inner_pattern: Some(
+                            Struct(
+                                PatternStruct {
+                                    concrete_struct_id: test::P,
+                                    field_patterns: [
+                                        (
+                                            Member {
+                                                id: MemberId(test::x),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                x,
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::y),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::z),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                t,
+                                            ),
+                                        ),
+                                    ],
+                                    ty: test::P,
+                                    n_snapshots: 0,
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u8>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u8,
+    },
+)
+
+//! > semantic_diagnostics
+error: Identifier not found.
+ --> lib.cairo:14:45
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+                                            ^
+
+error: Identifier not found.
+ --> lib.cairo:14:41
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+                                        ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:14:34
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+                                 ^
+
+error: Missing variable in pattern.
+ --> lib.cairo:14:5
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    ^**********^
+
+error: Missing variable in pattern.
+ --> lib.cairo:14:20
+    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+                   ^***************^
+
+//! > ==========================================================================
+
+//! > Test match_or_wrong_type
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+struct P {
+    x: u8,
+    y: u8,
+    z: u8
+}
+enum MyEnum<T> {
+    A: felt252,
+    B: (felt252, felt252),
+    C: (T, u8, u8),
+    D: P,
+}
+
+//! > function_body
+let a: MyEnum<u32> = MyEnum::A(9);
+
+//! > expr_code
+match a {
+    MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+}
+
+//! > expected
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                            id: VariantId(test::A),
+                            ty: core::felt252,
+                            idx: 0,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u32>,
+                    },
+                ),
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                            id: VariantId(test::B),
+                            ty: (core::felt252, core::felt252),
+                            idx: 1,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                    ],
+                                    ty: (core::felt252, core::felt252),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u32>,
+                    },
+                ),
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                            id: VariantId(test::C),
+                            ty: (core::integer::u32, core::integer::u8, core::integer::u8),
+                            idx: 2,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::integer::u8,
+                                            },
+                                        ),
+                                        Variable(
+                                            t,
+                                        ),
+                                    ],
+                                    ty: (core::integer::u32, core::integer::u8, core::integer::u8),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u32>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U32Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u32,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                            id: VariantId(test::D),
+                            ty: test::P,
+                            idx: 3,
+                        },
+                        inner_pattern: Some(
+                            Struct(
+                                PatternStruct {
+                                    concrete_struct_id: test::P,
+                                    field_patterns: [
+                                        (
+                                            Member {
+                                                id: MemberId(test::x),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                x,
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::y),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                        ),
+                                        (
+                                            Member {
+                                                id: MemberId(test::z),
+                                                ty: core::integer::u8,
+                                                visibility: Private,
+                                            },
+                                            Variable(
+                                                t,
+                                            ),
+                                        ),
+                                    ],
+                                    ty: test::P,
+                                    n_snapshots: 0,
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum::<core::integer::u32>,
+                    },
+                ),
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+        ],
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u8".
+ --> lib.cairo:15:64
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                               ^
+
+error: Expected type "core::integer::u32", found: "core::integer::u8".
+ --> lib.cairo:15:28
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                           ^**************************^
+
+error: Match arms have incompatible types: "core::felt252" and "?2"
+ --> lib.cairo:15:60
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                           ^***^
+
+error: Match arms have incompatible types: "core::felt252" and "?3"
+ --> lib.cairo:15:60
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                           ^***^
