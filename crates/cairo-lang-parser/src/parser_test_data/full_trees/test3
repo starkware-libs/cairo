@@ -169,7 +169,8 @@ false
     │   │       │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │       │   ├── arms (kind: MatchArms)
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
@@ -190,7 +191,8 @@ false
     │   │       │       │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
@@ -335,7 +337,8 @@ false
     │           │       │   ├── lbrace (kind: TokenLBrace): '{'
     │           │       │   ├── arms (kind: MatchArms)
     │           │       │   │   ├── item #0 (kind: MatchArm)
-    │           │       │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprListParenthesized)
     │           │       │   │   │       ├── lparen (kind: TokenLParen): '('
@@ -378,7 +381,8 @@ false
     │           │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │           │       │   │   ├── separator #0 (kind: TokenComma): ','
     │           │       │   │   ├── item #1 (kind: MatchArm)
-    │           │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprFunctionCall)
     │           │       │   │   │       ├── path (kind: ExprPath)
@@ -791,12 +795,13 @@ false
     │   │       │       │   │       └── child #0 (kind: TokenNewline).
     │   │       │       │   ├── arms (kind: MatchArms)
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: TerminalLiteralNumber)
-    │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   ├── token (kind: TokenLiteralNumber): '0'
-    │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: TerminalLiteralNumber)
+    │   │       │       │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
+    │   │       │       │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -843,12 +848,13 @@ false
     │   │       │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: TerminalUnderscore)
-    │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: TerminalUnderscore)
+    │   │       │       │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       ├── token (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1188,12 +1194,13 @@ false
     │           │       │   │       └── child #0 (kind: TokenNewline).
     │           │       │   ├── arms (kind: MatchArms)
     │           │       │   │   ├── item #0 (kind: MatchArm)
-    │           │       │   │   │   ├── pattern (kind: TerminalLiteralNumber)
-    │           │       │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │           │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │           │       │   │   │   │   ├── token (kind: TokenLiteralNumber): '0'
-    │           │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │           │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TerminalLiteralNumber)
+    │           │       │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │           │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
+    │           │       │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │           │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │           │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │           │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1290,12 +1297,13 @@ false
     │           │       │   │   │   └── trailing_trivia (kind: Trivia)
     │           │       │   │   │       └── child #0 (kind: TokenNewline).
     │           │       │   │   ├── item #1 (kind: MatchArm)
-    │           │       │   │   │   ├── pattern (kind: TerminalUnderscore)
-    │           │       │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │           │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │           │       │   │   │   │   ├── token (kind: TokenUnderscore): '_'
-    │           │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │           │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TerminalUnderscore)
+    │           │       │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │           │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   │       ├── token (kind: TokenUnderscore): '_'
+    │           │       │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │           │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │           │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │           │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
