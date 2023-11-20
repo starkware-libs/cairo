@@ -55,7 +55,7 @@ define_libfunc_hierarchy! {
         Null(NullLibfunc),
         NullableFromBox(NullableFromBoxLibfunc),
         MatchNullable(MatchNullableLibfunc),
-        MatchNullableSnapshot(MatchNullableSnapshotLibfunc),
+        ForwardSnapshot(NullableForwardSnapshotLibfunc),
     }, NullableConcreteLibfunc
 }
 
@@ -137,41 +137,24 @@ impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
 }
 pub type MatchNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<MatchNullableLibfuncWrapped>;
 
-/// Libfunc for converting `@Nullable<T>` to either `Box<@T>` or nothing (in the case of `null`).
+/// Libfunc for converting `@Nullable<T>` into `Nullable<@T>`.
 #[derive(Default)]
-pub struct MatchNullableSnapshotLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for MatchNullableSnapshotLibfuncWrapped {
-    const STR_ID: &'static str = "match_nullable_snapshot";
-
+pub struct NullableForwardSnapshotLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for NullableForwardSnapshotLibfuncWrapped {
+    const STR_ID: &'static str = "nullable_forward_snapshot";
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(snapshot_ty(
+        Ok(reinterpret_cast_signature(
+            snapshot_ty(
                 context,
                 context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
-            )?)],
-            branch_signatures: vec![
-                // `null`.
-                BranchSignature {
-                    vars: vec![],
-                    ap_change: SierraApChange::Known { new_vars_only: true },
-                },
-                // `Box<T>`.
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: context
-                            .get_wrapped_concrete_type(BoxType::id(), snapshot_ty(context, ty)?)?,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: true },
-                },
-            ],
-            fallthrough: Some(0),
-        })
+            )?,
+            context.get_wrapped_concrete_type(NullableType::id(), snapshot_ty(context, ty)?)?,
+        ))
     }
 }
-pub type MatchNullableSnapshotLibfunc =
-    WrapSignatureAndTypeGenericLibfunc<MatchNullableSnapshotLibfuncWrapped>;
+pub type NullableForwardSnapshotLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<NullableForwardSnapshotLibfuncWrapped>;

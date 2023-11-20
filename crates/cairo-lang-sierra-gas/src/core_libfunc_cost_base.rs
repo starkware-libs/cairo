@@ -271,7 +271,9 @@ pub fn core_libfunc_cost(
                     std::cmp::max(1, info_provider.type_size(&libfunc.ty).try_into().unwrap());
                 vec![ConstCost::steps(n_steps).into()]
             }
-            BoxConcreteLibfunc::Unbox(_) => vec![ConstCost::default().into()],
+            BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
+                vec![ConstCost::default().into()]
+            }
         },
         Mem(libfunc) => match libfunc {
             StoreTemp(libfunc) => {
@@ -349,10 +351,10 @@ pub fn core_libfunc_cost(
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibfunc::Null(_) => vec![ConstCost::default().into()],
-            NullableConcreteLibfunc::NullableFromBox(_) => vec![ConstCost::default().into()],
-            NullableConcreteLibfunc::MatchNullable(_)
-            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
+            NullableConcreteLibfunc::Null(_)
+            | NullableConcreteLibfunc::NullableFromBox(_)
+            | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ConstCost::default().into()],
+            NullableConcreteLibfunc::MatchNullable(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
         },
