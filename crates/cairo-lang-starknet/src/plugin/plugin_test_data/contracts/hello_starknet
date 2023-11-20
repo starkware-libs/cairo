@@ -127,13 +127,15 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     core::serde::Serde::<usize>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
@@ -618,13 +620,15 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     core::serde::Serde::<usize>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
     pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event

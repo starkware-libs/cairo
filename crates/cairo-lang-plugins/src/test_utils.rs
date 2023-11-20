@@ -31,7 +31,8 @@ pub fn expand_module_text(
             if let ast::MaybeModuleBody::Some(body) = submodule_item.body(syntax_db) {
                 // Recursively expand inline submodules.
                 output.extend([
-                    submodule_item.attributes(syntax_db).node.get_text(syntax_db),
+                    submodule_item.attributes(syntax_db).as_syntax_node().get_text(syntax_db),
+                    submodule_item.visibility(syntax_db).as_syntax_node().get_text(syntax_db),
                     submodule_item.module_kw(syntax_db).as_syntax_node().get_text(syntax_db),
                     submodule_item.name(syntax_db).as_syntax_node().get_text(syntax_db),
                     body.lbrace(syntax_db).as_syntax_node().get_text(syntax_db),

@@ -177,13 +177,15 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
     pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -430,13 +432,15 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
     pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

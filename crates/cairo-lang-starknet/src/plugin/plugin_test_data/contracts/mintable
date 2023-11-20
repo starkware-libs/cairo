@@ -163,12 +163,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     core::serde::Serde::<u256>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__ImplCtor__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -751,12 +753,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     core::serde::Serde::<u256>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
-mod __external {
+
+
+pub mod __external {
     pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__ImplCtor__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

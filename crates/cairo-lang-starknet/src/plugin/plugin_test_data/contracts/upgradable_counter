@@ -220,14 +220,15 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-mod __external {
+
+pub mod __external {
     pub use super::__wrapper__CounterContract__get_counter as get_counter;
     pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
     pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -983,14 +984,15 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-mod __external {
+
+pub mod __external {
     pub use super::__wrapper__CounterContract__get_counter as get_counter;
     pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
     pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
-mod __l1_handler {
+pub mod __l1_handler {
 }
-mod __constructor {
+pub mod __constructor {
     pub use super::__wrapper__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
