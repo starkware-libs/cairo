@@ -10,9 +10,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-trait Assertion: NamedPlugin {
+trait CompareAssertionPlugin: NamedPlugin {
     const OPERATOR: &'static str;
-    const OPP_OPERATOR: &'static str;
 
     fn generate_code(
         &self,
@@ -85,14 +84,13 @@ trait Assertion: NamedPlugin {
             )
         };
         let operator = Self::OPERATOR;
-        let opp_operator = Self::OPP_OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if @$lhs_value$ {opp_operator} @$rhs_value$ {{
+                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
@@ -183,9 +181,8 @@ impl NamedPlugin for AssertEqMacro {
     const NAME: &'static str = "assert_eq";
 }
 
-impl Assertion for AssertEqMacro {
+impl CompareAssertionPlugin for AssertEqMacro {
     const OPERATOR: &'static str = "==";
-    const OPP_OPERATOR: &'static str = "!=";
 }
 
 impl InlineMacroExprPlugin for AssertEqMacro {
@@ -194,7 +191,7 @@ impl InlineMacroExprPlugin for AssertEqMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        Assertion::generate_code(self, db, syntax)
+        CompareAssertionPlugin::generate_code(self, db, syntax)
     }
 }
 
@@ -205,9 +202,8 @@ impl NamedPlugin for AssertNeMacro {
     const NAME: &'static str = "assert_ne";
 }
 
-impl Assertion for AssertNeMacro {
+impl CompareAssertionPlugin for AssertNeMacro {
     const OPERATOR: &'static str = "!=";
-    const OPP_OPERATOR: &'static str = "==";
 }
 
 impl InlineMacroExprPlugin for AssertNeMacro {
@@ -216,6 +212,6 @@ impl InlineMacroExprPlugin for AssertNeMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        Assertion::generate_code(self, db, syntax)
+        CompareAssertionPlugin::generate_code(self, db, syntax)
     }
 }
