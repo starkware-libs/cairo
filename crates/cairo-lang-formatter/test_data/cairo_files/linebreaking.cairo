@@ -15,6 +15,9 @@ fn bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, s
     let y = Struct{first_arg: SubStruct{first_arg: first_arg, second_arg: second_arg, third_arg: third_arg}, second_arg: SubStruct{first_arg: first_arg, second_arg: second_arg, third_arg: third_arg, fourth_arg: fourth_arg}}; 
     let some_tuple = (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg);
     let rec_tuple = ((first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg), (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg, eighth_arg));
+    match 5 {
+        1|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|21|2|2|3=>4,
+    }
 }
 
 impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}

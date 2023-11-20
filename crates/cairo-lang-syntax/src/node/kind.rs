@@ -48,6 +48,7 @@ pub enum SyntaxKind {
     PatternStructParamList,
     PatternTuple,
     PatternList,
+    PatternListOr,
     PatternStructParamWithExpr,
     PatternEnum,
     PatternEnumInnerPattern,
