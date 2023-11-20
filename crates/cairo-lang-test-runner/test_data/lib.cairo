@@ -52,9 +52,13 @@ mod tests {
         let mut contract1 = IBalanceDispatcher { contract_address: address1 };
 
         assert_eq!(contract0.get(), 100);
+        assert_ne!(contract0.get(), 200);
         assert_eq!(contract1.get(), 200);
+        assert_ne!(contract1.get(), 100);
         @contract1.increase(200);
         assert_eq!(contract0.get(), 100);
+        assert_ne!(contract0.get(), 200);
         assert_eq!(contract1.get(), 400);
+        assert_ne!(contract0.get(), 400);
     }
 }

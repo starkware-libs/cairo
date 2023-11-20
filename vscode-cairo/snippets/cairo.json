@@ -220,6 +220,11 @@
     "body": ["assert_eq!($1, $2);"],
     "description": "Creates an simple test"
   },
+  "Creates an not equality assertion with macro": {
+    "prefix": "assert_ne!",
+    "body": ["assert_ne!($1, $2);"],
+    "description": "Creates an simple test"
+  },
   "Creates panic": {
     "prefix": "panic!",
     "body": ["panic!(\"$1\");"],
