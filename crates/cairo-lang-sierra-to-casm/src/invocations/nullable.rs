@@ -22,10 +22,8 @@ pub fn build(
             //    `build_into_box`.
             build_identity(builder)
         }
-        NullableConcreteLibfunc::MatchNullable(_)
-        | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
-            build_nullable_match_nullable(builder)
-        }
+        NullableConcreteLibfunc::MatchNullable(_) => build_nullable_match_nullable(builder),
+        NullableConcreteLibfunc::ForwardSnapshot(_) => build_identity(builder),
     }
 }
 

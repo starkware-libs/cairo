@@ -267,3 +267,39 @@ store_temp<test::Empty>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
+
+//! > ==========================================================================
+
+//! > box_forward_snapshot libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: @Box::<Array<felt252>>) -> Box<@Array<felt252>> {
+    core::box::box_forward_snapshot(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Box<Array<felt252>> = Box<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Box<Array<felt252>>> = Snapshot<Box<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc box_forward_snapshot<Array<felt252>> = box_forward_snapshot<Array<felt252>>;
+libfunc store_temp<Box<Snapshot<Array<felt252>>>> = store_temp<Box<Snapshot<Array<felt252>>>>;
+
+box_forward_snapshot<Array<felt252>>([0]) -> ([1]); // 0
+store_temp<Box<Snapshot<Array<felt252>>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Snapshot<Box<Array<felt252>>>) -> (Box<Snapshot<Array<felt252>>>);
