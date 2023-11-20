@@ -41,7 +41,7 @@ error: Identifier not found.
         (A::b(x), 1, _) => { x },
                              ^
 
-error: Mismatched types. The type test::A cannot be created from a numeric literal.
+error: Mismatched types. The type `test::A` cannot be created from a numeric literal.
  --> lib.cairo:9:10
         (7, 1) => { x },
          ^
@@ -81,7 +81,7 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
         A::b(_) => 1,
         ^**^
 
-error: Mismatched types. The type core::bool cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:15
     match a + 1 {
               ^

@@ -169,7 +169,7 @@ error: Unknown type.
     let b = 123_u129;
             ^******^
 
-error: Mismatched types. The type core::zeroable::NonZero cannot be created from a numeric literal.
+error: Mismatched types. The type `core::zeroable::NonZero` cannot be created from a numeric literal.
  --> lib.cairo:7:13
     let b = 123_NonZero;
             ^*********^
