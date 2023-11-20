@@ -113,9 +113,9 @@ mod v2 {
         // extra data to send to the paymaster.
         paymaster_data: Span<felt252>,
         // The data availability mode for the nonce.
-        nonce_data_availabilty_mode: u32,
+        nonce_data_availability_mode: u32,
         // The data availability mode for the account balance from which fee will be taken.
-        fee_data_availabilty_mode: u32,
+        fee_data_availability_mode: u32,
         // If nonempty, will contain the required data for deploying and initializing an account
         // contract: its class hash, address salt and constructor calldata.
         account_deployment_data: Span<felt252>,

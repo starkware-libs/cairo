@@ -20,7 +20,7 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateConfiguration {
-    /// The root directry of the crate.
+    /// The root directory of the crate.
     pub root: Directory,
     /// The cairo edition of the crate.
     pub edition: Edition,

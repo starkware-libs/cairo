@@ -531,7 +531,7 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
 
 //! > ==========================================================================
 
-//! > Test embeddable impl with exisiting drop impl..
+//! > Test embeddable impl with existing drop impl.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: false)

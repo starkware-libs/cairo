@@ -747,7 +747,7 @@ pub fn module_impl_ids_for_trait_filter(
     Ok(res)
 }
 
-/// Cycle handeling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
+/// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
 pub fn module_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
     _cycle: &[String],
