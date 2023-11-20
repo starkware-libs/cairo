@@ -1789,7 +1789,7 @@ impl LeanGenerator for AutoSpecs {
     }
 
     fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize) {
-        self.push_spec(indent, "false");
+        self.push_spec(indent, "False");
     }
 
     fn generate_advance_pc(
