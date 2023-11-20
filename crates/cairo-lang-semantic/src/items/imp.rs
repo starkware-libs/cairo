@@ -35,7 +35,7 @@ use super::functions::{
 use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use crate::corelib::{copy_trait, core_module, drop_trait};
+use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -720,8 +720,14 @@ pub fn module_impl_ids_for_trait_filter(
         uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
     }
     for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
-        if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
-            uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+        match db.use_resolved_item(use_id) {
+            Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
+                uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+            }
+            Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+                uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+            }
+            _ => {}
         }
     }
     let mut res = Vec::new();
@@ -917,8 +923,7 @@ pub fn find_candidates_at_context(
         }
         res.insert(UninferredImpl::GenericParam(*generic_param_id));
     }
-    let core_module = core_module(db);
-    for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
+    for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0)) {
         let Ok(imps) = db.module_impl_ids_for_trait_filter(*module_id, filter.clone()) else {
             continue;
         };
@@ -932,13 +937,13 @@ pub fn find_candidates_at_context(
 /// Checks if an impl of a trait function with a given self_ty exists.
 /// This function does not change the state of the inference context.
 pub fn can_infer_impl_by_self(
-    ctx: &mut ComputationContext<'_>,
+    ctx: &ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> bool {
-    let mut temp_inference_data = ctx.resolver.inference().temporary_clone();
+    let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, _)) = temp_inference.infer_concrete_trait_by_self(
@@ -1034,7 +1039,7 @@ pub fn filter_candidate_traits(
     candidate_traits: &[TraitId],
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<Vec<TraitFunctionId>> {
+) -> Vec<TraitFunctionId> {
     let mut candidates = Vec::new();
     for trait_id in candidate_traits.iter().copied() {
         let Ok(trait_functions) = ctx.db.trait_functions(trait_id) else {
@@ -1054,7 +1059,7 @@ pub fn filter_candidate_traits(
             }
         }
     }
-    Ok(candidates)
+    candidates
 }
 
 // === Impl Function Declaration ===
