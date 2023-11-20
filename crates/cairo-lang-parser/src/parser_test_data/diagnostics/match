@@ -1,7 +1,6 @@
 //! > Test lbrace in match
 
 //! > test_comments
-// TODO(spapini): Improve diagnostics.
 
 //! > test_runner_name
 get_diagnostics
@@ -19,22 +18,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalMatchArrow.
+error: Missing token TerminalOr.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
 
-error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:2:21
-    match MyStruct{a: 1} {
-                    ^
-
-error: Missing token TerminalComma.
- --> dummy_file.cairo:2:21
-    match MyStruct{a: 1} {
-                    ^
-
-error: Skipped tokens. Expected: match arm.
+error: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
@@ -53,3 +42,28 @@ error: Missing token TerminalUnderscore.
  --> dummy_file.cairo:8:19
       bool::False() => {}
                   ^
+
+//! > ==========================================================================
+
+//! > Test or in match
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+#[derive(Drop)]
+enum MyEnumLong {
+    a,
+    b,
+    c
+}
+fn f() -> felt252 {
+    let e = MyEnumLong::a;
+    match e {
+        MyEnumLong::a | MyEnumLong::b => { 3 },
+        MyEnumLong::c => { 1 },
+    }
+    5
+}
+
+//! > expected_diagnostics
