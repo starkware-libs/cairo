@@ -3201,16 +3201,16 @@ pub struct MatchArm {
     children: Arc<Vec<SyntaxNode>>,
 }
 impl MatchArm {
-    pub const INDEX_PATTERN: usize = 0;
+    pub const INDEX_PATTERNS: usize = 0;
     pub const INDEX_ARROW: usize = 1;
     pub const INDEX_EXPRESSION: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        pattern: PatternGreen,
+        patterns: PatternListOrGreen,
         arrow: TerminalMatchArrowGreen,
         expression: ExprGreen,
     ) -> MatchArmGreen {
-        let children: Vec<GreenId> = vec![pattern.0, arrow.0, expression.0];
+        let children: Vec<GreenId> = vec![patterns.0, arrow.0, expression.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         MatchArmGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::MatchArm,
@@ -3219,8 +3219,8 @@ impl MatchArm {
     }
 }
 impl MatchArm {
-    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[0].clone())
+    pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
+        PatternListOr::from_syntax_node(db, self.children[0].clone())
     }
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
         TerminalMatchArrow::from_syntax_node(db, self.children[1].clone())
@@ -3250,7 +3250,7 @@ impl TypedSyntaxNode for MatchArm {
             kind: SyntaxKind::MatchArm,
             details: GreenNodeDetails::Node {
                 children: vec![
-                    Pattern::missing(db).0,
+                    PatternListOr::missing(db).0,
                     TerminalMatchArrow::missing(db).0,
                     Expr::missing(db).0,
                 ],
@@ -5398,6 +5398,84 @@ impl TypedSyntaxNode for PatternList {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PatternListOr(ElementList<Pattern, 2>);
+impl Deref for PatternListOr {
+    type Target = ElementList<Pattern, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl PatternListOr {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<PatternListOrElementOrSeparatorGreen>,
+    ) -> PatternListOrGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        PatternListOrGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternListOr,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        })))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternListOrPtr(pub SyntaxStablePtrId);
+impl PatternListOrPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> PatternListOr {
+        PatternListOr::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum PatternListOrElementOrSeparatorGreen {
+    Separator(TerminalOrGreen),
+    Element(PatternGreen),
+}
+impl From<TerminalOrGreen> for PatternListOrElementOrSeparatorGreen {
+    fn from(value: TerminalOrGreen) -> Self {
+        PatternListOrElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<PatternGreen> for PatternListOrElementOrSeparatorGreen {
+    fn from(value: PatternGreen) -> Self {
+        PatternListOrElementOrSeparatorGreen::Element(value)
+    }
+}
+impl PatternListOrElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            PatternListOrElementOrSeparatorGreen::Separator(green) => green.0,
+            PatternListOrElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternListOrGreen(pub GreenId);
+impl TypedSyntaxNode for PatternListOr {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternListOr);
+    type StablePtr = PatternListOrPtr;
+    type Green = PatternListOrGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PatternListOrGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternListOr,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PatternListOrPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
