@@ -218,7 +218,12 @@
   "Creates an equality assertion with macro": {
     "prefix": "assert_eq!",
     "body": ["assert_eq!($1, $2);"],
-    "description": "Creates an simple test"
+    "description": "Creates an inline macro for asserting equality."
+  },
+  "Creates an not equality assertion with macro": {
+    "prefix": "assert_ne!",
+    "body": ["assert_ne!($1, $2);"],
+    "description": "Creates an inline macro for asserting non-equality"
   },
   "Creates panic": {
     "prefix": "panic!",
