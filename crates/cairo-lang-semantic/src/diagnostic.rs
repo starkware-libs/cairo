@@ -315,6 +315,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
             }
+            SemanticDiagnosticKind::MissingVariableInPattern => {
+                "Missing variable in pattern.".into()
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{member_name}" on struct "{}"."#,
@@ -767,6 +770,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound {
         name: SmolStr,
     },
+    MissingVariableInPattern,
     StructMemberRedefinition {
         struct_id: StructId,
         member_name: SmolStr,

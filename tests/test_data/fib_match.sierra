@@ -18,8 +18,9 @@ libfunc felt252_sub = felt252_sub;
 libfunc felt252_const<2> = felt252_const<2>;
 libfunc felt252_const<3> = felt252_const<3>;
 libfunc felt252_const<4> = felt252_const<4>;
-libfunc felt252_const<5> = felt252_const<5>;
+libfunc felt252_const<500> = felt252_const<500>;
 libfunc function_call<user@examples::fib_match::fib> = function_call<user@examples::fib_match::fib>;
+libfunc felt252_const<5> = felt252_const<5>;
 libfunc felt252_mul = felt252_mul;
 libfunc store_local<felt252> = store_local<felt252>;
 libfunc felt252_add = felt252_add;
@@ -89,7 +90,7 @@ felt252_is_zero([27]) { fallthrough() 67([28]) }; // 60
 branch_align() -> (); // 61
 drop<felt252>([0]) -> (); // 62
 drop<Uninitialized<felt252>>([2]) -> (); // 63
-felt252_const<5>() -> ([29]); // 64
+felt252_const<500>() -> ([29]); // 64
 store_temp<felt252>([29]) -> ([30]); // 65
 jump() { 88() }; // 66
 branch_align() -> (); // 67

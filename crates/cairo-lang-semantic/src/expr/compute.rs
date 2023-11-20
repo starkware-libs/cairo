@@ -797,40 +797,71 @@ fn compute_expr_match_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
-    let pattern_and_expr_options: Vec<_> = syntax_arms
+    let patterns_and_exprs: Vec<_> = syntax_arms
         .iter()
-        .map(|syntax_arm| {
+        .flat_map(|syntax_arm| {
             let arm_expr_syntax = syntax_arm.expression(syntax_db);
-            ctx.run_in_subscope(|new_ctx| {
-                // Typecheck pattern, and introduce the new variables to the subscope.
-                // Note that if the arm expr is a block, there will be *another* subscope
-                // for it.
 
-                if syntax_arm.patterns(syntax_db).elements(syntax_db).len() != 1 {
-                    new_ctx.diagnostics.report(syntax, Unsupported);
-                }
+            let mut arm_patterns_variables = UnorderedHashMap::default();
+            let (patterns_and_exprs, patterns_variables_len): (Vec<_>, Vec<_>) = syntax_arm
+                .patterns(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .map(|pattern_syntax| {
+                    // Typecheck pattern, and introduce the new variables to the subscope.
+                    // Note that if the arm expr is a block, there will be *another* subscope
+                    // for it.
+                    ctx.run_in_subscope(|new_ctx| {
+                        let pattern: PatternAndId =
+                            compute_pattern_semantic(new_ctx, pattern_syntax, expr.ty());
+                        let variables = pattern.variables(&new_ctx.patterns);
+                        let variables_len = variables.len();
+                        for variable in variables {
+                            match arm_patterns_variables.entry(variable.name.clone()) {
+                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                    if *entry.get() != variable.var.ty {
+                                        new_ctx.diagnostics.report(
+                                            pattern_syntax,
+                                            WrongType {
+                                                expected_ty: *entry.get(),
+                                                actual_ty: variable.var.ty,
+                                            },
+                                        );
+                                    }
+                                }
+                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(variable.var.ty);
+                                }
+                            }
+                            let var_def = Variable::Local(variable.var.clone());
+                            // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                            // insertion.
+                            new_ctx.environment.variables.insert(variable.name, var_def.clone());
+                            new_ctx.semantic_defs.insert(var_def.id(), var_def);
+                        }
+                        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
+                        ((pattern, arm_expr), variables_len)
+                    })
+                })
+                .unzip();
 
-                let pattern = compute_pattern_semantic(
-                    new_ctx,
-                    syntax_arm.patterns(syntax_db).elements(syntax_db).first().unwrap(),
-                    expr.ty(),
-                );
-                let variables = pattern.variables(&new_ctx.patterns);
-                for v in variables {
-                    let var_def = Variable::Local(v.var.clone());
-                    // TODO(spapini): Wrap this in a function to couple with semantic_defs
-                    // insertion.
-                    new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
-                    new_ctx.semantic_defs.insert(var_def.id(), var_def);
+            for (pattern_syntax, variables_len) in syntax_arm
+                .patterns(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .zip(patterns_variables_len.iter())
+            {
+                if *variables_len != arm_patterns_variables.len() {
+                    ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
                 }
-                let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                Ok((pattern, arm_expr))
-            })
+            }
+
+            patterns_and_exprs
         })
         .collect();
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
-    for (_, expr) in pattern_and_expr_options.iter().flatten() {
+    for (_, expr) in patterns_and_exprs.iter() {
         if let Err((match_ty, arm_ty)) =
             helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
         {
@@ -841,8 +872,7 @@ fn compute_expr_match_semantic(
         }
     }
     // Compute semantic representation of the match arms.
-    let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
-    let semantic_arms = pattern_and_exprs
+    let semantic_arms = patterns_and_exprs
         .into_iter()
         .map(|(pattern, arm_expr)| MatchArm { pattern: pattern.id, expression: arm_expr.id })
         .collect();
