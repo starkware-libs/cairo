@@ -19,7 +19,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenRBrack
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
-            SyntaxKind::TokenNot
+            SyntaxKind::TokenBang
                 if matches!(
                     grandparent_kind(db, self),
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
@@ -70,8 +70,8 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
-            | SyntaxKind::TokenNot
-            | SyntaxKind::TokenBitNot
+            | SyntaxKind::TokenBang
+            | SyntaxKind::TokenTilde
             | SyntaxKind::TokenAt
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
@@ -101,7 +101,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
-            SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
+            SyntaxKind::TokenMinus | SyntaxKind::TokenStar => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenPlus
@@ -457,7 +457,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalMul if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                SyntaxKind::TerminalStar
+                    if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         9,
                         BreakLinePointIndentation::Indented,
@@ -465,7 +467,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalDiv => {
+                SyntaxKind::TerminalSlash => {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         9,
                         BreakLinePointIndentation::Indented,
@@ -505,7 +507,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalXor => {
+                SyntaxKind::TerminalCaret => {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         14,
                         BreakLinePointIndentation::Indented,
@@ -524,9 +526,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::TokenEq
                 | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenMinusEq
-                | SyntaxKind::TokenMulEq
-                | SyntaxKind::TokenDivEq
-                | SyntaxKind::TokenModEq => {
+                | SyntaxKind::TokenStarEq
+                | SyntaxKind::TokenSlashEq
+                | SyntaxKind::TokenPercentEq => {
                     BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                         16,
                         BreakLinePointIndentation::Indented,

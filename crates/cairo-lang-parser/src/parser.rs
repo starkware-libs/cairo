@@ -235,7 +235,7 @@ impl<'a> Parser<'a> {
                 // TODO(Gil): Consider adding a lookahead capability to the lexer to avoid this.
                 let ident = self.take_raw();
                 match self.peek().kind {
-                    SyntaxKind::TerminalNot => {
+                    SyntaxKind::TerminalBang => {
                         // Complete the `take`ing of the identifier.
                         let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
                         Ok(self.expect_item_inline_macro(attributes, macro_name).into())
@@ -260,7 +260,7 @@ impl<'a> Parser<'a> {
                             .parse_item_inline_macro_given_bang(
                                 attributes,
                                 macro_name,
-                                TerminalNot::missing(self.db),
+                                TerminalBang::missing(self.db),
                             )
                             .into())
                     }
@@ -940,13 +940,13 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Assumes the current token is TerminalNot.
+    /// Assumes the current token is TerminalBang.
     fn expect_item_inline_macro(
         &mut self,
         attributes: AttributeListGreen,
         name: TerminalIdentifierGreen,
     ) -> ItemInlineMacroGreen {
-        let bang = self.parse_token::<TerminalNot>();
+        let bang = self.parse_token::<TerminalBang>();
         self.parse_item_inline_macro_given_bang(attributes, name, bang)
     }
 
@@ -955,7 +955,7 @@ impl<'a> Parser<'a> {
         &mut self,
         attributes: AttributeListGreen,
         name: TerminalIdentifierGreen,
-        bang: TerminalNotGreen,
+        bang: TerminalBangGreen,
     ) -> ItemInlineMacroGreen {
         let arguments = self.parse_wrapped_arg_list();
         let semicolon = self.parse_token::<TerminalSemicolon>();
@@ -988,12 +988,12 @@ impl<'a> Parser<'a> {
         // `get_post_operator_precedence`.
         match self.peek().kind {
             SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
-            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq>().into(),
-            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
-            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq>().into(),
-            SyntaxKind::TerminalMod => self.take::<TerminalMod>().into(),
-            SyntaxKind::TerminalModEq => self.take::<TerminalModEq>().into(),
+            SyntaxKind::TerminalStar => self.take::<TerminalStar>().into(),
+            SyntaxKind::TerminalStarEq => self.take::<TerminalStarEq>().into(),
+            SyntaxKind::TerminalSlash => self.take::<TerminalSlash>().into(),
+            SyntaxKind::TerminalSlashEq => self.take::<TerminalSlashEq>().into(),
+            SyntaxKind::TerminalPercent => self.take::<TerminalPercent>().into(),
+            SyntaxKind::TerminalPercentEq => self.take::<TerminalPercentEq>().into(),
             SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
             SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
@@ -1009,7 +1009,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
             SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
             SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
-            SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
+            SyntaxKind::TerminalCaret => self.take::<TerminalCaret>().into(),
             _ => unreachable!(),
         }
     }
@@ -1018,10 +1018,10 @@ impl<'a> Parser<'a> {
     fn expect_unary_operator(&mut self) -> UnaryOperatorGreen {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
-            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
-            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot>().into(),
+            SyntaxKind::TerminalBang => self.take::<TerminalBang>().into(),
+            SyntaxKind::TerminalTilde => self.take::<TerminalTilde>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+            SyntaxKind::TerminalStar => self.take::<TerminalStar>().into(),
             _ => unreachable!(),
         }
     }
@@ -1110,7 +1110,7 @@ impl<'a> Parser<'a> {
                     SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                         Ok(self.expect_constructor_call(path).into())
                     }
-                    SyntaxKind::TerminalNot => Ok(self.expect_macro_call(path).into()),
+                    SyntaxKind::TerminalBang => Ok(self.expect_macro_call(path).into()),
                     _ => Ok(path.into()),
                 }
             }
@@ -1199,10 +1199,10 @@ impl<'a> Parser<'a> {
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
     }
 
-    /// Assumes the current token is TerminalNot.
+    /// Assumes the current token is TerminalBang.
     /// Expected pattern: `!<WrappedArgList>`
     fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
-        let bang = self.take::<TerminalNot>();
+        let bang = self.take::<TerminalBang>();
         let macro_name = path;
         let wrapped_expr_list = self.parse_wrapped_arg_list();
         ExprInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list)
@@ -1567,7 +1567,7 @@ impl<'a> Parser<'a> {
     /// parsed.
     pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {
         let pattern = self.try_parse_pattern()?;
-        let arrow = self.parse_token::<TerminalMatchArrow>();
+        let arrow = self.parse_token::<TerminalFatArrow>();
         let expr = self.parse_expr();
         Ok(MatchArm::new_green(self.db, pattern, arrow, expr))
     }

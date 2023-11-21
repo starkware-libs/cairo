@@ -19,7 +19,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalMatchArrow.
+error: Missing token TerminalFatArrow.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
@@ -39,7 +39,7 @@ error: Skipped tokens. Expected: match arm.
     match MyStruct{a: 1} {
                     ^
 
-error: Missing token TerminalMatchArrow.
+error: Missing token TerminalFatArrow.
  --> dummy_file.cairo:2:24
     match MyStruct{a: 1} {
                        ^

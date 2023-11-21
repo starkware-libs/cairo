@@ -126,11 +126,11 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: ExprUnary)
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TokenNot): '!'
+    │   │       │   │   │       ├── op (kind: TokenBang): '!'
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TokenMinus): '-'
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TokenNot): '!'
+    │   │       │   │   │               ├── op (kind: TokenBang): '!'
     │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
@@ -160,7 +160,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
     │   │       │   │   │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
-    │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
     │   │       │   │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
@@ -172,7 +172,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
     │   │       │   │   │   │   │   ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   └── separator #1 (kind: TokenComma): ','
     │   │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
@@ -255,7 +255,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       │   │   │       ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │       │   └── item #1 (kind: MatchArm)
@@ -270,7 +270,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       │       │       ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │       │       └── rparen (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │       ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
@@ -708,7 +708,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │       │   │   │   │       ├── pattern (kind: TokenUnderscore): '_'
     │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
-    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
@@ -725,7 +725,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
-    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   │       │       │   │   ├── separator #1 (kind: TokenComma): ','
     │   │       │       │   │   ├── item #2 (kind: MatchArm)
@@ -737,7 +737,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'VEmpty'
     │   │       │       │   │   │   │   └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
-    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   └── separator #2 (kind: TokenComma): ','
     │   │       │       │   └── rbrace (kind: TokenRBrace): '}'
@@ -795,7 +795,7 @@ error: Missing tokens. Expected an item after attributes.
     │   ├── child #11 (kind: ItemInlineMacro)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'inline_item_macro'
-    │   │   ├── bang (kind: TokenNot): '!'
+    │   │   ├── bang (kind: TokenBang): '!'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── arguments (kind: ArgList)
@@ -1096,9 +1096,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TerminalNot)
+    │   │       │   │   │       ├── op (kind: TerminalBang)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │       │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TerminalMinus)
@@ -1106,9 +1106,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TerminalNot)
+    │   │       │   │   │               ├── op (kind: TerminalBang)
     │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │               │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │               │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │               └── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │                   ├── leading_trivia (kind: Trivia) []
@@ -1198,9 +1198,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │   ├── token (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │   │   │   │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
@@ -1234,9 +1234,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │   ├── token (kind: TokenUnderscore): '_'
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │   │   │   │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │   └── expression (kind: TerminalLiteralNumber)
@@ -1466,9 +1466,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   │   │           ├── token (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │   │               └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │   │   │   │       │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │   │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │   │   └── expression (kind: TerminalLiteralNumber)
@@ -1511,9 +1511,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       │           ├── token (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │       │               └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │       ├── arrow (kind: TerminalMatchArrow)
+    │   │       │   │   │   │       │       ├── arrow (kind: TerminalFatArrow)
     │   │       │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │       │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │   │   │   │       │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │       │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │       └── expression (kind: TerminalLiteralNumber)
@@ -2627,9 +2627,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │           ├── token (kind: TokenRParen): ')'
     │   │       │       │   │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │       │   │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   └── expression (kind: TerminalLiteralNumber)
@@ -2675,9 +2675,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │           ├── token (kind: TokenRParen): ')'
     │   │       │       │   │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │       │   │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   └── expression (kind: TerminalLiteralNumber)
@@ -2709,9 +2709,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │   │               └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   │   └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
-    │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
+    │   │       │       │   │   │   ├── arrow (kind: TerminalFatArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   │   ├── token (kind: TokenFatArrow): '=>'
     │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   └── expression (kind: TerminalLiteralNumber)
@@ -2875,9 +2875,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   │   └── child #0 (kind: TokenNewline).
     │   │   │   ├── token (kind: TokenIdentifier): 'inline_item_macro'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   ├── bang (kind: TerminalNot)
+    │   │   ├── bang (kind: TerminalBang)
     │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   ├── token (kind: TokenNot): '!'
+    │   │   │   ├── token (kind: TokenBang): '!'
     │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TerminalLParen)

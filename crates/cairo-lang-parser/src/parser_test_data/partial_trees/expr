@@ -22,7 +22,7 @@ StatementExpr
     │   ├── lhs (kind: ExprUnary)
     │   │   ├── op (kind: TokenMinus): '-'
     │   │   └── expr (kind: TokenLiteralNumber): '3'
-    │   ├── op (kind: TokenMul): '*'
+    │   ├── op (kind: TokenStar): '*'
     │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
 
@@ -54,6 +54,6 @@ StatementExpr
     │   │   └── expr (kind: ExprPath)
     │   │       └── item #0 (kind: PathSegmentSimple)
     │   │           └── ident (kind: TokenIdentifier): 'a'
-    │   ├── op (kind: TokenMul): '*'
+    │   ├── op (kind: TokenStar): '*'
     │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
