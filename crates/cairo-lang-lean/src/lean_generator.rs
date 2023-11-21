@@ -665,7 +665,7 @@ impl<'a> LeanFuncInfo<'a> {
         }
 
         // Fallthrough branch
-        HashMap::from([("Fallthrough".into(), 0)])
+        HashMap::from([("Fallthrough".into(), rc_count)])
     }
 
     /// Constructs the set of labels of all return blocks reachable from the given position.
@@ -2091,7 +2091,7 @@ impl AutoProof {
                 self.push_main(indent, "constructor ; norm_num1");
             }
             self.push_main(indent, "constructor");
-            self.push_main(indent, &format!("· arith_simps ; exact {rc_cond_hyp}"));
+            self.push_main(indent, &format!("· arith_simps ; rw [{rc_cond_hyp}] ; try {{ norm_cast }}"));
 
             self.push_main(indent, "intro rc_h_range_check");
         }
@@ -2648,7 +2648,7 @@ impl LeanGenerator for AutoProof {
 
                 rc_ret_name = ret_name;
             } else if pos == branch_id_pos {
-                if is_last {
+                if is_last ||  explicit_len == 0 {
                     self.push_final4_with_comma(0,  &format!("exact ret_{ret_name}"));
                 } else {
                     self.push_final4_with_comma(0,  &format!("use_only ret_{ret_name}"));
