@@ -80,8 +80,6 @@ fn build_withdraw_gas(
         .copied()
         .ok_or(InvocationError::UnknownVariableData)?;
 
-    check_zero_precost_values(variable_values, builder.idx)?;
-
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
         tempvar has_enough_gas;

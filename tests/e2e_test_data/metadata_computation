@@ -726,6 +726,118 @@ ret;
 
 //! > ==========================================================================
 
+//! > Precost gas mismatch.
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+fn foo() -> u128 {
+    match core::gas::withdraw_gas() {
+        Option::None => 2,
+        Option::Some(_) => 3_u128 & 1,
+    }
+}
+
+//! > gas_solution_lp
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 280})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Bitwise: 1, Const: 990})
+
+//! > gas_solution_linear
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 190})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Const: 1680})
+
+//! > ap_solution_lp
+#14: 2
+
+test::foo: 8
+
+//! > ap_solution_linear
+#14: 1
+
+test::foo: 14
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc u128_const<3> = u128_const<3>;
+libfunc u128_const<1> = u128_const<1>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc jump = jump;
+libfunc u128_const<2> = u128_const<2>;
+
+withdraw_gas([0], [1]) { fallthrough([3], [4]) 14([5], [6]) }; // 0
+branch_align() -> (); // 1
+u128_const<3>() -> ([7]); // 2
+u128_const<1>() -> ([8]); // 3
+store_temp<u128>([7]) -> ([7]); // 4
+store_temp<u128>([8]) -> ([8]); // 5
+bitwise([2], [7], [8]) -> ([9], [10], [11], [12]); // 6
+drop<u128>([11]) -> (); // 7
+drop<u128>([12]) -> (); // 8
+store_temp<RangeCheck>([3]) -> ([13]); // 9
+store_temp<GasBuiltin>([4]) -> ([14]); // 10
+store_temp<Bitwise>([9]) -> ([15]); // 11
+store_temp<u128>([10]) -> ([16]); // 12
+jump() { 20() }; // 13
+branch_align() -> (); // 14
+u128_const<2>() -> ([17]); // 15
+store_temp<RangeCheck>([5]) -> ([13]); // 16
+store_temp<GasBuiltin>([6]) -> ([14]); // 17
+store_temp<Bitwise>([2]) -> ([15]); // 18
+store_temp<u128>([17]) -> ([16]); // 19
+return([13], [14], [15], [16]); // 20
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise) -> (RangeCheck, GasBuiltin, Bitwise, u128);
+
+//! > casm
+call rel 41;
+[ap + 0] = [ap + -1] + 40, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 1], ap++;
+[ap + 0] = [ap + -1] + 190, ap++;
+%{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -4] %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 18;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + -1] = [[fp + -5] + 0];
+[ap + 0] = 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [fp + -3] + 5, ap++;
+[ap + 0] = [[fp + -3] + 2], ap++;
+jmp rel 10;
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 2, ap++;
+ret;
+
+//! > ==========================================================================
+
 //! > Function overuse ap-changes.
 
 //! > test_runner_name
