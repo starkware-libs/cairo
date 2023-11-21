@@ -22,6 +22,8 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
     }
+    /// Wraps a diagnostic that originated from a plugin generated file to the original file.
+    fn map_plugin_diagnostic(&self, db: &Self::DbType, user_location: DiagnosticLocation) -> Self;
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }

@@ -115,6 +115,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
         }
         self.location.stable_location.diagnostic_location(db.upcast())
     }
+
+    fn map_plugin_diagnostic(&self, _db: &Self::DbType, _location: DiagnosticLocation) -> Self {
+        todo!()
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

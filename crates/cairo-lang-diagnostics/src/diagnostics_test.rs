@@ -30,6 +30,14 @@ impl DiagnosticEntry for SimpleDiag {
             },
         }
     }
+
+    fn map_plugin_diagnostic(
+        &self,
+        _db: &dyn cairo_lang_filesystem::db::FilesGroup,
+        _location: DiagnosticLocation,
+    ) -> Self {
+        unreachable!("SimpleDiag doesn't support wrapping.")
+    }
 }
 
 fn setup() -> (FilesDatabaseForTesting, FileId) {
