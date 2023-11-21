@@ -104,15 +104,16 @@ impl WithdrawGasBranchInfo {
         &self,
         token_usages: TokenUsages,
     ) -> ConstCost {
-        let cost_computation: i32 = if self.with_builtin_costs {
-            BuiltinCostWithdrawGasLibfunc::cost_computation_steps(token_usages).into_or_panic()
-        } else {
-            0
-        };
+        let cost_computation: i32 =
+            BuiltinCostWithdrawGasLibfunc::cost_computation_steps(token_usages).into_or_panic();
         let mut steps = 3 + cost_computation;
+        // If we require builtin costs, we need to add steps for builtin cost table fetch.
+        if !self.with_builtin_costs && cost_computation > 0 {
+            steps += 4;
+        }
         // Failure branch have some additional costs.
         if !self.success {
-            if self.with_builtin_costs {
+            if self.with_builtin_costs || cost_computation > 0 {
                 // The additional jump to failure branch, and an additional minus 1 for the
                 // range checked gas counter result.
                 steps += 2;
