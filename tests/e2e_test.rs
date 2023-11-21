@@ -192,6 +192,7 @@ fn run_e2e_test(
         function_set_costs: enforced_costs,
         linear_gas_solver: false,
         linear_ap_change_solver: false,
+        skip_comparisons: true,
     };
     let metadata = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
