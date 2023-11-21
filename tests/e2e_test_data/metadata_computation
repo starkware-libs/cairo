@@ -726,6 +726,137 @@ ret;
 
 //! > ==========================================================================
 
+//! > Precost gas mismatch.
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+fn foo() -> u128 {
+    core::gas::withdraw_gas().unwrap();
+    3_u128 & 1
+}
+
+//! > gas_solution
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Bitwise: 1, Const: 1370})
+
+//! > gas_solution_no_solver
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 10})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#16: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Const: 2070})
+
+//! > ap_solution
+test::foo: 10
+
+//! > ap_solution_no_solver
+#1: 1
+
+test::foo: 17
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u128> = Struct<ut@Tuple, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc u128_const<3> = u128_const<3>;
+libfunc u128_const<1> = u128_const<1>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+libfunc struct_construct<Tuple<u128>> = struct_construct<Tuple<u128>>;
+libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<core::panics::PanicResult::<(core::integer::u128,)>> = store_temp<core::panics::PanicResult::<(core::integer::u128,)>>;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc felt252_const<29721761890975875353235833581453094220424382983267374> = felt252_const<29721761890975875353235833581453094220424382983267374>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>;
+
+withdraw_gas([0], [1]) { fallthrough([3], [4]) 16([5], [6]) }; // 0
+branch_align() -> (); // 1
+u128_const<3>() -> ([7]); // 2
+u128_const<1>() -> ([8]); // 3
+store_temp<u128>([7]) -> ([7]); // 4
+store_temp<u128>([8]) -> ([8]); // 5
+bitwise([2], [7], [8]) -> ([9], [10], [11], [12]); // 6
+drop<u128>([11]) -> (); // 7
+drop<u128>([12]) -> (); // 8
+struct_construct<Tuple<u128>>([10]) -> ([13]); // 9
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>([13]) -> ([14]); // 10
+store_temp<RangeCheck>([3]) -> ([3]); // 11
+store_temp<GasBuiltin>([4]) -> ([4]); // 12
+store_temp<Bitwise>([9]) -> ([9]); // 13
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([14]) -> ([14]); // 14
+return([3], [4], [9], [14]); // 15
+branch_align() -> (); // 16
+array_new<felt252>() -> ([15]); // 17
+felt252_const<29721761890975875353235833581453094220424382983267374>() -> ([16]); // 18
+store_temp<felt252>([16]) -> ([16]); // 19
+array_append<felt252>([15], [16]) -> ([17]); // 20
+struct_construct<core::panics::Panic>() -> ([18]); // 21
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([18], [17]) -> ([19]); // 22
+enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([19]) -> ([20]); // 23
+store_temp<RangeCheck>([5]) -> ([5]); // 24
+store_temp<GasBuiltin>([6]) -> ([6]); // 25
+store_temp<Bitwise>([2]) -> ([2]); // 26
+store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([20]) -> ([20]); // 27
+return([5], [6], [2], [20]); // 28
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise) -> (RangeCheck, GasBuiltin, Bitwise, core::panics::PanicResult::<(core::integer::u128,)>);
+
+//! > casm
+%{ memory[ap + 0] = 0 <= memory[fp + -4] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -4] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 22;
+[fp + -4] = [ap + 0] + 0, ap++;
+[ap + -1] = [[fp + -5] + 0];
+[ap + 0] = 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [fp + -3] + 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -3] + 2], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -7] + 1, ap++;
+ret;
+
+//! > ==========================================================================
+
 //! > Function overuse ap-changes.
 
 //! > test_runner_name
