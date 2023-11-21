@@ -396,7 +396,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
-                        diagnostics_mappings: Arc::new(generated.diagnostics_mappings),
+                        code_mappings: Arc::new(generated.code_mappings),
                         kind: FileKind::Module,
                     }));
                     generated_file_infos.push(Some(GeneratedFileInfo {

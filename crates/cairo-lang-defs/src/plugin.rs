@@ -2,7 +2,7 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_filesystem::ids::DiagnosticMapping;
+use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -42,9 +42,9 @@ pub struct PluginGeneratedFile {
     pub name: SmolStr,
     /// Code content for the file.
     pub content: String,
-    /// A diagnostics mapper, to allow more readable diagnostics that originate in plugin generated
+    /// A code mapper, to allow more readable diagnostics that originate in plugin generated
     /// virtual files.
-    pub diagnostics_mappings: Vec<DiagnosticMapping>,
+    pub code_mappings: Vec<CodeMapping>,
     /// Arbitrary data that the plugin generates along with the file.
     pub aux_data: Option<DynGeneratedFileAuxData>,
 }

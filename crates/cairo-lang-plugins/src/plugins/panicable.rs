@@ -135,7 +135,7 @@ fn generate_panicable_code(
         code: Some(PluginGeneratedFile {
             name: "panicable".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,

@@ -33,7 +33,7 @@ impl MacroPlugin for ConfigPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
                     content: builder.code,
-                    diagnostics_mappings: builder.diagnostics_mappings,
+                    code_mappings: builder.code_mappings,
                     aux_data: None,
                 }),
                 diagnostics,

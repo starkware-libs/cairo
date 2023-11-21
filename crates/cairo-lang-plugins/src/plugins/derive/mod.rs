@@ -291,7 +291,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: result.impls.join(""),
-                diagnostics_mappings: Default::default(),
+                code_mappings: Default::default(),
                 aux_data: None,
             })
         },

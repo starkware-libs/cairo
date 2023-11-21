@@ -228,7 +228,7 @@ impl MacroPlugin for DummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt".into(),
                         content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db)),
-                        diagnostics_mappings: Default::default(),
+                        code_mappings: Default::default(),
                         aux_data: None,
                     }),
                     diagnostics: vec![],
@@ -239,7 +239,7 @@ impl MacroPlugin for DummyPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
-                    diagnostics_mappings: Default::default(),
+                    code_mappings: Default::default(),
                     aux_data: None,
                 }),
                 diagnostics: vec![PluginDiagnostic {
@@ -347,7 +347,7 @@ impl MacroPlugin for FooToBarPlugin {
             code: Some(PluginGeneratedFile {
                 name: "virt".into(),
                 content: "fn bar() {}".to_string(),
-                diagnostics_mappings: vec![],
+                code_mappings: vec![],
                 aux_data: None,
             }),
             diagnostics: vec![],

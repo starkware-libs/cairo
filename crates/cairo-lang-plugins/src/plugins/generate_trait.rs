@@ -203,7 +203,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,

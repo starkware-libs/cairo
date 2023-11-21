@@ -99,7 +99,7 @@ fn get_dep_component_generate_code_helper(
         code: Some(PluginGeneratedFile {
             name: "get_dep_component_inline_macro".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],
