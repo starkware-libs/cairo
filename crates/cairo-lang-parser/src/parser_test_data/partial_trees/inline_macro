@@ -20,7 +20,7 @@ ExprInlineMacro
     ├── path (kind: ExprPath)
     │   └── item #0 (kind: PathSegmentSimple)
     │       └── ident (kind: TokenIdentifier): 'println'
-    ├── bang (kind: TokenNot): '!'
+    ├── bang (kind: TokenBang): '!'
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
         ├── arguments (kind: ArgList)

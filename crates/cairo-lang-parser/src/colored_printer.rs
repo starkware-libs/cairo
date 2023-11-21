@@ -61,9 +61,9 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenIdentifier => text.truecolor(255, 255, 100), // Yellow
         SyntaxKind::TokenPlus
         | SyntaxKind::TokenMinus
-        | SyntaxKind::TokenMul
-        | SyntaxKind::TokenDiv
-        | SyntaxKind::TokenMod
+        | SyntaxKind::TokenStar
+        | SyntaxKind::TokenSlash
+        | SyntaxKind::TokenPercent
         | SyntaxKind::TokenDot => text.bright_magenta(),
         SyntaxKind::TokenLiteralNumber
         | SyntaxKind::TokenFalse
@@ -97,10 +97,10 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenSemicolon
         | SyntaxKind::TokenAnd
         | SyntaxKind::TokenAndAnd
-        | SyntaxKind::TokenOr
-        | SyntaxKind::TokenOrOr
-        | SyntaxKind::TokenXor
-        | SyntaxKind::TokenNot
+        | SyntaxKind::TokenPipe
+        | SyntaxKind::TokenPipePipe
+        | SyntaxKind::TokenCaret
+        | SyntaxKind::TokenBang
         | SyntaxKind::TokenQuestionMark
         | SyntaxKind::TokenUnderscore
         | SyntaxKind::TokenHash => text.truecolor(255, 180, 255), // Pink

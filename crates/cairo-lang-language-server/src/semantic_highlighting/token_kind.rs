@@ -50,7 +50,7 @@ impl SemanticTokenKind {
             SyntaxKind::TokenIdentifier => {}
             _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
-            SyntaxKind::TokenNot
+            SyntaxKind::TokenBang
                 if matches!(
                     grandparent_kind(syntax_db, &node),
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
@@ -68,20 +68,20 @@ impl SemanticTokenKind {
             }
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
-            | SyntaxKind::TokenOr
-            | SyntaxKind::TokenOrOr
+            | SyntaxKind::TokenPipe
+            | SyntaxKind::TokenPipePipe
             | SyntaxKind::TokenEqEq
             | SyntaxKind::TokenNeq
             | SyntaxKind::TokenGE
             | SyntaxKind::TokenGT
             | SyntaxKind::TokenLE
             | SyntaxKind::TokenLT
-            | SyntaxKind::TokenNot
+            | SyntaxKind::TokenBang
             | SyntaxKind::TokenPlus
             | SyntaxKind::TokenMinus
-            | SyntaxKind::TokenMul
-            | SyntaxKind::TokenDiv
-            | SyntaxKind::TokenMod => return Some(SemanticTokenKind::Operator),
+            | SyntaxKind::TokenStar
+            | SyntaxKind::TokenSlash
+            | SyntaxKind::TokenPercent => return Some(SemanticTokenKind::Operator),
             SyntaxKind::TokenSingleLineComment => return Some(SemanticTokenKind::Comment),
             SyntaxKind::TokenShortString | SyntaxKind::TokenString => {
                 return Some(SemanticTokenKind::String);

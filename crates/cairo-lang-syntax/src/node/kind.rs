@@ -205,10 +205,10 @@ pub enum SyntaxKind {
     TerminalColonColon,
     TokenComma,
     TerminalComma,
-    TokenDiv,
-    TerminalDiv,
-    TokenDivEq,
-    TerminalDivEq,
+    TokenSlash,
+    TerminalSlash,
+    TokenSlashEq,
+    TerminalSlashEq,
     TokenDot,
     TerminalDot,
     TokenDotDot,
@@ -241,24 +241,24 @@ pub enum SyntaxKind {
     TerminalMinus,
     TokenMinusEq,
     TerminalMinusEq,
-    TokenMod,
-    TerminalMod,
-    TokenModEq,
-    TerminalModEq,
-    TokenMul,
-    TerminalMul,
-    TokenMulEq,
-    TerminalMulEq,
+    TokenPercent,
+    TerminalPercent,
+    TokenPercentEq,
+    TerminalPercentEq,
+    TokenStar,
+    TerminalStar,
+    TokenStarEq,
+    TerminalStarEq,
     TokenNeq,
     TerminalNeq,
-    TokenNot,
-    TerminalNot,
-    TokenBitNot,
-    TerminalBitNot,
-    TokenOr,
-    TerminalOr,
-    TokenOrOr,
-    TerminalOrOr,
+    TokenBang,
+    TerminalBang,
+    TokenTilde,
+    TerminalTilde,
+    TokenPipe,
+    TerminalPipe,
+    TokenPipePipe,
+    TerminalPipePipe,
     TokenPlus,
     TerminalPlus,
     TokenPlusEq,
@@ -275,8 +275,8 @@ pub enum SyntaxKind {
     TerminalSemicolon,
     TokenUnderscore,
     TerminalUnderscore,
-    TokenXor,
-    TerminalXor,
+    TokenCaret,
+    TerminalCaret,
     SyntaxFile,
     TokenSingleLineComment,
     TokenWhitespace,
@@ -327,8 +327,8 @@ impl SyntaxKind {
                 | SyntaxKind::TokenColon
                 | SyntaxKind::TokenColonColon
                 | SyntaxKind::TokenComma
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenDivEq
+                | SyntaxKind::TokenSlash
+                | SyntaxKind::TokenSlashEq
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenEndOfFile
@@ -345,15 +345,15 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenMinus
                 | SyntaxKind::TokenMinusEq
-                | SyntaxKind::TokenMod
-                | SyntaxKind::TokenModEq
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenMulEq
+                | SyntaxKind::TokenPercent
+                | SyntaxKind::TokenPercentEq
+                | SyntaxKind::TokenStar
+                | SyntaxKind::TokenStarEq
                 | SyntaxKind::TokenNeq
-                | SyntaxKind::TokenNot
-                | SyntaxKind::TokenBitNot
-                | SyntaxKind::TokenOr
-                | SyntaxKind::TokenOrOr
+                | SyntaxKind::TokenBang
+                | SyntaxKind::TokenTilde
+                | SyntaxKind::TokenPipe
+                | SyntaxKind::TokenPipePipe
                 | SyntaxKind::TokenPlus
                 | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenQuestionMark
@@ -362,7 +362,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenRParen
                 | SyntaxKind::TokenSemicolon
                 | SyntaxKind::TokenUnderscore
-                | SyntaxKind::TokenXor
+                | SyntaxKind::TokenCaret
                 | SyntaxKind::TokenSingleLineComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
@@ -412,8 +412,8 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalColon
                 | SyntaxKind::TerminalColonColon
                 | SyntaxKind::TerminalComma
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalSlash
+                | SyntaxKind::TerminalSlashEq
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEndOfFile
@@ -430,15 +430,15 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalMinus
                 | SyntaxKind::TerminalMinusEq
-                | SyntaxKind::TerminalMod
-                | SyntaxKind::TerminalModEq
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalMulEq
+                | SyntaxKind::TerminalPercent
+                | SyntaxKind::TerminalPercentEq
+                | SyntaxKind::TerminalStar
+                | SyntaxKind::TerminalStarEq
                 | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalBitNot
-                | SyntaxKind::TerminalOr
-                | SyntaxKind::TerminalOrOr
+                | SyntaxKind::TerminalBang
+                | SyntaxKind::TerminalTilde
+                | SyntaxKind::TerminalPipe
+                | SyntaxKind::TerminalPipePipe
                 | SyntaxKind::TerminalPlus
                 | SyntaxKind::TerminalPlusEq
                 | SyntaxKind::TerminalQuestionMark
@@ -447,7 +447,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalRParen
                 | SyntaxKind::TerminalSemicolon
                 | SyntaxKind::TerminalUnderscore
-                | SyntaxKind::TerminalXor
+                | SyntaxKind::TerminalCaret
         )
     }
     pub fn is_keyword_token(&self) -> bool {

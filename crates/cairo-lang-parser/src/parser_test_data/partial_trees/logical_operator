@@ -25,7 +25,7 @@ ExprBinary
     │   └── rhs (kind: ExprPath)
     │       └── item #0 (kind: PathSegmentSimple)
     │           └── ident (kind: TokenIdentifier): 'b'
-    ├── op (kind: TokenOrOr): '||'
+    ├── op (kind: TokenPipePipe): '||'
     └── rhs (kind: ExprBinary)
         ├── lhs (kind: ExprPath)
         │   └── item #0 (kind: PathSegmentSimple)

@@ -126,11 +126,11 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: ExprUnary)
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TokenNot): '!'
+    │   │       │   │   │       ├── op (kind: TokenBang): '!'
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TokenMinus): '-'
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TokenNot): '!'
+    │   │       │   │   │               ├── op (kind: TokenBang): '!'
     │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
@@ -795,7 +795,7 @@ error: Missing tokens. Expected an item after attributes.
     │   ├── child #11 (kind: ItemInlineMacro)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'inline_item_macro'
-    │   │   ├── bang (kind: TokenNot): '!'
+    │   │   ├── bang (kind: TokenBang): '!'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── arguments (kind: ArgList)
@@ -1096,9 +1096,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TerminalNot)
+    │   │       │   │   │       ├── op (kind: TerminalBang)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │       │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TerminalMinus)
@@ -1106,9 +1106,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TerminalNot)
+    │   │       │   │   │               ├── op (kind: TerminalBang)
     │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │               │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │               │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │               └── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │                   ├── leading_trivia (kind: Trivia) []
@@ -2875,9 +2875,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   │   └── child #0 (kind: TokenNewline).
     │   │   │   ├── token (kind: TokenIdentifier): 'inline_item_macro'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   ├── bang (kind: TerminalNot)
+    │   │   ├── bang (kind: TerminalBang)
     │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   ├── token (kind: TokenNot): '!'
+    │   │   │   ├── token (kind: TokenBang): '!'
     │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TerminalLParen)
