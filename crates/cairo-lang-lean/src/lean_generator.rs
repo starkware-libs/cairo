@@ -23,6 +23,18 @@ use cairo_lang_casm::operand::{ DerefOrImmediate, ResOperand, CellRef };
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::bigint::BigIntAsHex;
 
+pub fn func_name_from_test_name(test_name: &str) -> String {
+    if let Some((prefix, suffix)) = test_name.rsplit_once(' ') {
+        if suffix == "libfunc" {
+            prefix.replace(" ", "_")
+        } else {
+            test_name.replace(" ", "_")
+        }
+    } else {
+        test_name.into()
+    }
+}
+
 pub fn lean_code_name(func_name: &str) -> String {
     String::from(func_name) + "_code"
 }
@@ -1209,7 +1221,7 @@ fn generate_soundness_spec_prelude(main_func_name: &str) -> Vec<String> {
 fn generate_soundness_spec_prelude4(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
-    prelude.push(String::from("import Verification.Libfuncs.Basic"));
+    prelude.push(String::from("import Verification.Libfuncs.Common"));
     prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
     prelude.push(String::from("set_option autoImplicit false"));
@@ -1239,7 +1251,7 @@ fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
 fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
-    prelude.push(String::from("import Verification.Libfuncs.Basic"));
+    prelude.push(String::from("import Verification.Libfuncs.Common"));
     prelude.push(format!("import Verification.Libfuncs.uXX.{}", lean_soundness_spec_file_name(main_func_name, false)));
     prelude.push(format!("import Verification.Libfuncs.uXX.{}", lean_code_file_name(main_func_name, false)));
     prelude.push(String::from(""));
@@ -1940,14 +1952,15 @@ impl AutoProof {
         let mut rws: Vec<String> = Vec::new();
         let mut op: &str = "";
 
-
-
         rws.push(format!("htv_{}", rebind.get_var_name(&assert.lhs.name)));
         rws.push(self.make_var_rw(&assert.expr.var_a.name, lean_info, rebind));
         op = &assert.expr.op;
         if let Some(expr_b) = &assert.expr.var_b {
             rws.push(self.make_var_rw(&expr_b.name, lean_info, rebind));
         }
+
+        // Don't apply the same rewrite twice.
+        rws = rws.iter().unique().map(|rw| rw.into()).collect();
 
         let ha_rw = format!("ha{pc}");
 
@@ -1958,11 +1971,14 @@ impl AutoProof {
                 "apply PRIME.nat_cast_ne_zero (by norm_num1) ; rw [PRIME] ; norm_num1".into()
             ]
         } else {
-            rws.push(ha_rw);
-            if op == "-" {
-                rws.push("add_sub_cancel".into())
-            }
-            vec![format!("rw [{all_rws}]", all_rws = rws.join(", "))]
+            let exact: String = if op == "-" {
+                rws.push(ha_rw);
+                rws.push("add_sub_cancel".into());
+                "".into()
+            } else {
+                format!(" ; exact {ha_rw}")
+            };
+            vec![format!("rw [{all_rws}]{exact}", all_rws = rws.join(", "))]
         }
     }
 
@@ -1981,7 +1997,7 @@ impl AutoProof {
         self.push_main(indent, &format!("-- {var_type} {var_name}", var_type = if is_local { "localvar" } else { "tempvar" }));
         if has_expr {
             // Cayden TODO: How to do mostly similar strings but with different endings...
-            let step_str4: String = format!("step_assert_eq' {codes} with tv_{var_name}",
+            let step_str4: String = format!("step_assert_eq {codes} with tv_{var_name}",
                 codes = self.make_codes(pc, op_size));
             let str_copy = step_str4.clone();
             self.push_main4(indent, &(step_str4 + ","), &str_copy);
@@ -2383,7 +2399,7 @@ impl LeanGenerator for AutoProof {
         let lhs =  rebind.get_var_name(&assert.lhs.name);
         if lean_info.is_range_check(&assert.expr) {
             self.push_main(indent, &format!("-- range check for {lhs}"));
-            self.push_main4_with_comma(indent, &format!("step_assert_eq' {codes} with rc_{lhs}",
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with rc_{lhs}",
                     codes = self.make_codes(pc, op_size)));
 
             let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
@@ -2399,7 +2415,7 @@ impl LeanGenerator for AutoProof {
                 "");
         } else {
             self.push_main(indent, "-- assert");
-            self.push_main4_with_comma(indent, &format!("step_assert_eq' {codes} with ha{pc}",
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with ha{pc}",
                     codes = self.make_codes(pc, op_size)));
             let rhs = rebind.replace_var_names_in_expr(&assert.expr.expr);
 
@@ -2426,7 +2442,7 @@ impl LeanGenerator for AutoProof {
         op_size: usize,
         indent: usize,
     ) {
-        self.push_main4_with_comma(indent, &format!("step_jump_imm' {codes}",
+        self.push_main4_with_comma(indent, &format!("step_jump_imm {codes}",
             codes = self.make_codes(pc, op_size)));
     }
 
@@ -2441,7 +2457,7 @@ impl LeanGenerator for AutoProof {
     ) {
         let cond_var = rebind.get_var_name(cond_var);
         self.push_main(indent, &format!("-- jump to {label} if {cond_var} != 0"));
-        self.push_main4_with_comma(indent, &format!("step_jnz' {codes} with hcond{pc} hcond{pc}",
+        self.push_main4_with_comma(indent, &format!("step_jnz {codes} with hcond{pc} hcond{pc}",
             codes = self.make_codes(pc, op_size)));
     }
 
@@ -2583,7 +2599,7 @@ impl LeanGenerator for AutoProof {
                 let casm_pos = casm_pos - 1;
                 let pc = lean_info.get_pc_at(casm_pos);
                 let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
-                self.push_main4_with_comma(indent, &format!("step_advance_ap' {codes}", codes = self.make_codes(pc, op_size)));
+                self.push_main4_with_comma(indent, &format!("step_advance_ap {codes}", codes = self.make_codes(pc, op_size)));
             }
         }
 
@@ -2616,7 +2632,7 @@ impl LeanGenerator for AutoProof {
                 self.push_main(indent, "--   range check return value");
             }
 
-            self.push_main4_with_comma(indent, &format!("step_assert_eq' {codes} with ret_{ret_name}",
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with ret_{ret_name}",
                     codes = self.make_codes(pc, op_size)));
             let is_last = pos == ret_arg_names.len() - 1;
             if is_rc {
@@ -2655,7 +2671,7 @@ impl LeanGenerator for AutoProof {
         let last_instr = &lean_info.casm_instructions[casm_pos].body;
         if let InstructionBody::Jump(instr) = last_instr {
             let op_size = last_instr.op_size();
-            let jump_imm_str4: String = format!("step_jump_imm' {codes}",
+            let jump_imm_str4: String = format!("step_jump_imm {codes}",
                     codes = self.make_codes(pc, op_size));
             let ji_copy: String = jump_imm_str4.clone();
             self.push_main4(indent, &(jump_imm_str4 + ","), &ji_copy);
@@ -2663,7 +2679,7 @@ impl LeanGenerator for AutoProof {
 
         // Add the final return
         pc = lean_info.get_code_len() - 1;
-        self.push_main4_with_comma(indent, &format!("step_ret' {codes}",
+        self.push_main4_with_comma(indent, &format!("step_ret {codes}",
                 codes = self.make_codes(pc, 1)));
 
         self.push_main(indent, "step_done");
@@ -2680,13 +2696,13 @@ impl LeanGenerator for AutoProof {
     }
 
     fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
-        self.push_main4_with_comma(indent, &format!("step_advance_ap' {codes}",
+        self.push_main4_with_comma(indent, &format!("step_advance_ap {codes}",
                 codes = self.make_codes(pc, op_size)));
     }
 
     fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize) {
         self.push_main(indent, "-- fail");
-        self.push_main(indent, &format!("step_assert_eq' {codes} with ha_fail",
+        self.push_main(indent, &format!("step_assert_eq {codes} with ha_fail",
                 codes = self.make_codes(pc, op_size)));
         self.push_main4(indent, "exfalso, apply zero_ne_one (add_left_cancel (eq.trans _ ha_fail)), rw add_zero,",
             "exfalso; apply zero_ne_one (add_left_cancel (Eq.trans _ ha_fail)); rw [add_zero]");
@@ -3055,11 +3071,17 @@ fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
 ///
 pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is_lean3: bool) -> (String, String) {
 
+    let main_func_name: String = func_name_from_test_name(test_name);
+
+    if cairo_program.aux_infos.len() == 0 {
+        return ("-- No spec generated for {main_func_name}".into(), "-- No proof generated for {main_func_name}".into());
+    }
+
     // Start and end offsets of each of the functions.
     let offsets = find_func_offsets(cairo_program);
     assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
 
-    let main_func_name = test_name.split_whitespace().next().unwrap().to_string();
+
     let mut soundness_spec: Vec<String> = Vec::new();
     let mut soundness: Vec<String> = Vec::new();
 
@@ -3154,14 +3176,14 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram, is_lean
 
     let mut lean_code: Vec<String> = Vec::new();
 
-    let func_name = test_name.split_whitespace().next().unwrap();
+    let func_name = func_name_from_test_name(test_name);
 
     lean_code.push("import Verification.Semantics.Assembly".into());
     lean_code.push("".into());
     lean_code.push("set_option maxRecDepth 1024".into());
     lean_code.push("".into());
     lean_code.push("open Casm in".into());
-    lean_code.push(format!("casm_code_def {code_def_name} := {{", code_def_name = lean_code_name(func_name)));
+    lean_code.push(format!("casm_code_def {code_def_name} := {{", code_def_name = lean_code_name(&func_name)));
     lean_code.append(&mut casm_lines);
     lean_code.push("}".into());
     lean_code.push("".into());
@@ -3175,20 +3197,20 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram, is_lean
 
 pub fn write_lean_soundness_spec_file(test_path: &Path, test_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
     let spec_str = match spec { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = test_name.split_whitespace().next().unwrap();
+    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let soundness_file_path = lean_file_path(
-        &lean_path, &lean_soundness_spec_file_name(func_name, true));
+        &lean_path, &lean_soundness_spec_file_name(&func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(soundness_file_path, spec_str)
 }
 
 pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
     let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = test_name.split_whitespace().next().unwrap();
+    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let soundness_file_path = lean_file_path(
-        &lean_path, &lean_soundness_file_name(func_name, true));
+        &lean_path, &lean_soundness_file_name(&func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(soundness_file_path, soundness_str)
 }
@@ -3202,10 +3224,10 @@ pub fn write_lean_code_file(
     }
 
     let code_str = match lean_code { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = test_name.split_whitespace().next().unwrap();
+    let func_name = func_name_from_test_name(test_name);
     let lean_path = lean_verification_path(test_path);
     let code_file_path = lean_file_path(
-        &lean_path, &lean_code_file_name(func_name, true));
+        &lean_path, &lean_code_file_name(&func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(code_file_path, code_str)
 }
