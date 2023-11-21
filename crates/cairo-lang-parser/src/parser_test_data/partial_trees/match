@@ -30,13 +30,13 @@ ExprMatch
     │   ├── item #0 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
-    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenUnderscore): '_'
-    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   └── separator #1 (kind: TokenComma): ','
     └── rbrace (kind: TokenRBrace): '}'
@@ -77,13 +77,13 @@ ExprMatch
     │   │   │   ├── item #0 (kind: TokenLiteralNumber): '0'
     │   │   │   ├── separator #0 (kind: TokenOr): '|'
     │   │   │   └── item #1 (kind: TokenLiteralNumber): '1'
-    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenUnderscore): '_'
-    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   ├── arrow (kind: TokenFatArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   └── separator #1 (kind: TokenComma): ','
     └── rbrace (kind: TokenRBrace): '}'

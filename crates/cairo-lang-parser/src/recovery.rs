@@ -13,12 +13,12 @@ macro_rules! is_of_kind {
 }
 pub(crate) use is_of_kind;
 
-macro_rules! match_arrow {
+macro_rules! fat_arrow {
     () => {
-        SyntaxKind::TerminalMatchArrow
+        SyntaxKind::TerminalFatArrow
     };
 }
-pub(crate) use match_arrow;
+pub(crate) use fat_arrow;
 
 macro_rules! lbrace {
     () => {

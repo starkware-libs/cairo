@@ -775,4 +775,3 @@ error: Enum variant `Four` not covered.
 
 //! > lowering_flat
 Parameters: v0: test::A
-
