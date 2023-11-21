@@ -266,6 +266,7 @@ pub fn run_tests(
             function_set_costs,
             linear_gas_solver: true,
             linear_ap_change_solver: true,
+            skip_comparisons: false,
         }),
         contracts_info,
     )

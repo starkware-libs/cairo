@@ -3,9 +3,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
-use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 
 use super::misc::get_pointer_after_program_code;
@@ -28,19 +26,6 @@ pub fn build(
         GasConcreteLibfunc::BuiltinWithdrawGas(_) => build_builtin_withdraw_gas(builder),
         GasConcreteLibfunc::GetBuiltinCosts(_) => build_get_builtin_costs(builder),
     }
-}
-
-/// Checks that all the pre-cost variables of the given statement are zero.
-fn check_zero_precost_values(
-    variable_values: &OrderedHashMap<(StatementIdx, CostTokenType), i64>,
-    statement_idx: StatementIdx,
-) -> Result<(), InvocationError> {
-    for token_type in CostTokenType::iter_precost() {
-        if variable_values.get(&(statement_idx, *token_type)).copied().unwrap_or_default() != 0 {
-            return Err(InvocationError::PreCostMetadataNotSupported);
-        }
-    }
-    Ok(())
 }
 
 /// Handles the withdraw_gas invocation.
@@ -79,8 +64,6 @@ fn build_withdraw_gas(
         .get(&(builder.idx, CostTokenType::Const))
         .copied()
         .ok_or(InvocationError::UnknownVariableData)?;
-
-    check_zero_precost_values(variable_values, builder.idx)?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
@@ -124,8 +107,6 @@ fn build_redeposit_gas(
         .get(&(builder.idx, CostTokenType::Const))
         .copied()
         .ok_or(InvocationError::UnknownVariableData)?;
-
-    check_zero_precost_values(variable_values, builder.idx)?;
 
     let gas_counter_value = builder.try_get_single_cells::<1>()?[0]
         .to_deref()

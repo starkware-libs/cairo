@@ -47,8 +47,6 @@ pub enum CostError {
     UnexpectedCycle,
     #[error("failed to enforce function cost")]
     EnforceWalletValueFailed(StatementIdx),
-    #[error("withdraw_gas does not support builtin yet, try using withdraw_gas_all instead")]
-    WithdrawGasPreCostNotSupported,
 }
 
 /// Helper to implement the `InvocationCostInfoProvider` for the equation generation.

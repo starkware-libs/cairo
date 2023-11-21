@@ -656,23 +656,11 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     fn get_gas_withdrawal(
         &self,
         _idx: &StatementIdx,
-        branch_cost: &BranchCost,
+        _branch_cost: &BranchCost,
         wallet_value: &PreCost,
         future_wallet_value: PreCost,
     ) -> Result<PreCost, CostError> {
-        let res = future_wallet_value - wallet_value.clone();
-
-        if let BranchCost::WithdrawGas(WithdrawGasBranchInfo {
-            with_builtin_costs: false, ..
-        }) = branch_cost
-        {
-            // `withdraw_gas` (with with_builtin_costs == false) does not support pre-costs yet.
-            if !res.0.is_empty() {
-                return Err(CostError::WithdrawGasPreCostNotSupported);
-            }
-        }
-
-        Ok(res)
+        Ok(future_wallet_value - wallet_value.clone())
     }
 
     fn get_branch_requirement(
