@@ -7,9 +7,9 @@ license-file.workspace = true
 description = "Diagnostic utilities."
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.1.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.1.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.1" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.1.2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.1.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.2" }
 itertools.workspace = true
 salsa.workspace = true
 
