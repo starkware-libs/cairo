@@ -257,7 +257,7 @@ fn lower_expr_block(
                 let start_stmt = &ctx.function_body.statements[expr_block.statements[i + 1]];
                 let end_stmt =
                     &ctx.function_body.statements[*expr_block.statements.last().unwrap()];
-                // Emit diagnostic fo the rest of the statements with unreachable.
+                // Emit diagnostic for the rest of the statements with unreachable.
                 ctx.diagnostics.report(
                     start_stmt.stable_ptr().untyped(),
                     Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },

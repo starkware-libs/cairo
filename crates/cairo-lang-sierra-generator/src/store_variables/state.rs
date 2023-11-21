@@ -120,7 +120,7 @@ impl VariablesState {
                 let ty = output_info.ty.clone();
                 match &arg_states[*param_idx] {
                     VarState::TempVar { .. } => {
-                        // A partial paramater may be smaller than its parent so it can't
+                        // A partial parameter may be smaller than its parent so it can't
                         // replace it on the stack.
                         if matches!(
                             output_info.ref_info,

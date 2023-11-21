@@ -206,8 +206,8 @@ struct TxInfo {
     resource_bounds: Vec<ResourceBounds>,
     tip: Felt252,
     paymaster_data: Vec<Felt252>,
-    nonce_data_availabilty_mode: Felt252,
-    fee_data_availabilty_mode: Felt252,
+    nonce_data_availability_mode: Felt252,
+    fee_data_availability_mode: Felt252,
     account_deployment_data: Vec<Felt252>,
 }
 
@@ -884,8 +884,8 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info.tip.clone())?;
         res_segment.write(paymaster_data_start)?;
         res_segment.write(paymaster_data_end)?;
-        res_segment.write(tx_info.nonce_data_availabilty_mode.clone())?;
-        res_segment.write(tx_info.fee_data_availabilty_mode.clone())?;
+        res_segment.write(tx_info.nonce_data_availability_mode.clone())?;
+        res_segment.write(tx_info.fee_data_availability_mode.clone())?;
         res_segment.write(account_deployment_data_start)?;
         res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
@@ -1974,7 +1974,7 @@ pub fn execute_core_hint(
             let n: BigInt = n0 + n1.shl(128);
             let ExtendedGcd { gcd: mut g, x: _, y: mut r } = n.extended_gcd(&b);
             if g != 1.into() {
-                // This makes sure `g0_or_no_inv` is alway non-zero in the no inverse case.
+                // This makes sure `g0_or_no_inv` is always non-zero in the no inverse case.
                 if g.is_even() {
                     g = 2u32.into();
                 }

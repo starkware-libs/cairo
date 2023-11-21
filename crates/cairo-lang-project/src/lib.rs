@@ -44,7 +44,7 @@ pub struct ProjectConfigContent {
 /// Additional configurations for all crates.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AllCratesConfig {
-    /// The configuration for non overriden crates.
+    /// The configuration for non overridden crates.
     #[serde(default)]
     pub global: SingleCrateConfig,
     /// Configuration override per crate.
