@@ -211,6 +211,7 @@ fn run_e2e_test(
     if params.metadata_computation {
         metadata_config.linear_gas_solver = false;
         metadata_config.linear_ap_change_solver = false;
+        metadata_config.skip_non_linear_solver_comparisons = true;
         let metadata_with_lp = calc_metadata(&sierra_program, metadata_config).unwrap();
         res.insert("gas_solution_lp".into(), format!("{}", metadata_with_lp.gas_info));
         res.insert("gas_solution_linear".into(), format!("{}", metadata_with_linear.gas_info));

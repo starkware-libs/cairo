@@ -80,9 +80,6 @@ pub enum InvocationError {
     IntegerOverflow,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
-    // TODO(lior): Remove this error once not used.
-    #[error("This libfunc does not support pre-cost metadata yet.")]
-    PreCostMetadataNotSupported,
 }
 
 /// Describes a simple change in the ap tracking itself.
