@@ -2,7 +2,8 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use cairo_lang_filesystem::{db::Edition, ids::CrateLongId};
+use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::ids::CrateLongId;
 use lsp::Url;
 use scarb_metadata::Metadata;
 
@@ -87,13 +88,12 @@ impl ScarbService {
                     .packages
                     .iter()
                     .find(|package| package.id == component.package)
-                    .map(|package| {
+                    .and_then(|package| {
                         package
                             .edition
                             .clone()
                             .map(|edition| serde_json::from_value(edition.into()).unwrap())
                     })
-                    .flatten()
                     .unwrap_or_default();
                 if source_path.exists() {
                     let crate_id = CrateLongId::Real(component.name.as_str().into());
