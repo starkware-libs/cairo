@@ -2257,11 +2257,12 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a list of elements with `separator`s, where the elements are parsed using
-    /// `try_parse_list_element`. The separator may or may not appear in the end of the list.
-    /// Returns the list of elements and separators. This list contains alternating children:
-    /// [element, separator, element, separator, ...]. Separators may be missing.
-    /// The length of the list is either 2 * #elements - 1 or 2 * #elements (a separator for each
-    /// element or for each element but the last one).
+    /// `try_parse_list_element`. Depending on the value of
+    /// `forbid_trailing_separator` the separator may or may not appear in
+    /// the end of the list. Returns the list of elements and separators. This list contains
+    /// alternating children: [element, separator, element, separator, ...]. Separators may be
+    /// missing. The length of the list is either 2 * #elements - 1 or 2 * #elements (a
+    /// separator for each element or for each element but the last one).
     ///
     /// `should_stop` is a predicate to decide how to proceed in case an element or a separator
     /// can't be parsed, according to the current token.
@@ -2271,7 +2272,7 @@ impl<'a> Parser<'a> {
     /// When parsing a separator:
     /// If it returns true, the parsing of the list stops. If it returns false, a missing separator
     /// is added and we continue to try to parse another element (with the same token).
-    fn parse_separated_list<
+    fn parse_separated_list_inner<
         Element: TypedSyntaxNode,
         Separator: syntax::node::Terminal,
         ElementOrSeparatorGreen,
@@ -2280,6 +2281,7 @@ impl<'a> Parser<'a> {
         try_parse_list_element: fn(&mut Self) -> TryParseResult<Element::Green>,
         should_stop: fn(SyntaxKind) -> bool,
         expected_element: &'static str,
+        forbid_trailing_separator: Option<ParserDiagnosticKind>,
     ) -> Vec<ElementOrSeparatorGreen>
     where
         ElementOrSeparatorGreen: From<Separator::Green> + From<Element::Green>,
@@ -2288,6 +2290,15 @@ impl<'a> Parser<'a> {
         loop {
             match try_parse_list_element(self) {
                 Err(_) if should_stop(self.peek().kind) => {
+                    if let (Some(diagnostic_kind), true) =
+                        (forbid_trailing_separator, !children.is_empty())
+                    {
+                        self.diagnostics.add(ParserDiagnostic {
+                            file_id: self.file_id,
+                            span: TextSpan { start: self.offset, end: self.offset },
+                            kind: diagnostic_kind,
+                        });
+                    }
                     break;
                 }
                 Err(_) => {
@@ -2313,6 +2324,27 @@ impl<'a> Parser<'a> {
             children.push(separator.into());
         }
         children
+    }
+    /// Calls parse_separated_list_inner with trailing separator enabled.
+    fn parse_separated_list<
+        Element: TypedSyntaxNode,
+        Separator: syntax::node::Terminal,
+        ElementOrSeparatorGreen,
+    >(
+        &mut self,
+        try_parse_list_element: fn(&mut Self) -> TryParseResult<Element::Green>,
+        should_stop: fn(SyntaxKind) -> bool,
+        expected_element: &'static str,
+    ) -> Vec<ElementOrSeparatorGreen>
+    where
+        ElementOrSeparatorGreen: From<Separator::Green> + From<Element::Green>,
+    {
+        self.parse_separated_list_inner::<Element, Separator, ElementOrSeparatorGreen>(
+            try_parse_list_element,
+            should_stop,
+            expected_element,
+            None,
+        )
     }
 
     /// Peeks at the next terminal from the Lexer without taking it.
