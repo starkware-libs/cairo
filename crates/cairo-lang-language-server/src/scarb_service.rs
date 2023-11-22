@@ -2,6 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CrateLongId;
 use lsp::Url;
 use scarb_metadata::Metadata;
@@ -72,7 +73,7 @@ impl ScarbService {
     pub async fn crate_source_paths(
         &self,
         root_path: PathBuf,
-    ) -> Result<Vec<(CrateLongId, PathBuf)>> {
+    ) -> Result<Vec<(CrateLongId, PathBuf, Edition)>> {
         let metadata = self
             .scarb_metadata(root_path)
             .await
@@ -85,7 +86,18 @@ impl ScarbService {
                 let source_path: PathBuf = component.source_path.into();
                 if source_path.exists() {
                     let crate_id = CrateLongId::Real(component.name.as_str().into());
-                    Some((crate_id, source_path))
+                    let edition = metadata
+                        .packages
+                        .iter()
+                        .find(|package| package.id == component.package)
+                        .and_then(|package| {
+                            package
+                                .edition
+                                .clone()
+                                .map(|edition| serde_json::from_value(edition.into()).unwrap())
+                        })
+                        .unwrap_or_default();
+                    Some((crate_id, source_path, edition))
                 } else {
                     None
                 }
