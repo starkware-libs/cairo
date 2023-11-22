@@ -49,6 +49,7 @@
         "enum_snapshot_match",
         "felt252_add",
         "felt252_add_const",
+        "constrain_range",
         "felt252_const",
         "felt252_dict_entry_finalize",
         "felt252_dict_entry_get",
