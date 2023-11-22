@@ -2642,9 +2642,9 @@ dependencies = [
 
 [[package]]
 name = "scarb-metadata"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a1939d4a36ba77bc4a23024f42e16e307b74fe451d8efa23aff8916fdde6a83"
+checksum = "cf294b35e5abed4510b98150fbdfad402111cb05532b38d8569a1c3edea6d1a6"
 dependencies = [
  "camino",
  "semver",

@@ -20,7 +20,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx,
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
     PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
@@ -1269,10 +1269,13 @@ fn nearest_semantic_pat(
     }
 }
 
-fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId, PathBuf)>) {
+fn update_crate_roots(
+    db: &mut dyn SemanticGroup,
+    source_paths: Vec<(CrateLongId, PathBuf, Edition)>,
+) {
     let source_paths = source_paths
         .into_iter()
-        .filter_map(|(crate_long_id, source_path)| {
+        .filter_map(|(crate_long_id, source_path, edition)| {
             let file_stem =
                 source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
 
@@ -1285,22 +1288,22 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId
             match (crate_root, file_stem) {
                 (Some(crate_root), Some(file_stem)) => {
                     let crate_id = db.intern_crate(crate_long_id);
-                    Some((crate_id, crate_root, file_stem))
+                    Some((crate_id, crate_root, edition, file_stem))
                 }
                 _ => None,
             }
         })
         .collect::<Vec<_>>();
 
-    for (crate_id, crate_root, _file_stem) in source_paths.clone() {
+    for (crate_id, crate_root, edition, _file_stem) in source_paths.clone() {
         let crate_root = Directory::Real(crate_root);
-        db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(crate_root)));
+        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, edition }));
     }
 
     let source_paths = source_paths
         .into_iter()
-        .filter(|(_crate_id, _crate_root, file_stem)| *file_stem != "lib")
-        .map(|(crate_id, _crate_root, file_stem)| (crate_id, file_stem))
+        .filter(|(_crate_id, _crate_root, _edition, file_stem)| *file_stem != "lib")
+        .map(|(crate_id, _crate_root, _edition, file_stem)| (crate_id, file_stem))
         .collect::<Vec<_>>();
 
     inject_virtual_wrapper_lib(db, source_paths);
