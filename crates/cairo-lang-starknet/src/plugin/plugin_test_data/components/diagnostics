@@ -991,7 +991,7 @@ error: Plugin diagnostic: The first parameter of a function in an #[embeddable_a
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
                               ^**********************************^
 
-error: Plugin diagnostic: Not all trait items are implemented. Missing: 'no_self', 'self_of_wrong_type'.
+error: Not all trait items are implemented. Missing: 'no_self', 'self_of_wrong_type'.
  --> lib.cairo:8:21
     #[embeddable_as(MyImpl)]
                     ^****^

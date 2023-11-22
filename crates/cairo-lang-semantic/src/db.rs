@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
     VariantId,
 };
-use cairo_lang_diagnostics::{map_diagnostics, Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
@@ -1090,7 +1090,7 @@ fn module_semantic_diagnostics(
         }
     }
 
-    Ok(map_diagnostics(db.elongate(), diagnostics.build()).1)
+    Ok(diagnostics.build())
 }
 
 fn file_semantic_diagnostics(

@@ -3,11 +3,9 @@
 
 mod diagnostics;
 mod location_marks;
-mod map;
 
 pub use self::diagnostics::{
     format_diagnostics, skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation,
     DiagnosticNote, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
 pub use self::location_marks::get_location_marks;
-pub use self::map::{map_diagnostics, map_location};

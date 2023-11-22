@@ -19,7 +19,6 @@ use smol_str::SmolStr;
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
-use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::semantic;
 
@@ -480,10 +479,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
-                // TODO(spapini): Support nested diagnostics.
-                format!("Plugin diagnostic: {}", diagnostic.message)
-            }
             SemanticDiagnosticKind::NameDefinedMultipleTimes { name } => {
                 format!("The name `{name}` is defined multiple times.")
             }
@@ -633,27 +628,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
         if self.after {
             location = location.after();
         }
-        match &self.kind {
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, file_id, .. } => {
-                DiagnosticLocation { span: diagnostic.span, file_id: *file_id }
-            }
-            _ => location,
-        }
-    }
-
-    fn map_plugin_diagnostic(&self, db: &Self::DbType, user_location: DiagnosticLocation) -> Self {
-        // We don't have a real location, so we give a dummy location in the correct file.
-        // SemanticDiagnostic struct knowns to give the proper span for
-        // WrappedPluginDiagnostic.
-        let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
-            diagnostic: PluginMappedDiagnostic {
-                span: user_location.span,
-                message: self.format(db),
-            },
-            original_diag: Box::new(self.clone()),
-            file_id: user_location.file_id,
-        };
-        Self::new(self.stable_location, kind)
+        location
     }
 }
 
@@ -876,11 +851,6 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
-    WrappedPluginDiagnostic {
-        file_id: FileId,
-        diagnostic: PluginMappedDiagnostic,
-        original_diag: Box<SemanticDiagnostic>,
-    },
     NameDefinedMultipleTimes {
         name: SmolStr,
     },

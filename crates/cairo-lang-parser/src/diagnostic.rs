@@ -118,12 +118,4 @@ Did you mean to write `{identifier}!{left}...{right}'?",
     fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
-
-    fn map_plugin_diagnostic(
-        &self,
-        _db: &dyn cairo_lang_filesystem::db::FilesGroup,
-        _user_location: cairo_lang_diagnostics::DiagnosticLocation,
-    ) -> Self {
-        unreachable!("Parser diagnostics should not be wrapped.")
-    }
 }
