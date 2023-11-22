@@ -10,9 +10,9 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64, Uint8,
-    UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, Felt252Bounded,
+    FunctionCall, Gas, Mem, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16,
+    Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -20,6 +20,7 @@ use crate::extensions::felt252::{
     Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcrete, Felt252BinaryOperator,
     Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
+use crate::extensions::felt252_bounded::Felt252BoundedConcreteLibfunc;
 use crate::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{
@@ -277,6 +278,7 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Felt252Bounded(Felt252BoundedConcreteLibfunc::ConstrainRange(_)) => todo!(),
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
         Struct(
             StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
