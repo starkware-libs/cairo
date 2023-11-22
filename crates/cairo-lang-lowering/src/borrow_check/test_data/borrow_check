@@ -848,3 +848,74 @@ Statements:
   (v11: ()) <- struct_construct()
 End:
   Return(v9, v11)
+
+//! > ==========================================================================
+
+//! > Test mapping of borrow check diagnostics.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut x: MyStruct) -> MyStruct {
+  let arr = array![
+    {
+      x.a = 17;
+      x.a += 1;
+    },
+  ];
+  return x;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+struct MyStruct {
+  a: felt252,
+  b: NonCopy,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:7:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:11:7
+      x.a += 1;
+      ^******^
+note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>
+note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>
+
+error: Variable not dropped.
+ --> lib.cairo:7:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo[array_inline_macro]:2:54
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                     ^****************************^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyStruct>
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyStruct>
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::MyStruct>
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<()>) <- core::array::ArrayImpl::<()>::new()
+  (v2: core::felt252) <- 17u
+  (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x`})
+  (v5: core::felt252) <- 1u
+  (v7: core::felt252, v6: ()) <- core::Felt252AddEq::add_eq(v2{`x.a`}, v5{`1`})
+  (v8: ()) <- struct_construct()
+  (v10: core::array::Array::<()>, v9: ()) <- core::array::ArrayImpl::<()>::append(v1{`__array_builder_macro_result__`}, v8{`{ x.a = 17; x.a += 1; }`})
+  (v11: test::MyStruct) <- struct_construct(v7{`x`}, v4{`x`})
+End:
+  Return(v11)

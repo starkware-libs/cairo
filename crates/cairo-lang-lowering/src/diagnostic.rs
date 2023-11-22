@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::{
     DiagnosticsBuilder,
 };
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
@@ -94,7 +95,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 .into()
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-
+            LoweringDiagnosticKind::WrappedPluginDiagnostic { diagnostic_message, .. } => {
+                // TODO(spapini): Support nested diagnostics.
+                format!("Plugin diagnostic: {}", diagnostic_message)
+            }
         }
     }
 
@@ -111,26 +115,53 @@ impl DiagnosticEntry for LoweringDiagnostic {
                     .stable_location
                     .diagnostic_location_until(db.upcast(), *last_statement_ptr);
             }
+            LoweringDiagnosticKind::WrappedPluginDiagnostic { span, file_id, .. } => {
+                return DiagnosticLocation { span: *span, file_id: *file_id };
+            }
             _ => {}
         }
         self.location.stable_location.diagnostic_location(db.upcast())
     }
 
-    fn map_plugin_diagnostic(&self, _db: &Self::DbType, _location: DiagnosticLocation) -> Self {
-        todo!()
+    fn map_plugin_diagnostic(&self, db: &Self::DbType, user_location: DiagnosticLocation) -> Self {
+        // We don't have a real location, so we give a dummy location in the correct file.
+        // LoweringDiagnostic struct knowns to give the proper span for
+        // WrappedPluginDiagnostic.
+        let kind = LoweringDiagnosticKind::WrappedPluginDiagnostic {
+            span: user_location.span,
+            diagnostic_message: self.format(db),
+            original_diag: Box::new(self.clone()),
+            file_id: user_location.file_id,
+        };
+        Self {
+            location: Location {
+                stable_location: self.location.stable_location,
+                notes: self.location.notes.clone(),
+            },
+            kind,
+        }
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
-    Unreachable { last_statement_ptr: SyntaxStablePtrId },
+    Unreachable {
+        last_statement_ptr: SyntaxStablePtrId,
+    },
     // TODO(lior): Remove once supported.
     NonZeroValueInMatch,
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
-    VariableMoved { inference_error: InferenceError },
-    VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
-    DesnappingANonCopyableType { inference_error: InferenceError },
+    VariableMoved {
+        inference_error: InferenceError,
+    },
+    VariableNotDropped {
+        drop_err: InferenceError,
+        destruct_err: InferenceError,
+    },
+    DesnappingANonCopyableType {
+        inference_error: InferenceError,
+    },
     UnsupportedMatchedValue,
     UnsupportedMatchArms,
     UnexpectedError,
@@ -141,4 +172,10 @@ pub enum LoweringDiagnosticKind {
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     LiteralError(LiteralError),
+    WrappedPluginDiagnostic {
+        file_id: FileId,
+        span: TextSpan,
+        diagnostic_message: String,
+        original_diag: Box<LoweringDiagnostic>,
+    },
 }

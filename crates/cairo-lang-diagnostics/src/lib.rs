@@ -10,4 +10,4 @@ pub use self::diagnostics::{
     DiagnosticNote, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
 pub use self::location_marks::get_location_marks;
-pub use self::map::map_diagnostics;
+pub use self::map::{map_diagnostics, map_location};
