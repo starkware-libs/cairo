@@ -640,6 +640,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
             _ => location,
         }
     }
+
+    fn map_plugin_diagnostic(&self, db: &Self::DbType, user_location: DiagnosticLocation) -> Self {
+        // We don't have a real location, so we give a dummy location in the correct file.
+        // SemanticDiagnostic struct knowns to give the proper span for
+        // WrappedPluginDiagnostic.
+        let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
+            diagnostic: PluginMappedDiagnostic {
+                span: user_location.span,
+                message: self.format(db),
+            },
+            original_diag: Box::new(self.clone()),
+            file_id: user_location.file_id,
+        };
+        Self::new(self.stable_location, kind)
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
