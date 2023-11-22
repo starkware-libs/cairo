@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use anyhow::Context;
 use cairo_lang_starknet::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use cairo_lang_starknet::casm_contract_class::CasmContractClass;
+use cairo_lang_starknet::compiler_version::VersionId;
 use cairo_lang_starknet::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
@@ -25,6 +26,21 @@ struct Args {
     /// A file of the allowed libfuncs list to use.
     #[arg(long)]
     allowed_libfuncs_list_file: Option<String>,
+    /// Sierra version to override to prior to compilation.
+    #[arg(long)]
+    override_version: Option<String>,
+}
+
+/// Parses version id from string.
+fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
+    let context = || format!("Could not parse version {major_minor_patch}.");
+    let (major, minor_patch) = major_minor_patch.split_once('.').with_context(context)?;
+    let (minor, patch) = minor_patch.split_once('.').with_context(context)?;
+    Ok(VersionId {
+        major: major.parse().with_context(context)?,
+        minor: minor.parse().with_context(context)?,
+        patch: patch.parse().with_context(context)?,
+    })
 }
 
 /// The contract class from db.
@@ -54,6 +70,10 @@ fn main() -> anyhow::Result<()> {
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
+    let override_version = match args.override_version {
+        Some(version) => Some(parse_version_id(&version)?),
+        None => None,
+    };
     // Reading the contract classes from the file.
     let tested_classes: Vec<ContractClassInfo> = serde_json::from_str(
         &fs::read_to_string(&args.file)
@@ -78,8 +98,13 @@ fn main() -> anyhow::Result<()> {
         })
         .progress_chars("#>-"),
     );
-    tested_classes.into_par_iter().for_each(|sierra_class| {
+    tested_classes.into_par_iter().for_each(|mut sierra_class| {
         bar.inc(1);
+        if let Some(override_version) = override_version {
+            sierra_class.sierra_program[0].value = override_version.major.into();
+            sierra_class.sierra_program[1].value = override_version.minor.into();
+            sierra_class.sierra_program[2].value = override_version.patch.into();
+        }
         // Reconstructing the contract class from the read class.
         let contract_class = ContractClass {
             sierra_program: sierra_class.sierra_program,
