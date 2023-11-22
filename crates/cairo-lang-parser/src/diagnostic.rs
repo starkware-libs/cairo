@@ -36,6 +36,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutTraitItem,
     AttributesWithoutImplItem,
     AttributesWithoutStatement,
+    DisallowedTrailingSeparatorOr,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -111,6 +112,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::AttributesWithoutStatement => {
                 "Missing tokens. Expected a statement after attributes.".to_string()
+            }
+            ParserDiagnosticKind::DisallowedTrailingSeparatorOr => {
+                "A trailing `|` is not allowed in an or-pattern.".to_string()
             }
         }
     }
