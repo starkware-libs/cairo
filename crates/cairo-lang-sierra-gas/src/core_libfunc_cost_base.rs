@@ -33,12 +33,14 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::range_reduction::Felt252BoundedConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
+use num_traits::Zero;
 
 use crate::objects::{BranchCost, ConstCost, CostInfoProvider, PreCost};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -304,6 +306,24 @@ pub fn core_libfunc_cost(
                     )
                     .collect_vec(),
                 }
+            }
+        },
+        Felt252Bounded(libfunc) => match libfunc {
+            Felt252BoundedConcreteLibfunc::ConstrainRange(libfunc) => {
+                assert!(
+                    libfunc.in_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.in_range.lower
+                );
+                assert!(
+                    libfunc.out_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.out_range.lower
+                );
+                vec![
+                    ConstCost { steps: 4, holes: 0, range_checks: 2 }.into(),
+                    ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                ]
             }
         },
         Struct(
