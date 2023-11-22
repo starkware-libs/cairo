@@ -10,6 +10,7 @@ use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
+use super::felt252_bounded::{Felt252BoundedLibfunc, Felt252BoundedType};
 use super::felt252_dict::{
     Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
 };
@@ -84,6 +85,7 @@ define_type_hierarchy! {
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
+        Felt252Bounded(Felt252BoundedType),
     }, CoreTypeConcrete
 }
 
@@ -98,6 +100,7 @@ define_libfunc_hierarchy! {
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
+        Felt252Bounded(Felt252BoundedLibfunc),
         Felt252(Felt252Libfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
