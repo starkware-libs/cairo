@@ -10,6 +10,7 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
+use cairo_lang_sierra::extensions::felt252_bounded::Felt252BoundedConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
@@ -32,6 +33,7 @@ use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use num_traits::Zero;
 
 use crate::ApChange;
 
@@ -213,6 +215,23 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
+        CoreConcreteLibfunc::Felt252Bounded(libfunc) => match libfunc {
+            Felt252BoundedConcreteLibfunc::FromFelt(_) => vec![ApChange::Known(0)],
+            Felt252BoundedConcreteLibfunc::ConstrainRange(libfunc) => {
+                assert!(
+                    libfunc.in_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.in_range.lower
+                );
+                assert!(
+                    libfunc.out_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.out_range.lower
+                );
+                vec![ApChange::Known(2), ApChange::Known(7)]
+            }
+        },
+
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
