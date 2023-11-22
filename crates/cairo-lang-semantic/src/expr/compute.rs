@@ -2074,6 +2074,12 @@ pub fn compute_statement_semantic(
                 // Point to after the expression, where the semicolon is missing.
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
+            let ty = expr.ty();
+            if !ctx.resolver.edition.ignore_unhandled_error_type()
+                && unwrap_error_propagation_type(ctx.db, ty).is_some()
+            {
+                ctx.diagnostics.report(&expr_syntax, UnhandledErrorType { ty });
+            }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: expr.id,
                 stable_ptr: syntax.stable_ptr(),

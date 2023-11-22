@@ -131,7 +131,7 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
-    edition: Edition,
+    pub edition: Edition,
 }
 impl Deref for Resolver<'_> {
     type Target = ResolverData;

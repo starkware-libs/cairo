@@ -66,7 +66,16 @@ impl Edition {
         }
     }
 
+    /// Whether to ignore visibility modifiers.
     pub fn ignore_visibility(&self) -> bool {
+        match self {
+            Self::V2023_01 | Self::V2023_10 => true,
+            Self::V2023_11 => false,
+        }
+    }
+
+    /// Whether to ignore unhandled error types.
+    pub fn ignore_unhandled_error_type(&self) -> bool {
         match self {
             Self::V2023_01 | Self::V2023_10 => true,
             Self::V2023_11 => false,
