@@ -6,13 +6,12 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
-use crate::map_location;
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
@@ -23,8 +22,6 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
     }
-    /// Wraps a diagnostic that originated from a plugin generated file to the original file.
-    fn map_plugin_diagnostic(&self, db: &Self::DbType, user_location: DiagnosticLocation) -> Self;
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
@@ -40,13 +37,32 @@ impl DiagnosticLocation {
     pub fn after(&self) -> Self {
         Self { file_id: self.file_id, span: self.span.after() }
     }
+
+    /// Get the location originating user code.
+    pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
+        let mut result = self.clone();
+        while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+            db.lookup_intern_file(result.file_id)
+        {
+            if let Some(span) =
+                code_mappings.iter().find_map(|mapping| mapping.translate(result.span))
+            {
+                result.span = span;
+                result.file_id = parent;
+            } else {
+                break;
+            }
+        }
+        result
+    }
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
-        let file_path = self.file_id.full_path(db);
-        let marks = get_location_marks(db, self);
-        let pos = match self.span.start.position_in_file(db, self.file_id) {
+        let user_location = self.user_location(db);
+        let file_path = user_location.file_id.full_path(db);
+        let marks = get_location_marks(db, &user_location);
+        let pos = match user_location.span.start.position_in_file(db, user_location.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
@@ -80,7 +96,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
             write!(f, ":\n  --> ")?;
-            map_location(db.upcast(), location.clone()).as_ref().unwrap_or(location).fmt(f, db)?;
+            location.user_location(db).fmt(f, db)?;
         }
         Ok(())
     }
