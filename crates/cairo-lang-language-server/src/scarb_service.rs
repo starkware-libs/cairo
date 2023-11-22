@@ -84,19 +84,19 @@ impl ScarbService {
             .flat_map(|unit| unit.components)
             .filter_map(|component| {
                 let source_path: PathBuf = component.source_path.into();
-                let edition = metadata
-                    .packages
-                    .iter()
-                    .find(|package| package.id == component.package)
-                    .and_then(|package| {
-                        package
-                            .edition
-                            .clone()
-                            .map(|edition| serde_json::from_value(edition.into()).unwrap())
-                    })
-                    .unwrap_or_default();
                 if source_path.exists() {
                     let crate_id = CrateLongId::Real(component.name.as_str().into());
+                    let edition = metadata
+                        .packages
+                        .iter()
+                        .find(|package| package.id == component.package)
+                        .and_then(|package| {
+                            package
+                                .edition
+                                .clone()
+                                .map(|edition| serde_json::from_value(edition.into()).unwrap())
+                        })
+                        .unwrap_or_default();
                     Some((crate_id, source_path, edition))
                 } else {
                     None
