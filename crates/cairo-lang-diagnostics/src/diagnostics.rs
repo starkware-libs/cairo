@@ -12,6 +12,7 @@ use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
+use crate::map_location;
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
@@ -79,7 +80,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
             write!(f, ":\n  --> ")?;
-            location.fmt(f, db)?;
+            map_location(db.upcast(), location.clone()).as_ref().unwrap_or(location).fmt(f, db)?;
         }
         Ok(())
     }

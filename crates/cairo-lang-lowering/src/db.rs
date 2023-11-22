@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::{map_diagnostics, Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
@@ -521,7 +521,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::ExternFunction(_) => {}
         }
     }
-    Ok(diagnostics.build())
+    Ok(map_diagnostics(db.elongate(), diagnostics.build()).1)
 }
 
 fn file_lowering_diagnostics(

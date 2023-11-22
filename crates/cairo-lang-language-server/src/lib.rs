@@ -17,7 +17,9 @@ use cairo_lang_defs::ids::{
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{
+    map_location, DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
@@ -1374,10 +1376,12 @@ fn get_diagnostics<T: DiagnosticEntry>(
         let mut related_information = vec![];
         for note in diagnostic.notes(db) {
             if let Some(location) = &note.location {
+                let location =
+                    map_location(db.upcast(), location.clone()).unwrap_or(location.clone());
                 related_information.push(DiagnosticRelatedInformation {
                     location: Location {
                         uri: get_uri(db.upcast(), location.file_id),
-                        range: get_range(db.upcast(), location),
+                        range: get_range(db.upcast(), &location),
                     },
                     message: note.text.clone(),
                 });
