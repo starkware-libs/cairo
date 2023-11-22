@@ -6,10 +6,11 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
+use cairo_lang_sierra::extensions::range_reduction::Range;
 use num_bigint::{BigInt, ToBigInt};
 
 use super::{build_const, build_small_diff, build_small_wide_mul};
-use crate::invocations::misc::validate_under_limit;
+use crate::invocations::range_reduction::build_try_range_reduction;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -58,70 +59,6 @@ fn build_small_uint_overflowing_add(
         [
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
-        ],
-        CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
-            extra_costs: None,
-        },
-    ))
-}
-
-/// Handles a small uint conversion from felt252.
-fn build_small_uint_from_felt252<const LIMIT: u128, const K: u8>(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, value] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(2) range_check;
-        deref value;
-    };
-    casm_build_extend! {casm_builder,
-        let orig_range_check = range_check;
-        const limit = LIMIT;
-        tempvar is_small;
-        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
-        jump IsSmall if is_small != 0;
-        tempvar shifted_value = value - limit;
-    }
-    match K {
-        1 => {
-            let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
-            validate_under_limit::<K>(
-                &mut casm_builder,
-                &(-Felt252::from(LIMIT)).to_biguint().to_bigint().unwrap(),
-                shifted_value,
-                range_check,
-                &auxiliary_vars,
-            );
-            casm_build_extend! {casm_builder, jump Done;};
-        }
-        2 => {
-            let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
-            validate_under_limit::<K>(
-                &mut casm_builder,
-                &(-Felt252::from(LIMIT)).to_biguint().to_bigint().unwrap(),
-                shifted_value,
-                range_check,
-                &auxiliary_vars,
-            );
-        }
-        _ => unreachable!("Only K value of 1 or 2 are supported."),
-    }
-    casm_build_extend! {casm_builder,
-        IsSmall:
-        assert value = *(range_check++);
-        // value + 2**128 - limit < 2**128 ==> value < limit
-        const fixer_limit = (u128::MAX - LIMIT + 1);
-        tempvar value_upper_limit = value + fixer_limit;
-        assert value_upper_limit = *(range_check++);
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
@@ -254,7 +191,11 @@ pub fn build_uint<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits, const L
             IntOperator::OverflowingSub => build_small_diff(builder, BigInt::from(LIMIT)),
         },
         UintConcrete::ToFelt252(_) => misc::build_identity(builder),
-        UintConcrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
+        UintConcrete::FromFelt252(_) => build_try_range_reduction(
+            builder,
+            &Range { lower: 0.into(), upper: Felt252::prime().into() },
+            &Range { lower: 0.into(), upper: LIMIT.into() },
+        ),
         UintConcrete::IsZero(_) => misc::build_is_zero(builder),
         UintConcrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         UintConcrete::Bitwise(_) => bitwise::build(builder),
