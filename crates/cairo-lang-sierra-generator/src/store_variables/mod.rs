@@ -445,7 +445,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         false
     }
 
-    /// Stores all the deffered and temporary variables as local variables.
+    /// Stores all the deferred and temporary variables as local variables.
     fn store_variables_as_locals(&mut self, state: &mut VariablesState) {
         for (var, var_state) in state.variables.iter_mut() {
             if let Some(uninitialized_local_var_id) = self.local_variables.get(var) {

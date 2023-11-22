@@ -75,7 +75,7 @@ fn get_macro_name(with_newline: bool) -> &'static str {
     if with_newline { WritelnMacro::NAME } else { WriteMacro::NAME }
 }
 
-/// Information about a formating a string for the write macros.
+/// Information about a formatting a string for the write macros.
 struct FormattingInfo {
     /// The syntax rewrite node for the formatter input for the macro.
     formatter_arg_node: RewriteNode,
@@ -288,7 +288,7 @@ impl FormattingInfo {
     }
 
     /// Appends a formatted argument to the formatter, flushing the pending bytes if necessary.
-    /// This includes opening a new match, which is only closed at the end of the macro hanlding.
+    /// This includes opening a new match, which is only closed at the end of the macro handling.
     fn append_formatted_arg(
         &self,
         builder: &mut PatchBuilder<'_>,
