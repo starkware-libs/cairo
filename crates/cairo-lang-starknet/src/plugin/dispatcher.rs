@@ -329,7 +329,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: dispatcher_trait_name.into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,

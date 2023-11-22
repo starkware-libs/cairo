@@ -1113,14 +1113,11 @@ fn map_diagnostics(
         let mut diag_mapped = false;
         let mut mapped_span = diag.stable_location.diagnostic_location(db.upcast()).span;
         let mut orig_file = diag.stable_location.file_id(db.upcast());
-        while let FileLongId::Virtual(VirtualFile {
-            parent: Some(parent),
-            diagnostics_mappings,
-            ..
-        }) = db.lookup_intern_file(orig_file)
+        while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+            db.lookup_intern_file(orig_file)
         {
             if let Some(span) =
-                diagnostics_mappings.iter().find_map(|mapping| mapping.translate(mapped_span))
+                code_mappings.iter().find_map(|mapping| mapping.translate(mapped_span))
             {
                 mapped_span = span;
                 diag_mapped = true;

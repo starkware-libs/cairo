@@ -198,7 +198,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         code: Some(PluginGeneratedFile {
             name: "embeddable".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,

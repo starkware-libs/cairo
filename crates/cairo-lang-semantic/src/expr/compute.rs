@@ -313,7 +313,7 @@ fn compute_expr_inline_macro_semantic(
         parent: Some(ctx.diagnostics.file_id),
         name: code.name,
         content: Arc::new(code.content),
-        diagnostics_mappings: Arc::new(code.diagnostics_mappings),
+        code_mappings: Arc::new(code.code_mappings),
         kind: FileKind::Expr,
     }));
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;

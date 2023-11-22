@@ -106,7 +106,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt2".into(),
                         content: builder.code,
-                        diagnostics_mappings: builder.diagnostics_mappings,
+                        code_mappings: builder.code_mappings,
                         aux_data: None,
                     }),
                     diagnostics: vec![],

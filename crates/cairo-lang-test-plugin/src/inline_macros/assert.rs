@@ -167,7 +167,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
                 content: builder.code,
-                diagnostics_mappings: builder.diagnostics_mappings,
+                code_mappings: builder.code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],
