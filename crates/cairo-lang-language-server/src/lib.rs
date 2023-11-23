@@ -17,7 +17,9 @@ use cairo_lang_defs::ids::{
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
@@ -675,27 +677,20 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let Ok(node) = db.file_syntax(file) else {
+            let node = db.file_syntax(file).ok().on_none(|| {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                return None;
-            };
-            if !db.file_syntax_diagnostics(file).is_empty() {
-                return None;
-            }
+            })?;
+            db.file_syntax_diagnostics(file).check_error_free().ok().on_none(|| {
+                eprintln!("Formatting failed. Cannot properly parse '{file_uri}' exist.");
+            })?;
             let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
-            let file_summary = if let Some(summary) = db.file_summary(file) {
-                summary
-            } else {
+            let file_summary = db.file_summary(file).on_none(|| {
                 eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
-                return None;
-            };
-            let old_line_count = if let Ok(count) = file_summary.line_count().try_into() {
-                count
-            } else {
+            })?;
+            let old_line_count = file_summary.line_count().try_into().ok().on_none(|| {
                 eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
-                return None;
-            };
+            })?;
 
             Some(vec![TextEdit {
                 range: Range {
@@ -1395,6 +1390,10 @@ fn get_diagnostics<T: DiagnosticEntry>(
             } else {
                 Some(related_information)
             },
+            severity: Some(match diagnostic.severity() {
+                Severity::Error => DiagnosticSeverity::ERROR,
+                Severity::Warning => DiagnosticSeverity::WARNING,
+            }),
             ..Diagnostic::default()
         });
     }
