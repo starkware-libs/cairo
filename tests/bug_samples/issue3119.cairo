@@ -23,7 +23,7 @@ fn index_of_min<T, +PartialEq<T>, +PartialOrd<T>, +Drop<T>, +Copy<T>>(
 
 #[test]
 fn issue_3119() {
-    let min_index = index_of_min(array![5_usize, 4, 1, 2, 3].span());
+    let _min_index = index_of_min(array![5_usize, 4, 1, 2, 3].span());
 }
 
 fn foo(mut y: felt252, mut z: felt252) {

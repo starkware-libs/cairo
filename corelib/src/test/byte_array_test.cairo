@@ -336,18 +336,18 @@ fn test_index_view_out_of_bounds() {
     ba.append(@test_byte_array_31());
     ba.append(@test_byte_array_17());
 
-    let x = ba[79];
+    let _x = ba[79];
 }
 
 #[test]
 fn test_string_literals() {
-    let ba: ByteArray = "12345"; // len < 16
-    let ba: ByteArray = "1234567890123456"; // len == 16
-    let ba: ByteArray = "123456789012345678"; // 16 < len < 31
-    let ba: ByteArray = "1234567890123456789012345678901"; // len == 31
-    let ba: ByteArray = "123456789012345678901234567890123"; // 31 < len < 47
-    let ba: ByteArray = "12345678901234567890123456789012345678901234567"; // len == 47
-    let ba: ByteArray = "123456789012345678901234567890123456789012345678"; // len > 47
+    let _ba: ByteArray = "12345"; // len < 16
+    let _ba: ByteArray = "1234567890123456"; // len == 16
+    let _ba: ByteArray = "123456789012345678"; // 16 < len < 31
+    let _ba: ByteArray = "1234567890123456789012345678901"; // len == 31
+    let _ba: ByteArray = "123456789012345678901234567890123"; // 31 < len < 47
+    let _ba: ByteArray = "12345678901234567890123456789012345678901234567"; // len == 47
+    let _ba: ByteArray = "123456789012345678901234567890123456789012345678"; // len > 47
 }
 
 #[test]
