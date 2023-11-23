@@ -21,7 +21,6 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.3.1" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", optional = true, features = ["testing"], version = "2.3.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
-indexmap.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
 once_cell.workspace = true
