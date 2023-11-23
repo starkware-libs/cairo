@@ -11,7 +11,7 @@ fn foo(x: felt252) -> felt252 {
     let x2 = immovable(x + x);
     revoke_ap();
     let s = immovable(MyStruct{a: x, b: x2});
-    let s2 = immovable(MyStruct{a: s.a, b: 0});
+    let _s2 = immovable(MyStruct{a: s.a, b: 0});
     let s3 = immovable(MyStruct{a: x, b: 1});
     revoke_ap();
     s3.a

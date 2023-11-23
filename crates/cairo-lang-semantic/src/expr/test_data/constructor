@@ -5,7 +5,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let x = MyStruct { a, b, a: 3 };
+    let _x = MyStruct { a, b, a: 3 };
 }
 
 //! > function_name
@@ -19,16 +19,16 @@ struct MyStruct {
 
 //! > expected_diagnostics
 error: Variable "a" not found.
- --> lib.cairo:6:24
-    let x = MyStruct { a, b, a: 3 };
-                       ^
+ --> lib.cairo:6:25
+    let _x = MyStruct { a, b, a: 3 };
+                        ^
 
 error: Variable "b" not found.
- --> lib.cairo:6:27
-    let x = MyStruct { a, b, a: 3 };
-                          ^
+ --> lib.cairo:6:28
+    let _x = MyStruct { a, b, a: 3 };
+                           ^
 
 error: Member specified more than once.
- --> lib.cairo:6:30
-    let x = MyStruct { a, b, a: 3 };
-                             ^
+ --> lib.cairo:6:31
+    let _x = MyStruct { a, b, a: 3 };
+                              ^

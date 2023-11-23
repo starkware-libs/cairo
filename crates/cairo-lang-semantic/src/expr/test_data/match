@@ -6,7 +6,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo(b: A) -> felt252 {
     match (b, 4) {
-        (A::a(x), _) => { 1 },
+        (A::a(_x), _) => { 1 },
         (A::b(x), 1) => { x },
         (7, 1) => { x },
         (A::b(x), 1, _) => { x },

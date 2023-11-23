@@ -99,9 +99,9 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
     let x1 = Struct1 { x: 0 };
-    let y1 = x1[0];
+    let _y1 = x1[0];
     let x2 = Struct2 { x: 0 };
-    let y2 = x2[0];
+    let _y2 = x2[0];
 }
 
 //! > function_name
@@ -131,11 +131,11 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
 error: Type `test::Struct1` could not be indexed.
 Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<test::Struct1, ?3, ?4>
 Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<test::Struct1, ?3, ?4>
- --> lib.cairo:21:14
-    let y1 = x1[0];
-             ^***^
+ --> lib.cairo:21:15
+    let _y1 = x1[0];
+              ^***^
 
 error: Type "test::Struct2" implements both the "Index" trait and the "IndexView" trait.
- --> lib.cairo:23:14
-    let y2 = x2[0];
-             ^***^
+ --> lib.cairo:23:15
+    let _y2 = x2[0];
+              ^***^

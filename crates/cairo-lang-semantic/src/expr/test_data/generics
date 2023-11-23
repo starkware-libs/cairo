@@ -9,7 +9,7 @@ extern fn bar<T>(x:T) -> A::<T> nopanic;
 
 fn foo(a: A::<felt252>) -> A::<A::<felt252>> {
     let res = bar::<A::<felt252>>(a);
-    let bad : A::<A::<bool>> = res;
+    let _bad : A::<A::<bool>> = res;
     res
 }
 
@@ -20,9 +20,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
- --> lib.cairo:6:32
-    let bad : A::<A::<bool>> = res;
-                               ^*^
+ --> lib.cairo:6:33
+    let _bad : A::<A::<bool>> = res;
+                                ^*^
 
 //! > ==========================================================================
 
@@ -451,7 +451,7 @@ struct Generic<T, +Introspect<T>> {
 }
 
 fn foo() {
-    let generic = Generic { value: 123 };
+    let _generic = Generic { value: 123 };
 }
 
 impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}

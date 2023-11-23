@@ -22,7 +22,10 @@ struct A {}
 impl ADestruct of Destruct::<A> {
   fn destruct(self: A) nopanic {
     // Use RangeCheck, a previously unused implicit.
-    u128_overflowing_add(1_u128, 2_u128);
+    match u128_overflowing_add(1_u128, 2_u128) {
+      Result::Ok(v) => v,
+      Result::Err(v) => v,
+    };
   }
 }
 

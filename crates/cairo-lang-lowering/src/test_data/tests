@@ -98,7 +98,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-    let (_, b) = (1, a);
+    let (_, _b) = (1, a);
     5
 }
 
@@ -130,7 +130,7 @@ test_function_lowering
 fn foo(a: felt252) -> felt252 {
   let x = {7;};
   {x;}
-  let y = if 1 == 1 { 6 } else { 7 };
+  let _y = if 1 == 1 { 6 } else { 7 };
   foo(3) + 5 * {3; a + 0}
 }
 
@@ -225,11 +225,11 @@ test_function_lowering
 //! > function
 fn foo(x: MyEnum) -> felt252 {
   match x {
-    MyEnum::A(inner) => {return 5;},
+    MyEnum::A(_inner) => {return 5;},
     MyEnum::B(inner) => {inner},
     MyEnum::C(inner) => {
       // A workaround to drop inner.
-      let (a, b) = inner.unbox();
+      let (_a, _b) = inner.unbox();
       7
     }
   }

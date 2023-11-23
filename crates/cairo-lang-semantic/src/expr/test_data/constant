@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    let x = MY_CONST + my_module::CONST_IN_MODULE;
+    let _x = MY_CONST + my_module::CONST_IN_MODULE;
 }
 
 //! > function_name

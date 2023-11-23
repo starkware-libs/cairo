@@ -158,7 +158,7 @@ test_function_generator
 //! > function
 fn foo() -> felt252 {
     let x = revoke_ap();
-    let (y, z) = dup::<felt252>(x);
+    let (y, _z) = dup::<felt252>(x);
     revoke_ap();
     y
 }
@@ -330,7 +330,7 @@ fn foo(a: felt252, b: felt252) -> felt252 {
             revoke_ap();
             c + 1
         },
-        IsZeroResult::NonZero(y) => c + 2,
+        IsZeroResult::NonZero(_y) => c + 2,
     }
 }
 
