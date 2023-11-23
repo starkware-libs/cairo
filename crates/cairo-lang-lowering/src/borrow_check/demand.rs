@@ -1,6 +1,8 @@
 /// ! This module provides the Demand utility struct used for analyzing usage of variables.
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+
+
 /// A reporting trait that reports each variables dup, drop and last_use positions.
 pub trait DemandReporter<Var, Aux = ()> {
     type UsePosition: Copy;
@@ -142,4 +144,8 @@ pub trait AuxCombine {
 
 impl AuxCombine for () {
     fn merge<'a, I: Iterator<Item = &'a Self>>(_: I) -> Self {}
+}
+
+
+pub trait DemandReport<R: DemandReporter<Var>, Var> {
 }
