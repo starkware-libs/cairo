@@ -858,7 +858,7 @@ test_borrow_check
 
 //! > function
 fn foo(mut x: MyStruct) -> MyStruct {
-  let arr = array![
+  let _arr = array![
     {
       x.a = 17;
       x.a += 1;

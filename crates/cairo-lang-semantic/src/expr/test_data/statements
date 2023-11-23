@@ -29,7 +29,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut x = 3
+    let mut _x = 3
 }
 
 //! > function_name
@@ -39,9 +39,9 @@ foo
 
 //! > expected_diagnostics
 error: Missing token TerminalSemicolon.
- --> lib.cairo:2:18
-    let mut x = 3
-                 ^
+ --> lib.cairo:2:19
+    let mut _x = 3
+                  ^
 
 //! > ==========================================================================
 
@@ -156,7 +156,7 @@ fn foo() {
     // Block without ';' in the end
     {}
     // Another statement to make the previous ones non-tail.
-    let x = 3;
+    let _x = 3;
 }
 
 //! > function_name
@@ -187,7 +187,7 @@ fn foo() {
     #[unknown_attr1]
     #[unknown_attr2]
     #[cairofmt::skip]
-    let x = 3;
+    let _x = 3;
 }
 
 //! > function_name

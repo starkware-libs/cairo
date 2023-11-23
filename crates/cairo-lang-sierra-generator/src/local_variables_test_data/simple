@@ -10,11 +10,11 @@ foo
 fn foo(x: felt252) -> felt252 {
     let y0 = x + x;
     let y1 = y0 + y0;
-    let y2 = y1 + y1;  // Note: y2 is not used below.
+    let _y2 = y1 + y1;  // Note: _y2 is not used below.
     revoke_ap();
     let z = x + y1;
     revoke_ap();
-    let w = x + y1 + z;
+    let _w = x + y1 + z;
     x
 }
 
@@ -91,8 +91,8 @@ foo
 fn foo(x: felt252) -> felt252 {
     let y = x + x;
     let z = y + y;
-    let (z0, z1) = dup::<felt252>(z);
-    let (z2, z3) = dup::<felt252>(z1);
+    let (_z0, z1) = dup::<felt252>(z);
+    let (z2, _z3) = dup::<felt252>(z1);
     let (z4, z5) = dup::<felt252>(z2);
     revoke_ap();
     z4 + z5

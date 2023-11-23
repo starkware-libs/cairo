@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -635,6 +635,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
             location = location.after();
         }
         location
+    }
+
+    fn severity(&self) -> Severity {
+        if matches!(
+            self.kind,
+            SemanticDiagnosticKind::UnusedVariable
+                | SemanticDiagnosticKind::UnhandledErrorType { .. }
+        ) {
+            Severity::Warning
+        } else {
+            Severity::Error
+        }
     }
 }
 

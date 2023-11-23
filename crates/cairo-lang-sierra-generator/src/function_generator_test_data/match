@@ -5,7 +5,7 @@ test_function_generator
 
 //! > function
 fn foo(a: felt252) {
-    let (x, y) = immovable(if a == 0 {
+    let (_x, _y) = immovable(if a == 0 {
         (a, a)
     } else {
         (a, a)

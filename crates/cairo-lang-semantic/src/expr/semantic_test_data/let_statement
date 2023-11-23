@@ -6,7 +6,7 @@ test_expr_semantics
 //! > expr_code
 {
     let a: felt252 = 3;
-    let b = a;
+    let _b = a;
 }
 
 //! > expected
@@ -29,7 +29,7 @@ Block(
             Let(
                 StatementLet {
                     pattern: Variable(
-                        b,
+                        _b,
                     ),
                     expr: Var(
                         LocalVarId(test::a),
