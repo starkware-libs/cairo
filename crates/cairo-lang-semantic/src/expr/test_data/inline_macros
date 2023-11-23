@@ -131,7 +131,7 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
     let x = array!(0);
                   ^
 
-error: Plugin diagnostic: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
+error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
  --> lib.cairo:3:31
     let x = array![0_felt252, 1_u8];
                               ^**^
@@ -219,12 +219,12 @@ error: Plugin diagnostic: Argument must be a string literal.
    write!(f, ba);
              ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:21:16
    write!(f, "{non_existing}");
                ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:24:20
    write!(f, "{}", non_existing);
                    ^**********^
@@ -356,12 +356,12 @@ error: Plugin diagnostic: Argument must be a string literal.
    writeln!(f, ba);
                ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:21:18
    writeln!(f, "{non_existing}");
                  ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:24:22
    writeln!(f, "{}", non_existing);
                      ^**********^
@@ -436,47 +436,47 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `write` does not support this bracket type.
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:11
    format!["{}", ba];
           ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:11
    format!();
           ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:12
    format!(ba);
            ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:14
    format!("{non_existing}");
              ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:18
    format!("{}", non_existing);
                  ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:22
    format!("{}", ba, 1);
                      ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:12
    format!("{}{}", ba);
            ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:12
    format!("{2}{1}{0}", ba, 1);
            ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:26
    format!("{2}{0}", ba, 2, 1);
                          ^
@@ -531,47 +531,47 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `write` does not support this bracket type.
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:10
    print!["{}", ba];
          ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:10
    print!();
          ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:11
    print!(ba);
           ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:13
    print!("{non_existing}");
             ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:17
    print!("{}", non_existing);
                 ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:21
    print!("{}", ba, 1);
                     ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:11
    print!("{}{}", ba);
           ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:11
    print!("{2}{1}{0}", ba, 1);
           ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:25
    print!("{2}{0}", ba, 2, 1);
                         ^
@@ -626,47 +626,47 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:12
    println!["{}", ba];
            ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:12
    println!();
            ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:13
    println!(ba);
             ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:15
    println!("{non_existing}");
               ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:19
    println!("{}", non_existing);
                   ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:23
    println!("{}", ba, 1);
                       ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:13
    println!("{}{}", ba);
             ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:13
    println!("{2}{1}{0}", ba, 1);
             ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:27
    println!("{2}{0}", ba, 2, 1);
                           ^
@@ -726,37 +726,37 @@ error: Plugin diagnostic: Macro `panic` does not support this bracket type.
    panic!["{}", ba];
          ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:11
    panic!(ba);
           ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:13
    panic!("{non_existing}");
             ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:17
    panic!("{}", non_existing);
                 ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:21
    panic!("{}", ba, 1);
                     ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:11
    panic!("{}{}", ba);
           ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:11
    panic!("{2}{1}{0}", ba, 1);
           ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:25
    panic!("{2}{0}", ba, 2, 1);
                         ^

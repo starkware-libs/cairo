@@ -1509,22 +1509,22 @@ test_component_storage: path::to::component::Storage,
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
                                                      ^********************^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
@@ -1534,12 +1534,12 @@ error: Type annotations needed. Failed to infer ?0
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                           ^********************^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^

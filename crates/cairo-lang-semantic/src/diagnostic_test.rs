@@ -148,7 +148,7 @@ fn test_inline_module_diagnostics() {
                     return 5_felt252;
                            ^*******^
 
-            error: Plugin diagnostic: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
+            error: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^*******^
