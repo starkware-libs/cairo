@@ -174,7 +174,7 @@ impl TestCompiler {
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 
-        if DiagnosticsReporter::stderr().with_extra_crates(&main_crate_ids).check(db) {
+        if DiagnosticsReporter::stderr().with_crates(&main_crate_ids).check(db) {
             bail!("failed to compile: {}", path.display());
         }
 

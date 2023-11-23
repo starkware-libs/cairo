@@ -5,7 +5,6 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use itertools::chain;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -33,13 +32,13 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
-    extra_crate_ids: Vec<CrateId>,
+    crate_ids: Vec<CrateId>,
 }
 
 impl DiagnosticsReporter<'static> {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
-        Self { callback: None, extra_crate_ids: vec![] }
+        Self { callback: None, crate_ids: vec![] }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
@@ -79,12 +78,12 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
-        Self { callback: Some(Box::new(callback)), extra_crate_ids: vec![] }
+        Self { callback: Some(Box::new(callback)), crate_ids: vec![] }
     }
 
-    /// Adds extra crates to be checked.
-    pub fn with_extra_crates(mut self, extra_crate_ids: &[CrateId]) -> Self {
-        self.extra_crate_ids = extra_crate_ids.to_vec();
+    /// Sets crates to be checked, instead of all crates in the db.
+    pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
+        self.crate_ids = crate_ids.to_vec();
         self
     }
 
@@ -92,8 +91,8 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `true` if diagnostics were found.
     pub fn check(&mut self, db: &RootDatabase) -> bool {
         let mut found_diagnostics = false;
-        let crates = db.crates().clone();
-        for crate_id in chain!(crates.iter(), self.extra_crate_ids.iter()).copied() {
+        let crates = if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() };
+        for crate_id in crates {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
                 self.callback.on_diagnostic("Failed to get main module file".to_string());
@@ -155,8 +154,6 @@ impl Default for DiagnosticsReporter<'static> {
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
 pub fn get_diagnostics_as_string(db: &RootDatabase, extra_crate_ids: &[CrateId]) -> String {
     let mut diagnostics = String::default();
-    DiagnosticsReporter::write_to_string(&mut diagnostics)
-        .with_extra_crates(extra_crate_ids)
-        .check(db);
+    DiagnosticsReporter::write_to_string(&mut diagnostics).with_crates(extra_crate_ids).check(db);
     diagnostics
 }
