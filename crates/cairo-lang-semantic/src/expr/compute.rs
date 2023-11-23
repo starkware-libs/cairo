@@ -2,7 +2,6 @@
 //! the code, while type checking.
 //! It is invoked by queries for function bodies and other code blocks.
 
-use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -179,7 +178,7 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = HashMap<SmolStr, Variable>;
+pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
@@ -198,16 +197,12 @@ impl Environment {
         ast_param: &ast::Param,
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
-        let name = &semantic_param.name;
-        match self.variables.entry(name.clone()) {
-            std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
-                ast_param,
-                ParamNameRedefinition { function_title_id, param_name: name.clone() },
-            )),
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(Variable::Param(semantic_param));
-                Ok(())
-            }
+        let param_name = semantic_param.name.clone();
+        if self.variables.insert(param_name.clone(), Variable::Param(semantic_param)).is_some() {
+            Err(diagnostics
+                .report(ast_param, ParamNameRedefinition { function_title_id, param_name }))
+        } else {
+            Ok(())
         }
     }
 }
