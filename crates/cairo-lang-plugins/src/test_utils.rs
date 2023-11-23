@@ -1,6 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
-use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
+use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation, Severity};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -23,7 +23,7 @@ pub fn expand_module_text(
             file_id: file_id.file_id(db.upcast()).unwrap(),
             span: syntax_node.span_without_trivia(syntax_db),
         };
-        diagnostics.push(format_diagnostics(db.upcast(), &diag.message, location));
+        diagnostics.push(format_diagnostics(db.upcast(), Severity::Error, &diag.message, location));
     }
     for item_id in db.module_items(module_id).unwrap().iter() {
         if let ModuleItemId::Submodule(item) = item_id {
