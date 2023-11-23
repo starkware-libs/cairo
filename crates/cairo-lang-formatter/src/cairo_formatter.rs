@@ -146,7 +146,7 @@ fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Resul
     let original_text =
         db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
-    if !diagnostics.0.leaves.is_empty() {
+    if diagnostics.check_error_free().is_err() {
         bail!(diagnostics.format(&db));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
