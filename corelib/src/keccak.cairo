@@ -95,8 +95,6 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
     let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
     // `last_block_num_full_words` is in range [0, KECCAK_FULL_RATE_IN_U64S - 1]
     let (_, last_block_num_full_words) = core::integer::u32_safe_divmod(input.len(), words_divisor);
-    // `last_block_num_bytes` is in range [0, KECCAK_FULL_RATE_IN_BYTES - 1]
-    let last_block_num_bytes = last_block_num_full_words * BYTES_IN_U64_WORD + last_input_num_bytes;
 
     // The first word to append would be of the form
     //     0x1<`last_input_num_bytes` LSB bytes of `last_input_word`>.

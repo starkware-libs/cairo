@@ -386,6 +386,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledErrorType { ty } => {
                 format!(r#"Unhandled error type "{}""#, ty.format(db))
             }
+            SemanticDiagnosticKind::UnusedVariable => {
+                "Unused variable. Consider ignoring by prefixing with `_`.".into()
+            }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
@@ -802,6 +805,7 @@ pub enum SemanticDiagnosticKind {
     UnhandledErrorType {
         ty: semantic::TypeId,
     },
+    UnusedVariable,
     ConstGenericParamSupported,
     RefArgNotAVariable,
     RefArgNotMutable,

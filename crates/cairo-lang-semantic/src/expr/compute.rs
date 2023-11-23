@@ -152,6 +152,14 @@ impl<'ctx> ComputationContext<'ctx> {
 
         // Pop the environment from the stack.
         let parent = self.environment.parent.take();
+        if !self.resolver.edition.ignore_unhandled_values() {
+            for (name, var) in self.environment.variables.iter() {
+                if !self.environment.used_variables.contains(&var.id()) && !name.starts_with('_') {
+                    self.diagnostics
+                        .report_by_ptr(var.stable_ptr(self.db.upcast()), UnusedVariable);
+                }
+            }
+        }
         self.environment = parent.unwrap();
         res
     }
@@ -187,6 +195,7 @@ pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
+    used_variables: UnorderedHashSet<semantic::VarId>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -1855,12 +1864,13 @@ pub fn get_variable_by_name(
     variable_name: &SmolStr,
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
-    let mut maybe_env = Some(&*ctx.environment);
+    let mut maybe_env = Some(&mut *ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
+            env.used_variables.insert(var.id());
             return Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
         }
-        maybe_env = env.parent.as_deref();
+        maybe_env = env.parent.as_deref_mut();
     }
     None
 }
@@ -2072,7 +2082,7 @@ pub fn compute_statement_semantic(
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
             let ty = expr.ty();
-            if !ctx.resolver.edition.ignore_unhandled_error_type()
+            if !ctx.resolver.edition.ignore_unhandled_values()
                 && unwrap_error_propagation_type(ctx.db, ty).is_some()
             {
                 ctx.diagnostics.report(&expr_syntax, UnhandledErrorType { ty });

@@ -65,7 +65,7 @@ fn get_message_and_signature(y_parity: bool) -> (u256, Signature, u256, u256, Et
 #[test]
 fn test_verify_eth_signature() {
     let y_parity = true;
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
+    let (msg_hash, signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
         :y_parity
     );
@@ -76,7 +76,7 @@ fn test_verify_eth_signature() {
 #[should_panic(expected: ('Invalid signature',))]
 fn test_verify_eth_signature_wrong_eth_address() {
     let y_parity = true;
-    let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
+    let (msg_hash, signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
         :y_parity
     );
@@ -88,7 +88,7 @@ fn test_verify_eth_signature_wrong_eth_address() {
 #[should_panic(expected: ('Signature out of range',))]
 fn test_verify_eth_signature_overflowing_signature_r() {
     let y_parity = true;
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
+    let (msg_hash, mut signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
         :y_parity
     );
@@ -100,7 +100,7 @@ fn test_verify_eth_signature_overflowing_signature_r() {
 #[should_panic(expected: ('Signature out of range',))]
 fn test_verify_eth_signature_overflowing_signature_s() {
     let y_parity = true;
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
+    let (msg_hash, mut signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
         :y_parity
     );

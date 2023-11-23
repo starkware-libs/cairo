@@ -74,7 +74,7 @@ pub fn is_valid_signature<
     let point2 = public_key.mul(u2).unwrap_syscall();
     let sum = point1.add(point2).unwrap_syscall();
 
-    let (x, y) = sum.get_coordinates().unwrap_syscall();
+    let (x, _y) = sum.get_coordinates().unwrap_syscall();
     x == r
 }
 

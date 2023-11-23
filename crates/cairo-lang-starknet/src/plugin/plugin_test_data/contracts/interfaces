@@ -89,12 +89,12 @@ impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher>
     fn foo(self: Interface1Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
 
@@ -109,12 +109,12 @@ impl Interface1LibraryDispatcherImpl of Interface1DispatcherTrait<Interface1Libr
     fn foo(self: Interface1LibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
 
@@ -133,12 +133,12 @@ impl Interface1SafeLibraryDispatcherImpl of Interface1SafeDispatcherTrait<Interf
     fn foo(self: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
 
@@ -154,12 +154,12 @@ impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1Saf
     fn foo(self: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
 
@@ -181,12 +181,12 @@ impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher>
     fn foo(self: Interface2Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
 
@@ -201,12 +201,12 @@ impl Interface2LibraryDispatcherImpl of Interface2DispatcherTrait<Interface2Libr
     fn foo(self: Interface2LibraryDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
 
@@ -225,12 +225,12 @@ impl Interface2SafeLibraryDispatcherImpl of Interface2SafeDispatcherTrait<Interf
     fn foo(self: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
 
@@ -246,12 +246,12 @@ impl Interface2SafeDispatcherImpl of Interface2SafeDispatcherTrait<Interface2Saf
     fn foo(self: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
 
@@ -749,7 +749,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1010,8 +1010,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("CompEvent") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("CompEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

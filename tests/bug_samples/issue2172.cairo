@@ -5,7 +5,7 @@ struct Node {
 }
 
 fn traverse(node: Node) nopanic {
-    let Node{value, left, right } = node;
+    let Node{value: _, left, right } = node;
     match left {
         Option::Some(x) => traverse(x.unbox()),
         Option::None => {},

@@ -323,26 +323,26 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("CounterIncreased") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("CounterIncreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterIncreased(val));
         }
-        if selector == selector!("CounterDecreased") {
+        if __selector__ == selector!("CounterDecreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterDecreased(val));
         }
-        if selector == selector!("UpgradableEvent") {
+        if __selector__ == selector!("UpgradableEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::UpgradableEvent(val));
         }
-        if selector == selector!("OwnableEvent") {
+        if __selector__ == selector!("OwnableEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -420,37 +420,37 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     fn decrease_counter(self: ICounterContractDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     fn get_counter(self: ICounterContractDispatcher) -> u128 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u128>::deserialize(ref ret_data),
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -467,37 +467,37 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     fn decrease_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     fn get_counter(self: ICounterContractLibraryDispatcher) -> u128 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u128>::deserialize(ref ret_data),
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -520,38 +520,38 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     fn decrease_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     fn get_counter(self: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u128>::deserialize(ref ret_data),
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -570,38 +570,38 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     fn decrease_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     fn get_counter(self: ICounterContractSafeDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u128>::deserialize(ref ret_data),
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -1087,26 +1087,26 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("CounterIncreased") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("CounterIncreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterIncreased(val));
         }
-        if selector == selector!("CounterDecreased") {
+        if __selector__ == selector!("CounterDecreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterDecreased(val));
         }
-        if selector == selector!("UpgradableEvent") {
+        if __selector__ == selector!("UpgradableEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::UpgradableEvent(val));
         }
-        if selector == selector!("OwnableEvent") {
+        if __selector__ == selector!("OwnableEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

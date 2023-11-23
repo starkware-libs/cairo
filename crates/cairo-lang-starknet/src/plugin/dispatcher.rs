@@ -11,6 +11,9 @@ use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
+/// The name of the variable that holds the returned data.
+const RET_DATA: &str = "__dispatcher_return_data__";
+
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
@@ -183,7 +186,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         format!(
                             "\
         core::option::OptionTrait::expect(
-            core::serde::Serde::<{type_name}>::deserialize(ref ret_data),
+            core::serde::Serde::<{type_name}>::deserialize(ref {RET_DATA}),
             'Returned data too short',
         )"
                         )
@@ -357,15 +360,21 @@ fn declaration_method_impl(
         })
     };
     let return_code = RewriteNode::interpolate_patched(
-        if unwrap {
-            "let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        &if unwrap {
+            format!(
+                "let mut {RET_DATA} = starknet::SyscallResultTrait::unwrap_syscall({RET_DATA});
         $deserialization_code$"
+            )
         } else if ret_decode.is_empty() {
-            "let mut ret_data = ret_data?;
+            format!(
+                "let mut {RET_DATA} = {RET_DATA}?;
         Result::Ok($deserialization_code$)"
+            )
         } else {
-            "let mut ret_data = ret_data?;
+            format!(
+                "let mut {RET_DATA} = {RET_DATA}?;
         Result::Ok(\n        $deserialization_code$\n        )"
+            )
         },
         &[("deserialization_code".to_string(), deserialization_code)].into(),
     );
@@ -374,7 +383,7 @@ fn declaration_method_impl(
             "$func_decl$ {{
                     let mut {CALLDATA_PARAM_NAME} = core::traits::Default::default();
             $serialization_code$
-                    let mut ret_data = starknet::$syscall$(
+                    let mut {RET_DATA} = starknet::$syscall$(
                         self.$member$,
                         $entry_point_selector$,
                         core::array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
