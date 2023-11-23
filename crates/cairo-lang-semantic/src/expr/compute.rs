@@ -152,12 +152,9 @@ impl<'ctx> ComputationContext<'ctx> {
 
         // Pop the environment from the stack.
         let parent = self.environment.parent.take();
-        if !self.resolver.edition.ignore_unhandled_values() {
-            for (name, var) in self.environment.variables.iter() {
-                if !self.environment.used_variables.contains(&var.id()) && !name.starts_with('_') {
-                    self.diagnostics
-                        .report_by_ptr(var.stable_ptr(self.db.upcast()), UnusedVariable);
-                }
+        for (name, var) in self.environment.variables.iter() {
+            if !self.environment.used_variables.contains(&var.id()) && !name.starts_with('_') {
+                self.diagnostics.report_by_ptr(var.stable_ptr(self.db.upcast()), UnusedVariable);
             }
         }
         self.environment = parent.unwrap();
@@ -2082,9 +2079,7 @@ pub fn compute_statement_semantic(
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
             let ty = expr.ty();
-            if !ctx.resolver.edition.ignore_unhandled_values()
-                && unwrap_error_propagation_type(ctx.db, ty).is_some()
-            {
+            if unwrap_error_propagation_type(ctx.db, ty).is_some() {
                 ctx.diagnostics.report(&expr_syntax, UnhandledErrorType { ty });
             }
             semantic::Statement::Expr(semantic::StatementExpr {

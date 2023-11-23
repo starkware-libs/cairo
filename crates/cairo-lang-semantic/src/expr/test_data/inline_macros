@@ -116,8 +116,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x = array!(0);
-    let x = array![0_felt252, 1_u8];
+    let _x = array!(0);
+    let _x = array![0_felt252, 1_u8];
 }
 
 //! > function_name
@@ -127,14 +127,14 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `array` does not support this bracket type.
- --> lib.cairo:2:19
-    let x = array!(0);
-                  ^
+ --> lib.cairo:2:20
+    let _x = array!(0);
+                   ^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:31
-    let x = array![0_felt252, 1_u8];
-                              ^**^
+ --> lib.cairo:3:32
+    let _x = array![0_felt252, 1_u8];
+                               ^**^
 
 //! > ==========================================================================
 
@@ -167,7 +167,7 @@ fn foo() {
    write!(f, "{non_existing}");
 
    // Non existing provide argument.
-   write!(f, "{}", non_existing);
+   write!(f, "{}", non_existing).unwrap();
 
    // Too many arguments.
    write!(f, "{}", ba, 1);
@@ -224,9 +224,14 @@ error: Identifier not found.
    write!(f, "{non_existing}");
                ^**********^
 
+error: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+ --> lib.cairo:21:4
+   write!(f, "{non_existing}");
+   ^*************************^
+
 error: Identifier not found.
  --> lib.cairo:24:20
-   write!(f, "{}", non_existing);
+   write!(f, "{}", non_existing).unwrap();
                    ^**********^
 
 error: Plugin diagnostic: Unused argument.
@@ -274,6 +279,11 @@ error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or
     write!(f, "{x");
               ^**^
 
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo[write_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref f) {
@@ -307,7 +317,7 @@ fn foo() {
    writeln!(f, ba);
 
    // Non existing inline argument.
-   writeln!(f, "{non_existing}");
+   writeln!(f, "{non_existing}").unwrap();
 
    // Non existing provide argument.
    writeln!(f, "{}", non_existing);
@@ -358,13 +368,18 @@ error: Plugin diagnostic: Argument must be a string literal.
 
 error: Identifier not found.
  --> lib.cairo:21:18
-   writeln!(f, "{non_existing}");
+   writeln!(f, "{non_existing}").unwrap();
                  ^**********^
 
 error: Identifier not found.
  --> lib.cairo:24:22
    writeln!(f, "{}", non_existing);
                      ^**********^
+
+error: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+ --> lib.cairo:24:4
+   writeln!(f, "{}", non_existing);
+   ^*****************************^
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:27:26
@@ -385,6 +400,11 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:36:30
    writeln!(f, "{2}{0}", ba, 2, 1);
                              ^
+
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:8
+   let ba: ByteArray = "hello";
+       ^^
 
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo[writeln_macro]:2:22
@@ -481,6 +501,11 @@ error: Plugin diagnostic: Unused argument.
    format!("{2}{0}", ba, 2, 1);
                          ^
 
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[format_macro][write_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref __formatter_for_format_macro__) {
@@ -575,6 +600,11 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:25
    print!("{2}{0}", ba, 2, 1);
                         ^
+
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
 
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[print_macro][write_macro]:2:22
@@ -671,6 +701,11 @@ error: Plugin diagnostic: Unused argument.
    println!("{2}{0}", ba, 2, 1);
                           ^
 
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[println_macro][writeln_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
@@ -761,6 +796,11 @@ error: Plugin diagnostic: Unused argument.
    panic!("{2}{0}", ba, 2, 1);
                         ^
 
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?4
  --> lib.cairo[panic_macro][write_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
@@ -775,7 +815,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let x = foo!(0);
+   let _x = foo!(0);
 }
 
 //! > function_name
@@ -785,9 +825,9 @@ foo
 
 //! > expected_diagnostics
 error: Inline macro `foo` not found.
- --> lib.cairo:2:12
-   let x = foo!(0);
-           ^*****^
+ --> lib.cairo:2:13
+   let _x = foo!(0);
+            ^*****^
 
 //! > ==========================================================================
 

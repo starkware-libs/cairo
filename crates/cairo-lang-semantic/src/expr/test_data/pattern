@@ -23,9 +23,9 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(s2: Struct2) {
-    let Struct2{member1, member2, member3} = s2;
-    let Struct2{member1, member2, ..} = s2;
-    let Struct2{member1, member2, member3: Struct1{member1: a,..}} = s2;
+    let Struct2{member1: _, member2: _, member3: _} = s2;
+    let Struct2{member1: _, member2: _, ..} = s2;
+    let Struct2{member1: _, member2: _, member3: Struct1{member1: _a,..}} = s2;
 }
 
 //! > function_name
@@ -53,7 +53,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(s: MyStruct) {
-    let MyStruct { a } = s;
+    let MyStruct { a: _ } = s;
 }
 
 //! > function_name
@@ -68,8 +68,8 @@ struct MyStruct {
 //! > expected_diagnostics
 error: Missing member "b".
  --> lib.cairo:6:9
-    let MyStruct { a } = s;
-        ^************^
+    let MyStruct { a: _ } = s;
+        ^***************^
 
 //! > ==========================================================================
 
@@ -110,7 +110,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(s: MyStruct) {
-    let MyStruct { a, b, a, b } = s;
+    let MyStruct { a: _, b: _, a: _, b: _ } = s;
 }
 
 //! > function_name
@@ -124,14 +124,14 @@ struct MyStruct {
 
 //! > expected_diagnostics
 error: Redefinition of member "a" on struct "test::MyStruct".
- --> lib.cairo:6:26
-    let MyStruct { a, b, a, b } = s;
-                         ^
+ --> lib.cairo:6:32
+    let MyStruct { a: _, b: _, a: _, b: _ } = s;
+                               ^
 
 error: Redefinition of member "b" on struct "test::MyStruct".
- --> lib.cairo:6:29
-    let MyStruct { a, b, a, b } = s;
-                            ^
+ --> lib.cairo:6:38
+    let MyStruct { a: _, b: _, a: _, b: _ } = s;
+                                     ^
 
 //! > ==========================================================================
 
@@ -142,7 +142,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(s: MyStruct) {
-    let MyStruct { a, c, a } = s;
+    let MyStruct { a: _, c: _, a: _ } = s;
 }
 
 //! > function_name
@@ -156,16 +156,16 @@ struct MyStruct {
 
 //! > expected_diagnostics
 error: Struct "test::MyStruct" has no member "c"
- --> lib.cairo:6:23
-    let MyStruct { a, c, a } = s;
-                      ^
+ --> lib.cairo:6:26
+    let MyStruct { a: _, c: _, a: _ } = s;
+                         ^
 
 error: Redefinition of member "a" on struct "test::MyStruct".
- --> lib.cairo:6:26
-    let MyStruct { a, c, a } = s;
-                         ^
+ --> lib.cairo:6:32
+    let MyStruct { a: _, c: _, a: _ } = s;
+                               ^
 
 error: Missing member "b".
  --> lib.cairo:6:9
-    let MyStruct { a, c, a } = s;
-        ^******************^
+    let MyStruct { a: _, c: _, a: _ } = s;
+        ^***************************^

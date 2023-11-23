@@ -272,7 +272,7 @@ SmallE2ETestRunner
 fn foo() -> felt252 {
     match match_nullable(nullable_from_box(BoxTrait::new(()))) {
         nullable::FromNullableResult::Null(_) => 0,
-        nullable::FromNullableResult::NotNull(x) => 1,
+        nullable::FromNullableResult::NotNull(_x) => 1,
     }
 }
 

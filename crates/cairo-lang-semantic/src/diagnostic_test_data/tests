@@ -151,10 +151,10 @@ test_expr_diagnostics
 
 //! > expr_code
 {
-    let a = 123_felt252;
-    let a = 123_u128;
-    let b = 123_NonZero;
-    let b = 123_u129;
+    let _a = 123_felt252;
+    let _a = 123_u128;
+    let _b = 123_NonZero;
+    let _b = 123_u129;
 }
 
 //! > module_code
@@ -165,14 +165,14 @@ fn foo() {
 
 //! > expected_diagnostics
 error: Unknown type.
- --> lib.cairo:8:13
-    let b = 123_u129;
-            ^******^
+ --> lib.cairo:8:14
+    let _b = 123_u129;
+             ^******^
 
 error: Mismatched types. The type `core::zeroable::NonZero` cannot be created from a numeric literal.
- --> lib.cairo:7:13
-    let b = 123_NonZero;
-            ^*********^
+ --> lib.cairo:7:14
+    let _b = 123_NonZero;
+             ^*********^
 
 //! > ==========================================================================
 
@@ -236,7 +236,7 @@ test_expr_diagnostics
 
 //! > expr_code
 {
-  let x = y;
+  let _x = y;
 }
 
 //! > module_code
@@ -253,6 +253,72 @@ error: Missing tokens. Expected an item after attributes.
         ^
 
 error: Identifier not found.
- --> lib.cairo:6:11
-  let x = y;
-          ^
+ --> lib.cairo:6:12
+  let _x = y;
+           ^
+
+//! > ==========================================================================
+
+//! > Test unused variable.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let x = 3;
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:7
+  let x = 3;
+      ^
+
+//! > ==========================================================================
+
+//! > Test unhandled Option.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  Option::<felt252>::None;
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unhandled error type "core::option::Option::<core::felt252>"
+ --> lib.cairo:3:3
+  Option::<felt252>::None;
+  ^*********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled Result.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  Result::<felt252, felt252>::Err(4);
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unhandled error type "core::result::Result::<core::felt252, core::felt252>"
+ --> lib.cairo:3:3
+  Result::<felt252, felt252>::Err(4);
+  ^********************************^

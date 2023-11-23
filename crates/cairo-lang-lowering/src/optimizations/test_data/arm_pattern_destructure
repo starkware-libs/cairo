@@ -7,14 +7,14 @@ test_match_optimizer
 fn foo(mut z: felt252) {
     let y = bar(ref z);
     match y {
-        MyEnum::a((x, (y, z))) => {},
-        MyEnum::b((x, y)) => {},
-        MyEnum::c(x) => {},
-        MyEnum::d((x, y)) => {},
-        MyEnum::e(x) => {},
-        MyEnum::f((x,)) => {},
-        MyEnum::g(x) => {},
-        MyEnum::h(x) => {},
+        MyEnum::a((_x, (_y, _z))) => {},
+        MyEnum::b((_x, _y)) => {},
+        MyEnum::c(_x) => {},
+        MyEnum::d((_x, _y)) => {},
+        MyEnum::e(_x) => {},
+        MyEnum::f((_x,)) => {},
+        MyEnum::g(_x) => {},
+        MyEnum::h(_x) => {},
     }
 }
 

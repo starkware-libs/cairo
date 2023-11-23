@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let a = 'a'_Pedersen;
+    let _a = 'a'_Pedersen;
 }
 
 //! > function_name
@@ -15,6 +15,6 @@ foo
 
 //! > expected_diagnostics
 error: Mismatched types. The type `core::pedersen::Pedersen` cannot be created from a numeric literal.
- --> lib.cairo:2:13
-    let a = 'a'_Pedersen;
-            ^**********^
+ --> lib.cairo:2:14
+    let _a = 'a'_Pedersen;
+             ^**********^

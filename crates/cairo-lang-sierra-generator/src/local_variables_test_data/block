@@ -16,7 +16,7 @@ fn foo(x: felt252) -> felt252 {
         x1 + x1
     };
     // TODO(lior): Replace with "let w = x1 + x2 + z".
-    let w = x1 + x2;
+    let _w = x1 + x2;
     revoke_ap();
     x1 + y
 }

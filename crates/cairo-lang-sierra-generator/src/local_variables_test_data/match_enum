@@ -22,9 +22,9 @@ fn foo() -> felt252 {
     }
   };
   // 'w1' is revoked because of the revoke_ap() inside the match.
-  let w2 = w1 + w1;
+  let _w2 = w1 + w1;
   // 'literal' is not revoked since it is a const.
-  let w3 = literal + literal;
+  let _w3 = literal + literal;
   revoke_ap();
   // 'y' is revoked.
   y
@@ -103,7 +103,7 @@ foo
 fn foo(x: MyEnum, z: felt252) -> felt252 {
     let w1 = z + z;
     match x {
-        MyEnum::A(a) => {
+        MyEnum::A(_a) => {
             revoke_ap();
             return 0;
         },

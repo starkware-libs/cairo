@@ -142,7 +142,7 @@ fn foo(a: felt252) -> Option<u16> {
    let v = get_option();
 
    // The following instruction should block the optimization.
-   let a = a + a;
+   let _a = a + a;
    let v1 = match v {
         Option::Some(_) => Option::Some(1_u16),
         Option::None => Option::None,
