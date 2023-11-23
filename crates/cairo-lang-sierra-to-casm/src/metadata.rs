@@ -84,10 +84,15 @@ pub fn calc_metadata(
             )
         })
         .collect();
-    let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
-    let pre_gas_info2 = compute_precost_info(program)?;
-    pre_gas_info.assert_eq_variables(&pre_gas_info2);
-    pre_gas_info.assert_eq_functions(&pre_gas_info2);
+    let pre_gas_info_new = compute_precost_info(program)?;
+    let pre_gas_info_old = calc_gas_precost_info(program, pre_function_set_costs)?;
+    pre_gas_info_old.assert_eq_functions(&pre_gas_info_new);
+    let pre_gas_info = if config.linear_gas_solver {
+        pre_gas_info_new
+    } else {
+        pre_gas_info_old.assert_eq_variables(&pre_gas_info_new);
+        pre_gas_info_old
+    };
 
     let ap_change_info =
         if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
@@ -122,7 +127,7 @@ pub fn calc_metadata(
         let post_gas_info2 = compute_postcost_info(
             program,
             &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
-            &pre_gas_info2,
+            &pre_gas_info,
             &enforced_function_costs,
         )?;
 
