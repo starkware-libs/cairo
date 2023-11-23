@@ -17,7 +17,9 @@ use cairo_lang_defs::ids::{
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
@@ -679,7 +681,7 @@ impl LanguageServer for Backend {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
                 return None;
             };
-            if !db.file_syntax_diagnostics(file).is_empty() {
+            if db.file_syntax_diagnostics(file).check_error_free().is_err() {
                 return None;
             }
             let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
@@ -1395,6 +1397,10 @@ fn get_diagnostics<T: DiagnosticEntry>(
             } else {
                 Some(related_information)
             },
+            severity: Some(match diagnostic.severity() {
+                Severity::Error => DiagnosticSeverity::ERROR,
+                Severity::Warning => DiagnosticSeverity::WARNING,
+            }),
             ..Diagnostic::default()
         });
     }

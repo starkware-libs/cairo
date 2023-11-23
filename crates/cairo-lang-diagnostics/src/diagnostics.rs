@@ -13,6 +13,13 @@ use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
 
+/// The severity of a diagnostic.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Debug)]
+pub enum Severity {
+    Error,
+    Warning,
+}
+
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
@@ -21,6 +28,9 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
+    }
+    fn severity(&self) -> Severity {
+        Severity::Error
     }
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
@@ -148,21 +158,23 @@ impl<T> ToOption<T> for Maybe<T> {
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
-    pub count: usize,
+    pub error_count: usize,
     pub leaves: Vec<TEntry>,
     pub subtrees: Vec<Diagnostics<TEntry>>,
 }
 impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn new() -> Self {
-        Self { leaves: Default::default(), subtrees: Default::default(), count: 0 }
+        Self { leaves: Default::default(), subtrees: Default::default(), error_count: 0 }
     }
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
+        if diagnostic.severity() == Severity::Error {
+            self.error_count += 1;
+        }
         self.leaves.push(diagnostic);
-        self.count += 1;
         DiagnosticAdded
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
-        self.count += diagnostics.len();
+        self.error_count += diagnostics.0.error_count;
         self.subtrees.push(diagnostics);
     }
     pub fn build(self) -> Diagnostics<TEntry> {
@@ -192,16 +204,9 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         Self(DiagnosticsBuilder::default().into())
     }
 
-    pub fn len(&self) -> usize {
-        self.0.count
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.count == 0
-    }
-
-    pub fn is_diagnostic_free(&self) -> Maybe<()> {
-        if self.is_empty() { Ok(()) } else { Err(DiagnosticAdded) }
+    /// Returns Ok(()) if there are no errors, or an error handle if there are.
+    pub fn check_error_free(&self) -> Maybe<()> {
+        if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
 
     pub fn format(&self, db: &TEntry::DbType) -> String {
