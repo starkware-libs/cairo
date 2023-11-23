@@ -383,6 +383,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ErrorPropagateOnNonErrorType { ty } => {
                 format!(r#"Type "{}" can not error propagate"#, ty.format(db))
             }
+            SemanticDiagnosticKind::UnhandledErrorType { ty } => {
+                format!(r#"Unhandled error type "{}""#, ty.format(db))
+            }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
@@ -794,6 +797,9 @@ pub enum SemanticDiagnosticKind {
         err_ty: semantic::TypeId,
     },
     ErrorPropagateOnNonErrorType {
+        ty: semantic::TypeId,
+    },
+    UnhandledErrorType {
         ty: semantic::TypeId,
     },
     ConstGenericParamSupported,

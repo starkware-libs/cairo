@@ -142,8 +142,8 @@ fn test_pop_log() {
     let mut data = array![];
     keys.append(1234);
     data.append(2345);
-    starknet::emit_event_syscall(keys.span(), data.span());
-    starknet::emit_event_syscall(keys.span(), data.span());
+    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
+    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
 
     let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
     assert_eq!(keys.len(), 1);
