@@ -6,8 +6,8 @@ test_function_lowering
 //! > function
 fn foo() {
     let a = (1,2);
-    let (x,y) = immovable(a);
-    let (x,y) = immovable((1,2));
+    let (_x, _y) = immovable(a);
+    let (_x, _y) = immovable((1,2));
 }
 
 //! > function_name

@@ -18,8 +18,8 @@ fn test_expr_lookup() {
         indoc::indoc! {"
             // `inline` is used just to have an allowed attribute.
             #[inline]
-            fn foo<A, B>(a: felt252) -> felt252 {
-                let x = 5 + 5;
+            fn foo<A, B>(_a: felt252) -> felt252 {
+                let _x = 5 + 5;
                 match 1 * (1) {
                     0 => {5},
                     _ => {6}
@@ -44,7 +44,7 @@ fn test_expr_lookup() {
     assert_eq!(
         expr_debugs,
         [
-            "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(x), expr: \
+            "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(_x), expr: \
              FunctionCall(ExprFunctionCall { function: core::Felt252Add::add, args: \
              [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 })), \
              Value(Literal(ExprLiteral { value: 5, ty: core::felt252 }))], ty: core::felt252 }) \

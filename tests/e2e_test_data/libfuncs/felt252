@@ -5,7 +5,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: felt252, b: NonZero<felt252>) -> felt252 {
-    let x = felt252_div(a, b);
+    let _x = felt252_div(a, b);
     felt252_div(a, b)
 }
 
