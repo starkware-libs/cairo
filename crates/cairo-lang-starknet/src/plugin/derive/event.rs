@@ -180,6 +180,7 @@ fn handle_enum(
     enum_ast: &ast::ItemEnum,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
+    const SELECTOR: &str = "__selector__";
     let enum_name = RewriteNode::new_trimmed(enum_ast.name(db).as_syntax_node());
 
     // TODO(spapini): Support generics.
@@ -256,11 +257,13 @@ fn handle_enum(
         } else {
             let deserialize_member = deserialize_field(member_kind, RewriteNode::text("val"));
             let deserialize_variant = RewriteNode::interpolate_patched(
-                "\
-        if selector == selector!(\"$variant_name$\") {$deserialize_member$
+                &format!(
+                    "\
+        if {SELECTOR} == selector!(\"$variant_name$\") {{$deserialize_member$
                 return Option::Some($enum_name$::$variant_name$(val));
-        }
-        ",
+        }}
+        "
+                ),
                 &[
                     ("enum_name".to_string(), enum_name.clone()),
                     ("variant_name".to_string(), variant_name.clone()),
@@ -310,7 +313,7 @@ fn handle_enum(
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {{
-                    $deserialize_flat_variants$let selector = \
+                    $deserialize_flat_variants$let {SELECTOR} = \
              *core::array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_nested_variants$Option::None
                 }}

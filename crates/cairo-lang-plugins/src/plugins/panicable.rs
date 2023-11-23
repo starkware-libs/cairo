@@ -111,7 +111,7 @@ fn generate_panicable_code(
                         {success_variant} (v) => {{
                             v
                         }},
-                        {failure_variant} (v) => {{
+                        {failure_variant} (_v) => {{
                             let mut data = core::array::ArrayTrait::<felt252>::new();
                             core::array::ArrayTrait::<felt252>::append(ref data, $err_value$);
                             panic(data)

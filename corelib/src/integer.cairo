@@ -25,7 +25,7 @@ extern fn u128s_from_felt252(a: felt252) -> U128sFromFelt252Result implicits(Ran
 fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(x) => Option::Some(x),
-        U128sFromFelt252Result::Wide(x) => Option::None,
+        U128sFromFelt252Result::Wide(_x) => Option::None,
     }
 }
 
@@ -91,7 +91,7 @@ fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeChe
 fn u128_checked_add(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -111,7 +111,7 @@ impl U128AddEq of AddEq<u128> {
 fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -163,7 +163,7 @@ pub(crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
 
 impl U128Div of Div<u128> {
     fn div(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -176,7 +176,7 @@ impl U128DivEq of DivEq<u128> {
 
 impl U128Rem of Rem<u128> {
     fn rem(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -330,7 +330,7 @@ pub fn u8_wrapping_sub(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
 fn u8_checked_add(lhs: u8, rhs: u8) -> Option<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -349,7 +349,7 @@ impl U8AddEq of AddEq<u8> {
 fn u8_checked_sub(lhs: u8, rhs: u8) -> Option<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -399,7 +399,7 @@ impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
 
 impl U8Div of Div<u8> {
     fn div(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -412,7 +412,7 @@ impl U8DivEq of DivEq<u8> {
 
 impl U8Rem of Rem<u8> {
     fn rem(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -525,7 +525,7 @@ pub fn u16_wrapping_sub(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic
 fn u16_checked_add(lhs: u16, rhs: u16) -> Option<u16> implicits(RangeCheck) nopanic {
     match u16_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -544,7 +544,7 @@ impl U16AddEq of AddEq<u16> {
 fn u16_checked_sub(lhs: u16, rhs: u16) -> Option<u16> implicits(RangeCheck) nopanic {
     match u16_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -596,7 +596,7 @@ impl U16TryIntoNonZero of TryInto<u16, NonZero<u16>> {
 
 impl U16Div of Div<u16> {
     fn div(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -609,7 +609,7 @@ impl U16DivEq of DivEq<u16> {
 
 impl U16Rem of Rem<u16> {
     fn rem(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -722,7 +722,7 @@ pub fn u32_wrapping_sub(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic
 fn u32_checked_add(lhs: u32, rhs: u32) -> Option<u32> implicits(RangeCheck) nopanic {
     match u32_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -741,7 +741,7 @@ impl U32AddEq of AddEq<u32> {
 fn u32_checked_sub(lhs: u32, rhs: u32) -> Option<u32> implicits(RangeCheck) nopanic {
     match u32_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -793,7 +793,7 @@ pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
 
 impl U32Div of Div<u32> {
     fn div(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -806,7 +806,7 @@ impl U32DivEq of DivEq<u32> {
 
 impl U32Rem of Rem<u32> {
     fn rem(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -919,7 +919,7 @@ pub fn u64_wrapping_sub(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic
 fn u64_checked_add(lhs: u64, rhs: u64) -> Option<u64> implicits(RangeCheck) nopanic {
     match u64_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -938,7 +938,7 @@ impl U64AddEq of AddEq<u64> {
 fn u64_checked_sub(lhs: u64, rhs: u64) -> Option<u64> implicits(RangeCheck) nopanic {
     match u64_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
-        Result::Err(r) => Option::None,
+        Result::Err(_r) => Option::None,
     }
 }
 
@@ -990,7 +990,7 @@ impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
 
 impl U64Div of Div<u64> {
     fn div(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -1003,7 +1003,7 @@ impl U64DivEq of DivEq<u64> {
 
 impl U64Rem of Rem<u64> {
     fn rem(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -1259,7 +1259,7 @@ pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
 
 impl U256Div of Div<u256> {
     fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, _r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -1272,7 +1272,7 @@ impl U256DivEq of DivEq<u256> {
 
 impl U256Rem of Rem<u256> {
     fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
+        let (_q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }

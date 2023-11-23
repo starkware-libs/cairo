@@ -633,7 +633,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(x) => { Store::write(address_domain, base, 0)?; }
+            Option::None(_x) => { Store::write(address_domain, base, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }
