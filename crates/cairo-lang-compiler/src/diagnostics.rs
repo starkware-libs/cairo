@@ -1,10 +1,12 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_utils::Upcast;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -33,12 +35,14 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
     crate_ids: Vec<CrateId>,
+    /// If true, compilation will not fail due to warnings.
+    allow_warnings: bool,
 }
 
 impl DiagnosticsReporter<'static> {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
-        Self { callback: None, crate_ids: vec![] }
+        Self { callback: None, crate_ids: vec![], allow_warnings: false }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
@@ -78,12 +82,18 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
-        Self { callback: Some(Box::new(callback)), crate_ids: vec![] }
+        Self { callback: Some(Box::new(callback)), crate_ids: vec![], allow_warnings: false }
     }
 
     /// Sets crates to be checked, instead of all crates in the db.
     pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
         self.crate_ids = crate_ids.to_vec();
+        self
+    }
+
+    /// Allows the compilation to succeed if only warnings are emitted.
+    pub fn allow_warnings(mut self) -> Self {
+        self.allow_warnings = true;
         self
     }
 
@@ -111,28 +121,33 @@ impl<'a> DiagnosticsReporter<'a> {
 
             for module_id in &*db.crate_modules(crate_id) {
                 for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    let diag = db.file_syntax_diagnostics(file_id);
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
                 }
 
-                if let Ok(diag) = db.module_semantic_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
+                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
                 }
 
-                if let Ok(diag) = db.module_lowering_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
+                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
                 }
             }
         }
+        found_diagnostics
+    }
+
+    /// Checks if a diagnostics group contains any diagnostics and reports them to the provided
+    /// callback as strings. Returns `true` if diagnostics were found.
+    fn check_diag_group<TEntry: DiagnosticEntry>(
+        &mut self,
+        db: &TEntry::DbType,
+        group: Diagnostics<TEntry>,
+    ) -> bool {
+        let text = group.format(db);
+        let found_diagnostics =
+            if self.allow_warnings { group.check_error_free().is_err() } else { !text.is_empty() };
+        self.callback.on_diagnostic(text);
         found_diagnostics
     }
 
