@@ -467,3 +467,25 @@ error: Cycle detected while resolving generic param. Try specifying the generic 
  --> lib.cairo:13:72
 impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
                                                                        ^********************^
+
+//! > ==========================================================================
+
+//! > Generic param depends on the next generic param
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<+Drop<T>, T> {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
