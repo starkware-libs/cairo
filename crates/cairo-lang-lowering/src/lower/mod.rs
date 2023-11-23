@@ -67,8 +67,8 @@ pub fn lower_semantic_function(
     semantic_function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<MultiLowering> {
     db.function_declaration_diagnostics(semantic_function_id)
-        .is_diagnostic_free()
-        .and_then(|()| db.function_body_diagnostics(semantic_function_id).is_diagnostic_free())?;
+        .is_error_free()
+        .and_then(|()| db.function_body_diagnostics(semantic_function_id).is_error_free())?;
     let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
     let function_id = db
         .intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(semantic_function_id));
