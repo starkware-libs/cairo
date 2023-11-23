@@ -2,7 +2,6 @@
 //! the code, while type checking.
 //! It is invoked by queries for function bodies and other code blocks.
 
-use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -19,7 +18,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -179,7 +178,7 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = HashMap<SmolStr, Variable>;
+pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
@@ -198,16 +197,14 @@ impl Environment {
         ast_param: &ast::Param,
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
-        let name = &semantic_param.name;
-        match self.variables.entry(name.clone()) {
-            std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
+        if let Entry::Vacant(entry) = self.variables.entry(semantic_param.name.clone()) {
+            entry.insert(Variable::Param(semantic_param));
+            Ok(())
+        } else {
+            Err(diagnostics.report(
                 ast_param,
-                ParamNameRedefinition { function_title_id, param_name: name.clone() },
-            )),
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(Variable::Param(semantic_param));
-                Ok(())
-            }
+                ParamNameRedefinition { function_title_id, param_name: semantic_param.name },
+            ))
         }
     }
 }
