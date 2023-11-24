@@ -61,7 +61,7 @@ mod counter_contract {
             .write(IOtherContractDispatcher { contract_address: other_contract_addr });
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl CounterContract of super::ICounterContract<ContractState> {
         fn get_counter(self: @ContractState) -> u128 {
             self.counter.read()

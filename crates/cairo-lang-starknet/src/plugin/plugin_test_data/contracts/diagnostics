@@ -1883,7 +1883,17 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+ --> lib.cairo:6:5
+    #[external(v0)]
+    ^*************^
+
 error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:10:5
+    #[external(v1)]
+    ^*************^
+
+warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:10:5
     #[external(v1)]
     ^*************^
@@ -1979,6 +1989,11 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+ --> lib.cairo:14:5
+    #[external(v0)]
+    ^*************^
+
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:16:9
         #[external(v0)]
@@ -1993,6 +2008,11 @@ error: Plugin diagnostic: The `constructor` attribute is not allowed inside an i
  --> lib.cairo:20:9
         #[constructor]
         ^************^
+
+warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+ --> lib.cairo:25:5
+    #[external(v0)]
+    ^*************^
 
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:27:9
