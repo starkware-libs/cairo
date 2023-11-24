@@ -47,7 +47,7 @@ mod account {
         self.validate_transaction()
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl AccountContractImpl of starknet::account::AccountContract<ContractState> {
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
             self.validate_transaction()

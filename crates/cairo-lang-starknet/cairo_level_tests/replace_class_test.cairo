@@ -21,7 +21,7 @@ mod contract_a {
         self.value.write(value);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl IWithReplaceImpl of super::IWithReplace<ContractState> {
         fn replace(ref self: ContractState, class_hash: ClassHash) {
             starknet::replace_class_syscall(class_hash).unwrap_syscall();
