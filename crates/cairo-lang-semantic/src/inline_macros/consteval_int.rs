@@ -93,10 +93,10 @@ pub fn compute_constant_expr(
                     ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             _ => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: bin_expr.stable_ptr().untyped(),
-                    message: "Unsupported binary operator in consteval_int macro".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    bin_expr.stable_ptr().untyped(),
+                    "Unsupported binary operator in consteval_int macro".to_string(),
+                ));
                 None
             }
         },
@@ -105,10 +105,10 @@ pub fn compute_constant_expr(
                 Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics)?)
             }
             _ => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: un_expr.stable_ptr().untyped(),
-                    message: "Unsupported unary operator in consteval_int macro".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    un_expr.stable_ptr().untyped(),
+                    "Unsupported unary operator in consteval_int macro".to_string(),
+                ));
                 None
             }
         },
@@ -116,10 +116,10 @@ pub fn compute_constant_expr(
             compute_constant_expr(db, &paren_expr.expr(db), diagnostics)
         }
         _ => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: value.stable_ptr().untyped(),
-                message: "Unsupported expression in consteval_int macro".to_string(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                value.stable_ptr().untyped(),
+                "Unsupported expression in consteval_int macro".to_string(),
+            ));
             None
         }
     }

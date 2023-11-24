@@ -212,10 +212,10 @@ fn validate_v0(
     name: &str,
 ) {
     if !is_single_arg_attr(db, attr, "v0") {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("Only #[{name}(v0)] is supported."),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            attr.stable_ptr().untyped(),
+            format!("Only #[{name}(v0)] is supported."),
+        ));
     }
 }
 
@@ -240,12 +240,12 @@ pub fn forbid_attribute_in_impl(
     embedded_impl_attr: &str,
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
-        diagnostics.push(PluginDiagnostic {
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            attr.stable_ptr().untyped(),
+            format!(
                 "The `{attr_name}` attribute is not allowed inside an impl marked as \
                  `{embedded_impl_attr}`."
             ),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
+        ));
     }
 }

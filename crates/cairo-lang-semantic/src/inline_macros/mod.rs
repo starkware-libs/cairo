@@ -45,13 +45,13 @@ pub fn unsupported_bracket_diagnostic(
 ) -> InlinePluginResult {
     InlinePluginResult {
         code: None,
-        diagnostics: vec![PluginDiagnostic {
-            stable_ptr: macro_ast.arguments(db).left_bracket_stable_ptr(db),
-            message: format!(
+        diagnostics: vec![PluginDiagnostic::error(
+            macro_ast.arguments(db).left_bracket_stable_ptr(db),
+            format!(
                 "Macro `{}` does not support this bracket type.",
                 macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
             ),
-        }],
+        )],
     }
 }
 
@@ -121,14 +121,14 @@ macro_rules! extract_macro_unnamed_args {
 
         let args = $crate::inline_macros::extract_unnamed_args($db, &macro_arg_list, $n);
         let Some(args) = args else {
-            let diagnostics = vec![PluginDiagnostic {
-                stable_ptr: $syntax.stable_ptr().untyped(),
-                message: format!(
+            let diagnostics = vec![PluginDiagnostic::error(
+                $syntax.stable_ptr().untyped(),
+                format!(
                     "Macro `{}` must have exactly {} unnamed arguments.",
                     $syntax.path($db).as_syntax_node().get_text_without_trivia($db),
                     $n
                 ),
-            }];
+            )];
             return InlinePluginResult { code: None, diagnostics };
         };
         let args: [ast::Expr; $n] = args.try_into().unwrap();

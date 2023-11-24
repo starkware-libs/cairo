@@ -137,9 +137,9 @@ impl ComponentsGenerationData {
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
         if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: storage_name.stable_ptr().untyped(),
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                storage_name.stable_ptr().untyped(),
+                format!(
                     "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
                      `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
@@ -147,15 +147,15 @@ impl ComponentsGenerationData {
                     storage_name_syntax_node.get_text_without_trivia(db)
                 )
                 .to_string(),
-            });
+            ));
             is_valid = false;
         }
 
         let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
         if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: event_name.stable_ptr().untyped(),
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                event_name.stable_ptr().untyped(),
+                format!(
                     "`{event_name_str}` is not a nested event in the contract's \
                      `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \
                      enum:\n```\n{event_name_str}: \
@@ -164,7 +164,7 @@ impl ComponentsGenerationData {
                      supported.",
                 )
                 .to_string(),
-            });
+            ));
             is_valid = false;
         }
 
@@ -275,13 +275,13 @@ fn handle_contract_item(
                     &mut data.specific.entry_points_code,
                 );
             } else {
-                diagnostics.push(PluginDiagnostic {
-                    message: format!(
+                diagnostics.push(PluginDiagnostic::error(
+                    alias_ast.stable_ptr().untyped(),
+                    format!(
                         "The '{ABI_ATTR}' attribute for impl aliases only supports the \
                          '{ABI_ATTR_EMBED_V0_ARG}' argument.",
                     ),
-                    stable_ptr: alias_ast.stable_ptr().untyped(),
-                });
+                ));
             }
         }
         ast::Item::InlineMacro(inline_macro_ast)
@@ -459,13 +459,13 @@ fn impl_abi_config(
         } else if is_single_arg_attr(db, &abi_attr, ABI_ATTR_EMBED_V0_ARG) {
             ImplAbiConfig::Embed
         } else {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                abi_attr.stable_ptr().untyped(),
+                format!(
                     "The '{ABI_ATTR}' attribute for impls only supports the \
                      '{ABI_ATTR_PER_ITEM_ARG}' or '{ABI_ATTR_EMBED_V0_ARG}' argument.",
                 ),
-                stable_ptr: abi_attr.stable_ptr().untyped(),
-            });
+            ));
             ImplAbiConfig::None
         }
     } else if has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR) {
@@ -489,13 +489,13 @@ fn handle_embed_impl_alias(
         }
     };
     if has_generic_params {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            alias_ast.stable_ptr().untyped(),
+            format!(
                 "Generic parameters are not supported in impl aliases with \
                  `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]`."
             ),
-        });
+        ));
         return;
     }
     let elements = alias_ast.impl_path(db).elements(db);
@@ -504,13 +504,13 @@ fn handle_embed_impl_alias(
     };
 
     if !is_first_generic_arg_contract_state(db, impl_final_part) {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            alias_ast.stable_ptr().untyped(),
+            format!(
                 "First generic argument of impl alias with \
                  `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]` must be `{CONTRACT_STATE_NAME}`."
             ),
-        });
+        ));
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
@@ -576,13 +576,13 @@ pub fn handle_component_inline_macro(
 
 /// Returns an invalid `component` macro diagnostic.
 fn invalid_macro_diagnostic(component_macro_ast: &ast::ItemInlineMacro) -> PluginDiagnostic {
-    PluginDiagnostic {
-        message: format!(
+    PluginDiagnostic::error(
+        component_macro_ast.stable_ptr().untyped(),
+        format!(
             "Invalid component macro, expected `{COMPONENT_INLINE_MACRO}!(name: \
              \"<component_name>\", storage: \"<storage_name>\", event: \"<event_name>\");`"
         ),
-        stable_ptr: component_macro_ast.stable_ptr().untyped(),
-    }
+    )
 }
 
 /// Remove a `component!` inline macro from the original code if it's inside a starknet::contract.
@@ -642,36 +642,33 @@ fn try_extract_named_macro_argument(
                     if elements.len() != 1
                         || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
                     {
-                        diagnostics.push(PluginDiagnostic {
-                            message: format!(
+                        diagnostics.push(PluginDiagnostic::error(
+                            path.stable_ptr().untyped(),
+                            format!(
                                 "Component macro argument `{arg_name}` must be a simple \
                                  identifier.",
                             ),
-                            stable_ptr: path.stable_ptr().untyped(),
-                        });
+                        ));
                         return None;
                     }
                     Some(path)
                 }
                 value => {
-                    diagnostics.push(PluginDiagnostic {
-                        message: format!(
+                    diagnostics.push(PluginDiagnostic::error(
+                        value.stable_ptr().untyped(),
+                        format!(
                             "Component macro argument `{arg_name}` must be a path expression.",
                         ),
-                        stable_ptr: value.stable_ptr().untyped(),
-                    });
+                    ));
                     None
                 }
             }
         }
         _ => {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
-                    "Invalid component macro argument. Expected `{0}: <value>`",
-                    arg_name
-                ),
-                stable_ptr: arg_ast.stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                arg_ast.stable_ptr().untyped(),
+                format!("Invalid component macro argument. Expected `{0}: <value>`", arg_name),
+            ));
             None
         }
     }

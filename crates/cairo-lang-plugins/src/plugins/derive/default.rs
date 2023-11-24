@@ -34,18 +34,17 @@ pub fn handle_default(
                     Some((variant, variant.attributes.find_attr(db, DEFAULT_ATTR)?))
                 });
                 let Some((default_variant, _)) = default_variants.next() else {
-                    result.diagnostics.push(PluginDiagnostic {
+                    result.diagnostics.push(PluginDiagnostic::error(
                         stable_ptr,
-                        message: "derive `Default` for enum only supported with a default variant."
-                            .into(),
-                    });
+                        "derive `Default` for enum only supported with a default variant.".into(),
+                    ));
                     return;
                 };
                 for (_, extra_default_attr) in default_variants {
-                    result.diagnostics.push(PluginDiagnostic {
-                        stable_ptr: extra_default_attr.as_syntax_node().stable_ptr(),
-                        message: "Multiple variants annotated with `#[default]`".into(),
-                    });
+                    result.diagnostics.push(PluginDiagnostic::error(
+                        extra_default_attr.as_syntax_node().stable_ptr(),
+                        "Multiple variants annotated with `#[default]`".into(),
+                    ));
                 }
                 let default_variant = &default_variant.name;
                 formatdoc!("{ty}::{default_variant}(core::traits::Default::default())")
