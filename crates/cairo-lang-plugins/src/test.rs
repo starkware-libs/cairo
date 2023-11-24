@@ -162,10 +162,10 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                     }
                 } else {
                     PluginResult {
-                        diagnostics: vec![PluginDiagnostic {
-                            stable_ptr: struct_ast.stable_ptr().untyped(),
-                            message: "Double indirection diagnostic".to_string(),
-                        }],
+                        diagnostics: vec![PluginDiagnostic::error(
+                            struct_ast.stable_ptr().untyped(),
+                            "Double indirection diagnostic".to_string(),
+                        )],
                         ..PluginResult::default()
                     }
                 }

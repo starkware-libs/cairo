@@ -2,6 +2,7 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -64,6 +65,15 @@ pub struct PluginResult {
 pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
     pub message: String,
+    pub severity: Severity,
+}
+impl PluginDiagnostic {
+    pub fn error(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr, message, severity: Severity::Error }
+    }
+    pub fn warning(stable_ptr: SyntaxStablePtrId, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr, message, severity: Severity::Warning }
+    }
 }
 
 // TOD(spapini): Move to another place.

@@ -54,10 +54,10 @@ fn generate_panicable_code(
     let mut diagnostics = vec![];
     if attrs.len() > 1 {
         let extra_attr = attrs.swap_remove(1);
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: extra_attr.stable_ptr().untyped(),
-            message: "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            extra_attr.stable_ptr().untyped(),
+            "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
+        ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     }
     let attr = attrs.swap_remove(0);
@@ -66,21 +66,20 @@ fn generate_panicable_code(
     let Some((inner_ty, success_variant, failure_variant)) =
         extract_success_ty_and_variants(db, &signature)
     else {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: signature.ret_ty(db).stable_ptr().untyped(),
-            message: "Currently only wrapping functions returning an Option<T> or Result<T, E>"
-                .into(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            signature.ret_ty(db).stable_ptr().untyped(),
+            "Currently only wrapping functions returning an Option<T> or Result<T, E>".into(),
+        ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     let attr = attr.structurize(db);
 
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: attr.stable_ptr.untyped(),
-            message: "Failed to extract panic data attribute".into(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            attr.stable_ptr.untyped(),
+            "Failed to extract panic data attribute".into(),
+        ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
     let mut builder = PatchBuilder::new(db);

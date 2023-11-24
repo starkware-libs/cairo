@@ -15,7 +15,7 @@ use itertools::Itertools;
 use crate::location_marks::get_location_marks;
 
 /// The severity of a diagnostic.
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, Hash, Ord, PartialOrd, Clone, Copy, Debug)]
 pub enum Severity {
     Error,
     Warning,

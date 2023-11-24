@@ -20,10 +20,10 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: item_impl.stable_ptr().untyped(),
-                message: "Making empty impls embeddable is disallowed.".to_string(),
-            }],
+            diagnostics: vec![PluginDiagnostic::error(
+                item_impl.stable_ptr().untyped(),
+                "Making empty impls embeddable is disallowed.".to_string(),
+            )],
             remove_original_item: false,
         };
     };
@@ -46,14 +46,14 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
                     || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
                 {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: param.stable_ptr().untyped(),
-                        message: format!(
+                    diagnostics.push(PluginDiagnostic::error(
+                        param.stable_ptr().untyped(),
+                        format!(
                             "`embeddable` impls can't have impl generic parameters of \
                              `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
                              `PanicDestruct<{GENERIC_CONTRACT_STATE_NAME}>`."
                         ),
-                    });
+                    ));
                 }
             }
             let mut elements = elements.into_iter();
@@ -101,13 +101,13 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         }
     };
     if !is_valid_params {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: generic_params.stable_ptr().untyped(),
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            generic_params.stable_ptr().untyped(),
+            format!(
                 "First generic parameter of an embeddable impl should be \
                  `{GENERIC_CONTRACT_STATE_NAME}`."
             ),
-        });
+        ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
     let mut data = EntryPointsGenerationData::default();

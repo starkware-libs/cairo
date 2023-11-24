@@ -113,12 +113,14 @@ fn get_embeddable_as_impl_generic_params(
 ) -> Result<ast::GenericParamList, PluginDiagnostic> {
     let generic_params = item_impl.generic_params(db);
     let generic_params_ptr = generic_params.stable_ptr().untyped();
-    let first_generic_param_diagnostic = |stable_ptr| PluginDiagnostic {
-        message: format!(
-            "The first generic parameter of an impl with #[{EMBEDDABLE_AS_ATTR}] should be \
-             `TContractState`."
-        ),
-        stable_ptr,
+    let first_generic_param_diagnostic = |stable_ptr| {
+        PluginDiagnostic::error(
+            stable_ptr,
+            format!(
+                "The first generic parameter of an impl with #[{EMBEDDABLE_AS_ATTR}] should be \
+                 `TContractState`."
+            ),
+        )
     };
 
     let ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) = generic_params else {
@@ -141,13 +143,13 @@ fn get_embeddable_as_impl_generic_params(
     let has_has_component_impl = generic_param_elements
         .any(|param| param.is_impl_of(db, HAS_COMPONENT_TRAIT, GENERIC_CONTRACT_STATE_NAME));
     if !has_has_component_impl {
-        return Err(PluginDiagnostic {
-            message: format!(
+        return Err(PluginDiagnostic::error(
+            generic_params_ptr,
+            format!(
                 "An impl with #[{EMBEDDABLE_AS_ATTR}] should have a generic parameter which is an \
                  impl of `{HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}>`."
             ),
-            stable_ptr: generic_params_ptr,
-        });
+        ));
     }
 
     Ok(generic_params_node)
@@ -173,13 +175,13 @@ impl EmbeddableAsImplParams {
         attr: ast::Attribute,
     ) -> Option<EmbeddableAsImplParams> {
         let Some(attr_arg_value) = get_embeddable_as_attr_value(db, &attr) else {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr().untyped(),
+                format!(
                     "`{EMBEDDABLE_AS_ATTR}` attribute must have a single unnamed argument for the \
                      generated impl name, e.g.: #[{EMBEDDABLE_AS_ATTR}(MyImpl)]."
                 ),
-                stable_ptr: attr.stable_ptr().untyped(),
-            });
+            ));
             return None;
         };
 
@@ -196,12 +198,10 @@ impl EmbeddableAsImplParams {
         let impl_body = match item_impl.body(db) {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
-                diagnostics.push(PluginDiagnostic {
-                    message: format!(
-                        "`{EMBEDDABLE_AS_ATTR}` attribute is not supported for empty impls."
-                    ),
-                    stable_ptr: semicolon.stable_ptr().untyped(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    semicolon.stable_ptr().untyped(),
+                    format!("`{EMBEDDABLE_AS_ATTR}` attribute is not supported for empty impls."),
+                ));
                 return None;
             }
         };
@@ -228,14 +228,14 @@ fn handle_component_impl(
         if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
             || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
         {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: param.stable_ptr().untyped(),
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                param.stable_ptr().untyped(),
+                format!(
                     "`embeddable_as` impls can't have impl generic parameters of \
                      `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
                      `PanicDestruct<{GENERIC_CONTRACT_STATE_NAME}>`."
                 ),
-            });
+            ));
             return;
         }
     }
@@ -330,27 +330,27 @@ fn handle_component_embeddable_as_impl_item(
     let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let parameters_elements = parameters.elements(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
-        diagnostics.push(PluginDiagnostic {
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            parameters.stable_ptr().untyped(),
+            format!(
                 "A function in an #[{EMBEDDABLE_AS_ATTR}] impl in a component must have a first \
                  `self` parameter."
             ),
-            stable_ptr: parameters.stable_ptr().untyped(),
-        });
+        ));
         return None;
     };
     let Some((self_param, get_component_call, callsite_modifier)) =
         handle_first_param_for_embeddable_as(db, first_param)
     else {
-        diagnostics.push(PluginDiagnostic {
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            parameters.stable_ptr().untyped(),
+            format!(
                 "The first parameter of a function in an #[{EMBEDDABLE_AS_ATTR}] impl in a \
                  component must be either `self: @{GENERIC_COMPONENT_STATE_NAME}` (for view \
                  functions) or `ref self: {GENERIC_COMPONENT_STATE_NAME}` (for external \
                  functions)."
             ),
-            stable_ptr: parameters.stable_ptr().untyped(),
-        });
+        ));
         return None;
     };
     let rest_params_node = RewriteNode::new_modified(

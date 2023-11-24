@@ -638,14 +638,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn severity(&self) -> Severity {
-        if matches!(
-            self.kind,
+        match &self.kind {
             SemanticDiagnosticKind::UnusedVariable
-                | SemanticDiagnosticKind::UnhandledErrorType { .. }
-        ) {
-            Severity::Warning
-        } else {
-            Severity::Error
+            | SemanticDiagnosticKind::UnhandledErrorType { .. } => Severity::Warning,
+            SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
+            _ => Severity::Error,
         }
     }
 }

@@ -98,34 +98,34 @@ impl FormattingInfo {
         let argument_list_elements = arguments.arguments(db).elements(db);
         let Some((formatter_arg, without_formatter_args)) = argument_list_elements.split_first()
         else {
-            return Err(vec![PluginDiagnostic {
-                stable_ptr: arguments.lparen(db).stable_ptr().untyped(),
-                message: "Macro expected formatter argument.".to_string(),
-            }]);
+            return Err(vec![PluginDiagnostic::error(
+                arguments.lparen(db).stable_ptr().untyped(),
+                "Macro expected formatter argument.".to_string(),
+            )]);
         };
         let Some((format_string_arg, args)) = without_formatter_args.split_first() else {
-            return Err(vec![PluginDiagnostic {
-                stable_ptr: arguments.lparen(db).stable_ptr().untyped(),
-                message: "Macro expected format string argument.".to_string(),
-            }]);
+            return Err(vec![PluginDiagnostic::error(
+                arguments.lparen(db).stable_ptr().untyped(),
+                "Macro expected format string argument.".to_string(),
+            )]);
         };
         let mut diagnostics = vec![];
         let format_string = try_extract_unnamed_arg(db, format_string_arg)
             .and_then(|arg| try_extract_matches!(arg, ast::Expr::String)?.string_value(db))
             .on_none(|| {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: format_string_arg.stable_ptr().untyped(),
-                    message: "Argument must be a string literal.".to_string(),
-                })
+                diagnostics.push(PluginDiagnostic::error(
+                    format_string_arg.stable_ptr().untyped(),
+                    "Argument must be a string literal.".to_string(),
+                ))
             });
         let args: Vec<_> = args
             .iter()
             .filter_map(|arg| {
                 try_extract_unnamed_arg(db, arg).on_none(|| {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: arg.stable_ptr().untyped(),
-                        message: "Expected unnamed argument.".to_string(),
-                    })
+                    diagnostics.push(PluginDiagnostic::error(
+                        arg.stable_ptr().untyped(),
+                        "Expected unnamed argument.".to_string(),
+                    ))
                 })
             })
             .collect();
@@ -168,25 +168,25 @@ impl FormattingInfo {
                     continue;
                 }
                 let Some(argument_info) = extract_argument(&mut format_iter) else {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                        message: "Invalid format string: expected `}`, variable name, or \
-                                  formatting modifiers."
+                    diagnostics.push(PluginDiagnostic::error(
+                        self.format_string_arg.as_syntax_node().stable_ptr(),
+                        "Invalid format string: expected `}`, variable name, or formatting \
+                         modifiers."
                             .to_string(),
-                    });
+                    ));
                     return;
                 };
                 match argument_info.source {
                     ArgumentSource::Positional(positional) => {
                         let Some(arg) = self.args.get(positional) else {
-                            diagnostics.push(PluginDiagnostic {
-                                stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                                message: format!(
+                            diagnostics.push(PluginDiagnostic::error(
+                                self.format_string_arg.as_syntax_node().stable_ptr(),
+                                format!(
                                     "Invalid reference to positional argument {positional} (there \
                                      are {} arguments).",
                                     self.args.len()
                                 ),
-                            });
+                            ));
                             return;
                         };
                         arg_used[positional] = true;
@@ -233,24 +233,24 @@ impl FormattingInfo {
                     pending_chars.push('}');
                     format_iter.next();
                 } else {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                        message: "Closing `}` without a matching `{`.".to_string(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        self.format_string_arg.as_syntax_node().stable_ptr(),
+                        "Closing `}` without a matching `{`.".to_string(),
+                    ));
                 }
             } else {
                 pending_chars.push(c);
             }
         }
         if missing_args > 0 {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: self.format_string_arg.as_syntax_node().stable_ptr(),
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                self.format_string_arg.as_syntax_node().stable_ptr(),
+                format!(
                     "{} positional arguments in format string, but only {} arguments.",
                     self.args.len() + missing_args,
                     self.args.len()
                 ),
-            });
+            ));
             return;
         }
         if with_newline {
@@ -273,10 +273,10 @@ impl FormattingInfo {
         builder.add_str("}\n");
         for (position, used) in arg_used.into_iter().enumerate() {
             if !used {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: self.args[position].as_syntax_node().stable_ptr(),
-                    message: "Unused argument.".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    self.args[position].as_syntax_node().stable_ptr(),
+                    "Unused argument.".to_string(),
+                ));
             }
         }
     }
