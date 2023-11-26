@@ -75,7 +75,7 @@ fn get_macro_name(with_newline: bool) -> &'static str {
     if with_newline { WritelnMacro::NAME } else { WriteMacro::NAME }
 }
 
-/// Information about a formating a string for the write macros.
+/// Information about a formatting a string for the write macros.
 struct FormattingInfo {
     /// The syntax rewrite node for the formatter input for the macro.
     formatter_arg_node: RewriteNode,
@@ -148,7 +148,7 @@ impl FormattingInfo {
         diagnostics: &mut Vec<PluginDiagnostic>,
         with_newline: bool,
     ) {
-        let mut arg_iter = self.args.iter().enumerate();
+        let mut next_arg_index = 0..self.args.len();
         let mut arg_used = vec![false; self.args.len()];
         let mut format_iter = self.format_string.chars().enumerate().peekable();
         let mut pending_chars = String::new();
@@ -160,6 +160,13 @@ impl FormattingInfo {
             .span_start_without_trivia(builder.db)
             .add_width(TextWidth::from_char('"'));
         builder.add_str("{\n");
+        for (i, arg) in self.args.iter().enumerate() {
+            self.add_indentation(builder, ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                &format!("let __write_macro_arg{i}__ = @($arg$);\n"),
+                &[("arg".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))].into(),
+            ));
+        }
         while let Some((idx, c)) = format_iter.next() {
             if c == '{' {
                 if matches!(format_iter.peek(), Some(&(_, '{'))) {
@@ -194,18 +201,26 @@ impl FormattingInfo {
                             builder,
                             &mut ident_count,
                             &mut pending_chars,
-                            RewriteNode::new_trimmed(arg.as_syntax_node()),
+                            RewriteNode::RewriteText {
+                                origin: arg.as_syntax_node().span_without_trivia(builder.db),
+                                text: format!("__write_macro_arg{positional}__"),
+                            },
                             argument_info.fmt_type,
                         );
                     }
                     ArgumentSource::Next => {
-                        if let Some((position, arg)) = arg_iter.next() {
-                            arg_used[position] = true;
+                        if let Some(i) = next_arg_index.next() {
+                            arg_used[i] = true;
                             self.append_formatted_arg(
                                 builder,
                                 &mut ident_count,
                                 &mut pending_chars,
-                                RewriteNode::new_trimmed(arg.as_syntax_node()),
+                                RewriteNode::RewriteText {
+                                    origin: self.args[i]
+                                        .as_syntax_node()
+                                        .span_without_trivia(builder.db),
+                                    text: format!("__write_macro_arg{i}__"),
+                                },
                                 argument_info.fmt_type,
                             );
                         } else {
@@ -220,10 +235,13 @@ impl FormattingInfo {
                             builder,
                             &mut ident_count,
                             &mut pending_chars,
-                            RewriteNode::RewriteText {
-                                text: argument,
-                                origin: TextSpan { start, end },
-                            },
+                            RewriteNode::new_modified(vec![
+                                RewriteNode::text("@"),
+                                RewriteNode::RewriteText {
+                                    text: argument,
+                                    origin: TextSpan { start, end },
+                                },
+                            ]),
                             argument_info.fmt_type,
                         );
                     }
@@ -288,7 +306,7 @@ impl FormattingInfo {
     }
 
     /// Appends a formatted argument to the formatter, flushing the pending bytes if necessary.
-    /// This includes opening a new match, which is only closed at the end of the macro hanlding.
+    /// This includes opening a new match, which is only closed at the end of the macro handling.
     fn append_formatted_arg(
         &self,
         builder: &mut PatchBuilder<'_>,
@@ -300,7 +318,7 @@ impl FormattingInfo {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
         self.add_indentation(builder, *ident_count);
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("match core::fmt::{fmt_type}::fmt(@$arg$, ref $f$) {{\n"),
+            &format!("match core::fmt::{fmt_type}::fmt($arg$, ref $f$) {{\n"),
             &[("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into(),
         ));
         *ident_count += 1;

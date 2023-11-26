@@ -359,7 +359,7 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     let mut helper = ApChangeCalcHelper::new(program, token_usages)?;
     helper.calc_locals_and_function_ap_changes()?;
     let ap_tracked_topological_ordering = helper.tracked_ap_change_topological_order()?;
-    // Seting tracking info for function entry points.
+    // Setting tracking info for function entry points.
     for f in &program.funcs {
         helper.tracking_info.insert(
             f.entry_point,

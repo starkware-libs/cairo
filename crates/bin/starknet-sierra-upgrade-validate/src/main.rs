@@ -3,8 +3,11 @@ use std::fs;
 use std::sync::Mutex;
 
 use anyhow::Context;
-use cairo_lang_starknet::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
-use cairo_lang_starknet::casm_contract_class::CasmContractClass;
+use cairo_lang_starknet::allowed_libfuncs::{
+    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
+};
+use cairo_lang_starknet::casm_contract_class::{CasmContractClass, StarknetSierraCompilationError};
+use cairo_lang_starknet::compiler_version::VersionId;
 use cairo_lang_starknet::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
@@ -25,6 +28,21 @@ struct Args {
     /// A file of the allowed libfuncs list to use.
     #[arg(long)]
     allowed_libfuncs_list_file: Option<String>,
+    /// Sierra version to override to prior to compilation.
+    #[arg(long)]
+    override_version: Option<String>,
+}
+
+/// Parses version id from string.
+fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
+    let context = || format!("Could not parse version {major_minor_patch}.");
+    let (major, minor_patch) = major_minor_patch.split_once('.').with_context(context)?;
+    let (minor, patch) = minor_patch.split_once('.').with_context(context)?;
+    Ok(VersionId {
+        major: major.parse().with_context(context)?,
+        minor: minor.parse().with_context(context)?,
+        patch: patch.parse().with_context(context)?,
+    })
 }
 
 /// The contract class from db.
@@ -42,11 +60,30 @@ pub struct ContractClassInfo {
 
 struct Report {
     /// The classes that failed validation.
-    validation_failures: Vec<BigUintAsHex>,
+    validation_failures: Vec<ValidationFailure>,
     /// The classes that failed compilation.
-    compilation_failures: Vec<BigUintAsHex>,
+    compilation_failures: Vec<CompilationFailure>,
     /// The classes that had a non matching class hash after compilation.
-    compilation_mismatch: Vec<BigUintAsHex>,
+    compilation_mismatch: Vec<CompilationMismatch>,
+}
+
+/// Validation failure information.
+struct ValidationFailure {
+    class_hash: BigUintAsHex,
+    err: AllowedLibfuncsError,
+}
+
+/// Compilation failure information.
+struct CompilationFailure {
+    class_hash: BigUintAsHex,
+    err: StarknetSierraCompilationError,
+}
+
+/// Compilation mismatch information.
+struct CompilationMismatch {
+    class_hash: BigUintAsHex,
+    old: BigUintAsHex,
+    new: BigUintAsHex,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -54,6 +91,10 @@ fn main() -> anyhow::Result<()> {
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
+    let override_version = match args.override_version {
+        Some(version) => Some(parse_version_id(&version)?),
+        None => None,
+    };
     // Reading the contract classes from the file.
     let tested_classes: Vec<ContractClassInfo> = serde_json::from_str(
         &fs::read_to_string(&args.file)
@@ -78,33 +119,20 @@ fn main() -> anyhow::Result<()> {
         })
         .progress_chars("#>-"),
     );
+    let config = RunConfig { list_selector, override_version };
     tested_classes.into_par_iter().for_each(|sierra_class| {
         bar.inc(1);
-        // Reconstructing the contract class from the read class.
-        let contract_class = ContractClass {
-            sierra_program: sierra_class.sierra_program,
-            sierra_program_debug_info: None,
-            contract_class_version: "0.1.0".to_string(),
-            entry_points_by_type: sierra_class.entry_points_by_type,
-            abi: None,
-        };
-        // Validating the contract class.
-        if validate_compatible_sierra_version(&contract_class, list_selector.clone()).is_err() {
-            report.lock().unwrap().validation_failures.push(sierra_class.class_hash);
-            return;
-        };
-        // Compiling the contract class.
-        let Ok(compiled_contract_class) =
-            CasmContractClass::from_contract_class(contract_class, false)
-        else {
-            report.lock().unwrap().compilation_failures.push(sierra_class.class_hash);
-            return;
-        };
-        // Checking that the compiled class hash matches the previous compiled class hash.
-        if sierra_class.compiled_class_hash.value
-            != compiled_contract_class.compiled_class_hash().to_biguint()
-        {
-            report.lock().unwrap().compilation_mismatch.push(sierra_class.class_hash);
+        match run_single(sierra_class, &config) {
+            RunResult::ValidationFailure(failure) => {
+                report.lock().unwrap().validation_failures.push(failure);
+            }
+            RunResult::CompilationFailure(failure) => {
+                report.lock().unwrap().compilation_failures.push(failure);
+            }
+            RunResult::CompilationMismatch(mismatch) => {
+                report.lock().unwrap().compilation_mismatch.push(mismatch);
+            }
+            RunResult::Success => {}
         };
     });
     bar.finish_and_clear();
@@ -114,8 +142,8 @@ fn main() -> anyhow::Result<()> {
             "Validation failures: (Printing first 10 out of {})",
             report.validation_failures.len()
         );
-        for failure in report.validation_failures.iter().take(10) {
-            println!("compiled class hash: {:#x}", failure.value);
+        for ValidationFailure { class_hash, err } in report.validation_failures.iter().take(10) {
+            println!("Validation failure for {:#x}: {err}", class_hash.value);
         }
     }
     if !report.compilation_failures.is_empty() {
@@ -123,8 +151,8 @@ fn main() -> anyhow::Result<()> {
             "Compilation failures: (Printing first 10 out of {})",
             report.compilation_failures.len()
         );
-        for failure in report.compilation_failures.iter().take(10) {
-            println!("compiled class hash: {:#x}", failure.value);
+        for CompilationFailure { class_hash, err } in report.compilation_failures.iter().take(10) {
+            println!("Compilation failure for {:#x}: {err}", class_hash.value);
         }
     }
     if !report.compilation_mismatch.is_empty() {
@@ -132,9 +160,64 @@ fn main() -> anyhow::Result<()> {
             "Compilation mismatch {} out of {num_of_classes}: (Printing first 10)",
             report.compilation_mismatch.len()
         );
-        for failure in report.compilation_mismatch.iter().take(10) {
-            println!("compiled class hash: {:#x}", failure.value);
+        for CompilationMismatch { class_hash, old, new } in
+            report.compilation_mismatch.iter().take(10)
+        {
+            println!(
+                "Compilation mismatch for {:#x}: old={:#x}, new={:#x}",
+                class_hash.value, old.value, new.value
+            );
         }
     }
     Ok(())
+}
+
+/// The configuration for a Sierra compilation run.
+struct RunConfig {
+    list_selector: ListSelector,
+    override_version: Option<VersionId>,
+}
+
+/// The result of a Sierra compilation run.
+enum RunResult {
+    ValidationFailure(ValidationFailure),
+    CompilationFailure(CompilationFailure),
+    CompilationMismatch(CompilationMismatch),
+    Success,
+}
+
+/// Runs a single Sierra compilation.
+fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunResult {
+    if let Some(override_version) = config.override_version {
+        sierra_class.sierra_program[0].value = override_version.major.into();
+        sierra_class.sierra_program[1].value = override_version.minor.into();
+        sierra_class.sierra_program[2].value = override_version.patch.into();
+    }
+    let contract_class = ContractClass {
+        sierra_program: sierra_class.sierra_program,
+        sierra_program_debug_info: None,
+        contract_class_version: "0.1.0".to_string(),
+        entry_points_by_type: sierra_class.entry_points_by_type,
+        abi: None,
+    };
+    let class_hash = sierra_class.class_hash;
+    if let Err(err) =
+        validate_compatible_sierra_version(&contract_class, config.list_selector.clone())
+    {
+        return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
+    };
+    let compiled_contract_class =
+        match CasmContractClass::from_contract_class(contract_class, false) {
+            Ok(compiled_contract_class) => compiled_contract_class,
+            Err(err) => {
+                return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
+            }
+        };
+    let old = sierra_class.compiled_class_hash;
+    let new = BigUintAsHex { value: compiled_contract_class.compiled_class_hash().to_biguint() };
+    if old != new {
+        RunResult::CompilationMismatch(CompilationMismatch { class_hash, old, new })
+    } else {
+        RunResult::Success
+    }
 }

@@ -113,6 +113,12 @@ jobs:
       - run: >
           scripts/clippy.sh
 
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: crate-ci/typos@master
+
   docs:
     runs-on: ubuntu-latest
     steps:

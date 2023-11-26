@@ -310,9 +310,7 @@ pub(super) fn generate_contract_specific_code(
 
     let test_class_hash = format!(
         "0x{:x}",
-        starknet_keccak(
-            module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
-        )
+        starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
     );
 
     generation_data.specific.test_config = RewriteNode::Text(formatdoc!(

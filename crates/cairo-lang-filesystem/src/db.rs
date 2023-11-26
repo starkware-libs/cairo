@@ -20,7 +20,7 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateConfiguration {
-    /// The root directry of the crate.
+    /// The root directory of the crate.
     pub root: Directory,
     /// The cairo edition of the crate.
     pub edition: Edition,
@@ -48,6 +48,14 @@ pub enum Edition {
     V2023_10,
 }
 impl Edition {
+    /// Returns the latest stable edition.
+    ///
+    /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
+    /// to migrate to when possible.
+    pub const fn latest() -> Self {
+        Self::V2023_10
+    }
+
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
     pub fn prelude_submodule_name(&self) -> &str {
         match self {
