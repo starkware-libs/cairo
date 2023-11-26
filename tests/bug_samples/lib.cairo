@@ -1,4 +1,5 @@
 mod ecdsa_completeness;
+mod indirect_impl_alias;
 mod issue2114;
 mod issue2147;
 mod issue2152;
@@ -40,3 +41,4 @@ mod inconsistent_gas;
 mod partial_param_local;
 mod loop_break_in_match;
 mod generic_cycles;
+mod zero_sized_locals;

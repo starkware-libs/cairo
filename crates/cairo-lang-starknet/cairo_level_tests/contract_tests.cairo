@@ -1,3 +1,4 @@
+use core::num::traits::Zero;
 use starknet::StorageAddress;
 use core::test::test_utils::{assert_eq, assert_ne};
 

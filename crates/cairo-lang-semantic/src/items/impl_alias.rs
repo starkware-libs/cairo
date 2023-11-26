@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleItemId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -203,9 +203,26 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
 
     let impl_path_syntax = impl_alias_ast.impl_path(syntax_db);
 
-    resolver
-        .resolve_generic_path_with_args(&mut diagnostics, &impl_path_syntax, NotFoundItemType::Impl)
-        .ok()
-        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Impl))
-        .ok_or_else(|| diagnostics.report(&impl_path_syntax, NotAnImpl))
+    match resolver.resolve_generic_path_with_args(
+        &mut diagnostics,
+        &impl_path_syntax,
+        NotFoundItemType::Impl,
+    ) {
+        Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
+        Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),
+        // Skipping diagnostics since we will get these through when resolving in the
+        // `priv_impl_alias_semantic_data` query.
+        _ => Err(skip_diagnostic()),
+    }
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_alias_impl_def].
+pub fn impl_alias_impl_def_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &[String],
+    _impl_alias_id: &ImplAliasId,
+) -> Maybe<ImplDefId> {
+    // Skipping diagnostics since we will get these through when resolving in the
+    // `priv_impl_alias_semantic_data` query.
+    Err(skip_diagnostic())
 }

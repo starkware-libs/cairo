@@ -63,7 +63,7 @@ pub trait TopLevelLanguageElementId: LanguageElementId {
 /// Utility macro for defining an id for a language element.
 /// Defines a long id representing some element by a module_id and a stable pointer.
 /// Also defines a short id to be used for interning of the long id.
-/// Also requires the lookup function name for the lookup fo the long id from the short id,
+/// Also requires the lookup function name for the lookup of the long id from the short id,
 /// as defined in DefsGroup.
 /// Gets an optional parameter `name`. If specified, implements the Named trait using a key_field
 /// with this name. See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
