@@ -3,12 +3,12 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, StructId, TopLevelLanguageElementId,
-    TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, StructId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -19,7 +19,6 @@ use smol_str::SmolStr;
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
-use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::semantic;
 
@@ -365,6 +364,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     struct_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::MemberNotVisible { member_name } => {
+                format!(r#"Member "{member_name}" is not visible in this context."#)
+            }
             SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
                 format!(
                     r#"Enum "{}" has no variant "{variant_name}""#,
@@ -380,6 +382,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ErrorPropagateOnNonErrorType { ty } => {
                 format!(r#"Type "{}" can not error propagate"#, ty.format(db))
+            }
+            SemanticDiagnosticKind::UnhandledErrorType { ty } => {
+                format!(r#"Unhandled error type "{}""#, ty.format(db))
+            }
+            SemanticDiagnosticKind::UnusedVariable => {
+                "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
@@ -408,6 +416,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             },
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
+            }
+            SemanticDiagnosticKind::ItemNotVisible { item_id } => {
+                format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
@@ -474,10 +485,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
-                // TODO(spapini): Support nested diagnostics.
-                format!("Plugin diagnostic: {}", diagnostic.message)
-            }
             SemanticDiagnosticKind::NameDefinedMultipleTimes { name } => {
                 format!("The name `{name}` is defined multiple times.")
             }
@@ -516,11 +523,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
-            SemanticDiagnosticKind::NoImplementationOfIndexOperator(ty) => {
-                format!(
-                    r#"Type "{}" does not implement the "Index" trait nor the "IndexView" trait."#,
-                    ty.format(db)
-                )
+            SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Type `{}` does not implement the `Index` trait nor the `IndexView` trait.",
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Type `{}` could not be indexed.\n{}",
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
             }
             SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
                 format!(
@@ -542,11 +557,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
-                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
-                method_name,
-                ty.format(db)
-            ),
+            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!(
+                        "Method `{}` not found on type `{}`. Did you import the correct trait and \
+                         impl?",
+                        method_name,
+                        ty.format(db)
+                    )
+                } else {
+                    format!(
+                        "Method `{}` could not be called on type `{}`.\n{}",
+                        method_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allowed in a `loop` block.".into()
             }
@@ -573,6 +600,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
+            SemanticDiagnosticKind::UnknownStatementAttribute => {
+                "Unknown statement attribute.".into()
             }
             SemanticDiagnosticKind::InlineMacroNotFound { macro_name } => {
                 format!("Inline macro `{}` not found.", macro_name)
@@ -603,11 +634,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
         if self.after {
             location = location.after();
         }
-        match &self.kind {
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, file_id, .. } => {
-                DiagnosticLocation { span: diagnostic.span, file_id: *file_id }
-            }
-            _ => location,
+        location
+    }
+
+    fn severity(&self) -> Severity {
+        if matches!(
+            self.kind,
+            SemanticDiagnosticKind::UnusedVariable
+                | SemanticDiagnosticKind::UnhandledErrorType { .. }
+        ) {
+            Severity::Warning
+        } else {
+            Severity::Error
         }
     }
 }
@@ -753,12 +791,16 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
-    NoSuchMethod {
+    CannotCallMethod {
         ty: semantic::TypeId,
         method_name: SmolStr,
+        inference_errors: TraitInferenceErrors,
     },
     NoSuchMember {
         struct_id: StructId,
+        member_name: SmolStr,
+    },
+    MemberNotVisible {
         member_name: SmolStr,
     },
     NoSuchVariant {
@@ -772,6 +814,10 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType {
         ty: semantic::TypeId,
     },
+    UnhandledErrorType {
+        ty: semantic::TypeId,
+    },
+    UnusedVariable,
     ConstGenericParamSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
@@ -783,6 +829,9 @@ pub enum SemanticDiagnosticKind {
     InvalidPath,
     PathNotFound(NotFoundItemType),
     SuperUsedInRootModule,
+    ItemNotVisible {
+        item_id: ModuleItemId,
+    },
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,
@@ -824,11 +873,6 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
-    WrappedPluginDiagnostic {
-        file_id: FileId,
-        diagnostic: PluginMappedDiagnostic,
-        original_diag: Box<SemanticDiagnostic>,
-    },
     NameDefinedMultipleTimes {
         name: SmolStr,
     },
@@ -850,7 +894,10 @@ pub enum SemanticDiagnosticKind {
     },
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
-    NoImplementationOfIndexOperator(semantic::TypeId),
+    NoImplementationOfIndexOperator {
+        ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
@@ -864,6 +911,8 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    UnsupportedPubArgument,
+    UnknownStatementAttribute,
     InlineMacroNotFound {
         macro_name: SmolStr,
     },
@@ -942,5 +991,30 @@ impl Display for ElementKind {
             ElementKind::Impl => "impl",
         };
         write!(f, "{res}")
+    }
+}
+
+/// A list of trait functions and the inference errors that occurred while trying to infer them.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitInferenceErrors {
+    pub traits_and_errors: Vec<(TraitFunctionId, InferenceError)>,
+}
+impl TraitInferenceErrors {
+    /// Is the error list empty.
+    fn is_empty(&self) -> bool {
+        self.traits_and_errors.is_empty()
+    }
+    /// Format the list of errors.
+    fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        self.traits_and_errors
+            .iter()
+            .map(|(trait_function_id, inference_error)| {
+                format!(
+                    "Candidate `{}` inference failed with: {}",
+                    trait_function_id.full_path(db.upcast()),
+                    inference_error.format(db)
+                )
+            })
+            .join("\n")
     }
 }

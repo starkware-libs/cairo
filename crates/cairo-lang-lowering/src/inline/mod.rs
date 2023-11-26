@@ -295,9 +295,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     .db
                     .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
-                self.inlining_success = self
-                    .inlining_success
-                    .and_then(|()| inline_data.diagnostics.is_diagnostic_free());
+                self.inlining_success =
+                    self.inlining_success.and_then(|()| inline_data.diagnostics.check_error_free());
 
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline

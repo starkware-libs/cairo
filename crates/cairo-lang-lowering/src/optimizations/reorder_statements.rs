@@ -5,7 +5,7 @@ mod test;
 use std::cmp::Reverse;
 
 use cairo_lang_semantic::corelib;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
@@ -124,12 +124,12 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             // If the statement is not removed add demand for its inputs.
             for var_usage in stmt.inputs() {
                 match info.next_use.entry(var_usage.var_id) {
-                    indexmap::map::Entry::Occupied(mut e) => {
+                    Entry::Occupied(mut e) => {
                         // Since we don't know where `e.get()` and `target_location` converge
                         // we use `statement_location` as a conservative estimate.
                         &e.insert(statement_location)
                     }
-                    indexmap::map::Entry::Vacant(e) => e.insert(target_location),
+                    Entry::Vacant(e) => e.insert(target_location),
                 };
             }
         }
@@ -166,12 +166,12 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         for arm_info in infos {
             for (var_id, location) in arm_info.next_use.iter() {
                 match info.next_use.entry(*var_id) {
-                    indexmap::map::Entry::Occupied(mut e) => {
+                    Entry::Occupied(mut e) => {
                         // A variable that is used in multiple arms can be moved to
                         // before the match.
                         e.insert(statement_location);
                     }
-                    indexmap::map::Entry::Vacant(e) => {
+                    Entry::Vacant(e) => {
                         e.insert(*location);
                     }
                 }

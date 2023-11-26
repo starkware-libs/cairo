@@ -6,7 +6,7 @@ use core::option::OptionTrait;
 use core::serde::Serde;
 
 #[derive(Drop)]
-extern type Array<T>;
+pub extern type Array<T>;
 
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -24,7 +24,7 @@ extern fn array_slice<T>(
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 #[generate_trait]
-impl ArrayImpl<T> of ArrayTrait<T> {
+pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     fn new() -> Array<T> {
         array_new()
@@ -123,7 +123,7 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
 }
 
 // Span.
-struct Span<T> {
+pub struct Span<T> {
     snapshot: @Array<T>
 }
 
@@ -144,7 +144,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
 }
 
 #[generate_trait]
-impl SpanImpl<T> of SpanTrait<T> {
+pub impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -187,7 +187,7 @@ impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
-impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
+pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()

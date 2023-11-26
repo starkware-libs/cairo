@@ -30,6 +30,16 @@ fn test_assert_macro_true() {
 }
 
 #[test]
+fn test_assert_ne_with_description() {
+    assert_ne!(1, 2, "Description");
+}
+
+#[test]
+fn test_assert_ne_no_description() {
+    assert_ne!(1, 2);
+}
+
+#[test]
 #[should_panic(expected: "assertion failed: `false`.")]
 fn test_assert_macro_no_input() {
     assert!(false);

@@ -39,7 +39,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
             code: Some(PluginGeneratedFile {
                 name: "selector_inline_macro".into(),
                 content: format!("0x{}", selector.to_str_radix(16)),
-                diagnostics_mappings: vec![],
+                code_mappings: vec![],
                 aux_data: None,
             }),
             diagnostics: vec![],

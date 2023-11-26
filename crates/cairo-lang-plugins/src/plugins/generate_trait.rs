@@ -78,6 +78,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         }
     }
     builder.add_str(extra_ident);
+    builder.add_node(impl_ast.visibility(db).as_syntax_node());
     builder.add_str("trait ");
     let impl_generic_params = impl_ast.generic_params(db);
     let generic_params_match = match trait_ast_segment {
@@ -202,7 +203,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,

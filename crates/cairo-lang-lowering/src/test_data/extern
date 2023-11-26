@@ -47,9 +47,9 @@ test_function_lowering
 fn foo(ref a: felt252, b: felt252) {
   let x = f(ref a, b);
   match x {
-    MyEnum::A(y) => (),
-    MyEnum::B(y) => (),
-    MyEnum::C(y) => (),
+    MyEnum::A(_y) => (),
+    MyEnum::B(_y) => (),
+    MyEnum::C(_y) => (),
   }
 }
 
@@ -264,9 +264,9 @@ test_function_lowering
 fn foo(ref a: felt252, b: felt252) {
   let x = f(ref a, b);
   match x {
-    MyEnum::A(y) => (),
-    MyEnum::B(y) => (),
-    MyEnum::C(y) => (),
+    MyEnum::A(_y) => (),
+    MyEnum::B(_y) => (),
+    MyEnum::C(_y) => (),
   }
 }
 
@@ -418,7 +418,7 @@ test_function_lowering
 //! > function
 fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
     let y = match f(ref arr, ref b) {
-        MyEnum::A(x) => arr
+        MyEnum::A(_x) => arr
     };
     y
 }
@@ -459,7 +459,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  gas::withdraw_gas();
+  let _unused = gas::withdraw_gas();
 }
 
 //! > function_name

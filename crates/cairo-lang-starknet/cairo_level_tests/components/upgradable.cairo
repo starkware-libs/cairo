@@ -1,10 +1,10 @@
 use starknet::ClassHash;
 #[starknet::interface]
-trait IUpgradable<TCS> {
+pub trait IUpgradable<TCS> {
     fn upgrade(ref self: TCS, new_class_hash: ClassHash);
 }
 #[starknet::component]
-mod upgradable {
+pub mod upgradable {
     use starknet::ClassHash;
     use starknet::syscalls::replace_class_syscall;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
@@ -15,7 +15,7 @@ mod upgradable {
     }
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         ContractUpgraded: ContractUpgraded
     }
     #[derive(Drop, starknet::Event)]

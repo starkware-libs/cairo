@@ -30,8 +30,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x: @felt252 = 5;
-    let y: felt252 = @6;
+    let _x: @felt252 = 5;
+    let _y: felt252 = @6;
 }
 
 //! > function_name
@@ -41,11 +41,11 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
- --> lib.cairo:3:22
-    let y: felt252 = @6;
-                     ^^
+ --> lib.cairo:3:23
+    let _y: felt252 = @6;
+                      ^^
 
-error: Mismatched types. The type @core::felt252 cannot be created from a numeric literal.
- --> lib.cairo:2:23
-    let x: @felt252 = 5;
-                      ^
+error: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
+ --> lib.cairo:2:24
+    let _x: @felt252 = 5;
+                       ^

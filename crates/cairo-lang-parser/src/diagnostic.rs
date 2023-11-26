@@ -31,9 +31,11 @@ pub enum ParserDiagnosticKind {
     StringMustBeAscii,
     UnterminatedShortString,
     UnterminatedString,
+    VisibilityWithoutItem,
     AttributesWithoutItem,
     AttributesWithoutTraitItem,
     AttributesWithoutImplItem,
+    AttributesWithoutStatement,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -95,6 +97,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "Unterminated short string literal.".into()
             }
             ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
+            ParserDiagnosticKind::VisibilityWithoutItem => {
+                "Missing tokens. Expected an item after visibility.".to_string()
+            }
             ParserDiagnosticKind::AttributesWithoutItem => {
                 "Missing tokens. Expected an item after attributes.".to_string()
             }
@@ -103,6 +108,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::AttributesWithoutImplItem => {
                 "Missing tokens. Expected an impl item after attributes.".to_string()
+            }
+            ParserDiagnosticKind::AttributesWithoutStatement => {
+                "Missing tokens. Expected a statement after attributes.".to_string()
             }
         }
     }

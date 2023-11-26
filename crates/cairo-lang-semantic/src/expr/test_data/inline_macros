@@ -116,8 +116,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x = array!(0);
-    let x = array![0_felt252, 1_u8];
+    let _x = array!(0);
+    let _x = array![0_felt252, 1_u8];
 }
 
 //! > function_name
@@ -127,14 +127,14 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `array` does not support this bracket type.
- --> lib.cairo:2:19
-    let x = array!(0);
-                  ^
+ --> lib.cairo:2:20
+    let _x = array!(0);
+                   ^
 
-error: Plugin diagnostic: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:31
-    let x = array![0_felt252, 1_u8];
-                              ^**^
+error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
+ --> lib.cairo:3:32
+    let _x = array![0_felt252, 1_u8];
+                               ^**^
 
 //! > ==========================================================================
 
@@ -167,7 +167,7 @@ fn foo() {
    write!(f, "{non_existing}");
 
    // Non existing provide argument.
-   write!(f, "{}", non_existing);
+   write!(f, "{}", non_existing).unwrap();
 
    // Too many arguments.
    write!(f, "{}", ba, 1);
@@ -219,14 +219,19 @@ error: Plugin diagnostic: Argument must be a string literal.
    write!(f, ba);
              ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:21:16
    write!(f, "{non_existing}");
                ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+warning: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+ --> lib.cairo:21:4
+   write!(f, "{non_existing}");
+   ^*************************^
+
+error: Identifier not found.
  --> lib.cairo:24:20
-   write!(f, "{}", non_existing);
+   write!(f, "{}", non_existing).unwrap();
                    ^**********^
 
 error: Plugin diagnostic: Unused argument.
@@ -274,6 +279,11 @@ error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or
     write!(f, "{x");
               ^**^
 
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo[write_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref f) {
@@ -307,7 +317,7 @@ fn foo() {
    writeln!(f, ba);
 
    // Non existing inline argument.
-   writeln!(f, "{non_existing}");
+   writeln!(f, "{non_existing}").unwrap();
 
    // Non existing provide argument.
    writeln!(f, "{}", non_existing);
@@ -356,15 +366,20 @@ error: Plugin diagnostic: Argument must be a string literal.
    writeln!(f, ba);
                ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:21:18
-   writeln!(f, "{non_existing}");
+   writeln!(f, "{non_existing}").unwrap();
                  ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:24:22
    writeln!(f, "{}", non_existing);
                      ^**********^
+
+warning: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+ --> lib.cairo:24:4
+   writeln!(f, "{}", non_existing);
+   ^*****************************^
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:27:26
@@ -385,6 +400,11 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:36:30
    writeln!(f, "{2}{0}", ba, 2, 1);
                              ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:8
+   let ba: ByteArray = "hello";
+       ^^
 
 error: Type annotations needed. Failed to infer ?2
  --> lib.cairo[writeln_macro]:2:22
@@ -436,50 +456,55 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `write` does not support this bracket type.
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:11
    format!["{}", ba];
           ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:11
    format!();
           ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:12
    format!(ba);
            ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:14
    format!("{non_existing}");
              ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:18
    format!("{}", non_existing);
                  ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:22
    format!("{}", ba, 1);
                      ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:12
    format!("{}{}", ba);
            ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:12
    format!("{2}{1}{0}", ba, 1);
            ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:26
    format!("{2}{0}", ba, 2, 1);
                          ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
 
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[format_macro][write_macro]:2:22
@@ -531,50 +556,55 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `write` does not support this bracket type.
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:10
    print!["{}", ba];
          ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:10
    print!();
          ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:11
    print!(ba);
           ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:13
    print!("{non_existing}");
             ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:17
    print!("{}", non_existing);
                 ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:21
    print!("{}", ba, 1);
                     ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:11
    print!("{}{}", ba);
           ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:11
    print!("{2}{1}{0}", ba, 1);
           ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:25
    print!("{2}{0}", ba, 2, 1);
                         ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
 
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[print_macro][write_macro]:2:22
@@ -626,54 +656,154 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:12
    println!["{}", ba];
            ^
 
-error: Plugin diagnostic: Plugin diagnostic: Macro expected format string argument.
+error: Plugin diagnostic: Macro expected format string argument.
  --> lib.cairo:8:12
    println!();
            ^
 
-error: Plugin diagnostic: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Argument must be a string literal.
  --> lib.cairo:11:13
    println!(ba);
             ^^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:14:15
    println!("{non_existing}");
               ^**********^
 
-error: Plugin diagnostic: Identifier not found.
+error: Identifier not found.
  --> lib.cairo:17:19
    println!("{}", non_existing);
                   ^**********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:20:23
    println!("{}", ba, 1);
                       ^
 
-error: Plugin diagnostic: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
  --> lib.cairo:23:13
    println!("{}{}", ba);
             ^****^
 
-error: Plugin diagnostic: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
  --> lib.cairo:26:13
    println!("{2}{1}{0}", ba, 1);
             ^*********^
 
-error: Plugin diagnostic: Plugin diagnostic: Unused argument.
+error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:27
    println!("{2}{0}", ba, 2, 1);
                           ^
 
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
+
 error: Type annotations needed. Failed to infer ?5
  --> lib.cairo[println_macro][writeln_macro]:2:22
     match core::fmt::Display::fmt(@non_existing, ref __formatter_for_print_macros__) {
+                     ^*****^
+
+//! > ==========================================================================
+
+//! > Test bad panic! macros
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let ba: ByteArray = "hello";
+
+   // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+   panic!["{}", ba];
+
+   // No params.
+   panic!();
+
+   // No format string.
+   panic!(ba);
+
+   // Non existing inline argument.
+   panic!("{non_existing}");
+
+   // Non existing provide argument.
+   panic!("{}", non_existing);
+
+   // Too many arguments.
+   panic!("{}", ba, 1);
+
+   // Too few arguments.
+   panic!("{}{}", ba);
+
+   // Out of range positional argument.
+   panic!("{2}{1}{0}", ba, 1);
+
+   // Unused arguments.
+   panic!("{2}{0}", ba, 2, 1);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro `panic` does not support this bracket type.
+ --> lib.cairo:5:10
+   panic!["{}", ba];
+         ^
+
+error: Plugin diagnostic: Argument must be a string literal.
+ --> lib.cairo:11:11
+   panic!(ba);
+          ^^
+
+error: Identifier not found.
+ --> lib.cairo:14:13
+   panic!("{non_existing}");
+            ^**********^
+
+error: Identifier not found.
+ --> lib.cairo:17:17
+   panic!("{}", non_existing);
+                ^**********^
+
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:20:21
+   panic!("{}", ba, 1);
+                    ^
+
+error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
+ --> lib.cairo:23:11
+   panic!("{}{}", ba);
+          ^****^
+
+error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
+ --> lib.cairo:26:11
+   panic!("{2}{1}{0}", ba, 1);
+          ^*********^
+
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:29:25
+   panic!("{2}{0}", ba, 2, 1);
+                        ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:8
+   let ba: ByteArray = "hello";
+       ^^
+
+error: Type annotations needed. Failed to infer ?4
+ --> lib.cairo[panic_macro][write_macro]:2:22
+    match core::fmt::Display::fmt(@non_existing, ref __formatter_for_panic_macro__) {
                      ^*****^
 
 //! > ==========================================================================
@@ -685,7 +815,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let x = foo!(0);
+   let _x = foo!(0);
 }
 
 //! > function_name
@@ -695,9 +825,9 @@ foo
 
 //! > expected_diagnostics
 error: Inline macro `foo` not found.
- --> lib.cairo:2:12
-   let x = foo!(0);
-           ^*****^
+ --> lib.cairo:2:13
+   let _x = foo!(0);
+            ^*****^
 
 //! > ==========================================================================
 

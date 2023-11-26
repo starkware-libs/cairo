@@ -130,28 +130,28 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        var_felt252: var_felt252::ContractMemberState,
-        var_u8: var_u8::ContractMemberState,
-        var_u16: var_u16::ContractMemberState,
-        var_u32: var_u32::ContractMemberState,
-        var_u64: var_u64::ContractMemberState,
-        var_u128: var_u128::ContractMemberState,
-        var_bool: var_bool::ContractMemberState,
-        felt252_to_u128: felt252_to_u128::ContractMemberState,
-        u128_to_bool: u128_to_bool::ContractMemberState,
-        bool_to_felt252: bool_to_felt252::ContractMemberState,
-        outer_type_var: outer_type_var::ContractMemberState,
-        outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
-        inner_type_var: inner_type_var::ContractMemberState,
-        inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
+    pub struct ContractState {
+        pub var_felt252: var_felt252::ContractMemberState,
+        pub var_u8: var_u8::ContractMemberState,
+        pub var_u16: var_u16::ContractMemberState,
+        pub var_u32: var_u32::ContractMemberState,
+        pub var_u64: var_u64::ContractMemberState,
+        pub var_u128: var_u128::ContractMemberState,
+        pub var_bool: var_bool::ContractMemberState,
+        pub felt252_to_u128: felt252_to_u128::ContractMemberState,
+        pub u128_to_bool: u128_to_bool::ContractMemberState,
+        pub bool_to_felt252: bool_to_felt252::ContractMemberState,
+        pub outer_type_var: outer_type_var::ContractMemberState,
+        pub outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
+        pub inner_type_var: inner_type_var::ContractMemberState,
+        pub inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             var_felt252: var_felt252::ContractMemberState {},
             var_u8: var_u8::ContractMemberState {},
@@ -171,7 +171,7 @@ enum Event {}
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -179,8 +179,8 @@ enum Event {}
     mod var_felt252 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
@@ -217,8 +217,8 @@ enum Event {}
     mod var_u8 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u8;
             fn write(ref self: ContractMemberState, value: u8);
@@ -255,8 +255,8 @@ enum Event {}
     mod var_u16 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u16;
             fn write(ref self: ContractMemberState, value: u16);
@@ -293,8 +293,8 @@ enum Event {}
     mod var_u32 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u32;
             fn write(ref self: ContractMemberState, value: u32);
@@ -331,8 +331,8 @@ enum Event {}
     mod var_u64 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u64;
             fn write(ref self: ContractMemberState, value: u64);
@@ -369,8 +369,8 @@ enum Event {}
     mod var_u128 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
@@ -407,8 +407,8 @@ enum Event {}
     mod var_bool {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> bool;
             fn write(ref self: ContractMemberState, value: bool);
@@ -442,11 +442,11 @@ enum Event {}
         }
     }
     use felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
-    mod felt252_to_u128 {
+    pub mod felt252_to_u128 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: felt252) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: felt252) -> u128;
             fn write(ref self: ContractMemberState, key: felt252, value: u128);
@@ -481,11 +481,11 @@ enum Event {}
         }
     }
     use u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
-    mod u128_to_bool {
+    pub mod u128_to_bool {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: u128) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: u128) -> bool;
             fn write(ref self: ContractMemberState, key: u128, value: bool);
@@ -520,11 +520,11 @@ enum Event {}
         }
     }
     use bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
-    mod bool_to_felt252 {
+    pub mod bool_to_felt252 {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: bool) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: bool) -> felt252;
             fn write(ref self: ContractMemberState, key: bool, value: felt252);
@@ -562,8 +562,8 @@ enum Event {}
     mod outer_type_var {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> super::super::OuterType;
             fn write(ref self: ContractMemberState, value: super::super::OuterType);
@@ -597,11 +597,11 @@ enum Event {}
         }
     }
     use outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
-    mod outer_type_to_outer_type {
+    pub mod outer_type_to_outer_type {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType;
             fn write(ref self: ContractMemberState, key: super::super::OuterType, value: super::super::OuterType);
@@ -639,8 +639,8 @@ enum Event {}
     mod inner_type_var {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> inner::InnerType;
             fn write(ref self: ContractMemberState, value: inner::InnerType);
@@ -674,11 +674,11 @@ enum Event {}
         }
     }
     use inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
-    mod inner_type_to_inner_type {
+    pub mod inner_type_to_inner_type {
         use super::inner;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType;
             fn write(ref self: ContractMemberState, key: inner::InnerType, value: inner::InnerType);
@@ -717,18 +717,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
+pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -767,7 +764,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

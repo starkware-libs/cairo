@@ -606,7 +606,6 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
- "indexmap 2.1.0",
  "indoc",
  "itertools 0.11.0",
  "log",
@@ -708,6 +707,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits 0.2.17",
+ "starknet-crypto 0.6.1",
  "test-case",
  "thiserror",
 ]
@@ -818,7 +818,6 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
- "indexmap 2.1.0",
  "indoc",
  "itertools 0.11.0",
  "log",

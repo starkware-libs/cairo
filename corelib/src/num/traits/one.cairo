@@ -1,5 +1,5 @@
 /// Defines a multiplicative identity element for `T`.
-trait One<T> {
+pub trait One<T> {
     /// Returns the multiplicative identity element of `T`, `1`.
     fn one() -> T;
     /// Returns `true` if `self` is equal to the multiplicative identity.

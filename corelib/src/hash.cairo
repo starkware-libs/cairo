@@ -1,13 +1,13 @@
 use core::traits::Into;
 
 /// A trait for hash state accumulators.
-trait HashStateTrait<S> {
+pub trait HashStateTrait<S> {
     fn update(self: S, value: felt252) -> S;
     fn finalize(self: S) -> felt252;
 }
 
 /// A trait for values that can be hashed.
-trait Hash<T, S, +HashStateTrait<S>> {
+pub trait Hash<T, S, +HashStateTrait<S>> {
     /// Updates the hash state with the given value.
     fn update_state(state: S, value: T) -> S;
 }
@@ -15,7 +15,7 @@ trait Hash<T, S, +HashStateTrait<S>> {
 /// Trait for hashing values.
 /// Used for backwards compatibility.
 /// NOTE: Implement `Hash` instead of this trait if possible.
-trait LegacyHash<T> {
+pub trait LegacyHash<T> {
     fn hash(state: felt252, value: T) -> felt252;
 }
 
@@ -28,7 +28,7 @@ impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> 
 }
 
 /// Extension trait for hash state accumulators.
-trait HashStateExTrait<S, T> {
+pub trait HashStateExTrait<S, T> {
     /// Updates the hash state with the given value.
     fn update_with(self: S, value: T) -> S;
 }
@@ -53,8 +53,8 @@ impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
 /// impl MyTypeHash<S, +HashStateTrait<S>, +Drop<S>> =
 ///     core::hash::into_felt252_based::HashImpl<MyType, S>;`
 /// ```
-mod into_felt252_based {
-    impl HashImpl<
+pub mod into_felt252_based {
+    pub impl HashImpl<
         T, S, +Into<T, felt252>, +super::HashStateTrait<S>, +Drop<S>
     > of super::Hash<T, S> {
         #[inline(always)]

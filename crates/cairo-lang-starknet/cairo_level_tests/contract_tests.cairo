@@ -1,3 +1,4 @@
+use core::num::traits::Zero;
 use starknet::StorageAddress;
 use core::test::test_utils::{assert_eq, assert_ne};
 
@@ -279,7 +280,7 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 #[test]
 fn test_storage_address() {
     let mut args = array![0x17];
-    let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
+    let _storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = test_contract::__external::test_storage_address(args.span());
 
     assert_eq(args[0_u32], ret_data[0_u32], 'Unexpected ret_data.');

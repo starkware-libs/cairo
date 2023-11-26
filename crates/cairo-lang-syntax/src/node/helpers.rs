@@ -4,12 +4,14 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
-    WrappedArgList,
+    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
+    StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
+    TraitItemFunctionPtr, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
+use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
@@ -349,6 +351,123 @@ impl QueryAttrs for Variant {
     }
 }
 
+impl QueryAttrs for StatementBreak {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementContinue {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementReturn {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementLet {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for StatementExpr {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+/// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
+/// should be added here.
+impl QueryAttrs for SyntaxNode {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        match self.kind(db) {
+            SyntaxKind::ItemConstant => {
+                ast::ItemConstant::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemModule => {
+                ast::ItemModule::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::FunctionWithBody => {
+                ast::FunctionWithBody::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemUse => {
+                ast::ItemUse::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemExternFunction => {
+                ast::ItemExternFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemExternType => {
+                ast::ItemExternType::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemTrait => {
+                ast::ItemTrait::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemImpl => {
+                ast::ItemImpl::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemImplAlias => {
+                ast::ItemImplAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemStruct => {
+                ast::ItemStruct::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemEnum => {
+                ast::ItemEnum::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemTypeAlias => {
+                ast::ItemTypeAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::TraitItemFunction => {
+                ast::TraitItemFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::ItemInlineMacro => {
+                ast::ItemInlineMacro::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::AttributeList => {
+                ast::AttributeList::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::Member => {
+                ast::Member::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::Variant => {
+                ast::Variant::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::StatementBreak => {
+                ast::StatementBreak::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::StatementContinue => {
+                ast::StatementContinue::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::StatementReturn => {
+                ast::StatementReturn::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::StatementLet => {
+                ast::StatementLet::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            SyntaxKind::StatementExpr => {
+                ast::StatementExpr::from_syntax_node(db, self.clone()).attributes_elements(db)
+            }
+            _ => vec![],
+        }
+    }
+}
+
+impl QueryAttrs for Statement {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        match self {
+            Statement::Break(statement) => statement.attributes_elements(db),
+            Statement::Continue(statement) => statement.attributes_elements(db),
+            Statement::Return(statement) => statement.attributes_elements(db),
+            Statement::Let(statement) => statement.attributes_elements(db),
+            Statement::Expr(statement) => statement.attributes_elements(db),
+            Statement::Missing(_) => vec![],
+        }
+    }
+}
 pub trait WrappedArgListHelper {
     /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
     fn arg_list(&self, db: &dyn SyntaxGroup) -> Option<ast::ArgList>;

@@ -10,7 +10,7 @@ fn test_dict_new() -> Felt252Dict<felt252> {
 #[test]
 fn test_dict_squash_empty() {
     let mut dict: Felt252Dict<felt252> = Default::default();
-    let squashed_dict = dict.squash();
+    let _squashed_dict = dict.squash();
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn test_dict_update_twice() {
 fn test_dict_entry_destruct() {
     let mut dict = Default::default();
     dict.insert(10, 110);
-    let (entry, value) = dict.entry(10);
+    let (_entry, _value) = dict.entry(10);
 }
 
 const KEY1: felt252 = 10;

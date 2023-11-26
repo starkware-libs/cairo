@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut ref mut ref ref a = 3;
+    let mut ref mut ref ref _a = 3;
 }
 
 //! > function_name
@@ -16,22 +16,22 @@ foo
 //! > expected_diagnostics
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:13
-    let mut ref mut ref ref a = 3;
+    let mut ref mut ref ref _a = 3;
             ^*^
 
 error: `mut` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:17
-    let mut ref mut ref ref a = 3;
+    let mut ref mut ref ref _a = 3;
                 ^*^
 
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:21
-    let mut ref mut ref ref a = 3;
+    let mut ref mut ref ref _a = 3;
                     ^*^
 
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:25
-    let mut ref mut ref ref a = 3;
+    let mut ref mut ref ref _a = 3;
                         ^*^
 
 //! > ==========================================================================
@@ -43,7 +43,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let ref mut a = 3;
+    let ref mut _a = 3;
 }
 
 //! > function_name
@@ -54,13 +54,13 @@ foo
 //! > expected_diagnostics
 error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:2:13
-    let ref mut a = 3;
+    let ref mut _a = 3;
             ^*^
 
 error: `ref` is only allowed for function parameters, not for local variables.
  --> lib.cairo:2:17
-    let ref mut a = 3;
-                ^
+    let ref mut _a = 3;
+                ^^
 
 //! > ==========================================================================
 
@@ -71,7 +71,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let ref a = 3;
+    let ref _a = 3;
 }
 
 //! > function_name
@@ -82,8 +82,8 @@ foo
 //! > expected_diagnostics
 error: `ref` is only allowed for function parameters, not for local variables.
  --> lib.cairo:2:13
-    let ref a = 3;
-            ^
+    let ref _a = 3;
+            ^^
 
 //! > ==========================================================================
 
@@ -94,8 +94,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x = not_found;
-    let x = foo;
+    let _x = not_found;
+    let _x = foo;
 }
 
 //! > function_name
@@ -105,14 +105,14 @@ foo
 
 //! > expected_diagnostics
 error: Identifier not found.
- --> lib.cairo:2:13
-    let x = not_found;
-            ^*******^
+ --> lib.cairo:2:14
+    let _x = not_found;
+             ^*******^
 
 error: Expected variable or constant, found function.
- --> lib.cairo:3:13
-    let x = foo;
-            ^*^
+ --> lib.cairo:3:14
+    let _x = foo;
+             ^*^
 
 //! > ==========================================================================
 
@@ -123,7 +123,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let a: () = 3_felt252;
+   let _a: () = 3_felt252;
 }
 
 //! > function_name
@@ -133,6 +133,6 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
- --> lib.cairo:2:16
-   let a: () = 3_felt252;
-               ^*******^
+ --> lib.cairo:2:17
+   let _a: () = 3_felt252;
+                ^*******^

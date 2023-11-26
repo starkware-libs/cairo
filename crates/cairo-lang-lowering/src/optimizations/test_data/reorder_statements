@@ -7,8 +7,8 @@ test_reorder_statements
 fn foo() -> felt252 {
    let opt = get_option();
 
-   let unused = 17;
-   let unused2 = ();
+   let _unused = 17;
+   let _unused2 = ();
 
    let one = 1;
    let two = 2;

@@ -14,7 +14,7 @@ struct Tag {
 fn build(tag: Tag) -> ByteArray {
     let mut s = "<";
 
-    let mut attrs = tag.attrs.unwrap();
+    let mut _attrs = tag.attrs.unwrap();
     // let no_content = tag.children.is_none() && tag.content.is_none();
     let no_content = tag.children.is_none();
     let no_content = no_content && tag.content.is_none();

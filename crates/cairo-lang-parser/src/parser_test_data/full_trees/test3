@@ -19,6 +19,7 @@ false
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'main'
@@ -48,6 +49,7 @@ false
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprFunctionCall)
     │   │       │       │   ├── path (kind: ExprPath)
     │   │       │       │   │   └── item #0 (kind: PathSegmentSimple)
@@ -74,6 +76,7 @@ false
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'fib'
@@ -129,6 +132,7 @@ false
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprErrorPropagate)
     │   │       │   │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   │   ├── path (kind: ExprPath)
@@ -144,6 +148,7 @@ false
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprInlineMacro)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -155,6 +160,7 @@ false
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #2 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
     │   │       │       │   ├── expr (kind: ExprPath)
@@ -228,6 +234,9 @@ false
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TokenPub): 'pub'
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'fib_tuple'
@@ -301,6 +310,7 @@ false
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
     │           │   ├── child #0 (kind: StatementExpr)
+    │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── expr (kind: ExprErrorPropagate)
     │           │   │   │   ├── expr (kind: ExprFunctionCall)
     │           │   │   │   │   ├── path (kind: ExprPath)
@@ -316,6 +326,7 @@ false
     │           │   │   │   └── op (kind: TokenQuestionMark): '?'
     │           │   │   └── semicolon (kind: TokenSemicolon): ';'
     │           │   └── child #1 (kind: StatementExpr)
+    │           │       ├── attributes (kind: AttributeList) []
     │           │       ├── expr (kind: ExprMatch)
     │           │       │   ├── match_kw (kind: TokenMatch): 'match'
     │           │       │   ├── expr (kind: ExprPath)
@@ -434,6 +445,7 @@ false
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -498,6 +510,7 @@ false
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprFunctionCall)
     │   │       │       │   ├── path (kind: ExprPath)
     │   │       │       │   │   └── item #0 (kind: PathSegmentSimple)
@@ -556,6 +569,7 @@ false
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -687,6 +701,7 @@ false
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprErrorPropagate)
     │   │       │   │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   │   ├── path (kind: ExprPath)
@@ -725,6 +740,7 @@ false
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #1 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprInlineMacro)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -753,6 +769,7 @@ false
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   └── child #2 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TerminalMatch)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia)
@@ -934,10 +951,17 @@ false
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
-    │       ├── declaration (kind: FunctionDeclaration)
-    │       │   ├── function_kw (kind: TerminalFunction)
+    │       ├── visibility (kind: VisibilityPub)
+    │       │   ├── pub_kw (kind: TerminalPub)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   └── child #0 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenPub): 'pub'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TerminalFunction)
+    │       │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   ├── token (kind: TokenFunction): 'fn'
     │       │   │   └── trailing_trivia (kind: Trivia)
     │       │   │       └── child #0 (kind: TokenWhitespace).
@@ -1103,6 +1127,7 @@ false
     │           │       └── child #0 (kind: TokenNewline).
     │           ├── statements (kind: StatementList)
     │           │   ├── child #0 (kind: StatementExpr)
+    │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── expr (kind: ExprErrorPropagate)
     │           │   │   │   ├── expr (kind: ExprFunctionCall)
     │           │   │   │   │   ├── path (kind: ExprPath)
@@ -1141,6 +1166,7 @@ false
     │           │   │       └── trailing_trivia (kind: Trivia)
     │           │   │           └── child #0 (kind: TokenNewline).
     │           │   └── child #1 (kind: StatementExpr)
+    │           │       ├── attributes (kind: AttributeList) []
     │           │       ├── expr (kind: ExprMatch)
     │           │       │   ├── match_kw (kind: TerminalMatch)
     │           │       │   │   ├── leading_trivia (kind: Trivia)

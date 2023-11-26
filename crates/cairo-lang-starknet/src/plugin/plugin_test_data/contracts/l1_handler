@@ -35,20 +35,20 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -57,7 +57,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
+pub const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -110,17 +110,14 @@ fn __wrapper__good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt2
 }
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-        use super::__wrapper__good_l1_handler as good_l1_handler;
-        use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+    pub use super::__wrapper__good_l1_handler as good_l1_handler;
+    pub use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -159,7 +156,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

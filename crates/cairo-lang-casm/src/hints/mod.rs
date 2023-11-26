@@ -61,6 +61,7 @@ pub enum StarknetHint {
     #[codec(index = 0)]
     SystemCall { system: ResOperand },
     #[codec(index = 1)]
+    #[schemars(skip)]
     Cheatcode {
         selector: BigIntAsHex,
         input_start: ResOperand,

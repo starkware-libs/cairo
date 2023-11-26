@@ -66,14 +66,14 @@ mod mintable_erc20_ownable {
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -165,17 +165,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
 }
 
 
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -281,20 +278,20 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Ownable(val));
         }
-        if selector == selector!("Mintable") {
+        if __selector__ == selector!("Mintable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -336,21 +333,21 @@ trait GetSupplyDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct GetSupplyDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u256>::deserialize(ref ret_data),
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -359,21 +356,21 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct GetSupplyLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u256>::deserialize(ref ret_data),
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -386,22 +383,22 @@ trait GetSupplySafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct GetSupplySafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u256>::deserialize(ref ret_data),
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -412,22 +409,22 @@ impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSuppl
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct GetSupplySafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u256>::deserialize(ref ret_data),
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -659,14 +656,14 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -758,17 +755,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
 }
 
 
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -874,20 +868,20 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Ownable(val));
         }
-        if selector == selector!("Mintable") {
+        if __selector__ == selector!("Mintable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

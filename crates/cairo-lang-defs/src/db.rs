@@ -5,6 +5,9 @@ use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::attribute::consts::{
+    FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, STARKNET_INTERFACE_ATTR,
+};
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
@@ -75,6 +78,10 @@ pub trait DefsGroup:
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
     fn allowed_attributes(&self) -> Arc<OrderedHashSet<String>>;
+
+    /// Returns the set of attributes allowed on statements.
+    /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
+    fn allowed_statement_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -162,6 +169,7 @@ pub trait DefsGroup:
     ) -> Maybe<Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId)
     -> Maybe<Arc<Vec<ExternFunctionId>>>;
+    fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_infos(
         &self,
         module_id: ModuleId,
@@ -174,14 +182,20 @@ pub trait DefsGroup:
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
-        "inline".into(),
-        "implicit_precedence".into(),
+        INLINE_ATTR.into(),
+        IMPLICIT_PRECEDENCE_ATTR.into(),
+        FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
-        "starknet::interface".into(),
+        STARKNET_INTERFACE_ATTR.into(),
     ]);
     for plugin in db.macro_plugins() {
         all_attributes.extend(plugin.declared_attributes());
     }
+    Arc::new(all_attributes)
+}
+
+fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
+    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into()]);
     Arc::new(all_attributes)
 }
 
@@ -382,7 +396,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
-                        diagnostics_mappings: Arc::new(generated.diagnostics_mappings),
+                        code_mappings: Arc::new(generated.code_mappings),
                         kind: FileKind::Module,
                     }));
                     generated_file_infos.push(Some(GeneratedFileInfo {
@@ -526,7 +540,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
-fn validate_attributes_flat(
+pub fn validate_attributes_flat(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
     module_file_id: ModuleFileId,
@@ -791,6 +805,17 @@ pub fn module_extern_functions_ids(
     module_id: ModuleId,
 ) -> Maybe<Arc<Vec<ExternFunctionId>>> {
     Ok(Arc::new(db.module_extern_functions(module_id)?.keys().copied().collect()))
+}
+
+pub fn module_ancestors(db: &dyn DefsGroup, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
+    let mut current = module_id;
+    let mut ancestors = OrderedHashSet::new();
+    while let ModuleId::Submodule(submodule_id) = current {
+        let parent = submodule_id.parent_module(db);
+        ancestors.insert(parent);
+        current = parent
+    }
+    ancestors
 }
 
 /// Returns the generated_file_infos of the given module.

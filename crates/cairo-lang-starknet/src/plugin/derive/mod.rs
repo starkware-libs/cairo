@@ -63,7 +63,7 @@ pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult 
             Some(PluginGeneratedFile {
                 name: "starknet_derive".into(),
                 content: builder.code,
-                diagnostics_mappings: builder.diagnostics_mappings,
+                code_mappings: builder.code_mappings,
                 aux_data,
             })
         },

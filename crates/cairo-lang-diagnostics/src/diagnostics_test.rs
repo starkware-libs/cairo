@@ -38,7 +38,7 @@ fn setup() -> (FilesDatabaseForTesting, FileId) {
         parent: None,
         name: "dummy_file.sierra".into(),
         content: Arc::new("abcd\nefg.\n".into()),
-        diagnostics_mappings: Default::default(),
+        code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
     (db_val, file_id)

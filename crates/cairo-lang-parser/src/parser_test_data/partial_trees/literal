@@ -18,6 +18,7 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath) <ignored>
     ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -53,6 +54,7 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath) <ignored>
     ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -88,6 +90,7 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath) <ignored>
     ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -182,6 +185,7 @@ error: Missing token TerminalSemicolon.
 //! > expected_tree
 └── Top level kind: StatementList
     ├── child #0 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -189,6 +193,7 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0b1'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #1 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -196,9 +201,11 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0b'
     │   └── semicolon: Missing
     ├── child #2 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #3 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -206,9 +213,11 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0b1'
     │   └── semicolon: Missing
     ├── child #4 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #5 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -216,6 +225,7 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0o1'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #6 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -223,9 +233,11 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0o'
     │   └── semicolon: Missing
     ├── child #7 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '8'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #8 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -233,9 +245,11 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0o7'
     │   └── semicolon: Missing
     ├── child #9 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: TokenLiteralNumber): '8'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #10 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -243,6 +257,7 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0xf'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #11 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -250,9 +265,11 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0x'
     │   └── semicolon: Missing
     ├── child #12 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── expr (kind: ExprPath) <ignored>
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #13 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
@@ -260,6 +277,7 @@ error: Missing token TerminalSemicolon.
     │   ├── rhs (kind: TokenLiteralNumber): '0xf'
     │   └── semicolon: Missing
     └── child #14 (kind: StatementExpr)
+        ├── attributes (kind: AttributeList) []
         ├── expr (kind: ExprPath) <ignored>
         └── semicolon (kind: TokenSemicolon): ';'
 
@@ -289,6 +307,7 @@ error: Missing token TerminalSemicolon.
 
 //! > expected_tree
 └── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
     ├── let_kw (kind: TokenLet): 'let'
     ├── pattern (kind: ExprPath) <ignored>
     ├── type_clause (kind: OptionTypeClauseEmpty) []

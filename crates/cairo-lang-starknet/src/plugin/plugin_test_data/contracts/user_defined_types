@@ -95,18 +95,18 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        var: var::ContractMemberState,
-        zero_size: zero_size::ContractMemberState,
-        mapping: mapping::ContractMemberState,
-        zero_size_mapping: zero_size_mapping::ContractMemberState,
+    pub struct ContractState {
+        pub var: var::ContractMemberState,
+        pub zero_size: zero_size::ContractMemberState,
+        pub mapping: mapping::ContractMemberState,
+        pub zero_size_mapping: zero_size_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             var: var::ContractMemberState {},
             zero_size: zero_size::ContractMemberState {},
@@ -116,7 +116,7 @@ enum Event {}
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -129,8 +129,8 @@ enum Event {}
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> WrappedFelt252;
             fn write(ref self: ContractMemberState, value: WrappedFelt252);
@@ -172,8 +172,8 @@ enum Event {}
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> ZeroSize;
             fn write(ref self: ContractMemberState, value: ZeroSize);
@@ -207,7 +207,7 @@ enum Event {}
         }
     }
     use mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
-    mod mapping {
+    pub mod mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -215,8 +215,8 @@ enum Event {}
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252;
             fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252);
@@ -251,7 +251,7 @@ enum Event {}
         }
     }
     use zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
-    mod zero_size_mapping {
+    pub mod zero_size_mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -259,8 +259,8 @@ enum Event {}
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize;
             fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize);
@@ -299,18 +299,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
+pub const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -704,7 +701,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

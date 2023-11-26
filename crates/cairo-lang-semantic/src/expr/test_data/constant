@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    let x = MY_CONST + my_module::CONST_IN_MODULE;
+    let _x = MY_CONST + my_module::CONST_IN_MODULE;
 }
 
 //! > function_name
@@ -99,7 +99,7 @@ error: A literal of type core::bool cannot be created.
 const DEFAULT_VAR: bool = 1;
                           ^
 
-error: Mismatched types. The type core::bool cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^

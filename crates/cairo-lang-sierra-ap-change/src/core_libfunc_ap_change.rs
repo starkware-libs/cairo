@@ -94,6 +94,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
+            BoxConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {
@@ -287,10 +288,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             },
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::NullableFromBox(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::MatchNullable(_)
-            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
+            NullableConcreteLibfunc::Null(_)
+            | NullableConcreteLibfunc::NullableFromBox(_)
+            | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },

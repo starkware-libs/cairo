@@ -235,8 +235,8 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<NestedEventEnum> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("B") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("B") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -260,26 +260,26 @@ impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
         match lhs {
             MyEventEnum::A(x) => match rhs {
                 MyEventEnum::A(y) => x == y,
-                MyEventEnum::B(y) => false,
-                MyEventEnum::C(y) => false,
-                MyEventEnum::D(y) => false,
+                MyEventEnum::B(_y) => false,
+                MyEventEnum::C(_y) => false,
+                MyEventEnum::D(_y) => false,
             },
             MyEventEnum::B(x) => match rhs {
-                MyEventEnum::A(y) => false,
+                MyEventEnum::A(_y) => false,
                 MyEventEnum::B(y) => x == y,
-                MyEventEnum::C(y) => false,
-                MyEventEnum::D(y) => false,
+                MyEventEnum::C(_y) => false,
+                MyEventEnum::D(_y) => false,
             },
             MyEventEnum::C(x) => match rhs {
-                MyEventEnum::A(y) => false,
-                MyEventEnum::B(y) => false,
+                MyEventEnum::A(_y) => false,
+                MyEventEnum::B(_y) => false,
                 MyEventEnum::C(y) => x == y,
-                MyEventEnum::D(y) => false,
+                MyEventEnum::D(_y) => false,
             },
             MyEventEnum::D(x) => match rhs {
-                MyEventEnum::A(y) => false,
-                MyEventEnum::B(y) => false,
-                MyEventEnum::C(y) => false,
+                MyEventEnum::A(_y) => false,
+                MyEventEnum::B(_y) => false,
+                MyEventEnum::C(_y) => false,
                 MyEventEnum::D(y) => x == y,
             },
         }
@@ -346,14 +346,14 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
                 Option::None => {},
             };
         }
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("A") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("A") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::A(val));
         }
-        if selector == selector!("B") {
+        if __selector__ == selector!("B") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

@@ -8,6 +8,8 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
+    use core::num::traits::Zero;
+    use starknet::SyscallResultTrait;
     use starknet::{
         ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };
@@ -125,7 +127,8 @@ mod token_bridge {
             ];
             send_message_to_l1_syscall(
                 to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
-            );
+            )
+                .unwrap_syscall();
             self.emit(WithdrawInitiated { l1_recipient, amount, caller_address });
         }
     }

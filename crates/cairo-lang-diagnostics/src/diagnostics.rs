@@ -2,16 +2,32 @@
 #[path = "diagnostics_test.rs"]
 mod test;
 
+use core::fmt;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
+
+/// The severity of a diagnostic.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Debug)]
+pub enum Severity {
+    Error,
+    Warning,
+}
+impl std::fmt::Display for Severity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Severity::Error => write!(f, "error"),
+            Severity::Warning => write!(f, "warning"),
+        }
+    }
+}
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
@@ -21,6 +37,9 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
+    }
+    fn severity(&self) -> Severity {
+        Severity::Error
     }
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
@@ -37,13 +56,32 @@ impl DiagnosticLocation {
     pub fn after(&self) -> Self {
         Self { file_id: self.file_id, span: self.span.after() }
     }
+
+    /// Get the location of the originating user code.
+    pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
+        let mut result = self.clone();
+        while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+            db.lookup_intern_file(result.file_id)
+        {
+            if let Some(span) =
+                code_mappings.iter().find_map(|mapping| mapping.translate(result.span))
+            {
+                result.span = span;
+                result.file_id = parent;
+            } else {
+                break;
+            }
+        }
+        result
+    }
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
-        let file_path = self.file_id.full_path(db);
-        let marks = get_location_marks(db, self);
-        let pos = match self.span.start.position_in_file(db, self.file_id) {
+        let user_location = self.user_location(db);
+        let file_path = user_location.file_id.full_path(db);
+        let marks = get_location_marks(db, &user_location);
+        let pos = match user_location.span.start.position_in_file(db, user_location.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
@@ -77,7 +115,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
             write!(f, ":\n  --> ")?;
-            location.fmt(f, db)?;
+            location.user_location(db).fmt(f, db)?;
         }
         Ok(())
     }
@@ -129,21 +167,23 @@ impl<T> ToOption<T> for Maybe<T> {
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
-    pub count: usize,
+    pub error_count: usize,
     pub leaves: Vec<TEntry>,
     pub subtrees: Vec<Diagnostics<TEntry>>,
 }
 impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn new() -> Self {
-        Self { leaves: Default::default(), subtrees: Default::default(), count: 0 }
+        Self { leaves: Default::default(), subtrees: Default::default(), error_count: 0 }
     }
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
+        if diagnostic.severity() == Severity::Error {
+            self.error_count += 1;
+        }
         self.leaves.push(diagnostic);
-        self.count += 1;
         DiagnosticAdded
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
-        self.count += diagnostics.len();
+        self.error_count += diagnostics.0.error_count;
         self.subtrees.push(diagnostics);
     }
     pub fn build(self) -> Diagnostics<TEntry> {
@@ -159,10 +199,11 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 
 pub fn format_diagnostics(
     db: &(dyn FilesGroup + 'static),
+    severity: Severity,
     message: &str,
     location: DiagnosticLocation,
 ) -> String {
-    format!("error: {message}\n --> {:?}\n", location.debug(db))
+    format!("{severity}: {message}\n --> {:?}\n", location.debug(db))
 }
 
 /// A set of diagnostic entries that arose during a computation.
@@ -173,16 +214,9 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         Self(DiagnosticsBuilder::default().into())
     }
 
-    pub fn len(&self) -> usize {
-        self.0.count
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.count == 0
-    }
-
-    pub fn is_diagnostic_free(&self) -> Maybe<()> {
-        if self.is_empty() { Ok(()) } else { Err(DiagnosticAdded) }
+    /// Returns Ok(()) if there are no errors, or an error handle if there are.
+    pub fn check_error_free(&self) -> Maybe<()> {
+        if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
 
     pub fn format(&self, db: &TEntry::DbType) -> String {
@@ -191,9 +225,12 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let files_db = db.upcast();
         // Format leaves.
         for entry in &self.0.leaves {
-            let message = entry.format(db);
-
-            res += &format_diagnostics(files_db, &message, entry.location(db));
+            res += &format_diagnostics(
+                files_db,
+                entry.severity(),
+                &entry.format(db),
+                entry.location(db),
+            );
             for note in entry.notes(db) {
                 res += &format!("note: {:?}\n", note.debug(files_db))
             }

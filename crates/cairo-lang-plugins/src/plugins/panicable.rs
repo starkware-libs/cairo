@@ -1,3 +1,4 @@
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -6,8 +7,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
+use indoc::formatdoc;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -17,17 +18,21 @@ const PANIC_WITH_ATTR: &str = "panic_with";
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let (declaration, attributes) = match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => {
-                (extern_func_ast.declaration(db), extern_func_ast.attributes(db))
-            }
-            ast::Item::FreeFunction(free_func_ast) => {
-                (free_func_ast.declaration(db), free_func_ast.attributes(db))
-            }
+        let (declaration, attributes, visibility) = match item_ast {
+            ast::Item::ExternFunction(extern_func_ast) => (
+                extern_func_ast.declaration(db),
+                extern_func_ast.attributes(db),
+                extern_func_ast.visibility(db),
+            ),
+            ast::Item::FreeFunction(free_func_ast) => (
+                free_func_ast.declaration(db),
+                free_func_ast.attributes(db),
+                free_func_ast.visibility(db),
+            ),
             _ => return PluginResult::default(),
         };
 
-        generate_panicable_code(db, declaration, attributes)
+        generate_panicable_code(db, declaration, attributes, visibility)
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -40,56 +45,52 @@ fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
+    visibility: ast::Visibility,
 ) -> PluginResult {
     let mut attrs = attributes.query_attr(db, PANIC_WITH_ATTR);
     if attrs.is_empty() {
         return PluginResult::default();
     }
+    let mut diagnostics = vec![];
     if attrs.len() > 1 {
         let extra_attr = attrs.swap_remove(1);
-        return PluginResult {
-            code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: extra_attr.stable_ptr().untyped(),
-                message: "`#[panic_with]` cannot be applied multiple times to the same item."
-                    .into(),
-            }],
-            remove_original_item: false,
-        };
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: extra_attr.stable_ptr().untyped(),
+            message: "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
+        });
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     }
     let attr = attrs.swap_remove(0);
 
     let signature = declaration.signature(db);
-    let Some((inner_ty_text, success_variant, failure_variant)) =
+    let Some((inner_ty, success_variant, failure_variant)) =
         extract_success_ty_and_variants(db, &signature)
     else {
-        return PluginResult {
-            code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: signature.ret_ty(db).stable_ptr().untyped(),
-                message: "Currently only wrapping functions returning an Option<T> or Result<T, E>"
-                    .into(),
-            }],
-            remove_original_item: false,
-        };
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: signature.ret_ty(db).stable_ptr().untyped(),
+            message: "Currently only wrapping functions returning an Option<T> or Result<T, E>"
+                .into(),
+        });
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     let attr = attr.structurize(db);
 
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
-        return PluginResult {
-            code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: attr.stable_ptr.untyped(),
-                message: "Failed to extract panic data attribute".into(),
-            }],
-            remove_original_item: false,
-        };
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: attr.stable_ptr.untyped(),
+            message: "Failed to extract panic data attribute".into(),
+        });
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
-    let generics_params = declaration.generic_params(db).as_syntax_node().get_text(db);
-
-    let function_name = declaration.name(db).text(db);
-    let params = signature.parameters(db).as_syntax_node().get_text(db);
+    let mut builder = PatchBuilder::new(db);
+    builder.add_node(visibility.as_syntax_node());
+    builder.add_node(declaration.function_kw(db).as_syntax_node());
+    builder.add_modified(RewriteNode::new_trimmed(panicable_name.as_syntax_node()));
+    builder.add_node(declaration.generic_params(db).as_syntax_node());
+    builder.add_node(signature.lparen(db).as_syntax_node());
+    builder.add_node(signature.parameters(db).as_syntax_node());
+    builder.add_node(signature.rparen(db).as_syntax_node());
     let args = signature
         .parameters(db)
         .elements(db)
@@ -102,30 +103,42 @@ fn generate_panicable_code(
             format!("{}{}", ref_kw, param.name(db).as_syntax_node().get_text(db))
         })
         .join(", ");
+    builder.add_modified(RewriteNode::interpolate_patched(
+        &formatdoc!(
+            r#"
+                -> $inner_ty$ {{
+                    match $function_name$({args}) {{
+                        {success_variant} (v) => {{
+                            v
+                        }},
+                        {failure_variant} (_v) => {{
+                            let mut data = core::array::ArrayTrait::<felt252>::new();
+                            core::array::ArrayTrait::<felt252>::append(ref data, $err_value$);
+                            panic(data)
+                        }},
+                    }}
+                }}
+            "#
+        ),
+        &[
+            ("inner_ty".to_string(), RewriteNode::new_trimmed(inner_ty.as_syntax_node())),
+            (
+                "function_name".to_string(),
+                RewriteNode::new_trimmed(declaration.name(db).as_syntax_node()),
+            ),
+            ("err_value".to_string(), RewriteNode::new_trimmed(err_value.as_syntax_node())),
+        ]
+        .into(),
+    ));
 
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "panicable".into(),
-            content: indoc::formatdoc!(
-                r#"
-                    fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
-                        match {function_name}({args}) {{
-                            {success_variant} (v) => {{
-                                v
-                            }},
-                            {failure_variant} (v) => {{
-                                let mut data = core::array::array_new::<felt252>();
-                                core::array::array_append::<felt252>(ref data, {err_value});
-                                panic(data)
-                            }},
-                        }}
-                    }}
-                "#
-            ),
-            diagnostics_mappings: Default::default(),
+            content: builder.code,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
-        diagnostics: vec![],
+        diagnostics,
         remove_original_item: false,
     }
 }
@@ -135,7 +148,7 @@ fn generate_panicable_code(
 fn extract_success_ty_and_variants(
     db: &dyn SyntaxGroup,
     signature: &ast::FunctionSignature,
-) -> Option<(String, String, String)> {
+) -> Option<(ast::GenericArg, String, String)> {
     let ret_ty_expr =
         try_extract_matches!(signature.ret_ty(db), ast::OptionReturnTypeClause::ReturnTypeClause)?
             .ty(db);
@@ -150,20 +163,12 @@ fn extract_success_ty_and_variants(
         let [inner] = &segment.generic_args(db).generic_args(db).elements(db)[..] else {
             return None;
         };
-        Some((
-            inner.as_syntax_node().get_text(db),
-            "Option::Some".to_owned(),
-            "Option::None".to_owned(),
-        ))
+        Some((inner.clone(), "Option::Some".to_owned(), "Option::None".to_owned()))
     } else if ty == "Result" {
         let [inner, _err] = &segment.generic_args(db).generic_args(db).elements(db)[..] else {
             return None;
         };
-        Some((
-            inner.as_syntax_node().get_text(db),
-            "Result::Ok".to_owned(),
-            "Result::Err".to_owned(),
-        ))
+        Some((inner.clone(), "Result::Ok".to_owned(), "Result::Err".to_owned()))
     } else {
         None
     }
@@ -171,7 +176,10 @@ fn extract_success_ty_and_variants(
 
 /// Parse `#[panic_with(...)]` attribute arguments and return a tuple with error value and
 /// panicable function name.
-fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, SmolStr)> {
+fn parse_arguments(
+    db: &dyn SyntaxGroup,
+    attr: &Attribute,
+) -> Option<(ast::TerminalShortString, ast::TerminalIdentifier)> {
     let [
         AttributeArg {
             variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
@@ -190,5 +198,5 @@ fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, S
         return None;
     };
 
-    Some((err_value.text(db), segment.ident(db).text(db)))
+    Some((err_value.clone(), segment.ident(db)))
 }

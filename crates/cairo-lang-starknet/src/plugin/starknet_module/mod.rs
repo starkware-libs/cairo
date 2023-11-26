@@ -219,7 +219,7 @@ pub(super) fn handle_module_by_storage(
         code: Some(PluginGeneratedFile {
             name: module_kind.to_str_lower().into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
                     Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {

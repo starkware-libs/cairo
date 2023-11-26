@@ -29,15 +29,15 @@ mod hello_starknet {
     }
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             balance: balance::ContractMemberState {},
         }
@@ -47,8 +47,8 @@ enum Event {}
     mod balance {
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
@@ -129,17 +129,14 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
 }
 
 
-    mod __external {
-        use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-        use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
+    pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -169,7 +166,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -183,7 +180,7 @@ trait HelloStarknetTraitDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitDispatcher> {
@@ -192,26 +189,26 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     // Returns the current balance.
     fn get_balance(self: HelloStarknetTraitDispatcher) -> usize {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<usize>::deserialize(ref ret_data),
+            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -220,7 +217,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitLibraryDispatcher> {
@@ -229,26 +226,26 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
     // Returns the current balance.
     fn get_balance(self: HelloStarknetTraitLibraryDispatcher) -> usize {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<usize>::deserialize(ref ret_data),
+            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -264,7 +261,7 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+    pub class_hash: starknet::ClassHash,
 }
 
 impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeLibraryDispatcher> {
@@ -273,27 +270,27 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     // Returns the current balance.
     fn get_balance(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<usize> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<usize>::deserialize(ref ret_data),
+                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -304,7 +301,7 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 struct HelloStarknetTraitSafeDispatcher {
-    contract_address: starknet::ContractAddress,
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeDispatcher> {
@@ -313,27 +310,27 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
     // Returns the current balance.
     fn get_balance(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<usize> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
             self.contract_address,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<usize>::deserialize(ref ret_data),
+                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -525,15 +522,15 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
     }
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             balance: balance::ContractMemberState {},
         }
@@ -543,8 +540,8 @@ enum Event {}
     mod balance {
         use super::HelloStarknetImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
@@ -625,17 +622,14 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
 }
 
 
-    mod __external {
-        use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-        use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
+    pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -665,7 +659,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }

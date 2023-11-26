@@ -106,7 +106,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt2".into(),
                         content: builder.code,
-                        diagnostics_mappings: builder.diagnostics_mappings,
+                        code_mappings: builder.code_mappings,
                         aux_data: None,
                     }),
                     diagnostics: vec![],
@@ -148,7 +148,7 @@ fn test_inline_module_diagnostics() {
                     return 5_felt252;
                            ^*******^
 
-            error: Plugin diagnostic: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
+            error: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^*******^
