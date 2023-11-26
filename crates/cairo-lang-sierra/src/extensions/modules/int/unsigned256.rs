@@ -115,7 +115,9 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
     }
 }
 
-// Inverse Modulo N.
+/// Inverse Modulo N.
+/// Libfunc for calculating the inverse of a number modulo N, if `N == 1` does not consider the
+/// value as invertible.
 #[derive(Default)]
 pub struct Uint256InvModNLibfunc;
 impl NoGenericArgsGenericLibfunc for Uint256InvModNLibfunc {
