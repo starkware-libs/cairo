@@ -105,6 +105,12 @@ impl ConcreteImplId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
     }
+    pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
+        Ok(GenericSubstitution::new(
+            &db.impl_def_generic_params(self.impl_def_id(db))?,
+            &db.lookup_intern_concrete_impl(*self).generic_args,
+        ))
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.

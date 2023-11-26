@@ -596,7 +596,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Const generic args are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::NegativeImplsNotEnabled => {
-                "Negative impls are not enabled in this context.".into()
+                "Negative impls are supported only inside the core lib.".into()
             }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
