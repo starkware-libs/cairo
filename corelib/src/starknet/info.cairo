@@ -42,16 +42,8 @@ pub struct TxInfo {
     pub nonce: felt252,
 }
 
-<<<<<<< HEAD
-fn get_execution_info() -> Box<v2::ExecutionInfo> {
+pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
     starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
-||||||| 46db16633
-fn get_execution_info() -> Box<ExecutionInfo> {
-    get_execution_info_syscall().unwrap_syscall()
-=======
-pub fn get_execution_info() -> Box<ExecutionInfo> {
-    get_execution_info_syscall().unwrap_syscall()
->>>>>>> origin/main
 }
 
 pub fn get_caller_address() -> ContractAddress {
@@ -66,13 +58,7 @@ pub fn get_block_info() -> Box<BlockInfo> {
     get_execution_info().unbox().block_info
 }
 
-<<<<<<< HEAD
-fn get_tx_info() -> Box<v2::TxInfo> {
-||||||| 46db16633
-fn get_tx_info() -> Box<TxInfo> {
-=======
-pub fn get_tx_info() -> Box<TxInfo> {
->>>>>>> origin/main
+pub fn get_tx_info() -> Box<v2::TxInfo> {
     get_execution_info().unbox().tx_info
 }
 
@@ -91,11 +77,11 @@ pub mod v2 {
 
     #[derive(Copy, Drop)]
     pub struct ExecutionInfo {
-        block_info: Box<BlockInfo>,
-        tx_info: Box<TxInfo>,
-        caller_address: ContractAddress,
-        contract_address: ContractAddress,
-        entry_point_selector: felt252,
+        pub block_info: Box<BlockInfo>,
+        pub tx_info: Box<TxInfo>,
+        pub caller_address: ContractAddress,
+        pub contract_address: ContractAddress,
+        pub entry_point_selector: felt252,
     }
 
     #[derive(Copy, Drop, Serde)]
@@ -104,44 +90,44 @@ pub mod v2 {
         // signed by the account contract.
         // This field allows invalidating old transactions, whenever the meaning of the other
         // transaction fields is changed (in the OS).
-        version: felt252,
+        pub version: felt252,
         // The account contract from which this transaction originates.
-        account_contract_address: ContractAddress,
+        pub account_contract_address: ContractAddress,
         // The max_fee field of the transaction.
-        max_fee: u128,
+        pub max_fee: u128,
         // The signature of the transaction.
-        signature: Span<felt252>,
+        pub signature: Span<felt252>,
         // The hash of the transaction.
-        transaction_hash: felt252,
+        pub transaction_hash: felt252,
         // The identifier of the chain.
         // This field can be used to prevent replay of testnet transactions on mainnet.
-        chain_id: felt252,
+        pub chain_id: felt252,
         // The transaction's nonce.
-        nonce: felt252,
+        pub nonce: felt252,
         // A span of ResourceBounds structs.
-        resource_bounds: Span<ResourceBounds>,
+        pub resource_bounds: Span<ResourceBounds>,
         // The tip.
-        tip: u128,
+        pub tip: u128,
         // If specified, the paymaster should pay for the execution of the tx.
         // The data includes the address of the paymaster sponsoring the transaction, followed by
         // extra data to send to the paymaster.
-        paymaster_data: Span<felt252>,
+        pub paymaster_data: Span<felt252>,
         // The data availability mode for the nonce.
-        nonce_data_availabilty_mode: u32,
+        pub nonce_data_availabilty_mode: u32,
         // The data availability mode for the account balance from which fee will be taken.
-        fee_data_availabilty_mode: u32,
+        pub fee_data_availabilty_mode: u32,
         // If nonempty, will contain the required data for deploying and initializing an account
         // contract: its class hash, address salt and constructor calldata.
-        account_deployment_data: Span<felt252>,
+        pub account_deployment_data: Span<felt252>,
     }
 
     #[derive(Copy, Drop, Serde)]
     pub struct ResourceBounds {
         // The name of the resource.
-        resource: felt252,
+        pub resource: felt252,
         // The maximum amount of the resource allowed for usage during the execution.
-        max_amount: u64,
+        pub max_amount: u64,
         // The maximum price the user is willing to pay for the resource unit.
-        max_price_per_unit: u128,
+        pub max_price_per_unit: u128,
     }
 }
