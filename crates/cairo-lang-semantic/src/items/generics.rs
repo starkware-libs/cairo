@@ -394,8 +394,6 @@ fn semantic_from_generic_param_ast(
             GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
-            diagnostics.report(param_syntax, SemanticDiagnosticKind::NegImplsNotSupported);
-
             let path_syntax = syntax.trait_path(db.upcast());
             GenericParam::NegImpl(impl_generic_param_semantic(
                 resolver,
