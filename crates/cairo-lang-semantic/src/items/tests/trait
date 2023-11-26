@@ -172,11 +172,6 @@ impl MyImpl3 of NonExistingTrait;
                 ^**************^
 
 error: Not a trait.
- --> lib.cairo:3:17
-impl MyImpl3 of NonExistingTrait;
-                ^**************^
-
-error: Not a trait.
  --> lib.cairo:4:17
 impl MyImpl4 of foo;
                 ^*^

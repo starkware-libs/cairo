@@ -653,11 +653,6 @@ error: Trait not found.
 impl MyImpl of NonExistingTrait {
                ^**************^
 
-error: Not a trait.
- --> lib.cairo:1:16
-impl MyImpl of NonExistingTrait {
-               ^**************^
-
 //! > ==========================================================================
 
 //! > Test type inference not stopping on missing type.

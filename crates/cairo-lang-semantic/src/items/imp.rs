@@ -286,15 +286,15 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
-    resolver
-        .resolve_generic_path_with_args(
+    try_extract_matches!(
+        resolver.resolve_generic_path_with_args(
             &mut diagnostics,
             &trait_path_syntax,
             NotFoundItemType::Trait,
-        )
-        .ok()
-        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
-        .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        )?,
+        ResolvedGenericItem::Trait
+    )
+    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
@@ -369,13 +369,15 @@ pub fn priv_impl_declaration_data_inner(
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
     let concrete_trait = if resolve_trait {
-        resolver
-            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
-            .ok()
-            .and_then(|concrete_item| {
-                try_extract_matches!(concrete_item, ResolvedConcreteItem::Trait)
-            })
-            .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        match resolver.resolve_concrete_path(
+            &mut diagnostics,
+            &trait_path_syntax,
+            NotFoundItemType::Trait,
+        ) {
+            Ok(resolved_item) => try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait)
+                .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait)),
+            Err(err) => Err(err),
+        }
     } else {
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
