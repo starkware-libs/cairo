@@ -313,15 +313,15 @@ pub fn generic_impl_param_trait(
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    resolver
-        .resolve_generic_path_with_args(
+    try_extract_matches!(
+        resolver.resolve_generic_path_with_args(
             &mut diagnostics,
             &trait_path_syntax,
             NotFoundItemType::Trait,
-        )
-        .ok()
-        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
-        .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        )?,
+        ResolvedGenericItem::Trait
+    )
+    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
 }
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
