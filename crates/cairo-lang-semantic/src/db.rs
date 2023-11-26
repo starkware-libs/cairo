@@ -28,6 +28,7 @@ use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
+use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
     corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
@@ -986,6 +987,11 @@ pub trait SemanticGroup:
     #[salsa::invoke(corelib::core_felt252_ty)]
     fn core_felt252_ty(&self) -> semantic::TypeId;
 
+    // Analyzer plugins.
+    // ========
+    #[salsa::input]
+    fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
+
     // Helpers for language server.
     // ============================
     /// Returns all methods in a module that match the given type filter.
@@ -1087,6 +1093,14 @@ fn module_semantic_diagnostics(
             ModuleItemId::ImplAlias(type_alias) => {
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
+        }
+    }
+    for analyzer_plugin in db.analyzer_plugins().iter() {
+        for diag in analyzer_plugin.diagnostics(db, module_id) {
+            diagnostics.add(SemanticDiagnostic::new(
+                StableLocation::new(diag.stable_ptr),
+                SemanticDiagnosticKind::PluginDiagnostic(diag),
+            ));
         }
     }
 
