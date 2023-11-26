@@ -4,6 +4,18 @@ pub enum Option<T> {
     None,
 }
 
+use core::felt252;
+
+pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>> of Destruct<Option<T>> {
+    #[inline(always)]
+    fn destruct(self: Option<T>) nopanic {
+        match self {
+            Option::Some(x) => x.destruct(),
+            Option::None => (),
+        };
+    }
+}
+
 pub trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option<T>, err: felt252) -> T;
