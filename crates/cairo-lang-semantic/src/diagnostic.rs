@@ -592,9 +592,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConstGenericParamNotSupported => {
                 "Const generic args are not allowed in this context.".into()
             }
-            SemanticDiagnosticKind::NegImplsNotSupported => {
-                "Negative impls are not supported yet.".into()
-            }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
@@ -822,7 +819,6 @@ pub enum SemanticDiagnosticKind {
     },
     UnusedVariable,
     ConstGenericParamNotSupported,
-    NegImplsNotSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,

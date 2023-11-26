@@ -10,8 +10,8 @@ use super::{
 };
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
-use crate::substitution::SemanticRewriter;
-use crate::{ConcreteTraitId, GenericArgumentId, TypeLongId};
+use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
+use crate::{ConcreteTraitId, GenericArgumentId, GenericParam, TypeLongId};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -69,7 +69,7 @@ pub fn canonic_trait_solutions(
     lookup_context: ImplLookupContext,
 ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
     let mut solver = Solver::new(db, canonical_trait, lookup_context);
-    Ok(solver.solution_set(db))
+    solver.solution_set(db)
 }
 
 /// Cycle handling for [canonic_trait_solutions].
@@ -127,31 +127,62 @@ impl Solver {
         Self { canonical_trait, lookup_context, candidate_solvers }
     }
 
-    pub fn solution_set(&mut self, db: &dyn SemanticGroup) -> SolutionSet<CanonicalImpl> {
+    pub fn solution_set(
+        &mut self,
+        db: &dyn SemanticGroup,
+    ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
         let mut unique_solution: Option<CanonicalImpl> = None;
         for candidate_solver in &mut self.candidate_solvers {
-            let Ok(candidate_solution_set) = candidate_solver.solution_set(db) else {
+            let Ok(mut candidate_solution_set) = candidate_solver.solution_set(db) else {
                 continue;
             };
+
+            if let ImplId::Concrete(concrete_impl) = candidate_solver.candidate_impl {
+                let mut rewriter =
+                    SubstitutionRewriter { db, substitution: &concrete_impl.substitution(db)? };
+
+                for garg in db.impl_def_generic_params(concrete_impl.impl_def_id(db.upcast()))? {
+                    let GenericParam::NegImpl(neg_impl) = garg else {
+                        continue;
+                    };
+
+                    let neg_impl = rewriter.rewrite(neg_impl)?;
+                    let (canonical_trait, _canonicalizer) = CanonicalTrait::canonicalize(
+                        db,
+                        candidate_solver.inference_data.inference_id,
+                        neg_impl.concrete_trait?,
+                    );
+
+                    if !matches!(
+                        db.canonic_trait_solutions(canonical_trait, self.lookup_context.clone())?,
+                        SolutionSet::None
+                    ) {
+                        // If a negative impl has an impl, then we should skip it.
+                        candidate_solution_set = SolutionSet::None;
+                        break;
+                    }
+                }
+            }
+
             let candidate_solution = match candidate_solution_set {
                 SolutionSet::None => continue,
                 SolutionSet::Unique(candidate_solution) => candidate_solution,
-                SolutionSet::Ambiguous(ambiguity) => return SolutionSet::Ambiguous(ambiguity),
+                SolutionSet::Ambiguous(ambiguity) => return Ok(SolutionSet::Ambiguous(ambiguity)),
             };
             if let Some(unique_solution) = unique_solution {
                 // There might be multiple unique solutions from different candidates that are
                 // solved to the same impl id (e.g. finding it near the trait, and
                 // through an impl alias). This is valid.
                 if unique_solution.0 != candidate_solution.0 {
-                    return SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
                         concrete_trait_id: self.canonical_trait.0,
                         impls: vec![unique_solution.0, candidate_solution.0],
-                    });
+                    }));
                 }
             }
             unique_solution = Some(candidate_solution);
         }
-        unique_solution.map(SolutionSet::Unique).unwrap_or(SolutionSet::None)
+        Ok(unique_solution.map(SolutionSet::Unique).unwrap_or(SolutionSet::None))
     }
 }
 
