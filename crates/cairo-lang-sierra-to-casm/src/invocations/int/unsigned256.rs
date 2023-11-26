@@ -494,7 +494,9 @@ fn build_u256_inv_mod_n(
         jump GIsValid if g1 != 0;
         assert g0_minus_1 = g0 - one;
         jump GIsValid if g0_minus_1 != 0;
-        fail;
+        // Handling the case where `g = 1``, which is only valid if `n = 1``.
+        assert n1 = zero;
+        assert n0 = one;
         GIsValid:
 
         // Validating `g * s = b` and `g * t = n`.

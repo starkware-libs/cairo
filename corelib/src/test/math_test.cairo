@@ -1,3 +1,4 @@
+use core::option::OptionTrait;
 use core::math;
 
 /// Helper for making a non-zero value.
@@ -83,7 +84,14 @@ fn test_u256_div_mod_n() {
 }
 
 #[test]
-fn test_u256_inv_mod_no_inverse() {
+fn test_u256_inv_mod() {
+    assert(math::u256_inv_mod(5, nz(24)).unwrap().into() == 5_u256, 'inv_mov(5, 24) != 5');
+    assert(math::u256_inv_mod(29, nz(24)).unwrap().into() == 5_u256, 'inv_mov(29, 24) != 5');
+    assert(math::u256_inv_mod(1, nz(24)).unwrap().into() == 1_u256, 'inv_mov(1, 24) != 1');
+    assert(math::u256_inv_mod(1, nz(5)).unwrap().into() == 1_u256, 'inv_mov(1, 5) != 1');
+    assert(math::u256_inv_mod(8, nz(24)).is_none(), 'inv_mov(8, 24) != None');
+    assert(math::u256_inv_mod(1, nz(1)).is_none(), 'inv_mov(1, 1) != 0');
+    assert(math::u256_inv_mod(7, nz(1)).is_none(), 'inv_mov(7, 1) != 0');
     assert(math::u256_inv_mod(3, nz(6)).is_none(), 'inv_mod(3, 6)');
     assert(math::u256_inv_mod(4, nz(6)).is_none(), 'inv_mod(4, 6)');
     assert(math::u256_inv_mod(8, nz(4)).is_none(), 'inv_mod(8, 4)');
