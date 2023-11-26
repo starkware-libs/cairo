@@ -1,6 +1,6 @@
 [package]
 name = "core"
-version = "2.4.0-rc4"
+version = "2.4.0-rc5"
 edition = "2023_10"
 
 # NOTE: This is non-public, unstable Scarb's field, which instructs resolver that this package does not
