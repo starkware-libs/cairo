@@ -51,3 +51,38 @@ error: Only `_` is a valid for negative impls.
  --> lib.cairo:21:17
     Bad::<u128, core::NegImpl>::bad();
                 ^***********^
+
+//! > ==========================================================================
+
+//! > Test cycles
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+    NegImpl::bar()
+}
+
+//! > module_code
+pub trait NegImpl {
+    fn bar();
+}
+
+impl BadImpl<-NegImpl> of NegImpl {
+    fn bar() {
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Negative impls are not enabled in this context.
+ --> lib.cairo:5:14
+impl BadImpl<-NegImpl> of NegImpl {
+             ^******^
+
+error: Inference cycle detected
+ --> lib.cairo:9:16
+fn test_func() {  {
+               ^**^
