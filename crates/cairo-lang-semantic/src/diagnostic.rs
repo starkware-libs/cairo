@@ -589,7 +589,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop => {
                 "`?` not allowed inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ConstGenericParamSupported => {
+            SemanticDiagnosticKind::ConstGenericParamNotSupported => {
                 "Const generic args are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
@@ -818,7 +818,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
     },
     UnusedVariable,
-    ConstGenericParamSupported,
+    ConstGenericParamNotSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
