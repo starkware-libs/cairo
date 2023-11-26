@@ -371,7 +371,7 @@ fn semantic_from_generic_param_ast(
         ast::GenericParam::Const(syntax) => {
             if !allow_consts {
                 diagnostics
-                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamSupported);
+                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
             }
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
