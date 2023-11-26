@@ -202,24 +202,21 @@ pub fn generic_param_data(
         generic_param_generic_params_list(db, generic_param_id)?,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList
     );
-    for generic_param_syntax in
-        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).iter()
+
+    let mut opt_generic_param_syntax = None;
+    for param_syntax in
+        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
     {
-        let cur_generic_param_id = db.intern_generic_param(GenericParamLongId(
-            module_file_id,
-            generic_param_syntax.stable_ptr(),
-        ));
+        let cur_generic_param_id =
+            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
         resolver.add_generic_param(cur_generic_param_id);
+
+        if cur_generic_param_id == generic_param_id {
+            opt_generic_param_syntax = Some(param_syntax);
+        }
     }
-    let generic_param_syntax = generic_params_syntax
-        .generic_params(syntax_db)
-        .elements(syntax_db)
-        .into_iter()
-        .find(|param_syntax| {
-            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
-                == generic_param_id
-        })
-        .unwrap();
+    let generic_param_syntax =
+        opt_generic_param_syntax.expect("Query called on a non existing generic param.");
     let param_semantic = semantic_from_generic_param_ast(
         db,
         &mut resolver,
