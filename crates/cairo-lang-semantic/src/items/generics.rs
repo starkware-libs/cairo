@@ -60,8 +60,7 @@ impl GenericArgumentId {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
             GenericArgumentId::Literal(_) => GenericArgumentHead::Const,
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
-            // TODO(ilya): Do we need filtering for negative impls?
-            GenericArgumentId::NegImpl => return None,
+            GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
     }
 }
@@ -88,6 +87,7 @@ pub enum GenericArgumentHead {
     Type(TypeHead),
     Impl(ImplHead),
     Const,
+    NegImpl,
 }
 
 /// Generic parameter.
