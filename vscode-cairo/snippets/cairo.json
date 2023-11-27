@@ -145,10 +145,10 @@
     ],
     "description": "Creates a trait"
   },
-  "Impl a trait with ContractState": {
+  "Impl a starknet interface trait": {
     "prefix": ["impl", "external"],
-    "body": ["#[external(v0)]", "impl $1 of $2<ContractState>{", "\t$3", "}"],
-    "description": "Impl a trait with ContractState"
+    "body": ["#[abi(embed_v0)]", "impl $1 of $2<ContractState>{", "\t$3", "}"],
+    "description": "Impl a starknet interface trait"
   },
   "Generate Trait": {
     "prefix": "generate_trait",

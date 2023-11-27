@@ -21,7 +21,7 @@ use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute};
+use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute_ex};
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
@@ -468,7 +468,12 @@ fn impl_abi_config(
             ));
             ImplAbiConfig::None
         }
-    } else if has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR) {
+    } else if has_v0_attribute_ex(db, diagnostics, imp, EXTERNAL_ATTR, || {
+        Some(format!(
+            "The '{EXTERNAL_ATTR}' attribute on impls is deprecated. Use \
+             '{ABI_ATTR}({ABI_ATTR_PER_ITEM_ARG})' or '{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})'."
+        ))
+    }) {
         ImplAbiConfig::External
     } else {
         ImplAbiConfig::None

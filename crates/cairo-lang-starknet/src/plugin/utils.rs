@@ -197,10 +197,25 @@ pub fn has_v0_attribute(
     object: &impl QueryAttrs,
     attr_name: &str,
 ) -> bool {
+    has_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
+}
+
+/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
+/// validates that the attribute is v0, and adds a warning if supplied `depracted` returns a value.
+pub fn has_v0_attribute_ex(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    object: &impl QueryAttrs,
+    attr_name: &str,
+    deprecated: impl FnOnce() -> Option<String>,
+) -> bool {
     let Some(attr) = object.find_attr(db, attr_name) else {
         return false;
     };
     validate_v0(db, diagnostics, &attr, attr_name);
+    if let Some(deprecated) = deprecated() {
+        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr().untyped(), deprecated));
+    }
     true
 }
 
