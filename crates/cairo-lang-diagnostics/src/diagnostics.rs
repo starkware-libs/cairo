@@ -199,11 +199,10 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 
 pub fn format_diagnostics(
     db: &(dyn FilesGroup + 'static),
-    severity: Severity,
     message: &str,
     location: DiagnosticLocation,
 ) -> String {
-    format!("{severity}: {message}\n --> {:?}\n", location.debug(db))
+    format!("{message}\n --> {:?}\n", location.debug(db))
 }
 
 /// A set of diagnostic entries that arose during a computation.
@@ -219,26 +218,32 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
 
-    pub fn format(&self, db: &TEntry::DbType) -> String {
-        let mut res = String::new();
+    /// Format entries to pairs of severity and message.
+    pub fn format_with_severity(&self, db: &TEntry::DbType) -> Vec<(Severity, String)> {
+        let mut res: Vec<(Severity, String)> = Vec::new();
 
         let files_db = db.upcast();
         // Format leaves.
         for entry in &self.0.leaves {
-            res += &format_diagnostics(
-                files_db,
-                entry.severity(),
-                &entry.format(db),
-                entry.location(db),
-            );
+            let mut r = String::new();
+            r += &format_diagnostics(files_db, &entry.format(db), entry.location(db));
             for note in entry.notes(db) {
-                res += &format!("note: {:?}\n", note.debug(files_db))
+                r += &format!("note: {:?}\n", note.debug(files_db))
             }
-            res += "\n";
+            r += "\n";
+            res.push((entry.severity(), r));
         }
         // Format subtrees.
-        res += &self.0.subtrees.iter().map(|subtree| subtree.format(db)).join("");
+        res.extend(self.0.subtrees.iter().flat_map(|subtree| subtree.format_with_severity(db)));
         res
+    }
+
+    /// Format entries to a String with messages prefixed by severity.
+    pub fn format(&self, db: &TEntry::DbType) -> String {
+        self.format_with_severity(db)
+            .iter()
+            .map(|(severity, msg)| format!("{severity}: {msg}"))
+            .join("")
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
