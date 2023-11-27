@@ -965,6 +965,12 @@ impl<'a> CairoHintProcessor<'a> {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
 
+        // Set the class hash of the deployed contract before executing the constructor,
+        // as the constructor could make an external call to this address.
+        self.starknet_state
+            .deployed_contracts
+            .insert(deployed_contract_address.clone(), class_hash);
+
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
             let old_addrs = self
@@ -981,13 +987,12 @@ impl<'a> CairoHintProcessor<'a> {
         } else if calldata.is_empty() {
             (Relocatable::from((0, 0)), Relocatable::from((0, 0)))
         } else {
+            // Remove the contract from the deployed contracts,
+            // since it failed to deploy.
+            self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
             fail_syscall!(b"INVALID_CALLDATA_LEN");
         };
 
-        // Set the class hash of the deployed contract.
-        self.starknet_state
-            .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash);
         Ok(SyscallResult::Success(vec![
             deployed_contract_address.into(),
             res_data_start.into(),
