@@ -171,10 +171,10 @@ fn handle_enum(
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
         let indicator = if variant.attributes(db).has_attr(db, "default") {
             if default_index.is_some() {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: variant.stable_ptr().untyped(),
-                    message: "Multiple variants annotated with `#[default]`".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    variant.stable_ptr().untyped(),
+                    "Multiple variants annotated with `#[default]`".to_string(),
+                ));
                 return None;
             }
             default_index = Some(i);

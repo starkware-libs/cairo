@@ -26,10 +26,10 @@ trait CompareAssertionPlugin: NamedPlugin {
         if arguments.len() < 2 {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: arguments_syntax.lparen(db).stable_ptr().untyped(),
-                    message: format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
+                )],
             };
         }
         let (lhs, rest) = arguments.split_first().unwrap();
@@ -37,25 +37,19 @@ trait CompareAssertionPlugin: NamedPlugin {
         let Some(lhs) = try_extract_unnamed_arg(db, lhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: lhs.stable_ptr().untyped(),
-                    message: format!(
-                        "Macro `{}` requires the first argument to be unnamed.",
-                        Self::NAME
-                    ),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    lhs.stable_ptr().untyped(),
+                    format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
+                )],
             };
         };
         let Some(rhs) = try_extract_unnamed_arg(db, rhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: rhs.stable_ptr().untyped(),
-                    message: format!(
-                        "Macro `{}` requires the second argument to be unnamed.",
-                        Self::NAME
-                    ),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    rhs.stable_ptr().untyped(),
+                    format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
+                )],
             };
         };
         let f = format!("__formatter_for_{}_macro_", Self::NAME);

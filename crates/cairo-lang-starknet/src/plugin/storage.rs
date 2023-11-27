@@ -111,13 +111,13 @@ fn get_storage_member_code(
                 module_code: None,
             };
         } else {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                member.stable_ptr().untyped(),
+                format!(
                     "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                      [some_path::]{STORAGE_STRUCT_NAME}`"
                 ),
-                stable_ptr: member.stable_ptr().untyped(),
-            });
+            ));
             return Default::default();
         }
     }
@@ -177,10 +177,10 @@ fn get_simple_storage_member_code(
             ))
         }
         Some((_, _, MappingType::NonLegacy)) => {
-            diagnostics.push(PluginDiagnostic {
-                message: format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
-                stable_ptr: type_ast.stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                type_ast.stable_ptr().untyped(),
+                format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
+            ));
             None
         }
         None => {
@@ -217,20 +217,18 @@ fn get_mapping_full_path_type(
         ast::GenericArg::Unnamed(x) => match x.value(db) {
             ast::GenericArgValue::Expr(x) => x.expr(db),
             ast::GenericArgValue::Underscore(_) => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: type_ast.stable_ptr().untyped(),
-                    message: format!(
-                        "{LEGACY_STORAGE_MAPPING} generic arguments must be specified"
-                    ),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    type_ast.stable_ptr().untyped(),
+                    format!("{LEGACY_STORAGE_MAPPING} generic arguments must be specified"),
+                ));
                 return None;
             }
         },
         ast::GenericArg::Named(_) => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: type_ast.stable_ptr().untyped(),
-                message: format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                type_ast.stable_ptr().untyped(),
+                format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
+            ));
             return None;
         }
     };

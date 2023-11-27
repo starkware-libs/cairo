@@ -35,10 +35,10 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let [trait_ast_segment] = &trait_ast.elements(db)[..] else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: trait_ast.stable_ptr().untyped(),
-                message: "Generated trait must have a single element path.".to_string(),
-            }],
+            diagnostics: vec![PluginDiagnostic::error(
+                trait_ast.stable_ptr().untyped(),
+                "Generated trait must have a single element path.".to_string(),
+            )],
             remove_original_item: false,
         };
     };
@@ -70,10 +70,10 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 }
             }
             _ => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: attr_arg.arg_stable_ptr.untyped(),
-                    message: "Expected an argument with the name `trait_attrs`.".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    attr_arg.arg_stable_ptr.untyped(),
+                    "Expected an argument with the name `trait_attrs`.".to_string(),
+                ));
             }
         }
     }
@@ -126,11 +126,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         }
     };
     if !generic_params_match {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: trait_ast.stable_ptr().untyped(),
-            message: "Generated trait must have generic args matching the impl's generic params."
+        diagnostics.push(PluginDiagnostic::error(
+            trait_ast.stable_ptr().untyped(),
+            "Generated trait must have generic args matching the impl's generic params."
                 .to_string(),
-        });
+        ));
     }
     match impl_ast.body(db) {
         ast::MaybeImplBody::None(semicolon) => {

@@ -19,13 +19,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!(
+            diagnostics: vec![PluginDiagnostic::error(
+                trait_ast.stable_ptr().untyped(),
+                format!(
                     "The '{DEPRECATED_ABI_ATTR}' attribute for traits was deprecated, please use \
                      `{INTERFACE_ATTR}` instead.",
                 ),
-                stable_ptr: trait_ast.stable_ptr().untyped(),
-            }],
+            )],
             remove_original_item: false,
         };
     }
@@ -37,10 +37,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         MaybeTraitBody::None(empty_body) => {
             return PluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    message: "Starknet interfaces without body are not supported.".to_string(),
-                    stable_ptr: empty_body.stable_ptr().untyped(),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    empty_body.stable_ptr().untyped(),
+                    "Starknet interfaces without body are not supported.".to_string(),
+                )],
                 remove_original_item: false,
             };
         }
@@ -60,12 +60,11 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     }) else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: "Starknet interfaces must have exactly one generic parameter, which is a \
-                          type."
+            diagnostics: vec![PluginDiagnostic::error(
+                generic_params.stable_ptr().untyped(),
+                "Starknet interfaces must have exactly one generic parameter, which is a type."
                     .to_string(),
-                stable_ptr: generic_params.stable_ptr().untyped(),
-            }],
+            )],
             remove_original_item: false,
         };
     };
@@ -95,18 +94,17 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut params = signature.parameters(db).elements(db).into_iter();
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "`starknet::interface` functions must have a `self` parameter."
-                            .to_string(),
-                        stable_ptr: declaration.stable_ptr().untyped(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        declaration.stable_ptr().untyped(),
+                        "`starknet::interface` functions must have a `self` parameter.".to_string(),
+                    ));
                     continue;
                 };
                 if self_param.name(db).text(db) != "self" {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "The first parameter must be named `self`.".to_string(),
-                        stable_ptr: self_param.stable_ptr().untyped(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        self_param.stable_ptr().untyped(),
+                        "The first parameter must be named `self`.".to_string(),
+                    ));
                     skip_generation = true;
                 }
                 let self_param_type_ok = if self_param.is_ref_param(db) {
@@ -117,12 +115,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     false
                 };
                 if !self_param_type_ok {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "`starknet::interface` function first parameter must be a \
-                                  reference to the trait's generic parameter or a snapshot of it."
+                    diagnostics.push(PluginDiagnostic::error(
+                        self_param.stable_ptr().untyped(),
+                        "`starknet::interface` function first parameter must be a reference to \
+                         the trait's generic parameter or a snapshot of it."
                             .to_string(),
-                        stable_ptr: self_param.stable_ptr().untyped(),
-                    });
+                    ));
                     skip_generation = true;
                 }
 
@@ -130,31 +128,31 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     if param.is_ref_param(db) {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "`starknet::interface` functions don't support `ref` \
-                                      parameters other than the first one."
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.modifiers(db).stable_ptr().untyped(),
+                            "`starknet::interface` functions don't support `ref` parameters other \
+                             than the first one."
                                 .to_string(),
-                            stable_ptr: param.modifiers(db).stable_ptr().untyped(),
-                        })
+                        ))
                     }
                     if param.type_clause(db).ty(db).is_dependent_type(db, &single_generic_param) {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "`starknet::interface` functions don't support parameters \
-                                      that depend on the trait's generic param type."
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.type_clause(db).ty(db).stable_ptr().untyped(),
+                            "`starknet::interface` functions don't support parameters that depend \
+                             on the trait's generic param type."
                                 .to_string(),
-                            stable_ptr: param.type_clause(db).ty(db).stable_ptr().untyped(),
-                        })
+                        ))
                     }
 
                     if param.name(db).text(db) == CALLDATA_PARAM_NAME {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "Parameter name `__calldata__` cannot be used.".to_string(),
-                            stable_ptr: param.name(db).stable_ptr().untyped(),
-                        })
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.name(db).stable_ptr().untyped(),
+                            "Parameter name `__calldata__` cannot be used.".to_string(),
+                        ))
                     }
 
                     let param_type = param.type_clause(db).ty(db);

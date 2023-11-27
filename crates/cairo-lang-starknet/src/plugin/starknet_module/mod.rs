@@ -94,13 +94,13 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
     if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!(
+            diagnostics: vec![PluginDiagnostic::error(
+                module_ast.stable_ptr().untyped(),
+                format!(
                     "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
                      `{CONTRACT_ATTR}` instead.",
                 ),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
+            )],
             remove_original_item: false,
         };
     }
@@ -120,10 +120,10 @@ fn validate_module(
     let MaybeModuleBody::Some(body) = module_ast.body(db) else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!("{module_kind_str}s without body are not supported."),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
+            diagnostics: vec![PluginDiagnostic::error(
+                module_ast.stable_ptr().untyped(),
+                format!("{module_kind_str}s without body are not supported."),
+            )],
             remove_original_item: false,
         };
     };
@@ -132,10 +132,10 @@ fn validate_module(
     }) else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
+            diagnostics: vec![PluginDiagnostic::error(
+                 module_ast.stable_ptr().untyped(),
+                 format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
+            )],
             remove_original_item: false,
         };
     };
@@ -143,12 +143,10 @@ fn validate_module(
     if !storage_struct_ast.has_attr(db, STORAGE_ATTR) {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!(
-                    "'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."
-                ),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
+            diagnostics: vec![PluginDiagnostic::error(
+                module_ast.stable_ptr().untyped(),
+                format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
+            )],
             remove_original_item: false,
         };
     }
