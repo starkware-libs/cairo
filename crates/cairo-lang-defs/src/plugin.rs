@@ -7,7 +7,6 @@ use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
@@ -114,44 +113,4 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
 /// A trait for easier addition of macro plugins.
 pub trait NamedPlugin: Default + 'static {
     const NAME: &'static str;
-}
-
-/// A suite of plugins.
-#[derive(Clone, Debug, Default)]
-pub struct PluginSuite {
-    /// The macro plugins, running on all items.
-    pub plugins: Vec<Arc<dyn MacroPlugin>>,
-    /// The inline macro plugins, running on matching inline macro expressions.
-    pub inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
-}
-impl PluginSuite {
-    /// Adds a macro plugin.
-    pub fn add_plugin_ex(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
-        self.plugins.push(plugin);
-        self
-    }
-    /// Adds a macro plugin.
-    pub fn add_plugin<T: MacroPlugin + Default + 'static>(&mut self) -> &mut Self {
-        self.add_plugin_ex(Arc::new(T::default()))
-    }
-    /// Adds an inline macro plugin.
-    pub fn add_inline_macro_plugin_ex(
-        &mut self,
-        name: &str,
-        plugin: Arc<dyn InlineMacroExprPlugin>,
-    ) -> &mut Self {
-        self.inline_macro_plugins.insert(name.into(), plugin);
-        self
-    }
-    /// Adds an inline macro plugin.
-    pub fn add_inline_macro_plugin<T: NamedPlugin + InlineMacroExprPlugin>(&mut self) -> &mut Self {
-        self.add_inline_macro_plugin_ex(T::NAME, Arc::new(T::default()));
-        self
-    }
-    /// Adds another plugin suite into this suite.
-    pub fn add(&mut self, suite: PluginSuite) -> &mut Self {
-        self.plugins.extend(suite.plugins);
-        self.inline_macro_plugins.extend(suite.inline_macro_plugins);
-        self
-    }
 }

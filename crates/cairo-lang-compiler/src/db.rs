@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, PluginSuite};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
@@ -15,6 +15,7 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
+use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -44,11 +45,13 @@ impl RootDatabase {
     fn new(
         plugins: Vec<Arc<dyn MacroPlugin>>,
         inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+        analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res.set_macro_plugins(plugins);
         res.set_inline_macro_plugins(inline_macro_plugins.into());
+        res.set_analyzer_plugins(analyzer_plugins);
         res
     }
 
@@ -123,6 +126,7 @@ impl RootDatabaseBuilder {
         let mut db = RootDatabase::new(
             self.plugin_suite.plugins.clone(),
             self.plugin_suite.inline_macro_plugins.clone(),
+            self.plugin_suite.analyzer_plugins.clone(),
         );
 
         if let Some(cfg_set) = &self.cfg_set {

@@ -5,7 +5,8 @@
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
 
-use cairo_lang_defs::plugin::PluginSuite;
+use cairo_lang_semantic::plugin::PluginSuite;
+
 pub mod abi;
 mod aliased;
 pub mod allowed_libfuncs;
