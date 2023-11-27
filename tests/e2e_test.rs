@@ -172,7 +172,7 @@ fn run_e2e_test(
     // Parse code and create semantic model.
     let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
     let db = locked_db.snapshot();
-    DiagnosticsReporter::stderr().with_extra_crates(&[test_module.crate_id]).ensure(&db).unwrap();
+    DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 
     // Compile to Sierra.
     let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
