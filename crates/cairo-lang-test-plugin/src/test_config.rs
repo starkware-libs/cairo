@@ -137,7 +137,7 @@ fn extract_available_gas(
         diagnostics.push(PluginDiagnostic::error(
             attr.args_stable_ptr.untyped(),
             format!(
-                "Attribute should have a single numeric literal argument or `{STATIC_GAS_ARG}`."
+                "Attribute should have a single non-negative literal in `i64` range or `{STATIC_GAS_ARG}`."
             ),
         ))
     };
@@ -147,7 +147,7 @@ fn extract_available_gas(
                 variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
                 ..
             },
-        ] => literal.numeric_value(db).and_then(|v| v.to_usize()).on_none(add_malformed_attr_diag),
+            ] => literal.numeric_value(db).and_then(|v| v.to_i64()).and_then(|v| v.to_usize()).on_none(add_malformed_attr_diag),
         [
             AttributeArg {
                 variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
