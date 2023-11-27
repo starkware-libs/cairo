@@ -145,10 +145,12 @@ impl<'a> DiagnosticsReporter<'a> {
         group: Diagnostics<TEntry>,
     ) -> bool {
         let text = group.format(db);
-        let found_diagnostics =
-            !text.is_empty() && (!self.allow_warnings || group.check_error_free().is_err());
-        self.callback.on_diagnostic(text);
-        found_diagnostics
+        if !text.is_empty() {
+            self.callback.on_diagnostic(text);
+            !self.allow_warnings || group.check_error_free().is_err()
+        } else {
+            false
+        }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
