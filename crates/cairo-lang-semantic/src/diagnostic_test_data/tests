@@ -266,7 +266,10 @@ test_expr_diagnostics
 
 //! > expr_code
 {
+  let x = 7;
   let x = 3;
+  let y = 5;
+  x
 }
 
 //! > module_code
@@ -276,7 +279,12 @@ test_expr_diagnostics
 //! > expected_diagnostics
 warning: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:7
-  let x = 3;
+  let x = 7;
+      ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:7
+  let y = 5;
       ^
 
 //! > ==========================================================================

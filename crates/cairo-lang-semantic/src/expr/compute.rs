@@ -152,13 +152,18 @@ impl<'ctx> ComputationContext<'ctx> {
 
         // Pop the environment from the stack.
         let parent = self.environment.parent.take();
-        for (name, var) in self.environment.variables.iter() {
-            if !self.environment.used_variables.contains(&var.id()) && !name.starts_with('_') {
-                self.diagnostics.report_by_ptr(var.stable_ptr(self.db.upcast()), UnusedVariable);
-            }
+        for (var_name, var) in std::mem::take(&mut self.environment.variables) {
+            self.add_unused_variable_warning(&var_name, &var);
         }
         self.environment = parent.unwrap();
         res
+    }
+
+    /// Adds warning for unused variables if required.
+    fn add_unused_variable_warning(&mut self, var_name: &str, var: &Variable) {
+        if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
+            self.diagnostics.report_by_ptr(var.stable_ptr(self.db.upcast()), UnusedVariable);
+        }
     }
 
     /// Returns [Self::signature] if it exists. Otherwise, reports a diagnostic and returns `Err`.
@@ -2056,7 +2061,11 @@ pub fn compute_statement_semantic(
             // ctx.environment.unnamed_variables
             for v in variables {
                 let var_def = Variable::Local(v.var.clone());
-                ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                if let Some(old_var) =
+                    ctx.environment.variables.insert(v.name.clone(), var_def.clone())
+                {
+                    ctx.add_unused_variable_warning(&v.name, &old_var);
+                }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
             semantic::Statement::Let(semantic::StatementLet {
