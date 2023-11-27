@@ -146,7 +146,7 @@ impl<'a> DiagnosticsReporter<'a> {
     ) -> bool {
         let text = group.format(db);
         let found_diagnostics =
-            if self.allow_warnings { group.check_error_free().is_err() } else { !text.is_empty() };
+            !text.is_empty() && (!self.allow_warnings || group.check_error_free().is_err());
         self.callback.on_diagnostic(text);
         found_diagnostics
     }
