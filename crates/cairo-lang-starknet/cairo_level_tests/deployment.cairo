@@ -27,7 +27,6 @@ mod Factory {
         let calldata = array![];
         let (address, _) = deploy_syscall(child_hash.try_into().unwrap(), 0, calldata.span(), false)
             .expect('child deployment failed');
-        // The child contract is deployed, but the following line fails without propagating an error.
         IEmptyContractDispatcher { contract_address: address }.initialize();
     }
 
