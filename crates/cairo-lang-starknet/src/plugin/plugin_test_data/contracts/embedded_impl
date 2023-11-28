@@ -1,7 +1,7 @@
 //! > Test expansion of the outside implementations.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]
@@ -246,6 +246,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:12:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
@@ -529,12 +533,17 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
 
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:23:1
+#[starknet::contract]
+^*******************^
+
 //! > ==========================================================================
 
 //! > Test embeddable impl with exisiting drop impl..
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]
@@ -716,3 +725,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:12:1
+#[starknet::contract]
+^*******************^
