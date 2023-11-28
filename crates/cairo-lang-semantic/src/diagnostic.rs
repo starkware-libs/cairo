@@ -383,8 +383,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ErrorPropagateOnNonErrorType { ty } => {
                 format!(r#"Type "{}" can not error propagate"#, ty.format(db))
             }
-            SemanticDiagnosticKind::UnhandledErrorType { ty } => {
-                format!(r#"Unhandled error type "{}""#, ty.format(db))
+            SemanticDiagnosticKind::UnhandledMustUseType { ty } => {
+                format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))
             }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
@@ -640,7 +640,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
     fn severity(&self) -> Severity {
         match &self.kind {
             SemanticDiagnosticKind::UnusedVariable
-            | SemanticDiagnosticKind::UnhandledErrorType { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::UnhandledMustUseType { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -811,7 +811,7 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType {
         ty: semantic::TypeId,
     },
-    UnhandledErrorType {
+    UnhandledMustUseType {
         ty: semantic::TypeId,
     },
     UnusedVariable,

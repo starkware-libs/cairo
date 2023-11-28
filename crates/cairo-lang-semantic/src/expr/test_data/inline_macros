@@ -224,7 +224,7 @@ error: Identifier not found.
    write!(f, "{non_existing}");
                ^**********^
 
-warning: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+warning: Unhandled `#[must_use]` type `core::result::Result::<(), core::fmt::Error>`
  --> lib.cairo:21:4
    write!(f, "{non_existing}");
    ^*************************^
@@ -376,7 +376,7 @@ error: Identifier not found.
    writeln!(f, "{}", non_existing);
                      ^**********^
 
-warning: Unhandled error type "core::result::Result::<(), core::fmt::Error>"
+warning: Unhandled `#[must_use]` type `core::result::Result::<(), core::fmt::Error>`
  --> lib.cairo:24:4
    writeln!(f, "{}", non_existing);
    ^*****************************^

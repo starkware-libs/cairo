@@ -2,6 +2,7 @@ use core::array::ArrayTrait;
 use core::serde::Serde;
 use core::array::SpanTrait;
 
+#[must_use]
 #[derive(Copy, Drop, Serde, PartialEq)]
 pub enum Result<T, E> {
     Ok: T,

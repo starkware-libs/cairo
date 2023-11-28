@@ -304,7 +304,7 @@ test_expr_diagnostics
 //! > function_body
 
 //! > expected_diagnostics
-warning: Unhandled error type "core::option::Option::<core::felt252>"
+warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
  --> lib.cairo:3:3
   Option::<felt252>::None;
   ^*********************^
@@ -326,7 +326,7 @@ test_expr_diagnostics
 //! > function_body
 
 //! > expected_diagnostics
-warning: Unhandled error type "core::result::Result::<core::felt252, core::felt252>"
+warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
  --> lib.cairo:3:3
   Result::<felt252, felt252>::Err(4);
   ^********************************^

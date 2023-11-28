@@ -13,6 +13,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -48,6 +49,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -2087,9 +2089,15 @@ pub fn compute_statement_semantic(
                 // Point to after the expression, where the semicolon is missing.
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
-            let ty = expr.ty();
-            if unwrap_error_propagation_type(ctx.db, ty).is_some() {
-                ctx.diagnostics.report(&expr_syntax, UnhandledErrorType { ty });
+            let ty: TypeId = expr.ty();
+            if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(ty) {
+                if match concrete {
+                    ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR)?,
+                    ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR)?,
+                    ConcreteTypeId::Extern(_) => false,
+                } {
+                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
+                }
             }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: expr.id,
