@@ -981,6 +981,7 @@ impl<'a> CairoHintProcessor<'a> {
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
+                    self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
                     fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
