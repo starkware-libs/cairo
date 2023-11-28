@@ -33,7 +33,7 @@ num-bigint.workspace = true
 once_cell.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 test-log.workspace = true
 
 [[test]]

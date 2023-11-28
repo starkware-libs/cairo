@@ -12,5 +12,5 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 [dev-dependencies]
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros"}
 env_logger.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 test-log.workspace = true

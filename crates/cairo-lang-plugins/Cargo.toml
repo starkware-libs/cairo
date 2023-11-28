@@ -19,7 +19,7 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 indent.workspace = true
 indoc.workspace = true
 itertools.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]

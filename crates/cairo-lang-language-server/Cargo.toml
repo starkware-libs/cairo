@@ -23,7 +23,7 @@ cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.3.1"
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 log.workspace = true
 lsp.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 scarb-metadata.workspace = true
 serde.workspace = true
 serde_json.workspace = true

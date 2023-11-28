@@ -16,7 +16,7 @@ colored.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true
 

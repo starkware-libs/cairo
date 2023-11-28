@@ -19,7 +19,7 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.1" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.3.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.3.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

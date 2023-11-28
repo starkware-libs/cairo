@@ -24,7 +24,7 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 itertools.workspace = true
 num-bigint.workspace = true
 once_cell.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
