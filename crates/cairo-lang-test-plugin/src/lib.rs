@@ -17,9 +17,8 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
-    find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
+    extract_semantic_entrypoints, find_contracts, get_contracts_info, ContractInfo,
 };
-use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
@@ -59,11 +58,8 @@ pub fn compile_test_prepared_db(
         find_contracts(db, &main_crate_ids)
             .iter()
             .flat_map(|contract| {
-                chain!(
-                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
-                )
+                let entrypoints = extract_semantic_entrypoints(db, contract);
+                chain!(entrypoints.external, entrypoints.constructor, entrypoints.l1_handler)
             })
             .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
             .collect()

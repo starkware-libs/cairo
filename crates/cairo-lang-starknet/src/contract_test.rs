@@ -44,7 +44,6 @@ fn test_contract_resolving() {
 
     assert_eq!(
         get_contract_internal_module_abi_functions(db, &contracts[0], EXTERNAL_MODULE)
-            .unwrap()
             .into_iter()
             .map(|f| f.alias)
             .collect_vec(),

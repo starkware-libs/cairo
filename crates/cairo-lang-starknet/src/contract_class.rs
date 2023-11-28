@@ -8,8 +8,8 @@ use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId as LoweringConcreteFunctionWithBodyId;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -27,11 +27,10 @@ use crate::allowed_libfuncs::{
 };
 use crate::compiler_version::{self};
 use crate::contract::{
-    find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
-    ContractDeclaration,
+    extract_semantic_entrypoints, find_contracts, get_selector_and_sierra_function,
+    ContractDeclaration, SemanticEntryPoints,
 };
 use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
-use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
 
 #[cfg(test)]
@@ -192,10 +191,12 @@ fn compile_contract_with_prepared_and_checked_db(
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
-        extract_semantic_entrypoints(db, contract)?;
+        extract_semantic_entrypoints(db, contract);
     let mut sierra_program = db
         .get_sierra_program_for_functions(
-            chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
+            chain!(&external, &l1_handler, &constructor)
+                .map(|f| LoweringConcreteFunctionWithBodyId::from_semantic(db, f.value))
+                .collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -230,36 +231,6 @@ fn compile_contract_with_prepared_and_checked_db(
     };
     contract_class.sanity_check();
     Ok(contract_class)
-}
-
-pub struct SemanticEntryPoints {
-    pub external: Vec<Aliased<ConcreteFunctionWithBodyId>>,
-    pub l1_handler: Vec<Aliased<ConcreteFunctionWithBodyId>>,
-    pub constructor: Vec<Aliased<ConcreteFunctionWithBodyId>>,
-}
-
-/// Extracts functions from the contract.
-pub fn extract_semantic_entrypoints(
-    db: &dyn LoweringGroup,
-    contract: &ContractDeclaration,
-) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
-    let external: Vec<_> = get_contract_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
-        .into_iter()
-        .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-        .collect();
-    let l1_handler: Vec<_> = get_contract_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
-        .into_iter()
-        .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-        .collect();
-    let constructor: Vec<_> =
-        get_contract_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-            .into_iter()
-            .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-            .collect();
-    if constructor.len() > 1 {
-        anyhow::bail!("Expected at most one constructor.");
-    }
-    Ok(SemanticEntryPoints { external, l1_handler, constructor })
 }
 
 /// Returns the entry points given their IDs sorted by selectors.
