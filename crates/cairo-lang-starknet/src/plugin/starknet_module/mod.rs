@@ -221,7 +221,7 @@ pub(super) fn handle_module_by_storage(
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
                     Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
-                        contracts: vec![module_name],
+                        contract_name: module_name,
                     }))
                 }
                 StarknetModuleKind::Component => None,
