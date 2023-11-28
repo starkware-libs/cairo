@@ -220,8 +220,8 @@ impl FormattingInfo {
                             builder,
                             &mut ident_count,
                             &mut pending_chars,
-                            RewriteNode::RewriteText {
-                                text: argument,
+                            RewriteNode::Wrapped {
+                                inner: Box::new(RewriteNode::Text(argument)),
                                 origin: TextSpan { start, end },
                             },
                             argument_info.fmt_type,

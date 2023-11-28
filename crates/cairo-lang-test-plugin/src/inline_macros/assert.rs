@@ -60,9 +60,12 @@ trait CompareAssertionPlugin: NamedPlugin {
             (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")
         } else {
             (
-                RewriteNode::RewriteText {
+                RewriteNode::Wrapped {
                     origin: lhs.as_syntax_node().span_without_trivia(db),
-                    text: format!("__lhs_value_for_{}_macro__", Self::NAME),
+                    inner: Box::new(RewriteNode::Text(format!(
+                        "__lhs_value_for_{}_macro__",
+                        Self::NAME
+                    ))),
                 },
                 "let $lhs_value$ = $lhs$;",
             )
@@ -71,9 +74,12 @@ trait CompareAssertionPlugin: NamedPlugin {
             (RewriteNode::new_trimmed(rhs.as_syntax_node()), "")
         } else {
             (
-                RewriteNode::RewriteText {
+                RewriteNode::Wrapped {
                     origin: rhs.as_syntax_node().span_without_trivia(db),
-                    text: format!("__rhs_value_for_{}_macro__", Self::NAME),
+                    inner: Box::new(RewriteNode::Text(format!(
+                        "__rhs_value_for_{}_macro__",
+                        Self::NAME
+                    ))),
                 },
                 "let $rhs_value$ = $rhs$;",
             )

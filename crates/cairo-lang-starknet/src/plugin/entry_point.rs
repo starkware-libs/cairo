@@ -333,8 +333,10 @@ fn generate_entry_point_wrapper(
     }));
 
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
-    Ok(RewriteNode::interpolate_patched(
-        &formatdoc! {"
+    Ok(RewriteNode::Wrapped {
+        origin: function.attributes(db).as_syntax_node().span_without_trivia(db),
+        inner: Box::new(RewriteNode::interpolate_patched(
+            &formatdoc! {"
             $implicit_precedence$
             fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
                 core::internal::require_implicit::<System>();
@@ -349,15 +351,16 @@ fn generate_entry_point_wrapper(
                 $output_handling$
             }}
         "},
-        &[
-            ("wrapper_function_name".to_string(), wrapper_function_name),
-            ("generic_params".to_string(), generic_params),
-            ("output_handling".to_string(), output_handling),
-            ("arg_definitions".to_string(), arg_definitions),
-            ("implicit_precedence".to_string(), implicit_precedence),
-        ]
-        .into(),
-    ))
+            &[
+                ("wrapper_function_name".to_string(), wrapper_function_name),
+                ("generic_params".to_string(), generic_params),
+                ("output_handling".to_string(), output_handling),
+                ("arg_definitions".to_string(), arg_definitions),
+                ("implicit_precedence".to_string(), implicit_precedence),
+            ]
+            .into(),
+        )),
+    })
 }
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
