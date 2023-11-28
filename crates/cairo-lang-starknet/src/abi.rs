@@ -766,20 +766,14 @@ pub enum ABIError {
     NoStorage,
     #[error("Contracts must have only one Storage struct.")]
     MultipleStorages,
-    #[error("Compilation error.")]
-    CompilationError,
     #[error("Got unexpected type.")]
     UnexpectedType,
     #[error("Entrypoints must have a self first param.")]
     EntrypointMustHaveSelf,
-    #[error("Entrypoint attribute must match the mutability of the self parameter")]
-    AttributeMismatch,
     #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
     EmbeddedImplMustBeInterface,
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable,
-    #[error("The first generic parameter of an embedded impl must be `TContractState`.")]
-    WrongEmbeddedImplFirstGeneric,
     #[error("Only the first generic parameter of an embeddable impl can be a type.")]
     EmbeddableImplWithExtraGenerics,
     #[error(

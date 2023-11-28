@@ -6,7 +6,7 @@ use super::events::EventData;
 #[derive(Debug, PartialEq, Eq)]
 pub struct StarkNetContractAuxData {
     /// A list of contracts that were processed by the plugin.
-    pub contracts: Vec<smol_str::SmolStr>,
+    pub contract_name: smol_str::SmolStr,
 }
 impl GeneratedFileAuxData for StarkNetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
