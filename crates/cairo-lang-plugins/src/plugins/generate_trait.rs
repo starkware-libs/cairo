@@ -147,6 +147,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 };
                 let decl = item.declaration(db);
                 let signature = decl.signature(db);
+                builder.add_node(item.attributes(db).as_syntax_node());
                 builder.add_node(decl.function_kw(db).as_syntax_node());
                 builder.add_node(decl.name(db).as_syntax_node());
                 builder.add_node(decl.generic_params(db).as_syntax_node());

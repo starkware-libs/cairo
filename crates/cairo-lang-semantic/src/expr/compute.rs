@@ -2099,6 +2099,23 @@ pub fn compute_statement_semantic(
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
                 }
             }
+            if let Expr::FunctionCall(expr_function_call) = &expr.expr {
+                let generic_function_id = db
+                    .lookup_intern_function(expr_function_call.function)
+                    .function
+                    .generic_function;
+                if match generic_function_id {
+                    crate::items::functions::GenericFunctionId::Free(id) => {
+                        id.has_attr(db, MUST_USE_ATTR)?
+                    }
+                    crate::items::functions::GenericFunctionId::Impl(id) => {
+                        id.function.has_attr(db, MUST_USE_ATTR)?
+                    }
+                    crate::items::functions::GenericFunctionId::Extern(_) => false,
+                } {
+                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseFunction);
+                }
+            }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: expr.id,
                 stable_ptr: syntax.stable_ptr(),
