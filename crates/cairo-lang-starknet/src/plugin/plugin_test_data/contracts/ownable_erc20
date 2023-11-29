@@ -235,6 +235,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableERC20 {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -473,6 +474,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableERC20 {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

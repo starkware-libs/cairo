@@ -2638,8 +2638,11 @@ pub mod __constructor {
 generate_trait:
 
     trait NonInterfaceTrait {
+        #[external(v0)]
         fn foo_external2(self: @ContractState);
+        #[l1_handler]
         fn foo_l1_handler2(self: @ContractState);
+        #[constructor]
         fn foo_constructor2(self: @ContractState);
     }
 

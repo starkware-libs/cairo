@@ -180,6 +180,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 }
     trait CtorTrait {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -360,6 +361,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 }
     trait CtorTrait {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

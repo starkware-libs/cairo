@@ -386,6 +386,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledMustUseType { ty } => {
                 format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))
             }
+            SemanticDiagnosticKind::UnhandledMustUseFunction => {
+                "Unhandled `#[must_use]` function.".into()
+            }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
@@ -646,7 +649,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
     fn severity(&self) -> Severity {
         match &self.kind {
             SemanticDiagnosticKind::UnusedVariable
-            | SemanticDiagnosticKind::UnhandledMustUseType { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::UnhandledMustUseType { .. }
+            | SemanticDiagnosticKind::UnhandledMustUseFunction => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -820,6 +824,7 @@ pub enum SemanticDiagnosticKind {
     UnhandledMustUseType {
         ty: semantic::TypeId,
     },
+    UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,

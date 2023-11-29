@@ -330,3 +330,141 @@ warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, cor
  --> lib.cairo:3:3
   Result::<felt252, felt252>::Err(4);
   ^********************************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  must_use_function();
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+  0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:7:3
+  must_use_function();
+  ^*****************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use impl function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  imp::must_use_function();
+}
+
+//! > module_code
+trait trt {
+  fn must_use_function() -> felt252;
+}
+impl imp of trt {
+  #[must_use]
+  fn must_use_function() -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unhandled must use trait function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  trt::must_use_function();
+}
+
+//! > module_code
+trait trt {
+  #[must_use]
+  fn must_use_function() -> felt252;
+}
+impl imp of trt {
+  fn must_use_function() -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:12:3
+  trt::must_use_function();
+  ^**********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use method.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let x: felt252 = 1;
+  x.must_use_function();
+}
+
+//! > module_code
+trait trt<T> {
+  #[must_use]
+  fn must_use_function(self: T) -> felt252;
+}
+impl imp of trt<felt252> {
+  fn must_use_function(self: felt252) -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:13:3
+  x.must_use_function();
+  ^*******************^
+
+//! > ==========================================================================
+
+//! > Test tail expression must use function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  must_use_function()
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+  0
+}
+
+//! > function_body
+
+//! > expected_diagnostics

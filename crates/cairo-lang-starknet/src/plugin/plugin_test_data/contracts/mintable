@@ -316,6 +316,7 @@ impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -906,6 +907,7 @@ impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

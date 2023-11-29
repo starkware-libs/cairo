@@ -259,8 +259,11 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableBalance {
+        #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        #[external(v0)]
         fn get_balance(self: @ContractState) -> u128;
+        #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
 }
@@ -514,8 +517,11 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableBalance {
+        #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        #[external(v0)]
         fn get_balance(self: @ContractState) -> u128;
+        #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
 
