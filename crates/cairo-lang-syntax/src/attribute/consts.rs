@@ -7,6 +7,9 @@ pub const FMT_SKIP_ATTR: &str = "cairofmt::skip";
 /// An attribute to mark a function as a function that should be inlined.
 pub const INLINE_ATTR: &str = "inline";
 
+/// An attribute to define a type as a type that must be used
+pub const MUST_USE_ATTR: &str = "must_use";
+
 /// An attribute to define the order of implicit arguments.
 pub const IMPLICIT_PRECEDENCE_ATTR: &str = "implicit_precedence";
 

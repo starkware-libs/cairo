@@ -7,6 +7,7 @@ use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
+use crate::{ConcreteEnumId, ConcreteStructId};
 
 pub trait AttributeTrait {
     fn name(&self, db: &dyn SemanticGroup) -> String;
@@ -92,6 +93,11 @@ impl SemanticQueryAttrs for StructId {
         db.struct_attributes(*self)
     }
 }
+impl SemanticQueryAttrs for ConcreteStructId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        self.struct_id(db).attributes_elements(db)
+    }
+}
 impl SemanticQueryAttrs for TraitId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         db.trait_attributes(*self)
@@ -127,7 +133,11 @@ impl SemanticQueryAttrs for EnumId {
         db.enum_attributes(*self)
     }
 }
-
+impl SemanticQueryAttrs for ConcreteEnumId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        self.enum_id(db).attributes_elements(db)
+    }
+}
 impl SemanticQueryAttrs for SubmoduleId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         ModuleId::Submodule(*self).attributes_elements(db)
