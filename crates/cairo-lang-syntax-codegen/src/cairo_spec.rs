@@ -671,6 +671,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("Const")
         .node("ImplNamed")
         .node("ImplAnonymous")
+        .node("NegativeImpl")
     )
     .add_struct(StructBuilder::new("GenericParamType")
         .key_node("name", "TerminalIdentifier")
@@ -689,6 +690,10 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("GenericParamImplAnonymous")
         .node("plus", "TerminalPlus")
+        .node("trait_path", "ExprPath")
+    )
+    .add_struct(StructBuilder::new("GenericParamNegativeImpl")
+        .node("minus", "TerminalMinus")
         .node("trait_path", "ExprPath")
     )
     // --- Skipped nodes ---
