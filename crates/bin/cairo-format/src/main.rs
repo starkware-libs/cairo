@@ -43,9 +43,9 @@ struct FormatterArgs {
     files: Vec<String>,
 }
 
-fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
+fn print_error(error: String, path: String, args: &FormatterArgs) {
     let parsed_errors = if args.print_parsing_errors {
-        format!("{error}").red()
+        error.red()
     } else {
         "Run with '--print-parsing-errors' to see error details.".red()
     };
@@ -86,19 +86,28 @@ fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path
             println!("Diff found in file {}:\n {}", path.display(), diff.display_colored());
             false
         }
+        Ok(FormatOutcome::ParsingError(parsing_error)) => {
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
+            false
+        }
         Err(parsing_error) => {
-            print_error(parsing_error, path.display().to_string(), args);
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
             false
         }
     }
 }
 
 fn format_file_in_place(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path) -> bool {
-    if let Err(parsing_error) = fmt.format_in_place(&path) {
-        print_error(parsing_error, path.display().to_string(), args);
-        false
-    } else {
-        true
+    match fmt.format_in_place(&path) {
+        Err(parsing_error) => {
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
+            false
+        }
+        Ok(FormatOutcome::ParsingError(parsing_error)) => {
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
+            false
+        }
+        Ok(_) => true,
     }
 }
 
@@ -157,6 +166,14 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     match fmt.format_to_string(&StdinFmt) {
+        Err(parsing_error) => {
+            print_error(parsing_error.to_string(), String::from("standard input"), args);
+            false
+        }
+        Ok(FormatOutcome::ParsingError(parsing_error)) => {
+            print_error(parsing_error.to_string(), String::from("standard input"), args);
+            false
+        }
         Ok(outcome) => {
             if args.check {
                 match outcome {
@@ -165,15 +182,12 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
                         println!("{diff}");
                         false
                     }
+                    _ => unreachable!(),
                 }
             } else {
-                print!("{}", FormatOutcome::into_output_text(outcome));
+                print!("{}", FormatOutcome::into_output_text(outcome).unwrap());
                 true
             }
-        }
-        Err(parsing_error) => {
-            print_error(parsing_error, String::from("standard input"), args);
-            false
         }
     }
 }

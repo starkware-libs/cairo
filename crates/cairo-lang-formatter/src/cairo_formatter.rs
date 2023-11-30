@@ -4,7 +4,8 @@ use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
+use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
@@ -65,6 +66,26 @@ impl<'a> Debug for FileDiffColoredDisplay<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct ParsingError {
+    pub diagnostics: Vec<(Severity, String)>,
+}
+
+impl Display for ParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (severity, diagnostic) in &self.diagnostics {
+            writeln!(f, "{severity}: {diagnostic}")?;
+        }
+        Ok(())
+    }
+}
+
+impl From<Vec<(Severity, String)>> for ParsingError {
+    fn from(diagnostics: Vec<(Severity, String)>) -> Self {
+        Self { diagnostics }
+    }
+}
+
 /// An output from file formatting.
 ///
 /// Differentiates between already formatted files and files that differ after formatting.
@@ -73,13 +94,15 @@ impl<'a> Debug for FileDiffColoredDisplay<'a> {
 pub enum FormatOutcome {
     Identical(String),
     DiffFound(FileDiff),
+    ParsingError(ParsingError),
 }
 
 impl FormatOutcome {
-    pub fn into_output_text(self) -> String {
+    pub fn into_output_text(self) -> Option<String> {
         match self {
-            FormatOutcome::Identical(original) => original,
-            FormatOutcome::DiffFound(diff) => diff.formatted,
+            FormatOutcome::Identical(original) => Some(original),
+            FormatOutcome::DiffFound(diff) => Some(diff.formatted),
+            FormatOutcome::ParsingError(_diagnostics) => None,
         }
     }
 }
@@ -147,10 +170,9 @@ fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Resul
         db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
     if diagnostics.check_error_free().is_err() {
-        bail!(diagnostics.format(&db));
+        return Ok(FormatOutcome::ParsingError(diagnostics.format_with_severity(&db).into()));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
-
     if &formatted_text == original_text.as_ref() {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
@@ -199,7 +221,7 @@ impl CairoFormatter {
                 input.overwrite_content(diff.formatted.clone())?;
                 Ok(FormatOutcome::DiffFound(diff))
             }
-            FormatOutcome::Identical(original) => Ok(FormatOutcome::Identical(original)),
+            outcome => Ok(outcome),
         }
     }
 
