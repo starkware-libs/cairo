@@ -93,6 +93,7 @@ pub trait PartialOrd<T> {
 
 /// Trait for conversion between types.
 pub trait Into<T, S> {
+    #[must_use]
     fn into(self: T) -> S;
 }
 
@@ -152,6 +153,7 @@ impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
 }
 
 pub trait Default<T> {
+    #[must_use]
     fn default() -> T;
 }
 
@@ -166,6 +168,7 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
 pub trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a Felt252Dict.
     /// Should be logically equivalent to 0.
+    #[must_use]
     fn zero_default() -> T nopanic;
 }
 
