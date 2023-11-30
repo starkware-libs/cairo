@@ -64,7 +64,13 @@ impl AllCratesConfig {
 pub struct SingleCrateConfig {
     /// The crate's Cairo edition.
     pub edition: Edition,
+
+    pub experimental_features: Option<ExperementalFeaturesConfig>,
 }
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperementalFeaturesConfig {}
 
 impl ProjectConfig {
     pub fn from_directory(directory: &Path) -> Result<Self, DeserializationError> {
