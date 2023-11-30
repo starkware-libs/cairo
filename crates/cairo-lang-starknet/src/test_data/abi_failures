@@ -23,7 +23,7 @@ mod test_contract {
 Event type must derive `starknet::Event`.
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: Event type must derive `starknet::Event`.
+warning: Plugin diagnostic: Failed to generate ABI: Event type must derive `starknet::Event`.
  --> lib.cairo:4:1
 #[starknet::contract]
 ^*******************^
@@ -66,7 +66,7 @@ mod test_contract {
 `starknet::Event` variant marked with `#[flat]` must be an enum.
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: `starknet::Event` variant marked with `#[flat]` must be an enum.
+warning: Plugin diagnostic: Failed to generate ABI: `starknet::Event` variant marked with `#[flat]` must be an enum.
  --> lib.cairo:4:1
 #[starknet::contract]
 ^*******************^
@@ -102,7 +102,7 @@ mod test_contract {
 Event `test::test_contract::Event` has duplicate selector `Dup`.
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
+warning: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
  --> lib.cairo:6:1
 #[starknet::contract]
 ^*******************^
@@ -121,7 +121,7 @@ test_abi_failure(expect_diagnostics: true)
 Duplicate entry point: 'foo'. This is not currently supported.
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
+warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:38:1
 #[starknet::contract]
 ^*******************^
@@ -153,7 +153,7 @@ mod contract {
 An embedded impl must be an impl of a trait marked with #[starknet::interface].
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
  --> lib.cairo:5:1
 #[starknet::contract]
 ^*******************^
@@ -187,7 +187,7 @@ An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet:
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
+warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
  --> lib.cairo:6:1
 #[starknet::contract]

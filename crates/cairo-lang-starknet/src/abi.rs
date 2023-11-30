@@ -774,8 +774,6 @@ pub enum ABIError {
     EmbeddedImplMustBeInterface,
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable,
-    #[error("Only the first generic parameter of an embeddable impl can be a type.")]
-    EmbeddableImplWithExtraGenerics,
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
          #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
