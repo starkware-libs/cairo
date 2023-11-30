@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -74,6 +75,7 @@ pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
+const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
@@ -83,17 +85,22 @@ pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
+    let db = configured_db();
+
+    let (service, socket) = LspService::build(|client| Backend::new(client, db))
+        .custom_method("vfs/provide", Backend::vfs_provide)
+        .finish();
+    Server::new(stdin, stdout, socket).serve(service).await;
+}
+
+fn configured_db() -> RootDatabase {
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_plugin_suite(starknet_plugin_suite())
         .with_plugin_suite(test_plugin_suite())
         .build()
         .expect("Failed to initialize Cairo compiler database.");
-
-    let (service, socket) = LspService::build(|client| Backend::new(client, db))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
-    Server::new(stdin, stdout, socket).serve(service).await;
+    db
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -136,6 +143,8 @@ pub struct Backend {
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
     pub notification: NotificationService,
+    last_replace: tokio::sync::Mutex<SystemTime>,
+    db_replace_interval: Duration,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
@@ -149,6 +158,13 @@ impl Backend {
             notification: notification.clone(),
             state_mutex: State::default().into(),
             scarb: ScarbService::new(notification),
+            last_replace: tokio::sync::Mutex::new(SystemTime::now()),
+            db_replace_interval: Duration::from_secs(
+                std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
+                    .ok()
+                    .and_then(|value| value.parse::<u64>().ok())
+                    .unwrap_or(DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL),
+            ),
         }
     }
 
@@ -158,7 +174,7 @@ impl Backend {
     where
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
-        let db_mut = self.db_mutex.lock().await;
+        let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
         std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
@@ -240,8 +256,31 @@ impl Backend {
         for (uri, diags) in res {
             self.client.publish_diagnostics(uri, diags, None).await
         }
+        // After handling of all diagnostics attempting to swap the database to reduce memory
+        // consumption.
+        self.maybe_sweep_database().await;
 
         Ok(())
+    }
+
+    /// Checks if enough time passed since last db swap, and if so, swaps the database.
+    async fn maybe_sweep_database(&self) {
+        let Ok(mut last_replace) = self.last_replace.try_lock() else {
+            // Another thread is already swapping the database.
+            return;
+        };
+        if last_replace.elapsed().unwrap() <= self.db_replace_interval {
+            // Not enough time passed since last swap.
+            return;
+        }
+        eprintln!("DB swap - scheduled.");
+        let mut db = self.db_mut().await;
+        eprintln!("DB swap - starting.");
+        let mut new_db = configured_db();
+        new_db.set_file_overrides(db.file_overrides());
+        *db = new_db;
+        *last_replace = SystemTime::now();
+        eprintln!("DB swap - done.");
     }
 
     pub async fn vfs_provide(
