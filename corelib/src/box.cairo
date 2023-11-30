@@ -11,13 +11,16 @@ extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
 #[generate_trait]
 pub impl BoxImpl<T> of BoxTrait<T> {
     #[inline(always)]
+    #[must_use]
     fn new(value: T) -> Box<T> nopanic {
         into_box(value)
     }
     #[inline(always)]
+    #[must_use]
     fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)
     }
+    #[must_use]
     fn as_snapshot(self: @Box<T>) -> Box<@T> nopanic {
         box_forward_snapshot(self)
     }

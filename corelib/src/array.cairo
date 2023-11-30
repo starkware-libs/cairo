@@ -64,14 +64,17 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
         array_at(self, index).unbox()
     }
     #[inline(always)]
+    #[must_use]
     fn len(self: @Array<T>) -> usize {
         array_len(self)
     }
     #[inline(always)]
+    #[must_use]
     fn is_empty(self: @Array<T>) -> bool {
         self.len() == 0_usize
     }
     #[inline(always)]
+    #[must_use]
     fn span(self: @Array<T>) -> Span<T> {
         Span { snapshot: self }
     }

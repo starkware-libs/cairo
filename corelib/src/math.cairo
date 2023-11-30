@@ -121,10 +121,13 @@ pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
 
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
+    #[must_use]
     fn one() -> T;
     /// Returns whether self is equal to 1, the multiplicative identity element.
+    #[must_use]
     fn is_one(self: T) -> bool;
     /// Returns whether self is not equal to 1, the multiplicative identity element.
+    #[must_use]
     fn is_non_one(self: T) -> bool;
 }
 

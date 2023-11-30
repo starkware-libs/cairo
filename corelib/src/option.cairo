@@ -14,8 +14,10 @@ pub trait OptionTrait<T> {
     /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
     fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E>;
     /// Returns `true` if the `Option` is `Option::Some`.
+    #[must_use]
     fn is_some(self: @Option<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
+    #[must_use]
     fn is_none(self: @Option<T>) -> bool;
     /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns the provided default.
     fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T;
