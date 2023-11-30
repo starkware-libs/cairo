@@ -22,8 +22,8 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
-    PrivRawFileContentQuery,
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, ExperementalFeaturesConfig,
+    FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
@@ -1292,7 +1292,15 @@ fn update_crate_roots(
 
     for (crate_id, crate_root, edition, _file_stem) in source_paths.clone() {
         let crate_root = Directory::Real(crate_root);
-        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, edition }));
+        db.set_crate_config(
+            crate_id,
+            Some(CrateConfiguration {
+                root: crate_root,
+                edition,
+                // TODO(ilya): Should we get the experimental features from scarb?
+                experimental_features: ExperementalFeaturesConfig::default(),
+            }),
+        );
     }
 
     let source_paths = source_paths

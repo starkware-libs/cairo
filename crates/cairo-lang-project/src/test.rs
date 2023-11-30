@@ -1,5 +1,6 @@
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::{Edition, ExperementalFeaturesConfig};
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 
 use crate::{AllCratesConfig, ProjectConfigContent, SingleCrateConfig};
 
@@ -14,10 +15,19 @@ fn test_serde() {
         .into_iter()
         .collect(),
         crates_config: AllCratesConfig {
-            global: SingleCrateConfig { edition: Default::default() },
+            global: SingleCrateConfig { edition: Default::default(), experimental_features: None },
             override_map: [
-                ("crate1".into(), SingleCrateConfig { edition: Edition::V2023_10 }),
-                ("crate3".into(), SingleCrateConfig { edition: Default::default() }),
+                (
+                    "crate1".into(),
+                    SingleCrateConfig { edition: Edition::V2023_10, experimental_features: None },
+                ),
+                (
+                    "crate3".into(),
+                    SingleCrateConfig {
+                        edition: Default::default(),
+                        experimental_features: Some(ExperementalFeaturesConfig {}),
+                    },
+                ),
             ]
             .into_iter()
             .collect(),
@@ -40,6 +50,8 @@ fn test_serde() {
 
             [config.override.crate3]
             edition = "2023_01"
+
+            [config.override.crate3.experimental_features]
         "# }
     );
     assert_eq!(config, toml::from_str(&serialized).unwrap());

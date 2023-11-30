@@ -24,11 +24,17 @@ pub struct CrateConfiguration {
     pub root: Directory,
     /// The cairo edition of the crate.
     pub edition: Edition,
+
+    pub experimental_features: ExperementalFeaturesConfig,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root, edition: Edition::default() }
+        Self {
+            root,
+            edition: Edition::default(),
+            experimental_features: ExperementalFeaturesConfig::default(),
+        }
     }
 }
 
@@ -74,6 +80,10 @@ impl Edition {
         }
     }
 }
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperementalFeaturesConfig {}
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]

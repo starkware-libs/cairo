@@ -4,7 +4,7 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::{Edition, ExperementalFeaturesConfig};
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
@@ -64,6 +64,8 @@ impl AllCratesConfig {
 pub struct SingleCrateConfig {
     /// The crate's Cairo edition.
     pub edition: Edition,
+
+    pub experimental_features: Option<ExperementalFeaturesConfig>,
 }
 
 impl ProjectConfig {
