@@ -18,8 +18,10 @@ impl AnalyzerPlugin for ABIAnalyzer {
                 if !matches!(err, ABIError::SemanticError) {
                     // TODO(orizi): Make `ABIError` contain a semantic location.
                     // TODO(orizi): Enable getting several diagnostics.
-                    diagnostics.push(PluginDiagnostic::error(
-                        contract.submodule_id.stable_ptr(db.upcast()).untyped(),
+                    diagnostics.push(PluginDiagnostic::warning(
+                        err.location(db).unwrap_or_else(|| {
+                            contract.submodule_id.stable_ptr(db.upcast()).untyped()
+                        }),
                         format!("Failed to generate ABI: {}", err),
                     ));
                 }

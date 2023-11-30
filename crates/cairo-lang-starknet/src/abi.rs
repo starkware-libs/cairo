@@ -774,8 +774,6 @@ pub enum ABIError {
     EmbeddedImplMustBeInterface,
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable,
-    #[error("Only the first generic parameter of an embeddable impl can be a type.")]
-    EmbeddableImplWithExtraGenerics,
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
          #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
@@ -789,6 +787,29 @@ pub enum ABIError {
     InvalidDuplicatedItem { description: String },
     #[error("Duplicate entry point: '{name}'. This is not currently supported.")]
     DuplicateEntryPointName { name: String },
+}
+impl ABIError {
+    pub fn location(&self, _db: &dyn SemanticGroup) -> Option<SyntaxStablePtrId> {
+        match self {
+            ABIError::SemanticError => None,
+            ABIError::EventMustBeEnum => None,
+            ABIError::EventFlatVariantMustBeEnum => None,
+            ABIError::EventWithGenericParams => None,
+            ABIError::EventNotDerived => None,
+            ABIError::EventSelectorDuplication { .. } => None,
+            ABIError::ExpectedOneGenericParam => None,
+            ABIError::MultipleConstructors => None,
+            ABIError::NoStorage => None,
+            ABIError::MultipleStorages => None,
+            ABIError::UnexpectedType => None,
+            ABIError::EntrypointMustHaveSelf => None,
+            ABIError::EmbeddedImplMustBeInterface => None,
+            ABIError::EmbeddedImplNotEmbeddable => None,
+            ABIError::ContractInterfaceImplCannotBePerItem => None,
+            ABIError::InvalidDuplicatedItem { .. } => None,
+            ABIError::DuplicateEntryPointName { .. } => None,
+        }
+    }
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {
