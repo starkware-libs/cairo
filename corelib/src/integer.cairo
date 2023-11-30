@@ -1363,7 +1363,9 @@ extern fn u512_safe_divmod_by_u256(
 
 /// Bounded
 pub trait BoundedInt<T> {
+    #[must_use]
     fn min() -> T nopanic;
+    #[must_use]
     fn max() -> T nopanic;
 }
 

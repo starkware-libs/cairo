@@ -470,8 +470,8 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   (@5).clone();
-   5.clone();
+   let _ = (@5).clone();
+   let _ = 5.clone();
 }
 
 //! > function_name
