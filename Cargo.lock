@@ -677,6 +677,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
  "indoc",
+ "pretty_assertions",
  "serde",
  "smol_str",
  "thiserror",

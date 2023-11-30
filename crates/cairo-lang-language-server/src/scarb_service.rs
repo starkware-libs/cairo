@@ -2,7 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::CrateLongId;
 use lsp::Url;
 use scarb_metadata::Metadata;
@@ -73,7 +73,7 @@ impl ScarbService {
     pub async fn crate_source_paths(
         &self,
         root_path: PathBuf,
-    ) -> Result<Vec<(CrateLongId, PathBuf, Edition)>> {
+    ) -> Result<Vec<(CrateLongId, PathBuf, CrateSettings)>> {
         let metadata = self
             .scarb_metadata(root_path)
             .await
@@ -97,7 +97,12 @@ impl ScarbService {
                                 .map(|edition| serde_json::from_value(edition.into()).unwrap())
                         })
                         .unwrap_or_default();
-                    Some((crate_id, source_path, edition))
+                    Some((
+                        crate_id,
+                        source_path,
+                        // TODO(ilya): Get experimental features from Scarb.
+                        CrateSettings { edition, experimental_features: Default::default() },
+                    ))
                 } else {
                     None
                 }
