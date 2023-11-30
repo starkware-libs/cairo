@@ -1027,7 +1027,7 @@ impl EventCompEventIntoEvent of Into<super::comp::Event, Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
+warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
  --> lib.cairo:38:1
 #[starknet::contract]
 ^*******************^

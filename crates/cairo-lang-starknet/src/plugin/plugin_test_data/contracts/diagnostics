@@ -120,7 +120,7 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
     fn bar(_n: u32) {}
            ^*****^
 
-error: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
+warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
@@ -993,7 +993,7 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(ref self: ContractState, x: T) {
           ^*^
 
-error: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
+warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
