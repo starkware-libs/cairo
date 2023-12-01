@@ -51,6 +51,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -101,6 +102,23 @@ fn configured_db() -> RootDatabase {
         .build()
         .expect("Failed to initialize Cairo compiler database.");
     db
+}
+
+/// Makes sure that all open files exist in the new db, with their current changes.
+fn ensure_exists_in_db(
+    new_db: &mut RootDatabase,
+    old_db: &RootDatabase,
+    open_files: impl Iterator<Item = FileId>,
+) {
+    let overrides = old_db.file_overrides();
+    let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
+    for file_id in open_files {
+        if let Some(content) = overrides.get(&file_id) {
+            new_overrides.insert(file_id, content.clone());
+        }
+        new_db.intern_file(old_db.lookup_intern_file(file_id));
+    }
+    new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -258,29 +276,43 @@ impl Backend {
         }
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
-        self.maybe_sweep_database().await;
-
-        Ok(())
+        self.maybe_sweep_database().await
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
-    async fn maybe_sweep_database(&self) {
+    async fn maybe_sweep_database(&self) -> LSPResult<()> {
         let Ok(mut last_replace) = self.last_replace.try_lock() else {
             // Another thread is already swapping the database.
-            return;
+            return Ok(());
         };
         if last_replace.elapsed().unwrap() <= self.db_replace_interval {
             // Not enough time passed since last swap.
-            return;
+            return Ok(());
         }
+        let open_files = self.state_mutex.lock().await.open_files.clone();
         eprintln!("DB swap - scheduled.");
+        let mut new_db = self
+            .with_db(|db| {
+                let mut new_db = configured_db();
+                ensure_exists_in_db(&mut new_db, db, open_files.iter().copied());
+                new_db
+            })
+            .await?;
+        eprintln!("DB swap - initial setup done.");
+        for file_id in open_files {
+            new_db.file_syntax_diagnostics(file_id);
+            let _ = new_db.file_semantic_diagnostics(file_id);
+            let _ = new_db.file_lowering_diagnostics(file_id);
+        }
+        eprintln!("DB swap - initial compilation done.");
         let mut db = self.db_mut().await;
         eprintln!("DB swap - starting.");
-        let mut new_db = configured_db();
-        new_db.set_file_overrides(db.file_overrides());
+        let state = self.state_mutex.lock().await;
+        ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().copied());
         *db = new_db;
         *last_replace = SystemTime::now();
         eprintln!("DB swap - done.");
+        Ok(())
     }
 
     pub async fn vfs_provide(
