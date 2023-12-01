@@ -3,7 +3,7 @@ use core::array::ArrayTrait;
 use core::array::SpanTrait;
 use core::traits::Into;
 
-// A general cheatcode function used to simplify implementation of Starknet testing functions.
+// A general cheatcode function used to simplify the implementation of Starknet testing functions.
 // External users of the cairo crates can also implement their own cheatcodes
 // by injecting custom `CairoHintProcessor`.
 pub extern fn cheatcode<const selector: felt252>(
