@@ -39,7 +39,7 @@ pub(crate) impl BoolPrintImpl of PrintTrait<bool> {
         if self {
             'true'.print();
         } else {
-            'false'.print(); 
+            'false'.print();
         }
     }
 }
