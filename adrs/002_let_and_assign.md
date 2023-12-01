@@ -12,7 +12,7 @@ identifier.
 Some properties:
 
 - Rebinding may not change the type.
-- Rebinding affects outer scopes.
+- Rebinding affects outer scopes. 
 
 This is opposed to "let"/"var" in other languages, that are effectively, shadowing:
 
