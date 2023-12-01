@@ -16,7 +16,7 @@ resistance. You can
 read
 more about Sierra link:https://medium.com/starkware/cairo-1-0-aa96eefb19a0[here].
 
-If you are looking for Cairo 0 documentation, please see link:https://www.cairo-lang.org/docs/0.12.0/hello_cairo/index.html[here].
+If you are looking for Cairo 0 documentation, please see the link:https://www.cairo-lang.org/docs/0.12.0/hello_cairo/index.html[here].
 
 ## Help us to improve this documentation
 This documentation site is a work in progress. You are very welcome to contribute to this
