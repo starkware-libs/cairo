@@ -37,7 +37,7 @@ pub(crate) impl Felt252PrintImpl of PrintTrait<felt252> {
 pub(crate) impl BoolPrintImpl of PrintTrait<bool> {
     fn print(self: bool) {
         if self {
-            'true'.print();
+            'true'.print(); 
         } else {
             'false'.print(); 
         }
