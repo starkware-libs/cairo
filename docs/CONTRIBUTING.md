@@ -22,7 +22,7 @@ To set up a development environment, please follow these steps:
 3. Follow instructions in [vscode-cairo](../vscode-cairo/README.md).
 
 The `rustfmt` configuration used by cairo requires a nightly version of Rust. 
-You can install the nightly version by running.
+You can install the nightly version of Rust by running the following command:
 ```sh
 rustup install nightly-2023-07-05
 ```
