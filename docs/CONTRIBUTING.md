@@ -79,5 +79,5 @@ branches:
     * [sierra-major-update](https://github.com/starkware-libs/cairo/tree/sierra-major-update) -
     If Sierra to CASM compilation changed in a **non-backward-compatible** manner - meaning
     existing Sierra code will compile to different CASM. For example, editing the CASM
-    implementation of a an existing libfunc. This may also include no longer accepting some old
+    implementation of an existing libfunc. This may also include no longer accepting some old
     Sierra code.
