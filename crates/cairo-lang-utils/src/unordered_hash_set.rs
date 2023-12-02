@@ -57,6 +57,16 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
     pub fn clear(&mut self) {
         self.0.clear()
     }
+
+    /// Return a sorted vector of the keys.
+    pub fn sorted(self) -> Vec<Key>
+    where
+        Key: Ord,
+    {
+        let mut vec: Vec<Key> = self.0.into_iter().collect();
+        vec.sort();
+        vec
+    }
 }
 
 impl<Key: Hash + Eq> Default for UnorderedHashSet<Key> {
