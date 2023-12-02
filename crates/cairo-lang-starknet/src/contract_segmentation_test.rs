@@ -2,7 +2,7 @@ use cairo_lang_sierra::ProgramParser;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::find_segments;
+use super::{find_segments, get_segment_lengths};
 
 /// Tests `find_segments` returns the correct result.
 #[derive(Default)]
@@ -28,3 +28,16 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     { find_segment: "find_segment" },
     FindSegmentTest
 );
+
+#[test]
+fn test_get_segment_lengths() {
+    // Tests get_segment_lengths returns the correct result.
+    let segment_starts_offsets = vec![vec![0, 3, 8], vec![10, 10, 14], vec![14, 16]];
+    let bytecode_len = 20;
+    let expected_lengths = vec![vec![3, 5, 2], vec![4], vec![2, 4]];
+    assert_eq!(get_segment_lengths(&segment_starts_offsets, bytecode_len), expected_lengths);
+
+    let bytecode_len2 = 16;
+    let expected_lengths2 = vec![vec![3, 5, 2], vec![4], vec![2]];
+    assert_eq!(get_segment_lengths(&segment_starts_offsets, bytecode_len2), expected_lengths2);
+}

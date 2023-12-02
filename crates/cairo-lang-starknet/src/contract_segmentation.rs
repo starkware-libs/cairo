@@ -67,6 +67,43 @@ fn statement_ids_to_offsets(
         .collect()
 }
 
+/// Returns a vector of vectors, where each inner vector represents a function in the program,
+/// and contains the lengths of the segments in the function.
+#[allow(dead_code)]
+fn get_segment_lengths(
+    segment_starts_offsets: &[Vec<usize>],
+    bytecode_len: usize,
+) -> Vec<Vec<usize>> {
+    // Compute the lengths of the segments from their start points.
+    let mut segment_lengths = vec![];
+    for i in 0..segment_starts_offsets.len() {
+        let mut function_segment_lengths = vec![];
+        for j in 1..segment_starts_offsets[i].len() {
+            let segment_size = segment_starts_offsets[i][j] - segment_starts_offsets[i][j - 1];
+            if segment_size > 0 {
+                function_segment_lengths.push(segment_size);
+            }
+        }
+
+        // Handle the last segment.
+        let last_offset = segment_starts_offsets[i]
+            .last()
+            .expect("Segmentation error: Function has no segments.");
+        let next_offset = if i < segment_starts_offsets.len() - 1 {
+            segment_starts_offsets[i + 1][0]
+        } else {
+            bytecode_len
+        };
+        let segment_size = next_offset - last_offset;
+        if segment_size > 0 {
+            function_segment_lengths.push(segment_size);
+        }
+
+        segment_lengths.push(function_segment_lengths);
+    }
+    segment_lengths
+}
+
 /// Helper struct for [find_segments].
 /// Represents a single function and its segments.
 struct FunctionInfo {
