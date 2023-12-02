@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_sierra::program::{BranchTarget, Program, Statement, StatementIdx};
+use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
@@ -42,6 +43,28 @@ fn find_segments(program: &Program) -> Result<Vec<Vec<usize>>, SegmentationError
     segment_starts.push(current_function.finalize(program.statements.len())?);
 
     Ok(segment_starts)
+}
+
+/// Converts the result of [find_segments] from statement ids to bytecode offsets.
+#[allow(dead_code)]
+fn statement_ids_to_offsets(
+    cairo_program: &CairoProgram,
+    segment_starts_statements: &[Vec<usize>],
+) -> Vec<Vec<usize>> {
+    let statement_to_offset = |statement_id: usize| {
+        cairo_program
+            .debug_info
+            .sierra_statement_info
+            .get(statement_id)
+            .unwrap_or_else(|| panic!("Missing bytecode offset for statement id {statement_id}."))
+            .code_offset
+    };
+    segment_starts_statements
+        .iter()
+        .map(|segment_starts| {
+            segment_starts.iter().map(|start| statement_to_offset(*start)).collect()
+        })
+        .collect()
 }
 
 /// Helper struct for [find_segments].
