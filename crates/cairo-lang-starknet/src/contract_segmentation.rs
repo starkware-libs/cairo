@@ -5,7 +5,19 @@ mod test;
 use cairo_lang_sierra::program::{BranchTarget, Program, Statement, StatementIdx};
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use serde::{Serialize, Deserialize};
 use thiserror::Error;
+
+
+/// NestedIntList is either a list of NestedIntList or an integer.
+/// E.g., [0, [1, 2], [3, [4]]].
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum NestedIntList {
+    Leaf(usize),
+    Node(Vec<NestedIntList>),
+}
+
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SegmentationError {
@@ -15,9 +27,31 @@ pub enum SegmentationError {
     JumpOutsideFunction(StatementIdx),
 }
 
+/// Computes the bytecode_segment_length for the given contract.
+pub fn compute_bytecode_segment_lengths(
+    program: &Program,
+    cairo_program: &CairoProgram,
+    bytecode_size: usize,
+) -> Result<NestedIntList, SegmentationError> {
+    if bytecode_size == 0 {
+        return Ok(NestedIntList::Leaf(0));
+    }
+    let segment_start_statements = find_segments(program)?;
+    let segment_start_offsets = statement_ids_to_offsets(cairo_program, &segment_start_statements);
+    Ok(NestedIntList::Node(
+        get_segment_lengths(&segment_start_offsets, bytecode_size)
+            .iter()
+            .map(|segment| {
+                NestedIntList::Node(
+                    segment.iter().map(|length| NestedIntList::Leaf(*length)).collect(),
+                )
+            })
+            .collect(),
+    ))
+}
+
 /// Returns a vector of vectors, where each inner vector represents a function in the program,
 /// and contains the starts (as statement indices) of the segments in the function.
-#[allow(dead_code)]
 fn find_segments(program: &Program) -> Result<Vec<Vec<usize>>, SegmentationError> {
     // Get the set of function entry points.
     let function_statement_ids: UnorderedHashSet<usize> =
@@ -46,7 +80,6 @@ fn find_segments(program: &Program) -> Result<Vec<Vec<usize>>, SegmentationError
 }
 
 /// Converts the result of [find_segments] from statement ids to bytecode offsets.
-#[allow(dead_code)]
 fn statement_ids_to_offsets(
     cairo_program: &CairoProgram,
     segment_starts_statements: &[Vec<usize>],
@@ -69,7 +102,6 @@ fn statement_ids_to_offsets(
 
 /// Returns a vector of vectors, where each inner vector represents a function in the program,
 /// and contains the lengths of the segments in the function.
-#[allow(dead_code)]
 fn get_segment_lengths(
     segment_starts_offsets: &[Vec<usize>],
     bytecode_len: usize,
