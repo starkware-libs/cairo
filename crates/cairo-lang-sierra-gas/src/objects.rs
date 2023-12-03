@@ -1,6 +1,7 @@
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -83,9 +84,45 @@ pub enum BranchCost {
     /// The cost of the `branch_align` libfunc.
     BranchAlign,
     /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.
-    WithdrawGas { const_cost: ConstCost, success: bool, with_builtin_costs: bool },
+    WithdrawGas(WithdrawGasBranchInfo),
     /// The cost of the `redeposit_gas` libfunc.
     RedepositGas,
+}
+
+/// Information about a branch of a `withdraw_gas` libfunc.
+#[derive(Clone, Debug)]
+pub struct WithdrawGasBranchInfo {
+    /// Is this the success branch.
+    pub success: bool,
+    /// Is the builtin cost table supplied.
+    pub with_builtin_costs: bool,
+}
+impl WithdrawGasBranchInfo {
+    /// Returns the actual cost of the branch, not including the retrieved tokens, given the
+    /// expected retrieved tokens per type.
+    pub fn const_cost<TokenUsages: Fn(CostTokenType) -> usize>(
+        &self,
+        token_usages: TokenUsages,
+    ) -> ConstCost {
+        let cost_computation: i32 = if self.with_builtin_costs {
+            BuiltinCostWithdrawGasLibfunc::cost_computation_steps(token_usages).into_or_panic()
+        } else {
+            0
+        };
+        let mut steps = 3 + cost_computation;
+        // Failure branch have some additional costs.
+        if !self.success {
+            if self.with_builtin_costs {
+                // The additional jump to failure branch, and an additional minus 1 for the
+                // range checked gas counter result.
+                steps += 2;
+            } else {
+                // The additional jump to failure branch.
+                steps += 1;
+            }
+        };
+        ConstCost { steps, range_checks: 1, holes: 0 }
+    }
 }
 
 /// Converts [ConstCost] into [BranchCost].
