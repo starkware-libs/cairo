@@ -67,9 +67,9 @@ mod test_contract {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `starknet::Event` variant marked with `#[flat]` must be an enum.
- --> lib.cairo:4:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:12:9
+        #[flat]
+        ^*****^
 
 //! > ==========================================================================
 
