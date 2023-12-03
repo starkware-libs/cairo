@@ -2355,6 +2355,34 @@ impl I128MulEq of MulEq<i128> {
     }
 }
 
+impl I128Div of Div<i128> {
+    fn div(lhs: i128, rhs: i128) -> i128 {
+        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        };
+        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
+            Result::Ok(v) => (v, lhs_neg),
+            Result::Err(v) => (~v + 1, !lhs_neg),
+        };
+        // The u128 div handles the case where rhs is 0.
+        let res_as_u128 = lhs_u127 / rhs_u127;
+        let res_as_felt252: felt252 = if res_neg {
+            -res_as_u128.into()
+        } else {
+            res_as_u128.into()
+        };
+        res_as_felt252.try_into().expect('i128_div Overflow')
+    }
+}
+
+impl I128DivEq of DivEq<i128> {
+    #[inline(always)]
+    fn div_eq(ref self: i128, other: i128) {
+        self = Div::div(self, other);
+    }
+}
+
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
 pub extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 impl I128PartialOrd of PartialOrd<i128> {
