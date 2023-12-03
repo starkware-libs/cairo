@@ -2,7 +2,7 @@ use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
-use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -14,7 +14,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
-use crate::objects::{BranchCost, ConstCost, PreCost};
+use crate::objects::{BranchCost, ConstCost, PreCost, WithdrawGasBranchInfo};
 use crate::CostError;
 
 type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
@@ -159,7 +159,10 @@ fn get_branch_requirements_dependencies(
             BranchCost::FunctionCall { const_cost: _, function } => {
                 res.insert(function.entry_point);
             }
-            BranchCost::WithdrawGas { const_cost: _, success: true, with_builtin_costs: _ } => {
+            BranchCost::WithdrawGas(WithdrawGasBranchInfo {
+                success: true,
+                with_builtin_costs: _,
+            }) => {
                 // If withdraw_gas succeeds, we don't need to take future_wallet_value into account,
                 // so we simply return.
                 continue;
@@ -225,7 +228,7 @@ fn analyze_gas_statements<
         let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).value;
         // TODO(lior): Consider checking that idx.next(&branch_info.target) is indeed branch
         //   align.
-        if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
+        if let BranchCost::WithdrawGas(WithdrawGasBranchInfo { success: true, .. }) = branch_cost {
             let withdrawal = specific_context.get_gas_withdrawal(
                 idx,
                 branch_cost,
@@ -572,7 +575,9 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             let mut actual_excess = current_excess.clone();
 
             if invocation.branches.len() > 1 {
-                if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
+                if let BranchCost::WithdrawGas(WithdrawGasBranchInfo { success: true, .. }) =
+                    branch_cost
+                {
                     let planned_withdrawal = specific_cost_context.get_gas_withdrawal(
                         idx,
                         branch_cost,
@@ -657,7 +662,10 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     ) -> Result<PreCost, CostError> {
         let res = future_wallet_value - wallet_value.clone();
 
-        if let BranchCost::WithdrawGas { with_builtin_costs: false, .. } = branch_cost {
+        if let BranchCost::WithdrawGas(WithdrawGasBranchInfo {
+            with_builtin_costs: false, ..
+        }) = branch_cost
+        {
             // `withdraw_gas` (with with_builtin_costs == false) does not support pre-costs yet.
             if !res.0.is_empty() {
                 return Err(CostError::WithdrawGasPreCostNotSupported);
@@ -680,8 +688,8 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             BranchCost::FunctionCall { const_cost: _, function } => {
                 wallet_at_fn(&function.entry_point).value
             }
-            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
-                if *success {
+            BranchCost::WithdrawGas(info) => {
+                if info.success {
                     // If withdraw_gas succeeds, we don't need to take
                     // future_wallet_value into account, so we simply return.
                     return Default::default();
@@ -721,13 +729,12 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
         wallet_value: &i32,
         future_wallet_value: i32,
     ) -> Result<i32, CostError> {
-        let BranchCost::WithdrawGas { const_cost, success: true, with_builtin_costs } = branch_cost
-        else {
-            panic!("Unexpected BranchCost: {:?}.", branch_cost);
+        let BranchCost::WithdrawGas(info) = branch_cost else {
+            panic!("Unexpected BranchCost: {branch_cost:?}.");
         };
+        assert!(info.success, "Expected extraction to be success, got {info:?}.");
 
-        let withdraw_gas_cost =
-            self.compute_withdraw_gas_cost(idx, const_cost, *with_builtin_costs);
+        let withdraw_gas_cost = self.compute_withdraw_gas_cost(idx, info);
         Ok(future_wallet_value + withdraw_gas_cost - *wallet_value)
     }
 
@@ -751,12 +758,12 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
             BranchCost::FunctionCall { const_cost, function } => {
                 wallet_at_fn(&function.entry_point).value + const_cost.cost()
             }
-            BranchCost::WithdrawGas { const_cost, success, with_builtin_costs } => {
-                let cost = self.compute_withdraw_gas_cost(idx, const_cost, *with_builtin_costs);
+            BranchCost::WithdrawGas(info) => {
+                let cost = self.compute_withdraw_gas_cost(idx, info);
 
                 // If withdraw_gas succeeds, we don't need to take
                 // future_wallet_value into account, so we simply return.
-                if *success {
+                if info.success {
                     return WalletInfo::from(cost);
                 }
                 cost
@@ -770,22 +777,10 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
 
 impl<'a> PostcostContext<'a> {
     /// Computes the cost of the withdraw_gas libfunc.
-    fn compute_withdraw_gas_cost(
-        &self,
-        idx: &StatementIdx,
-        const_cost: &ConstCost,
-        with_builtin_costs: bool,
-    ) -> i32 {
-        let mut amount = const_cost.cost();
-
-        if with_builtin_costs {
-            let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
-                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
-            })
-            .into_or_panic::<i32>();
-            amount += ConstCost { steps, ..Default::default() }.cost();
-        }
-
-        amount
+    fn compute_withdraw_gas_cost(&self, idx: &StatementIdx, info: &WithdrawGasBranchInfo) -> i32 {
+        info.const_cost(|token_type| {
+            self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+        })
+        .cost()
     }
 }
