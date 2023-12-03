@@ -365,6 +365,7 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -1004,6 +1005,7 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
