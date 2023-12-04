@@ -233,7 +233,7 @@ fn test_add_store_statements(
 
 #[test]
 fn store_temp_simple() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -241,7 +241,7 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["5", "4"], &["5"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_label(&db, 0),
+        dummy_label(&mut db, 0),
         dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["6"]),
         dummy_return_statement(&[]),
     ];
@@ -272,11 +272,11 @@ fn store_temp_simple() {
 
 #[test]
 fn store_temp_for_branch_command() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
-        dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
-        dummy_label(&db, 0),
+        dummy_simple_branch(&mut db, "branch_with_param", &["2"], 0),
+        dummy_label(&mut db, 0),
         dummy_return_statement(&[]),
     ];
 
@@ -294,7 +294,7 @@ fn store_temp_for_branch_command() {
 
 #[test]
 fn store_local_simple() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -309,12 +309,12 @@ fn store_local_simple() {
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
         dummy_simple_statement(&db, "store_temp<felt252>", &["9"], &["9"]),
         // Don't store as local due to a simple jump.
-        dummy_jump_statement(&db, 0),
-        dummy_label(&db, 0),
+        dummy_jump_statement(&mut db, 0),
+        dummy_label(&mut db, 0),
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case IV: tempvar copied into local before branches.
-        dummy_simple_branch(&db, "branch", &[], 1),
-        dummy_label(&db, 1),
+        dummy_simple_branch(&mut db, "branch", &[], 1),
+        dummy_label(&mut db, 1),
         dummy_return_statement(&[]),
     ];
 
@@ -409,17 +409,17 @@ fn same_as_param_push_value_optimization() {
 ///     // Use y.
 #[test]
 fn store_local_result_of_if() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_simple_branch(&mut db, "branch", &[], 0),
         // If part.
         dummy_simple_statement(&db, "store_temp<felt252>", &["100"], &["100"]),
-        dummy_jump_statement(&db, 1),
+        dummy_jump_statement(&mut db, 1),
         // Else part.
-        dummy_label(&db, 0),
+        dummy_label(&mut db, 0),
         dummy_push_values(&db, &[("0", "100")]),
         // Post-if.
-        dummy_label(&db, 1),
+        dummy_label(&mut db, 1),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
         dummy_return_statement(&[]),
@@ -640,14 +640,14 @@ fn consecutive_push_values() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn push_values_after_branch_merge() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_simple_branch(&mut db, "branch", &[], 0),
         dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
-        dummy_jump_statement(&db, 1),
-        dummy_label(&db, 0),
+        dummy_jump_statement(&mut db, 1),
+        dummy_label(&mut db, 0),
         dummy_push_values(&db, &[("1", "101"), ("2", "102")]),
-        dummy_label(&db, 1),
+        dummy_label(&mut db, 1),
         dummy_push_values(&db, &[("101", "201"), ("102", "202"), ("3", "203")]),
         dummy_return_statement(&["0"]),
     ];
@@ -685,13 +685,13 @@ fn push_values_after_branch_merge() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn push_values_early_return() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
-        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_simple_branch(&mut db, "branch", &[], 0),
         dummy_push_values(&db, &[("101", "201"), ("2", "202"), ("3", "203")]),
         dummy_return_statement(&["0"]),
-        dummy_label(&db, 0),
+        dummy_label(&mut db, 0),
         dummy_push_values(&db, &[("101", "201"), ("2", "202")]),
         dummy_return_statement(&["0"]),
     ];
@@ -771,13 +771,13 @@ fn consecutive_const_additions() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_const_additions_with_branch() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
         dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
-        dummy_simple_branch(&db, "branch", &[], 0),
-        dummy_label(&db, 0),
+        dummy_simple_branch(&mut db, "branch", &[], 0),
+        dummy_label(&mut db, 0),
         dummy_push_values(&db, &[("4", "5")]),
         dummy_return_statement(&["5"]),
     ];
@@ -803,13 +803,13 @@ fn consecutive_const_additions_with_branch() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_appends_with_branch() {
-    let db = SierraGenDatabaseForTesting::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "array_append", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "array_append", &["4", "5"], &["6"]),
-        dummy_simple_branch(&db, "branch", &[], 0),
-        dummy_label(&db, 0),
+        dummy_simple_branch(&mut db, "branch", &[], 0),
+        dummy_label(&mut db, 0),
         dummy_push_values(&db, &[("6", "7")]),
         dummy_return_statement(&["7"]),
     ];

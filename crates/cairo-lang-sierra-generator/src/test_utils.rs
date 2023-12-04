@@ -127,8 +127,8 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
 pub fn setup_db_and_get_crate_id(
     content: &str,
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
-    let db_val = SierraGenDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SierraGenDatabaseForTesting::default();
+    let db = &mut db_val;
     let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
@@ -140,8 +140,9 @@ pub fn setup_db_and_get_crate_id(
     (db_val, crate_id)
 }
 
-pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+pub fn get_dummy_function(db: &mut dyn SierraGenGroup) -> FreeFunctionId {
+    let mut semantic_db: &mut dyn SemanticGroup = db.upcast_mut();
+    let crate_id = setup_test_crate(semantic_db, "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }
@@ -175,7 +176,7 @@ pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_lang_sierra::ids::VarId> {
 /// Generates a dummy statement with two branches. One branch is Fallthrough and the other is to the
 /// given label.
 pub fn dummy_simple_branch(
-    db: &dyn SierraGenGroup,
+    db: &mut dyn SierraGenGroup,
     name: &str,
     args: &[&str],
     target: usize,
@@ -202,17 +203,17 @@ pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::Statement {
 }
 
 /// Generates a dummy label.
-pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+pub fn dummy_label(db: &mut dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
     pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
 }
 
 /// Generates a dummy jump to label statement.
-pub fn dummy_jump_statement(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+pub fn dummy_jump_statement(db: &mut dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
-pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
+pub fn label_id_from_usize(db: &mut dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
     let free_function_id = get_dummy_function(db);
     let semantic_function = db.intern_concrete_function_with_body(
         semantic::items::functions::ConcreteFunctionWithBody {

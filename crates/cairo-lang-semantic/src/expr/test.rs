@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         loop_: "loop",
         match_: "match",
         method: "method",
+        neg_impl: "neg_impl",
         operators: "operators",
         pattern: "pattern",
         return_: "return",
@@ -65,7 +66,7 @@ fn test_expr_semantics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
     let (test_expr, diagnostics) = setup_test_expr(
         db,
         inputs["expr_code"].as_str(),
@@ -83,9 +84,8 @@ fn test_expr_semantics(
 
 #[test]
 fn test_function_with_param() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_test_function(&db_val, "fn foo(a: felt252) {}", "foo", "").unwrap();
-    let _db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function(db, "fn foo(a: felt252) {}", "foo", "").unwrap();
     let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
@@ -96,9 +96,9 @@ fn test_function_with_param() {
 
 #[test]
 fn test_tuple_type() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}", "foo", "")
+        setup_test_function(&mut db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}", "foo", "")
             .unwrap();
     let db = &db_val;
     let signature = test_function.signature;
@@ -114,9 +114,9 @@ fn test_tuple_type() {
 
 #[test]
 fn test_function_with_return_type() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&db_val, "fn foo() -> felt252 { 5 }", "foo", "").unwrap();
+        setup_test_function(&mut db_val, "fn foo() -> felt252 { 5 }", "foo", "").unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -126,9 +126,9 @@ fn test_function_with_return_type() {
 
 #[test]
 fn test_expr_var() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let test_function = setup_test_function(
-        &db_val,
+        &mut db_val,
         indoc! {"
             fn foo(a: felt252) -> felt252 {
                 a
@@ -156,9 +156,9 @@ fn test_expr_var() {
 
 #[test]
 fn test_expr_call_failures() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = setup_test_expr(&db_val, "foo()", "", "").split();
+    let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
@@ -185,9 +185,9 @@ fn test_expr_call_failures() {
 
 #[test]
 fn test_function_body() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let test_function = setup_test_function(
-        &db_val,
+        &mut db_val,
         indoc! {"
             fn foo(a: felt252) {
                 a;
