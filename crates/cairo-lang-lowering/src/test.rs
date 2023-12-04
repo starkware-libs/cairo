@@ -105,10 +105,10 @@ fn test_function_lowering_phases(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = LoweringDatabaseForTesting::default();
+    let mut db = LoweringDatabaseForTesting::default();
 
     let (test_function, semantic_diagnostics) = setup_test_function(
-        &db,
+        &mut db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),

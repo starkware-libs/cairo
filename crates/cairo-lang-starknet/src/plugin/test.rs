@@ -23,9 +23,9 @@ impl TestFileRunner for ExpandContractTestRunner {
         inputs: &OrderedHashMap<String, String>,
         args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        let db = SHARED_DB.lock().unwrap().snapshot();
+        let mut db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, _semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
+        let (test_module, _semantic_diagnostics) = setup_test_module(&mut db, &cairo_code).split();
 
         let mut module_ids = vec![test_module.module_id];
         module_ids.extend(

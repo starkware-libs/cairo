@@ -5,7 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, Edition,
+    FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -113,8 +114,11 @@ pub struct TestModule {
     pub module_id: ModuleId,
 }
 
-/// Sets up a crate with given content, and returns its crate id.
-pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
+/// Sets up a crate with given content and default configuration.
+/// Returns its crate id.
+///
+/// This function is useful for tests that don't care about the crate configuration.
+pub fn setup_test_crate_default_config(db: &dyn SemanticGroup, content: &str) -> CrateId {
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
@@ -123,18 +127,31 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
         kind: FileKind::Module,
     }));
 
-    db.intern_crate(CrateLongId::Virtual {
-        name: "test".into(),
-        root: Directory::Virtual {
-            files: BTreeMap::from([("lib.cairo".into(), file_id)]),
-            dirs: Default::default(),
-        },
-    })
+    let crate_root = Directory::Virtual {
+        files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+        dirs: Default::default(),
+    };
+
+    db.intern_crate(CrateLongId::Virtual { name: "test".into(), root: crate_root.clone() })
+}
+
+/// Same as `setup_test_crate_default_config` but also enables experimental features.
+pub fn setup_test_crate(db: &mut dyn SemanticGroup, content: &str) -> CrateId {
+    let crate_id = setup_test_crate_default_config(db, content);
+
+    db.set_crate_config(
+        crate_id,
+        Some(CrateConfiguration {
+            root: db.crate_config(crate_id).unwrap().root,
+            edition: Edition::latest(),
+        }),
+    );
+    crate_id
 }
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(
-    db: &(dyn SemanticGroup + 'static),
+    db: &mut (dyn SemanticGroup + 'static),
     content: &str,
 ) -> WithStringDiagnostics<TestModule> {
     let crate_id = setup_test_crate(db, content);
@@ -163,7 +180,7 @@ pub struct TestFunction {
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
 pub fn setup_test_function(
-    db: &(dyn SemanticGroup + 'static),
+    db: &mut (dyn SemanticGroup + 'static),
     function_code: &str,
     function_name: &str,
     module_code: &str,
@@ -210,7 +227,7 @@ pub struct TestExpr {
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_expr(
-    db: &(dyn SemanticGroup + 'static),
+    db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -250,7 +267,7 @@ pub fn setup_test_expr(
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_block(
-    db: &(dyn SemanticGroup + 'static),
+    db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -262,7 +279,7 @@ pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
     TestRunnerResult::success(OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
@@ -279,7 +296,7 @@ pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
 
     let diagnostics = setup_test_function(
         db,

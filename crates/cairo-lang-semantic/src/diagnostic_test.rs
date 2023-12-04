@@ -36,8 +36,8 @@ cairo_lang_test_utils::test_file_test!(
 
 #[test]
 fn test_missing_module_file() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
     let crate_id = setup_test_crate(
         db,
         "
@@ -163,8 +163,8 @@ fn test_inline_module_diagnostics() {
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
     let crate_id = setup_test_crate(
         db,
         indoc! {"

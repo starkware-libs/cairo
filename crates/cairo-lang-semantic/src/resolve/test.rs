@@ -16,8 +16,8 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
 fn test_resolve_path() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -107,8 +107,8 @@ fn test_resolve_path_super() {
 
 #[test]
 fn test_resolve_path_trait_impl() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"

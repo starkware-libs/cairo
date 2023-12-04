@@ -15,7 +15,7 @@ pub fn test_function_generator(
 ) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
+    let db = &mut SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(

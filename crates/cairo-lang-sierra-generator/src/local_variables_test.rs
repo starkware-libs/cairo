@@ -33,7 +33,7 @@ fn check_find_local_variables(
 ) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
+    let db = &mut SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
     let test_function = setup_test_function(

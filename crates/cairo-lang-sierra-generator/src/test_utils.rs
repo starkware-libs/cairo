@@ -20,6 +20,7 @@ use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use once_cell::sync::Lazy;
 use semantic::inline_macros::get_default_plugin_suite;
+use semantic::test_utils::setup_test_crate_default_config;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -127,8 +128,8 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
 pub fn setup_db_and_get_crate_id(
     content: &str,
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
-    let db_val = SierraGenDatabaseForTesting::default();
-    let db = &db_val;
+    let mut db_val = SierraGenDatabaseForTesting::default();
+    let db = &mut db_val;
     let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
@@ -141,7 +142,7 @@ pub fn setup_db_and_get_crate_id(
 }
 
 pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+    let crate_id = setup_test_crate_default_config(db.upcast(), "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }
