@@ -22,14 +22,23 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub struct CrateConfiguration {
     /// The root directry of the crate.
     pub root: Directory,
-    /// The cairo edition of the crate.
-    pub edition: Edition,
+    pub settings: CrateSettings,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root, edition: Edition::default() }
+        Self { root, settings: CrateSettings::default() }
     }
+}
+
+/// Same as `CrateConfiguration` but without the root directory..
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrateSettings {
+    /// The crate's Cairo edition.
+    pub edition: Edition,
+
+    #[serde(default)]
+    pub experimental_features: ExperementalFeaturesConfig,
 }
 
 /// The Cairo edition of a crate.
@@ -74,6 +83,10 @@ impl Edition {
         }
     }
 }
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperementalFeaturesConfig {}
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
