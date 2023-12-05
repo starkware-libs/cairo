@@ -65,15 +65,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
                                                                 and felt252s are supported."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArms => "Unsupported match. Currently, \
-                                                             matches require one arm per variant, \
-                                                             in the order of variant definition."
+                                                             matches require one arm per variant."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
-            }
-            LoweringDiagnosticKind::UnsupportedMatchArmOutOfOrder => {
-                "Unsupported match arm - variants must be the same order as enum declaration."
-                    .into()
             }
             LoweringDiagnosticKind::UnsupportedMatchArmNonSequential=>
             "Unsupported match arm - numbers must be sequential starting from 0.".into(),
@@ -130,7 +125,6 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArms,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
-    UnsupportedMatchArmOutOfOrder,
     UnsupportedMatchArmNonSequential,
     NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
