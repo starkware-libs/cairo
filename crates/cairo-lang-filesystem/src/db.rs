@@ -201,7 +201,7 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match db.lookup_intern_crate(crt) {
         CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, root } => Some(CrateConfiguration::default_for_root(root)),
+        CrateLongId::Virtual { name: _, config } => Some(config),
     }
 }
 
