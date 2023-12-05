@@ -17,21 +17,21 @@ fn test_serde() {
         crates_config: AllCratesConfig {
             global: CrateSettings {
                 edition: Default::default(),
-                experimental_features: ExperementalFeaturesConfig {},
+                experimental_features: ExperementalFeaturesConfig::default(),
             },
             override_map: [
                 (
                     "crate1".into(),
                     CrateSettings {
                         edition: Edition::V2023_10,
-                        experimental_features: ExperementalFeaturesConfig {},
+                        experimental_features: ExperementalFeaturesConfig::default(),
                     },
                 ),
                 (
                     "crate3".into(),
                     CrateSettings {
                         edition: Default::default(),
-                        experimental_features: ExperementalFeaturesConfig {},
+                        experimental_features: ExperementalFeaturesConfig { negative_impls: true },
                     },
                 ),
             ]
@@ -52,16 +52,19 @@ fn test_serde() {
             edition = "2023_01"
 
             [config.global.experimental_features]
+            negative_impls = false
 
             [config.override.crate1]
             edition = "2023_10"
 
             [config.override.crate1.experimental_features]
+            negative_impls = false
 
             [config.override.crate3]
             edition = "2023_01"
 
             [config.override.crate3.experimental_features]
+            negative_impls = true
         "# }
     );
     assert_eq!(config, toml::from_str(&serialized).unwrap());
