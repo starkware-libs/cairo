@@ -368,7 +368,8 @@ pub fn semantic_generic_params(
 /// Returns true if negative impls are enabled in the module.
 fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
     let owning_crate = module_file_id.0.owning_crate(db.upcast());
-    owning_crate == db.core_crate()
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.negative_impls
 }
 
 /// Computes the semantic model of a generic parameter give its ast.

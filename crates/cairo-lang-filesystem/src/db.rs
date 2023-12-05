@@ -86,7 +86,9 @@ impl Edition {
 
 /// Configuration per crate.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExperementalFeaturesConfig {}
+pub struct ExperementalFeaturesConfig {
+    pub negative_impls: bool,
+}
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
