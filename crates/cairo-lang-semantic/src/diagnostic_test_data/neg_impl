@@ -32,16 +32,6 @@ pub impl ImplBad2<T> of Bad<T, T>{
 //! > function_body
 
 //! > expected_diagnostics
-error: Negative impls are supported only inside the core lib.
- --> lib.cairo:4:18
-pub trait Bad<T, -NegImpl> {
-                 ^******^
-
-error: Negative impls are supported only inside the core lib.
- --> lib.cairo:8:21
-pub impl ImplBad<T, -NegImpl> of Bad<T, _>{
-                    ^******^
-
 error: Only `_` is a valid for negative impls.
  --> lib.cairo:14:32
 pub impl ImplBad2<T> of Bad<T, T>{
@@ -77,11 +67,6 @@ impl BadImpl<-NegImpl> of NegImpl {
 //! > function_body
 
 //! > expected_diagnostics
-error: Negative impls are supported only inside the core lib.
- --> lib.cairo:5:14
-impl BadImpl<-NegImpl> of NegImpl {
-             ^******^
-
 error: Inference cycle detected
  --> lib.cairo:9:16
 fn test_func() {  {

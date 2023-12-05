@@ -3,3 +3,9 @@ core = "src"
 
 [config.global]
 edition = "2023_11"
+
+[config.override.core]
+edition = "2023_01"
+
+[config.override.core.experimental_features]
+negative_impls = true
