@@ -86,7 +86,9 @@ impl Edition {
 
 /// Configuration per crate.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExperementalFeaturesConfig {}
+pub struct ExperementalFeaturesConfig {
+    pub negative_impls: bool,
+}
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
@@ -144,7 +146,16 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
     let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
     let core_root_dir = Directory::Real(path);
-    db.set_crate_config(core_crate, Some(CrateConfiguration::default_for_root(core_root_dir)));
+    db.set_crate_config(
+        core_crate,
+        Some(CrateConfiguration {
+            root: core_root_dir,
+            settings: CrateSettings {
+                edition: Edition::default(),
+                experimental_features: ExperementalFeaturesConfig { negative_impls: true },
+            },
+        }),
+    );
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {
