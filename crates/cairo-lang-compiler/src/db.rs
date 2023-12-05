@@ -139,14 +139,14 @@ impl RootDatabaseBuilder {
             init_dev_corelib(&mut db, path);
         }
 
-        if let Some(config) = self.project_config.clone() {
+        if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, *config.clone());
 
-            if let Some(corelib) = config.corelib {
+            if let Some(corelib) = &config.corelib {
                 let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
                 db.set_crate_config(
                     core_crate,
-                    Some(CrateConfiguration::default_for_root(corelib)),
+                    Some(CrateConfiguration::default_for_root(corelib.clone())),
                 );
             }
         }
