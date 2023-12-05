@@ -5,8 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
-    FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, CrateSettings,
+    Edition, ExperementalFeaturesConfig, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -131,7 +131,10 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
                 files: BTreeMap::from([("lib.cairo".into(), file_id)]),
                 dirs: Default::default(),
             },
-            settings: Default::default(),
+            settings: CrateSettings {
+                edition: Edition::default(),
+                experimental_features: ExperementalFeaturesConfig { negative_impls: true },
+            },
         },
     })
 }
