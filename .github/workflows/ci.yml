@@ -28,7 +28,7 @@ jobs:
           - test -p cairo-lang-proc-macros
           - test -p cairo-lang-project
           - test -p cairo-lang-runner
-          - test -p cairo-lang-semantic
+          - test -p cairo-lang-semantic -- --test-threads=1
           - test -p cairo-lang-sierra
           - test -p cairo-lang-sierra-ap-change
           - test -p cairo-lang-sierra-gas
