@@ -65,8 +65,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                                                                 and felt252s are supported."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArms => "Unsupported match. Currently, \
-                                                             matches require one arm per variant, \
-                                                             in the order of variant definition."
+                                                             matches require one arm per variant."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
