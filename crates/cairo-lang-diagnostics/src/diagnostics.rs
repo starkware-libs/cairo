@@ -199,11 +199,36 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 
 pub fn format_diagnostics(
     db: &(dyn FilesGroup + 'static),
-    severity: Severity,
     message: &str,
     location: DiagnosticLocation,
 ) -> String {
-    format!("{severity}: {message}\n --> {:?}\n", location.debug(db))
+    format!("{message}\n --> {:?}\n", location.debug(db))
+}
+
+pub struct FormattedDiagnosticEntry((Severity, String));
+
+impl FormattedDiagnosticEntry {
+    pub fn new(severity: Severity, message: String) -> Self {
+        Self((severity, message))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.message().is_empty()
+    }
+
+    pub fn severity(&self) -> Severity {
+        self.0.0
+    }
+
+    pub fn message(&self) -> &str {
+        &self.0.1
+    }
+}
+
+impl From<(Severity, String)> for FormattedDiagnosticEntry {
+    fn from((severity, message): (Severity, String)) -> Self {
+        Self::new(severity, message)
+    }
 }
 
 /// A set of diagnostic entries that arose during a computation.
@@ -219,26 +244,32 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
 
-    pub fn format(&self, db: &TEntry::DbType) -> String {
-        let mut res = String::new();
+    /// Format entries to pairs of severity and message.
+    pub fn format_with_severity(&self, db: &TEntry::DbType) -> Vec<FormattedDiagnosticEntry> {
+        let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
         let files_db = db.upcast();
         // Format leaves.
         for entry in &self.0.leaves {
-            res += &format_diagnostics(
-                files_db,
-                entry.severity(),
-                &entry.format(db),
-                entry.location(db),
-            );
+            let mut msg = String::new();
+            msg += &format_diagnostics(files_db, &entry.format(db), entry.location(db));
             for note in entry.notes(db) {
-                res += &format!("note: {:?}\n", note.debug(files_db))
+                msg += &format!("note: {:?}\n", note.debug(files_db))
             }
-            res += "\n";
+            msg += "\n";
+            res.push((entry.severity(), msg).into());
         }
         // Format subtrees.
-        res += &self.0.subtrees.iter().map(|subtree| subtree.format(db)).join("");
+        res.extend(self.0.subtrees.iter().flat_map(|subtree| subtree.format_with_severity(db)));
         res
+    }
+
+    /// Format entries to a String with messages prefixed by severity.
+    pub fn format(&self, db: &TEntry::DbType) -> String {
+        self.format_with_severity(db)
+            .iter()
+            .map(|entry| format!("{}: {}", entry.severity(), entry.message()))
+            .join("")
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
