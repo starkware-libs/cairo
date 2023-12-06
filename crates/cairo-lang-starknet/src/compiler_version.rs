@@ -5,6 +5,8 @@ pub struct VersionId {
     pub patch: usize,
 }
 
+pub const CONTRACT_SEGMENTATION_MINOR_VERSION: usize = 5;
+
 impl std::fmt::Display for VersionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
