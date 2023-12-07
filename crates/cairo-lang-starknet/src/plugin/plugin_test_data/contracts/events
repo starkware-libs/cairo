@@ -113,7 +113,7 @@ impl AIsEvent of starknet::Event<A> {
     }
 }
 impl StoreA of starknet::Store::<A> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<A> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<A> {
         let x = starknet::Store::<felt252>::read(address_domain, base)?;
         let mut current_offset = starknet::Store::<felt252>::size();
         let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
@@ -124,13 +124,13 @@ impl StoreA of starknet::Store::<A> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: A) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: A) -> starknet::SyscallResult<()> {
         starknet::Store::<felt252>::write(address_domain, base, value.x)?;
         let mut current_offset = starknet::Store::<felt252>::size();
         starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<A> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<A> {
         let x = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         let mut current_offset = offset + starknet::Store::<felt252>::size();
         let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
@@ -142,7 +142,7 @@ impl StoreA of starknet::Store::<A> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: A) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: A) -> starknet::SyscallResult<()> {
         starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.x)?;
         let mut current_offset = offset + starknet::Store::<felt252>::size();
         starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;

@@ -105,7 +105,7 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
     let store_impl = formatdoc!(
         "
         impl Store{struct_name} of {STORE_TRAIT}::<{struct_name}> {{
-            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+            fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
                 {reads_values}
                 starknet::SyscallResult::Ok(
@@ -114,13 +114,14 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
                     }}
                 )
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-         {struct_name}) -> starknet::SyscallResult<()> {{
+            fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, \
+         value: {struct_name}) -> starknet::SyscallResult<()> {{
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
-            fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
-         -> starknet::SyscallResult<{struct_name}> {{
+            fn read_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8) -> \
+         starknet::SyscallResult<{struct_name}> {{
                 {reads_values_at_offset}
                 starknet::SyscallResult::Ok(
                     {struct_name} {{
@@ -129,8 +130,9 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
                 )
             }}
             #[inline(always)]
-            fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: \
-         u8, value: {struct_name}) -> starknet::SyscallResult<()> {{
+            fn write_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8, value: {struct_name}) -> \
+         starknet::SyscallResult<()> {{
                 {writes_at_offset}
                 starknet::SyscallResult::Ok(())
             }}
