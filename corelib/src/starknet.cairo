@@ -51,8 +51,8 @@ use eth_signature::verify_eth_signature;
 pub mod class_hash;
 pub use class_hash::ClassHash;
 use class_hash::{
-    ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const,
-    class_hash_to_felt252, class_hash_try_from_felt252
+    ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const, class_hash_to_felt252,
+    class_hash_try_from_felt252
 };
 
 // Not `pub` on purpose, only used for direct reexport by the next line.
