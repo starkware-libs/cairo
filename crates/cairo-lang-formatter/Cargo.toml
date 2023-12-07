@@ -17,8 +17,9 @@ diffy.workspace = true
 ignore.workspace = true
 itertools.workspace = true
 salsa.workspace = true
-smol_str.workspace = true
 serde.workspace = true
+smol_str.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true

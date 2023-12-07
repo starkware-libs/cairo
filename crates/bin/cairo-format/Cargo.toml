@@ -7,7 +7,6 @@ license-file.workspace = true
 description = "Cairo formatter executable for the Cairo programming language"
 
 [dependencies]
-anyhow.workspace = true
 clap.workspace = true
 log.workspace = true
 colored.workspace = true
