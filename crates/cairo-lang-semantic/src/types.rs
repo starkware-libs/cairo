@@ -234,6 +234,16 @@ pub struct ConcreteEnumLongId {
     pub enum_id: EnumId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteEnumLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", ConcreteTypeId::Enum(db.intern_concrete_enum(self.clone())).debug(db))
+    }
+}
+
 define_short_id!(ConcreteEnumId, ConcreteEnumLongId, SemanticGroup, lookup_intern_concrete_enum);
 semantic_object_for_id!(
     ConcreteEnumId,
