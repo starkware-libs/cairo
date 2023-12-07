@@ -374,7 +374,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
             fn read(self: @{member_state_name}) -> $type_path$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::read(
                         address_domain,
                         Internal{member_state_name}Impl::address(self),
@@ -384,7 +384,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
             fn write(ref self: {member_state_name}, value: $type_path$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::write(
                         address_domain,
                         Internal{member_state_name}Impl::address(@self),
@@ -445,7 +445,7 @@ fn handle_legacy_mapping_storage_member(
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::read(
                         address_domain,
                         Internal{member_state_name}Impl::address(self, key),
@@ -455,7 +455,7 @@ fn handle_legacy_mapping_storage_member(
             fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::write(
                         address_domain,
                         Internal{member_state_name}Impl::address(@self, key),
