@@ -6,6 +6,7 @@ mod location_marks;
 
 pub use self::diagnostics::{
     format_diagnostics, skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation,
-    DiagnosticNote, Diagnostics, DiagnosticsBuilder, Maybe, Severity, ToMaybe, ToOption,
+    DiagnosticNote, Diagnostics, DiagnosticsBuilder, FormattedDiagnosticEntry, Maybe, Severity,
+    ToMaybe, ToOption,
 };
 pub use self::location_marks::get_location_marks;

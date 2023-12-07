@@ -421,7 +421,6 @@ dependencies = [
 name = "cairo-format"
 version = "2.3.1"
 dependencies = [
- "anyhow",
  "cairo-lang-formatter",
  "cairo-lang-utils",
  "clap",
@@ -558,6 +557,7 @@ dependencies = [
  "serde",
  "smol_str",
  "test-case",
+ "thiserror",
 ]
 
 [[package]]

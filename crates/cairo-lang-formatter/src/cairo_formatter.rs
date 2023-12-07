@@ -4,13 +4,15 @@ use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
+use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use diffy::{create_patch, PatchFormatter};
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
+use thiserror::Error;
 
 use crate::{get_formatted_file, FormatterConfig, CAIRO_FMT_IGNORE};
 
@@ -84,6 +86,47 @@ impl FormatOutcome {
     }
 }
 
+/// An error thrown while trying to format Cairo code.
+#[derive(Debug, Error)]
+pub enum FormattingError {
+    /// A parsing error has occurred. See diagnostics for context.
+    #[error(transparent)]
+    ParsingError(ParsingError),
+    /// All other errors.
+    #[error(transparent)]
+    Error(#[from] anyhow::Error),
+}
+
+#[derive(Debug, Error)]
+pub struct ParsingError(Vec<FormattedDiagnosticEntry>);
+
+impl ParsingError {
+    pub fn iter(&self) -> impl Iterator<Item = &FormattedDiagnosticEntry> {
+        self.0.iter()
+    }
+}
+
+impl From<ParsingError> for Vec<FormattedDiagnosticEntry> {
+    fn from(error: ParsingError) -> Self {
+        error.0
+    }
+}
+
+impl From<Vec<FormattedDiagnosticEntry>> for ParsingError {
+    fn from(diagnostics: Vec<FormattedDiagnosticEntry>) -> Self {
+        Self(diagnostics)
+    }
+}
+
+impl Display for ParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for entry in &self.0 {
+            writeln!(f, "{}: {}", entry.severity(), entry.message())?;
+        }
+        Ok(())
+    }
+}
+
 /// A struct used to indicate that the formatter input should be read from stdin.
 /// Implements the [`FormattableInput`] trait.
 pub struct StdinFmt;
@@ -140,14 +183,18 @@ impl FormattableInput for StdinFmt {
     }
 }
 
-fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Result<FormatOutcome> {
+fn format_input(
+    input: &dyn FormattableInput,
+    config: &FormatterConfig,
+) -> Result<FormatOutcome, FormattingError> {
     let db = SimpleParserDatabase::default();
     let file_id = input.to_file_id(&db).context("Unable to create virtual file.")?;
     let original_text =
         db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
     if diagnostics.check_error_free().is_err() {
-        bail!(diagnostics.format(&db));
+        // bail!(diagnostics.format(&db));
+        return Err(FormattingError::ParsingError(diagnostics.format_with_severity(&db).into()));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
@@ -192,7 +239,10 @@ impl CairoFormatter {
 
     /// Formats the path in place, writing changes to the files.
     /// The ['FormattableInput'] trait implementation defines the method for persisting changes.
-    pub fn format_in_place(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
+    pub fn format_in_place(
+        &self,
+        input: &dyn FormattableInput,
+    ) -> Result<FormatOutcome, FormattingError> {
         match format_input(input, &self.formatter_config)? {
             FormatOutcome::DiffFound(diff) => {
                 // Persist changes.
@@ -205,7 +255,10 @@ impl CairoFormatter {
 
     /// Formats the path and returns the formatted string.
     /// No changes are persisted. The original file is not modified.
-    pub fn format_to_string(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
+    pub fn format_to_string(
+        &self,
+        input: &dyn FormattableInput,
+    ) -> Result<FormatOutcome, FormattingError> {
         format_input(input, &self.formatter_config)
     }
 }

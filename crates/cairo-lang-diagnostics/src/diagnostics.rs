@@ -205,6 +205,7 @@ pub fn format_diagnostics(
     format!("{message}\n --> {:?}\n", location.debug(db))
 }
 
+#[derive(Debug)]
 pub struct FormattedDiagnosticEntry((Severity, String));
 
 impl FormattedDiagnosticEntry {
