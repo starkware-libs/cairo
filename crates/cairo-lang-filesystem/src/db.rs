@@ -153,7 +153,7 @@ pub fn init_dev_corelib_from_directory(
         Some(CrateConfiguration {
             root: core_lib_dir,
             settings: CrateSettings {
-                edition: Edition::default(),
+                edition: Edition::V2023_11,
                 experimental_features: ExperementalFeaturesConfig { negative_impls: true },
             },
         }),

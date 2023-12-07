@@ -64,8 +64,7 @@ mod test_contract {
 
         #[external(v0)]
         fn libcall_foo(ref self: ContractState, a: u128) -> u128 {
-            IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }
-                .foo(a)
+            IAnotherContractLibraryDispatcher { class_hash: core::num::traits::Zero::zero() }.foo(a)
         }
 
         /// An external method that requires the `segment_arena` builtin.
