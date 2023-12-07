@@ -570,7 +570,7 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -582,7 +582,7 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -593,7 +593,7 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     fn get_counter(self: ICounterContractSafeDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
