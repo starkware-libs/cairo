@@ -20,7 +20,7 @@ impl StorageMemberAccessImpl<
     fn read(self: @TMemberState) -> TValue {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
-        starknet::SyscallResultTraitImpl::unwrap_syscall(
+        starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<TValue>::read(address_domain, self.address())
         )
     }
@@ -28,7 +28,7 @@ impl StorageMemberAccessImpl<
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
         let write_result = starknet::Store::<TValue>::write(address_domain, self.address(), value);
-        starknet::SyscallResultTraitImpl::unwrap_syscall(write_result)
+        starknet::SyscallResultTrait::unwrap_syscall(write_result)
     }
 }
 
@@ -57,14 +57,14 @@ impl StorageMapMemberAccessImpl<
     fn read(self: @TMemberState, key: TKey) -> TValue {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
-        starknet::SyscallResultTraitImpl::unwrap_syscall(
+        starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<TValue>::read(address_domain, self.address(key))
         )
     }
     fn write(ref self: TMemberState, key: TKey, value: TValue) {
         // Only address_domain 0 is currently supported.
         let address_domain = 0_u32;
-        starknet::SyscallResultTraitImpl::unwrap_syscall(
+        starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<TValue>::write(address_domain, self.address(key), value)
         )
     }

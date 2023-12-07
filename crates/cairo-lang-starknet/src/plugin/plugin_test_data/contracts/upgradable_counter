@@ -105,7 +105,7 @@ mod counter_contract {
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -115,7 +115,7 @@ mod counter_contract {
             fn write(ref self: ContractMemberState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -241,7 +241,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -869,7 +869,7 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -879,7 +879,7 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
             fn write(ref self: ContractMemberState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -1005,7 +1005,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

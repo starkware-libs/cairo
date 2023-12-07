@@ -143,7 +143,7 @@ pub enum Event {}
             fn read(self: @ContractMemberState) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -153,7 +153,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -186,7 +186,7 @@ pub enum Event {}
             fn read(self: @ContractMemberState) -> ZeroSize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -196,7 +196,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: ZeroSize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -230,7 +230,7 @@ pub enum Event {}
             fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self, key),
@@ -240,7 +240,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self, key),
@@ -274,7 +274,7 @@ pub enum Event {}
             fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self, key),
@@ -284,7 +284,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self, key),
@@ -318,7 +318,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
