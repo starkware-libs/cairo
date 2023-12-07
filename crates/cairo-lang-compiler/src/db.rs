@@ -5,11 +5,10 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
-    FilesGroup, FilesGroupEx, CORELIB_CRATE_NAME,
+    init_dev_corelib, init_dev_corelib_from_directory, init_files_group, AsFilesGroupMut,
+    FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_project::ProjectConfig;
@@ -136,18 +135,14 @@ impl RootDatabaseBuilder {
         if self.detect_corelib {
             let path =
                 detect_corelib().ok_or_else(|| anyhow!("Failed to find development corelib."))?;
-            init_dev_corelib(&mut db, path);
+            init_dev_corelib(&mut db, path)
         }
 
         if let Some(config) = self.project_config.clone() {
             update_crate_roots_from_project_config(&mut db, *config.clone());
 
             if let Some(corelib) = config.corelib {
-                let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
-                db.set_crate_config(
-                    core_crate,
-                    Some(CrateConfiguration::default_for_root(corelib)),
-                );
+                init_dev_corelib_from_directory(&mut db, corelib)
             }
         }
 
