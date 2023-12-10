@@ -40,7 +40,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
         core::serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         core::serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_something"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -55,7 +55,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
     fn empty(self: IContractDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("empty"),
             core::array::ArrayTrait::span(@__calldata__),

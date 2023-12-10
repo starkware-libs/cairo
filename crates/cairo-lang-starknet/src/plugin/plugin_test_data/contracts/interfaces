@@ -89,7 +89,7 @@ impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher>
     fn foo(self: Interface1Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -181,7 +181,7 @@ impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher>
     fn foo(self: Interface2Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),

@@ -189,7 +189,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -201,7 +201,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
     fn get_balance(self: HelloStarknetTraitDispatcher) -> usize {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
