@@ -582,3 +582,39 @@ error: Unsupported matched value. Currently, only matches on enums and felt252s 
 
 //! > lowering_flat
 Parameters: v0: (core::felt252, core::felt252)
+
+//! > ==========================================================================
+
+//! > Match with complex patterns.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: Option<Option<felt252>>) -> felt252 {
+    match a {
+        Option::Some(Option::Some(x)) => 0,
+        Option::None(_) => 1,
+        
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:35
+        Option::Some(Option::Some(x)) => 0,
+                                  ^
+
+//! > lowering_diagnostics
+error: Complex patterns are not supported yet.
+ --> lib.cairo:3:22
+        Option::Some(Option::Some(x)) => 0,
+                     ^*************^
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>

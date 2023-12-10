@@ -362,7 +362,13 @@ fn lower_single_pattern(
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
     match pattern {
-        semantic::Pattern::Literal(_) | semantic::Pattern::StringLiteral(_) => unreachable!(),
+        semantic::Pattern::Literal(_)
+        | semantic::Pattern::StringLiteral(_)
+        | semantic::Pattern::EnumVariant(_) => {
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedPattern),
+            ));
+        }
         semantic::Pattern::Variable(semantic::PatternVariable {
             name: _,
             var: sem_var,
@@ -459,7 +465,6 @@ fn lower_single_pattern(
                 )?;
             }
         }
-        semantic::Pattern::EnumVariant(_) => unreachable!(),
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
     }
@@ -1052,7 +1057,6 @@ fn lower_expr_match(
                     Ok(())
                 }
             };
-
             match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.

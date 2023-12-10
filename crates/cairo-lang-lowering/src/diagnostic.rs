@@ -94,6 +94,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 .into()
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
+            LoweringDiagnosticKind::UnsupportedPattern=> {
+                "Complex patterns are not supported yet.".into()
+            }
         }
     }
 
@@ -136,4 +139,5 @@ pub enum LoweringDiagnosticKind {
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     LiteralError(LiteralError),
+    UnsupportedPattern,
 }
