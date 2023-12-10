@@ -64,9 +64,6 @@ impl DiagnosticEntry for LoweringDiagnostic {
                                                                 Currently, only matches on enums \
                                                                 and felt252s are supported."
                 .into(),
-            LoweringDiagnosticKind::UnsupportedMatchArms => "Unsupported match. Currently, \
-                                                             matches require one arm per variant."
-                .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
             }
@@ -89,6 +86,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 .into()
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
+            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm `{}` not covered.", variant),
+            LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
         }
     }
 
@@ -122,7 +121,8 @@ pub enum LoweringDiagnosticKind {
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
-    UnsupportedMatchArms,
+    MissingMatchArm(String),
+    UnreachableMatchArm,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmNonSequential,
