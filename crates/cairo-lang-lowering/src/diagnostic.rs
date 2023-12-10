@@ -64,8 +64,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
                                                                 Currently, only matches on enums \
                                                                 and felt252s are supported."
                 .into(),
+            LoweringDiagnosticKind::UnsupportedMatchedValueTuple => "Unsupported matched value. \
+                Currently, match on tuples only supports enums."
+                .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmNotATuple => {
+                "Unsupported match arm - not a tuple.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchArmNonSequential=>
             "Unsupported match arm - numbers must be sequential starting from 0.".into(),
@@ -89,7 +95,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
             }
-            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Enum variant `{}` not covered.", variant),
+            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm: `{}` not covered.", variant),
             LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
         }
     }
@@ -124,10 +130,12 @@ pub enum LoweringDiagnosticKind {
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
+    UnsupportedMatchedValueTuple,
     MissingMatchArm(String),
     UnreachableMatchArm,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
+    UnsupportedMatchArmNotATuple,
     UnsupportedMatchArmNonSequential,
     NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
