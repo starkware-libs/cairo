@@ -523,7 +523,7 @@ trait MyTrait<+Drop<T>, +Copy<T>> {
 
 //! > ==========================================================================
 
-//! > Pass type instead of impl to trait.
+//! > Pass type instad of impl to trait.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
