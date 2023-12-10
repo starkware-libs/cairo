@@ -95,7 +95,7 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     CtorImpl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -276,7 +276,7 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     CtorImpl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
