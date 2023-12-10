@@ -2094,7 +2094,7 @@ impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTrai
     fn foo_external1(self: InterfaceTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo_external1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -2105,7 +2105,7 @@ impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTrai
     fn foo_l1_handler1(self: InterfaceTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo_l1_handler1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -2116,7 +2116,7 @@ impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTrai
     fn foo_constructor1(self: InterfaceTraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo_constructor1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4235,7 +4235,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4246,7 +4246,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo2(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4257,7 +4257,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo3(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4810,7 +4810,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo1(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4821,7 +4821,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo2(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo2"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -4832,7 +4832,7 @@ impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
     fn foo3(self: InterfaceDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -5814,7 +5814,7 @@ impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher>
     fn foo3(self: Comp3TraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -6495,7 +6495,7 @@ impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher>
     fn foo3(self: Comp3TraitDispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
             core::array::ArrayTrait::span(@__calldata__),

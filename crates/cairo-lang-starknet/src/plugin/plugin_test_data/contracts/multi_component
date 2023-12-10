@@ -390,7 +390,7 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
