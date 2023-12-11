@@ -130,7 +130,7 @@ fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractS
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, _>::do_nothing(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)

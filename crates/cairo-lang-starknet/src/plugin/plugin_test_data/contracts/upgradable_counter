@@ -147,7 +147,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -165,7 +165,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -187,7 +187,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     );
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -208,7 +208,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     );
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -420,7 +420,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -432,7 +432,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("decrease_counter"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -443,7 +443,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
     fn get_counter(self: ICounterContractDispatcher) -> u128 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -911,7 +911,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -929,7 +929,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -951,7 +951,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     );
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -972,7 +972,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     );
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)

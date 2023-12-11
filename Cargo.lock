@@ -746,6 +746,7 @@ version = "2.3.1"
 dependencies = [
  "anyhow",
  "bimap",
+ "cairo-felt",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const-fnv1a-hash",
@@ -780,6 +781,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "itertools 0.11.0",
+ "num-traits 0.2.17",
  "thiserror",
 ]
 
@@ -795,6 +797,7 @@ dependencies = [
  "env_logger",
  "indoc",
  "itertools 0.11.0",
+ "num-traits 0.2.17",
  "pretty_assertions",
  "test-case",
  "test-log",
