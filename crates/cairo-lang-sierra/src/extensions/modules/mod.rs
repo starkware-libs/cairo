@@ -15,6 +15,7 @@ pub mod branch_align;
 pub mod bytes31;
 pub mod casts;
 pub mod consts;
+pub mod coupon;
 pub mod debug;
 pub mod drop;
 pub mod duplicate;
