@@ -11,7 +11,7 @@ test_expr_semantics
 //! > expected
 FunctionCall(
     ExprFunctionCall {
-        function: core::BoolNot::not,
+        function: core::boolean::BoolNot::not,
         args: [
             Value(
                 FunctionCall(

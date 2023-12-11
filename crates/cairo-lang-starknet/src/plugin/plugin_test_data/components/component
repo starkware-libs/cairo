@@ -686,7 +686,7 @@ fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, 
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = MyImpl::<TContractState, X, TContractStateDrop>::get(@contract_state, __arg_addr);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -712,7 +712,7 @@ fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, 
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, TContractStateDrop>::set(ref contract_state, __arg_addr, __arg_value);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)

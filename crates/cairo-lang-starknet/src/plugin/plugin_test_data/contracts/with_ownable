@@ -132,7 +132,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -150,7 +150,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -172,7 +172,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -390,7 +390,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -408,7 +408,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -430,7 +430,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
