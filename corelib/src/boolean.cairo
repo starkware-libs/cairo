@@ -1,5 +1,5 @@
 #[generate_trait]
-pub impl BoolThenSomeImpl<T, +Drop<T>> of ThenSome<T> {
+pub impl ThenSome<T, +Drop<T>> of ThenSomeTrait<T> {
     /// Returns `Some(t)` if the `bool` is `true`, or `None` otherwise.
     ///
     /// # Examples

@@ -98,7 +98,7 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
     }
 }
 pub mod boolean;
-use boolean::BoolThenSome;
+use boolean::ThenSome;
 
 // General purpose implicits.
 pub extern type RangeCheck;
