@@ -5,6 +5,7 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
+use super::coupon::CouponType;
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -51,6 +52,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 define_type_hierarchy! {
     pub enum CoreType {
         Array(ArrayType),
+        Coupon(CouponType),
         Bitwise(BitwiseType),
         Box(BoxType),
         EcOp(EcOpType),
