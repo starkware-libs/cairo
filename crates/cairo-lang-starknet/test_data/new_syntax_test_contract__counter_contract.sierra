@@ -239,7 +239,7 @@ libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, cor
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>> = enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>;
 libfunc struct_deconstruct<Tuple<core::array::Span::<core::felt252>>> = struct_deconstruct<Tuple<core::array::Span::<core::felt252>>>;
-libfunc function_call<user@core::BoolSerde::deserialize> = function_call<user@core::BoolSerde::deserialize>;
+libfunc function_call<user@core::boolean::BoolSerde::deserialize> = function_call<user@core::boolean::BoolSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::bool>> = enum_match<core::option::Option::<core::bool>>;
 libfunc struct_construct<Tuple<core::bool>> = struct_construct<Tuple<core::bool>>;
 libfunc enum_init<core::panics::PanicResult::<(core::bool,)>, 0> = enum_init<core::panics::PanicResult::<(core::bool,)>, 0>;
@@ -1421,7 +1421,7 @@ enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 branch_align() -> (); // 1112
 struct_deconstruct<Tuple<core::array::Span::<core::felt252>>>([21]) -> ([23]); // 1113
 store_temp<core::array::Span::<core::felt252>>([23]) -> ([23]); // 1114
-function_call<user@core::BoolSerde::deserialize>([23]) -> ([24], [25]); // 1115
+function_call<user@core::boolean::BoolSerde::deserialize>([23]) -> ([24], [25]); // 1115
 drop<core::array::Span::<core::felt252>>([24]) -> (); // 1116
 enum_match<core::option::Option::<core::bool>>([25]) { fallthrough([26]) 1125([27]) }; // 1117
 branch_align() -> (); // 1118
@@ -1883,7 +1883,7 @@ cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventI
 cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::read@1366([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>);
 core::starknet::SyscallResultTraitImpl::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>::unwrap_syscall@1408([0]: core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>);
 core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@1420([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-core::BoolSerde::deserialize@1432([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
+core::boolean::BoolSerde::deserialize@1432([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into@1489([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased) -> (cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event);
 cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::write@1492([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageBaseAddress, [4]: cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data@1509([0]: cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);

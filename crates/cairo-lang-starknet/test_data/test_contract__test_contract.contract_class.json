@@ -1610,7 +1610,7 @@
       ],
       [
         112,
-        "function_call<user@core::BoolSerde::deserialize>"
+        "function_call<user@core::boolean::BoolSerde::deserialize>"
       ],
       [
         113,
@@ -2076,7 +2076,7 @@
       ],
       [
         22,
-        "core::BoolSerde::deserialize"
+        "core::boolean::BoolSerde::deserialize"
       ],
       [
         23,

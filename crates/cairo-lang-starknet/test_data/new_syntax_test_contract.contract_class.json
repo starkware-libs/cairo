@@ -2114,7 +2114,7 @@
       ],
       [
         186,
-        "function_call<user@core::BoolSerde::deserialize>"
+        "function_call<user@core::boolean::BoolSerde::deserialize>"
       ],
       [
         187,
@@ -2576,7 +2576,7 @@
       ],
       [
         29,
-        "core::BoolSerde::deserialize"
+        "core::boolean::BoolSerde::deserialize"
       ],
       [
         30,

@@ -1979,7 +1979,7 @@
       ],
       [
         182,
-        "function_call<user@core::BoolSerde::deserialize>"
+        "function_call<user@core::boolean::BoolSerde::deserialize>"
       ],
       [
         183,
@@ -2357,7 +2357,7 @@
       ],
       [
         28,
-        "core::BoolSerde::deserialize"
+        "core::boolean::BoolSerde::deserialize"
       ],
       [
         29,

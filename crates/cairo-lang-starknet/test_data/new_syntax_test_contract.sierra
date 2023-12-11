@@ -248,7 +248,7 @@ libfunc rename<core::result::Result::<core::array::Span::<core::felt252>, core::
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>> = enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>;
 libfunc struct_deconstruct<Tuple<core::array::Span::<core::felt252>>> = struct_deconstruct<Tuple<core::array::Span::<core::felt252>>>;
-libfunc function_call<user@core::BoolSerde::deserialize> = function_call<user@core::BoolSerde::deserialize>;
+libfunc function_call<user@core::boolean::BoolSerde::deserialize> = function_call<user@core::boolean::BoolSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::bool>> = enum_match<core::option::Option::<core::bool>>;
 libfunc struct_construct<Tuple<core::bool>> = struct_construct<Tuple<core::bool>>;
 libfunc enum_init<core::panics::PanicResult::<(core::bool,)>, 0> = enum_init<core::panics::PanicResult::<(core::bool,)>, 0>;
@@ -1435,7 +1435,7 @@ enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 branch_align() -> (); // 1097
 struct_deconstruct<Tuple<core::array::Span::<core::felt252>>>([22]) -> ([24]); // 1098
 store_temp<core::array::Span::<core::felt252>>([24]) -> ([27]); // 1099
-function_call<user@core::BoolSerde::deserialize>([27]) -> ([25], [26]); // 1100
+function_call<user@core::boolean::BoolSerde::deserialize>([27]) -> ([25], [26]); // 1100
 drop<core::array::Span::<core::felt252>>([25]) -> (); // 1101
 enum_match<core::option::Option::<core::bool>>([26]) { fallthrough([28]) 1110([29]) }; // 1102
 branch_align() -> (); // 1103
@@ -1981,7 +1981,7 @@ test::counter_contract::EventIsEvent::append_keys_and_data@1347([0]: test::count
 test::StoreIOtherContractDispatcher::read@1397([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>);
 core::starknet::SyscallResultTraitImpl::<test::IOtherContractDispatcher>::unwrap_syscall@1433([0]: core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(test::IOtherContractDispatcher,)>);
 core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@1445([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-core::BoolSerde::deserialize@1457([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
+core::boolean::BoolSerde::deserialize@1457([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
 test::counter_contract::EventCounterDecreasedIntoEvent::into@1514([0]: test::counter_contract::CounterDecreased) -> (test::counter_contract::Event);
 test::StoreIOtherContractDispatcher::write@1517([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageBaseAddress, [4]: test::IOtherContractDispatcher) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 test::test_component::EventIsEvent::append_keys_and_data@1534([0]: test::test_component::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);

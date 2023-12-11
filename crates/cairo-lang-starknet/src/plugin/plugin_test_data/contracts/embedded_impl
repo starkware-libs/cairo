@@ -75,7 +75,7 @@ fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: Un
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImpl::<TContractState>::ret_3(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -101,7 +101,7 @@ fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractSt
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImpl::<TContractState>::ret_identity(ref contract_state, __arg_from_address, __arg_value);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -361,7 +361,7 @@ fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithDestruct::<TContractState, DisallowedDestruct>::ret_3(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -412,7 +412,7 @@ fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithPanicDestruct::<TContractState, DisallowedPanicDestruct>::ret_5(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -620,7 +620,7 @@ fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithDrop::<TContractState, _>::ret_8(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);

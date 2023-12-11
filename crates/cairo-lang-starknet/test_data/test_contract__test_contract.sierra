@@ -164,7 +164,7 @@ libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::te
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 1>;
 libfunc drop<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState> = drop<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState>;
 libfunc store_temp<Unit> = store_temp<Unit>;
-libfunc function_call<user@core::BoolSerde::deserialize> = function_call<user@core::BoolSerde::deserialize>;
+libfunc function_call<user@core::boolean::BoolSerde::deserialize> = function_call<user@core::boolean::BoolSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::bool>> = enum_match<core::option::Option::<core::bool>>;
 libfunc struct_construct<cairo_level_tests::contracts::test_contract::MyType> = struct_construct<cairo_level_tests::contracts::test_contract::MyType>;
 libfunc enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 0> = enum_init<core::option::Option::<cairo_level_tests::contracts::test_contract::MyType>, 0>;
@@ -1330,7 +1330,7 @@ function_call<user@core::Felt252Serde::deserialize>([0]) -> ([1], [2]); // 1067
 enum_match<core::option::Option::<core::felt252>>([2]) { fallthrough([3]) 1085([4]) }; // 1068
 branch_align() -> (); // 1069
 store_temp<core::array::Span::<core::felt252>>([1]) -> ([1]); // 1070
-function_call<user@core::BoolSerde::deserialize>([1]) -> ([5], [6]); // 1071
+function_call<user@core::boolean::BoolSerde::deserialize>([1]) -> ([5], [6]); // 1071
 enum_match<core::option::Option::<core::bool>>([6]) { fallthrough([7]) 1079([8]) }; // 1072
 branch_align() -> (); // 1073
 struct_construct<cairo_level_tests::contracts::test_contract::MyType>([3], [7]) -> ([9]); // 1074
@@ -1846,7 +1846,7 @@ cairo_level_tests::contracts::test_contract::test_contract::Impl::l1_handle@1199
 cairo_level_tests::contracts::test_contract::test_contract::Impl::constructor@1203([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::test_contract::test_contract::ContractState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, ())>);
 cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::InternalContractMemberStateImpl::read@1227([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
 cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::InternalContractMemberStateImpl::write@1261([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, ())>);
-core::BoolSerde::deserialize@1298([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
+core::boolean::BoolSerde::deserialize@1298([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
 cairo_level_tests::contracts::test_contract::IAnotherContractDispatcherImpl::foo@1355([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::test_contract::IAnotherContractDispatcher, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
 cairo_level_tests::contracts::test_contract::IAnotherContractLibraryDispatcherImpl::foo@1438([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::test_contract::IAnotherContractLibraryDispatcher, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
 core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash@1521([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);
