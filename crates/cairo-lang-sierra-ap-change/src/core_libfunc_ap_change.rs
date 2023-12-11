@@ -28,10 +28,12 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use num_traits::Zero;
 
 use crate::ApChange;
 
@@ -214,6 +216,22 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
+        CoreConcreteLibfunc::Range(libfunc) => match libfunc {
+            RangeConcreteLibfunc::ConstrainRange(libfunc) => {
+                assert!(
+                    libfunc.in_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.in_range.lower
+                );
+                assert!(
+                    libfunc.out_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.out_range.lower
+                );
+                vec![ApChange::Known(2), ApChange::Known(7)]
+            }
+        },
+
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)

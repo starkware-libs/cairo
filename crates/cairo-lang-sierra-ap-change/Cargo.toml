@@ -13,6 +13,7 @@ cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
 itertools.workspace = true
 thiserror.workspace = true
+num-traits.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
