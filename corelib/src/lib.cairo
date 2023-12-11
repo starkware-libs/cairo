@@ -97,6 +97,8 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
         bool_to_felt252(self)
     }
 }
+pub mod boolean;
+use boolean::BoolThenSome;
 
 // General purpose implicits.
 pub extern type RangeCheck;
