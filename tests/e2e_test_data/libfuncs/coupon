@@ -1,0 +1,38 @@
+//! > coupon type
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(x: bar::<u8>::Coupon) -> bar::<u8>::Coupon {
+    bar::<u8>();
+    x
+}
+
+fn bar<T>() nopanic {}
+
+//! > casm
+call rel 3;
+ret;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+test::bar::<core::integer::u8>: OrderedHashMap({})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: false, dup: false, zero_sized: true];
+
+libfunc function_call<user@test::bar::<core::integer::u8>> = function_call<user@test::bar::<core::integer::u8>>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+function_call<user@test::bar::<core::integer::u8>>() -> ([1]); // 0
+drop<Unit>([1]) -> (); // 1
+return([0]); // 2
+struct_construct<Unit>() -> ([0]); // 3
+return([0]); // 4
+
+test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> (Coupon<user@test::bar::<core::integer::u8>>);
+test::bar::<core::integer::u8>@3() -> (Unit);
