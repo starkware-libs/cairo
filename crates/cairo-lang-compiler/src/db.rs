@@ -138,11 +138,11 @@ impl RootDatabaseBuilder {
             init_dev_corelib(&mut db, path)
         }
 
-        if let Some(config) = self.project_config.clone() {
+        if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, *config.clone());
 
-            if let Some(corelib) = config.corelib {
-                init_dev_corelib_from_directory(&mut db, corelib)
+            if let Some(corelib) = &config.corelib {
+                init_dev_corelib_from_directory(&mut db, corelib.clone())
             }
         }
 
