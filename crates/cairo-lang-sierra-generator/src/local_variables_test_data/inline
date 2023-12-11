@@ -48,8 +48,8 @@ End:
 
 blk2:
 Statements:
-  (v9: core::felt252) <- core::felt252_add(v0, v0)
   (v6: ()) <- test::revoke_ap()
+  (v9: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk3, {v9 -> v1})
 
@@ -59,7 +59,6 @@ End:
   Return(v1)
 
 //! > local_variables
-v9
 
 //! > ==========================================================================
 
@@ -115,8 +114,8 @@ End:
 
 blk2:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
   (v8: ()) <- test::revoke_ap()
+  (v12: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk3, {v12 -> v1})
 
@@ -127,7 +126,6 @@ End:
   Return(v10)
 
 //! > local_variables
-v12
 
 //! > ==========================================================================
 
@@ -161,11 +159,10 @@ fn revoke_ap() {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v4: ()) <- test::revoke_ap()
   (v1: core::felt252) <- 1u
   (v5: core::felt252) <- core::felt252_add(v0, v1)
-  (v4: ()) <- test::revoke_ap()
 End:
   Return(v5)
 
 //! > local_variables
-v5

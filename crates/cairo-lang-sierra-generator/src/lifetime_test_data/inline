@@ -194,8 +194,8 @@ End:
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
   (v5: ()) <- test::revoke_tempvars()
+  (v6: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk3, {v6 -> v3})
 
@@ -207,13 +207,12 @@ End:
 //! > last_use
 v3: ((BlockId(3), 0), 0)
 v6: ((BlockId(2), 2), 0)
-v0: ((BlockId(2), 0), 1)
+v0: ((BlockId(2), 1), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
+PostStatement((BlockId(2), 0)): v5
 BeginningOfBlock(BlockId(2)): v2
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
 
 //! > ==========================================================================
 

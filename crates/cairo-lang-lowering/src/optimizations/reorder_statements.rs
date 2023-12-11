@@ -25,13 +25,20 @@ use crate::{
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let semantic_db = db.upcast();
-        let bool_not_func_id = db.intern_lowering_function(FunctionLongId::Semantic(
-            corelib::get_core_function_id(semantic_db, "bool_not_impl".into(), vec![]),
-        ));
+
+        let libfunc_by_name =
+            |name: &str| {
+                db.intern_lowering_function(FunctionLongId::Semantic(
+                    corelib::get_core_function_id(semantic_db, name.into(), vec![]),
+                ))
+            };
 
         let ctx = ReorderStatementsContext {
             lowered: &*lowered,
-            moveable_functions: [bool_not_func_id].into_iter().collect(),
+            moveable_functions: ["bool_not_impl", "felt252_add", "felt252_sub"]
+                .into_iter()
+                .map(libfunc_by_name)
+                .collect(),
             statement_to_move: vec![],
         };
         let mut analysis =

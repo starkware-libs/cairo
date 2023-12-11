@@ -31,15 +31,12 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v8: core::felt252) <- core::felt252_add(v0, v0)
-  (v9: core::felt252) <- core::felt252_add(v8, v8)
   (v3: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::felt252_add(v8, v8)
-  (v11: core::felt252) <- core::felt252_add(v8, v9)
   (v6: core::felt252) <- test::revoke_ap()
+  (v8: core::felt252) <- core::felt252_add(v0, v0)
+  (v10: core::felt252) <- core::felt252_add(v8, v8)
   (v12: core::felt252) <- core::felt252_add(v8, v10)
 End:
   Return(v12)
 
 //! > local_variables
-v10, v8, v9

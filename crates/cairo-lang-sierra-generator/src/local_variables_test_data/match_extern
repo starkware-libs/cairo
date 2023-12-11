@@ -128,19 +128,16 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {})
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 2u
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {})
 
 blk3:
 Statements:
-  (v14: core::felt252) <- core::felt252_add(v13, v6)
 End:
   Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk4,
@@ -216,7 +213,6 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
@@ -225,6 +221,7 @@ End:
 
 blk1:
 Statements:
+  (v13: core::felt252) <- core::felt252_add(v0, v0)
   (v14: core::felt252) <- core::felt252_add(v13, v0)
 End:
   Match(match core::felt252_is_zero(v0) {

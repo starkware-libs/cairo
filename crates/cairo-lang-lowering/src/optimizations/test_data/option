@@ -189,7 +189,6 @@ End:
 
 blk3:
 Statements:
-  (v19: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk4, {})
 
@@ -252,20 +251,17 @@ End:
 
 blk1:
 Statements:
-  (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk5, {})
 
 blk2:
 Statements:
   (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk6, {})
 
 blk3:
 Statements:
-  (v19: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk4, {})
 
@@ -273,8 +269,8 @@ blk4:
 Statements:
 End:
   Match(match_enum(v5) {
-    Option::Some(v7) => blk5,
-    Option::None(v10) => blk6,
+    Option::Some(v7) => blk11,
+    Option::None(v10) => blk12,
   })
 
 blk5:
@@ -315,6 +311,16 @@ blk10:
 Statements:
 End:
   Return(v18)
+
+blk11:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk12:
+Statements:
+End:
+  Goto(blk6, {})
 
 //! > ==========================================================================
 
@@ -375,13 +381,13 @@ End:
 
 blk4:
 Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
+  (v6: core::felt252) <- 3u
+  (v14: core::felt252) <- core::felt252_add(v5, v6)
   (v8: core::option::Option::<core::felt252>) <- Option::Some(v14)
 End:
   Goto(blk7, {v8 -> v12})
@@ -475,13 +481,13 @@ End:
 
 blk4:
 Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
+  (v6: core::felt252) <- 3u
+  (v14: core::felt252) <- core::felt252_add(v5, v6)
 End:
   Goto(blk8, {v14 -> v17})
 

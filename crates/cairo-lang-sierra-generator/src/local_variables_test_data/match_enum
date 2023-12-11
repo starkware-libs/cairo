@@ -57,7 +57,6 @@ blk0 (root):
 Statements:
   (v0: test::MyEnum) <- test::bar()
   (v2: core::felt252) <- test::non_literal()
-  (v1: core::felt252) <- 2u
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,
@@ -80,14 +79,12 @@ End:
 
 blk3:
 Statements:
-  (v15: core::felt252) <- core::felt252_add(v2, v2)
-  (v17: core::felt252) <- core::felt252_add(v1, v1)
   (v12: core::felt252) <- test::revoke_ap()
 End:
   Return(v9)
 
 //! > local_variables
-v9, v2, v3
+v9, v3
 
 //! > ==========================================================================
 
@@ -145,7 +142,6 @@ enum MyEnum {
 Parameters: v0: test::MyEnum, v1: core::felt252
 blk0 (root):
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v1, v1)
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,
@@ -161,8 +157,7 @@ End:
 
 blk2:
 Statements:
-  (v18: core::felt252) <- core::felt252_add(v6, v6)
-  (v22: core::felt252) <- core::felt252_add(v18, v6)
+  (v17: core::felt252) <- core::felt252_add(v1, v1)
   (v19: core::felt252) <- core::felt252_add(v17, v1)
 End:
   Match(match_enum(v0) {
@@ -177,8 +172,6 @@ End:
 
 blk4:
 Statements:
-  (v20: core::felt252) <- core::felt252_add(v12, v12)
-  (v23: core::felt252) <- core::felt252_add(v20, v12)
 End:
   Goto(blk5, {})
 
