@@ -18,6 +18,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::{Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
+use lowering::optimizations::config::OptimizationConfig;
 use once_cell::sync::Lazy;
 use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -62,6 +63,12 @@ impl SierraGenDatabaseForTesting {
         res.set_macro_plugins(suite.plugins);
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         res.set_analyzer_plugins(suite.analyzer_plugins);
+
+        // Disable moving of functions to simplify tests writing.
+        res.set_optimization_config(Arc::new(OptimizationConfig {
+            moveable_functions: [].into_iter().collect(),
+        }));
+
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
