@@ -623,7 +623,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 
 /// For statement lists, returns if we want these as a single line.
 fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
-    // Currently, we only want single line blocks for match arms, with a single statments, with no
+    // Currently, we only want single line blocks for match arms, with a single statements, with no
     // single line comments.
     grandparent_kind(db, node) == Some(SyntaxKind::MatchArm)
         && db.get_children(node.clone()).len() == 1

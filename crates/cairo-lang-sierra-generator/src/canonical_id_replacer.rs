@@ -15,7 +15,7 @@ pub struct CanonicalReplacer {
     libfunc_ids: HashMap<ConcreteLibfuncId, u64>,
 }
 
-/// A replacer that replace the Ids in the program with canonical onces.
+/// A replacer that replace the Ids in the program with canonical ones.
 /// The canonical ids are defined by the order of the declaration in the program.
 /// The first type_id is 0, the second type id is 1, etc.
 impl CanonicalReplacer {

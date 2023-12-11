@@ -42,8 +42,16 @@ pub struct TxInfo {
     pub nonce: felt252,
 }
 
+<<<<<<< HEAD
 pub fn get_execution_info() -> Box<ExecutionInfo> {
     get_execution_info_syscall().unwrap_syscall()
+||||||| 46db16633
+fn get_execution_info() -> Box<ExecutionInfo> {
+    get_execution_info_syscall().unwrap_syscall()
+=======
+fn get_execution_info() -> Box<v2::ExecutionInfo> {
+    starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
+>>>>>>> origin/dev-v2.4.0
 }
 
 pub fn get_caller_address() -> ContractAddress {
@@ -58,7 +66,13 @@ pub fn get_block_info() -> Box<BlockInfo> {
     get_execution_info().unbox().block_info
 }
 
+<<<<<<< HEAD
 pub fn get_tx_info() -> Box<TxInfo> {
+||||||| 46db16633
+fn get_tx_info() -> Box<TxInfo> {
+=======
+fn get_tx_info() -> Box<v2::TxInfo> {
+>>>>>>> origin/dev-v2.4.0
     get_execution_info().unbox().tx_info
 }
 
@@ -113,9 +127,9 @@ pub mod v2 {
         // extra data to send to the paymaster.
         paymaster_data: Span<felt252>,
         // The data availability mode for the nonce.
-        nonce_data_availabilty_mode: u32,
+        nonce_data_availability_mode: u32,
         // The data availability mode for the account balance from which fee will be taken.
-        fee_data_availabilty_mode: u32,
+        fee_data_availability_mode: u32,
         // If nonempty, will contain the required data for deploying and initializing an account
         // contract: its class hash, address salt and constructor calldata.
         account_deployment_data: Span<felt252>,

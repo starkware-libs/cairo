@@ -540,7 +540,7 @@ error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an im
 
 //! > ==========================================================================
 
-//! > Test embeddable impl with exisiting drop impl..
+//! > Test embeddable impl with existing drop impl.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: true)

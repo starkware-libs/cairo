@@ -1,5 +1,5 @@
 use core::array::ArrayTrait;
-use core::math::{u256_mul_mod_n, inv_mod};
+use core::math::{u256_mul_mod_n, u256_inv_mod};
 use core::option::OptionTrait;
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 use core::traits::{Into, TryInto};
@@ -65,7 +65,7 @@ pub fn is_valid_signature<
     }
 
     let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let s_inv = inv_mod(s.try_into().unwrap(), n_nz).unwrap();
+    let s_inv = u256_inv_mod(s.try_into().unwrap(), n_nz).unwrap().into();
     let u1 = u256_mul_mod_n(msg_hash, s_inv, n_nz);
     let u2 = u256_mul_mod_n(r, s_inv, n_nz);
 
@@ -98,7 +98,7 @@ pub fn recover_public_key<
     // where the divisions by `r` are modulo `N` (the size of the curve).
 
     let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let r_inv = inv_mod(r.try_into().unwrap(), n_nz).unwrap();
+    let r_inv = u256_inv_mod(r.try_into().unwrap(), n_nz).unwrap().into();
 
     let u1 = u256_mul_mod_n(msg_hash, r_inv, n_nz);
     let minus_u1 = secp256_ec_negate_scalar::<Secp256Point>(u1);
