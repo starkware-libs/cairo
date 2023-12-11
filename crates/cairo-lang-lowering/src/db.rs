@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
@@ -15,10 +16,12 @@ use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::ids::FunctionId;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
+use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
@@ -268,6 +271,19 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function: ConcreteSCCRepresentative,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
+
+    /// Internal query for reorder_statements to cache the function ids that can be moved.
+    #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
+    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<FunctionId>>;
+
+    #[salsa::input]
+    fn optimization_config(&self) -> Arc<OptimizationConfig>;
+}
+
+pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
+    db.set_optimization_config(Arc::new(OptimizationConfig {
+        moveable_functions: vec!["bool_not_impl".to_string()],
+    }));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

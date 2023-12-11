@@ -9,7 +9,7 @@ use cairo_lang_filesystem::db::{
     FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
@@ -48,6 +48,7 @@ impl RootDatabase {
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_lowering_group(&mut res);
         res.set_macro_plugins(plugins);
         res.set_inline_macro_plugins(inline_macro_plugins.into());
         res.set_analyzer_plugins(analyzer_plugins);
