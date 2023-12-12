@@ -6,7 +6,7 @@ use core::traits::{Into, TryInto};
 use core::integer::U256TryIntoNonZero;
 
 /// Secp256{k/r}1 ECDSA signature.
-#[derive(Copy, Drop, PartialEq, Serde, starknet::Store, Hash)]
+#[derive(Copy, Drop, Debug, PartialEq, Serde, starknet::Store, Hash)]
 pub struct Signature {
     pub r: u256,
     pub s: u256,
