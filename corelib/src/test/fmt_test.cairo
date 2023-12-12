@@ -65,4 +65,9 @@ fn test_format_debug() {
         'bad tuple fmt'
     );
     assert(format!("{:?}", core::box::BoxTrait::new(1)) == "BoxTrait::new(1)", 'bad box fmt');
+    assert(format!("{:x?}", 10) == "a", 'bad basic hex fmt');
+    assert(
+        format!("{:x?}", EnumExample::FeltValue(40)) == "EnumExample::FeltValue(28)",
+        'bad complex hex fmt'
+    );
 }
