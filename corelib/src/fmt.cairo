@@ -173,3 +173,16 @@ impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
         write!(f, "]")
     }
 }
+
+/// Impls for `Debug` for types that can be converted into `felt252` using the `Into` trait.
+/// Usage example:
+/// ```ignore
+/// impl MyTypeDebug = core::fmt::into_felt252_based::DebugImpl<MyType>;`
+/// ```
+pub mod into_felt252_based {
+    pub impl DebugImpl<T, +Into<T, felt252>, +Copy<T>> of core::fmt::Debug<T> {
+        fn fmt(self: @T, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+            core::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
+        }
+    }
+}
