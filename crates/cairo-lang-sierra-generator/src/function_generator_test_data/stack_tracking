@@ -62,6 +62,10 @@ fn get_val() -> (felt252, felt252) {
 fn test_func(a: felt252, b: felt252) {}
 
 //! > semantic_diagnostics
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:10
+    let (a, b) = tuple;
+         ^
 
 //! > lowering_diagnostics
 

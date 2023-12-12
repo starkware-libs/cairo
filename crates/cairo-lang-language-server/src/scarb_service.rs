@@ -2,12 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-<<<<<<< HEAD
 use cairo_lang_filesystem::db::CrateSettings;
-||||||| 46db16633
-=======
-use cairo_lang_filesystem::db::Edition;
->>>>>>> origin/dev-v2.4.0
 use cairo_lang_filesystem::ids::CrateLongId;
 use lsp::Url;
 use scarb_metadata::Metadata;
@@ -78,13 +73,7 @@ impl ScarbService {
     pub async fn crate_source_paths(
         &self,
         root_path: PathBuf,
-<<<<<<< HEAD
     ) -> Result<Vec<(CrateLongId, PathBuf, CrateSettings)>> {
-||||||| 46db16633
-    ) -> Result<Vec<(CrateLongId, PathBuf)>> {
-=======
-    ) -> Result<Vec<(CrateLongId, PathBuf, Edition)>> {
->>>>>>> origin/dev-v2.4.0
         let metadata = self
             .scarb_metadata(root_path)
             .await
@@ -97,7 +86,6 @@ impl ScarbService {
                 let source_path: PathBuf = component.source_path.into();
                 if source_path.exists() {
                     let crate_id = CrateLongId::Real(component.name.as_str().into());
-<<<<<<< HEAD
                     let edition = metadata
                         .packages
                         .iter()
@@ -115,22 +103,6 @@ impl ScarbService {
                         // TODO(ilya): Get experimental features from Scarb.
                         CrateSettings { edition, experimental_features: Default::default() },
                     ))
-||||||| 46db16633
-                    Some((crate_id, source_path))
-=======
-                    let edition = metadata
-                        .packages
-                        .iter()
-                        .find(|package| package.id == component.package)
-                        .and_then(|package| {
-                            package
-                                .edition
-                                .clone()
-                                .map(|edition| serde_json::from_value(edition.into()).unwrap())
-                        })
-                        .unwrap_or_default();
-                    Some((crate_id, source_path, edition))
->>>>>>> origin/dev-v2.4.0
                 } else {
                     None
                 }

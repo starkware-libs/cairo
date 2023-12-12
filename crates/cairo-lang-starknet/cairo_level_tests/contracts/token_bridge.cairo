@@ -8,13 +8,8 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
-<<<<<<< HEAD
     use core::num::traits::Zero;
     use starknet::SyscallResultTrait;
-||||||| 46db16633
-=======
-    use core::num::traits::Zero;
->>>>>>> origin/dev-v2.4.0
     use starknet::{
         ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };

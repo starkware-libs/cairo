@@ -62,15 +62,7 @@ pub(crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
 
 impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
-<<<<<<< HEAD
-// TODO(yuval): implement all `into`s using `integer::upcast(self)`.
 pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
-||||||| 46db16633
-// TODO(yuval): implement all `into`s using `integer::upcast(self)`.
-impl U8IntoBytes31 of Into<u8, bytes31> {
-=======
-impl U8IntoBytes31 of Into<u8, bytes31> {
->>>>>>> origin/dev-v2.4.0
     fn into(self: u8) -> bytes31 {
         core::integer::upcast(self)
     }

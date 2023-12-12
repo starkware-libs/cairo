@@ -127,7 +127,7 @@ fn test_dict_of_nullable() {
 #[test]
 fn test_bool_dict() {
     let mut bool_dict: Felt252Dict<bool> = Default::default();
-    let squashed_dict = bool_dict.squash();
+    let _squashed_dict = bool_dict.squash();
     let mut bool_dict: Felt252Dict<bool> = Default::default();
     assert(!bool_dict.get(0), 'default_val != false');
     bool_dict.insert(1, true);
@@ -144,7 +144,7 @@ fn test_array_dict() {
     let (entry, value) = dict.entry(10);
     assert_eq(@value.deref(), @array![4, 5], 'dict[10] == [4, 5]');
     dict = entry.finalize(nullable::null());
-    let (entry, value) = dict.entry(10);
+    let (_entry, value) = dict.entry(10);
     assert(value.is_null(), 'dict[10] == null');
 }
 
