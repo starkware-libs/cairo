@@ -29,7 +29,7 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
     }
 }
 
-pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
+pub extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
 extern fn u128_overflowing_add(
     lhs: u128, rhs: u128
@@ -88,7 +88,7 @@ fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeChe
 }
 
 
-fn u128_checked_add(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
+pub fn u128_checked_add(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_add(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
         Result::Err(_r) => Option::None,
@@ -108,7 +108,7 @@ impl U128AddEq of AddEq<u128> {
 }
 
 #[panic_with('u128_sub Overflow', u128_sub)]
-fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
+pub fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(lhs, rhs) {
         Result::Ok(r) => Option::Some(r),
         Result::Err(_r) => Option::None,
