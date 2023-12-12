@@ -1,5 +1,5 @@
 #[must_use]
-#[derive(Copy, Drop, Serde, PartialEq)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
 pub enum Option<T> {
     Some: T,
     None,
