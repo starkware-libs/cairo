@@ -85,32 +85,61 @@ impl DebugTuple0 of Debug<()> {
     }
 }
 
-impl DebugTuple1<E0, +Debug<E0>> of Debug<(E0,)> {
+impl DebugTuple1<E0, impl E0Debug: Debug<E0>> of Debug<(E0,)> {
     fn fmt(self: @(E0,), ref f: Formatter) -> Result<(), Error> {
         let (e0,) = self;
-        write!(f, "({e0:?},)")
+        write!(f, "(")?;
+        E0Debug::fmt(e0, ref f)?;
+        write!(f, ",)")
     }
 }
 
-impl DebugTuple2<E0, E1, +Debug<E0>, +Debug<E1>> of Debug<(E0, E1)> {
+impl DebugTuple2<E0, E1, impl E0Debug: Debug<E0>, impl E1Debug: Debug<E1>> of Debug<(E0, E1)> {
     fn fmt(self: @(E0, E1), ref f: Formatter) -> Result<(), Error> {
         let (e0, e1) = self;
-        write!(f, "({e0:?}, {e1:?})")
+        write!(f, "(")?;
+        E0Debug::fmt(e0, ref f)?;
+        write!(f, ", ")?;
+        E1Debug::fmt(e1, ref f)?;
+        write!(f, ")")
     }
 }
 
-impl DebugTuple3<E0, E1, E2, +Debug<E0>, +Debug<E1>, +Debug<E2>> of Debug<(E0, E1, E2)> {
+impl DebugTuple3<
+    E0, E1, E2, impl E0Debug: Debug<E0>, impl E1Debug: Debug<E1>, impl E2Debug: Debug<E2>
+> of Debug<(E0, E1, E2)> {
     fn fmt(self: @(E0, E1, E2), ref f: Formatter) -> Result<(), Error> {
         let (e0, e1, e2) = self;
-        write!(f, "({e0:?}, {e1:?}, {e2:?})")
+        write!(f, "(")?;
+        E0Debug::fmt(e0, ref f)?;
+        write!(f, ", ")?;
+        E1Debug::fmt(e1, ref f)?;
+        write!(f, ", ")?;
+        E2Debug::fmt(e2, ref f)?;
+        write!(f, ")")
     }
 }
 
 impl DebugTuple4<
-    E0, E1, E2, E3, +Debug<E0>, +Debug<E1>, +Debug<E2>, +Debug<E3>
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0Debug: Debug<E0>,
+    impl E1Debug: Debug<E1>,
+    impl E2Debug: Debug<E2>,
+    impl E3Debug: Debug<E3>
 > of Debug<(E0, E1, E2, E3)> {
     fn fmt(self: @(E0, E1, E2, E3), ref f: Formatter) -> Result<(), Error> {
         let (e0, e1, e2, e3) = self;
-        write!(f, "({e0:?}, {e1:?}, {e2:?}, {e3:?})")
+        write!(f, "(")?;
+        E0Debug::fmt(e0, ref f)?;
+        write!(f, ", ")?;
+        E1Debug::fmt(e1, ref f)?;
+        write!(f, ", ")?;
+        E2Debug::fmt(e2, ref f)?;
+        write!(f, ", ")?;
+        E3Debug::fmt(e3, ref f)?;
+        write!(f, ")")
     }
 }
