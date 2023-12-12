@@ -296,6 +296,10 @@ pub fn core_libfunc_cost(
         }
         Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ConstCost::default().into()],
+            EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => match libfunc.num_variants {
+                1 | 2 => vec![ConstCost::default().into()],
+                _ => vec![ConstCost::steps(1).into()],
+            },
             EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig) => {
                 let n = sig.signature.branch_signatures.len();
                 match n {
