@@ -56,3 +56,15 @@ impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
         null()
     }
 }
+
+impl NullableDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Nullable<T>> {
+    fn fmt(self: @Nullable<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        if self.is_null() {
+            write!(f, "null()")
+        } else {
+            write!(f, "NullableTrait::new(")?;
+            TDebug::fmt(self.as_snapshot().deref(), ref f)?;
+            write!(f, ")")
+        }
+    }
+}
