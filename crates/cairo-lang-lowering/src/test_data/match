@@ -765,3 +765,34 @@ error: Enum variant `VariantId(test::Three)` not covered.
 
 //! > lowering_flat
 Parameters: v0: test::A
+
+//! > ==========================================================================
+
+//! > Test match on bool literals.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: bool) -> felt252 {
+  match a {
+    true => 2,
+    false => 1,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:3:5
+    true => 2,
+    ^**^
+
+//! > lowering_flat
+Parameters: v0: core::bool

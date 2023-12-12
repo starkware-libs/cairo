@@ -35,8 +35,8 @@ use super::inference::infers::InferenceEmbeddings;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternMissing, PatternOtherwise, PatternTuple,
-    PatternVariable,
+    Pattern, PatternBoolTerminal, PatternEnumVariant, PatternLiteral, PatternMissing,
+    PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
@@ -1374,6 +1374,28 @@ fn maybe_compute_pattern_semantic(
                 field_patterns,
                 ty,
                 stable_ptr: pattern_tuple.stable_ptr(),
+            })
+        }
+        ast::Pattern::False(pattern_false) => {
+            let enum_expr = extract_matches!(
+                false_literal_expr(ctx, pattern_false.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+            Pattern::BoolTerminal(PatternBoolTerminal {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_false.stable_ptr().into(),
+                ty: enum_expr.ty,
+            })
+        }
+        ast::Pattern::True(pattern_false) => {
+            let enum_expr = extract_matches!(
+                true_literal_expr(ctx, pattern_false.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+            Pattern::BoolTerminal(PatternBoolTerminal {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_false.stable_ptr().into(),
+                ty: enum_expr.ty,
             })
         }
     };

@@ -221,7 +221,7 @@ impl BlockUsages {
     fn handle_pattern(arena: &Arena<semantic::Pattern>, pattern: PatternId, current: &mut Usage) {
         let pattern = &arena[pattern];
         match pattern {
-            Pattern::Literal(_) | Pattern::StringLiteral(_) => {}
+            Pattern::BoolTerminal(_) | Pattern::Literal(_) | Pattern::StringLiteral(_) => {}
             Pattern::Variable(pattern) => {
                 current.introductions.insert(VarId::Local(pattern.var.id));
             }

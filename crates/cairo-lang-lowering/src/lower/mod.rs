@@ -364,6 +364,7 @@ fn lower_single_pattern(
     match pattern {
         semantic::Pattern::Literal(_)
         | semantic::Pattern::StringLiteral(_)
+        | semantic::Pattern::BoolTerminal(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
                 ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedPattern),

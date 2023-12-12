@@ -20,6 +20,7 @@ use crate::{semantic, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVar
 pub enum Pattern {
     Literal(PatternLiteral),
     StringLiteral(PatternStringLiteral),
+    BoolTerminal(PatternBoolTerminal),
     Variable(PatternVariable),
     Struct(PatternStruct),
     Tuple(PatternTuple),
@@ -38,6 +39,7 @@ impl Pattern {
             Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
             Pattern::Missing(pattern_missing) => pattern_missing.ty,
+            Pattern::BoolTerminal(pattern_bool) => pattern_bool.ty,
         }
     }
 
@@ -63,7 +65,8 @@ impl Pattern {
             Pattern::Literal(_)
             | Pattern::StringLiteral(_)
             | Pattern::Otherwise(_)
-            | Pattern::Missing(_) => vec![],
+            | Pattern::Missing(_)
+            | Pattern::BoolTerminal(_) => vec![],
         }
     }
 
@@ -77,6 +80,7 @@ impl Pattern {
             Pattern::EnumVariant(pattern) => pattern.stable_ptr.into(),
             Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
             Pattern::Missing(pattern) => pattern.stable_ptr,
+            Pattern::BoolTerminal(pattern) => pattern.stable_ptr,
         }
     }
 }
@@ -94,6 +98,16 @@ pub struct PatternLiteral {
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternStringLiteral {
     pub string_literal: ExprStringLiteral,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct PatternBoolTerminal {
+    pub variant: semantic::ConcreteVariant,
+    pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,
