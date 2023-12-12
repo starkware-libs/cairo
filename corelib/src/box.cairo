@@ -25,3 +25,11 @@ pub impl BoxImpl<T> of BoxTrait<T> {
         box_forward_snapshot(self)
     }
 }
+
+impl BoxDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Box<T>> {
+    fn fmt(self: @Box<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        write!(f, "BoxTrait::new(")?;
+        TDebug::fmt(self.as_snapshot().unbox(), ref f)?;
+        write!(f, ")")
+    }
+}
