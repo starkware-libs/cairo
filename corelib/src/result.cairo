@@ -3,7 +3,7 @@ use core::serde::Serde;
 use core::array::SpanTrait;
 
 #[must_use]
-#[derive(Copy, Drop, Serde, PartialEq)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
 pub enum Result<T, E> {
     Ok: T,
     Err: E,
