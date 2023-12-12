@@ -2393,13 +2393,7 @@
       ],
       [
         151,
-<<<<<<< HEAD
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>"
-||||||| 46db16633
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
-=======
         "struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>"
->>>>>>> origin/dev-v2.4.0
       ],
       [
         152,

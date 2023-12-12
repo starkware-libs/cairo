@@ -945,14 +945,8 @@ pub fn find_candidates_at_context(
 /// Checks if an impl of a trait function with a given self_ty exists.
 /// This function does not change the state of the inference context.
 pub fn can_infer_impl_by_self(
-<<<<<<< HEAD
     ctx: &ComputationContext<'_>,
     inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
-||||||| 46db16633
-    ctx: &mut ComputationContext<'_>,
-=======
-    ctx: &ComputationContext<'_>,
->>>>>>> origin/dev-v2.4.0
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,

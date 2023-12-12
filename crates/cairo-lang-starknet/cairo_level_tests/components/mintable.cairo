@@ -6,15 +6,8 @@ pub trait MintTrait<TContractState> {
 }
 
 #[starknet::component]
-<<<<<<< HEAD
 pub mod mintable {
     use core::num::traits::Zero;
-||||||| 46db16633
-mod mintable {
-=======
-mod mintable {
-    use core::num::traits::Zero;
->>>>>>> origin/dev-v2.4.0
     use starknet::{ContractAddress, contract_address_const};
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
