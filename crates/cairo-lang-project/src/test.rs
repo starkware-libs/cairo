@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperementalFeaturesConfig};
+use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
@@ -17,21 +17,21 @@ fn test_serde() {
         crates_config: AllCratesConfig {
             global: CrateSettings {
                 edition: Default::default(),
-                experimental_features: ExperementalFeaturesConfig::default(),
+                experimental_features: ExperimentalFeaturesConfig::default(),
             },
             override_map: [
                 (
                     "crate1".into(),
                     CrateSettings {
                         edition: Edition::V2023_10,
-                        experimental_features: ExperementalFeaturesConfig::default(),
+                        experimental_features: ExperimentalFeaturesConfig::default(),
                     },
                 ),
                 (
                     "crate3".into(),
                     CrateSettings {
                         edition: Default::default(),
-                        experimental_features: ExperementalFeaturesConfig { negative_impls: true },
+                        experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
                     },
                 ),
             ]
