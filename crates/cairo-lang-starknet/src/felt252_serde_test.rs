@@ -35,12 +35,8 @@ fn test_felt252_serde(example_contract_path: &str) {
     let dummy_compiler_version_id = compiler_version::VersionId { major: 2, minor: 0, patch: 0 };
     pretty_assertions::assert_eq!(
         sierra_from_felt252s(
-            &sierra_to_felt252s(
-                dummy_sierra_version_id.clone(),
-                dummy_compiler_version_id.clone(),
-                &sierra
-            )
-            .expect("Serialization failed.")
+            &sierra_to_felt252s(dummy_sierra_version_id, dummy_compiler_version_id, &sierra)
+                .expect("Serialization failed.")
         )
         .expect("Deserialization failed."),
         (dummy_sierra_version_id, dummy_compiler_version_id, sierra)

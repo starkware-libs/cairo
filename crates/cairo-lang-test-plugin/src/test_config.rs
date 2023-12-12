@@ -169,6 +169,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
     if name != "expected" {
         return None;
     }
+
     match value {
         ast::Expr::Tuple(panic_exprs) => {
             let mut panic_bytes = Vec::new();

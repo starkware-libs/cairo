@@ -23,7 +23,13 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
+<<<<<<< HEAD
     init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
+||||||| 46db16633
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx,
+=======
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
+>>>>>>> origin/dev-v2.4.0
     PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
@@ -1303,13 +1309,28 @@ fn nearest_semantic_pat(
     }
 }
 
+<<<<<<< HEAD
 fn update_crate_roots(
     db: &mut dyn SemanticGroup,
     source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
 ) {
+||||||| 46db16633
+fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId, PathBuf)>) {
+=======
+fn update_crate_roots(
+    db: &mut dyn SemanticGroup,
+    source_paths: Vec<(CrateLongId, PathBuf, Edition)>,
+) {
+>>>>>>> origin/dev-v2.4.0
     let source_paths = source_paths
         .into_iter()
+<<<<<<< HEAD
         .filter_map(|(crate_long_id, source_path, crate_settings)| {
+||||||| 46db16633
+        .filter_map(|(crate_long_id, source_path)| {
+=======
+        .filter_map(|(crate_long_id, source_path, edition)| {
+>>>>>>> origin/dev-v2.4.0
             let file_stem =
                 source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
 
@@ -1322,16 +1343,34 @@ fn update_crate_roots(
             match (crate_root, file_stem) {
                 (Some(crate_root), Some(file_stem)) => {
                     let crate_id = db.intern_crate(crate_long_id);
+<<<<<<< HEAD
                     Some((crate_id, crate_root, crate_settings, file_stem))
+||||||| 46db16633
+                    Some((crate_id, crate_root, file_stem))
+=======
+                    Some((crate_id, crate_root, edition, file_stem))
+>>>>>>> origin/dev-v2.4.0
                 }
                 _ => None,
             }
         })
         .collect::<Vec<_>>();
 
+<<<<<<< HEAD
     for (crate_id, crate_root, settings, _file_stem) in source_paths.clone() {
+||||||| 46db16633
+    for (crate_id, crate_root, _file_stem) in source_paths.clone() {
+=======
+    for (crate_id, crate_root, edition, _file_stem) in source_paths.clone() {
+>>>>>>> origin/dev-v2.4.0
         let crate_root = Directory::Real(crate_root);
+<<<<<<< HEAD
         db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, settings }));
+||||||| 46db16633
+        db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(crate_root)));
+=======
+        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, edition }));
+>>>>>>> origin/dev-v2.4.0
     }
 
     let source_paths = source_paths

@@ -296,14 +296,20 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         let is_empty = variant_types.is_empty();
         let branch_signatures = variant_types
             .into_iter()
-            .map(|ty| BranchSignature {
-                vars: vec![OutputVarInfo {
-                    ty,
-                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
-                }],
-                ap_change: SierraApChange::Known { new_vars_only: true },
+            .map(|ty| {
+                Ok(BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: ty.clone(),
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                })
             })
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![enum_type.into()],
@@ -334,8 +340,14 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
             .map(|ty| {
                 Ok(BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
-                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        ty: snapshot_ty(context, ty.clone())?,
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            // All memory of the deconstruction would have the same lifetime as the
+                            // first param - as it is its deconstruction.
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
                 })
