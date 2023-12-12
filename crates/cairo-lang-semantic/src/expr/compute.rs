@@ -1259,7 +1259,7 @@ fn maybe_compute_pattern_semantic(
                 variant: concrete_variant,
                 inner_pattern,
                 ty,
-                stable_ptr: enum_pattern.stable_ptr(),
+                stable_ptr: enum_pattern.stable_ptr().into(),
             })
         }
         ast::Pattern::Path(path) => {
@@ -1407,6 +1407,30 @@ fn maybe_compute_pattern_semantic(
                 field_patterns,
                 ty,
                 stable_ptr: pattern_tuple.stable_ptr(),
+            })
+        }
+        ast::Pattern::False(pattern_false) => {
+            let enum_expr = extract_matches!(
+                false_literal_expr(ctx, pattern_false.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+            Pattern::EnumVariant(PatternEnumVariant {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_false.stable_ptr().into(),
+                ty,
+                inner_pattern: None,
+            })
+        }
+        ast::Pattern::True(pattern_true) => {
+            let enum_expr = extract_matches!(
+                true_literal_expr(ctx, pattern_true.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+            Pattern::EnumVariant(PatternEnumVariant {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_true.stable_ptr().into(),
+                ty,
+                inner_pattern: None,
             })
         }
     };
