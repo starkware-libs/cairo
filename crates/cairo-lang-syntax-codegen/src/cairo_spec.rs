@@ -232,6 +232,8 @@ pub fn get_spec() -> Vec<Node> {
     .add_enum(EnumBuilder::new("Pattern")
         .node_with_explicit_kind("Underscore", "TerminalUnderscore")
         .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+        .node_with_explicit_kind("False", "TerminalFalse")
+        .node_with_explicit_kind("True", "TerminalTrue")
         .node_with_explicit_kind("ShortString", "TerminalShortString")
         .node_with_explicit_kind("String", "TerminalString")
         .node("Identifier")
