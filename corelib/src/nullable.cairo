@@ -29,9 +29,11 @@ pub impl NullableImpl<T> of NullableTrait<T> {
             FromNullableResult::NotNull(value) => value.unbox(),
         }
     }
+    #[must_use]
     fn new(value: T) -> Nullable<T> {
         nullable_from_box(BoxTrait::new(value))
     }
+    #[must_use]
     fn is_null(self: @Nullable<T>) -> bool {
         match match_nullable(self.as_snapshot()) {
             FromNullableResult::Null => true,
@@ -45,6 +47,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
 
 impl NullableDefault<T> of Default<Nullable<T>> {
     #[inline(always)]
+    #[must_use]
     fn default() -> Nullable<T> nopanic {
         null()
     }
@@ -52,6 +55,7 @@ impl NullableDefault<T> of Default<Nullable<T>> {
 
 impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
     #[inline(always)]
+    #[must_use]
     fn zero_default() -> Nullable<T> nopanic {
         null()
     }
