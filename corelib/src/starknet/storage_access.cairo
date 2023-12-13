@@ -9,25 +9,25 @@ use starknet::{
 use core::serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type StorageAddress;
+pub extern type StorageAddress;
 
 #[derive(Copy, Drop)]
-extern type StorageBaseAddress;
+pub extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
-extern fn storage_base_address_from_felt252(
+pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
-extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
-extern fn storage_address_from_base_and_offset(
+pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
 
-extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
+pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
-extern fn storage_address_try_from_felt252(
+pub(crate) extern fn storage_address_try_from_felt252(
     address: felt252
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 
@@ -54,7 +54,7 @@ impl StorageAddressSerde of Serde<StorageAddress> {
 }
 
 /// Trait for types that can be used as a value in Starknet storage variables.
-trait Store<T> {
+pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     /// Writes a value to storage to domain `address_domain` and base address `base`.
@@ -74,7 +74,7 @@ trait Store<T> {
 
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.
-trait StorePacking<T, PackedT> {
+pub trait StorePacking<T, PackedT> {
     /// Packs a value of type `T` into a value of type `PackedT`.
     fn pack(value: T) -> PackedT;
     /// Unpacks a value of type `PackedT` into a value of type `T`.
@@ -513,7 +513,6 @@ impl TupleSize4Store<
     }
 }
 
-
 impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
@@ -634,7 +633,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(x) => { Store::write(address_domain, base, 0)?; }
+            Option::None(_x) => { Store::write(address_domain, base, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }

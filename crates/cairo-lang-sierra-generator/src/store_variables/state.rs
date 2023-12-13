@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 };
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 
 use super::known_stack::KnownStack;
 
@@ -161,10 +161,8 @@ impl VariablesState {
     /// Pops the state of `var` from self.variables and returns it.
     pub fn pop_var_state(&mut self, var: &sierra::ids::VarId) -> VarState {
         match self.variables.entry(var.clone()) {
-            indexmap::map::Entry::Occupied(mut e) => {
-                std::mem::replace(e.get_mut(), VarState::Removed)
-            }
-            indexmap::map::Entry::Vacant(_) => {
+            Entry::Occupied(mut e) => std::mem::replace(e.get_mut(), VarState::Removed),
+            Entry::Vacant(_) => {
                 unreachable!("Unknown state for variable `{var}`.")
             }
         }

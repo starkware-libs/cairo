@@ -11,6 +11,7 @@ use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
+    use starknet::SyscallResultTrait;
     use core::traits::Into;
     use core::array::ArrayTrait;
 
@@ -26,15 +27,17 @@ mod contract_with_messages_sent_to_l1 {
         self.value.write(0);
     }
 
-    #[external(v0)]
+    #[abi(per_item)]
     #[generate_trait]
-    impl IContractWithMessagesSentToL1Impl of IContractWithMessagesSentToL1 {
+    pub impl IContractWithMessagesSentToL1Impl of IContractWithMessagesSentToL1 {
+        #[external(v0)]
         fn send_message_to_l1(ref self: ContractState) {
             let value_ = self.value.read();
 
             starknet::send_message_to_l1_syscall(
                 to_address: value_.into(), payload: generate_payload(n: value_).span()
-            );
+            )
+                .unwrap_syscall();
             self.value.write(value_ + 1);
         }
     }
@@ -104,8 +107,8 @@ fn test_pop_l2_to_l1_message() {
     let mut to_address = 1234;
     let mut payload = array![2345];
 
-    starknet::send_message_to_l1_syscall(to_address, payload.span());
-    starknet::send_message_to_l1_syscall(to_address, payload.span());
+    starknet::send_message_to_l1_syscall(to_address, payload.span()).unwrap_syscall();
+    starknet::send_message_to_l1_syscall(to_address, payload.span()).unwrap_syscall();
 
     let (to_address, payload) = starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
     assert_eq!(payload.len(), 1);

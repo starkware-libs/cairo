@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::LocalVarId;
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use smol_str::SmolStr;
 
 pub use super::expr::objects::*;
@@ -53,6 +54,11 @@ pub struct Parameter {
     #[dont_rewrite]
     pub stable_ptr: ast::TerminalIdentifierPtr,
 }
+impl Parameter {
+    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::ParamPtr {
+        self.id.stable_ptr(db)
+    }
+}
 
 /// The mutability attribute of a variable.
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
@@ -89,6 +95,12 @@ impl Variable {
         match self {
             Variable::Local(local) => local.is_mut,
             Variable::Param(param) => param.mutability != Mutability::Immutable,
+        }
+    }
+    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+        match self {
+            Variable::Local(local) => local.stable_ptr(db).untyped(),
+            Variable::Param(param) => param.stable_ptr(db).untyped(),
         }
     }
 }

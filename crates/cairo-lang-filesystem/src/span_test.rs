@@ -17,7 +17,7 @@ fn test_span() {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
-        diagnostics_mappings: Default::default(),
+        code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
     assert_eq!(
@@ -83,7 +83,7 @@ fn should_panic_test_span_out_of_range() {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
-        diagnostics_mappings: Default::default(),
+        code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
     TextOffset(TextWidth(TEST_STRING.len() as u32 + 1)).position_in_file(&db, file);

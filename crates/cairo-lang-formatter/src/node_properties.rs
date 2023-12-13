@@ -28,7 +28,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenLParen
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature))
+                    | matches!(
+                        grandparent_kind(db, self),
+                        Some(SyntaxKind::VisibilityPubArgumentClause)
+                    ) =>
             {
                 true
             }
@@ -44,6 +48,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenPlus
                 if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+            {
+                true
+            }
+            SyntaxKind::TokenMinus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
             {
                 true
             }
@@ -94,6 +103,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                         .get_children(self.parent().unwrap())
                         .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
+            {
+                true
+            }
+            SyntaxKind::TokenMinus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
             {
                 true
             }
@@ -434,7 +448,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalPlus
-                    if parent_kind(db, self) != Some(SyntaxKind::GenericParamImplAnonymous) =>
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::GenericParamImplAnonymous)
+                    ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
@@ -444,7 +461,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalMinus
-                    if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) =>
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::ExprUnary | SyntaxKind::GenericParamNegativeImpl)
+                    ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
@@ -493,7 +513,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalOr => {
+                SyntaxKind::TerminalOr
+                    if parent_kind(db, self) != Some(SyntaxKind::PatternListOr) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         13,
                         BreakLinePointIndentation::Indented,
@@ -567,7 +589,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     breaking_frequency: 2,
                 }
             }
-            SyntaxKind::UsePathList => {
+            SyntaxKind::PatternListOr | SyntaxKind::UsePathList => {
                 let mut properties = BreakLinePointProperties::new(
                     6,
                     BreakLinePointIndentation::NotIndented,
@@ -577,6 +599,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 properties.set_single_breakpoint();
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
+
             _ => BreakLinePointsPositions::None,
         }
     }

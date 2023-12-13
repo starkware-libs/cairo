@@ -11,18 +11,21 @@ use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
+/// The name of the variable that holds the returned data.
+const RET_DATA: &str = "__dispatcher_return_data__";
+
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!(
+            diagnostics: vec![PluginDiagnostic::error(
+                trait_ast.stable_ptr().untyped(),
+                format!(
                     "The '{DEPRECATED_ABI_ATTR}' attribute for traits was deprecated, please use \
                      `{INTERFACE_ATTR}` instead.",
                 ),
-                stable_ptr: trait_ast.stable_ptr().untyped(),
-            }],
+            )],
             remove_original_item: false,
         };
     }
@@ -34,10 +37,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         MaybeTraitBody::None(empty_body) => {
             return PluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    message: "Starknet interfaces without body are not supported.".to_string(),
-                    stable_ptr: empty_body.stable_ptr().untyped(),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    empty_body.stable_ptr().untyped(),
+                    "Starknet interfaces without body are not supported.".to_string(),
+                )],
                 remove_original_item: false,
             };
         }
@@ -57,12 +60,11 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     }) else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: "Starknet interfaces must have exactly one generic parameter, which is a \
-                          type."
+            diagnostics: vec![PluginDiagnostic::error(
+                generic_params.stable_ptr().untyped(),
+                "Starknet interfaces must have exactly one generic parameter, which is a type."
                     .to_string(),
-                stable_ptr: generic_params.stable_ptr().untyped(),
-            }],
+            )],
             remove_original_item: false,
         };
     };
@@ -92,18 +94,17 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut params = signature.parameters(db).elements(db).into_iter();
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "`starknet::interface` functions must have a `self` parameter."
-                            .to_string(),
-                        stable_ptr: declaration.stable_ptr().untyped(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        declaration.stable_ptr().untyped(),
+                        "`starknet::interface` functions must have a `self` parameter.".to_string(),
+                    ));
                     continue;
                 };
                 if self_param.name(db).text(db) != "self" {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "The first parameter must be named `self`.".to_string(),
-                        stable_ptr: self_param.stable_ptr().untyped(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        self_param.stable_ptr().untyped(),
+                        "The first parameter must be named `self`.".to_string(),
+                    ));
                     skip_generation = true;
                 }
                 let self_param_type_ok = if self_param.is_ref_param(db) {
@@ -114,12 +115,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     false
                 };
                 if !self_param_type_ok {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "`starknet::interface` function first parameter must be a \
-                                  reference to the trait's generic parameter or a snapshot of it."
+                    diagnostics.push(PluginDiagnostic::error(
+                        self_param.stable_ptr().untyped(),
+                        "`starknet::interface` function first parameter must be a reference to \
+                         the trait's generic parameter or a snapshot of it."
                             .to_string(),
-                        stable_ptr: self_param.stable_ptr().untyped(),
-                    });
+                    ));
                     skip_generation = true;
                 }
 
@@ -127,31 +128,31 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     if param.is_ref_param(db) {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "`starknet::interface` functions don't support `ref` \
-                                      parameters other than the first one."
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.modifiers(db).stable_ptr().untyped(),
+                            "`starknet::interface` functions don't support `ref` parameters other \
+                             than the first one."
                                 .to_string(),
-                            stable_ptr: param.modifiers(db).stable_ptr().untyped(),
-                        })
+                        ))
                     }
                     if param.type_clause(db).ty(db).is_dependent_type(db, &single_generic_param) {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "`starknet::interface` functions don't support parameters \
-                                      that depend on the trait's generic param type."
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.type_clause(db).ty(db).stable_ptr().untyped(),
+                            "`starknet::interface` functions don't support parameters that depend \
+                             on the trait's generic param type."
                                 .to_string(),
-                            stable_ptr: param.type_clause(db).ty(db).stable_ptr().untyped(),
-                        })
+                        ))
                     }
 
                     if param.name(db).text(db) == CALLDATA_PARAM_NAME {
                         skip_generation = true;
 
-                        diagnostics.push(PluginDiagnostic {
-                            message: "Parameter name `__calldata__` cannot be used.".to_string(),
-                            stable_ptr: param.name(db).stable_ptr().untyped(),
-                        })
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.name(db).stable_ptr().untyped(),
+                            "Parameter name `__calldata__` cannot be used.".to_string(),
+                        ))
                     }
 
                     let param_type = param.type_clause(db).ty(db);
@@ -183,7 +184,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         format!(
                             "\
         core::option::OptionTrait::expect(
-            core::serde::Serde::<{type_name}>::deserialize(ref ret_data),
+            core::serde::Serde::<{type_name}>::deserialize(ref {RET_DATA}),
             'Returned data too short',
         )"
                         )
@@ -208,7 +209,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),
                     "contract_address",
-                    "call_contract_syscall",
+                    "syscalls::call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
                     true,
@@ -226,7 +227,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     dispatcher_signature(db, &declaration, &safe_contract_caller_name, false),
                     entry_point_selector.clone(),
                     "contract_address",
-                    "call_contract_syscall",
+                    "syscalls::call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
                     false,
@@ -249,12 +250,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
+            "$visibility$trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {contract_caller_name} {{
-                contract_address: starknet::ContractAddress,
+            $visibility$struct {contract_caller_name} {{
+                pub contract_address: starknet::ContractAddress,
             }}
 
             impl {contract_caller_name}Impl of {dispatcher_trait_name}<{contract_caller_name}> {{
@@ -262,20 +263,20 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {library_caller_name} {{
-                class_hash: starknet::ClassHash,
+            $visibility$struct {library_caller_name} {{
+                pub class_hash: starknet::ClassHash,
             }}
 
             impl {library_caller_name}Impl of {dispatcher_trait_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
 
-            trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
+            $visibility$trait {safe_dispatcher_trait_name}<T> {{$safe_dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {safe_library_caller_name} {{
-                class_hash: starknet::ClassHash,
+            $visibility$struct {safe_library_caller_name} {{
+                pub class_hash: starknet::ClassHash,
             }}
 
             impl {safe_library_caller_name}Impl of \
@@ -285,8 +286,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
-            struct {safe_contract_caller_name} {{
-                contract_address: starknet::ContractAddress,
+            $visibility$struct {safe_contract_caller_name} {{
+                pub contract_address: starknet::ContractAddress,
             }}
 
             impl {safe_contract_caller_name}Impl of \
@@ -317,6 +318,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "safe_library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(safe_library_caller_method_impls),
             ),
+            (
+                "visibility".to_string(),
+                RewriteNode::Copied(trait_ast.visibility(db).as_syntax_node()),
+            ),
         ]
         .into(),
     ));
@@ -325,7 +330,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: dispatcher_trait_name.into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics,
@@ -353,15 +358,21 @@ fn declaration_method_impl(
         })
     };
     let return_code = RewriteNode::interpolate_patched(
-        if unwrap {
-            "let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        &if unwrap {
+            format!(
+                "let mut {RET_DATA} = starknet::SyscallResultTrait::unwrap_syscall({RET_DATA});
         $deserialization_code$"
+            )
         } else if ret_decode.is_empty() {
-            "let mut ret_data = ret_data?;
+            format!(
+                "let mut {RET_DATA} = {RET_DATA}?;
         Result::Ok($deserialization_code$)"
+            )
         } else {
-            "let mut ret_data = ret_data?;
+            format!(
+                "let mut {RET_DATA} = {RET_DATA}?;
         Result::Ok(\n        $deserialization_code$\n        )"
+            )
         },
         &[("deserialization_code".to_string(), deserialization_code)].into(),
     );
@@ -370,7 +381,7 @@ fn declaration_method_impl(
             "$func_decl$ {{
                     let mut {CALLDATA_PARAM_NAME} = core::traits::Default::default();
             $serialization_code$
-                    let mut ret_data = starknet::$syscall$(
+                    let mut {RET_DATA} = starknet::$syscall$(
                         self.$member$,
                         $entry_point_selector$,
                         core::array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),

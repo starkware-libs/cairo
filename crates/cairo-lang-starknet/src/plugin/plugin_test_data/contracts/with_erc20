@@ -42,12 +42,12 @@ mod erc20_contract {
     }
 
 
-    struct ContractState {
-        erc20_token: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_token: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
         }
@@ -95,23 +95,20 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     CtorImpl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__CtorImpl__constructor as constructor;
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__CtorImpl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -122,7 +119,7 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -167,8 +164,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20Token") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20Token") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -183,6 +180,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 }
     trait CtorTrait {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -225,12 +223,12 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 
 
-    struct ContractState {
-        erc20_token: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_token: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_token: erc20_comp::unsafe_new_component_state::<ContractState>(),
         }
@@ -278,23 +276,20 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     CtorImpl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__CtorImpl__constructor as constructor;
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__CtorImpl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -305,7 +300,7 @@ fn __wrapper__CtorImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -350,8 +345,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20Token") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20Token") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -366,6 +361,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
     }
 }
     trait CtorTrait {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

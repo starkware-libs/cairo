@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, FunctionWithBody, OptionReturnTypeClause, OptionWrappedGenericParamList,
 };
@@ -87,9 +88,9 @@ impl EntryPointsGenerationData {
         RewriteNode::interpolate_patched(
             indoc! {"
                 $generated_wrapper_functions$
-                    $generated_external_module$
-                    $generated_l1_handler_module$
-                    $generated_constructor_module$"},
+                $generated_external_module$
+                $generated_l1_handler_module$
+                $generated_constructor_module$"},
             &[
                 (
                     "generated_wrapper_functions".to_string(),
@@ -107,12 +108,10 @@ impl EntryPointsGenerationData {
 /// Generates a submodule with the given name, uses and functions.
 fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
     RewriteNode::interpolate_patched(
-        &formatdoc!(
-            "
-            mod {module_name} {{$generated_functions_node$
-                }}
-        "
-        ),
+        &formatdoc! {"
+            pub mod {module_name} {{$generated_functions_node$
+            }}"
+        },
         &[("generated_functions_node".to_string(), generated_functions_node)].into(),
     )
 }
@@ -144,19 +143,19 @@ pub fn handle_entry_point(
     let declaration = item_function.declaration(db);
     let name_node = declaration.name(db);
     if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
-            stable_ptr: name_node.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            name_node.stable_ptr().untyped(),
+            format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
+        ));
     }
 
     if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
         declaration.generic_params(db)
     {
-        diagnostics.push(PluginDiagnostic {
-            message: "Contract entry points cannot have generic arguments".to_string(),
-            stable_ptr: generic_params.stable_ptr().untyped(),
-        })
+        diagnostics.push(PluginDiagnostic::error(
+            generic_params.stable_ptr().untyped(),
+            "Contract entry points cannot have generic arguments".to_string(),
+        ))
     }
 
     let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
@@ -198,7 +197,7 @@ pub fn handle_entry_point(
                 EntryPointKind::External => &mut data.external_functions,
             };
             generated.push(RewriteNode::interpolate_patched(
-                "\n        use super::$wrapper_function_name$ as $function_name$;",
+                "\n    pub use super::$wrapper_function_name$ as $function_name$;",
                 &[
                     ("wrapper_function_name".into(), wrapper_function_name),
                     ("function_name".into(), function_name),
@@ -230,16 +229,16 @@ fn generate_entry_point_wrapper(
     let mut ref_appends = Vec::new();
 
     let Some((0, first_param)) = params.next() else {
-        return Err(vec![PluginDiagnostic {
-            message: "The first parameter of an entry point must be `self`.".into(),
-            stable_ptr: sig.stable_ptr().untyped(),
-        }]);
+        return Err(vec![PluginDiagnostic::error(
+            sig.stable_ptr().untyped(),
+            "The first parameter of an entry point must be `self`.".into(),
+        )]);
     };
     if first_param.name(db).text(db) != "self" {
-        return Err(vec![PluginDiagnostic {
-            message: "The first parameter of an entry point must be `self`.".into(),
-            stable_ptr: first_param.stable_ptr().untyped(),
-        }]);
+        return Err(vec![PluginDiagnostic::error(
+            first_param.stable_ptr().untyped(),
+            "The first parameter of an entry point must be `self`.".into(),
+        )]);
     };
     let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
     // TODO(spapini): Check modifiers and type.
@@ -252,10 +251,10 @@ fn generate_entry_point_wrapper(
 
         let is_ref = param.is_ref_param(db);
         if raw_output && is_ref {
-            diagnostics.push(PluginDiagnostic {
-                message: format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
-                stable_ptr: param.modifiers(db).stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                param.modifiers(db).stable_ptr().untyped(),
+                format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
+            ));
         }
         let ref_modifier = if is_ref { "ref " } else { "" };
         arg_names.push(format!("{ref_modifier}{arg_name}"));
@@ -297,10 +296,10 @@ fn generate_entry_point_wrapper(
     };
 
     if raw_output && !return_ty_is_felt252_span {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<felt252>`."),
-            stable_ptr: ret_type_ptr,
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            ret_type_ptr,
+            format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<felt252>`."),
+        ));
     }
 
     if !diagnostics.is_empty() {
@@ -313,7 +312,7 @@ fn generate_entry_point_wrapper(
     } else {
         formatdoc! {"
             {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
-                let mut arr = core::array::array_new();
+                let mut arr = ArrayTrait::new();
                 // References.$ref_appends$
                 // Result.{append_res}
                 core::array::ArrayTrait::span(@arr)"
@@ -329,7 +328,7 @@ fn generate_entry_point_wrapper(
         .into(),
     );
 
-    let implicit_precedence = RewriteNode::Text(format!("#[implicit_precedence({})]", {
+    let implicit_precedence = RewriteNode::Text(format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", {
         IMPLICIT_PRECEDENCE.iter().join(", ")
     }));
 
@@ -371,28 +370,25 @@ fn validate_l1_handler_first_parameter(
     if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
         if !first_param.type_clause(db).ty(db).is_felt252(db) {
-            diagnostics.push(PluginDiagnostic {
-                message: "The second parameter of an L1 handler must be of type `felt252`."
-                    .to_string(),
-                stable_ptr: first_param.stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                first_param.stable_ptr().untyped(),
+                "The second parameter of an L1 handler must be of type `felt252`.".to_string(),
+            ));
         }
 
         // Validate name
         if maybe_strip_underscore(first_param.name(db).text(db).as_str())
             != L1_HANDLER_FIRST_PARAM_NAME
         {
-            diagnostics.push(PluginDiagnostic {
-                message: "The second parameter of an L1 handler must be named 'from_address'."
-                    .to_string(),
-                stable_ptr: first_param.stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                first_param.stable_ptr().untyped(),
+                "The second parameter of an L1 handler must be named 'from_address'.".to_string(),
+            ));
         }
     } else {
-        diagnostics.push(PluginDiagnostic {
-            message: "An L1 handler must have the 'from_address' as its second parameter."
-                .to_string(),
-            stable_ptr: params.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            params.stable_ptr().untyped(),
+            "An L1 handler must have the 'from_address' as its second parameter.".to_string(),
+        ));
     };
 }

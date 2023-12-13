@@ -49,7 +49,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         parent: None,
         name: "string_to_format".into(),
         content: Arc::new(content.clone()),
-        diagnostics_mappings: Default::default(),
+        code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
     let mut diagnostics = DiagnosticsBuilder::new();

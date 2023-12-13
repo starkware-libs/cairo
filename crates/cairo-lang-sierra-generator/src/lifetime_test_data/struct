@@ -9,7 +9,7 @@ foo
 //! > function_code
 fn foo(x: MyStruct) -> MyStruct {
     let s = immovable(MyStruct{ a: x.a, b: x.b });
-    let w = immovable(MyStruct{ a: s.a, b: s.b });
+    let _w = immovable(MyStruct{ a: s.a, b: s.b });
     MyStruct{ a: 10, b: 20 }
 }
 

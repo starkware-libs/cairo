@@ -105,7 +105,7 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
     let store_impl = formatdoc!(
         "
         impl Store{struct_name} of {STORE_TRAIT}::<{struct_name}> {{
-            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+            fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
                 {reads_values}
                 starknet::SyscallResult::Ok(
@@ -114,13 +114,14 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
                     }}
                 )
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-         {struct_name}) -> starknet::SyscallResult<()> {{
+            fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, \
+         value: {struct_name}) -> starknet::SyscallResult<()> {{
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
-            fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
-         -> starknet::SyscallResult<{struct_name}> {{
+            fn read_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8) -> \
+         starknet::SyscallResult<{struct_name}> {{
                 {reads_values_at_offset}
                 starknet::SyscallResult::Ok(
                     {struct_name} {{
@@ -129,8 +130,9 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
                 )
             }}
             #[inline(always)]
-            fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: \
-         u8, value: {struct_name}) -> starknet::SyscallResult<()> {{
+            fn write_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8, value: {struct_name}) -> \
+         starknet::SyscallResult<()> {{
                 {writes_at_offset}
                 starknet::SyscallResult::Ok(())
             }}
@@ -171,10 +173,10 @@ fn handle_enum(
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
         let indicator = if variant.attributes(db).has_attr(db, "default") {
             if default_index.is_some() {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: variant.stable_ptr().untyped(),
-                    message: "Multiple variants annotated with `#[default]`".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    variant.stable_ptr().untyped(),
+                    "Multiple variants annotated with `#[default]`".to_string(),
+                ));
                 return None;
             }
             default_index = Some(i);

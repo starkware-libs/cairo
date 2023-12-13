@@ -43,9 +43,9 @@ fn foo_improved(a: felt252, ref b: other) -> () {
         Option::Some (v) => {
             v
         },
-        Option::None (v) => {
-            let mut data = core::array::array_new::<felt252>();
-            core::array::array_append::<felt252>(ref data, '1');
+        Option::None (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '1');
             panic(data)
         },
     }
@@ -55,9 +55,9 @@ fn bar_changed() -> felt252 {
         Result::Ok (v) => {
             v
         },
-        Result::Err (v) => {
-            let mut data = core::array::array_new::<felt252>();
-            core::array::array_append::<felt252>(ref data, '2');
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '2');
             panic(data)
         },
     }
@@ -67,9 +67,9 @@ fn non_extern_stuff(_a: some_type) -> (felt252, other) {
         Option::Some (v) => {
             v
         },
-        Option::None (v) => {
-            let mut data = core::array::array_new::<felt252>();
-            core::array::array_append::<felt252>(ref data, '3');
+        Option::None (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '3');
             panic(data)
         },
     }
@@ -79,9 +79,9 @@ fn generic_panic<T>(t: T, v: felt252) -> T {
         Result::Ok (v) => {
             v
         },
-        Result::Err (v) => {
-            let mut data = core::array::array_new::<felt252>();
-            core::array::array_append::<felt252>(ref data, '4');
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '4');
             panic(data)
         },
     }
@@ -91,9 +91,9 @@ fn wrapped_possibly_panic() -> felt252 {
         Result::Ok (v) => {
             v
         },
-        Result::Err (v) => {
-            let mut data = core::array::array_new::<felt252>();
-            core::array::array_append::<felt252>(ref data, '5');
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '5');
             panic(data)
         },
     }

@@ -6,10 +6,10 @@ use core::traits::{Into, TryInto};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
-struct EthAddress {
+pub struct EthAddress {
     address: felt252,
 }
-impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
+pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
         let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
@@ -20,12 +20,12 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         }
     }
 }
-impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
+pub(crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
     }
 }
-impl U256IntoEthAddress of Into<u256, EthAddress> {
+pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
         // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
         let high_32_bits = self.high % 0x100000000_u128;
@@ -35,7 +35,7 @@ impl U256IntoEthAddress of Into<u256, EthAddress> {
         }
     }
 }
-impl EthAddressSerde of Serde<EthAddress> {
+pub(crate) impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(self: @EthAddress, ref output: Array<felt252>) {
         self.address.serialize(ref output);
     }
@@ -49,7 +49,7 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     }
     #[inline(always)]
     fn is_zero(self: @EthAddress) -> bool {
-        core::felt_252::Felt252Zero::is_zero(self.address)
+        core::num::traits::Zero::<felt252>::is_zero(self.address)
     }
     #[inline(always)]
     fn is_non_zero(self: @EthAddress) -> bool {
@@ -57,9 +57,10 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     }
 }
 
-impl EthAddressZeroable = core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
+pub(crate) impl EthAddressZeroable =
+    core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
-impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+pub(crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {
         self.address.print();
     }

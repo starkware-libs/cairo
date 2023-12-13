@@ -9,14 +9,14 @@ foo
 //! > function_code
 fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
     immovable(match x {
-        MyEnum::A(a) => {
+        MyEnum::A(_a) => {
             immovable(MyEnum::A(1));
             MyEnum::A(2)
         },
         MyEnum::B(b) => {
             MyEnum::A(b + y + z)
         },
-        MyEnum::C((c0, c1)) => {
+        MyEnum::C((_c0, _c1)) => {
             MyEnum::C((z, w))
         },
     });

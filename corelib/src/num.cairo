@@ -1,1 +1,1 @@
-mod traits;
+pub mod traits;

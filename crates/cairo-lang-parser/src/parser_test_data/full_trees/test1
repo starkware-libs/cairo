@@ -43,11 +43,13 @@ error: Missing tokens. Expected an item after attributes.
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'submod'
     │   │   └── body (kind: TokenSemicolon): ';'
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
     │   │   ├── use_path (kind: UsePathSingle)
     │   │   │   ├── ident (kind: PathSegmentSimple)
@@ -60,6 +62,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
@@ -99,6 +102,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -112,6 +116,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── expr (kind: TokenLiteralNumber): '7'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -129,6 +134,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -138,6 +144,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: TokenLiteralNumber): '1'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -152,24 +159,28 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
     │   │       │   │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   └── separator #1 (kind: TokenComma): ','
     │   │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -193,6 +204,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
@@ -202,11 +214,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │           │       ├── expr (kind: TokenLiteralNumber): '2'
     │   │       │   │   │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -219,6 +233,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '5'
     │   │       │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
@@ -231,32 +246,34 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │       ├── arms (kind: MatchArms)
     │   │       │   │   │   │       │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │       │   │   ├── pattern (kind: PatternEnum)
-    │   │       │   │   │   │       │   │   │   ├── path (kind: ExprPath)
-    │   │       │   │   │   │       │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
-    │   │       │   │   │   │       │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │   │   │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
-    │   │       │   │   │   │       │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │   │   │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │   │   │       ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │       │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │   │   │   │       │   │   │       ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │       │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'V1'
+    │   │       │   │   │   │       │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │           ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │       │   └── item #1 (kind: MatchArm)
-    │   │       │   │   │   │       │       ├── pattern (kind: PatternEnum)
-    │   │       │   │   │   │       │       │   ├── path (kind: ExprPath)
-    │   │       │   │   │   │       │       │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │       │   │   │   └── ident (kind: TokenIdentifier): 'E'
-    │   │       │   │   │   │       │       │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │   │   │   │       │       │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │       │   │       └── ident (kind: TokenIdentifier): 'V2'
-    │   │       │   │   │   │       │       │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │   │   │   │       │       │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │       │       ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │       │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │       │       │   └── item #0 (kind: PatternEnum)
+    │   │       │   │   │   │       │       │       ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │       │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │       │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │       │       │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │       │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │       │       └── ident (kind: TokenIdentifier): 'V2'
+    │   │       │   │   │   │       │       │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │       │           ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │           ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │           └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
@@ -270,6 +287,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │       │   ├── statements (kind: StatementList)
     │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │       │   │       ├── expr (kind: TokenLiteralNumber): '32'
     │   │       │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
@@ -279,11 +297,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │               │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │               │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │               │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │               └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #6 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -324,6 +344,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #7 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -342,6 +363,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #8 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -365,6 +387,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #9 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -374,6 +397,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #10 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -382,6 +406,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #11 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -398,6 +423,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -424,6 +450,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr_clause (kind: ExprClause)
     │   │       │       │   └── expr (kind: ExprPath)
@@ -433,6 +460,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'bar'
@@ -462,6 +490,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #4 (kind: ItemExternType)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'S'
@@ -472,6 +501,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -521,6 +551,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #6 (kind: ItemStruct)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── struct_kw (kind: TokenStruct): 'struct'
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -536,6 +567,9 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
     │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   │   │   ├── pub_kw (kind: TokenPub): 'pub'
+    │   │   │   │   │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │   │   │   │   ├── name (kind: TokenIdentifier): 'member'
     │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -562,6 +596,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'a'
     │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
     │   │   │       │       └── rbrack (kind: TokenRBrack): ']'
+    │   │   │       ├── visibility (kind: VisibilityDefault) []
     │   │   │       ├── name (kind: TokenIdentifier): 'member2'
     │   │   │       └── type_clause (kind: TypeClause)
     │   │   │           ├── colon (kind: TokenColon): ':'
@@ -584,6 +619,12 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #7 (kind: ItemEnum)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   ├── pub_kw (kind: TokenPub): 'pub'
+    │   │   │   └── argument_clause (kind: VisibilityPubArgumentClause)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── argument (kind: TokenIdentifier): 'crate'
+    │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │   ├── enum_kw (kind: TokenEnum): 'enum'
     │   │   ├── name (kind: TokenIdentifier): 'E'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -623,6 +664,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #8 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'match_e_enum'
@@ -650,6 +692,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
     │   │       │       │   ├── expr (kind: ExprPath)
@@ -658,46 +701,49 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │       │   ├── arms (kind: MatchArms)
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
-    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │       │   │   │   │       ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'V1'
+    │   │       │       │   │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │       │       │   │   │   │           ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'V2'
-    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │       │   │   │   │       ├── pattern (kind: ExprPath)
-    │   │       │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'x'
-    │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'V2'
+    │   │       │       │   │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │       │       │   │   │   │           ├── pattern (kind: ExprPath)
+    │   │       │       │   │   │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │       │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   │       │       │   │   ├── separator #1 (kind: TokenComma): ','
     │   │       │       │   │   ├── item #2 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'VEmpty'
-    │   │       │       │   │   │   │   └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'VEmpty'
+    │   │       │       │   │   │   │       └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   └── separator #2 (kind: TokenComma): ','
@@ -706,6 +752,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #9 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Renamed'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -722,6 +769,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #10 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Generic'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -830,6 +878,7 @@ error: Missing tokens. Expected an item after attributes.
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── module_kw (kind: TerminalModule)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenModule): 'mod'
@@ -846,6 +895,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── use_kw (kind: TerminalUse)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenUse): 'use'
@@ -875,6 +925,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -984,6 +1035,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1025,6 +1077,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// succeeds, ok'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1076,6 +1129,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// succeeds, ok'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1105,6 +1159,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1144,12 +1199,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: TerminalLiteralNumber)
-    │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   │   │   ├── token (kind: TokenLiteralNumber): '0'
-    │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │   │   │   └── item #0 (kind: TerminalLiteralNumber)
+    │   │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1163,6 +1219,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │       │       │   ├── token (kind: TokenLiteralNumber): '1'
@@ -1179,12 +1236,13 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: TerminalUnderscore)
-    │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   │   │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │   │   │   └── item #0 (kind: TerminalUnderscore)
+    │   │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   │       ├── token (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1210,6 +1268,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #4 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1274,6 +1333,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │       │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1301,6 +1361,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           │       └── child #0 (kind: TokenNewline).
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │           │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │           │       │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │           │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1319,6 +1380,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1347,6 +1409,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │   │   │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │       │   ├── token (kind: TokenLiteralNumber): '5'
@@ -1382,36 +1445,37 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       ├── arms (kind: MatchArms)
     │   │       │   │   │   │       │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │       │   │   ├── pattern (kind: PatternEnum)
-    │   │       │   │   │   │       │   │   │   ├── path (kind: ExprPath)
-    │   │       │   │   │   │       │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │   │   │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │       │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   │       ├── token (kind: TokenIdentifier): 'E'
-    │   │       │   │   │   │       │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │   │   │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │   │   │   │       │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'V1'
-    │   │       │   │   │   │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │   │   │   │       │   │   │       ├── lparen (kind: TerminalLParen)
-    │   │       │   │   │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
-    │   │       │   │   │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │       ├── pattern (kind: TerminalUnderscore)
-    │   │       │   │   │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │       │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │       └── rparen (kind: TerminalRParen)
-    │   │       │   │   │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │           ├── token (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │   │   ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │       │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │   │   │   │       │   │   │       ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │       │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │       │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   │       ├── token (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │   │   │   │       │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │   │   │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │       │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │           ├── token (kind: TokenIdentifier): 'V1'
+    │   │       │   │   │   │       │   │   │       │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │   │   │           ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │           │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │           ├── pattern (kind: TerminalUnderscore)
+    │   │       │   │   │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │           │   ├── token (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │           └── rparen (kind: TerminalRParen)
+    │   │       │   │   │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │               ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       │   │   │                   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1427,36 +1491,37 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │   └── item #1 (kind: MatchArm)
-    │   │       │   │   │   │       │       ├── pattern (kind: PatternEnum)
-    │   │       │   │   │   │       │       │   ├── path (kind: ExprPath)
-    │   │       │   │   │   │       │       │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │       │   │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │       │       │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   │       ├── token (kind: TokenIdentifier): 'E'
-    │   │       │   │   │   │       │       │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │   │   │   │       │       │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │   │   │   │       │       │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │       │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │       │       │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │           ├── token (kind: TokenIdentifier): 'V2'
-    │   │       │   │   │   │       │       │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │   │   │   │       │       │       ├── lparen (kind: TerminalLParen)
-    │   │       │   │   │   │       │       │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │       │   ├── token (kind: TokenLParen): '('
-    │   │       │   │   │   │       │       │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │       ├── pattern (kind: TerminalUnderscore)
-    │   │       │   │   │   │       │       │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │       │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │       │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │       └── rparen (kind: TerminalRParen)
-    │   │       │   │   │   │       │       │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │           ├── token (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │       │           └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │       │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │       ├── patterns (kind: PatternListOr)
+    │   │       │   │   │   │       │       │   └── item #0 (kind: PatternEnum)
+    │   │       │   │   │   │       │       │       ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │       │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │       │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │       │       │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   │       ├── token (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │       │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │   │   │   │       │       │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │       │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │       │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │       │       │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │           ├── token (kind: TokenIdentifier): 'V2'
+    │   │       │   │   │   │       │       │       │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │       │           ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │   │       │       │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │           │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │           ├── pattern (kind: TerminalUnderscore)
+    │   │       │   │   │   │       │       │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │           │   ├── token (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │           └── rparen (kind: TerminalRParen)
+    │   │       │   │   │   │       │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │               ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       │               └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       │       │                   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │       ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │       │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1499,6 +1564,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │       │   ├── statements (kind: StatementList)
     │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │   │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │       │   │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │       │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   │       │   ├── token (kind: TokenLiteralNumber): '32'
@@ -1524,6 +1590,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │               │       ├── attributes (kind: AttributeList) []
     │   │       │   │   │               │       ├── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │               │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │               │       │   ├── token (kind: TokenLiteralNumber): '1'
@@ -1540,6 +1607,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #6 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1629,6 +1697,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #7 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1676,6 +1745,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #8 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1734,6 +1804,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #9 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── let_kw (kind: TerminalLet)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1765,6 +1836,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// bla1'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #10 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -1792,6 +1864,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #11 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -1825,6 +1898,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -1877,6 +1951,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │               └── child #0 (kind: TokenNewline).
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TerminalReturn)
     │   │       │       │   ├── leading_trivia (kind: Trivia)
     │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1901,6 +1976,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── trailing_trivia (kind: Trivia) []
     │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -1977,6 +2053,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #4 (kind: ItemExternType)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -2009,6 +2086,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenExtern): 'extern'
@@ -2135,6 +2213,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #6 (kind: ItemStruct)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── struct_kw (kind: TerminalStruct)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -2179,9 +2258,16 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
     │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   │   │   ├── pub_kw (kind: TerminalPub)
+    │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   │   │   ├── token (kind: TokenPub): 'pub'
+    │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │   │   │   │   ├── name (kind: TerminalIdentifier)
-    │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   ├── token (kind: TokenIdentifier): 'member'
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   └── type_clause (kind: TypeClause)
@@ -2243,6 +2329,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │       │           ├── token (kind: TokenRBrack): ']'
     │   │   │       │           └── trailing_trivia (kind: Trivia)
     │   │   │       │               └── child #0 (kind: TokenNewline).
+    │   │   │       ├── visibility (kind: VisibilityDefault) []
     │   │   │       ├── name (kind: TerminalIdentifier)
     │   │   │       │   ├── leading_trivia (kind: Trivia)
     │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -2304,9 +2391,28 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #7 (kind: ItemEnum)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityPub)
+    │   │   │   ├── pub_kw (kind: TerminalPub)
+    │   │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   │   └── child #0 (kind: TokenNewline).
+    │   │   │   │   ├── token (kind: TokenPub): 'pub'
+    │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   └── argument_clause (kind: VisibilityPubArgumentClause)
+    │   │   │       ├── lparen (kind: TerminalLParen)
+    │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   ├── token (kind: TokenLParen): '('
+    │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       ├── argument (kind: TerminalIdentifier)
+    │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   ├── token (kind: TokenIdentifier): 'crate'
+    │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       └── rparen (kind: TerminalRParen)
+    │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │   │           ├── token (kind: TokenRParen): ')'
+    │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │   │               └── child #0 (kind: TokenWhitespace).
     │   │   ├── enum_kw (kind: TerminalEnum)
-    │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   └── child #0 (kind: TokenNewline).
+    │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenEnum): 'enum'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
@@ -2414,6 +2520,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #8 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -2478,6 +2585,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       └── child #0 (kind: TokenNewline).
     │   │       ├── statements (kind: StatementList)
     │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TerminalMatch)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia)
@@ -2499,37 +2607,38 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │       └── child #0 (kind: TokenNewline).
     │   │       │       │   ├── arms (kind: MatchArms)
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │           ├── token (kind: TokenIdentifier): 'V1'
-    │   │       │       │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │       │   │   │   │       ├── lparen (kind: TerminalLParen)
-    │   │       │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       │   ├── token (kind: TokenLParen): '('
-    │   │       │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       ├── pattern (kind: TerminalUnderscore)
-    │   │       │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       └── rparen (kind: TerminalRParen)
-    │   │       │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │           ├── token (kind: TokenRParen): ')'
-    │   │       │       │   │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │       │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       │   │       ├── token (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │       │   │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │           ├── token (kind: TokenIdentifier): 'V1'
+    │   │       │       │   │   │   │       │           └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │           ├── lparen (kind: TerminalLParen)
+    │   │       │       │   │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           │   ├── token (kind: TokenLParen): '('
+    │   │       │       │   │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           ├── pattern (kind: TerminalUnderscore)
+    │   │       │       │   │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           │   ├── token (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           └── rparen (kind: TerminalRParen)
+    │   │       │       │   │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │               ├── token (kind: TokenRParen): ')'
+    │   │       │       │   │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │   │                   └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -2545,39 +2654,40 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │           ├── token (kind: TokenIdentifier): 'V2'
-    │   │       │       │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
-    │   │       │       │   │   │   │       ├── lparen (kind: TerminalLParen)
-    │   │       │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       │   ├── token (kind: TokenLParen): '('
-    │   │       │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       ├── pattern (kind: ExprPath)
-    │   │       │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │       │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       │   │       ├── token (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │       │   │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
     │   │       │       │   │   │   │       │       └── ident (kind: TerminalIdentifier)
     │   │       │       │   │   │   │       │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       │           ├── token (kind: TokenIdentifier): 'x'
+    │   │       │       │   │   │   │       │           ├── token (kind: TokenIdentifier): 'V2'
     │   │       │       │   │   │   │       │           └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       └── rparen (kind: TerminalRParen)
-    │   │       │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │           ├── token (kind: TokenRParen): ')'
-    │   │       │       │   │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │           ├── lparen (kind: TerminalLParen)
+    │   │       │       │   │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           │   ├── token (kind: TokenLParen): '('
+    │   │       │       │   │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           ├── pattern (kind: ExprPath)
+    │   │       │       │   │   │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │           │       └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │           │           ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           │           ├── token (kind: TokenIdentifier): 'x'
+    │   │       │       │   │   │   │           │           └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │           └── rparen (kind: TerminalRParen)
+    │   │       │       │   │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │               ├── token (kind: TokenRParen): ')'
+    │   │       │       │   │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │   │                   └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -2593,25 +2703,26 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │       │   │   ├── item #2 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
-    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
-    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'E'
-    │   │       │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │   │           ├── token (kind: TokenIdentifier): 'VEmpty'
-    │   │       │       │   │   │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │   │   │               └── child #0 (kind: TokenWhitespace).
-    │   │       │       │   │   │   │   └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: PatternEnum)
+    │   │       │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │       │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       │   │       ├── token (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │       │   │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TerminalIdentifier)
+    │   │       │       │   │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │   │       │           ├── token (kind: TokenIdentifier): 'VEmpty'
+    │   │       │       │   │   │   │       │           └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │   │       │               └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   │       └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -2640,6 +2751,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #9 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TerminalType)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -2688,6 +2800,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #10 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TerminalType)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenType): 'type'

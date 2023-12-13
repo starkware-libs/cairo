@@ -145,7 +145,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                         code: Some(PluginGeneratedFile {
                             name: "virt1".into(),
                             content: "#[second] struct A {}\n".to_string(),
-                            diagnostics_mappings: Default::default(),
+                            code_mappings: Default::default(),
                             aux_data: None,
                         }),
                         ..PluginResult::default()
@@ -155,17 +155,17 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                         code: Some(PluginGeneratedFile {
                             name: "virt2".into(),
                             content: "struct B {}\n".to_string(),
-                            diagnostics_mappings: Default::default(),
+                            code_mappings: Default::default(),
                             aux_data: None,
                         }),
                         ..PluginResult::default()
                     }
                 } else {
                     PluginResult {
-                        diagnostics: vec![PluginDiagnostic {
-                            stable_ptr: struct_ast.stable_ptr().untyped(),
-                            message: "Double indirection diagnostic".to_string(),
-                        }],
+                        diagnostics: vec![PluginDiagnostic::error(
+                            struct_ast.stable_ptr().untyped(),
+                            "Double indirection diagnostic".to_string(),
+                        )],
                         ..PluginResult::default()
                     }
                 }

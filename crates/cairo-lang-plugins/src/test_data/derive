@@ -367,10 +367,10 @@ impl TwoVariantEnumPartialEq of core::traits::PartialEq::<TwoVariantEnum> {
         match lhs {
             TwoVariantEnum::First(x) => match rhs {
                 TwoVariantEnum::First(y) => x == y,
-                TwoVariantEnum::Second(y) => false,
+                TwoVariantEnum::Second(_y) => false,
             },
             TwoVariantEnum::Second(x) => match rhs {
-                TwoVariantEnum::First(y) => false,
+                TwoVariantEnum::First(_y) => false,
                 TwoVariantEnum::Second(y) => x == y,
             },
         }

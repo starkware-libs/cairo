@@ -12,6 +12,7 @@ use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
+use super::visibility::Visibility;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -151,11 +152,13 @@ pub struct StructDefinitionData {
     members: OrderedHashMap<SmolStr, Member>,
     resolver_data: Arc<ResolverData>,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
     pub ty: semantic::TypeId,
+    #[dont_rewrite]
+    pub visibility: Visibility,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
@@ -194,8 +197,15 @@ pub fn priv_struct_definition_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
+        let visibility = Visibility::from_ast(
+            syntax_db,
+            &mut diagnostics.diagnostics,
+            &member.visibility(syntax_db),
+        );
         let member_name = member.name(syntax_db).text(syntax_db);
-        if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
+        if let Some(_other_member) =
+            members.insert(member_name.clone(), Member { id, ty, visibility })
+        {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
     }

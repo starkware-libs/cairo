@@ -5,13 +5,13 @@ use core::zeroable::Zeroable;
 
 /// Formats a type that behaves like uint to its Ascii representation and appends the formatted
 /// result into the given ByteArray.
-trait AppendFormattedToByteArray<T> {
+pub trait AppendFormattedToByteArray<T> {
     fn append_formatted_to_byte_array(self: @T, ref byte_array: ByteArray, base: NonZero<T>);
 }
 
 /// Formats the given input of a type that behaves like uint to its Ascii representation in a
 /// ByteArray.
-trait FormatAsByteArray<T> {
+pub trait FormatAsByteArray<T> {
     fn format_as_byte_array(self: @T, base: NonZero<T>) -> ByteArray;
 }
 

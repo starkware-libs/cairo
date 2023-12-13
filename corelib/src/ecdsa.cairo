@@ -22,7 +22,7 @@ use core::zeroable::IsZeroResult;
 // Returns:
 //   `true` if the signature is valid and `false` otherwise.
 // TODO(lior): Make this function nopanic once possible.
-fn check_ecdsa_signature(
+pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
     // TODO(orizi): Change to || once it does not prevent `a == 0` comparison optimization.
@@ -99,7 +99,7 @@ fn check_ecdsa_signature(
 
 /// Receives a signature and the signed message hash.
 /// Returns the public key associated with the signer.
-fn recover_public_key(
+pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool
 ) -> Option<felt252> {
     let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;

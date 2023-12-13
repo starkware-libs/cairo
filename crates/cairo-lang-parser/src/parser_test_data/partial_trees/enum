@@ -20,6 +20,7 @@ ItemEnum
 //! > expected_tree
 └── Top level kind: ItemEnum
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── enum_kw (kind: TokenEnum): 'enum'
     ├── name (kind: TokenIdentifier): 'MyEnum'
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

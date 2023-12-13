@@ -23,6 +23,11 @@ mod test_contract {
 Event type must derive `starknet::Event`.
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: Event type must derive `starknet::Event`.
+ --> lib.cairo:4:1
+#[starknet::contract]
+^*******************^
+
 error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
  --> lib.cairo[starknet_derive]:8:34
                 starknet::Event::append_keys_and_data(
@@ -38,7 +43,7 @@ error: Trait has no implementation in context: core::starknet::event::Event::<te
 //! > Test flat event variant which is not an enum.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: false)
+test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 #[derive(Drop, starknet::Event)]
@@ -61,13 +66,17 @@ mod test_contract {
 `starknet::Event` variant marked with `#[flat]` must be an enum.
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: `starknet::Event` variant marked with `#[flat]` must be an enum.
+ --> lib.cairo:4:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test duplicate event selector.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: false)
+test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 #[derive(Drop, starknet::Event)]
@@ -93,13 +102,17 @@ mod test_contract {
 Event `test::test_contract::Event` has duplicate selector `Dup`.
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
+ --> lib.cairo:6:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test duplicate entry points with the same name.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: false)
+test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 >>> file: test_data/interfaces.cairo
@@ -108,13 +121,17 @@ test_abi_failure(expect_diagnostics: false)
 Duplicate entry point: 'foo'. This is not currently supported.
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
+ --> lib.cairo:38:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test embed impl of non-interface trait.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: false)
+test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 trait NonInterfaceTrait<TContractState> {
@@ -136,13 +153,17 @@ mod contract {
 An embedded impl must be an impl of a trait marked with #[starknet::interface].
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:5:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test per-item impl of a starknet interface.
 
 //! > test_runner_name
-test_abi_failure(expect_diagnostics: false)
+test_abi_failure(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::interface]
@@ -166,3 +187,8 @@ An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet:
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
+    Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
+ --> lib.cairo:6:1
+#[starknet::contract]
+^*******************^

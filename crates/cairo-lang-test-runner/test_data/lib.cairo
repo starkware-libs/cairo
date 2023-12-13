@@ -18,7 +18,7 @@ mod Balance {
         self.value.write(value_);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl Balance of super::IBalance<ContractState> {
         fn get(self: @ContractState) -> u128 {
             self.value.read()

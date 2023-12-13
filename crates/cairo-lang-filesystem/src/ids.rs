@@ -6,7 +6,7 @@ use cairo_lang_utils::define_short_id;
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
-use crate::db::FilesGroup;
+use crate::db::{CrateConfiguration, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -17,7 +17,7 @@ pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real(SmolStr),
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, root: Directory },
+    Virtual { name: SmolStr, config: CrateConfiguration },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
@@ -70,21 +70,21 @@ pub enum FileKind {
     Expr,
 }
 
-/// A diagnostics mapping for a code rewrite.
+/// A mapping for a code rewrite.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct DiagnosticMapping {
+pub struct CodeMapping {
     pub span: TextSpan,
-    pub origin: DiagnosticOrigin,
+    pub origin: CodeOrigin,
 }
-impl DiagnosticMapping {
+impl CodeMapping {
     pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
         if self.span.contains(span) {
             Some(match self.origin {
-                DiagnosticOrigin::Start(origin_start) => {
+                CodeOrigin::Start(origin_start) => {
                     let start = origin_start.add_width(span.start - self.span.start);
                     TextSpan { start, end: start.add_width(span.width()) }
                 }
-                DiagnosticOrigin::Span(span) => span,
+                CodeOrigin::Span(span) => span,
             })
         } else {
             None
@@ -92,9 +92,9 @@ impl DiagnosticMapping {
     }
 }
 
-/// The origin of a diagnostic mapping.
+/// The origin of a code mapping.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum DiagnosticOrigin {
+pub enum CodeOrigin {
     /// The origin is a copied node staring at the given offset.
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
@@ -106,7 +106,7 @@ pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
     pub content: Arc<String>,
-    pub diagnostics_mappings: Arc<Vec<DiagnosticMapping>>,
+    pub code_mappings: Arc<Vec<CodeMapping>>,
     pub kind: FileKind,
 }
 impl VirtualFile {

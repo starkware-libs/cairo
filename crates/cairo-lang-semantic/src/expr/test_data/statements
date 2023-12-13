@@ -29,7 +29,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut x = 3
+    let mut _x = 3
 }
 
 //! > function_name
@@ -39,9 +39,9 @@ foo
 
 //! > expected_diagnostics
 error: Missing token TerminalSemicolon.
- --> lib.cairo:2:18
-    let mut x = 3
-                 ^
+ --> lib.cairo:2:19
+    let mut _x = 3
+                  ^
 
 //! > ==========================================================================
 
@@ -156,7 +156,7 @@ fn foo() {
     // Block without ';' in the end
     {}
     // Another statement to make the previous ones non-tail.
-    let x = 3;
+    let _x = 3;
 }
 
 //! > function_name
@@ -174,3 +174,34 @@ error: Identifier not found.
  --> lib.cairo:8:9
         None(_) => {},
         ^**^
+
+//! > ==========================================================================
+
+//! > Test a statement with an unknown attribute
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    #[unknown_attr1]
+    #[unknown_attr2]
+    #[cairofmt::skip]
+    let _x = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unknown statement attribute.
+ --> lib.cairo:2:5
+    #[unknown_attr1]
+    ^**************^
+
+error: Unknown statement attribute.
+ --> lib.cairo:3:5
+    #[unknown_attr2]
+    ^**************^

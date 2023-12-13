@@ -28,10 +28,12 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use num_traits::Zero;
 
 use crate::ApChange;
 
@@ -94,6 +96,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
+            BoxConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {
@@ -228,10 +231,30 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::UnconditionalJump(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ApChange::Known(0)],
+            EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => match libfunc.num_variants {
+                1 | 2 => vec![ApChange::Known(0)],
+                _ => vec![ApChange::Known(1)],
+            },
             EnumConcreteLibfunc::Match(libfunc) | EnumConcreteLibfunc::SnapshotMatch(libfunc) => {
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
+        CoreConcreteLibfunc::Range(libfunc) => match libfunc {
+            RangeConcreteLibfunc::ConstrainRange(libfunc) => {
+                assert!(
+                    libfunc.in_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.in_range.lower
+                );
+                assert!(
+                    libfunc.out_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.out_range.lower
+                );
+                vec![ApChange::Known(2), ApChange::Known(7)]
+            }
+        },
+
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
@@ -287,10 +310,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             },
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::NullableFromBox(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::MatchNullable(_)
-            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
+            NullableConcreteLibfunc::Null(_)
+            | NullableConcreteLibfunc::NullableFromBox(_)
+            | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },

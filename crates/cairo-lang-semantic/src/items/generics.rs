@@ -35,6 +35,7 @@ pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
     Impl(ImplId), // TODO(spapini): impls and constants as generic values.
+    NegImpl,
 }
 impl GenericArgumentId {
     pub fn kind(&self) -> GenericKind {
@@ -42,6 +43,7 @@ impl GenericArgumentId {
             GenericArgumentId::Type(_) => GenericKind::Type,
             GenericArgumentId::Literal(_) => GenericKind::Const,
             GenericArgumentId::Impl(_) => GenericKind::Impl,
+            GenericArgumentId::NegImpl => GenericKind::NegImpl,
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -49,6 +51,7 @@ impl GenericArgumentId {
             GenericArgumentId::Type(ty) => ty.format(db),
             GenericArgumentId::Literal(lit) => lit.format(db),
             GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
+            GenericArgumentId::NegImpl => "_".into(),
         }
     }
     /// Returns the [GenericArgumentHead] for a generic argument if available.
@@ -57,6 +60,7 @@ impl GenericArgumentId {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
             GenericArgumentId::Literal(_) => GenericArgumentHead::Const,
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
+            GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
     }
 }
@@ -70,6 +74,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::NegImpl => write!(f, "_"),
         }
     }
 }
@@ -82,6 +87,7 @@ pub enum GenericArgumentHead {
     Type(TypeHead),
     Impl(ImplHead),
     Const,
+    NegImpl,
 }
 
 /// Generic parameter.
@@ -91,6 +97,7 @@ pub enum GenericParam {
     // TODO(spapini): Add expression.
     Const(GenericParamConst),
     Impl(GenericParamImpl),
+    NegImpl(GenericParamImpl),
 }
 impl GenericParam {
     pub fn id(&self) -> GenericParamId {
@@ -98,6 +105,7 @@ impl GenericParam {
             GenericParam::Type(param) => param.id,
             GenericParam::Const(param) => param.id,
             GenericParam::Impl(param) => param.id,
+            GenericParam::NegImpl(param) => param.id,
         }
     }
     pub fn kind(&self) -> GenericKind {
@@ -105,6 +113,7 @@ impl GenericParam {
             GenericParam::Type(_) => GenericKind::Type,
             GenericParam::Const(_) => GenericKind::Const,
             GenericParam::Impl(_) => GenericKind::Impl,
+            GenericParam::NegImpl(_) => GenericKind::NegImpl,
         }
     }
     pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::GenericParamPtr {
@@ -202,24 +211,21 @@ pub fn generic_param_data(
         generic_param_generic_params_list(db, generic_param_id)?,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList
     );
-    for generic_param_syntax in
-        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).iter()
+
+    let mut opt_generic_param_syntax = None;
+    for param_syntax in
+        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
     {
-        let cur_generic_param_id = db.intern_generic_param(GenericParamLongId(
-            module_file_id,
-            generic_param_syntax.stable_ptr(),
-        ));
+        let cur_generic_param_id =
+            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
         resolver.add_generic_param(cur_generic_param_id);
+
+        if cur_generic_param_id == generic_param_id {
+            opt_generic_param_syntax = Some(param_syntax);
+        }
     }
-    let generic_param_syntax = generic_params_syntax
-        .generic_params(syntax_db)
-        .elements(syntax_db)
-        .into_iter()
-        .find(|param_syntax| {
-            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
-                == generic_param_id
-        })
-        .unwrap();
+    let generic_param_syntax =
+        opt_generic_param_syntax.expect("Query called on a non existing generic param.");
     let param_semantic = semantic_from_generic_param_ast(
         db,
         &mut resolver,
@@ -316,15 +322,15 @@ pub fn generic_impl_param_trait(
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    resolver
-        .resolve_generic_path_with_args(
+    try_extract_matches!(
+        resolver.resolve_generic_path_with_args(
             &mut diagnostics,
             &trait_path_syntax,
             NotFoundItemType::Trait,
-        )
-        .ok()
-        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
-        .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        )?,
+        ResolvedGenericItem::Trait
+    )
+    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
 }
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
@@ -359,6 +365,13 @@ pub fn semantic_generic_params(
     res
 }
 
+/// Returns true if negative impls are enabled in the module.
+fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.negative_impls
+}
+
 /// Computes the semantic model of a generic parameter give its ast.
 fn semantic_from_generic_param_ast(
     db: &dyn SemanticGroup,
@@ -374,18 +387,31 @@ fn semantic_from_generic_param_ast(
         ast::GenericParam::Const(syntax) => {
             if !allow_consts {
                 diagnostics
-                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamSupported);
+                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
             }
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }
         ast::GenericParam::ImplNamed(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
-            impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id)
+            GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
-            impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id)
+            GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
+        }
+        ast::GenericParam::NegativeImpl(syntax) => {
+            if !are_negative_impls_enabled(db, module_file_id) {
+                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+            }
+
+            let path_syntax = syntax.trait_path(db.upcast());
+            GenericParam::NegImpl(impl_generic_param_semantic(
+                resolver,
+                diagnostics,
+                &path_syntax,
+                id,
+            ))
         }
     }
 }
@@ -396,7 +422,7 @@ fn impl_generic_param_semantic(
     diagnostics: &mut SemanticDiagnostics,
     path_syntax: &ast::ExprPath,
     id: GenericParamId,
-) -> GenericParam {
+) -> GenericParamImpl {
     let concrete_trait = resolver
         .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
         .and_then(|resolved_item| {
@@ -404,5 +430,5 @@ fn impl_generic_param_semantic(
                 diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)
             })
         });
-    GenericParam::Impl(GenericParamImpl { id, concrete_trait })
+    GenericParamImpl { id, concrete_trait }
 }

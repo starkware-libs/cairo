@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -38,9 +38,9 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                 PluginGeneratedFile {
                     name: "consteval_int_inline_macro".into(),
                     content,
-                    diagnostics_mappings: vec![DiagnosticMapping {
+                    code_mappings: vec![CodeMapping {
                         span,
-                        origin: DiagnosticOrigin::Span(syntax.as_syntax_node().span(db)),
+                        origin: CodeOrigin::Span(syntax.as_syntax_node().span(db)),
                     }],
                     aux_data: None,
                 }
@@ -93,10 +93,10 @@ pub fn compute_constant_expr(
                     ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             _ => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: bin_expr.stable_ptr().untyped(),
-                    message: "Unsupported binary operator in consteval_int macro".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    bin_expr.stable_ptr().untyped(),
+                    "Unsupported binary operator in consteval_int macro".to_string(),
+                ));
                 None
             }
         },
@@ -105,10 +105,10 @@ pub fn compute_constant_expr(
                 Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics)?)
             }
             _ => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: un_expr.stable_ptr().untyped(),
-                    message: "Unsupported unary operator in consteval_int macro".to_string(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    un_expr.stable_ptr().untyped(),
+                    "Unsupported unary operator in consteval_int macro".to_string(),
+                ));
                 None
             }
         },
@@ -116,10 +116,10 @@ pub fn compute_constant_expr(
             compute_constant_expr(db, &paren_expr.expr(db), diagnostics)
         }
         _ => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: value.stable_ptr().untyped(),
-                message: "Unsupported expression in consteval_int macro".to_string(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                value.stable_ptr().untyped(),
+                "Unsupported expression in consteval_int macro".to_string(),
+            ));
             None
         }
     }

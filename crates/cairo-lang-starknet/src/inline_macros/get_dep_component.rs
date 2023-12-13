@@ -62,13 +62,13 @@ fn get_dep_component_generate_code_helper(
         if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
-            let diagnostics = vec![PluginDiagnostic {
-                stable_ptr: contract_arg.stable_ptr().untyped(),
-                message: format!(
+            let diagnostics = vec![PluginDiagnostic::error(
+                contract_arg.stable_ptr().untyped(),
+                format!(
                     "The first argument of `{}` macro must have only a `ref` modifier.",
                     GetDepComponentMutMacro::NAME
                 ),
-            }];
+            )];
             return InlinePluginResult { code: None, diagnostics };
         };
     }
@@ -99,7 +99,7 @@ fn get_dep_component_generate_code_helper(
         code: Some(PluginGeneratedFile {
             name: "get_dep_component_inline_macro".into(),
             content: builder.code,
-            diagnostics_mappings: builder.diagnostics_mappings,
+            code_mappings: builder.code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],

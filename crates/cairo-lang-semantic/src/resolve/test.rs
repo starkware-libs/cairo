@@ -27,7 +27,7 @@ fn test_resolve_path() {
 
             fn foo<Q>(value: S::<felt252>, b: Q, c: Box::<Q>) {
                 bar::<(felt252,Q)>(value);
-                let c = b;
+                let _c = b;
             }
         "},
     )
@@ -45,7 +45,7 @@ fn test_resolve_path() {
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
          [Value(Var(ParamId(test::value)))], ty: test::S::<()> }) }), Let(StatementLet { pattern: \
-         Variable(c), expr: Var(ParamId(test::b)) })], tail: None, ty: () }))"
+         Variable(_c), expr: Var(ParamId(test::b)) })], tail: None, ty: () }))"
     );
 }
 
@@ -96,11 +96,12 @@ fn test_resolve_path_super() {
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
         format!("{:?}", members["a"].debug(db)),
-        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1 }"
+        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
+         Private }"
     );
     assert_eq!(
         format!("{:?}", members["b"].debug(db)),
-        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct }"
+        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
     );
 }
 

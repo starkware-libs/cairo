@@ -3,22 +3,22 @@ use core::serde::Serde;
 use core::hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
-extern type ContractAddress;
+pub extern type ContractAddress;
 
 
-extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
-extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-extern fn contract_address_try_from_felt252(
+pub(crate) extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
+pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
-impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
+pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
@@ -31,7 +31,7 @@ impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     }
     #[inline(always)]
     fn is_zero(self: @ContractAddress) -> bool {
-        core::felt_252::Felt252Zero::is_zero(@contract_address_to_felt252(*self))
+        core::num::traits::Zero::<felt252>::is_zero(@contract_address_to_felt252(*self))
     }
     #[inline(always)]
     fn is_non_zero(self: @ContractAddress) -> bool {
@@ -39,7 +39,7 @@ impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     }
 }
 
-impl ContractAddressZeroable =
+pub(crate) impl ContractAddressZeroable =
     core::zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
 
 impl ContractAddressSerde of Serde<ContractAddress> {

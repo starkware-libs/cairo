@@ -320,6 +320,9 @@ pub fn get_concrete_libfunc_id(
             semantic::GenericArgumentId::Impl(_) => {
                 panic!("Extern function with impl generics are not supported.")
             }
+            semantic::GenericArgumentId::NegImpl => {
+                panic!("Extern function with neg impl generics are not supported.")
+            }
         });
     }
 

@@ -1,16 +1,16 @@
-extern type Pedersen;
+pub extern type Pedersen;
 
-extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
 
 
 /// State for Pedersen hash.
 #[derive(Copy, Drop)]
-struct HashState {
-    state: felt252,
+pub struct HashState {
+    pub state: felt252,
 }
 
 #[generate_trait]
-impl PedersenImpl of PedersenTrait {
+pub impl PedersenImpl of PedersenTrait {
     /// Creates a state from a base value.
     #[inline(always)]
     fn new(base: felt252) -> HashState {

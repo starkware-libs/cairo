@@ -107,17 +107,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -126,7 +126,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
+pub const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -147,7 +147,7 @@ fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_something(@contract_state, ref __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
             core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
@@ -174,7 +174,7 @@ fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     set_something(ref contract_state, ref __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
             core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
@@ -204,7 +204,7 @@ fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -233,26 +233,23 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-        use super::__wrapper__get_something as get_something;
-        use super::__wrapper__set_something as set_something;
-        use super::__wrapper__test_serde as test_serde;
-    }
-
-    mod __l1_handler {
-        use super::__wrapper__l1_handler_func as l1_handler_func;
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__get_something as get_something;
+    pub use super::__wrapper__set_something as set_something;
+    pub use super::__wrapper__test_serde as test_serde;
+}
+pub mod __l1_handler {
+    pub use super::__wrapper__l1_handler_func as l1_handler_func;
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -263,7 +260,7 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -303,14 +300,14 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("AwesomeEvent") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::AwesomeEvent(val));
         }
-        if selector == selector!("BestEventEver") {
+        if __selector__ == selector!("BestEventEver") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

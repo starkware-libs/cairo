@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -17,10 +18,12 @@ use cairo_lang_defs::ids::{
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, Edition, FilesGroup, FilesGroupEx,
+    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
     PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
@@ -72,6 +75,7 @@ pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
+const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
@@ -81,17 +85,22 @@ pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
+    let db = configured_db();
+
+    let (service, socket) = LspService::build(|client| Backend::new(client, db))
+        .custom_method("vfs/provide", Backend::vfs_provide)
+        .finish();
+    Server::new(stdin, stdout, socket).serve(service).await;
+}
+
+fn configured_db() -> RootDatabase {
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_plugin_suite(starknet_plugin_suite())
         .with_plugin_suite(test_plugin_suite())
         .build()
         .expect("Failed to initialize Cairo compiler database.");
-
-    let (service, socket) = LspService::build(|client| Backend::new(client, db))
-        .custom_method("vfs/provide", Backend::vfs_provide)
-        .finish();
-    Server::new(stdin, stdout, socket).serve(service).await;
+    db
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -134,6 +143,8 @@ pub struct Backend {
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
     pub notification: NotificationService,
+    last_replace: tokio::sync::Mutex<SystemTime>,
+    db_replace_interval: Duration,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
@@ -147,6 +158,13 @@ impl Backend {
             notification: notification.clone(),
             state_mutex: State::default().into(),
             scarb: ScarbService::new(notification),
+            last_replace: tokio::sync::Mutex::new(SystemTime::now()),
+            db_replace_interval: Duration::from_secs(
+                std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
+                    .ok()
+                    .and_then(|value| value.parse::<u64>().ok())
+                    .unwrap_or(DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL),
+            ),
         }
     }
 
@@ -156,7 +174,7 @@ impl Backend {
     where
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
-        let db_mut = self.db_mutex.lock().await;
+        let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
         std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
@@ -238,8 +256,31 @@ impl Backend {
         for (uri, diags) in res {
             self.client.publish_diagnostics(uri, diags, None).await
         }
+        // After handling of all diagnostics attempting to swap the database to reduce memory
+        // consumption.
+        self.maybe_sweep_database().await;
 
         Ok(())
+    }
+
+    /// Checks if enough time passed since last db swap, and if so, swaps the database.
+    async fn maybe_sweep_database(&self) {
+        let Ok(mut last_replace) = self.last_replace.try_lock() else {
+            // Another thread is already swapping the database.
+            return;
+        };
+        if last_replace.elapsed().unwrap() <= self.db_replace_interval {
+            // Not enough time passed since last swap.
+            return;
+        }
+        eprintln!("DB swap - scheduled.");
+        let mut db = self.db_mut().await;
+        eprintln!("DB swap - starting.");
+        let mut new_db = configured_db();
+        new_db.set_file_overrides(db.file_overrides());
+        *db = new_db;
+        *last_replace = SystemTime::now();
+        eprintln!("DB swap - done.");
     }
 
     pub async fn vfs_provide(
@@ -301,12 +342,12 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
-        if self.scarb.is_scarb_project(file_path.into()) {
+        if self.scarb.is_scarb_project(file_path.clone()) {
             if self.scarb.is_scarb_found() {
                 // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.into()).await {
+                let corelib = match self.scarb.corelib_path(file_path.clone()).await {
                     Ok(corelib) => corelib,
                     Err(err) => {
                         let err =
@@ -321,7 +362,7 @@ impl Backend {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_source_paths(file_path.into()).await {
+                match self.scarb.crate_source_paths(file_path).await {
                     Ok(source_paths) => {
                         update_crate_roots(db, source_paths.clone());
                     }
@@ -346,7 +387,7 @@ impl Backend {
         }
 
         // Fallback to cairo_project manifest format.
-        let mut path = PathBuf::from(file_path);
+        let mut path = file_path.clone();
         for _ in 0..MAX_CRATE_DETECTION_DEPTH {
             path.pop();
             // Check for a cairo project file.
@@ -357,8 +398,9 @@ impl Backend {
         }
 
         // Fallback to a single file.
-        if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-            eprintln!("Error loading file {file_path} as a single crate: {err}");
+        if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
+            let file_path_s = file_path.to_string_lossy();
+            eprintln!("Error loading file {file_path_s} as a single crate: {err}");
         }
     }
 
@@ -368,9 +410,7 @@ impl Backend {
         for file in self.state_mutex.lock().await.open_files.iter() {
             let file = db.lookup_intern_file(*file);
             if let FileLongId::OnDisk(file_path) = file {
-                if let Some(file_path) = file_path.to_str() {
-                    self.detect_crate_for(&mut db, file_path).await;
-                }
+                self.detect_crate_for(&mut db, file_path).await;
             }
         }
         drop(db);
@@ -547,7 +587,9 @@ impl LanguageServer for Backend {
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
-            let path = uri.path();
+            let Ok(path) = uri.to_file_path() else {
+                return;
+            };
             self.detect_crate_for(&mut db, path).await;
         }
 
@@ -674,27 +716,20 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let Ok(node) = db.file_syntax(file) else {
+            let node = db.file_syntax(file).ok().on_none(|| {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                return None;
-            };
-            if !db.file_syntax_diagnostics(file).is_empty() {
-                return None;
-            }
+            })?;
+            db.file_syntax_diagnostics(file).check_error_free().ok().on_none(|| {
+                eprintln!("Formatting failed. Cannot properly parse '{file_uri}' exist.");
+            })?;
             let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
-            let file_summary = if let Some(summary) = db.file_summary(file) {
-                summary
-            } else {
+            let file_summary = db.file_summary(file).on_none(|| {
                 eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
-                return None;
-            };
-            let old_line_count = if let Ok(count) = file_summary.line_count().try_into() {
-                count
-            } else {
+            })?;
+            let old_line_count = file_summary.line_count().try_into().ok().on_none(|| {
                 eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
-                return None;
-            };
+            })?;
 
             Some(vec![TextEdit {
                 range: Range {
@@ -1270,11 +1305,11 @@ fn nearest_semantic_pat(
 
 fn update_crate_roots(
     db: &mut dyn SemanticGroup,
-    source_paths: Vec<(CrateLongId, PathBuf, Edition)>,
+    source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
 ) {
     let source_paths = source_paths
         .into_iter()
-        .filter_map(|(crate_long_id, source_path, edition)| {
+        .filter_map(|(crate_long_id, source_path, crate_settings)| {
             let file_stem =
                 source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
 
@@ -1287,16 +1322,16 @@ fn update_crate_roots(
             match (crate_root, file_stem) {
                 (Some(crate_root), Some(file_stem)) => {
                     let crate_id = db.intern_crate(crate_long_id);
-                    Some((crate_id, crate_root, edition, file_stem))
+                    Some((crate_id, crate_root, crate_settings, file_stem))
                 }
                 _ => None,
             }
         })
         .collect::<Vec<_>>();
 
-    for (crate_id, crate_root, edition, _file_stem) in source_paths.clone() {
+    for (crate_id, crate_root, settings, _file_stem) in source_paths.clone() {
         let crate_root = Directory::Real(crate_root);
-        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, edition }));
+        db.set_crate_config(crate_id, Some(CrateConfiguration { root: crate_root, settings }));
     }
 
     let source_paths = source_paths
@@ -1357,6 +1392,7 @@ fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
 
 /// Converts an internal diagnostic location to an LSP range.
 fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
+    let location = location.user_location(db);
     let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
     let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
     Range { start, end }
@@ -1393,6 +1429,10 @@ fn get_diagnostics<T: DiagnosticEntry>(
             } else {
                 Some(related_information)
             },
+            severity: Some(match diagnostic.severity() {
+                Severity::Error => DiagnosticSeverity::ERROR,
+                Severity::Warning => DiagnosticSeverity::WARNING,
+            }),
             ..Diagnostic::default()
         });
     }

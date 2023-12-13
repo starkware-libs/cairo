@@ -175,6 +175,7 @@ impl GenericParamExtract for ast::GenericParam {
             ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
             ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
             ast::GenericParam::ImplAnonymous(i) => Some(i.trait_path(db)),
+            ast::GenericParam::NegativeImpl(i) => Some(i.trait_path(db)),
         }
     }
 }
@@ -197,10 +198,25 @@ pub fn has_v0_attribute(
     object: &impl QueryAttrs,
     attr_name: &str,
 ) -> bool {
+    has_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
+}
+
+/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
+/// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
+pub fn has_v0_attribute_ex(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    object: &impl QueryAttrs,
+    attr_name: &str,
+    deprecated: impl FnOnce() -> Option<String>,
+) -> bool {
     let Some(attr) = object.find_attr(db, attr_name) else {
         return false;
     };
     validate_v0(db, diagnostics, &attr, attr_name);
+    if let Some(deprecated) = deprecated() {
+        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr().untyped(), deprecated));
+    }
     true
 }
 
@@ -212,10 +228,10 @@ fn validate_v0(
     name: &str,
 ) {
     if !is_single_arg_attr(db, attr, "v0") {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("Only #[{name}(v0)] is supported."),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            attr.stable_ptr().untyped(),
+            format!("Only #[{name}(v0)] is supported."),
+        ));
     }
 }
 
@@ -240,12 +256,12 @@ pub fn forbid_attribute_in_impl(
     embedded_impl_attr: &str,
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
-        diagnostics.push(PluginDiagnostic {
-            message: format!(
+        diagnostics.push(PluginDiagnostic::error(
+            attr.stable_ptr().untyped(),
+            format!(
                 "The `{attr_name}` attribute is not allowed inside an impl marked as \
                  `{embedded_impl_attr}`."
             ),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
+        ));
     }
 }

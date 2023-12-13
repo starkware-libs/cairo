@@ -47,30 +47,27 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut arr = array::array_new();
-    array::array_append(arr, arr)
+   MyTrait::foo();
 }
 
 //! > function_name
 foo
 
 //! > module_code
+trait MyTrait {
+   fn foo();
+}
+
+impl MyImpl<+MyTrait> of MyTrait {
+   fn foo() {
+   }
+}
 
 //! > expected_diagnostics
-error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:3:25
-    array::array_append(arr, arr)
-                        ^*^
-
-error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
- --> lib.cairo:3:30
-    array::array_append(arr, arr)
-                             ^*^
-
-error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:26
-    let mut arr = array::array_new();
-                         ^*******^
+error: Inference cycle detected
+ --> lib.cairo:9:10
+fn foo() {
+         ^
 
 //! > ==========================================================================
 
@@ -81,7 +78,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut arr = array::array_new();
+    let mut _arr = array::array_new();
 }
 
 //! > function_name
@@ -91,9 +88,9 @@ foo
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:26
-    let mut arr = array::array_new();
-                         ^*******^
+ --> lib.cairo:2:27
+    let mut _arr = array::array_new();
+                          ^*******^
 
 //! > ==========================================================================
 
@@ -104,7 +101,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let mut arr: felt252 = array::array_new::<felt252>();
+    let mut _arr: felt252 = array::array_new::<felt252>();
 }
 
 //! > function_name
@@ -114,9 +111,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
- --> lib.cairo:2:28
-    let mut arr: felt252 = array::array_new::<felt252>();
-                           ^***************************^
+ --> lib.cairo:2:29
+    let mut _arr: felt252 = array::array_new::<felt252>();
+                            ^***************************^
 
 //! > ==========================================================================
 
@@ -473,8 +470,8 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   (@5).clone();
-   5.clone();
+   let _ = (@5).clone();
+   let _ = 5.clone();
 }
 
 //! > function_name
@@ -561,7 +558,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-   let u256 { low, high } = 123;
+   let u256 { low: _, high: _ } = 123;
 }
 
 //! > function_name
@@ -613,7 +610,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-   let x = "hello";
+   let _x = "hello";
 }
 
 //! > function_name
@@ -623,9 +620,9 @@ foo
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:12
-   let x = "hello";
-           ^*****^
+ --> lib.cairo:2:13
+   let _x = "hello";
+            ^*****^
 
 //! > ==========================================================================
 
@@ -637,7 +634,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
    // A NumericLiteral<felt252> should be inferred here.
-   let x = 123;
+   let _x = 123;
 }
 
 //! > function_name
@@ -649,11 +646,6 @@ impl MyImpl of NonExistingTrait {
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:1:16
-impl MyImpl of NonExistingTrait {
-               ^**************^
-
-error: Not a trait.
  --> lib.cairo:1:16
 impl MyImpl of NonExistingTrait {
                ^**************^

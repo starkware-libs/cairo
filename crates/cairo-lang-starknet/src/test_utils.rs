@@ -72,7 +72,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
         );
     };
     let main_crate_ids = vec![**contracts_crate_id];
-    let diagnostics_reporter = DiagnosticsReporter::default().with_extra_crates(&main_crate_ids);
+    let diagnostics_reporter = DiagnosticsReporter::default().with_crates(&main_crate_ids);
     compile_contract_in_prepared_db(
         &db,
         Some(example_file_name),

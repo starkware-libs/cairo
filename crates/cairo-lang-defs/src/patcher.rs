@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -223,11 +223,11 @@ pub struct ModifiedNode {
 pub struct PatchBuilder<'a> {
     pub db: &'a dyn SyntaxGroup,
     pub code: String,
-    pub diagnostics_mappings: Vec<DiagnosticMapping>,
+    pub code_mappings: Vec<CodeMapping>,
 }
 impl<'a> PatchBuilder<'a> {
     pub fn new(db: &'a dyn SyntaxGroup) -> Self {
-        Self { db, code: String::default(), diagnostics_mappings: vec![] }
+        Self { db, code: String::default(), code_mappings: vec![] }
     }
 
     pub fn add_char(&mut self, c: char) {
@@ -258,12 +258,12 @@ impl<'a> PatchBuilder<'a> {
 
     pub fn add_node_ex(&mut self, text: &str, orig_span: TextSpan) {
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
-        self.diagnostics_mappings.push(DiagnosticMapping {
+        self.code_mappings.push(CodeMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
             origin: if orig_span.width() != TextWidth::from_str(text) {
-                DiagnosticOrigin::Span(orig_span)
+                CodeOrigin::Span(orig_span)
             } else {
-                DiagnosticOrigin::Start(orig_span.start)
+                CodeOrigin::Start(orig_span.start)
             },
         });
         self.code += text;
@@ -284,9 +284,9 @@ impl<'a> PatchBuilder<'a> {
 
         self.code += &text;
 
-        self.diagnostics_mappings.push(DiagnosticMapping {
+        self.code_mappings.push(CodeMapping {
             span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
-            origin: DiagnosticOrigin::Start(orig_start),
+            origin: CodeOrigin::Start(orig_start),
         });
     }
 }

@@ -7,7 +7,7 @@ struct MyStruct {
 #[generate_trait]
 impl MyStructImpl of MyStructTrait {
     fn repro(ref self: MyStruct) {
-        let copyable = self.copyable;
+        let _copyable = self.copyable;
         if true {
             self.uses_self();
         }
