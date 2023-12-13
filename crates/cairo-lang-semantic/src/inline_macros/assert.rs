@@ -28,22 +28,19 @@ impl InlineMacroExprPlugin for AssertMacro {
         let Some((value, format_args)) = arguments.split_first() else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: arguments_syntax.lparen(db).stable_ptr().untyped(),
-                    message: format!("Macro `{}` requires at least 1 argument.", Self::NAME),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    format!("Macro `{}` requires at least 1 argument.", Self::NAME),
+                )],
             };
         };
         let Some(value) = try_extract_unnamed_arg(db, value) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: value.stable_ptr().untyped(),
-                    message: format!(
-                        "Macro `{}` requires the first argument to be unnamed.",
-                        Self::NAME
-                    ),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    value.stable_ptr().untyped(),
+                    format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
+                )],
             };
         };
         let f = "__formatter_for_assert_macro__";
@@ -104,7 +101,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
                 content: builder.code,
-                diagnostics_mappings: builder.diagnostics_mappings,
+                code_mappings: builder.code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],

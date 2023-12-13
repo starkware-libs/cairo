@@ -10,8 +10,8 @@ foo
 fn foo(x: felt252, y: felt252) -> felt252 {
     let a = x + x;
     let b = a + a;
-    let c = b + b;
-    let d = b + 1;
+    let _c = b + b;
+    let _d = b + 1;
     1234;
     a
 }

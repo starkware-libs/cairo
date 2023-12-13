@@ -33,7 +33,7 @@ impl MacroPlugin for ConfigPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
                     content: builder.code,
-                    diagnostics_mappings: builder.diagnostics_mappings,
+                    code_mappings: builder.code_mappings,
                     aux_data: None,
                 }),
                 diagnostics,
@@ -159,10 +159,10 @@ fn parse_predicate_item(
 ) -> Option<Cfg> {
     match arg.variant {
         AttributeArgVariant::FieldInitShorthand { .. } => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: arg.arg_stable_ptr.untyped(),
-                message: "This attribute does not support field initialization shorthands.".into(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                arg.arg_stable_ptr.untyped(),
+                "This attribute does not support field initialization shorthands.".into(),
+            ));
             None
         }
         AttributeArgVariant::Named { name, value, value_stable_ptr, .. } => {
@@ -170,10 +170,10 @@ fn parse_predicate_item(
                 ast::Expr::ShortString(terminal) => terminal.string_value(db).unwrap_or_default(),
                 ast::Expr::String(terminal) => terminal.string_value(db).unwrap_or_default(),
                 _ => {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: value_stable_ptr.untyped(),
-                        message: "Expected a string/short-string literal.".into(),
-                    });
+                    diagnostics.push(PluginDiagnostic::error(
+                        value_stable_ptr.untyped(),
+                        "Expected a string/short-string literal.".into(),
+                    ));
                     return None;
                 }
             };
@@ -182,17 +182,17 @@ fn parse_predicate_item(
         }
         AttributeArgVariant::Unnamed { value, value_stable_ptr, .. } => {
             let ast::Expr::Path(path) = value else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected identifier.".into(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    value_stable_ptr.untyped(),
+                    "Expected identifier.".into(),
+                ));
                 return None;
             };
             let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected simple path.".into(),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    value_stable_ptr.untyped(),
+                    "Expected simple path.".into(),
+                ));
                 return None;
             };
             let key = segment.ident(db).text(db);

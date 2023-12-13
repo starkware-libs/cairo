@@ -10,7 +10,7 @@ fn test_dict_new() -> Felt252Dict<felt252> {
 #[test]
 fn test_dict_squash_empty() {
     let mut dict: Felt252Dict<felt252> = Default::default();
-    let squashed_dict = dict.squash();
+    let _squashed_dict = dict.squash();
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn test_dict_update_twice() {
 fn test_dict_entry_destruct() {
     let mut dict = Default::default();
     dict.insert(10, 110);
-    let (entry, value) = dict.entry(10);
+    let (_entry, _value) = dict.entry(10);
 }
 
 const KEY1: felt252 = 10;
@@ -127,7 +127,7 @@ fn test_dict_of_nullable() {
 #[test]
 fn test_bool_dict() {
     let mut bool_dict: Felt252Dict<bool> = Default::default();
-    let squashed_dict = bool_dict.squash();
+    let _squashed_dict = bool_dict.squash();
     let mut bool_dict: Felt252Dict<bool> = Default::default();
     assert(!bool_dict.get(0), 'default_val != false');
     bool_dict.insert(1, true);
@@ -144,7 +144,7 @@ fn test_array_dict() {
     let (entry, value) = dict.entry(10);
     assert_eq(@value.deref(), @array![4, 5], 'dict[10] == [4, 5]');
     dict = entry.finalize(nullable::null());
-    let (entry, value) = dict.entry(10);
+    let (_entry, value) = dict.entry(10);
     assert(value.is_null(), 'dict[10] == null');
 }
 

@@ -6,7 +6,7 @@ mod panic;
 mod print;
 mod write;
 
-use cairo_lang_defs::plugin::{InlinePluginResult, PluginDiagnostic, PluginSuite};
+use cairo_lang_defs::plugin::{InlinePluginResult, PluginDiagnostic};
 use cairo_lang_plugins::get_base_plugins;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -21,11 +21,15 @@ use self::print::{PrintMacro, PrintlnMacro};
 use self::write::{WriteMacro, WritelnMacro};
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
+use crate::plugin::PluginSuite;
 
 /// Gets the default plugin suite to load into the Cairo compiler.
 pub fn get_default_plugin_suite() -> PluginSuite {
-    let mut suite =
-        PluginSuite { plugins: get_base_plugins(), inline_macro_plugins: Default::default() };
+    let mut suite = PluginSuite {
+        plugins: get_base_plugins(),
+        inline_macro_plugins: Default::default(),
+        analyzer_plugins: Default::default(),
+    };
     suite
         .add_inline_macro_plugin::<ArrayMacro>()
         .add_inline_macro_plugin::<AssertMacro>()
@@ -45,13 +49,13 @@ pub fn unsupported_bracket_diagnostic(
 ) -> InlinePluginResult {
     InlinePluginResult {
         code: None,
-        diagnostics: vec![PluginDiagnostic {
-            stable_ptr: macro_ast.arguments(db).left_bracket_stable_ptr(db),
-            message: format!(
+        diagnostics: vec![PluginDiagnostic::error(
+            macro_ast.arguments(db).left_bracket_stable_ptr(db),
+            format!(
                 "Macro `{}` does not support this bracket type.",
                 macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
             ),
-        }],
+        )],
     }
 }
 
@@ -121,14 +125,14 @@ macro_rules! extract_macro_unnamed_args {
 
         let args = $crate::inline_macros::extract_unnamed_args($db, &macro_arg_list, $n);
         let Some(args) = args else {
-            let diagnostics = vec![PluginDiagnostic {
-                stable_ptr: $syntax.stable_ptr().untyped(),
-                message: format!(
+            let diagnostics = vec![PluginDiagnostic::error(
+                $syntax.stable_ptr().untyped(),
+                format!(
                     "Macro `{}` must have exactly {} unnamed arguments.",
                     $syntax.path($db).as_syntax_node().get_text_without_trivia($db),
                     $n
                 ),
-            }];
+            )];
             return InlinePluginResult { code: None, diagnostics };
         };
         let args: [ast::Expr; $n] = args.try_into().unwrap();

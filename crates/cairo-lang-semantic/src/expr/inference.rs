@@ -142,16 +142,16 @@ impl InferenceError {
             InferenceError::Failed(_) => "Inference error occurred".into(),
             InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
-                format!("Type mismatch: {:?} and {:?}", ty0.debug(db), ty1.debug(db))
+                format!("Type mismatch: `{:?}` and `{:?}`", ty0.debug(db), ty1.debug(db))
             }
             InferenceError::ImplKindMismatch { impl0, impl1 } => {
-                format!("Impl mismatch: {:?} and {:?}", impl0.debug(db), impl1.debug(db))
+                format!("Impl mismatch: `{:?}` and `{:?}`", impl0.debug(db), impl1.debug(db))
             }
             InferenceError::GenericArgMismatch { garg0, garg1 } => {
-                format!("Generic arg mismatch: {:?} and {:?}", garg0.debug(db), garg1.debug(db))
+                format!("Generic arg mismatch: `{:?}` and `{:?}`", garg0.debug(db), garg1.debug(db))
             }
             InferenceError::TraitMismatch { trt0, trt1 } => {
-                format!("Trait mismatch: {:?} and {:?}", trt0.debug(db), trt1.debug(db))
+                format!("Trait mismatch: `{:?}` and `{:?}`", trt0.debug(db), trt1.debug(db))
             }
             InferenceError::ConstInferenceNotSupported => {
                 "Const generic inference not yet supported.".into()
@@ -164,7 +164,8 @@ impl InferenceError {
                         GenericArgumentId::Type
                     );
                     return format!(
-                        "Mismatched types. The type {:?} cannot be created from a numeric literal.",
+                        "Mismatched types. The type `{:?}` cannot be created from a numeric \
+                         literal.",
                         generic_type.debug(db)
                     );
                 } else if trait_id == get_core_trait(db, "StringLiteral".into()) {
@@ -173,7 +174,8 @@ impl InferenceError {
                         GenericArgumentId::Type
                     );
                     return format!(
-                        "Mismatched types. The type {:?} cannot be created from a string literal.",
+                        "Mismatched types. The type `{:?}` cannot be created from a string \
+                         literal.",
                         generic_type.debug(db)
                     );
                 }

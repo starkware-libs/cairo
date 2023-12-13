@@ -54,19 +54,20 @@ pub fn handle_storage_struct(
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
-            "    struct {full_state_struct_name} {{$members_code$
+            "    pub struct {full_state_struct_name} {{$members_code$
                  }}
                  impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
              {{}}
                  #[inline(always)]
-                 fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} {{
+                 pub fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} \
+             {{
                      {state_struct_name}{full_generic_arg_str} {{$member_init_code$
                      }}
                  }}
                  #[cfg(test)]
                  #[inline(always)]
-                 fn {module_kind}_state_for_testing{generic_arg_str}() -> {full_state_struct_name} \
-             {{
+                 pub fn {module_kind}_state_for_testing{generic_arg_str}() -> \
+             {full_state_struct_name} {{
                      {unsafe_new_function_name}{full_generic_arg_str}()
                  }}
                  $members_module_code$",
@@ -110,13 +111,13 @@ fn get_storage_member_code(
                 module_code: None,
             };
         } else {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                member.stable_ptr().untyped(),
+                format!(
                     "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                      [some_path::]{STORAGE_STRUCT_NAME}`"
                 ),
-                stable_ptr: member.stable_ptr().untyped(),
-            });
+            ));
             return Default::default();
         }
     }
@@ -139,7 +140,7 @@ fn get_simple_storage_member_code(
         &[("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
     );
     let member_code = RewriteNode::interpolate_patched(
-        "\n        $member$,",
+        "\n        pub $member$,",
         &[("member".to_string(), member_node.clone())].into(),
     );
 
@@ -176,10 +177,10 @@ fn get_simple_storage_member_code(
             ))
         }
         Some((_, _, MappingType::NonLegacy)) => {
-            diagnostics.push(PluginDiagnostic {
-                message: format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
-                stable_ptr: type_ast.stable_ptr().untyped(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                type_ast.stable_ptr().untyped(),
+                format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
+            ));
             None
         }
         None => {
@@ -216,20 +217,18 @@ fn get_mapping_full_path_type(
         ast::GenericArg::Unnamed(x) => match x.value(db) {
             ast::GenericArgValue::Expr(x) => x.expr(db),
             ast::GenericArgValue::Underscore(_) => {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: type_ast.stable_ptr().untyped(),
-                    message: format!(
-                        "{LEGACY_STORAGE_MAPPING} generic arguments must be specified"
-                    ),
-                });
+                diagnostics.push(PluginDiagnostic::error(
+                    type_ast.stable_ptr().untyped(),
+                    format!("{LEGACY_STORAGE_MAPPING} generic arguments must be specified"),
+                ));
                 return None;
             }
         },
         ast::GenericArg::Named(_) => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: type_ast.stable_ptr().untyped(),
-                message: format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                type_ast.stable_ptr().untyped(),
+                format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
+            ));
             return None;
         }
     };
@@ -282,11 +281,11 @@ fn get_substorage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            &format!("\n$name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
+                            &format!("\n        pub $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
                             &[
                                 (
                                     "name".to_string(),
-                                    RewriteNode::Copied(member.name(db).as_syntax_node()),
+                                    RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                                 ),
                                 ("component_path".to_string(), component_path.clone()),
                             ]
@@ -361,21 +360,22 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
                  $storage_member_name${member_state_name}Trait;
     mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
-        trait Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
+        pub struct {member_state_name} {{}}
+        pub trait Internal{member_state_name}Trait {{
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @{member_state_name}) -> $type_path$;
             fn write(ref self: {member_state_name}, value: $type_path$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress {{
-                starknet::storage_base_address_const::<{address}>()
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
+                 {{
+                starknet::storage_access::storage_base_address_const::<{address}>()
             }}
             fn read(self: @{member_state_name}) -> $type_path$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::read(
                         address_domain,
                         Internal{member_state_name}Impl::address(self),
@@ -385,7 +385,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
             fn write(ref self: {member_state_name}, value: $type_path$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::write(
                         address_domain,
                         Internal{member_state_name}Impl::address(@self),
@@ -399,13 +399,14 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         }
         StarknetModuleKind::Component => format!(
             "
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
+        pub struct {member_state_name} {{}}
         impl Storage{member_state_name}Impl of \
              starknet::storage::StorageMemberAddressTrait<{member_state_name}, $type_path$> {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress nopanic {{
-                starknet::storage_base_address_const::<{address}>()
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
+             nopanic {{
+                starknet::storage_access::storage_base_address_const::<{address}>()
             }}
         }}
     }}"
@@ -427,26 +428,26 @@ fn handle_legacy_mapping_storage_member(
                 "
     use $storage_member_name$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
-        trait Internal{member_state_name}Trait {{
+        pub struct {member_state_name} {{}}
+        pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::StorageBaseAddress;
+                 starknet::storage_access::StorageBaseAddress;
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
             fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
+                 starknet::storage_access::StorageBaseAddress {{
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::read(
                         address_domain,
                         Internal{member_state_name}Impl::address(self, key),
@@ -456,7 +457,7 @@ fn handle_legacy_mapping_storage_member(
             fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::write(
                         address_domain,
                         Internal{member_state_name}Impl::address(@self, key),
@@ -470,16 +471,16 @@ fn handle_legacy_mapping_storage_member(
         }
         StarknetModuleKind::Component => format!(
             "
-    mod $storage_member_name$ {{$extra_uses$
+    pub mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct {member_state_name} {{}}
+        pub struct {member_state_name} {{}}
 
         impl StorageMap{member_state_name}Impl of \
              starknet::storage::StorageMapMemberAddressTrait<{member_state_name}, $key_type$, \
              $value_type$> {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-             starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
+             starknet::storage_access::StorageBaseAddress {{
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
         }}

@@ -151,10 +151,10 @@ test_expr_diagnostics
 
 //! > expr_code
 {
-    let a = 123_felt252;
-    let a = 123_u128;
-    let b = 123_NonZero;
-    let b = 123_u129;
+    let _a = 123_felt252;
+    let _a = 123_u128;
+    let _b = 123_NonZero;
+    let _b = 123_u129;
 }
 
 //! > module_code
@@ -165,14 +165,14 @@ fn foo() {
 
 //! > expected_diagnostics
 error: Unknown type.
- --> lib.cairo:8:13
-    let b = 123_u129;
-            ^******^
+ --> lib.cairo:8:14
+    let _b = 123_u129;
+             ^******^
 
-error: Mismatched types. The type core::zeroable::NonZero cannot be created from a numeric literal.
- --> lib.cairo:7:13
-    let b = 123_NonZero;
-            ^*********^
+error: Mismatched types. The type `core::zeroable::NonZero` cannot be created from a numeric literal.
+ --> lib.cairo:7:14
+    let _b = 123_NonZero;
+             ^*********^
 
 //! > ==========================================================================
 
@@ -236,7 +236,7 @@ test_expr_diagnostics
 
 //! > expr_code
 {
-  let x = y;
+  let _x = y;
 }
 
 //! > module_code
@@ -253,6 +253,218 @@ error: Missing tokens. Expected an item after attributes.
         ^
 
 error: Identifier not found.
- --> lib.cairo:6:11
-  let x = y;
-          ^
+ --> lib.cairo:6:12
+  let _x = y;
+           ^
+
+//! > ==========================================================================
+
+//! > Test unused variable.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let x = 7;
+  let x = 3;
+  let y = 5;
+  x
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:7
+  let x = 7;
+      ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:7
+  let y = 5;
+      ^
+
+//! > ==========================================================================
+
+//! > Test unhandled Option.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  Option::<felt252>::None;
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
+ --> lib.cairo:3:3
+  Option::<felt252>::None;
+  ^*********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled Result.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  Result::<felt252, felt252>::Err(4);
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
+ --> lib.cairo:3:3
+  Result::<felt252, felt252>::Err(4);
+  ^********************************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  must_use_function();
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+  0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:7:3
+  must_use_function();
+  ^*****************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use impl function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  imp::must_use_function();
+}
+
+//! > module_code
+trait trt {
+  fn must_use_function() -> felt252;
+}
+impl imp of trt {
+  #[must_use]
+  fn must_use_function() -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unhandled must use trait function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  trt::must_use_function();
+}
+
+//! > module_code
+trait trt {
+  #[must_use]
+  fn must_use_function() -> felt252;
+}
+impl imp of trt {
+  fn must_use_function() -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:12:3
+  trt::must_use_function();
+  ^**********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use method.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let x: felt252 = 1;
+  x.must_use_function();
+}
+
+//! > module_code
+trait trt<T> {
+  #[must_use]
+  fn must_use_function(self: T) -> felt252;
+}
+impl imp of trt<felt252> {
+  fn must_use_function(self: felt252) -> felt252 {
+    0
+  }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:13:3
+  x.must_use_function();
+  ^*******************^
+
+//! > ==========================================================================
+
+//! > Test tail expression must use function.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  must_use_function()
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+  0
+}
+
+//! > function_body
+
+//! > expected_diagnostics

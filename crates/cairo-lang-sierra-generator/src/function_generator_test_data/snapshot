@@ -6,7 +6,7 @@ test_function_generator
 //! > function
 fn foo(ref arr: Array<felt252>) {
     arr.append(5);
-    arr.span();
+    let _ = arr.span();
     revoke_ap();
     arr.append(6);
 }

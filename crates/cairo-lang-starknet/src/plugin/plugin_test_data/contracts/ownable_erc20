@@ -49,13 +49,13 @@ mod ownable_erc20_contract {
     }
 
 
-    struct ContractState {
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
@@ -114,23 +114,20 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableERC20Impl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__OwnableERC20Impl__constructor as constructor;
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -141,7 +138,7 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -211,14 +208,14 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -238,6 +235,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableERC20 {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -290,13 +288,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    struct ContractState {
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
@@ -355,23 +353,20 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableERC20Impl::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__OwnableERC20Impl__constructor as constructor;
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__OwnableERC20Impl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -382,7 +377,7 @@ fn __wrapper__OwnableERC20Impl__constructor(mut data: Span::<felt252>) -> Span::
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -452,14 +447,14 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -479,6 +474,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableERC20 {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

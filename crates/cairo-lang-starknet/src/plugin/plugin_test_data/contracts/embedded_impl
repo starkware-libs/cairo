@@ -1,7 +1,7 @@
 //! > Test expansion of the outside implementations.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]
@@ -57,7 +57,9 @@ trait OutsideTrait<TContractState> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
+trait UnsafeNewContractStateTraitForOutsideImpl<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -73,7 +75,7 @@ fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: Un
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImpl::<TContractState>::ret_3(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -99,7 +101,7 @@ fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractSt
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImpl::<TContractState>::ret_identity(ref contract_state, __arg_from_address, __arg_value);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -109,8 +111,8 @@ fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractSt
 
 
 mod __external_OutsideImpl {
-        use super::__wrapper__OutsideImpl__ret_3 as ret_3;
-        use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
+    pub use super::__wrapper__OutsideImpl__ret_3 as ret_3;
+    pub use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
 }
 
 mod __l1_handler_OutsideImpl {
@@ -124,43 +126,43 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        value: value::ContractMemberState,
+    pub struct ContractState {
+        pub value: value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             value: value::ContractMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
     use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
     mod value {
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
             }
             fn read(self: @ContractMemberState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<felt252>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -170,7 +172,7 @@ enum Event {}
             fn write(ref self: ContractMemberState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<felt252>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -185,7 +187,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
+pub const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -194,15 +196,12 @@ impl ContractStateOutsideImpl of
     }
 }
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -213,7 +212,7 @@ impl ContractStateOutsideImpl of
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -241,12 +240,16 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:12:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
@@ -339,7 +342,9 @@ trait OutsideTraitWithDestruct<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState> {
+trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -356,7 +361,7 @@ fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithDestruct::<TContractState, DisallowedDestruct>::ret_3(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -366,7 +371,7 @@ fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
 
 
 mod __external_OutsideImplWithDestruct {
-        use super::__wrapper__OutsideImplWithDestruct__ret_3 as ret_3;
+    pub use super::__wrapper__OutsideImplWithDestruct__ret_3 as ret_3;
 }
 
 mod __l1_handler_OutsideImplWithDestruct {
@@ -388,7 +393,9 @@ trait OutsideTraitWithPanicDestruct<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState> {
+trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -405,7 +412,7 @@ fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithPanicDestruct::<TContractState, DisallowedPanicDestruct>::ret_5(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -415,7 +422,7 @@ fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
 
 
 mod __external_OutsideImplWithPanicDestruct {
-        use super::__wrapper__OutsideImplWithPanicDestruct__ret_5 as ret_5;
+    pub use super::__wrapper__OutsideImplWithPanicDestruct__ret_5 as ret_5;
 }
 
 mod __l1_handler_OutsideImplWithPanicDestruct {
@@ -429,20 +436,20 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -451,7 +458,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
+pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
 
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
@@ -466,15 +473,12 @@ impl ContractStateOutsideImplWithPanicDestruct of
     }
 }
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -485,7 +489,7 @@ impl ContractStateOutsideImplWithPanicDestruct of
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -513,7 +517,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -529,12 +533,17 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
 
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:23:1
+#[starknet::contract]
+^*******************^
+
 //! > ==========================================================================
 
 //! > Test embeddable impl with existing drop impl.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]
@@ -592,7 +601,9 @@ trait OutsideTraitWithDrop<
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState> {
+trait UnsafeNewContractStateTraitForOutsideImplWithDrop<
+    TContractState
+> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -609,7 +620,7 @@ fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = OutsideImplWithDrop::<TContractState, _>::ret_8(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -619,7 +630,7 @@ fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
 
 
 mod __external_OutsideImplWithDrop {
-        use super::__wrapper__OutsideImplWithDrop__ret_8 as ret_8;
+    pub use super::__wrapper__OutsideImplWithDrop__ret_8 as ret_8;
 }
 
 mod __l1_handler_OutsideImplWithDrop {
@@ -633,20 +644,20 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -655,7 +666,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
+pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
 
 impl ContractStateOutsideImplWithDrop of
     super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {
@@ -664,15 +675,12 @@ impl ContractStateOutsideImplWithDrop of
     }
 }
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -683,7 +691,7 @@ impl ContractStateOutsideImplWithDrop of
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -711,9 +719,13 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:12:1
+#[starknet::contract]
+^*******************^

@@ -33,7 +33,7 @@ mod example_failure {
         }
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl Tree of ITree<ContractState> {
         fn sorted_list(ref self: ContractState, root: u128) {
             let mut in_order: Array<(u128, Node)> = array![];

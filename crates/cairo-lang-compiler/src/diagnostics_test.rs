@@ -14,5 +14,5 @@ fn test_diagnostics() {
         Some(CrateConfiguration::default_for_root(Directory::Real("no/such/path".into()))),
     );
 
-    assert_eq!(get_diagnostics_as_string(&db, &[]), "no/such/path/lib.cairo not found\n");
+    assert_eq!(get_diagnostics_as_string(&db, &[]), "error: no/such/path/lib.cairo not found\n");
 }

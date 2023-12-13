@@ -1,11 +1,12 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use itertools::chain;
+use cairo_lang_utils::Upcast;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -19,13 +20,13 @@ mod test;
 pub struct DiagnosticsError;
 
 trait DiagnosticCallback {
-    fn on_diagnostic(&mut self, diagnostic: String);
+    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String);
 }
 
 impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
-    fn on_diagnostic(&mut self, diagnostic: String) {
+    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
         if let Some(callback) = self {
-            callback.on_diagnostic(diagnostic)
+            callback.on_diagnostic(severity, diagnostic)
         }
     }
 }
@@ -33,37 +34,39 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
-    extra_crate_ids: Vec<CrateId>,
+    crate_ids: Vec<CrateId>,
+    /// If true, compilation will not fail due to warnings.
+    allow_warnings: bool,
 }
 
 impl DiagnosticsReporter<'static> {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
-        Self { callback: None, extra_crate_ids: vec![] }
+        Self { callback: None, crate_ids: vec![], allow_warnings: false }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
-        Self::callback(|diagnostic| {
-            eprint!("{diagnostic}");
+        Self::callback(|severity, diagnostic| {
+            eprint!("{severity}: {diagnostic}");
         })
     }
 }
 
 impl<'a> DiagnosticsReporter<'a> {
     // NOTE(mkaput): If Rust will ever have intersection types, one could write
-    //   impl<F> DiagnosticCallback for F where F: FnMut(String)
+    //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
     /// Create a reporter which calls `callback` for each diagnostic.
-    pub fn callback(callback: impl FnMut(String) + 'a) -> Self {
+    pub fn callback(callback: impl FnMut(Severity, String) + 'a) -> Self {
         struct Func<F>(F);
 
         impl<F> DiagnosticCallback for Func<F>
         where
-            F: FnMut(String),
+            F: FnMut(Severity, String),
         {
-            fn on_diagnostic(&mut self, diagnostic: String) {
-                (self.0)(diagnostic)
+            fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
+                (self.0)(severity, diagnostic)
             }
         }
 
@@ -72,19 +75,25 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which appends all diagnostics to provided string.
     pub fn write_to_string(string: &'a mut String) -> Self {
-        Self::callback(|diagnostic| {
-            string.push_str(&diagnostic);
+        Self::callback(|severity, diagnostic| {
+            string.push_str(&format!("{severity}: {diagnostic}"));
         })
     }
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
-        Self { callback: Some(Box::new(callback)), extra_crate_ids: vec![] }
+        Self { callback: Some(Box::new(callback)), crate_ids: vec![], allow_warnings: false }
     }
 
-    /// Adds extra crates to be checked.
-    pub fn with_extra_crates(mut self, extra_crate_ids: &[CrateId]) -> Self {
-        self.extra_crate_ids = extra_crate_ids.to_vec();
+    /// Sets crates to be checked, instead of all crates in the db.
+    pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
+        self.crate_ids = crate_ids.to_vec();
+        self
+    }
+
+    /// Allows the compilation to succeed if only warnings are emitted.
+    pub fn allow_warnings(mut self) -> Self {
+        self.allow_warnings = true;
         self
     }
 
@@ -92,19 +101,20 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `true` if diagnostics were found.
     pub fn check(&mut self, db: &RootDatabase) -> bool {
         let mut found_diagnostics = false;
-        let crates = db.crates().clone();
-        for crate_id in chain!(crates.iter(), self.extra_crate_ids.iter()).copied() {
+        let crates = if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() };
+        for crate_id in crates {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
-                self.callback.on_diagnostic("Failed to get main module file".to_string());
+                self.callback
+                    .on_diagnostic(Severity::Error, "Failed to get main module file".to_string());
                 continue;
             };
 
             if db.file_content(module_file).is_none() {
                 match db.lookup_intern_file(module_file) {
-                    FileLongId::OnDisk(path) => {
-                        self.callback.on_diagnostic(format!("{} not found\n", path.display()))
-                    }
+                    FileLongId::OnDisk(path) => self
+                        .callback
+                        .on_diagnostic(Severity::Error, format!("{} not found\n", path.display())),
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
                 }
                 found_diagnostics = true;
@@ -112,29 +122,37 @@ impl<'a> DiagnosticsReporter<'a> {
 
             for module_id in &*db.crate_modules(crate_id) {
                 for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    let diag = db.file_syntax_diagnostics(file_id);
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
                 }
 
-                if let Ok(diag) = db.module_semantic_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
+                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
                 }
 
-                if let Ok(diag) = db.module_lowering_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        self.callback.on_diagnostic(diag.format(db));
-                    }
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
+                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
                 }
             }
         }
         found_diagnostics
+    }
+
+    /// Checks if a diagnostics group contains any diagnostics and reports them to the provided
+    /// callback as strings. Returns `true` if diagnostics were found.
+    fn check_diag_group<TEntry: DiagnosticEntry>(
+        &mut self,
+        db: &TEntry::DbType,
+        group: Diagnostics<TEntry>,
+    ) -> bool {
+        let mut found: bool = false;
+        for entry in group.format_with_severity(db) {
+            if !entry.is_empty() {
+                self.callback.on_diagnostic(entry.severity(), entry.message().to_string());
+                found |= !self.allow_warnings || group.check_error_free().is_err();
+            }
+        }
+        found
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
@@ -155,8 +173,6 @@ impl Default for DiagnosticsReporter<'static> {
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
 pub fn get_diagnostics_as_string(db: &RootDatabase, extra_crate_ids: &[CrateId]) -> String {
     let mut diagnostics = String::default();
-    DiagnosticsReporter::write_to_string(&mut diagnostics)
-        .with_extra_crates(extra_crate_ids)
-        .check(db);
+    DiagnosticsReporter::write_to_string(&mut diagnostics).with_crates(extra_crate_ids).check(db);
     diagnostics
 }

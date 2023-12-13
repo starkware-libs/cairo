@@ -60,4 +60,8 @@ fn test_format_debug() {
         ) == "StructExample { felt_value: 6, bool_value: false, byte_array_value: \"ByteArray\", enum_value: EnumExample::BoolValue(true) }",
         'bad derive struct formatting'
     );
+    assert(
+        format!("{:?}", ((), (1,), (2, 3), (4, 5, 6))) == "((), (1,), (2, 3), (4, 5, 6))",
+        'bad tuple fmt'
+    );
 }

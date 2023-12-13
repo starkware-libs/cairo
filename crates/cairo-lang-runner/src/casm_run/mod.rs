@@ -39,6 +39,7 @@ use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
+use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner};
@@ -46,6 +47,7 @@ use crate::{Arg, RunResultValue, SierraCasmRunner};
 #[cfg(test)]
 mod test;
 
+mod contract_address;
 mod dict_manager;
 
 // TODO(orizi): This def is duplicated.
@@ -944,8 +946,18 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
-        // Assign an arbitrary address to the contract.
-        let deployed_contract_address = self.starknet_state.get_next_id();
+        // Assign the starknet address of the contract.
+        let deployer_address = if deploy_from_zero {
+            Felt252::zero()
+        } else {
+            self.starknet_state.exec_info.contract_address.clone()
+        };
+        let deployed_contract_address = calculate_contract_address(
+            &_contract_address_salt,
+            &class_hash,
+            &calldata,
+            &deployer_address,
+        );
 
         // Prepare runner for running the constructor.
         let runner = self.runner.expect("Runner is needed for starknet.");
@@ -953,34 +965,35 @@ impl<'a> CairoHintProcessor<'a> {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
 
+        // Set the class hash of the deployed contract before executing the constructor,
+        // as the constructor could make an external call to this address.
+        self.starknet_state
+            .deployed_contracts
+            .insert(deployed_contract_address.clone(), class_hash);
+
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            let new_caller_address = if deploy_from_zero {
-                Felt252::zero()
-            } else {
-                self.starknet_state.exec_info.contract_address.clone()
-            };
             let old_addrs = self
                 .starknet_state
-                .open_caller_context((deployed_contract_address.clone(), new_caller_address));
+                .open_caller_context((deployed_contract_address.clone(), deployer_address));
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
+                    self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
                     fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
         } else if calldata.is_empty() {
             (Relocatable::from((0, 0)), Relocatable::from((0, 0)))
         } else {
+            // Remove the contract from the deployed contracts,
+            // since it failed to deploy.
+            self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
             fail_syscall!(b"INVALID_CALLDATA_LEN");
         };
 
-        // Set the class hash of the deployed contract.
-        self.starknet_state
-            .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash);
         Ok(SyscallResult::Success(vec![
             deployed_contract_address.into(),
             res_data_start.into(),
@@ -1970,10 +1983,17 @@ pub fn execute_core_hint(
             let b1 = get_val(vm, b1)?.to_bigint();
             let n0 = get_val(vm, n0)?.to_bigint();
             let n1 = get_val(vm, n1)?.to_bigint();
-            let b: BigInt = b0 + b1.shl(128);
+            let b: BigInt = b0.clone() + b1.clone().shl(128);
             let n: BigInt = n0 + n1.shl(128);
             let ExtendedGcd { gcd: mut g, x: _, y: mut r } = n.extended_gcd(&b);
-            if g != 1.into() {
+            if n == 1.into() {
+                insert_value_to_cellref!(vm, s_or_r0, Felt252::from(b0))?;
+                insert_value_to_cellref!(vm, s_or_r1, Felt252::from(b1))?;
+                insert_value_to_cellref!(vm, t_or_k0, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, t_or_k1, Felt252::from(0))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, g1_option, Felt252::from(0))?;
+            } else if g != 1.into() {
                 // This makes sure `g0_or_no_inv` is always non-zero in the no inverse case.
                 if g.is_even() {
                     g = 2u32.into();

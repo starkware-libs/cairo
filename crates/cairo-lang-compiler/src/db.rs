@@ -2,19 +2,19 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, PluginSuite};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase,
-    FilesGroup, FilesGroupEx, CORELIB_CRATE_NAME,
+    init_dev_corelib, init_dev_corelib_from_directory, init_files_group, AsFilesGroupMut,
+    FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
+use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -44,11 +44,13 @@ impl RootDatabase {
     fn new(
         plugins: Vec<Arc<dyn MacroPlugin>>,
         inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+        analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
     ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res.set_macro_plugins(plugins);
         res.set_inline_macro_plugins(inline_macro_plugins.into());
+        res.set_analyzer_plugins(analyzer_plugins);
         res
     }
 
@@ -123,6 +125,7 @@ impl RootDatabaseBuilder {
         let mut db = RootDatabase::new(
             self.plugin_suite.plugins.clone(),
             self.plugin_suite.inline_macro_plugins.clone(),
+            self.plugin_suite.analyzer_plugins.clone(),
         );
 
         if let Some(cfg_set) = &self.cfg_set {
@@ -132,18 +135,14 @@ impl RootDatabaseBuilder {
         if self.detect_corelib {
             let path =
                 detect_corelib().ok_or_else(|| anyhow!("Failed to find development corelib."))?;
-            init_dev_corelib(&mut db, path);
+            init_dev_corelib(&mut db, path)
         }
 
-        if let Some(config) = self.project_config.clone() {
+        if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, *config.clone());
 
-            if let Some(corelib) = config.corelib {
-                let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
-                db.set_crate_config(
-                    core_crate,
-                    Some(CrateConfiguration::default_for_root(corelib)),
-                );
+            if let Some(corelib) = &config.corelib {
+                init_dev_corelib_from_directory(&mut db, corelib.clone())
             }
         }
 

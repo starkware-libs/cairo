@@ -5,9 +5,7 @@ mod test;
 use std::hash::Hash;
 use std::ops::{Add, Sub};
 
-use indexmap::map::Entry;
-
-use crate::ordered_hash_map::OrderedHashMap;
+use crate::ordered_hash_map::{Entry, OrderedHashMap};
 
 /// A trait for types which have a zero value.
 ///

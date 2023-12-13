@@ -61,7 +61,7 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 pub const EMPTY_EVENT_CODE: &str = formatcp! {"\
 #[{EVENT_ATTR}]
 #[derive(Drop, {EVENT_TRAIT})]
-enum {EVENT_TYPE_NAME} {{}}
+pub enum {EVENT_TYPE_NAME} {{}}
 "};
 
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
@@ -92,14 +92,14 @@ pub fn get_starknet_event_variants(
                 let stable_ptr = &leaf.stable_ptr();
                 if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
                     if !item.has_attr(db, EVENT_ATTR) {
-                        diagnostics.push(PluginDiagnostic {
-                            message: format!(
+                        diagnostics.push(PluginDiagnostic::error(
+                            stable_ptr.untyped(),
+                            format!(
                                 "{} type that is named `{EVENT_TYPE_NAME}` must be marked with \
                                  #[{EVENT_ATTR}].",
                                 module_kind.to_str_capital()
                             ),
-                            stable_ptr: stable_ptr.untyped(),
-                        });
+                        ));
                     }
                     return Some(vec![]);
                 }
@@ -112,25 +112,25 @@ pub fn get_starknet_event_variants(
 
     match (has_event_attr, has_event_name) {
         (true, false) => {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                stable_ptr,
+                format!(
                     "{} type that is marked with #[{EVENT_ATTR}] must be named \
                      `{EVENT_TYPE_NAME}`.",
                     module_kind.to_str_capital()
                 ),
-                stable_ptr,
-            });
+            ));
             None
         }
         (false, true) => {
-            diagnostics.push(PluginDiagnostic {
-                message: format!(
+            diagnostics.push(PluginDiagnostic::error(
+                stable_ptr,
+                format!(
                     "{} type that is named `{EVENT_TYPE_NAME}` must be marked with \
                      #[{EVENT_ATTR}].",
                     module_kind.to_str_capital()
                 ),
-                stable_ptr,
-            });
+            ));
             // The attribute is missing, but this counts as a event - we can't create another
             // (empty) event.
             Some(variants)

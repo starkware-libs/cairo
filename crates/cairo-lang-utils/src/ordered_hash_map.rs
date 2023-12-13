@@ -27,7 +27,7 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     /// manipulation.
     ///
     /// Computes in O(1) time (amortized average).
-    pub fn entry(&mut self, key: Key) -> indexmap::map::Entry<'_, Key, Value> {
+    pub fn entry(&mut self, key: Key) -> Entry<'_, Key, Value> {
         self.0.entry(key)
     }
 
@@ -120,6 +120,9 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.shift_remove_index(index)
     }
 }
+
+/// Entry for an existing key-value pair or a vacant location to insert one.
+pub type Entry<'a, Key, Value> = indexmap::map::Entry<'a, Key, Value>;
 
 impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
     type Item = (Key, Value);

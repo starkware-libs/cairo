@@ -5,7 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, CrateSettings,
+    Edition, ExperimentalFeaturesConfig, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -42,6 +43,7 @@ impl SemanticDatabaseForTesting {
         let suite = get_default_plugin_suite();
         res.set_macro_plugins(suite.plugins);
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
+        res.set_analyzer_plugins(suite.analyzer_plugins);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
@@ -118,15 +120,21 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
         parent: None,
         name: "lib.cairo".into(),
         content: Arc::new(content.into()),
-        diagnostics_mappings: Default::default(),
+        code_mappings: Default::default(),
         kind: FileKind::Module,
     }));
 
     db.intern_crate(CrateLongId::Virtual {
         name: "test".into(),
-        root: Directory::Virtual {
-            files: BTreeMap::from([("lib.cairo".into(), file_id)]),
-            dirs: Default::default(),
+        config: CrateConfiguration {
+            root: Directory::Virtual {
+                files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+                dirs: Default::default(),
+            },
+            settings: CrateSettings {
+                edition: Edition::default(),
+                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
+            },
         },
     })
 }

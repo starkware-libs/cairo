@@ -243,7 +243,7 @@ fn foo(p: ec::EcPoint) -> felt252 {
     match ec::ec_point_is_zero(p) {
         IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(p_nz) => {
-            let (x, y) = ec::ec_point_unwrap(p_nz);
+            let (x, _y) = ec::ec_point_unwrap(p_nz);
             x
         },
     }

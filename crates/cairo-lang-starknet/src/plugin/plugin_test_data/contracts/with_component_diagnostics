@@ -59,31 +59,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -92,7 +92,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -119,7 +119,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -130,17 +130,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -149,18 +149,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
+pub const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -171,7 +168,7 @@ const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bd
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -205,8 +202,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -311,31 +308,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -344,7 +341,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -371,7 +368,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -382,17 +379,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -401,18 +398,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
+pub const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -423,7 +417,7 @@ const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -457,8 +451,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -551,31 +545,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -584,7 +578,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -611,7 +605,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -622,17 +616,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -641,18 +635,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
+pub const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -663,7 +654,7 @@ const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d1
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -697,8 +688,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -800,31 +791,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -833,7 +824,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -860,7 +851,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -871,17 +862,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -890,18 +881,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50532f2a0f11f077643a;
+pub const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50532f2a0f11f077643a;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -912,7 +900,7 @@ const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -946,8 +934,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -1056,31 +1044,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -1089,7 +1077,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -1116,7 +1104,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1127,19 +1115,19 @@ contract:
 
 
 
-    struct ContractState {
-        test_component_storage: super::test_component::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub test_component_storage: super::test_component::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -1148,18 +1136,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
+pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -1170,7 +1155,7 @@ const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e522
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -1223,8 +1208,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -1323,31 +1308,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -1356,7 +1341,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -1383,7 +1368,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1394,17 +1379,17 @@ contract:
 
 
 
-    struct ContractState {
+    pub struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -1413,18 +1398,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
+pub const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -1435,7 +1417,7 @@ const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -1469,8 +1451,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -1527,37 +1509,37 @@ test_component_storage: path::to::component::Storage,
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
                                                      ^********************^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
 error: Type annotations needed. Failed to infer ?0
  --> lib.cairo[contract]:37:27
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                          ^********************^
+                starknet::SyscallResultTrait::unwrap_syscall(
+                          ^****************^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
+error: Type not found.
  --> lib.cairo:14:56
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
@@ -1597,31 +1579,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -1630,7 +1612,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -1657,7 +1639,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1668,19 +1650,19 @@ contract:
 
 
 
-    struct ContractState {
-        test_component_storage: test_component_storage::ContractMemberState,
+    pub struct ContractState {
+        pub test_component_storage: test_component_storage::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: test_component_storage::ContractMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -1688,21 +1670,21 @@ contract:
     mod test_component_storage {
         use super::Event;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> super::super::test_component::Storage;
             fn write(ref self: ContractMemberState, value: super::super::test_component::Storage);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
             }
             fn read(self: @ContractMemberState) -> super::super::test_component::Storage {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<super::super::test_component::Storage>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -1712,7 +1694,7 @@ contract:
             fn write(ref self: ContractMemberState, value: super::super::test_component::Storage) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<super::super::test_component::Storage>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -1727,18 +1709,15 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
+pub const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
 
 
-    mod __external {
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -1749,7 +1728,7 @@ const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -1783,8 +1762,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -1871,31 +1850,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -1904,7 +1883,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -1931,7 +1910,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -1942,22 +1921,22 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ContractState {
-        test_component_storage: super::test_component::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub test_component_storage: super::test_component::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -1966,7 +1945,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
+pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1980,7 +1959,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -1988,16 +1967,13 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
-    mod __external {
-        use super::__wrapper__get_data as get_data;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__get_data as get_data;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -2008,7 +1984,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -2036,7 +2012,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2148,8 +2124,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ABC") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -2170,31 +2146,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -2203,7 +2179,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -2230,7 +2206,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2241,19 +2217,19 @@ contract:
 
 
 
-    struct ContractState {
-        test_component_storage: super::test_component::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub test_component_storage: super::test_component::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -2262,7 +2238,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
+pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2276,7 +2252,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -2284,16 +2260,13 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
-    mod __external {
-        use super::__wrapper__get_data as get_data;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__get_data as get_data;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -2304,7 +2277,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -2423,31 +2396,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -2456,7 +2429,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -2483,7 +2456,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2494,31 +2467,31 @@ component:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-enum Event {}
+pub enum Event {}
 
 
-    struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
+    pub struct ComponentState<TContractState> {
+        pub data: data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
             data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    pub mod data {
         #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
+        pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -2527,7 +2500,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait,
 };
-trait HasComponent<TContractState> {
+pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
@@ -2554,7 +2527,7 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         Option::None
     }
 }
@@ -2565,13 +2538,13 @@ contract:
 
 
 
-    struct ContractState {
-        component1_storage: super::component1::ComponentState<ContractState>,
-        component2_storage: super::component2::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub component1_storage: super::component1::ComponentState<ContractState>,
+        pub component2_storage: super::component2::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             component1_storage: super::component1::unsafe_new_component_state::<ContractState>(),
             component2_storage: super::component2::unsafe_new_component_state::<ContractState>(),
@@ -2579,7 +2552,7 @@ contract:
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
     
@@ -2588,7 +2561,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
+pub const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2602,7 +2575,7 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -2610,16 +2583,13 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
-    mod __external {
-        use super::__wrapper__get_sum as get_sum;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-    }
-
+pub mod __external {
+    pub use super::__wrapper__get_sum as get_sum;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -2630,7 +2600,7 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -2683,8 +2653,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("Comp1Event") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("Comp1Event") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

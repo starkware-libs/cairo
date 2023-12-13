@@ -82,7 +82,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Mismatched types. The type core::bool cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:2:17
     let mut x = 3;
                 ^

@@ -33,11 +33,13 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
+use num_traits::Zero;
 
 use crate::objects::{BranchCost, ConstCost, CostInfoProvider, PreCost, WithdrawGasBranchInfo};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -290,7 +292,9 @@ pub fn core_libfunc_cost(
                     std::cmp::max(1, info_provider.type_size(&libfunc.ty).try_into().unwrap());
                 vec![ConstCost::steps(n_steps).into()]
             }
-            BoxConcreteLibfunc::Unbox(_) => vec![ConstCost::default().into()],
+            BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
+                vec![ConstCost::default().into()]
+            }
         },
         Mem(libfunc) => match libfunc {
             StoreTemp(libfunc) => {
@@ -311,6 +315,10 @@ pub fn core_libfunc_cost(
         }
         Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ConstCost::default().into()],
+            EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => match libfunc.num_variants {
+                1 | 2 => vec![ConstCost::default().into()],
+                _ => vec![ConstCost::steps(1).into()],
+            },
             EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig) => {
                 let n = sig.signature.branch_signatures.len();
                 match n {
@@ -323,6 +331,24 @@ pub fn core_libfunc_cost(
                     )
                     .collect_vec(),
                 }
+            }
+        },
+        Range(libfunc) => match libfunc {
+            RangeConcreteLibfunc::ConstrainRange(libfunc) => {
+                assert!(
+                    libfunc.in_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.in_range.lower
+                );
+                assert!(
+                    libfunc.out_range.lower.is_zero(),
+                    "Non-zero `min` value {} not supported",
+                    libfunc.out_range.lower
+                );
+                vec![
+                    ConstCost { steps: 4, holes: 0, range_checks: 2 }.into(),
+                    ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                ]
             }
         },
         Struct(
@@ -368,10 +394,10 @@ pub fn core_libfunc_cost(
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibfunc::Null(_) => vec![ConstCost::default().into()],
-            NullableConcreteLibfunc::NullableFromBox(_) => vec![ConstCost::default().into()],
-            NullableConcreteLibfunc::MatchNullable(_)
-            | NullableConcreteLibfunc::MatchNullableSnapshot(_) => {
+            NullableConcreteLibfunc::Null(_)
+            | NullableConcreteLibfunc::NullableFromBox(_)
+            | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ConstCost::default().into()],
+            NullableConcreteLibfunc::MatchNullable(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
         },
@@ -613,7 +639,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 30, holes: 0, range_checks: 7 }],
         Uint256Concrete::InvModN(_) => vec![
             ConstCost { steps: 40, holes: 0, range_checks: 9 },
-            ConstCost { steps: 23, holes: 0, range_checks: 7 },
+            ConstCost { steps: 25, holes: 0, range_checks: 7 },
         ],
     }
 }

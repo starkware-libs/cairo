@@ -45,13 +45,13 @@ mod ownable_balance {
     }
 
 
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub ownable: ownable_comp::ComponentState<ContractState>,
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
             balance: balance::ContractMemberState {},
@@ -66,21 +66,21 @@ mod ownable_balance {
         use super::Event;
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -90,7 +90,7 @@ mod ownable_balance {
             fn write(ref self: ContractMemberState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -132,7 +132,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -150,7 +150,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -172,25 +172,22 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-        use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
-        use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
+    pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -201,7 +198,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -246,8 +243,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("Ownable") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -262,8 +259,11 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableBalance {
+        #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        #[external(v0)]
         fn get_balance(self: @ContractState) -> u128;
+        #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
 }
@@ -303,13 +303,13 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
+    pub struct ContractState {
+        pub ownable: ownable_comp::ComponentState<ContractState>,
+        pub balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
             balance: balance::ContractMemberState {},
@@ -324,21 +324,21 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         use super::Event;
         use super::OwnableBalanceImpl;
         #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+        pub struct ContractMemberState {}
+        pub trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -348,7 +348,7 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
             fn write(ref self: ContractMemberState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -390,7 +390,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -408,7 +408,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -430,25 +430,22 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     );
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
 
-    mod __external {
-        use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
-        use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
+    pub use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -459,7 +456,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -504,8 +501,8 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("Ownable") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -520,8 +517,11 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 }
     trait OwnableBalance {
+        #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        #[external(v0)]
         fn get_balance(self: @ContractState) -> u128;
+        #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
 

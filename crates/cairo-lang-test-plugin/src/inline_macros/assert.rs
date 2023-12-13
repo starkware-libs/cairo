@@ -10,13 +10,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-/// Macro for equality assertion.
-#[derive(Default, Debug)]
-pub struct AssertEqMacro;
-impl NamedPlugin for AssertEqMacro {
-    const NAME: &'static str = "assert_eq";
-}
-impl InlineMacroExprPlugin for AssertEqMacro {
+/// A trait for compare assertion plugin.
+trait CompareAssertionPlugin: NamedPlugin {
+    const OPERATOR: &'static str;
+
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
@@ -29,10 +26,10 @@ impl InlineMacroExprPlugin for AssertEqMacro {
         if arguments.len() < 2 {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: arguments_syntax.lparen(db).stable_ptr().untyped(),
-                    message: format!("Macro `{}` requires at least 2 arguments.", Self::NAME,),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
+                )],
             };
         }
         let (lhs, rest) = arguments.split_first().unwrap();
@@ -40,28 +37,22 @@ impl InlineMacroExprPlugin for AssertEqMacro {
         let Some(lhs) = try_extract_unnamed_arg(db, lhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: lhs.stable_ptr().untyped(),
-                    message: format!(
-                        "Macro `{}` requires the first argument to be unnamed.",
-                        Self::NAME
-                    ),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    lhs.stable_ptr().untyped(),
+                    format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
+                )],
             };
         };
         let Some(rhs) = try_extract_unnamed_arg(db, rhs) else {
             return InlinePluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: rhs.stable_ptr().untyped(),
-                    message: format!(
-                        "Macro `{}` requires the second argument to be unnamed.",
-                        Self::NAME
-                    ),
-                }],
+                diagnostics: vec![PluginDiagnostic::error(
+                    rhs.stable_ptr().untyped(),
+                    format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
+                )],
             };
         };
-        let f = "__formatter_for_assert_eq_macro_";
+        let f = format!("__formatter_for_{}_macro_", Self::NAME);
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db);
@@ -71,7 +62,7 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             (
                 RewriteNode::RewriteText {
                     origin: lhs.as_syntax_node().span_without_trivia(db),
-                    text: "__lhs_value_for_assert_eq_macro__".to_string(),
+                    text: format!("__lhs_value_for_{}_macro__", Self::NAME),
                 },
                 "let $lhs_value$ = $lhs$;",
             )
@@ -82,21 +73,22 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             (
                 RewriteNode::RewriteText {
                     origin: rhs.as_syntax_node().span_without_trivia(db),
-                    text: "__rhs_value_for_assert_eq_macro__".to_string(),
+                    text: format!("__rhs_value_for_{}_macro__", Self::NAME),
                 },
                 "let $rhs_value$ = $rhs$;",
             )
         };
+        let operator = Self::OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if @$lhs_value$ != @$rhs_value$ {{
+                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-                            write!({f}, "assertion `{lhs_escaped} == {rhs_escaped}` failed")
+                            write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
                         );
             "#,
             },
@@ -169,10 +161,49 @@ impl InlineMacroExprPlugin for AssertEqMacro {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
                 content: builder.code,
-                diagnostics_mappings: builder.diagnostics_mappings,
+                code_mappings: builder.code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],
         }
     }
 }
+
+macro_rules! define_compare_assert_macro {
+    ($(#[$attr:meta])* $ident:ident, $name:tt, $operator:tt) => {
+        $(#[$attr])*
+        #[derive(Default, Debug)]
+        pub struct $ident;
+        impl NamedPlugin for $ident {
+            const NAME: &'static str = $name;
+        }
+
+        impl CompareAssertionPlugin for $ident {
+            const OPERATOR: &'static str = $operator;
+        }
+
+        impl InlineMacroExprPlugin for $ident {
+            fn generate_code(
+                &self,
+                db: &dyn SyntaxGroup,
+                syntax: &ast::ExprInlineMacro,
+            ) -> InlinePluginResult {
+                CompareAssertionPlugin::generate_code(self, db, syntax)
+            }
+        }
+    };
+}
+
+define_compare_assert_macro!(
+    /// Macro for equality assertion.
+    AssertEqMacro,
+    "assert_eq",
+    "=="
+);
+
+define_compare_assert_macro!(
+    /// Macro for not equality assertion.
+    AssertNeMacro,
+    "assert_ne",
+    "!="
+);

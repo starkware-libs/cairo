@@ -54,25 +54,25 @@ pub fn try_extract_test_config(
     let mut diagnostics = vec![];
     if let Some(attr) = test_attr {
         if !attr.args.is_empty() {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: attr.id_stable_ptr.untyped(),
-                message: "Attribute should not have arguments.".into(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                attr.id_stable_ptr.untyped(),
+                "Attribute should not have arguments.".into(),
+            ));
         }
     } else {
         for attr in [ignore_attr, available_gas_attr, should_panic_attr].into_iter().flatten() {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: attr.id_stable_ptr.untyped(),
-                message: "Attribute should only appear on tests.".into(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                attr.id_stable_ptr.untyped(),
+                "Attribute should only appear on tests.".into(),
+            ));
         }
     }
     let ignored = if let Some(attr) = ignore_attr {
         if !attr.args.is_empty() {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: attr.id_stable_ptr.untyped(),
-                message: "Attribute should not have arguments.".into(),
-            });
+            diagnostics.push(PluginDiagnostic::error(
+                attr.id_stable_ptr.untyped(),
+                "Attribute should not have arguments.".into(),
+            ));
         }
         true
     } else {
@@ -86,13 +86,12 @@ pub fn try_extract_test_config(
             (
                 true,
                 extract_panic_bytes(db, attr).on_none(|| {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: attr.args_stable_ptr.untyped(),
-                        message: "Expected panic must be of the form `expected: <tuple of \
-                                  felt252s and strings>` or `expected: \"some string\"` or \
-                                  `expected: <some felt252>`."
+                    diagnostics.push(PluginDiagnostic::error(
+                        attr.args_stable_ptr.untyped(),
+                        "Expected panic must be of the form `expected: <tuple of felt252s and \
+                         strings>` or `expected: \"some string\"` or `expected: <some felt252>`."
                             .into(),
-                    });
+                    ));
                 }),
             )
         }
@@ -134,32 +133,29 @@ fn extract_available_gas(
         // loops will run out of gas.
         return Some(u32::MAX as usize);
     };
-    let mut add_malformed_attr_diag = || {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: attr.args_stable_ptr.untyped(),
-            message: format!(
-                "Attribute should have a single numeric literal argument or `{STATIC_GAS_ARG}`."
-            ),
-        })
-    };
     match &attr.args[..] {
-        [
-            AttributeArg {
-                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
-                ..
-            },
-        ] => literal.numeric_value(db).and_then(|v| v.to_usize()).on_none(add_malformed_attr_diag),
-        [
-            AttributeArg {
-                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                ..
-            },
-        ] if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG => None,
-        _ => {
-            add_malformed_attr_diag();
-            None
-        }
+        [AttributeArg { variant: AttributeArgVariant::Unnamed { value, .. }, .. }] => match value {
+            ast::Expr::Path(path)
+                if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG =>
+            {
+                return None;
+            }
+            ast::Expr::Literal(literal) => {
+                literal.numeric_value(db).and_then(|v| v.to_i64()).and_then(|v| v.to_usize())
+            }
+            _ => None,
+        },
+        _ => None,
     }
+    .on_none(|| {
+        diagnostics.push(PluginDiagnostic::error(
+            attr.args_stable_ptr.untyped(),
+            format!(
+                "Attribute should have a single non-negative literal in `i64` range or \
+                 `{STATIC_GAS_ARG}`."
+            ),
+        ))
+    })
 }
 
 /// Tries to extract the expected panic bytes out of the given `should_panic` attribute.

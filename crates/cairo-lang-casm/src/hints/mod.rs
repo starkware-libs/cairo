@@ -239,6 +239,10 @@ pub enum CoreHint {
     /// `g * s = b`
     /// `g * t = n`
     ///
+    /// The case `n == 1` is considered "no-inverse" (special case).
+    /// In this case: Returns `g == 1`, `s == b` and `t == 1`.
+    /// All no-inverse requirements are satisfied, except for `g > 1`.
+    ///
     /// In all cases - `name`0 is the least significant limb.
     #[codec(index = 27)]
     U256InvModN {
@@ -732,7 +736,14 @@ impl PythonicHint for CoreHint {
                         n = {n0} + ({n1} << 128)
 
                         (_, r, g) = igcdex(n, b)
-                        if g != 1:
+                        if n == 1:
+                            memory{g0_or_no_inv} = 1
+                            memory{g1_option} = 0
+                            memory{s_or_r0} = {b0}
+                            memory{s_or_r1} = {b1}
+                            memory{t_or_k0} = 1
+                            memory{t_or_k1} = 0
+                        elif g != 1:
                             if g % 2 == 0:
                                 g = 2
                             s = b // g

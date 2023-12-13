@@ -60,7 +60,7 @@ foo
 
 //! > function_code
 fn foo(x: felt252, y: felt252) -> felt252 {
-    let z = if x == 0 { y } else { 0 };
+    let _z = if x == 0 { y } else { 0 };
     y
 }
 
@@ -110,7 +110,7 @@ foo
 
 //! > function_code
 fn foo(x: felt252, y: felt252) {
-    let z = if x == 0 { y } else { y + 3 };
+    let _z = if x == 0 { y } else { y + 3 };
 }
 
 //! > module_code
@@ -166,7 +166,7 @@ foo
 
 //! > function_code
 fn foo(x: felt252, y: felt252) {
-    let z = if x == 0 {
+    let _z = if x == 0 {
         y
     } else {
         if x == 1 {

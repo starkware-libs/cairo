@@ -5,6 +5,8 @@ mod contracts;
 #[cfg(test)]
 mod contract_tests;
 #[cfg(test)]
+mod deployment;
+#[cfg(test)]
 mod events;
 #[cfg(test)]
 mod interoperability;

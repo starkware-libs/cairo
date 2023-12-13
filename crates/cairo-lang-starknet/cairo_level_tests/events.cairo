@@ -18,21 +18,21 @@ mod contract_with_event {
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
-    struct IncrementalEvent {
-        value: u128,
+    pub struct IncrementalEvent {
+        pub value: u128,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
-    struct StaticEvent {}
+    pub struct StaticEvent {}
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
-    enum FlatEvent {
+    pub enum FlatEvent {
         FlatEvent: StaticEvent,
     }
 
     #[event]
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
-    enum Event {
+    pub enum Event {
         IncrementalEvent: IncrementalEvent,
         StaticEvent: StaticEvent,
         #[flat]
@@ -142,8 +142,8 @@ fn test_pop_log() {
     let mut data = array![];
     keys.append(1234);
     data.append(2345);
-    starknet::emit_event_syscall(keys.span(), data.span());
-    starknet::emit_event_syscall(keys.span(), data.span());
+    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
+    starknet::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
 
     let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
     assert_eq!(keys.len(), 1);

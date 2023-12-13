@@ -184,7 +184,7 @@ fn foo(x: felt252) -> felt252 {
 
     match felt252_is_zero(x) {
         IsZeroResult::Zero => 1,
-        IsZeroResult::NonZero(y) => {
+        IsZeroResult::NonZero(_y) => {
             revoke_ap();
             return 0;
         },
@@ -195,7 +195,7 @@ fn foo(x: felt252) -> felt252 {
 
     match felt252_is_zero(x) {
         IsZeroResult::Zero => 1,
-        IsZeroResult::NonZero(y) => {
+        IsZeroResult::NonZero(_y) => {
             // Same as above, without revoke_ap() and without an early return.
             2
         },

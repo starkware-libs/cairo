@@ -128,6 +128,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::PatternList => vec![],
+        SyntaxKind::PatternListOr => vec![],
         SyntaxKind::PatternStructParamWithExpr => {
             vec![]
         }
@@ -157,7 +158,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::StatementLet => {
-            vec![/* pattern */ children[1]]
+            vec![/* pattern */ children[2]]
         }
         SyntaxKind::OptionTerminalSemicolonEmpty => {
             vec![]
@@ -199,7 +200,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::Member => {
-            vec![/* name */ children[1]]
+            vec![/* name */ children[2]]
         }
         SyntaxKind::MemberList => vec![],
         SyntaxKind::Variant => {
@@ -214,8 +215,20 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::AttributeList => vec![],
+        SyntaxKind::VisibilityDefault => {
+            vec![]
+        }
+        SyntaxKind::VisibilityPubArgumentClause => {
+            vec![]
+        }
+        SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => {
+            vec![]
+        }
+        SyntaxKind::VisibilityPub => {
+            vec![]
+        }
         SyntaxKind::ItemModule => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ModuleBody => {
             vec![]
@@ -224,19 +237,19 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* name */ children[1]]
         }
         SyntaxKind::ItemConstant => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::FunctionWithBody => {
-            vec![/* declaration */ children[1]]
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![/* declaration */ children[2]]
-        }
-        SyntaxKind::ItemExternType => {
             vec![/* name */ children[3]]
         }
+        SyntaxKind::FunctionWithBody => {
+            vec![/* declaration */ children[2]]
+        }
+        SyntaxKind::ItemExternFunction => {
+            vec![/* declaration */ children[3]]
+        }
+        SyntaxKind::ItemExternType => {
+            vec![/* name */ children[4]]
+        }
         SyntaxKind::ItemTrait => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::TraitBody => {
             vec![]
@@ -249,7 +262,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* declaration */ children[1]]
         }
         SyntaxKind::ItemImpl => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemInlineMacro => {
             vec![]
@@ -262,19 +275,19 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::ItemImplAlias => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemStruct => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemEnum => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemTypeAlias => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemUse => {
-            vec![/* use_path */ children[2]]
+            vec![/* use_path */ children[3]]
         }
         SyntaxKind::UsePathLeaf => {
             vec![/* ident */ children[0], /* alias_clause */ children[1]]
@@ -322,6 +335,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* name */ children[1]]
         }
         SyntaxKind::GenericParamImplAnonymous => {
+            vec![]
+        }
+        SyntaxKind::GenericParamNegativeImpl => {
             vec![]
         }
         SyntaxKind::TriviumSkippedNode => {
@@ -445,6 +461,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenUse => vec![],
         SyntaxKind::TerminalUse => {
+            vec![]
+        }
+        SyntaxKind::TokenPub => vec![],
+        SyntaxKind::TerminalPub => {
             vec![]
         }
         SyntaxKind::TokenAnd => vec![],

@@ -8,12 +8,12 @@ cairo_level_tests/contracts/multi_component.cairo
 
 //! > generated_cairo_code
 #[starknet::interface]
-trait GetSupply<TContractState> {
+pub trait GetSupply<TContractState> {
     fn get_total_supply_plus_1(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
-mod contract_with_4_components {
+pub mod contract_with_4_components {
     use starknet::ContractAddress;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
@@ -71,15 +71,15 @@ mod contract_with_4_components {
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
-        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
+        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -152,7 +152,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -170,7 +170,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -178,17 +178,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
 }
 
 
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -199,7 +196,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -319,26 +316,26 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Ownable(val));
         }
-        if selector == selector!("Mintable") {
+        if __selector__ == selector!("Mintable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Mintable(val));
         }
-        if selector == selector!("Upgradable") {
+        if __selector__ == selector!("Upgradable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -368,6 +365,7 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,
@@ -379,27 +377,27 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
         );
     }
 }
-trait GetSupplyDispatcherTrait<T> {
+pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplyDispatcher {
-    contract_address: starknet::ContractAddress,
+pub struct GetSupplyDispatcher {
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u256>::deserialize(ref ret_data),
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -407,50 +405,50 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplyLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+pub struct GetSupplyLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<u256>::deserialize(ref ret_data),
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
 
 }
 
-trait GetSupplySafeDispatcherTrait<T> {
+pub trait GetSupplySafeDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplySafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+pub struct GetSupplySafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
 }
 
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::syscalls::library_call_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u256>::deserialize(ref ret_data),
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -460,23 +458,23 @@ impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSuppl
 
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct GetSupplySafeDispatcher {
-    contract_address: starknet::ContractAddress,
+pub struct GetSupplySafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplySafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut ret_data = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
         );
-        let mut ret_data = ret_data?;
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<u256>::deserialize(ref ret_data),
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -496,7 +494,7 @@ impl GetSupplyDispatcherSerde of core::serde::Serde::<GetSupplyDispatcher> {
     }
 }
 impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
@@ -504,11 +502,11 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
@@ -517,7 +515,7 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -539,7 +537,7 @@ impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDis
     }
 }
 impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
@@ -547,11 +545,11 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
@@ -560,7 +558,7 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -582,7 +580,7 @@ impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLi
     }
 }
 impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
@@ -590,11 +588,11 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
@@ -603,7 +601,7 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -625,7 +623,7 @@ impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatche
     }
 }
 impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
@@ -633,11 +631,11 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
@@ -646,7 +644,7 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -713,15 +711,15 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
     }
 
 
-    struct ContractState {
-        erc20_storage: erc20_comp::ComponentState<ContractState>,
-        ownable_storage: ownable_comp::ComponentState<ContractState>,
-        mintable_storage: mintable_comp::ComponentState<ContractState>,
-        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    pub struct ContractState {
+        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
+        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
+        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
+        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
@@ -794,7 +792,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -812,7 +810,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -820,17 +818,14 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
 }
 
 
-    mod __external {
-        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
-    }
-
-    mod __l1_handler {
-    }
-
-    mod __constructor {
-        use super::__wrapper__ImplCtor__constructor as constructor;
-    }
-
+pub mod __external {
+    pub use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__ImplCtor__constructor as constructor;
+}
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
     > {
@@ -841,7 +836,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -961,26 +956,26 @@ impl EventIsEvent of starknet::Event<Event> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        let selector = *core::array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ERC20") {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("ERC20") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ERC20(val));
         }
-        if selector == selector!("Ownable") {
+        if __selector__ == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Ownable(val));
         }
-        if selector == selector!("Mintable") {
+        if __selector__ == selector!("Mintable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Mintable(val));
         }
-        if selector == selector!("Upgradable") {
+        if __selector__ == selector!("Upgradable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
@@ -1010,6 +1005,7 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
     }
 }
     trait TraitCtor {
+        #[constructor]
         fn constructor(
             ref self: ContractState,
             name: felt252,

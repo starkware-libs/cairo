@@ -9,6 +9,7 @@ trait IMintableToken<T> {
 #[starknet::contract]
 mod token_bridge {
     use core::num::traits::Zero;
+    use starknet::SyscallResultTrait;
     use starknet::{
         ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };
@@ -81,17 +82,20 @@ mod token_bridge {
     }
 
     #[generate_trait]
-    #[external(v0)]
+    #[abi(per_item)]
     impl TokenBridgeImpl of ITokenBridge {
         // TODO(spapini): Consider adding a pure option, with no parameters.
+        #[external(v0)]
         fn get_version(self: @ContractState) -> felt252 {
             CONTRACT_VERSION
         }
 
+        #[external(v0)]
         fn get_identity(self: @ContractState) -> felt252 {
             CONTRACT_IDENTITY
         }
 
+        #[external(v0)]
         fn set_l1_bridge(ref self: ContractState, l1_bridge_address: EthAddress) {
             // The call is restricted to the governor.
             assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
@@ -103,6 +107,7 @@ mod token_bridge {
             self.emit(L1BridgeSet { l1_bridge_address });
         }
 
+        #[external(v0)]
         fn set_l2_token(ref self: ContractState, l2_token_address: ContractAddress) {
             // The call is restricted to the governor.
             assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
@@ -114,6 +119,7 @@ mod token_bridge {
             self.emit(L2TokenSet { l2_token_address });
         }
 
+        #[external(v0)]
         fn initiate_withdraw(ref self: ContractState, l1_recipient: EthAddress, amount: u256) {
             // Call burn on l2_token contract.
             let caller_address = get_caller_address();
@@ -126,7 +132,8 @@ mod token_bridge {
             ];
             send_message_to_l1_syscall(
                 to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
-            );
+            )
+                .unwrap_syscall();
             self.emit(WithdrawInitiated { l1_recipient, amount, caller_address });
         }
     }

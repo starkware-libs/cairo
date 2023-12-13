@@ -49,6 +49,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
+mod range_reduction;
 mod starknet;
 mod structure;
 
@@ -648,6 +649,7 @@ pub fn compile_invocation(
             felt252_dict::build_entry(libfunc, builder)
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
     }
 }
 

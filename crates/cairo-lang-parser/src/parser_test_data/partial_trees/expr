@@ -17,6 +17,7 @@ StatementExpr
 
 //! > expected_tree
 └── Top level kind: StatementExpr
+    ├── attributes (kind: AttributeList) []
     ├── expr (kind: ExprBinary)
     │   ├── lhs (kind: ExprUnary)
     │   │   ├── op (kind: TokenMinus): '-'
@@ -46,6 +47,7 @@ StatementExpr
 
 //! > expected_tree
 └── Top level kind: StatementExpr
+    ├── attributes (kind: AttributeList) []
     ├── expr (kind: ExprBinary)
     │   ├── lhs (kind: ExprUnary)
     │   │   ├── op (kind: TokenMinus): '-'

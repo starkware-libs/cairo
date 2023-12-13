@@ -2,7 +2,9 @@
 mod account {
     use core::num::traits::Zero;
     use core::ecdsa::check_ecdsa_signature;
-    use starknet::{account::Call, ContractAddress, call_contract_syscall, SyscallResultTrait};
+    use starknet::{
+        account::Call, ContractAddress, syscalls::call_contract_syscall, SyscallResultTrait
+    };
 
     #[storage]
     struct Storage {
@@ -47,7 +49,7 @@ mod account {
         self.validate_transaction()
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl AccountContractImpl of starknet::account::AccountContract<ContractState> {
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
             self.validate_transaction()

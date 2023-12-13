@@ -69,7 +69,6 @@ fn test_derive_default_struct() {
 
 #[test]
 fn test_derive_default_enum() {
-    let actual: EnumForDefault = Default::default();
     assert_eq!(
         Default::default(), EnumForDefault::C(StructForDefault { a: 0, b: 0, c: bool::False })
     );

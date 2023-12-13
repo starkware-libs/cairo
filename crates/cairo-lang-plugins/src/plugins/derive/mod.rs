@@ -236,10 +236,10 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {
-            result.diagnostics.push(PluginDiagnostic {
-                stable_ptr: attr.args_stable_ptr.untyped(),
-                message: "Expected args.".into(),
-            });
+            result.diagnostics.push(PluginDiagnostic::error(
+                attr.args_stable_ptr.untyped(),
+                "Expected args.".into(),
+            ));
             continue;
         }
 
@@ -252,10 +252,10 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
                 ..
             } = arg
             else {
-                result.diagnostics.push(PluginDiagnostic {
-                    stable_ptr: arg.arg_stable_ptr.untyped(),
-                    message: "Expected path.".into(),
-                });
+                result.diagnostics.push(PluginDiagnostic::error(
+                    arg.arg_stable_ptr.untyped(),
+                    "Expected path.".into(),
+                ));
                 continue;
             };
 
@@ -291,7 +291,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: result.impls.join(""),
-                diagnostics_mappings: Default::default(),
+                code_mappings: Default::default(),
                 aux_data: None,
             })
         },
@@ -313,8 +313,5 @@ fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
 
 /// Returns a diagnostic for when a derive is not supported for extern types.
 fn unsupported_for_extern_diagnostic(stable_ptr: SyntaxStablePtrId) -> PluginDiagnostic {
-    PluginDiagnostic {
-        stable_ptr,
-        message: "Unsupported trait for derive for extern types.".into(),
-    }
+    PluginDiagnostic::error(stable_ptr, "Unsupported trait for derive for extern types.".into())
 }

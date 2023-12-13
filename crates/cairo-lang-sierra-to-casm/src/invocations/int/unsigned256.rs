@@ -489,15 +489,17 @@ fn build_u256_inv_mod_n(
         assert s1 = *(range_check++);
         assert t0 = *(range_check++);
         assert t1 = *(range_check++);
-        // Validating `g > 1`.
+        // Validate that `g > 1` or `g = n = 1`.
         tempvar g0_minus_1;
         jump GIsValid if g1 != 0;
         assert g0_minus_1 = g0 - one;
         jump GIsValid if g0_minus_1 != 0;
-        fail;
+        // Handle the case where `g = 1`, which is only valid if `n = 1`.
+        assert n1 = zero;
+        assert n0 = one;
         GIsValid:
 
-        // Validating `g * s = b` and `g * t = n`.
+        // Validate `g * s = b` and `g * t = n`.
 
         // Only calculate the upper word, since we already know the lower word is `b0`.
         let g0s0_low = b0;

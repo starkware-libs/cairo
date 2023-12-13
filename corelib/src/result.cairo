@@ -2,14 +2,15 @@ use core::array::ArrayTrait;
 use core::serde::Serde;
 use core::array::SpanTrait;
 
+#[must_use]
 #[derive(Copy, Drop, Serde, PartialEq)]
-enum Result<T, E> {
+pub enum Result<T, E> {
     Ok: T,
     Err: E,
 }
 
 #[generate_trait]
-impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
+pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {

@@ -3,12 +3,12 @@ use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
-use cairo_lang_defs::plugin::PluginSuite;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -167,6 +167,7 @@ pub fn test_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
         .add_plugin::<TestPlugin>()
-        .add_inline_macro_plugin::<inline_macros::assert_eq::AssertEqMacro>();
+        .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>();
     suite
 }

@@ -514,9 +514,13 @@ impl GenericParamLongId {
         else {
             unreachable!()
         };
-        if kind == SyntaxKind::GenericParamImplAnonymous {
+        if matches!(
+            kind,
+            SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
+        ) {
             return None;
         }
+
         let name_green = TerminalIdentifierGreen(key_fields[0]);
         Some(name_green.identifier(db))
     }
@@ -533,6 +537,7 @@ impl GenericParamLongId {
             SyntaxKind::GenericParamImplNamed | SyntaxKind::GenericParamImplAnonymous => {
                 GenericKind::Impl
             }
+            SyntaxKind::GenericParamNegativeImpl => GenericKind::NegImpl,
             _ => unreachable!(),
         }
     }
@@ -689,6 +694,7 @@ pub enum GenericKind {
     Type,
     Const,
     Impl,
+    NegImpl,
 }
 impl std::fmt::Display for GenericKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -696,6 +702,7 @@ impl std::fmt::Display for GenericKind {
             GenericKind::Type => write!(f, "Type"),
             GenericKind::Const => write!(f, "Const"),
             GenericKind::Impl => write!(f, "Impl"),
+            GenericKind::NegImpl => write!(f, "-Impl"),
         }
     }
 }

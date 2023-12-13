@@ -14,30 +14,31 @@ use core::zeroable::NonZeroIntoImpl;
 /// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
 /// magic as one of the felt252s indicates that right after it you should expect a serialized
 /// ByteArray. This is currently used mainly for prints and panics.
-const BYTE_ARRAY_MAGIC: felt252 = 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
+pub(crate) const BYTE_ARRAY_MAGIC: felt252 =
+    0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
-struct ByteArray {
+pub struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
-    data: Array<bytes31>,
+    pub(crate) data: Array<bytes31>,
     // This felt252 actually represents a bytes31, with < 31 bytes.
     // It is represented as a felt252 to improve performance of building the byte array.
     // The number of bytes in here is specified in `pending_word_len`.
     // The first byte is the most significant byte among the `pending_word_len` bytes in the word.
-    pending_word: felt252,
+    pub(crate) pending_word: felt252,
     // Should be in range [0, 30].
-    pending_word_len: usize,
+    pub(crate) pending_word_len: usize,
 }
 
-impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
+pub(crate) impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
 
 #[generate_trait]
-impl ByteArrayImpl of ByteArrayTrait {
+pub impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
 
     // Appends a single word of `len` bytes to the end of the ByteArray.
@@ -166,6 +167,7 @@ impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = 0;
     }
 
+    #[must_use]
     fn len(self: @ByteArray) -> usize {
         self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
     }
@@ -353,7 +355,7 @@ impl ByteArrayAddEq of AddEq<ByteArray> {
     }
 }
 
-impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
+pub(crate) impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }

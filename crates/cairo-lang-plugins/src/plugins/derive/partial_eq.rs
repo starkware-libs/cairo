@@ -32,7 +32,7 @@ pub fn handle_partial_eq(
                             if lhs_variant.name == rhs_variant.name {
                                 format!("{ty}::{}(y) => x == y,", rhs_variant.name)
                             } else {
-                                format!("{ty}::{}(y) => false,", rhs_variant.name)
+                                format!("{ty}::{}(_y) => false,", rhs_variant.name)
                             }
                         }).join("\n    "),
                     lhs_variant=lhs_variant.name,

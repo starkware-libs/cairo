@@ -130,6 +130,7 @@ fn foo(d: MyStruct) {
     d + 0;
     - d;
     d.bar();
+    d.baz();
 }
 
 //! > function_name
@@ -139,18 +140,34 @@ foo
 struct MyStruct {
 }
 
+struct OtherStruct {
+}
+
+trait MyTrait<T> {
+    fn baz(self: T);
+}
+impl OtherStructImpl of MyTrait<OtherStruct> {
+    fn baz(self: OtherStruct) {}
+}
+
 //! > expected_diagnostics
 error: Function not found.
- --> lib.cairo:4:5
+ --> lib.cairo:14:5
     bar(0);
     ^*^
 
-error: Method `bar` not found on type "test::MyStruct". Did you import the correct trait and impl?
- --> lib.cairo:7:7
+error: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
+ --> lib.cairo:17:7
     d.bar();
       ^*^
 
-error: Mismatched types. The type test::MyStruct cannot be created from a numeric literal.
- --> lib.cairo:5:9
+error: Method `baz` could not be called on type `test::MyStruct`.
+Candidate `MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>
+ --> lib.cairo:18:7
+    d.baz();
+      ^*^
+
+error: Mismatched types. The type `test::MyStruct` cannot be created from a numeric literal.
+ --> lib.cairo:15:9
     d + 0;
         ^

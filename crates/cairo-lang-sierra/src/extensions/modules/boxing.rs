@@ -1,3 +1,5 @@
+use super::snapshot::snapshot_ty;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
@@ -36,6 +38,7 @@ define_libfunc_hierarchy! {
     pub enum BoxLibfunc {
         Into(IntoBoxLibfunc),
         Unbox(UnboxLibfunc),
+        ForwardSnapshot(BoxForwardSnapshotLibfunc),
     }, BoxConcreteLibfunc
 }
 
@@ -88,3 +91,22 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
     }
 }
 pub type UnboxLibfunc = WrapSignatureAndTypeGenericLibfunc<UnboxLibfuncWrapped>;
+
+/// Libfunc for converting `@Box<T>` into `Box<@T>`.
+#[derive(Default)]
+pub struct BoxForwardSnapshotLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for BoxForwardSnapshotLibfuncWrapped {
+    const STR_ID: &'static str = "box_forward_snapshot";
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            snapshot_ty(context, context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?)?,
+            context.get_wrapped_concrete_type(BoxType::id(), snapshot_ty(context, ty)?)?,
+        ))
+    }
+}
+pub type BoxForwardSnapshotLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<BoxForwardSnapshotLibfuncWrapped>;

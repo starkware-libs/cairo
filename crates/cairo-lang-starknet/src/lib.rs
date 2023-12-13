@@ -5,10 +5,12 @@
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
 
-use cairo_lang_defs::plugin::PluginSuite;
+use cairo_lang_semantic::plugin::PluginSuite;
+
 pub mod abi;
 mod aliased;
 pub mod allowed_libfuncs;
+mod analyzer;
 pub mod casm_contract_class;
 pub mod compiler_version;
 pub mod contract;
@@ -26,7 +28,8 @@ pub fn starknet_plugin_suite() -> PluginSuite {
         .add_plugin::<plugin::StarkNetPlugin>()
         .add_inline_macro_plugin::<inline_macros::selector::SelectorMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMacro>()
-        .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMutMacro>();
+        .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMutMacro>()
+        .add_analyzer_plugin::<analyzer::ABIAnalyzer>();
     suite
 }
 

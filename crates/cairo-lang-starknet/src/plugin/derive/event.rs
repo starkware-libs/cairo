@@ -34,10 +34,10 @@ fn handle_struct(
     // TODO(spapini): Support generics.
     let generic_params = struct_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("{EVENT_TYPE_NAME} structs with generic arguments are unsupported"),
-            stable_ptr: generic_params.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            generic_params.stable_ptr().untyped(),
+            format!("{EVENT_TYPE_NAME} structs with generic arguments are unsupported"),
+        ));
         return None;
     };
 
@@ -115,17 +115,17 @@ fn get_field_kind_for_member(
 
     // Currently, nested fields are unsupported.
     if is_nested {
-        diagnostics.push(PluginDiagnostic {
-            message: "Nested event fields are currently unsupported".to_string(),
-            stable_ptr: member.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            member.stable_ptr().untyped(),
+            "Nested event fields are currently unsupported".to_string(),
+        ));
     }
     // Currently, serde fields are unsupported.
     if is_serde {
-        diagnostics.push(PluginDiagnostic {
-            message: "Serde event fields are currently unsupported".to_string(),
-            stable_ptr: member.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            member.stable_ptr().untyped(),
+            "Serde event fields are currently unsupported".to_string(),
+        ));
     }
 
     if is_key {
@@ -150,10 +150,10 @@ fn get_field_kind_for_variant(
 
     // Currently, nested fields are unsupported.
     if is_nested {
-        diagnostics.push(PluginDiagnostic {
-            message: "Nested event fields are currently unsupported".to_string(),
-            stable_ptr: variant.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            variant.stable_ptr().untyped(),
+            "Nested event fields are currently unsupported".to_string(),
+        ));
     }
 
     if is_flat {
@@ -162,10 +162,10 @@ fn get_field_kind_for_variant(
 
     // Currently, serde fields are unsupported.
     if is_serde {
-        diagnostics.push(PluginDiagnostic {
-            message: "Serde event fields are currently unsupported".to_string(),
-            stable_ptr: variant.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            variant.stable_ptr().untyped(),
+            "Serde event fields are currently unsupported".to_string(),
+        ));
     }
 
     if is_key {
@@ -180,15 +180,16 @@ fn handle_enum(
     enum_ast: &ast::ItemEnum,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
+    const SELECTOR: &str = "__selector__";
     let enum_name = RewriteNode::new_trimmed(enum_ast.name(db).as_syntax_node());
 
     // TODO(spapini): Support generics.
     let generic_params = enum_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("{EVENT_TYPE_NAME} enums with generic arguments are unsupported"),
-            stable_ptr: generic_params.stable_ptr().untyped(),
-        });
+        diagnostics.push(PluginDiagnostic::error(
+            generic_params.stable_ptr().untyped(),
+            format!("{EVENT_TYPE_NAME} enums with generic arguments are unsupported"),
+        ));
         return None;
     };
 
@@ -256,11 +257,13 @@ fn handle_enum(
         } else {
             let deserialize_member = deserialize_field(member_kind, RewriteNode::text("val"));
             let deserialize_variant = RewriteNode::interpolate_patched(
-                "\
-        if selector == selector!(\"$variant_name$\") {$deserialize_member$
+                &format!(
+                    "\
+        if {SELECTOR} == selector!(\"$variant_name$\") {{$deserialize_member$
                 return Option::Some($enum_name$::$variant_name$(val));
-        }
-        ",
+        }}
+        "
+                ),
                 &[
                     ("enum_name".to_string(), enum_name.clone()),
                     ("variant_name".to_string(), variant_name.clone()),
@@ -310,7 +313,7 @@ fn handle_enum(
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {{
-                    $deserialize_flat_variants$let selector = \
+                    $deserialize_flat_variants$let {SELECTOR} = \
              *core::array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_nested_variants$Option::None
                 }}
