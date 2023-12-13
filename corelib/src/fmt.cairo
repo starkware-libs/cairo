@@ -160,7 +160,7 @@ impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
                     if Debug::fmt(value, ref f).is_err() {
                         break Result::Err(Error {});
                     };
-                    if self.len() == 0 {
+                    if self.is_empty() {
                         break Result::Ok(());
                     }
                     if write!(f, ", ").is_err() {
