@@ -1,5 +1,3 @@
-use std::fmt;
-
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
@@ -297,16 +295,37 @@ impl FormattingInfo {
         arg: RewriteNode,
         fmt_type: FormatType,
     ) {
+        let patches =
+            [("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into();
         self.flush_pending_chars(builder, pending_chars, *ident_count);
+        if let Some(base_change) = fmt_type.base_change() {
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                "let __write_macro_prev_base__ = $f$.base;\n",
+                &patches,
+            ));
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                &format!("$f$.base = {base_change}_u8;\n"),
+                &patches,
+            ));
+        }
         self.add_indentation(builder, *ident_count);
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("match core::fmt::{fmt_type}::fmt(@$arg$, ref $f$) {{\n"),
-            &[("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into(),
+            &format!("match core::fmt::{}::fmt(@$arg$, ref $f$) {{\n", fmt_type.trait_name()),
+            &patches,
         ));
         *ident_count += 1;
         self.add_indentation(builder, *ident_count);
         builder.add_str("core::result::Result::Ok(_) => {\n");
         *ident_count += 1;
+        if fmt_type.base_change().is_some() {
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                "$f$.base = __write_macro_prev_base__;\n",
+                &patches,
+            ));
+        }
     }
 
     /// Flushes the pending bytes to the formatter.
@@ -355,14 +374,37 @@ enum FormatType {
     /// Got `{}` and we should use the `Display` trait.
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
-    Debug,
+    Debug { hex: bool },
 }
-impl fmt::Display for FormatType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FormatType::Display => write!(f, "Display"),
-            FormatType::Debug => write!(f, "Debug"),
+impl FormatType {
+    /// Attempt to parse a format type from a string.
+    fn parse(mut s: String) -> Option<FormatType> {
+        let Some(fmt_ty) = s.pop() else {
+            return Some(FormatType::Display);
+        };
+        if fmt_ty != '?' {
+            return None;
         }
+        if s.is_empty() {
+            Some(FormatType::Debug { hex: false })
+        } else if s == "x" {
+            Some(FormatType::Debug { hex: true })
+        } else {
+            None
+        }
+    }
+
+    /// Gets the trait name for the format type.
+    fn trait_name(&self) -> &'static str {
+        match self {
+            FormatType::Display => "Display",
+            FormatType::Debug { .. } => "Debug",
+        }
+    }
+
+    /// Gets a possible base change for the format.
+    fn base_change(&self) -> Option<usize> {
+        if matches!(self, FormatType::Debug { hex: true }) { Some(16) } else { None }
     }
 }
 
@@ -409,12 +451,6 @@ fn extract_argument(
         } else {
             ArgumentSource::Named(arg_value)
         },
-        fmt_type: if fmt_value.is_empty() {
-            FormatType::Display
-        } else if fmt_value == "?" {
-            FormatType::Debug
-        } else {
-            return None;
-        },
+        fmt_type: FormatType::parse(fmt_value)?,
     })
 }
