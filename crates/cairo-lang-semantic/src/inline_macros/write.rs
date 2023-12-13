@@ -1,5 +1,3 @@
-use std::fmt;
-
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
@@ -328,16 +326,37 @@ impl FormattingInfo {
         arg: RewriteNode,
         fmt_type: FormattingTrait,
     ) {
+        let patches =
+            [("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into();
         self.flush_pending_chars(builder, pending_chars, *ident_count);
+        if let Some(base_change) = fmt_type.base_change() {
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                "let __write_macro_prev_base__ = $f$.base;\n",
+                &patches,
+            ));
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                &format!("$f$.base = {base_change}_u8;\n"),
+                &patches,
+            ));
+        }
         self.add_indentation(builder, *ident_count);
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("match core::fmt::{fmt_type}::fmt($arg$, ref $f$) {{\n"),
-            &[("arg".to_string(), arg), ("f".to_string(), self.formatter_arg_node.clone())].into(),
+            &format!("match core::fmt::{}::fmt($arg$, ref $f$) {{\n", fmt_type.trait_name()),
+            &patches,
         ));
         *ident_count += 1;
         self.add_indentation(builder, *ident_count);
         builder.add_str("core::result::Result::Ok(_) => {\n");
         *ident_count += 1;
+        if fmt_type.base_change().is_some() {
+            self.add_indentation(builder, *ident_count);
+            builder.add_modified(RewriteNode::interpolate_patched(
+                "$f$.base = __write_macro_prev_base__;\n",
+                &patches,
+            ));
+        }
     }
 
     /// Flushes the pending bytes to the formatter.
@@ -387,14 +406,37 @@ enum FormattingTrait {
     /// Got `{}` and we should use the `Display` trait.
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
-    Debug,
+    Debug { hex: bool },
 }
-impl fmt::Display for FormattingTrait {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FormattingTrait::Display => write!(f, "Display"),
-            FormattingTrait::Debug => write!(f, "Debug"),
+impl FormattingTrait {
+    /// Attempt to parse a format type from a string.
+    fn parse(mut spec: String) -> Result<Self, &'static str> {
+        let Some(fmt_ty) = spec.pop() else {
+            return Ok(Self::Display);
+        };
+        if fmt_ty != '?' {
+            return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
         }
+        if spec.is_empty() {
+            Ok(Self::Debug { hex: false })
+        } else if spec == "x" {
+            Ok(Self::Debug { hex: true })
+        } else {
+            Err("Unsupported spec for `Display` trait")
+        }
+    }
+
+    /// Gets the trait name for the format type.
+    fn trait_name(&self) -> &'static str {
+        match self {
+            Self::Display => "Display",
+            Self::Debug { .. } => "Debug",
+        }
+    }
+
+    /// Gets a possible base change for the format.
+    fn base_change(&self) -> Option<usize> {
+        if matches!(self, Self::Debug { hex: true }) { Some(16) } else { None }
     }
 }
 
@@ -443,13 +485,6 @@ fn extract_placeholder_argument(
     if !placeholder_terminated {
         return Err("Unterminated placeholder: no matching '}' for '{'");
     }
-    let fmt_type = if formatting_spec.is_empty() {
-        FormattingTrait::Display
-    } else if formatting_spec == "?" {
-        FormattingTrait::Debug
-    } else {
-        return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
-    };
     let source = if parameter_name.is_empty() {
         PlaceholderArgumentSource::Next
     } else if let Ok(position) = parameter_name.parse::<usize>() {
@@ -459,5 +494,8 @@ fn extract_placeholder_argument(
     } else {
         PlaceholderArgumentSource::Named(parameter_name)
     };
-    Ok(PlaceholderArgumentInfo { source, formatting_trait: fmt_type })
+    Ok(PlaceholderArgumentInfo {
+        source,
+        formatting_trait: FormattingTrait::parse(formatting_spec)?,
+    })
 }

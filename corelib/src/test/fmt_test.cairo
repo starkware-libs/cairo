@@ -69,6 +69,11 @@ fn test_format_debug() {
         format!("{:?}", core::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
     );
     assert(format!("{:?}", core::nullable::null::<felt252>()) == "null", 'bad null fmt');
+    assert(format!("{:x?}", 10) == "a", 'bad basic hex fmt');
+    assert(
+        format!("{:x?}", EnumExample::FeltValue(7982)) == "EnumExample::FeltValue(1f2e)",
+        'bad complex hex fmt'
+    );
 }
 
 #[test]
