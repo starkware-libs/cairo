@@ -2,10 +2,18 @@
 pub struct Error {}
 
 /// Configuration for formatting.
-#[derive(Default, Drop)]
+#[derive(Drop)]
 pub struct Formatter {
     /// The pending result of formatting.
     pub buffer: ByteArray,
+    /// The used base for integer printing.
+    pub base: u8,
+}
+
+impl FormatterDefault of Default<Formatter> {
+    fn default() -> Formatter {
+        Formatter { buffer: Default::default(), base: 10, }
+    }
 }
 
 /// A trait for standard formatting, using the empty format ("{}").
@@ -24,8 +32,7 @@ impl DisplayInteger<
     T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
-        // TODO(yuval): determine base according to Formatter parameters.
-        let base: T = 10_u8.into();
+        let base: T = f.base.into();
         self.append_formatted_to_byte_array(ref f.buffer, base.try_into().unwrap());
         Result::Ok(())
     }
