@@ -1125,7 +1125,7 @@ pub fn lookup_resolved_generic_item_by_ptr(
     id: LookupItemId,
     ptr: ast::TerminalIdentifierPtr,
 ) -> Option<ResolvedGenericItem> {
-    get_resolver_datas(id, db)
+    get_resolver_data_options(id, db)
         .into_iter()
         .find_map(|resolver_data| resolver_data.resolved_items.generic.get(&ptr).cloned())
 }
@@ -1135,12 +1135,12 @@ pub fn lookup_resolved_concrete_item_by_ptr(
     id: LookupItemId,
     ptr: ast::TerminalIdentifierPtr,
 ) -> Option<ResolvedConcreteItem> {
-    get_resolver_datas(id, db)
+    get_resolver_data_options(id, db)
         .into_iter()
         .find_map(|resolver_data| resolver_data.resolved_items.concrete.get(&ptr).cloned())
 }
 
-fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolverData>> {
+fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolverData>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
             ModuleItemId::Constant(id) => vec![db.constant_resolver_data(id)],

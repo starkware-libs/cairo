@@ -20,7 +20,7 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateConfiguration {
-    /// The root directry of the crate.
+    /// The root directory of the crate.
     pub root: Directory,
     pub settings: CrateSettings,
 }
@@ -38,7 +38,7 @@ pub struct CrateSettings {
     pub edition: Edition,
 
     #[serde(default)]
-    pub experimental_features: ExperementalFeaturesConfig,
+    pub experimental_features: ExperimentalFeaturesConfig,
 }
 
 /// The Cairo edition of a crate.
@@ -86,7 +86,7 @@ impl Edition {
 
 /// Configuration per crate.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExperementalFeaturesConfig {
+pub struct ExperimentalFeaturesConfig {
     pub negative_impls: bool,
 }
 
@@ -154,7 +154,7 @@ pub fn init_dev_corelib_from_directory(
             root: core_lib_dir,
             settings: CrateSettings {
                 edition: Edition::V2023_11,
-                experimental_features: ExperementalFeaturesConfig { negative_impls: true },
+                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
             },
         }),
     );

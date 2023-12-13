@@ -155,7 +155,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: u64) -> (GasBuiltin, System, core
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> starknet::SyscallResult<Box<starknet::ExecutionInfo>> {
+fn foo() -> starknet::SyscallResult<Box<starknet::info::ExecutionInfo>> {
     starknet::info::get_execution_info_syscall()
 }
 

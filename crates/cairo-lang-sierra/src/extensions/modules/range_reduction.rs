@@ -35,7 +35,7 @@ pub struct Felt252BoundedConstrainRange {
     pub signature: LibfuncSignature,
     /// The range bounds for a value of the input.
     pub in_range: Range,
-    /// The range bounds for a value of the outpus.
+    /// The range bounds for a value of the outputs.
     pub out_range: Range,
 }
 impl SignatureBasedConcreteLibfunc for Felt252BoundedConstrainRange {

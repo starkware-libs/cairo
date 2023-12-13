@@ -162,4 +162,47 @@ impl KnownStack {
             offset: new_offset,
         }
     }
+
+    /// Updates the stack after a variable is deconstructed.
+    /// input is the deconstructed variable, and outputs are the non-zero sized variables that
+    /// replace it.
+    pub fn deconstruct_variable(
+        &mut self,
+        input: &cairo_lang_sierra::ids::VarId,
+        outputs: &[cairo_lang_sierra::ids::VarId],
+    ) {
+        let Some(input_idx) = self.variables_on_stack.swap_remove(input) else {
+            return;
+        };
+        let n_outputs = outputs.len();
+
+        self.variables_on_stack = std::mem::take(&mut self.variables_on_stack)
+            .into_iter()
+            .filter_map(|(var, idx)| {
+                // Invalidate all the variable at `input_idx` and insert `n_outputs`
+                // at that place.
+                // We lose track of the of the fact that the original variable is still on the
+                // stack but that situation is quite rare.
+
+                // TODO(ilya): Consider supporting items the occupy stack slots.
+                if input_idx == idx {
+                    return None;
+                }
+
+                let mut idx = idx;
+                if input_idx < idx {
+                    idx += n_outputs;
+                    idx -= 1;
+                }
+                Some((var, idx))
+            })
+            .collect();
+
+        for (offset, output) in outputs.iter().enumerate() {
+            assert!(self.variables_on_stack.insert(output.clone(), input_idx + offset).is_none());
+        }
+
+        self.offset += n_outputs;
+        self.offset -= 1;
+    }
 }

@@ -4,6 +4,7 @@ fn test_format() {
     assert(format!("{}", ba) == ba, 'byte array bad formatting');
     assert(format!("{}", 97_felt252) == "97", 'felt252 bad formatting');
     assert(format!("{}", 97_usize) == "97", 'usize bad formatting');
+    assert(format!("{}", 34 - 5) == "29", 'expression bad formatting');
     assert(format!("no_format") == "no_format", 'no args bad formatting');
     assert(format!("{}{}", 12_usize, 14_u32) == "1214", 'two args bad formatting');
     assert(format!("{0}{0}", 12_usize) == "1212", 'positional bad formatting');
