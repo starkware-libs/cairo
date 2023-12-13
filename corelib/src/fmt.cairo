@@ -143,3 +143,33 @@ impl DebugTuple4<
         write!(f, ")")
     }
 }
+
+impl ArrayTDebug<T, +Debug<T>, +Copy<T>> of Debug<Array<T>> {
+    fn fmt(self: @Array<T>, ref f: Formatter) -> Result<(), Error> {
+        Debug::fmt(@self.span(), ref f)
+    }
+}
+
+impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
+    fn fmt(self: @Span<T>, ref f: Formatter) -> Result<(), Error> {
+        let mut self = *self;
+        write!(f, "[")?;
+        loop {
+            match self.pop_front() {
+                Option::Some(value) => {
+                    if Debug::fmt(value, ref f).is_err() {
+                        break Result::Err(Error {});
+                    };
+                    if self.len() == 0 {
+                        break Result::Ok(());
+                    }
+                    if write!(f, ", ").is_err() {
+                        break Result::Err(Error {});
+                    };
+                },
+                Option::None => { break Result::Ok(()); }
+            };
+        }?;
+        write!(f, "]")
+    }
+}
