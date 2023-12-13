@@ -199,10 +199,10 @@ impl FormattingInfo {
                             builder,
                             &mut ident_count,
                             &mut pending_chars,
-                            RewriteNode::RewriteText {
-                                origin: arg.as_syntax_node().span_without_trivia(builder.db),
-                                text: format!("__write_macro_arg{positional}__"),
-                            },
+                            RewriteNode::mapped_text(
+                                &format!("__write_macro_arg{positional}__"),
+                                arg.as_syntax_node().span_without_trivia(builder.db),
+                            ),
                             argument_info.fmt_type,
                         );
                     }
@@ -213,12 +213,10 @@ impl FormattingInfo {
                                 builder,
                                 &mut ident_count,
                                 &mut pending_chars,
-                                RewriteNode::RewriteText {
-                                    origin: self.args[i]
-                                        .as_syntax_node()
-                                        .span_without_trivia(builder.db),
-                                    text: format!("__write_macro_arg{i}__"),
-                                },
+                                RewriteNode::mapped_text(
+                                    &format!("__write_macro_arg{i}__"),
+                                    self.args[i].as_syntax_node().span_without_trivia(builder.db),
+                                ),
                                 argument_info.fmt_type,
                             );
                         } else {
@@ -235,10 +233,7 @@ impl FormattingInfo {
                             &mut pending_chars,
                             RewriteNode::new_modified(vec![
                                 RewriteNode::text("@"),
-                                RewriteNode::RewriteText {
-                                    text: argument,
-                                    origin: TextSpan { start, end },
-                                },
+                                RewriteNode::mapped_text(&argument, TextSpan { start, end }),
                             ]),
                             argument_info.fmt_type,
                         );
