@@ -4397,25 +4397,25 @@ branch_align() -> (); // 3826
 snapshot_take<ContractAddress>([9]) -> ([31], [32]); // 3827
 rename<ContractAddress>([32]) -> ([33]); // 3828
 contract_address_to_felt252([33]) -> ([34]); // 3829
-snapshot_take<felt252>([34]) -> ([35], [36]); // 3830
-drop<felt252>([35]) -> (); // 3831
-rename<felt252>([36]) -> ([37]); // 3832
-snapshot_take<felt252>([37]) -> ([38], [39]); // 3833
-drop<felt252>([38]) -> (); // 3834
-felt252_const<0>() -> ([40]); // 3835
-snapshot_take<felt252>([40]) -> ([41], [42]); // 3836
+struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>([19]) -> ([35], [36]); // 3830
+drop<Unit>([36]) -> (); // 3831
+struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>([24]) -> ([37], [38]); // 3832
+drop<Unit>([38]) -> (); // 3833
+struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>([29]) -> ([39], [40]); // 3834
+drop<Unit>([40]) -> (); // 3835
+snapshot_take<felt252>([34]) -> ([41], [42]); // 3836
 drop<felt252>([41]) -> (); // 3837
-rename<felt252>([39]) -> ([43]); // 3838
-rename<felt252>([42]) -> ([44]); // 3839
-felt252_sub([43], [44]) -> ([45]); // 3840
-struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>([19]) -> ([46], [47]); // 3841
-drop<Unit>([47]) -> (); // 3842
-struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>([24]) -> ([48], [49]); // 3843
-drop<Unit>([49]) -> (); // 3844
-struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>([29]) -> ([50], [51]); // 3845
-drop<Unit>([51]) -> (); // 3846
-store_temp<felt252>([45]) -> ([45]); // 3847
-felt252_is_zero([45]) { fallthrough() 3854([52]) }; // 3848
+rename<felt252>([42]) -> ([43]); // 3838
+snapshot_take<felt252>([43]) -> ([44], [45]); // 3839
+drop<felt252>([44]) -> (); // 3840
+felt252_const<0>() -> ([46]); // 3841
+snapshot_take<felt252>([46]) -> ([47], [48]); // 3842
+drop<felt252>([47]) -> (); // 3843
+rename<felt252>([45]) -> ([49]); // 3844
+rename<felt252>([48]) -> ([50]); // 3845
+felt252_sub([49], [50]) -> ([51]); // 3846
+store_temp<felt252>([51]) -> ([51]); // 3847
+felt252_is_zero([51]) { fallthrough() 3854([52]) }; // 3848
 branch_align() -> (); // 3849
 struct_construct<Unit>() -> ([53]); // 3850
 enum_init<core::bool, 1>([53]) -> ([54]); // 3851
@@ -4432,10 +4432,10 @@ enum_match<core::bool>([58]) { fallthrough([59]) 3885([60]) }; // 3861
 branch_align() -> (); // 3862
 drop<Unit>([59]) -> (); // 3863
 drop<ContractAddress>([31]) -> (); // 3864
-drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([48]) -> (); // 3865
-drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([46]) -> (); // 3866
+drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([37]) -> (); // 3865
+drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([35]) -> (); // 3866
 drop<core::integer::u256>([8]) -> (); // 3867
-drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([50]) -> (); // 3868
+drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([39]) -> (); // 3868
 drop<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([15]) -> (); // 3869
 drop<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([14]) -> (); // 3870
 drop<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>([13]) -> (); // 3871
@@ -4479,7 +4479,7 @@ struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::balances::
 drop<Unit>([86]) -> (); // 3909
 struct_construct<cairo_level_tests::components::erc20::erc20::TransferEvent>([82], [31], [8]) -> ([87]); // 3910
 enum_init<cairo_level_tests::components::erc20::erc20::Event, 0>([87]) -> ([88]); // 3911
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([46], [48], [50], [83], [85], [15]) -> ([89]); // 3912
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([35], [37], [39], [83], [85], [15]) -> ([89]); // 3912
 store_temp<GasBuiltin>([76]) -> ([76]); // 3913
 store_temp<System>([78]) -> ([78]); // 3914
 store_temp<cairo_level_tests::components::erc20::erc20::Event>([88]) -> ([88]); // 3915
@@ -4506,12 +4506,12 @@ store_temp<System>([91]) -> ([91]); // 3935
 store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>([100]) -> ([100]); // 3936
 return([75], [90], [77], [91], [100]); // 3937
 branch_align() -> (); // 3938
-drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([46]) -> (); // 3939
+drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([35]) -> (); // 3939
 drop<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([15]) -> (); // 3940
 drop<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>([71]) -> (); // 3941
 drop<ContractAddress>([31]) -> (); // 3942
-drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([50]) -> (); // 3943
-drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([48]) -> (); // 3944
+drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([39]) -> (); // 3943
+drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([37]) -> (); // 3944
 drop<core::integer::u256>([8]) -> (); // 3945
 enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>([81]) -> ([101]); // 3946
 store_temp<RangeCheck>([75]) -> ([75]); // 3947
@@ -4522,10 +4522,10 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::er
 return([75], [76], [77], [78], [101]); // 3952
 branch_align() -> (); // 3953
 drop<ContractAddress>([31]) -> (); // 3954
-drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([48]) -> (); // 3955
-drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([46]) -> (); // 3956
+drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([37]) -> (); // 3955
+drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([35]) -> (); // 3956
 drop<core::integer::u256>([8]) -> (); // 3957
-drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([50]) -> (); // 3958
+drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([39]) -> (); // 3958
 drop<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([15]) -> (); // 3959
 drop<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([14]) -> (); // 3960
 enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>([72]) -> ([102]); // 3961
