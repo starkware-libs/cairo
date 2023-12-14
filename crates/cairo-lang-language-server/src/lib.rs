@@ -49,6 +49,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -101,6 +102,24 @@ fn configured_db() -> RootDatabase {
     db
 }
 
+/// Makes sure that all open files exist in the new db, with their current changes.
+fn ensure_exists_in_db(
+    new_db: &mut RootDatabase,
+    old_db: &RootDatabase,
+    open_files: impl Iterator<Item = Url>,
+) {
+    let overrides = old_db.file_overrides();
+    let mut new_overrides: OrderedHashMap<FileId, Arc<String>> = Default::default();
+    for uri in open_files {
+        let file_id = file(old_db, uri);
+        let new_file_id = new_db.intern_file(old_db.lookup_intern_file(file_id));
+        if let Some(content) = overrides.get(&file_id) {
+            new_overrides.insert(new_file_id, content.clone());
+        }
+    }
+    new_db.set_file_overrides(Arc::new(new_overrides));
+}
+
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
@@ -110,8 +129,8 @@ pub struct FileDiagnostics {
 impl std::panic::UnwindSafe for FileDiagnostics {}
 #[derive(Clone, Default)]
 pub struct State {
-    pub file_diagnostics: HashMap<FileId, FileDiagnostics>,
-    pub open_files: HashSet<FileId>,
+    pub file_diagnostics: HashMap<Url, FileDiagnostics>,
+    pub open_files: HashSet<Url>,
 }
 impl std::panic::UnwindSafe for State {}
 
@@ -199,27 +218,27 @@ impl Backend {
                 let mut state = state;
                 let mut res = vec![];
                 // Get all files. Try to go over open files first.
-                let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
+                let mut files_set: OrderedHashSet<_> = state.open_files.iter().cloned().collect();
                 for crate_id in db.crates() {
                     for module_id in db.crate_modules(crate_id).iter() {
                         for file_id in
                             db.module_files(*module_id).unwrap_or_default().iter().copied()
                         {
-                            files_set.insert(file_id);
+                            files_set.insert(get_uri(db, file_id));
                         }
                     }
                 }
 
                 // Get all diagnostics.
-                for file_id in files_set.iter().copied() {
-                    let uri = get_uri(db, file_id);
+                for uri in files_set.iter().cloned() {
+                    let file_id = file(db, uri.clone());
                     let new_file_diagnostics = FileDiagnostics {
                         parser: db.file_syntax_diagnostics(file_id),
                         semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
                         lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
                     };
                     // Since we are using Arcs, this comparison should be efficient.
-                    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
+                    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
                         if old_file_diagnostics == &new_file_diagnostics {
                             continue;
                         }
@@ -228,19 +247,18 @@ impl Backend {
                     get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
                     get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
                     get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
-                    state.file_diagnostics.insert(file_id, new_file_diagnostics);
+                    state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
 
                     res.push((uri, diags));
                 }
 
                 // Clear old diagnostics.
-                let old_files: Vec<_> = state.file_diagnostics.keys().copied().collect();
-                for file_id in old_files {
-                    if files_set.contains(&file_id) {
+                let old_files: Vec<_> = state.file_diagnostics.keys().cloned().collect();
+                for uri in old_files {
+                    if files_set.contains(&uri) {
                         continue;
                     }
-                    state.file_diagnostics.remove(&file_id);
-                    let uri = get_uri(db, file_id);
+                    state.file_diagnostics.remove(&uri);
                     res.push((uri, Vec::new()));
                 }
 
@@ -256,29 +274,66 @@ impl Backend {
         }
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
-        self.maybe_sweep_database().await;
-
-        Ok(())
+        self.maybe_swap_database().await
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
-    async fn maybe_sweep_database(&self) {
+    async fn maybe_swap_database(&self) -> LSPResult<()> {
         let Ok(mut last_replace) = self.last_replace.try_lock() else {
             // Another thread is already swapping the database.
-            return;
+            return Ok(());
         };
         if last_replace.elapsed().unwrap() <= self.db_replace_interval {
             // Not enough time passed since last swap.
-            return;
+            return Ok(());
         }
+        let open_files = self.state_mutex.lock().await.open_files.clone();
         eprintln!("DB swap - scheduled.");
+        let mut new_db = self
+            .with_db(|db| {
+                let mut new_db = configured_db();
+                ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                new_db
+            })
+            .await?;
+        eprintln!("DB swap - initial setup done.");
+        self.ensure_diagnostics_queries_up_to_date(&mut new_db, open_files.into_iter()).await;
+        eprintln!("DB swap - initial compilation done.");
         let mut db = self.db_mut().await;
         eprintln!("DB swap - starting.");
-        let mut new_db = configured_db();
-        new_db.set_file_overrides(db.file_overrides());
+        let state = self.state_mutex.lock().await;
+        ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().cloned());
         *db = new_db;
         *last_replace = SystemTime::now();
         eprintln!("DB swap - done.");
+        Ok(())
+    }
+
+    /// Ensures that all diagnostics are up to date.
+    async fn ensure_diagnostics_queries_up_to_date(
+        &self,
+        db: &mut RootDatabase,
+        open_files: impl Iterator<Item = Url>,
+    ) {
+        let query_diags = |db: &RootDatabase, file_id| {
+            db.file_syntax_diagnostics(file_id);
+            let _ = db.file_semantic_diagnostics(file_id);
+            let _ = db.file_lowering_diagnostics(file_id);
+        };
+        for uri in open_files {
+            let file_id = file(db, uri.clone());
+            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
+                self.detect_crate_for(db, file_path).await;
+            }
+            query_diags(db, file_id);
+        }
+        for crate_id in db.crates() {
+            for module_id in db.crate_modules(crate_id).iter() {
+                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
+                    query_diags(db, file_id);
+                }
+            }
+        }
     }
 
     pub async fn vfs_provide(
@@ -405,9 +460,9 @@ impl Backend {
     /// Reload crate detection for all open files.
     pub async fn reload(&self) -> LSPResult<()> {
         let mut db = self.db_mut().await;
-        for file in self.state_mutex.lock().await.open_files.iter() {
-            let file = db.lookup_intern_file(*file);
-            if let FileLongId::OnDisk(file_path) = file {
+        for uri in self.state_mutex.lock().await.open_files.iter() {
+            let file_id = file(&db, uri.clone());
+            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
                 self.detect_crate_for(&mut db, file_path).await;
             }
         }
@@ -591,9 +646,9 @@ impl LanguageServer for Backend {
             self.detect_crate_for(&mut db, path).await;
         }
 
-        let file = file(&db, uri.clone());
-        self.state_mutex.lock().await.open_files.insert(file);
-        db.override_file_content(file, Some(Arc::new(params.text_document.text)));
+        let file_id = file(&db, uri.clone());
+        self.state_mutex.lock().await.open_files.insert(uri);
+        db.override_file_content(file_id, Some(Arc::new(params.text_document.text)));
         drop(db);
         self.refresh_diagnostics().await.ok();
     }
@@ -623,8 +678,8 @@ impl LanguageServer for Backend {
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
+        self.state_mutex.lock().await.open_files.remove(&params.text_document.uri);
         let file = file(&db, params.text_document.uri);
-        self.state_mutex.lock().await.open_files.remove(&file);
         db.override_file_content(file, None);
         drop(db);
         self.refresh_diagnostics().await.ok();
@@ -635,18 +690,18 @@ impl LanguageServer for Backend {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
-            let file = file(db, file_uri);
+            let file_id = file(db, file_uri);
             let mut position = text_document_position.position;
             position.character = position.character.saturating_sub(1);
 
-            let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file, position)
+            let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file_id, position)
             else {
                 return None;
             };
 
             // Find module.
-            let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-                eprintln!("Hover failed. Failed to find module.");
+            let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
+                eprintln!("Completion failed. Failed to find module.");
             })?;
             let file_index = FileIndex(0);
             let module_file_id = ModuleFileId(module_id, file_index);
@@ -664,7 +719,7 @@ impl LanguageServer for Backend {
 
             match completion_kind(db, node) {
                 CompletionKind::Dot(expr) => {
-                    dot_completions(db, file, lookup_items, expr).map(CompletionResponse::Array)
+                    dot_completions(db, file_id, lookup_items, expr).map(CompletionResponse::Array)
                 }
                 CompletionKind::ColonColon(segments) if !segments.is_empty() => {
                     colon_colon_completions(db, module_file_id, lookup_items, segments)
@@ -751,9 +806,10 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
             eprintln!("Hover {file_uri}");
-            let file = file(db, file_uri);
+            let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
+            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file_id, position)
+            else {
                 return None;
             };
             let Some(lookup_item_id) = lookup_items.into_iter().next() else {
@@ -834,7 +890,7 @@ fn find_definition(
         if parent.kind(db) == SyntaxKind::ItemModule {
             let containing_module_id =
                 find_node_module(db, file, parent.clone()).on_none(|| {
-                    eprintln!("Hover failed. Failed to find module.");
+                    eprintln!("`find_definition` failed. Failed to find module.");
                 })?;
 
             let submodule_id = db.intern_submodule(SubmoduleLongId(
@@ -1141,15 +1197,15 @@ fn get_node_and_lookup_items(
 
     // Get syntax for file.
     let syntax = db.file_syntax(file).to_option().on_none(|| {
-        eprintln!("Formatting failed. File '{filename}' does not exist.");
+        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
     })?;
 
     // Get file summary and content.
     let file_summary = db.file_summary(file).on_none(|| {
-        eprintln!("Hover failed. File '{filename}' does not exist.");
+        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
     })?;
     let content = db.file_content(file).on_none(|| {
-        eprintln!("Hover failed. File '{filename}' does not exist.");
+        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
     })?;
 
     // Find offset for position.
@@ -1158,7 +1214,7 @@ fn get_node_and_lookup_items(
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        eprintln!("Hover failed. Failed to find module.");
+        eprintln!("`get_node_and_lookup_items` failed. Failed to find module.");
     })?;
     let file_index = FileIndex(0);
     let module_file_id = ModuleFileId(module_id, file_index);
