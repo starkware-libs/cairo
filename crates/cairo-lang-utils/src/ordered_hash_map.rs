@@ -119,6 +119,17 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(Key, Value)> {
         self.0.shift_remove_index(index)
     }
+
+    /// Returns true if the maps are equal, ignoring the order of the entries.
+    pub fn eq_unordered(&self, other: &Self) -> bool
+    where
+        Value: Eq,
+    {
+        if self.0.len() != other.0.len() {
+            return false;
+        };
+        self.0.iter().all(|(k, v)| other.0.get(k) == Some(v))
+    }
 }
 
 /// Entry for an existing key-value pair or a vacant location to insert one.
