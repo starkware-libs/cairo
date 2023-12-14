@@ -4,7 +4,7 @@ use starknet::{
 };
 use core::box::BoxTrait;
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Debug)]
 pub struct ExecutionInfo {
     pub block_info: Box<BlockInfo>,
     pub tx_info: Box<TxInfo>,
@@ -13,14 +13,14 @@ pub struct ExecutionInfo {
     pub entry_point_selector: felt252,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Debug, Serde)]
 pub struct BlockInfo {
     pub block_number: u64,
     pub block_timestamp: u64,
     pub sequencer_address: ContractAddress,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Debug, Serde)]
 pub struct TxInfo {
     // The version of the transaction. It is fixed (currently, 1) in the OS, and should be
     // signed by the account contract.
@@ -75,7 +75,7 @@ pub mod v2 {
     use starknet::contract_address::ContractAddress;
     use super::BlockInfo;
 
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Debug)]
     pub struct ExecutionInfo {
         pub block_info: Box<BlockInfo>,
         pub tx_info: Box<TxInfo>,
@@ -84,7 +84,7 @@ pub mod v2 {
         pub entry_point_selector: felt252,
     }
 
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Debug, Serde)]
     pub struct TxInfo {
         // The version of the transaction. It is fixed (currently, 1) in the OS, and should be
         // signed by the account contract.
@@ -121,7 +121,7 @@ pub mod v2 {
         pub account_deployment_data: Span<felt252>,
     }
 
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Debug, Serde)]
     pub struct ResourceBounds {
         // The name of the resource.
         pub resource: felt252,
