@@ -64,8 +64,7 @@ impl SierraGenDatabaseForTesting {
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         res.set_analyzer_plugins(suite.analyzer_plugins);
 
-        // Disable moving of functions to simplify tests writing.
-        res.set_optimization_config(Arc::new(OptimizationConfig { moveable_functions: vec![] }));
+        res.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
