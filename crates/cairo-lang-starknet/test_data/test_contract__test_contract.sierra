@@ -154,8 +154,8 @@ libfunc felt252_add = felt252_add;
 libfunc dup<felt252> = dup<felt252>;
 libfunc function_call<user@cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::InternalContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, ())>>;
-libfunc felt252_const<-1> = felt252_const<-1>;
 libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, Unit>>;
+libfunc felt252_const<-1> = felt252_const<-1>;
 libfunc struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>> = struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>>;
@@ -1280,12 +1280,12 @@ dup<felt252>([17]) -> ([17], [16]); // 1020
 function_call<user@cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::InternalContractMemberStateImpl::write>([9], [10], [7], [17]) -> ([18], [19], [20]); // 1021
 enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, ())>>([20]) { fallthrough([21]) 1035([22]) }; // 1022
 branch_align() -> (); // 1023
-felt252_const<-1>() -> ([23]); // 1024
-felt252_add([16], [23]) -> ([24]); // 1025
-struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, Unit>>([21]) -> ([25], [26]); // 1026
-drop<Unit>([26]) -> (); // 1027
-struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([25]) -> ([27]); // 1028
-struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>>([27], [3], [24]) -> ([28]); // 1029
+struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::my_storage_var::ContractMemberState, Unit>>([21]) -> ([23], [24]); // 1024
+drop<Unit>([24]) -> (); // 1025
+felt252_const<-1>() -> ([25]); // 1026
+felt252_add([16], [25]) -> ([26]); // 1027
+struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([23]) -> ([27]); // 1028
+struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>>([27], [3], [26]) -> ([28]); // 1029
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 0>([28]) -> ([29]); // 1030
 store_temp<GasBuiltin>([18]) -> ([18]); // 1031
 store_temp<System>([19]) -> ([19]); // 1032
