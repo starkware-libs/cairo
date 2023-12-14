@@ -187,11 +187,11 @@ End:
 
 blk5:
 Statements:
+  (v30: core::felt252) <- struct_destructure(v29)
+  (v12: core::felt252) <- 5u
   (v14: core::felt252) <- 0u
   (v19: core::felt252) <- core::felt252_add(v0, v14)
-  (v12: core::felt252) <- 5u
   (v20: core::felt252) <- core::felt252_mul(v12, v19)
-  (v30: core::felt252) <- struct_destructure(v29)
   (v21: core::felt252) <- core::felt252_add(v30, v20)
   (v32: (core::felt252,)) <- struct_construct(v21)
   (v33: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v32)

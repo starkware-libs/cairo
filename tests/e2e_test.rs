@@ -6,6 +6,8 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -23,12 +25,17 @@ use once_cell::sync::Lazy;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> =
-    Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
+static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_optimization_config(Arc::new(OptimizationConfig::testing()));
+    Mutex::new(db)
+});
 static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+
+    db.set_optimization_config(Arc::new(OptimizationConfig::testing()));
     Mutex::new(db)
 });
 
