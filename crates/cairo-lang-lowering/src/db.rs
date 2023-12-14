@@ -282,9 +282,17 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
-    db.set_optimization_config(Arc::new(OptimizationConfig {
-        moveable_functions: vec!["bool_not_impl".to_string()],
-    }));
+    let mut moveable_functions: Vec<String> =
+        ["bool_not_impl", "felt252_add", "felt252_sub", "felt252_mul", "felt252_div"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+
+    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "u128"] {
+        moveable_functions.push(format!("integer::{}_wide_mul", ty));
+    }
+
+    db.set_optimization_config(Arc::new(OptimizationConfig { moveable_functions }));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
