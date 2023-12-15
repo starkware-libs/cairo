@@ -128,17 +128,17 @@ fn generate_type_declarations_helper(
     });
 }
 
-/// Collects the set of all [ConcreteTypeId] that are used in the given list of
-/// [program::LibfuncDeclaration].
+/// Collects the set of all [ConcreteTypeId] that are used in the given lists of
+/// [program::LibfuncDeclaration] and user functions.
 fn collect_used_types(
     db: &dyn SierraGenGroup,
     libfunc_declarations: &[program::LibfuncDeclaration],
+    functions: &[Arc<pre_sierra::Function>],
 ) -> OrderedHashSet<ConcreteTypeId> {
-    libfunc_declarations
-        .iter()
-        .flat_map(|libfunc| {
-            // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
-            let signature = CoreLibfunc::specialize_signature_by_id(
+    // Collect types that appear in libfuncs.
+    let types_in_libfuncs = libfunc_declarations.iter().flat_map(|libfunc| {
+        // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
+        let signature = CoreLibfunc::specialize_signature_by_id(
                 &SierraSignatureSpecializationContext(db),
                 &libfunc.long_id.generic_id,
                 &libfunc.long_id.generic_args,
@@ -147,16 +147,21 @@ fn collect_used_types(
             // the libfuncs in the [`CoreLibfunc`] structured enum.
             .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
                 DebugReplacer { db }.replace_libfunc_id(&libfunc.id)));
-            chain!(
-                signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
-                signature
-                    .branch_signatures
-                    .into_iter()
-                    .flat_map(|info| info.vars)
-                    .map(|var| var.ty)
-            )
-        })
-        .collect()
+        chain!(
+            signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
+            signature.branch_signatures.into_iter().flat_map(|info| info.vars).map(|var| var.ty)
+        )
+    });
+
+    // Collect types that appear in user functions.
+    // This is only relevant for types that are arguments to entry points and are not used in
+    // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
+    // have no libfuncs, but we still need to declare the struct.
+    let types_in_user_functions = functions.iter().flat_map(|func| {
+        chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
+    });
+
+    chain!(types_in_libfuncs, types_in_user_functions).collect()
 }
 
 pub fn get_sierra_program_for_functions(
@@ -186,7 +191,7 @@ pub fn get_sierra_program_for_functions(
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations));
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
