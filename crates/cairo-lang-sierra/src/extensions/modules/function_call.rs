@@ -1,3 +1,5 @@
+use itertools::chain;
+
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
     SpecializationContext,
@@ -81,5 +83,47 @@ pub struct FunctionCallConcreteLibfunc {
 impl SignatureBasedConcreteLibfunc for FunctionCallConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
+    }
+}
+
+/// Libfunc used to call user functions.
+#[derive(Default)]
+pub struct CouponFunctionCallLibfunc {}
+impl NamedLibfunc for CouponFunctionCallLibfunc {
+    type Concrete = FunctionCallConcreteLibfunc;
+    const STR_ID: &'static str = "coupon_call";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let [GenericArg::UserFunc(function_id)] = args else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        let signature = context.get_function_signature(function_id)?;
+        let ap_change = context.get_function_ap_change(function_id)?;
+        // let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            chain!(&[], &signature.param_types).cloned().collect(),
+            handle_ret_types(context, signature)?,
+            ap_change,
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let [GenericArg::UserFunc(function_id)] = args else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        Ok(Self::Concrete {
+            function: context.get_function(function_id)?,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }

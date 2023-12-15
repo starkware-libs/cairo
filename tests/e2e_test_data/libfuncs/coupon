@@ -4,12 +4,20 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: bar::<u8>::Coupon) -> bar::<u8>::Coupon {
+extern fn coupon_call<T>() nopanic;
+
+// impl DropCoupon<T> of Drop<bar::<T>::Coupon> { }
+
+// TODO: try with drop.
+fn foo(x: bar::<u8>::Coupon) {
     bar::<u8>();
-    x
+    // bar::coupon_call();
 }
 
-fn bar<T>() nopanic {}
+// TODO: remove tmp.
+#[inline(never)]
+fn bar<T>() {
+}
 
 //! > casm
 call rel 3;
