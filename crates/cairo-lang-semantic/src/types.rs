@@ -19,7 +19,7 @@ use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVa
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -30,6 +30,7 @@ pub enum TypeLongId {
     Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
+    Coupon(FunctionId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -89,6 +90,7 @@ impl TypeLongId {
                 format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
+            TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.fullname(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
         }
     }
@@ -99,6 +101,7 @@ impl TypeLongId {
             TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
             TypeLongId::Tuple(_) => TypeHead::Tuple,
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
+            TypeLongId::Coupon(_) => TypeHead::Coupon,
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
@@ -123,6 +126,7 @@ pub enum TypeHead {
     Concrete(GenericTypeId),
     Snapshot(Box<TypeHead>),
     Tuple,
+    Coupon,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
