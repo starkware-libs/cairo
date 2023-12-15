@@ -1,38 +1,55 @@
-//! > coupon type
+//! > coupon type and coupon_call
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: bar::<u8>::Coupon) -> bar::<u8>::Coupon {
-    bar::<u8>();
-    x
+impl DropCoupon<T, impl DropImpl: Drop<T>> of Drop<bar::<T, DropImpl>::Coupon>;
+
+fn foo(x: bar::<u8>::Coupon) {
+    bar::<u8>(0, __coupon__: x);
 }
 
-fn bar<T>() nopanic {}
+fn bar<T, +Drop<T>>(x: T) -> felt252 {
+    10
+}
 
 //! > casm
+[ap + 0] = 0, ap++;
 call rel 3;
 ret;
+[ap + 0] = 10, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
-test::bar::<core::integer::u8>: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 300})
+test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 100})
 
 //! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: false, dup: false, zero_sized: true];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
 
-libfunc function_call<user@test::bar::<core::integer::u8>> = function_call<user@test::bar::<core::integer::u8>>;
-libfunc drop<Unit> = drop<Unit>;
+libfunc u8_const<0> = u8_const<0>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>;
+libfunc drop<felt252> = drop<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<u8> = drop<u8>;
+libfunc felt252_const<10> = felt252_const<10>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
-function_call<user@test::bar::<core::integer::u8>>() -> ([1]); // 0
-drop<Unit>([1]) -> (); // 1
-return([0]); // 2
-struct_construct<Unit>() -> ([0]); // 3
-return([0]); // 4
+u8_const<0>() -> ([1]); // 0
+store_temp<u8>([1]) -> ([1]); // 1
+coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([1], [0]) -> ([2]); // 2
+drop<felt252>([2]) -> (); // 3
+struct_construct<Unit>() -> ([3]); // 4
+return([3]); // 5
+drop<u8>([0]) -> (); // 6
+felt252_const<10>() -> ([1]); // 7
+store_temp<felt252>([1]) -> ([1]); // 8
+return([1]); // 9
 
-test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> (Coupon<user@test::bar::<core::integer::u8>>);
-test::bar::<core::integer::u8>@3() -> (Unit);
+test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> (Unit);
+test::bar::<core::integer::u8, core::integer::u8Drop>@6([0]: u8) -> (felt252);

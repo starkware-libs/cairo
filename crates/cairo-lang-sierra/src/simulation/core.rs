@@ -10,9 +10,9 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Range, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64,
-    Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bool, BranchAlign, CouponCall, Drop, Dup, Ec, Enum, Felt252,
+    FunctionCall, Gas, Mem, Range, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16,
+    Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -90,7 +90,8 @@ pub fn simulate<
             },
             _ => unimplemented!(),
         },
-        FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
+        FunctionCall(FunctionCallConcreteLibfunc { function, .. })
+        | CouponCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
         Gas(WithdrawGas(_)) => {

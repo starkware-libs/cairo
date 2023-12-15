@@ -279,6 +279,20 @@ pub fn function_call_libfunc_id(
     })
 }
 
+/// Returns the [ConcreteLibfuncId] for calling a user-defined function, given a coupon for that
+/// function.
+pub fn coupon_call_libfunc_id(
+    db: &dyn SierraGenGroup,
+    func: lowering::ids::FunctionId,
+) -> ConcreteLibfuncId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: GenericLibfuncId::from_string("coupon_call"),
+        generic_args: vec![cairo_lang_sierra::program::GenericArg::UserFunc(
+            db.intern_sierra_function(func),
+        )],
+    })
+}
+
 /// Returns the [ConcreteLibfuncId] used for calling a libfunc.
 pub fn generic_libfunc_id(
     db: &dyn SierraGenGroup,
@@ -295,11 +309,19 @@ pub fn generic_libfunc_id(
 pub fn get_concrete_libfunc_id(
     db: &dyn SierraGenGroup,
     function: lowering::ids::FunctionId,
+    with_coupon: bool,
 ) -> (Option<lowering::ids::ConcreteFunctionWithBodyId>, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
     if let Some(body) = function.body(db.upcast()).expect("No diagnostics at this stage.") {
-        return (Some(body), function_call_libfunc_id(db, function));
+        if with_coupon {
+            return (Some(body), coupon_call_libfunc_id(db, function));
+        } else {
+            return (Some(body), function_call_libfunc_id(db, function));
+        }
     }
+
+    assert!(!with_coupon, "Coupon cannot be used with extern functions.");
+
     let semantic =
         extract_matches!(function.lookup(db.upcast()), lowering::ids::FunctionLongId::Semantic);
     let concrete_function = db.lookup_intern_function(semantic).function;
