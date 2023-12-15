@@ -103,7 +103,7 @@ impl MyTypeDrop of core::traits::Drop::<MyType>;
 starknet_derive:
 
 impl StoreMyType of starknet::Store::<MyType> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
         let x = starknet::Store::<u32>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             MyType {
@@ -111,11 +111,11 @@ impl StoreMyType of starknet::Store::<MyType> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyType) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyType) -> starknet::SyscallResult<()> {
         starknet::Store::<u32>::write(address_domain, base, value.x)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyType> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyType> {
         let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             MyType {
@@ -124,7 +124,7 @@ impl StoreMyType of starknet::Store::<MyType> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyType) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyType) -> starknet::SyscallResult<()> {
         starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
         starknet::SyscallResult::Ok(())
     }
@@ -152,7 +152,7 @@ impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -168,7 +168,7 @@ impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
         core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
         core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("set"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -271,7 +271,7 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -289,7 +289,7 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
         core::serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
         core::serde::Serde::<u32>::serialize(@value, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("set"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -320,7 +320,7 @@ impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
 starknet_derive:
 
 impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             MyTraitDispatcher {
@@ -328,11 +328,11 @@ impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             MyTraitDispatcher {
@@ -341,7 +341,7 @@ impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -371,7 +371,7 @@ impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatc
 starknet_derive:
 
 impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             MyTraitLibraryDispatcher {
@@ -379,11 +379,11 @@ impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             MyTraitLibraryDispatcher {
@@ -392,7 +392,7 @@ impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -422,7 +422,7 @@ impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibrar
 starknet_derive:
 
 impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             MyTraitSafeLibraryDispatcher {
@@ -430,11 +430,11 @@ impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDi
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             MyTraitSafeLibraryDispatcher {
@@ -443,7 +443,7 @@ impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDi
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -473,7 +473,7 @@ impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
 starknet_derive:
 
 impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             MyTraitSafeDispatcher {
@@ -481,11 +481,11 @@ impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             MyTraitSafeDispatcher {
@@ -494,7 +494,7 @@ impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -538,8 +538,8 @@ component:
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -553,8 +553,8 @@ component:
         pub struct ComponentMemberState {}
 
         impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState, u32, u32> {
-            fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ComponentMemberState, key: u32) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
             }
         }
@@ -568,8 +568,8 @@ component:
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, super::super::MyType> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
             }
         }
     }
@@ -686,7 +686,7 @@ fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, 
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = MyImpl::<TContractState, X, TContractStateDrop>::get(@contract_state, __arg_addr);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -712,7 +712,7 @@ fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, 
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, TContractStateDrop>::set(ref contract_state, __arg_addr, __arg_value);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)

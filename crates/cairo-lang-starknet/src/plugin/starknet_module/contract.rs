@@ -184,7 +184,7 @@ const EVENT_EMITTER_CODE: &str = formatcp! {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

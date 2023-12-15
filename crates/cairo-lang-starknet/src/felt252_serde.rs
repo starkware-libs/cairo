@@ -140,7 +140,7 @@ impl<T: Felt252Serde> Felt252Serde for Vec<T> {
 
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
         let (size, mut input) = usize::deserialize(input)?;
-        let mut result = Vec::with_capacity(size);
+        let mut result = vec_with_bounded_capacity(size, input.len())?;
         for _ in 0..size {
             let (value, next) = T::deserialize(input)?;
             result.push(value);
@@ -367,7 +367,7 @@ impl Felt252Serde for Program {
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
         // Type declarations.
         let (size, mut input) = usize::deserialize(input)?;
-        let mut type_declarations = Vec::with_capacity(size);
+        let mut type_declarations = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
             let (info, next) = ConcreteTypeInfo::deserialize(input)?;
             type_declarations.push(TypeDeclaration {
@@ -379,7 +379,7 @@ impl Felt252Serde for Program {
         }
         // Libfunc declaration.
         let (size, mut input) = usize::deserialize(input)?;
-        let mut libfunc_declarations = Vec::with_capacity(size);
+        let mut libfunc_declarations = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
             let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
             libfunc_declarations
@@ -390,7 +390,7 @@ impl Felt252Serde for Program {
         let (statements, input) = Felt252Serde::deserialize(input)?;
         // Function declaration.
         let (size, mut input) = usize::deserialize(input)?;
-        let mut funcs = Vec::with_capacity(size);
+        let mut funcs = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
             let (signature, next) = FunctionSignature::deserialize(input)?;
             input = next;
@@ -452,7 +452,7 @@ impl Felt252Serde for ConcreteTypeInfo {
         let (len_and_decl_ti_value, mut input) = BigInt::deserialize(input)?;
         let len = (len_and_decl_ti_value.clone() & BigInt::from(u128::MAX)).to_usize().unwrap();
         let decl_ti_value = (len_and_decl_ti_value.shr(128) as BigInt).to_u64().unwrap();
-        let mut generic_args = Vec::with_capacity(len);
+        let mut generic_args = vec_with_bounded_capacity(len, input.len())?;
         for _ in 0..len {
             let (arg, next) = GenericArg::deserialize(input)?;
             generic_args.push(arg);
@@ -644,5 +644,18 @@ impl Felt252Serde for BranchTarget {
             if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
             input,
         ))
+    }
+}
+
+/// Helper for allocating a vector with capacity given an upper bound on the remaining possibly read
+/// data.
+fn vec_with_bounded_capacity<T>(
+    size: usize,
+    max_remaining_size: usize,
+) -> Result<Vec<T>, Felt252SerdeError> {
+    if max_remaining_size < size {
+        Err(Felt252SerdeError::InvalidInputForDeserialization)
+    } else {
+        Ok(Vec::with_capacity(size))
     }
 }

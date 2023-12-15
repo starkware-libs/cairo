@@ -160,13 +160,11 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc into_box<Unit> = into_box<Unit>;
 
 struct_construct<Unit>() -> ([0]); // 0
-store_temp<Unit>([0]) -> ([0]); // 1
-into_box<Unit>([0]) -> ([1]); // 2
-return([1]); // 3
+into_box<Unit>([0]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0() -> (Box<Unit>);
 
@@ -193,11 +191,9 @@ type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: f
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<Unit> = unbox<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
 unbox<Unit>([0]) -> ([1]); // 0
-store_temp<Unit>([1]) -> ([1]); // 1
-return([1]); // 2
+return([1]); // 1
 
 test::foo@0([0]: Box<Unit>) -> (Unit);
 
@@ -226,13 +222,11 @@ type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true
 type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc struct_construct<test::Empty> = struct_construct<test::Empty>;
-libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 libfunc into_box<test::Empty> = into_box<test::Empty>;
 
 struct_construct<test::Empty>() -> ([0]); // 0
-store_temp<test::Empty>([0]) -> ([0]); // 1
-into_box<test::Empty>([0]) -> ([1]); // 2
-return([1]); // 3
+into_box<test::Empty>([0]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0() -> (Box<test::Empty>);
 
@@ -260,11 +254,9 @@ type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true,
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<test::Empty> = unbox<test::Empty>;
-libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 
 unbox<test::Empty>([0]) -> ([1]); // 0
-store_temp<test::Empty>([1]) -> ([1]); // 1
-return([1]); // 2
+return([1]); // 1
 
 test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
 

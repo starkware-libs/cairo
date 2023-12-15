@@ -11,14 +11,24 @@ extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
 #[generate_trait]
 pub impl BoxImpl<T> of BoxTrait<T> {
     #[inline(always)]
+    #[must_use]
     fn new(value: T) -> Box<T> nopanic {
         into_box(value)
     }
     #[inline(always)]
+    #[must_use]
     fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)
     }
+    #[must_use]
     fn as_snapshot(self: @Box<T>) -> Box<@T> nopanic {
         box_forward_snapshot(self)
+    }
+}
+
+impl BoxDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Box<T>> {
+    fn fmt(self: @Box<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        write!(f, "&")?;
+        TDebug::fmt(self.as_snapshot().unbox(), ref f)
     }
 }

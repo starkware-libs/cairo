@@ -8,10 +8,10 @@ use core::zeroable::Zeroable;
 // Re-imports
 // Store
 pub mod storage_access;
+pub use storage_access::{Store, StorageAddress};
 use storage_access::{
-    Store, StorePacking, StorageAddress, StorageBaseAddress, storage_base_address_const,
-    storage_base_address_from_felt252, storage_address_from_base,
-    storage_address_from_base_and_offset, storage_address_to_felt252,
+    StorePacking, StorageBaseAddress, storage_base_address_const, storage_base_address_from_felt252,
+    storage_address_from_base, storage_address_from_base_and_offset, storage_address_to_felt252,
     storage_address_try_from_felt252
 };
 
@@ -30,10 +30,10 @@ pub mod secp256r1;
 
 // ContractAddress
 pub mod contract_address;
-pub use contract_address::ContractAddress;
+pub use contract_address::{ContractAddress, contract_address_const};
 use contract_address::{
-    ContractAddressIntoFelt252, Felt252TryIntoContractAddress, contract_address_const,
-    contract_address_to_felt252, contract_address_try_from_felt252
+    ContractAddressIntoFelt252, Felt252TryIntoContractAddress, contract_address_to_felt252,
+    contract_address_try_from_felt252
 };
 
 // EthAddress
@@ -49,20 +49,21 @@ use eth_signature::verify_eth_signature;
 
 // ClassHash
 pub mod class_hash;
+pub use class_hash::ClassHash;
 use class_hash::{
-    ClassHash, ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const,
-    class_hash_to_felt252, class_hash_try_from_felt252
+    ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const, class_hash_to_felt252,
+    class_hash_try_from_felt252
 };
 
 // Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
 pub use info::{
-    ExecutionInfo, BlockInfo, TxInfo, get_execution_info, get_caller_address, get_contract_address,
-    get_block_info, get_tx_info, get_block_timestamp
+    v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
+    get_caller_address, get_contract_address, get_block_info, get_tx_info, get_block_timestamp
 };
 
 pub mod event;
-use event::Event;
+pub use event::Event;
 
 pub mod account;
 pub use account::AccountContract;

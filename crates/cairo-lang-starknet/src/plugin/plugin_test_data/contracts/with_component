@@ -96,8 +96,8 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -170,19 +170,19 @@ contract:
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
             }
             fn read(self: @ContractMemberState) -> usize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -192,7 +192,7 @@ contract:
             fn write(ref self: ContractMemberState, value: usize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -208,19 +208,19 @@ contract:
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
             }
             fn read(self: @ContractMemberState) -> usize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -230,7 +230,7 @@ contract:
             fn write(ref self: ContractMemberState, value: usize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -259,7 +259,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -284,7 +284,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -475,8 +475,8 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -546,8 +546,8 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -631,7 +631,7 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -656,7 +656,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -885,8 +885,8 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -956,8 +956,8 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            fn address(self: @ComponentMemberState) -> starknet::storage_access::StorageBaseAddress nopanic {
+                starknet::storage_access::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
         }
     }
@@ -1041,7 +1041,7 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -1066,7 +1066,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

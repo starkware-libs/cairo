@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         loop_: "loop",
         match_: "match",
         method: "method",
+        neg_impl: "neg_impl",
         operators: "operators",
         pattern: "pattern",
         return_: "return",

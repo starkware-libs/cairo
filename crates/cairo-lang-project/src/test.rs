@@ -1,7 +1,8 @@
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 
-use crate::{AllCratesConfig, ProjectConfigContent, SingleCrateConfig};
+use crate::{AllCratesConfig, ProjectConfigContent};
 
 #[test]
 fn test_serde() {
@@ -14,10 +15,25 @@ fn test_serde() {
         .into_iter()
         .collect(),
         crates_config: AllCratesConfig {
-            global: SingleCrateConfig { edition: Default::default() },
+            global: CrateSettings {
+                edition: Default::default(),
+                experimental_features: ExperimentalFeaturesConfig::default(),
+            },
             override_map: [
-                ("crate1".into(), SingleCrateConfig { edition: Edition::V2023_10 }),
-                ("crate3".into(), SingleCrateConfig { edition: Default::default() }),
+                (
+                    "crate1".into(),
+                    CrateSettings {
+                        edition: Edition::V2023_10,
+                        experimental_features: ExperimentalFeaturesConfig::default(),
+                    },
+                ),
+                (
+                    "crate3".into(),
+                    CrateSettings {
+                        edition: Default::default(),
+                        experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
+                    },
+                ),
             ]
             .into_iter()
             .collect(),
@@ -35,11 +51,20 @@ fn test_serde() {
             [config.global]
             edition = "2023_01"
 
+            [config.global.experimental_features]
+            negative_impls = false
+
             [config.override.crate1]
             edition = "2023_10"
 
+            [config.override.crate1.experimental_features]
+            negative_impls = false
+
             [config.override.crate3]
             edition = "2023_01"
+
+            [config.override.crate3.experimental_features]
+            negative_impls = true
         "# }
     );
     assert_eq!(config, toml::from_str(&serialized).unwrap());

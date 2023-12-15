@@ -49,19 +49,19 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> usize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -71,7 +71,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: usize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -103,7 +103,7 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
     );
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -121,7 +121,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -147,7 +147,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -189,7 +189,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -201,7 +201,7 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
     fn get_balance(self: HelloStarknetTraitDispatcher) -> usize {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -310,7 +310,7 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("increase_balance"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -322,7 +322,7 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     fn get_balance(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<usize> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_balance"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -350,7 +350,7 @@ impl HelloStarknetTraitDispatcherSerde of core::serde::Serde::<HelloStarknetTrai
     }
 }
 impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitDispatcher {
@@ -358,11 +358,11 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitDispatcher {
@@ -371,7 +371,7 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -393,7 +393,7 @@ impl HelloStarknetTraitLibraryDispatcherSerde of core::serde::Serde::<HelloStark
     }
 }
 impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknetTraitLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitLibraryDispatcher {
@@ -401,11 +401,11 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitLibraryDispatcher {
@@ -414,7 +414,7 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -436,7 +436,7 @@ impl HelloStarknetTraitSafeLibraryDispatcherSerde of core::serde::Serde::<HelloS
     }
 }
 impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStarknetTraitSafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitSafeLibraryDispatcher {
@@ -444,11 +444,11 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitSafeLibraryDispatcher {
@@ -457,7 +457,7 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -479,7 +479,7 @@ impl HelloStarknetTraitSafeDispatcherSerde of core::serde::Serde::<HelloStarknet
     }
 }
 impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTraitSafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitSafeDispatcher {
@@ -487,11 +487,11 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             HelloStarknetTraitSafeDispatcher {
@@ -500,7 +500,7 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -542,19 +542,19 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> usize;
             fn write(ref self: ContractMemberState, value: usize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> usize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -564,7 +564,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: usize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<usize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -596,7 +596,7 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
     );
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -614,7 +614,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -640,7 +640,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

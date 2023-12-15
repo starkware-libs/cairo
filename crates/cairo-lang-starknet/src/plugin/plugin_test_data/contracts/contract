@@ -147,7 +147,7 @@ fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = get_something(@contract_state, ref __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
             core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
@@ -174,7 +174,7 @@ fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     set_something(ref contract_state, ref __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
             core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
     // Result.
@@ -204,7 +204,7 @@ fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -233,7 +233,7 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -260,7 +260,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

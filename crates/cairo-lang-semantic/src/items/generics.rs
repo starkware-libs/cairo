@@ -365,6 +365,13 @@ pub fn semantic_generic_params(
     res
 }
 
+/// Returns true if negative impls are enabled in the module.
+fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.negative_impls
+}
+
 /// Computes the semantic model of a generic parameter give its ast.
 fn semantic_from_generic_param_ast(
     db: &dyn SemanticGroup,
@@ -394,7 +401,9 @@ fn semantic_from_generic_param_ast(
             GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
-            diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+            if !are_negative_impls_enabled(db, module_file_id) {
+                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+            }
 
             let path_syntax = syntax.trait_path(db.upcast());
             GenericParam::NegImpl(impl_generic_param_semantic(

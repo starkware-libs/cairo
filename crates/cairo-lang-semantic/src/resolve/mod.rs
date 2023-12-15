@@ -1091,7 +1091,7 @@ impl<'db> Resolver<'db> {
 
 /// Extracts the edition of a crate.
 fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
-    db.crate_config(crate_id).map(|config| config.edition).unwrap_or_default()
+    db.crate_config(crate_id).map(|config| config.settings.edition).unwrap_or_default()
 }
 
 /// The callbacks to be used by `resolve_path_inner`.

@@ -78,6 +78,7 @@ pub fn inv_mod<
 }
 
 /// Returns `1 / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// All `b`s will be considered not invertible for `n == 1`.
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
 /// calculation.
 extern fn u256_guarantee_inv_mod_n(
@@ -98,6 +99,7 @@ extern fn u256_guarantee_inv_mod_n(
 > implicits(RangeCheck) nopanic;
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
+/// All `b`s will be considered not invertible for `n == 1`.
 #[inline(always)]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
@@ -121,10 +123,13 @@ pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
 
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
+    #[must_use]
     fn one() -> T;
     /// Returns whether self is equal to 1, the multiplicative identity element.
+    #[must_use]
     fn is_one(self: T) -> bool;
     /// Returns whether self is not equal to 1, the multiplicative identity element.
+    #[must_use]
     fn is_non_one(self: T) -> bool;
 }
 

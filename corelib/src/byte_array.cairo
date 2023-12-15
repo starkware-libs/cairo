@@ -167,6 +167,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = 0;
     }
 
+    #[must_use]
     fn len(self: @ByteArray) -> usize {
         self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
     }

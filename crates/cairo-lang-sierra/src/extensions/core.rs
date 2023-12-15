@@ -10,6 +10,7 @@ use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
+use super::felt252_bounded::Felt252BoundedType;
 use super::felt252_dict::{
     Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
 };
@@ -37,6 +38,7 @@ use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
+use super::range_reduction::RangeLibfunc;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
@@ -84,6 +86,7 @@ define_type_hierarchy! {
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
+        Felt252Bounded(Felt252BoundedType),
     }, CoreTypeConcrete
 }
 
@@ -98,6 +101,7 @@ define_libfunc_hierarchy! {
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
+        Range(RangeLibfunc),
         Felt252(Felt252Libfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),

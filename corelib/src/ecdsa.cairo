@@ -129,7 +129,7 @@ pub fn recover_public_key(
     let r_nz = r_nz.try_into()?;
     let ord_nz: u256 = ec::stark_curve::ORDER.into();
     let ord_nz = ord_nz.try_into()?;
-    let r_inv = math::inv_mod(r_nz, ord_nz)?;
+    let r_inv = math::u256_inv_mod(r_nz, ord_nz)?.into();
     let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ord_nz).try_into()?;
     let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ord_nz).try_into()?;
     let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);

@@ -89,7 +89,7 @@ impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher>
     fn foo(self: Interface1Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -154,7 +154,7 @@ impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1Saf
     fn foo(self: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -181,7 +181,7 @@ impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher>
     fn foo(self: Interface2Dispatcher) {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -246,7 +246,7 @@ impl Interface2SafeDispatcherImpl of Interface2SafeDispatcherTrait<Interface2Saf
     fn foo(self: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -277,7 +277,7 @@ impl Interface1DispatcherSerde of core::serde::Serde::<Interface1Dispatcher> {
 starknet_derive:
 
 impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface1Dispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface1Dispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface1Dispatcher {
@@ -285,11 +285,11 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface1Dispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface1Dispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1Dispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1Dispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface1Dispatcher {
@@ -298,7 +298,7 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface1Dispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface1Dispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -328,7 +328,7 @@ impl Interface1LibraryDispatcherSerde of core::serde::Serde::<Interface1LibraryD
 starknet_derive:
 
 impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface1LibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface1LibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface1LibraryDispatcher {
@@ -336,11 +336,11 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface1LibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface1LibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1LibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1LibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface1LibraryDispatcher {
@@ -349,7 +349,7 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface1LibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface1LibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -379,7 +379,7 @@ impl Interface1SafeLibraryDispatcherSerde of core::serde::Serde::<Interface1Safe
 starknet_derive:
 
 impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface1SafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface1SafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface1SafeLibraryDispatcher {
@@ -387,11 +387,11 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1SafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1SafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface1SafeLibraryDispatcher {
@@ -400,7 +400,7 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -430,7 +430,7 @@ impl Interface1SafeDispatcherSerde of core::serde::Serde::<Interface1SafeDispatc
 starknet_derive:
 
 impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface1SafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface1SafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface1SafeDispatcher {
@@ -438,11 +438,11 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1SafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface1SafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface1SafeDispatcher {
@@ -451,7 +451,7 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -481,7 +481,7 @@ impl Interface2DispatcherSerde of core::serde::Serde::<Interface2Dispatcher> {
 starknet_derive:
 
 impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface2Dispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface2Dispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface2Dispatcher {
@@ -489,11 +489,11 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface2Dispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface2Dispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2Dispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2Dispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface2Dispatcher {
@@ -502,7 +502,7 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface2Dispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface2Dispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -532,7 +532,7 @@ impl Interface2LibraryDispatcherSerde of core::serde::Serde::<Interface2LibraryD
 starknet_derive:
 
 impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface2LibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface2LibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface2LibraryDispatcher {
@@ -540,11 +540,11 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface2LibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface2LibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2LibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2LibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface2LibraryDispatcher {
@@ -553,7 +553,7 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface2LibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface2LibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -583,7 +583,7 @@ impl Interface2SafeLibraryDispatcherSerde of core::serde::Serde::<Interface2Safe
 starknet_derive:
 
 impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface2SafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface2SafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface2SafeLibraryDispatcher {
@@ -591,11 +591,11 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2SafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2SafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface2SafeLibraryDispatcher {
@@ -604,7 +604,7 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -634,7 +634,7 @@ impl Interface2SafeDispatcherSerde of core::serde::Serde::<Interface2SafeDispatc
 starknet_derive:
 
 impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Interface2SafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<Interface2SafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             Interface2SafeDispatcher {
@@ -642,11 +642,11 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2SafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Interface2SafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             Interface2SafeDispatcher {
@@ -655,7 +655,7 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -777,7 +777,7 @@ fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I1::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -817,7 +817,7 @@ fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I2::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -857,7 +857,7 @@ fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I2I::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -933,7 +933,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     );
     let mut contract_state = unsafe_new_contract_state();
     foo(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -957,7 +957,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),

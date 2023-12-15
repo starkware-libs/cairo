@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCARB_REPO="https://github.com/software-mansion/scarb"
 
-CURRENT_VERSION='2.3.1'
+CURRENT_VERSION='2.4.0'
 NEW_VERSION="$@"
 
 # NOTE: These two functions were copied from asdf-scarb.
@@ -27,7 +27,9 @@ check_scarb_version_sync() {
     local latest_scarb_version
     latest_scarb_version="$(echo "$all_scarb_versions" | tail -n1)"
 
-    if [[ "$all_scarb_versions" == *"$NEW_VERSION"* ]]; then
+    local wrapped_all_scarb_versions
+    wrapped_all_scarb_versions="$(echo $all_scarb_versions | awk '{print "`" $1 "`"}')"
+    if [[ "$wrapped_all_scarb_versions" == *"\`$NEW_VERSION\`"* ]]; then
         echo "error: cairo $NEW_VERSION = scarb $NEW_VERSION"
         echo "help: the latest Scarb release is: $latest_scarb_version"
         exit 1

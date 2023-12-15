@@ -48,6 +48,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "U128AndFelt252".into()
             || id == "StorageAddress".into()
             || id == "ContractAddress".into()
+            || id.debug_name.clone().unwrap().contains("Felt252Bounded")
         {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
@@ -174,6 +175,10 @@ impl SpecializationContext for MockSpecializationContext {
             "Enum<name, UninitializedFelt252>")]
 #[test_case("Enum", vec![type_arg("u128"), type_arg("felt252")] => Err(UnsupportedGenericArg);
             "Enum<u128, felt252>")]
+#[test_case("Felt252Bounded", vec![value_arg(3), value_arg(2)] => Err(UnsupportedGenericArg);
+            "Felt252Bounded<3, 2>")]
+#[test_case("Felt252Bounded", vec![value_arg(0), value_arg(0)] => Ok(());
+            "Felt252Bounded<0, 0>")]
 #[test_case("Struct", vec![user_type_arg("Unit")] => Ok(()); "Struct<Unit>")]
 #[test_case("Struct", vec![user_type_arg("Wrap"), type_arg("u128")] => Ok(());
             "Struct<Wrap, u128>")]
@@ -293,6 +298,11 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
 #[test_case("enum_snapshot_match", vec![type_arg("Option")] => Ok(()); "enum_snapshot_match<Option>")]
 #[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(()); "enum_snapshot_match<NonDupEnum>")]
+#[test_case("constrain_range", vec![type_arg("Felt252Bounded0_10"),type_arg("Felt252Bounded0_3")] => Ok(()); "felt252_bounded<0, 3>")]
+#[test_case("constrain_range", vec![type_arg("Felt252Bounded0_10"),type_arg("Felt252Bounded2_3")] => Err(UnsupportedGenericArg); "felt252_bounded<2, 3>")]
+#[test_case("constrain_range", vec![type_arg("Felt252Bounded0_10"),type_arg("Felt252Bounded0_0")] => Ok(()); "felt252_bounded<0, 0>")]
+#[test_case("constrain_range", vec![type_arg("Felt252Bounded0_3"),type_arg("Felt252Bounded0_10")] => Err(UnsupportedGenericArg); "felt252_bounded<0, 10>")]
+#[test_case("constrain_range", vec![type_arg("Felt252Bounded0_10"),type_arg("Felt252Bounded0_-1")] => Err(UnsupportedGenericArg); "felt252_bounded<0, -1>")]
 #[test_case("struct_construct", vec![type_arg("U128AndFelt252")] => Ok(());
             "struct_construct<U128AndFelt252>")]
 #[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);

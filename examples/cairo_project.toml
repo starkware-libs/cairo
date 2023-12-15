@@ -2,4 +2,4 @@
 examples = "."
 
 [config.global]
-edition = "2023_11"
+edition = "2023_10"

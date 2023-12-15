@@ -131,19 +131,19 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> WrappedFelt252;
             fn write(ref self: ContractMemberState, value: WrappedFelt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
             }
             fn read(self: @ContractMemberState) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -153,7 +153,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -174,19 +174,19 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> ZeroSize;
             fn write(ref self: ContractMemberState, value: ZeroSize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
             }
             fn read(self: @ContractMemberState) -> ZeroSize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self),
@@ -196,7 +196,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, value: ZeroSize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self),
@@ -217,20 +217,20 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252;
             fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
             }
             fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self, key),
@@ -240,7 +240,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<WrappedFelt252>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self, key),
@@ -261,20 +261,20 @@ pub enum Event {}
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize;
             fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<ZeroSize>::hash(0x18a905aad30d0632877f9b37c338ceaaa98ea40758006e286f2104428beedab, key))
             }
             fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::read(
                         address_domain,
                         InternalContractMemberStateImpl::address(self, key),
@@ -284,7 +284,7 @@ pub enum Event {}
             fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::Store::<ZeroSize>::write(
                         address_domain,
                         InternalContractMemberStateImpl::address(@self, key),
@@ -318,7 +318,7 @@ pub mod __constructor {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -348,7 +348,7 @@ impl WrappedFelt252Hash<
 starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
         let value = starknet::Store::<felt252>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
@@ -356,11 +356,11 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
         starknet::Store::<felt252>::write(address_domain, base, value.value)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
         let value = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
@@ -369,7 +369,7 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
         starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.value)?;
         starknet::SyscallResult::Ok(())
     }
@@ -409,7 +409,7 @@ impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
 starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
         
         starknet::SyscallResult::Ok(
             ZeroSize {
@@ -417,11 +417,11 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ZeroSize) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ZeroSize) -> starknet::SyscallResult<()> {
         
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ZeroSize> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ZeroSize> {
         
         starknet::SyscallResult::Ok(
             ZeroSize {
@@ -430,7 +430,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ZeroSize) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ZeroSize) -> starknet::SyscallResult<()> {
         
         starknet::SyscallResult::Ok(())
     }

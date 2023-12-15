@@ -68,6 +68,8 @@ impl Display for CairoProgram {
 pub struct SierraStatementDebugInfo {
     /// The offset of the sierra statement within the bytecode.
     pub code_offset: usize,
+    /// The index of the sierra statement in the instructions vector.
+    pub instruction_idx: usize,
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -112,6 +114,7 @@ pub fn compile(
     // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
+    let mut statement_indices = Vec::with_capacity(program.statements.len());
 
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
@@ -133,6 +136,7 @@ pub fn compile(
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
+        statement_indices.push(instructions.len());
         statement_offsets.push(program_offset);
         match statement {
             Statement::Return(ref_ids) => {
@@ -247,7 +251,8 @@ pub fn compile(
         }
     }
 
-    // Push the final offset at the end of `statement_offsets`.
+    // Push the final offset and index at the end of the vectors.
+    statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
 
     relocate_instructions(&relocations, &statement_offsets, &mut instructions);
@@ -255,9 +260,11 @@ pub fn compile(
     Ok(CairoProgram {
         instructions,
         debug_info: CairoProgramDebugInfo {
-            sierra_statement_info: statement_offsets
-                .into_iter()
-                .map(|code_offset| SierraStatementDebugInfo { code_offset })
+            sierra_statement_info: zip_eq(statement_offsets, statement_indices)
+                .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
+                    code_offset,
+                    instruction_idx,
+                })
                 .collect(),
         },
     })

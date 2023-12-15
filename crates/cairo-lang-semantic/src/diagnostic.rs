@@ -315,6 +315,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
             }
+            SemanticDiagnosticKind::MissingVariableInPattern => {
+                "Missing variable in pattern.".into()
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{member_name}" on struct "{}"."#,
@@ -385,6 +388,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnhandledMustUseType { ty } => {
                 format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))
+            }
+            SemanticDiagnosticKind::UnhandledMustUseFunction => {
+                "Unhandled `#[must_use]` function.".into()
             }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
@@ -593,7 +599,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Const generic args are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::NegativeImplsNotEnabled => {
-                "Negative impls are not enabled in this context.".into()
+                "Negative impls are not enabled in the current crate.".into()
             }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
@@ -646,7 +652,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
     fn severity(&self) -> Severity {
         match &self.kind {
             SemanticDiagnosticKind::UnusedVariable
-            | SemanticDiagnosticKind::UnhandledMustUseType { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::UnhandledMustUseType { .. }
+            | SemanticDiagnosticKind::UnhandledMustUseFunction => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -763,6 +770,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound {
         name: SmolStr,
     },
+    MissingVariableInPattern,
     StructMemberRedefinition {
         struct_id: StructId,
         member_name: SmolStr,
@@ -820,6 +828,7 @@ pub enum SemanticDiagnosticKind {
     UnhandledMustUseType {
         ty: semantic::TypeId,
     },
+    UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,

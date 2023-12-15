@@ -43,9 +43,9 @@ struct FormatterArgs {
     files: Vec<String>,
 }
 
-fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
+fn print_error(error: String, path: String, args: &FormatterArgs) {
     let parsed_errors = if args.print_parsing_errors {
-        format!("{error}").red()
+        error.red()
     } else {
         "Run with '--print-parsing-errors' to see error details.".red()
     };
@@ -87,7 +87,7 @@ fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path
             false
         }
         Err(parsing_error) => {
-            print_error(parsing_error, path.display().to_string(), args);
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
             false
         }
     }
@@ -95,7 +95,7 @@ fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path
 
 fn format_file_in_place(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path) -> bool {
     if let Err(parsing_error) = fmt.format_in_place(&path) {
-        print_error(parsing_error, path.display().to_string(), args);
+        print_error(parsing_error.to_string(), path.display().to_string(), args);
         false
     } else {
         true
@@ -172,7 +172,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
             }
         }
         Err(parsing_error) => {
-            print_error(parsing_error, String::from("standard input"), args);
+            print_error(parsing_error.to_string(), String::from("standard input"), args);
             false
         }
     }
