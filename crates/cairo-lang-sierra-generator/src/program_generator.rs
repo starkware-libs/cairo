@@ -228,7 +228,8 @@ fn try_get_function_with_body_id(
         program::GenStatement::Invocation
     )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
-    if libfunc.generic_id != "function_call".into() {
+    if !(libfunc.generic_id == "function_call".into() || libfunc.generic_id == "coupon_call".into())
+    {
         return None;
     }
     db.lookup_intern_sierra_function(
