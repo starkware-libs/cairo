@@ -128,6 +128,7 @@ pub enum InferenceError {
     ImplKindMismatch { impl0: ImplId, impl1: ImplId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
     TraitMismatch { trt0: TraitId, trt1: TraitId },
+    GenericFunctionMismatch { func0: GenericFunctionId, func1: GenericFunctionId },
     ConstInferenceNotSupported,
 
     // TODO(spapini): These are only used for external interface. Separate them along with the
@@ -184,6 +185,9 @@ impl InferenceError {
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
             InferenceError::TypeNotInferred { ty } => {
                 format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
+            }
+            InferenceError::GenericFunctionMismatch { func0, func1 } => {
+                format!("Function mismatch: `{}` and `{}`", func0.format(db), func1.format(db))
             }
         }
     }

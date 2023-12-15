@@ -3,12 +3,13 @@ use itertools::zip_eq;
 use super::canonic::ResultNoErrEx;
 use super::{Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
 use crate::types::peel_snapshots;
 use crate::{
-    ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId,
-    TypeId, TypeLongId,
+    ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
+    FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
 };
 
 /// Functions for conforming semantic objects with each other.
@@ -37,6 +38,11 @@ pub trait InferenceConform {
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
     ) -> Result<ConcreteTraitId, InferenceError>;
+    fn conform_generic_function(
+        &mut self,
+        trt0: GenericFunctionId,
+        trt1: GenericFunctionId,
+    ) -> Result<GenericFunctionId, InferenceError>;
     fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool;
     fn generic_args_contain_var(
         &mut self,
@@ -44,6 +50,7 @@ pub trait InferenceConform {
         var: InferenceVar,
     ) -> bool;
     fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool;
+    fn function_contains_var(&mut self, function_id: FunctionId, var: InferenceVar) -> bool;
 }
 
 impl<'db> InferenceConform for Inference<'db> {
@@ -133,6 +140,33 @@ impl<'db> InferenceConform for Inference<'db> {
             TypeLongId::GenericParameter(_) => Err(InferenceError::TypeKindMismatch { ty0, ty1 }),
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
+            TypeLongId::Coupon(function_id0) => {
+                let TypeLongId::Coupon(function_id1) = long_ty1 else {
+                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                };
+
+                let func0 = self.db.lookup_intern_function(function_id0).function;
+                let func1 = self.db.lookup_intern_function(function_id1).function;
+
+                let generic_function =
+                    self.conform_generic_function(func0.generic_function, func1.generic_function)?;
+
+                if func0.generic_args.len() != func1.generic_args.len() {
+                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                }
+
+                let generic_args =
+                    self.conform_generic_args(&func0.generic_args, &func1.generic_args)?;
+
+                Ok((
+                    self.db.intern_type(TypeLongId::Coupon(self.db.intern_function(
+                        FunctionLongId {
+                            function: ConcreteFunction { generic_function, generic_args },
+                        },
+                    ))),
+                    n_snapshots,
+                ))
+            }
         }
     }
 
@@ -255,6 +289,26 @@ impl<'db> InferenceConform for Inference<'db> {
             .intern_concrete_trait(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }))
     }
 
+    fn conform_generic_function(
+        &mut self,
+        func0: GenericFunctionId,
+        func1: GenericFunctionId,
+    ) -> Result<GenericFunctionId, InferenceError> {
+        if let (GenericFunctionId::Impl(id0), GenericFunctionId::Impl(id1)) = (func0, func1) {
+            if id0.function != id1.function {
+                return Err(InferenceError::GenericFunctionMismatch { func0, func1 });
+            }
+            let function = id0.function;
+            let impl_id = self.conform_impl(id0.impl_id, id1.impl_id)?;
+            return Ok(GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }));
+        }
+
+        if func0 != func1 {
+            return Err(InferenceError::GenericFunctionMismatch { func0, func1 });
+        }
+        Ok(func0)
+    }
+
     /// Checks if a type tree contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
     fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool {
@@ -277,6 +331,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 false
             }
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
+            TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
         }
     }
 
@@ -319,5 +374,26 @@ impl<'db> InferenceConform for Inference<'db> {
                 false
             }
         }
+    }
+
+    /// Checks if a function contains a certain [InferenceVar] in its generic arguments or in the
+    /// generic arguments of the impl containing the function (in case the function is an impl
+    /// function).
+    ///
+    /// Used to avoid inference cycles.
+    fn function_contains_var(&mut self, function_id: FunctionId, var: InferenceVar) -> bool {
+        // Look in the generic arguments of the function.
+        let function = function_id.get_concrete(self.db);
+        let generic_args = function.generic_args;
+        if self.generic_args_contain_var(&generic_args, var) {
+            return true;
+        }
+        // Look in the impl generic arguments.
+        if let GenericFunctionId::Impl(impl_generic_function_id) = function.generic_function {
+            if self.impl_contains_var(&impl_generic_function_id.impl_id, var) {
+                return true;
+            }
+        };
+        false
     }
 }

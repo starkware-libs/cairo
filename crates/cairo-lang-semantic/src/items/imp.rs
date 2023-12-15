@@ -657,8 +657,11 @@ fn check_special_impls(
 }
 
 /// Retrieves all the inner types (members of a struct / tuple or variants of an enum).
+///
 /// These are the types that are required to implement some trait,
 /// in order for the original type to be able to implement this trait.
+///
+/// For example, a struct containing a type T can implement Drop only if T implements Drop.
 fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
@@ -683,6 +686,9 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
             return Err(skip_diagnostic());
         }
         TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Coupon(_) => {
+            vec![]
+        }
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }

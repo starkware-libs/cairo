@@ -332,6 +332,7 @@ pub fn unwrap_error_propagation_type(
         | TypeLongId::Tuple(_)
         | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
+        | TypeLongId::Coupon(_)
         | TypeLongId::Missing(_) => None,
     }
 }

@@ -600,6 +600,9 @@ impl<'db> Resolver<'db> {
                     generic_args_syntax.unwrap_or_default(),
                 )?))
             }
+            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => Ok(
+                ResolvedConcreteItem::Type(self.db.intern_type(TypeLongId::Coupon(*function_id))),
+            ),
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
     }
