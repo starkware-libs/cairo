@@ -14,7 +14,7 @@ To set up a development environment, please follow these steps:
 1. Clone the repo
 
    ```sh
-   git clone https://github.com/starkware-libs-cairo
+   git clone https://github.com/starkware-libs/cairo
    ```
 
 2. Download and install [VSCode](https://code.visualstudio.com/).
@@ -39,9 +39,9 @@ Some tests should now be fixed.
 ## Issues and feature requests
 
 You've found a bug in the source code, a mistake in the documentation or maybe you'd like a new
-feature? Take a look at [GitHub Discussions](https://github.com/starkware-libs-cairo/discussions)
+feature? Take a look at [GitHub Discussions](https://github.com/starkware-libs/cairo/discussions)
 to see if it's already being discussed. You can help us by
-[submitting an issue on GitHub](https://github.com/starkware-libs-cairo/issues).
+[submitting an issue on GitHub](https://github.com/starkware-libs/cairo/issues).
 Before you create an issue, make sure to search the issue archive -- your issue may have already
 been addressed!
 
@@ -57,7 +57,7 @@ Please try to create bug reports that are:
 ### How to submit a Pull Request
 
 1. Search our repository for open or closed
-   [Pull Requests](https://github.com/starkware-libs-cairo/pulls)
+   [Pull Requests](https://github.com/starkware-libs/cairo/pulls)
    that relate to your submission. You don't want to duplicate effort.
 2. Fork the project
 3. Create your feature branch (`git checkout -b feat/amazing_feature`)
