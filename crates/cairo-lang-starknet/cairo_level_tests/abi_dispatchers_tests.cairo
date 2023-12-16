@@ -6,7 +6,7 @@ use super::utils::serialized;
 #[starknet::interface]
 trait IAnotherContract<T> {}
 
-#[starknet::contract]
+#[starknet::contract(account)]
 mod test_contract {
     use starknet::{account::Call, ContractAddress, ClassHash};
     use super::{
@@ -43,6 +43,23 @@ mod test_contract {
 
     #[external(v0)]
     fn __validate__(ref self: ContractState, calls: Array<Call>) {}
+    #[external(v0)]
+    fn __validate_deploy__(
+        self: @ContractState,
+        class_hash: felt252,
+        contract_address_salt: felt252,
+        public_key_: felt252
+    ) -> felt252 {
+        2
+    }
+    #[external(v0)]
+    fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
+        3
+    }
+    #[external(v0)]
+    fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
+        array![]
+    }
 }
 
 #[test]
