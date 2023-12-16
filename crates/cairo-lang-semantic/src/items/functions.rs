@@ -30,7 +30,7 @@ use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRew
 use crate::types::resolve_type;
 use crate::{
     semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
-    GenericParam, SemanticDiagnostic, TypeId,
+    GenericParam, SemanticDiagnostic, TypeId, Parameter,
 };
 
 /// A generic function of an impl.
@@ -79,6 +79,13 @@ impl ImplGenericFunctionId {
     }
 }
 
+/// A generic function for calling with a coupon.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub enum CouponCallGenericFunctionId {
+    Free(FreeFunctionId),
+    Impl(ImplGenericFunctionId),
+}
+
 /// The ID of a generic function that can be concretized.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionId {
@@ -88,6 +95,8 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of an impl.
     Impl(ImplGenericFunctionId),
+    /// A generic function for calling with a coupon.
+    CouponCall(CouponCallGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn from_generic_with_body(
@@ -110,6 +119,8 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(id) => {
                 format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
             }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Free(id)) => id.full_path(defs_db),
+            GenericFunctionId::CouponCall(_) => todo!(),
         }
     }
     pub fn generic_signature(&self, db: &dyn SemanticGroup) -> Maybe<Signature> {
@@ -122,6 +133,19 @@ impl GenericFunctionId {
 
                 db.concrete_trait_function_signature(id)
             }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Free(id)) => {
+                let signature = db.free_function_signature(id)?;
+                Ok(Signature{
+                    params: signature.params, // TODO: Should this be changed?
+                    return_type: signature.return_type,
+                    implicits: signature.implicits,
+                    panicable: signature.panicable,
+                    stable_ptr: signature.stable_ptr, // TODO: Should this be changed?
+                })
+            }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Impl(id)) => {
+                todo!()
+            }
         }
     }
     pub fn generic_params(&self, db: &dyn SemanticGroup) -> Maybe<Vec<GenericParam>> {
@@ -133,6 +157,15 @@ impl GenericFunctionId {
                 let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
                 db.concrete_trait_function_generic_params(id)
             }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Free(id)) => {
+                db.free_function_generic_params(id)
+            }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Impl(id)) => {
+                // TODO: avoid code duplication.
+                let concrete_trait_id = db.impl_concrete_trait(id.impl_id)?;
+                let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
+                db.concrete_trait_function_generic_params(id)
+            }
         }
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -140,6 +173,7 @@ impl GenericFunctionId {
             GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
             GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
+            GenericFunctionId::CouponCall(_) => todo!(),
         }
     }
     /// Returns the ModuleFileId of the function's definition if possible.
@@ -159,6 +193,7 @@ impl GenericFunctionId {
                     None
                 }
             }
+            GenericFunctionId::CouponCall(_) => todo!(),
         }
     }
 }
@@ -262,6 +297,10 @@ impl GenericFunctionWithBodyId {
                     function: impl_function,
                 })
             }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Free(id)) => {
+                GenericFunctionWithBodyId::Free(id)
+            }
+            GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Impl(_)) => todo!(),
             _ => return Ok(None),
         }))
     }

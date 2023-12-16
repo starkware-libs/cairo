@@ -29,6 +29,7 @@ use crate::items::constant::Constant;
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+    CouponCallGenericFunctionId
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};

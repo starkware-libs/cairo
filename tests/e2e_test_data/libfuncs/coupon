@@ -6,16 +6,12 @@ SmallE2ETestRunner
 //! > cairo
 extern fn coupon_call<T>() nopanic;
 
-// impl DropCoupon<T> of Drop<bar::<T>::Coupon> { }
+impl DropCoupon<T> of Drop<bar::<T>::Coupon> { }
 
-// TODO: try with drop.
 fn foo(x: bar::<u8>::Coupon) {
-    bar::<u8>();
-    // bar::coupon_call();
+    bar::<u8>::coupon_call();
 }
 
-// TODO: remove tmp.
-#[inline(never)]
 fn bar<T>() {
 }
 
@@ -29,18 +25,21 @@ test::foo: OrderedHashMap({Const: 200})
 test::bar::<core::integer::u8>: OrderedHashMap({})
 
 //! > sierra_code
+type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: false, dup: false, zero_sized: true];
 
+libfunc drop<Coupon<user@test::bar::<core::integer::u8>>> = drop<Coupon<user@test::bar::<core::integer::u8>>>;
 libfunc function_call<user@test::bar::<core::integer::u8>> = function_call<user@test::bar::<core::integer::u8>>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 
-function_call<user@test::bar::<core::integer::u8>>() -> ([1]); // 0
-drop<Unit>([1]) -> (); // 1
-return([0]); // 2
-struct_construct<Unit>() -> ([0]); // 3
-return([0]); // 4
+drop<Coupon<user@test::bar::<core::integer::u8>>>([0]) -> (); // 0
+function_call<user@test::bar::<core::integer::u8>>() -> ([1]); // 1
+drop<Unit>([1]) -> (); // 2
+struct_construct<Unit>() -> ([2]); // 3
+return([2]); // 4
+struct_construct<Unit>() -> ([0]); // 5
+return([0]); // 6
 
-test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> (Coupon<user@test::bar::<core::integer::u8>>);
-test::bar::<core::integer::u8>@3() -> (Unit);
+test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> (Unit);
+test::bar::<core::integer::u8>@5() -> (Unit);

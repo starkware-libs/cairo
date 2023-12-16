@@ -51,6 +51,7 @@ use crate::diagnostic::{
 };
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::functions::CouponCallGenericFunctionId;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -2123,6 +2124,12 @@ pub fn compute_statement_semantic(
                         id.function.has_attr(db, MUST_USE_ATTR)?
                     }
                     crate::items::functions::GenericFunctionId::Extern(_) => false,
+                    crate::items::functions::GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Free(id)) => {
+                        id.has_attr(db, MUST_USE_ATTR)?
+                    }
+                    crate::items::functions::GenericFunctionId::CouponCall(CouponCallGenericFunctionId::Impl(id)) => {
+                        id.function.has_attr(db, MUST_USE_ATTR)?
+                    }
                 } {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseFunction);
                 }

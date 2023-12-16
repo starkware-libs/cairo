@@ -180,6 +180,7 @@ fn run_e2e_test(
     let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
+    println!("{}", sierra_program_str);
 
     // Handle the `enforced_costs` argument.
     let enforced_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =

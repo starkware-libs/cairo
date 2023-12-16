@@ -30,7 +30,7 @@ impl NamedType for CouponType {
             info: TypeInfo {
                 long_id,
                 duplicatable: false,
-                droppable: false,
+                droppable: true,
                 storable: true,
                 zero_sized: true,
             },

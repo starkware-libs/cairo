@@ -31,7 +31,7 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId, CouponCallGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
@@ -610,6 +610,30 @@ impl<'db> Resolver<'db> {
                 Ok(ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::Coupon(*function_id)),
                 ))
+            }
+            ResolvedConcreteItem::Function(function_id) if ident == "coupon_call" => {
+                let function = function_id.get_concrete(self.db); // .generic_function
+                let coupon_call_generic_function = match function.generic_function {
+                    GenericFunctionId::Free(free_function) => {
+                        // let FreeFunctionLongId(module_file_id, function_with_body_ptr) = self.db.lookup_intern_free_function(free_function);
+                        CouponCallGenericFunctionId::Free(free_function)
+                        // (module_file_id, function_with_body_ptr)
+                    }
+                    GenericFunctionId::Extern(_) => {
+                        return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                    }
+                    GenericFunctionId::Impl(_) => todo!(),
+                    GenericFunctionId::CouponCall(_) => {
+                        // TODO: rename error.
+                        return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                    }
+                };
+                Ok(ResolvedConcreteItem::Function(self.db.intern_function(FunctionLongId {
+                    function: ConcreteFunction {
+                        generic_function: GenericFunctionId::CouponCall(coupon_call_generic_function),
+                        generic_args: function.generic_args,
+                    },
+                })))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
