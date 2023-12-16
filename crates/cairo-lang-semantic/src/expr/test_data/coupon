@@ -7,7 +7,8 @@ test_function_diagnostics(expect_diagnostics: true)
 type A = foo::Coupon;
 type B = bar::Coupon; // Invalid: missing type annotation.
 type C = bar::<u8>::Coupon;
-type D = foo::UnknownIdentifier;
+type D = extern_func::Coupon;
+type E = foo::UnknownIdentifier;
 
 struct MyStruct {
     a: foo::Coupon,
@@ -20,6 +21,8 @@ fn foo(x: foo::Coupon) {
     x.a;
 }
 
+extern fn extern_func() nopanic;
+
 //! > function_name
 foo
 
@@ -31,13 +34,18 @@ error: Type annotations needed. Failed to infer ?0
 type B = bar::Coupon; // Invalid: missing type annotation.
          ^*^
 
+error: Coupon cannot be used with extern functions.
+ --> lib.cairo:4:23
+type D = extern_func::Coupon;
+                      ^****^
+
 error: Invalid path.
- --> lib.cairo:4:15
-type D = foo::UnknownIdentifier;
+ --> lib.cairo:5:15
+type E = foo::UnknownIdentifier;
               ^***************^
 
 error: Type "test::foo::Coupon" has no members.
- --> lib.cairo:14:7
+ --> lib.cairo:15:7
     x.a;
       ^
 
