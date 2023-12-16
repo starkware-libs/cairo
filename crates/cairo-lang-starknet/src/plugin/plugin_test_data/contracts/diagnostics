@@ -1349,6 +1349,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: Failed to generate ABI: `__validate__`, `__validate_declare__`, `__validate_deploy__` and `__execute__` are reserved entry point names for account contracts only.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
 
 //! > ==========================================================================
 
