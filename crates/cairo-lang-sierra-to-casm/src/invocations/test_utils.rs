@@ -17,6 +17,7 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use itertools::{zip_eq, Itertools};
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
+use crate::compiler::ConstSegmentInfoBuilder;
 use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -275,7 +276,8 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         })
         .collect();
 
-    let environment = Environment::new(GasWallet::Disabled);
+    let environment: Environment = Environment::new(GasWallet::Disabled);
+    let mut const_segment_info_builder = ConstSegmentInfoBuilder::default();
     ReducedCompiledInvocation::new(
         compile_invocation(
             program_info,
@@ -300,6 +302,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             StatementIdx(0),
             &args,
             environment,
+            &mut const_segment_info_builder,
         )
         .expect("Failed to compile invocation."),
     )

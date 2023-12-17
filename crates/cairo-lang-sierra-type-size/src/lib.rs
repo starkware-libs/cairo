@@ -71,6 +71,8 @@ pub fn get_type_size_map(
                 }
                 Some(size)
             }
+            // Const types are not moved around and should not have a size.
+            CoreTypeConcrete::Const(_) => continue,
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

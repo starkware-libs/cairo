@@ -331,6 +331,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
         },
+        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
     }
 }
 
