@@ -1,14 +1,20 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteType;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::ids::VarId;
-use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
+use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_lang_sierra::program::{
+    BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
+};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
+use num_bigint::BigInt;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -17,7 +23,7 @@ use crate::invocations::{
 };
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
-use crate::relocations::{relocate_instructions, RelocationEntry};
+use crate::relocations::{relocate_instructions, CodeOffset, RelocationEntry};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -46,6 +52,10 @@ pub enum CompilationError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
     },
+    #[error("Const data does not match the declared const type.")]
+    ConstDataMismatch,
+    #[error("Unsupported const type.")]
+    UnsupportedConstType,
 }
 
 /// The casm program representation.
@@ -53,11 +63,18 @@ pub enum CompilationError {
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
+    pub const_segment_info: ConstSegmentInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for instruction in &self.instructions {
             writeln!(f, "{instruction};")?
+        }
+        for const_allocation in self.const_segment_info.const_allocations.values() {
+            writeln!(f, "ret;")?;
+            for value in &const_allocation.values {
+                writeln!(f, "dw {};", value)?;
+            }
         }
         Ok(())
     }
@@ -77,6 +94,75 @@ pub struct SierraStatementDebugInfo {
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
+}
+
+/// A builder for the const segment information.
+#[derive(Debug, Default)]
+pub struct ConstSegmentInfoBuilder {
+    used_const_types: OrderedHashSet<ConcreteTypeId>,
+}
+
+impl ConstSegmentInfoBuilder {
+    /// Inserts a const type into the builder, to be added to the const segment.
+    pub fn insert(&mut self, const_type: &ConcreteTypeId) {
+        self.used_const_types.insert(const_type.clone());
+    }
+    /// Builds the const segment information.
+    pub fn build(
+        self,
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) -> Result<ConstSegmentInfo, CompilationError> {
+        let mut const_allocations = OrderedHashMap::default();
+        let mut const_segment_size = 0;
+        for const_type in self.used_const_types {
+            let core_type_concrete = registry.get_type(&const_type).unwrap();
+            let cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(const_concrete_type) =
+                core_type_concrete
+            else {
+                return Err(CompilationError::UnsupportedConstType);
+            };
+            let const_allocation = ConstAllocation {
+                offset: const_segment_size,
+                values: extract_const_value(registry, const_concrete_type).unwrap(),
+            };
+            const_segment_size += const_allocation.values.len() + 1;
+            const_allocations.insert(const_type.clone(), const_allocation);
+        }
+        Ok(ConstSegmentInfo { const_allocations })
+    }
+}
+/// The data of a single const in the const segment.
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct ConstAllocation {
+    /// The offset of the const within the constants segment.
+    pub offset: CodeOffset,
+    /// The values to be stored in the const segment.
+    pub values: Vec<BigInt>,
+}
+
+/// The information about the constants used in the program.
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct ConstSegmentInfo {
+    /// A map between the const type and the data of the const.
+    pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
+}
+
+/// Gets a const type, and returns a vector of the values to be stored in the const segment.
+pub fn extract_const_value(
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    const_type: &ConstConcreteType,
+) -> Result<Vec<BigInt>, CompilationError> {
+    let const_core_type = registry.get_type(&const_type.inner_ty).unwrap();
+    match const_core_type {
+        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252(_) => {
+            if let [GenericArg::Value(value)] = &const_type.inner_data[..] {
+                Ok(vec![value.clone()])
+            } else {
+                Err(CompilationError::ConstDataMismatch)
+            }
+        }
+        _ => Err(CompilationError::UnsupportedConstType),
+    }
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
@@ -110,7 +196,6 @@ pub fn compile(
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
-
     // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
@@ -121,6 +206,7 @@ pub fn compile(
         metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
+    let mut const_segment_info_builder = ConstSegmentInfoBuilder::default();
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_annotations = ProgramAnnotations::create(
@@ -198,6 +284,7 @@ pub fn compile(
                     statement_idx,
                     &invoke_refs,
                     annotations.environment,
+                    &mut const_segment_info_builder,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
@@ -250,15 +337,15 @@ pub fn compile(
             }
         }
     }
-
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
-
-    relocate_instructions(&relocations, &statement_offsets, &mut instructions);
+    let const_segment_info = const_segment_info_builder.build(&registry)?;
+    relocate_instructions(&relocations, &statement_offsets, &const_segment_info, &mut instructions);
 
     Ok(CairoProgram {
         instructions,
+        const_segment_info,
         debug_info: CairoProgramDebugInfo {
             sierra_statement_info: zip_eq(statement_offsets, statement_indices)
                 .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
