@@ -71,6 +71,7 @@ pub fn get_type_size_map(
                 }
                 Some(size)
             }
+            CoreTypeConcrete::Const(_) => Some(0),
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

@@ -1,14 +1,19 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteType;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::ids::VarId;
-use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
+use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_lang_sierra::program::{
+    BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
+};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
+use num_bigint::BigInt;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -17,7 +22,7 @@ use crate::invocations::{
 };
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
-use crate::relocations::{relocate_instructions, RelocationEntry};
+use crate::relocations::{relocate_instructions, CodeOffset, RelocationEntry};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -53,11 +58,19 @@ pub enum CompilationError {
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
+    pub const_segment_info: ConstSegmentInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for instruction in &self.instructions {
             writeln!(f, "{instruction};")?
+        }
+        for const_type in self.const_segment_info.const_allocations.keys() {
+            writeln!(f, "ret;")?;
+            let value = self.const_segment_info.const_types_values.get(const_type).unwrap();
+            for value in &value.const_values {
+                writeln!(f, "dw {};", value)?;
+            }
         }
         Ok(())
     }
@@ -77,6 +90,71 @@ pub struct SierraStatementDebugInfo {
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
+}
+
+/// The information about the constants used in the program.
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct ConstSegmentInfo {
+    /// A map between the const type and the offset of the const within the constants segment.
+    pub const_allocations: OrderedHashMap<ConcreteTypeId, CodeOffset>,
+    /// The size of the constants segment.
+    pub const_segment_size: usize,
+    /// The type info of the all the declared constants.
+    pub const_types_values: OrderedHashMap<ConcreteTypeId, ConstValue>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct ConstValue {
+    pub const_values: Vec<BigInt>,
+}
+impl ConstSegmentInfo {
+    pub fn new(program: &Program, registry: &ProgramRegistry<CoreType, CoreLibfunc>) -> Self {
+        let mut const_types_values: OrderedHashMap<ConcreteTypeId, ConstValue> = Default::default();
+        for type_declaration in program.type_declarations.iter() {
+            let const_core_type = registry.get_type(&type_declaration.id).unwrap();
+            match const_core_type {
+                cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(ty) => {
+                    let const_values = extract_const_value(registry, ty).unwrap();
+                    const_types_values
+                        .insert(type_declaration.id.clone(), ConstValue { const_values });
+                }
+                _ => {}
+            }
+        }
+        Self { const_allocations: Default::default(), const_segment_size: 0, const_types_values }
+    }
+    /// Insert a new const type to the const segment.
+    pub fn insert(&mut self, const_type: ConcreteTypeId) {
+        if self.const_allocations.contains_key(&const_type) {
+            return;
+        }
+        self.const_allocations.insert(const_type.clone(), self.const_segment_size);
+        // The size is the number of values, +1 for the prepending ret instruction.
+        self.const_segment_size +=
+            1 + self.const_types_values.get(&const_type).unwrap().const_values.len();
+    }
+    /// Returns the offset of the const within the const segment.
+    pub fn get(&self, const_type: &ConcreteTypeId) -> Option<CodeOffset> {
+        self.const_allocations.get(const_type).copied()
+    }
+}
+
+/// Gets a ConcreteTypeId, which represents a const type inner type, and returns the const type.
+pub fn extract_const_value(
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    const_type: &ConstConcreteType,
+) -> Option<Vec<BigInt>> {
+    let const_core_type = registry.get_type(&const_type.inner_ty).unwrap();
+    match const_core_type {
+        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252(_) => {
+            if let [GenericArg::Value(value)] = &const_type.inner_data[..] {
+                Some(vec![value.clone()])
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
@@ -110,7 +188,6 @@ pub fn compile(
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
-
     // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
@@ -121,6 +198,7 @@ pub fn compile(
         metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
+    let mut const_segment_info = ConstSegmentInfo::new(program, &registry);
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_annotations = ProgramAnnotations::create(
@@ -198,6 +276,7 @@ pub fn compile(
                     statement_idx,
                     &invoke_refs,
                     annotations.environment,
+                    &mut const_segment_info,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
@@ -250,15 +329,15 @@ pub fn compile(
             }
         }
     }
-
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
 
-    relocate_instructions(&relocations, &statement_offsets, &mut instructions);
+    relocate_instructions(&relocations, &statement_offsets, &const_segment_info, &mut instructions);
 
     Ok(CairoProgram {
         instructions,
+        const_segment_info,
         debug_info: CairoProgramDebugInfo {
             sierra_statement_info: zip_eq(statement_offsets, statement_indices)
                 .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
