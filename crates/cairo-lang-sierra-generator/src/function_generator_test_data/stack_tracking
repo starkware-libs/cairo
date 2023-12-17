@@ -80,3 +80,44 @@ drop<felt252>([2]) -> ()
 drop<felt252>([3]) -> ()
 store_temp<Tuple<felt252, felt252>>([0]) -> ([0])
 return([0])
+
+//! > ==========================================================================
+
+//! > Test stack tracking through struct_construct.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo() {
+    let arr = get_val();
+    test_func(arr.span());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn get_val() -> Array<felt252>{
+  ArrayTrait::new()
+}
+
+fn test_func(a: Span<felt252>) {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+function_call<user@test::get_val>() -> ([0])
+snapshot_take<Array<felt252>>([0]) -> ([1], [2])
+drop<Array<felt252>>([1]) -> ()
+struct_construct<core::array::Span::<core::felt252>>([2]) -> ([3])
+function_call<user@test::test_func>([3]) -> ([4])
+drop<Unit>([4]) -> ()
+struct_construct<Unit>() -> ([5])
+return([5])
