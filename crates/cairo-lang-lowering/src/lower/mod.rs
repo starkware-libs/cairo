@@ -1008,19 +1008,8 @@ fn extract_concrete_enum(
             ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
         ));
     };
-    let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
-    let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
-    let concrete_variants = variants
-        .values()
-        .map(|variant_id| {
-            let variant =
-                ctx.db.variant_semantic(enum_id, *variant_id).map_err(LoweringFlowError::Failed)?;
-
-            ctx.db
-                .concrete_enum_variant(concrete_enum_id, &variant)
-                .map_err(LoweringFlowError::Failed)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+    let concrete_variants =
+        ctx.db.concrete_enum_variants(concrete_enum_id).map_err(LoweringFlowError::Failed)?;
 
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
