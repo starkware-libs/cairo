@@ -607,9 +607,10 @@ impl AbiBuilder {
                 Ok(())
             }
             TypeLongId::Snapshot(ty) => self.add_type(db, ty),
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
-                Err(ABIError::UnexpectedType)
-            }
+            TypeLongId::Coupon(_)
+            | TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
         }
     }
 

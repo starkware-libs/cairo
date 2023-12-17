@@ -108,6 +108,10 @@ pub fn get_concrete_long_type_id(
                 .into()
             }
         }
+        semantic::TypeLongId::Coupon(_) => {
+            // TODO(lior): Implement once Coupons types are supported in Sierra.
+            panic!("Coupons are not supported yet.");
+        }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {
@@ -159,6 +163,10 @@ pub fn type_dependencies(
         },
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
+        semantic::TypeLongId::Coupon(_) => {
+            // TODO(lior): Implement once Coupons types are supported in Sierra.
+            panic!("Coupons are not supported yet.");
+        }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

@@ -1793,6 +1793,9 @@ fn member_access_expr(
         TypeLongId::Var(_) => Err(ctx
             .diagnostics
             .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred { ty }))),
+        TypeLongId::Coupon(_) => {
+            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
+        }
         TypeLongId::Missing(diag_added) => Err(diag_added),
     }
 }
