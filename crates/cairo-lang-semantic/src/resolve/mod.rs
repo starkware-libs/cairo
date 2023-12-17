@@ -600,9 +600,17 @@ impl<'db> Resolver<'db> {
                     generic_args_syntax.unwrap_or_default(),
                 )?))
             }
-            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => Ok(
-                ResolvedConcreteItem::Type(self.db.intern_type(TypeLongId::Coupon(*function_id))),
-            ),
+            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+                if matches!(
+                    function_id.get_concrete(self.db).generic_function,
+                    GenericFunctionId::Extern(_)
+                ) {
+                    return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                }
+                Ok(ResolvedConcreteItem::Type(
+                    self.db.intern_type(TypeLongId::Coupon(*function_id)),
+                ))
+            }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
     }

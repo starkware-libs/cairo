@@ -635,6 +635,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
             }
+            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
+                "Coupon cannot be used with extern functions.".into()
+            }
         }
     }
 
@@ -943,6 +946,7 @@ pub enum SemanticDiagnosticKind {
     GenericArgOutOfOrder {
         name: SmolStr,
     },
+    CouponForExternFunctionNotAllowed,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
