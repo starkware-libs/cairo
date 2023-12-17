@@ -18,9 +18,9 @@ pub enum RewriteNode {
     },
     Copied(SyntaxNode),
     Modified(ModifiedNode),
-    RewriteText {
+    Mapped {
         origin: TextSpan,
-        text: String,
+        node: Box<RewriteNode>,
     },
     Text(String),
 }
@@ -35,6 +35,10 @@ impl RewriteNode {
 
     pub fn text(text: &str) -> Self {
         Self::Text(text.to_string())
+    }
+
+    pub fn mapped_text(text: &str, origin: TextSpan) -> Self {
+        Self::Mapped { origin, node: Box::new(RewriteNode::Text(text.to_string())) }
     }
 
     pub fn empty() -> Self {
@@ -119,9 +123,8 @@ impl RewriteNode {
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Modified(modified) => modified,
-            RewriteNode::Text(_) | RewriteNode::RewriteText { .. } => {
-                panic!("A text node can't be modified")
-            }
+            RewriteNode::Text(_) => panic!("A text node can't be modified"),
+            RewriteNode::Mapped { .. } => panic!("A mapped node can't be modified"),
         }
     }
 
@@ -241,7 +244,7 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_modified(&mut self, node: RewriteNode) {
         match node {
             RewriteNode::Copied(node) => self.add_node(node),
-            RewriteNode::RewriteText { origin, text } => self.add_node_ex(&text, origin),
+            RewriteNode::Mapped { origin, node } => self.add_mapped(*node, origin),
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
                 self.add_trimmed_node(node, trim_left, trim_right)
             }
@@ -256,21 +259,22 @@ impl<'a> PatchBuilder<'a> {
         }
     }
 
-    pub fn add_node_ex(&mut self, text: &str, orig_span: TextSpan) {
+    pub fn add_node(&mut self, node: SyntaxNode) {
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        let orig_span = node.span(self.db);
         self.code_mappings.push(CodeMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
-            origin: if orig_span.width() != TextWidth::from_str(text) {
-                CodeOrigin::Span(orig_span)
-            } else {
-                CodeOrigin::Start(orig_span.start)
-            },
+            origin: CodeOrigin::Start(orig_span.start),
         });
-        self.code += text;
+        self.code += &node.get_text(self.db);
     }
 
-    pub fn add_node(&mut self, node: SyntaxNode) {
-        self.add_node_ex(node.get_text(self.db).as_str(), node.span(self.db))
+    fn add_mapped(&mut self, node: RewriteNode, origin: TextSpan) {
+        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        self.add_modified(node);
+        let end = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        self.code_mappings
+            .push(CodeMapping { span: TextSpan { start, end }, origin: CodeOrigin::Span(origin) });
     }
 
     fn add_trimmed_node(&mut self, node: SyntaxNode, trim_left: bool, trim_right: bool) {
