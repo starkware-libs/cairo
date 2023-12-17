@@ -414,16 +414,13 @@ fn build_ec_state_finalize(
         tempvar numerator = y + random_y;
     }
 
-    let (result_x, result_y) =
-        add_ec_points_inner(&mut casm_builder, (x, y), random_x, numerator, denominator);
+    let result_x_y: [Var; 2] =
+        add_ec_points_inner(&mut casm_builder, (x, y), random_x, numerator, denominator).into();
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [
-            ("Fallthrough", &[&[result_x, result_y]], None),
-            ("SumIsInfinity", &[], Some(failure_handle)),
-        ],
+        [("Fallthrough", &[&result_x_y], None), ("SumIsInfinity", &[], Some(failure_handle))],
         Default::default(),
     ))
 }

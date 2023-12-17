@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
@@ -408,8 +408,7 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var_id, (_, member)) in
-                generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
+            for (var_id, (_, member)) in izip!(generator.add(ctx, &mut builder.statements), members)
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
                     let member_pattern = ctx.function_body.patterns[*member_pattern].clone();

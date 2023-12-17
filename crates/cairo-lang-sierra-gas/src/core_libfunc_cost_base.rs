@@ -631,9 +631,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(OrderedHashMap::from_iter(
-                (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
-            )),
+            pre_cost: PreCost(OrderedHashMap::from_iter([(CostTokenType::Bitwise, 4)])),
         }],
     }
 }
