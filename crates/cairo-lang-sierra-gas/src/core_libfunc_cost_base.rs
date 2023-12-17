@@ -423,6 +423,7 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
+        Const(_) => vec![ConstCost::default().into()],
     }
 }
 
