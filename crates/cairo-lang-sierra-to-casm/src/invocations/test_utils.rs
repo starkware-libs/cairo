@@ -275,7 +275,8 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         })
         .collect();
 
-    let environment = Environment::new(GasWallet::Disabled);
+    let environment: Environment = Environment::new(GasWallet::Disabled);
+    let mut const_segment_info = Default::default();
     ReducedCompiledInvocation::new(
         compile_invocation(
             program_info,
@@ -300,6 +301,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             StatementIdx(0),
             &args,
             environment,
+            &mut const_segment_info,
         )
         .expect("Failed to compile invocation."),
     )
