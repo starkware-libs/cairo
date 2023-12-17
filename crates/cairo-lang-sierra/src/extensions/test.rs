@@ -56,6 +56,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: true,
                 duplicatable: true,
                 zero_sized: false,
+                constable: false,
             })
         } else if id == "ArrayFelt252".into() || id == "ArrayU128".into() {
             Some(TypeInfo {
@@ -64,6 +65,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: true,
                 duplicatable: false,
                 zero_sized: false,
+                constable: false,
             })
         } else if id == "UninitializedFelt252".into() || id == "UninitializedU128".into() {
             Some(TypeInfo {
@@ -72,6 +74,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: true,
                 duplicatable: false,
                 zero_sized: true,
+                constable: false,
             })
         } else if id == "GasBuiltin".into()
             || id == "System".into()
@@ -85,6 +88,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: false,
                 duplicatable: false,
                 zero_sized: false,
+                constable: false,
             })
         } else if id == "SnapshotRangeCheck".into() || id == "SnapshotArrayU128".into() {
             Some(TypeInfo {
@@ -93,6 +97,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: true,
                 duplicatable: true,
                 zero_sized: false,
+                constable: false,
             })
         } else {
             None

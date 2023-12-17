@@ -124,6 +124,7 @@ fn generate_type_declarations_helper(
             droppable: type_info.droppable,
             duplicatable: type_info.duplicatable,
             zero_sized: type_info.zero_sized,
+            constable: type_info.constable,
         }),
     });
 }

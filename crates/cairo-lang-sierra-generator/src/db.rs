@@ -183,6 +183,7 @@ fn get_type_info(
                 droppable: info.droppable.is_ok(),
                 duplicatable: info.duplicatable.is_ok(),
                 zero_sized: false,
+                constable: false,
             }));
         }
     };

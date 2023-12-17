@@ -33,6 +33,7 @@ impl GenericTypeArgGenericType for SnapshotTypeWrapped {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                constable: false,
             })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)

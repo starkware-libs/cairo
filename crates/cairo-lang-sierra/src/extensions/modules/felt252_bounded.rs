@@ -37,6 +37,7 @@ impl NamedType for Felt252BoundedType {
             storable: true,
             droppable: true,
             duplicatable: true,
+            constable: false,
         };
 
         Ok(Self::Concrete {

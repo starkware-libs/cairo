@@ -18,7 +18,14 @@ impl GenericTypeArgGenericType for SpanTypeWrapped {
         TypeInfo { storable, duplicatable, droppable, zero_sized, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable && !zero_sized {
-            Ok(TypeInfo { long_id, duplicatable, droppable, storable: true, zero_sized: false })
+            Ok(TypeInfo {
+                long_id,
+                duplicatable,
+                droppable,
+                storable: true,
+                zero_sized: false,
+                constable: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

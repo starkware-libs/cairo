@@ -20,6 +20,7 @@ impl NoGenericArgsGenericType for Bytes31Type {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 define_libfunc_hierarchy! {

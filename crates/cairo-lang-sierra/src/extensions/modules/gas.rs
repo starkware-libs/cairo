@@ -25,6 +25,7 @@ impl NoGenericArgsGenericType for GasBuiltinType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 define_libfunc_hierarchy! {
@@ -206,6 +207,7 @@ impl NoGenericArgsGenericType for BuiltinCostsType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// Libfunc for withdrawing gas to be used by a builtin.

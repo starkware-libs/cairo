@@ -87,6 +87,7 @@ pub trait NoGenericArgsGenericType: Default {
     const DUPLICATABLE: bool;
     const DROPPABLE: bool;
     const ZERO_SIZED: bool;
+    const CONSTABLE: bool;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
     type Concrete = InfoOnlyConcreteType;
@@ -105,6 +106,7 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
                     droppable: T::DROPPABLE,
                     duplicatable: T::DUPLICATABLE,
                     zero_sized: T::ZERO_SIZED,
+                    constable: T::CONSTABLE,
                 },
             })
         } else {
@@ -158,6 +160,8 @@ pub struct TypeInfo {
     pub duplicatable: bool,
     /// Is the type zero sized.
     pub zero_sized: bool,
+    /// Can the type be used as a const.
+    pub constable: bool,
 }
 
 /// Trait for a specialized type.

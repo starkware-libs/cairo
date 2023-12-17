@@ -469,6 +469,7 @@ impl Felt252Serde for ConcreteTypeInfo {
                         droppable: (decl_ti_value & TYPE_DROPPABLE) != 0,
                         duplicatable: (decl_ti_value & TYPE_DUPLICATABLE) != 0,
                         zero_sized: (decl_ti_value & TYPE_ZERO_SIZED) != 0,
+                        constable: false,
                     })
                 },
             },
