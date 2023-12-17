@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{account::Call, ContractAddress};
 use core::test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized;
@@ -8,7 +8,7 @@ trait IAnotherContract<T> {}
 
 #[starknet::contract]
 mod test_contract {
-    use starknet::{ContractAddress, ClassHash};
+    use starknet::{account::Call, ContractAddress, ClassHash};
     use super::{
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait
@@ -40,6 +40,9 @@ mod test_contract {
     fn set_another_class_hash(ref self: ContractState, class_hash: ClassHash) {
         self.another_as_library.write(IAnotherContractLibraryDispatcher { class_hash });
     }
+
+    #[external(v0)]
+    fn __validate__(ref self: ContractState, calls: Array<Call>) {}
 }
 
 #[test]
@@ -62,4 +65,51 @@ fn test_library_dispatcher_serialization() {
         @serialized(a),
         'Wrong result'
     );
+}
+
+
+// Tests the serialization and deserialize of the arguments to `__validate__`.
+#[test]
+#[available_gas(500000)]
+fn test_valdiate_gas_cost() {
+    let contract_address = starknet::contract_address_const::<11>();
+    let calls = array![
+        Call {
+            to: contract_address,
+            selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
+            calldata: array![
+                0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0
+            ]
+        },
+        Call {
+            to: contract_address,
+            selector: 0x2c0f7bf2d6cf5304c29171bf493feb222fef84bdaf17805a6574b0c2e8bcc87,
+            calldata: array![
+                0x4db5d32,
+                0x0,
+                0x896ba264a31df2,
+                0x0,
+                0x2,
+                0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8,
+                0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
+                0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8,
+                0x65586264
+            ]
+        },
+    ];
+
+    let available_gas1 = core::testing::get_available_gas();
+    let gas_usage = 500000 - available_gas1;
+    assert!(gas_usage == 152000, "Unexpected call building cost `{gas_usage}`.");
+
+    let serialized_args = serialized(calls);
+    let available_gas2 = core::testing::get_available_gas();
+
+    let gas_usage = available_gas1 - available_gas2;
+    assert!(gas_usage == 96700, "Unexpected serialization cost `{gas_usage}`.");
+
+    test_contract::__wrapper____validate__(serialized_args);
+    let available_gas3 = core::testing::get_available_gas();
+    let gas_usage = available_gas2 - available_gas3;
+    assert!(gas_usage == 117930, "Unexpected entry point cost `{gas_usage}`.");
 }
