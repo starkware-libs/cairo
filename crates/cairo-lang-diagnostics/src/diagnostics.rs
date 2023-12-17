@@ -187,7 +187,7 @@ impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
         self.subtrees.push(diagnostics);
     }
     pub fn build(self) -> Diagnostics<TEntry> {
-        Diagnostics(Arc::new(self))
+        Diagnostics(self.into())
     }
 }
 
