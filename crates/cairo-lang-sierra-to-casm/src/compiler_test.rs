@@ -432,7 +432,54 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
             ret;
         "};
         "Merge stack with zero_sized variable.")]
-
+#[test_case(indoc! {"
+        type felt252 = felt252;
+        type const<felt252, 5> = const<felt252, 5>;
+        type const<felt252, 17> = const<felt252, 17>;
+        type BoxFelt252 = Box<felt252>;
+        
+        
+        libfunc const_as_box<const<felt252, 5>> = const_as_box<const<felt252, 5>>;
+        libfunc const_as_box<const<felt252, 17>> = const_as_box<const<felt252, 17>>;
+        libfunc unbox<felt252> = unbox<felt252>;
+        libfunc store_temp_felt252 = store_temp<felt252>;
+        libfunc drop<felt252> = drop<felt252>;
+        
+        
+        const_as_box<const<felt252, 5>>() -> ([1]);
+        const_as_box<const<felt252, 17>>() -> ([2]);
+        const_as_box<const<felt252, 5>>() -> ([3]);
+        unbox<felt252>([1]) -> ([1]);
+        unbox<felt252>([2]) -> ([2]);
+        unbox<felt252>([3]) -> ([3]);
+        store_temp_felt252([1]) -> ([1]);
+        drop<felt252>([1]) -> ();
+        store_temp_felt252([2]) -> ([2]);
+        drop<felt252>([2]) -> ();
+        store_temp_felt252([3]) -> ([3]);
+        return([3]);
+        
+        test_program@0() -> (felt252);
+        
+    "},
+    false,
+    indoc! {"
+        call rel 16;
+        [ap + 0] = [ap + -1] + 15, ap++;
+        call rel 14;
+        [ap + 0] = [ap + -1] + 13, ap++;
+        call rel 8;
+        [ap + 0] = [ap + -1] + 7, ap++;
+        [ap + 0] = [[ap + -7] + 0], ap++;
+        [ap + 0] = [[ap + -5] + 0], ap++;
+        [ap + 0] = [[ap + -3] + 0], ap++;
+        ret;
+        ret;
+        dw 5;
+        ret;
+        dw 17;
+    "};
+    "Simple use of constants.")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
@@ -851,6 +898,15 @@ of the libfunc or return statement.";
                 foo@0([1]: UninitializedFelt252) -> ();
             "}, "Error from program registry: Function parameter type must be storable";
             "Function that uses unstorable types")]
+#[test_case(indoc! {"
+                type u8 = u8;
+                type const<u8, 5, 3> = const<u8, 5, 3>;
+
+                return ();
+
+                foo@0() -> ();
+            "}, "Error from program registry: Error during type specialization";
+            "Non constable const type.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
