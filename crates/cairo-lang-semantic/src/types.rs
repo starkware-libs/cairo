@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -16,6 +17,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
@@ -184,6 +186,13 @@ impl ConcreteTypeId {
                 generic_type_format,
                 generic_args.iter().map(|arg| arg.format(db)).join(", ")
             )
+        }
+    }
+    pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+        match self {
+            ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR),
+            ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
+            ConcreteTypeId::Extern(_) => Ok(false),
         }
     }
 }
