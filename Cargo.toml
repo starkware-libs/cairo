@@ -46,11 +46,12 @@ members = [
     "crates/bin/starknet-compile",
     "crates/bin/starknet-sierra-compile",
     "crates/bin/starknet-sierra-extract-code",
+    "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
 
 [workspace.package]
-version = "2.3.1"
+version = "2.4.0"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -64,8 +65,8 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-felt = "0.9.0"
-cairo-vm = "0.9.0"
+cairo-felt = "0.8.2"
+cairo-vm = "0.8.2"
 clap = { version = "4.4", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"

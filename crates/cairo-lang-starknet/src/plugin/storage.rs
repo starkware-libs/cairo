@@ -362,14 +362,15 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @{member_state_name}) -> $type_path$;
             fn write(ref self: {member_state_name}, value: $type_path$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress {{
-                starknet::storage_base_address_const::<{address}>()
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
+                 {{
+                starknet::storage_access::storage_base_address_const::<{address}>()
             }}
             fn read(self: @{member_state_name}) -> $type_path$ {{
                 // Only address_domain 0 is currently supported.
@@ -403,8 +404,9 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         pub struct {member_state_name} {{}}
         impl Storage{member_state_name}Impl of \
              starknet::storage::StorageMemberAddressTrait<{member_state_name}, $type_path$> {{
-            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress nopanic {{
-                starknet::storage_base_address_const::<{address}>()
+            fn address(self: @{member_state_name}) -> starknet::storage_access::StorageBaseAddress \
+             nopanic {{
+                starknet::storage_access::storage_base_address_const::<{address}>()
             }}
         }}
     }}"
@@ -431,15 +433,15 @@ fn handle_legacy_mapping_storage_member(
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::StorageBaseAddress;
+                 starknet::storage_access::StorageBaseAddress;
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
             fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-                 starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
+                 starknet::storage_access::StorageBaseAddress {{
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
@@ -477,8 +479,8 @@ fn handle_legacy_mapping_storage_member(
              starknet::storage::StorageMapMemberAddressTrait<{member_state_name}, $key_type$, \
              $value_type$> {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-             starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
+             starknet::storage_access::StorageBaseAddress {{
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
         }}

@@ -2,13 +2,16 @@ use core::traits::Into;
 
 /// A trait for hash state accumulators.
 pub trait HashStateTrait<S> {
+    #[must_use]
     fn update(self: S, value: felt252) -> S;
+    #[must_use]
     fn finalize(self: S) -> felt252;
 }
 
 /// A trait for values that can be hashed.
 pub trait Hash<T, S, +HashStateTrait<S>> {
     /// Updates the hash state with the given value.
+    #[must_use]
     fn update_state(state: S, value: T) -> S;
 }
 
@@ -16,6 +19,7 @@ pub trait Hash<T, S, +HashStateTrait<S>> {
 /// Used for backwards compatibility.
 /// NOTE: Implement `Hash` instead of this trait if possible.
 pub trait LegacyHash<T> {
+    #[must_use]
     fn hash(state: felt252, value: T) -> felt252;
 }
 
@@ -30,6 +34,7 @@ impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> 
 /// Extension trait for hash state accumulators.
 pub trait HashStateExTrait<S, T> {
     /// Updates the hash state with the given value.
+    #[must_use]
     fn update_with(self: S, value: T) -> S;
 }
 

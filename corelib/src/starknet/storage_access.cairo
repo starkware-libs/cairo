@@ -53,6 +53,13 @@ impl StorageAddressSerde of Serde<StorageAddress> {
     }
 }
 
+impl DebugStorageAddress = core::fmt::into_felt252_based::DebugImpl<StorageAddress>;
+impl DebugStorageBaseAddress of core::fmt::Debug<StorageBaseAddress> {
+    fn fmt(self: @StorageBaseAddress, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        DebugStorageAddress::fmt(@storage_address_from_base(*self), ref f)
+    }
+}
+
 /// Trait for types that can be used as a value in Starknet storage variables.
 pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.

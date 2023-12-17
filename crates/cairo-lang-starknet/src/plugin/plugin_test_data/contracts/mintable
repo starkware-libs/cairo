@@ -139,7 +139,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -157,7 +157,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -341,7 +341,7 @@ impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
     fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = core::traits::Default::default();
 
-        let mut __dispatcher_return_data__ = starknet::call_contract_syscall(
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("get_total_supply_plus_1"),
             core::array::ArrayTrait::span(@__calldata__),
@@ -445,7 +445,7 @@ impl GetSupplyDispatcherSerde of core::serde::Serde::<GetSupplyDispatcher> {
     }
 }
 impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
@@ -453,11 +453,11 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
@@ -466,7 +466,7 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -488,7 +488,7 @@ impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDis
     }
 }
 impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
@@ -496,11 +496,11 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
@@ -509,7 +509,7 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -531,7 +531,7 @@ impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLi
     }
 }
 impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
@@ -539,11 +539,11 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
@@ -552,7 +552,7 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
@@ -574,7 +574,7 @@ impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatche
     }
 }
 impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
@@ -582,11 +582,11 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
@@ -595,7 +595,7 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
@@ -730,7 +730,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     );
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -748,7 +748,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     );
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = core::array::array_new();
+    let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);

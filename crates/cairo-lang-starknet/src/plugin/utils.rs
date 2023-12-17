@@ -202,7 +202,7 @@ pub fn has_v0_attribute(
 }
 
 /// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
-/// validates that the attribute is v0, and adds a warning if supplied `depracted` returns a value.
+/// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
 pub fn has_v0_attribute_ex(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,

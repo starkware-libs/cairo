@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
@@ -18,7 +18,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    TypeLongId,
+    Pattern, PatternEnumVariant, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -257,7 +257,7 @@ fn lower_expr_block(
                 let start_stmt = &ctx.function_body.statements[expr_block.statements[i + 1]];
                 let end_stmt =
                     &ctx.function_body.statements[*expr_block.statements.last().unwrap()];
-                // Emit diagnostic fo the rest of the statements with unreachable.
+                // Emit diagnostic for the rest of the statements with unreachable.
                 ctx.diagnostics.report(
                     start_stmt.stable_ptr().untyped(),
                     Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
@@ -362,7 +362,13 @@ fn lower_single_pattern(
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
     match pattern {
-        semantic::Pattern::Literal(_) | semantic::Pattern::StringLiteral(_) => unreachable!(),
+        semantic::Pattern::Literal(_)
+        | semantic::Pattern::StringLiteral(_)
+        | semantic::Pattern::EnumVariant(_) => {
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedPattern),
+            ));
+        }
         semantic::Pattern::Variable(semantic::PatternVariable {
             name: _,
             var: sem_var,
@@ -402,8 +408,7 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var_id, (_, member)) in
-                generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
+            for (var_id, (_, member)) in izip!(generator.add(ctx, &mut builder.statements), members)
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
                     let member_pattern = ctx.function_body.patterns[*member_pattern].clone();
@@ -459,7 +464,6 @@ fn lower_single_pattern(
                 )?;
             }
         }
-        semantic::Pattern::EnumVariant(_) => unreachable!(),
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
     }
@@ -980,6 +984,88 @@ fn call_loop_func(
     Ok(LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap()))
 }
 
+/// Information about the enum of a match statement. See [extract_concrete_enum].
+struct ExtractedEnumDetails {
+    concrete_enum_id: semantic::ConcreteEnumId,
+    concrete_variants: Vec<semantic::ConcreteVariant>,
+    n_snapshots: usize,
+}
+
+/// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
+/// enum.
+fn extract_concrete_enum(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprMatch,
+) -> Result<ExtractedEnumDetails, LoweringFlowError> {
+    let matched_expr = &ctx.function_body.exprs[expr.matched_expr];
+    let ty = matched_expr.ty();
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
+
+    // Semantic model should have made sure the type is an enum.
+    let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
+        ));
+    };
+    let concrete_variants =
+        ctx.db.concrete_enum_variants(concrete_enum_id).map_err(LoweringFlowError::Failed)?;
+
+    Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
+}
+
+/// Returns an option containing the index of the underscore pattern, if it exists.
+fn get_underscore_pattern_index(
+    ctx: &mut LoweringContext<'_, '_>,
+    arms: &[semantic::MatchArm],
+) -> Option<usize> {
+    let otherwise_variant = arms.iter().position(|arm| {
+        matches!(ctx.function_body.patterns[arm.pattern], semantic::Pattern::Otherwise(_))
+    })?;
+
+    for arm in arms.iter().skip(otherwise_variant + 1) {
+        let pattern = ctx.function_body.patterns[arm.pattern].clone();
+        ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
+    }
+
+    Some(otherwise_variant)
+}
+
+/// Returns a map from variants to their corresponding arm index.
+fn get_variant_to_arm_map<'a>(
+    ctx: &mut LoweringContext<'_, '_>,
+    arms: impl Iterator<Item = &'a semantic::MatchArm>,
+    concrete_enum_id: semantic::ConcreteEnumId,
+) -> LoweringResult<UnorderedHashMap<semantic::ConcreteVariant, usize>> {
+    let mut map = UnorderedHashMap::default();
+    for (arm_index, arm) in arms.enumerate() {
+        let pattern = ctx.function_body.patterns[arm.pattern].clone();
+        let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
+            .ok_or_else(|| {
+                LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+                )
+            })?
+            .clone();
+
+        if enum_pattern.variant.concrete_enum_id != concrete_enum_id {
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics
+                    .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+            ));
+        }
+
+        match map.entry(enum_pattern.variant.clone()) {
+            std::collections::hash_map::Entry::Occupied(_) => {
+                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(arm_index);
+            }
+        };
+    }
+    Ok(map)
+}
 /// Lowers an expression of type [semantic::ExprMatch].
 fn lower_expr_match(
     ctx: &mut LoweringContext<'_, '_>,
@@ -1006,30 +1092,37 @@ fn lower_expr_match(
     let match_input = lowered_expr.as_var_usage(ctx, builder)?;
 
     // Merge arm blocks.
+    let otherwise_variant = get_underscore_pattern_index(ctx, &expr.arms);
+    let variant_map = get_variant_to_arm_map(
+        ctx,
+        expr.arms.iter().take(otherwise_variant.unwrap_or(expr.arms.len())),
+        concrete_enum_id,
+    )?;
 
     let mut arm_var_ids = vec![];
-    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, &expr.arms)
-        .map(|(concrete_variant, arm)| {
+    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
+        .iter()
+        .map(|concrete_variant| {
             let mut subscope = create_subscope_with_bound_refs(ctx, builder);
             let block_id = subscope.block_id;
-            let pattern = ctx.function_body.patterns[arm.pattern].clone();
 
-            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
+            let arm_index = variant_map
+                .get(concrete_variant)
+                .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
-                    LoweringFlowError::Failed(
-                        ctx.diagnostics
-                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-                    )
+                    LoweringFlowError::Failed(ctx.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        MissingMatchArm(format!("{}", concrete_variant.id.name(ctx.db.upcast()))),
+                    ))
                 })?;
-            if &enum_pattern.variant != concrete_variant {
-                return Err(LoweringFlowError::Failed(
-                    ctx.diagnostics
-                        .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
-                ));
-            }
+            let arm = &expr.arms[*arm_index];
+            let pattern = &ctx.function_body.patterns[arm.pattern];
 
-            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
-                Some(inner_pattern) => {
+            let lowering_inner_pattern_result = match pattern {
+                Pattern::EnumVariant(PatternEnumVariant {
+                    inner_pattern: Some(inner_pattern),
+                    ..
+                }) => {
                     let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
                     let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
 
@@ -1041,18 +1134,22 @@ fn lower_expr_match(
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-                    lower_single_pattern(ctx, &mut subscope, inner_pattern.clone(), variant_expr)
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
                 }
-                None => {
+                Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
+                | Pattern::Otherwise(_) => {
                     let var_id = ctx.new_var(VarRequest {
                         ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                        location: ctx.get_location(enum_pattern.stable_ptr.untyped()),
+                        location: ctx.get_location(pattern.stable_ptr().untyped()),
                     });
                     arm_var_ids.push(vec![var_id]);
                     Ok(())
                 }
+                _ => unreachable!(
+                    "function `get_variant_to_arm_map` should have reported every other pattern \
+                     type"
+                ),
             };
-
             match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.
@@ -1063,6 +1160,8 @@ fn lower_expr_match(
             .map_err(LoweringFlowError::Failed)
             .map(|sb| (sb, block_id))
         })
+        .collect::<Vec<_>>()
+        .into_iter()
         .collect::<LoweringResult<Vec<_>>>()?
         .into_iter()
         .unzip();
@@ -1091,16 +1190,20 @@ fn lower_optimized_extern_match(
         .db
         .concrete_enum_variants(extern_enum.concrete_enum_id)
         .map_err(LoweringFlowError::Failed)?;
-    if match_arms.len() != concrete_variants.len() {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report_by_location(location.get(ctx.db), UnsupportedMatchArms),
-        ));
-    }
+
     // Merge arm blocks.
+    let otherwise_variant = get_underscore_pattern_index(ctx, match_arms);
+
+    let variant_map = get_variant_to_arm_map(
+        ctx,
+        match_arms.iter().take(otherwise_variant.unwrap_or(match_arms.len())),
+        extern_enum.concrete_enum_id,
+    )?;
     let mut arm_var_ids = vec![];
 
-    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, match_arms)
-        .map(|(concrete_variant, arm)| {
+    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
+        .iter()
+        .map(|concrete_variant| {
             let mut subscope = create_subscope(ctx, builder);
             let block_id = subscope.block_id;
 
@@ -1111,34 +1214,41 @@ fn lower_optimized_extern_match(
                 .map(|ty| ctx.new_var(VarRequest { ty, location }))
                 .collect_vec();
             arm_var_ids.push(input_vars.clone());
-            let pattern = ctx.function_body.patterns[arm.pattern].clone();
 
-            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
+            let arm_index = variant_map
+                .get(concrete_variant)
+                .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
-                    LoweringFlowError::Failed(
-                        ctx.diagnostics
-                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-                    )
+                    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
+                        location.get(ctx.db),
+                        MissingMatchArm(format!("{}", concrete_variant.id.name(ctx.db.upcast()))),
+                    ))
                 })?;
-            if &enum_pattern.variant != concrete_variant {
-                return Err(LoweringFlowError::Failed(
-                    ctx.diagnostics
-                        .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
-                ));
-            }
 
             // Bind the arm inputs to implicits and semantic variables.
             match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
-            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
-                Some(inner_pattern) => lower_single_pattern(
+
+            let arm = &match_arms[*arm_index];
+            let pattern = &ctx.function_body.patterns[arm.pattern];
+
+            let lowering_inner_pattern_result = match pattern {
+                Pattern::EnumVariant(PatternEnumVariant {
+                    inner_pattern: Some(inner_pattern),
+                    ..
+                }) => lower_single_pattern(
                     ctx,
                     &mut subscope,
                     ctx.function_body.patterns[*inner_pattern].clone(),
                     variant_expr,
                 ),
-                None => Ok(()),
+                Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
+                | Pattern::Otherwise(_) => Ok(()),
+                _ => unreachable!(
+                    "function `get_variant_to_arm_map` should have reported every other pattern \
+                     type"
+                ),
             };
 
             match lowering_inner_pattern_result {
@@ -1285,52 +1395,6 @@ fn lower_expr_match_felt252(
         ));
     };
     lower_expr_felt252_arm(ctx, expr, match_input, builder, 0)
-}
-
-/// Information about the enum of a match statement. See [extract_concrete_enum].
-struct ExtractedEnumDetails {
-    concrete_enum_id: semantic::ConcreteEnumId,
-    concrete_variants: Vec<semantic::ConcreteVariant>,
-    n_snapshots: usize,
-}
-
-/// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
-/// enum.
-fn extract_concrete_enum(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprMatch,
-) -> Result<ExtractedEnumDetails, LoweringFlowError> {
-    let matched_expr = &ctx.function_body.exprs[expr.matched_expr];
-    let ty = matched_expr.ty();
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
-
-    // Semantic model should have made sure the type is an enum.
-    let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
-        ));
-    };
-    let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
-    let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
-    let concrete_variants = variants
-        .values()
-        .map(|variant_id| {
-            let variant =
-                ctx.db.variant_semantic(enum_id, *variant_id).map_err(LoweringFlowError::Failed)?;
-
-            ctx.db
-                .concrete_enum_variant(concrete_enum_id, &variant)
-                .map_err(LoweringFlowError::Failed)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    if expr.arms.len() != concrete_variants.len() {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
-        ));
-    }
-
-    Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
 /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,

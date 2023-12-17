@@ -40,9 +40,9 @@ test_function_lowering
 fn foo(a: felt252) -> felt252 {
   match a {
     0 =>1,
-    1=>2,
-    2=>3,
-    _=>4,
+    1 =>2,
+    2 =>3,
+    _ =>4,
   }
 }
 
@@ -342,7 +342,12 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+error: Enum variant `Some` not covered.
+ --> lib.cairo:2:3
+  match Option::Some(5) {};
+  ^**********************^
+
+error: Enum variant `None` not covered.
  --> lib.cairo:2:3
   match Option::Some(5) {};
   ^**********************^
@@ -400,7 +405,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+error: Enum variant `Zero` not covered.
  --> lib.cairo:2:9
   match felt252_is_zero(5) {};
         ^****************^
@@ -410,7 +415,7 @@ Parameters:
 
 //! > ==========================================================================
 
-//! > Test bad extern match arm.
+//! > Test otherwise extern match arm.
 
 //! > test_runner_name
 test_function_lowering
@@ -430,6 +435,7 @@ foo
 enum A {
   One: (),
   Two: (),
+  Three: (),
 }
 
 extern fn get_a() -> A nopanic;
@@ -437,27 +443,55 @@ extern fn get_a() -> A nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match arm - not a variant.
- --> lib.cairo:10:5
-    _ => {},
-    ^
 
 //! > lowering_flat
 Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::get_a() {
+    A::One => blk1,
+    A::Two => blk2,
+    A::Three => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
 
 //! > ==========================================================================
 
-//! > Test bad match arm.
+//! > Test otherwise match arm.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
-fn foo(a: A) {
+fn foo(a: A) -> felt252 {
   match a {
-    A::One(_) => {},
-    _ => {},
-  };
+    A::Two(_) => 2,
+    A::One(_) => 1,
+    _ => 3,
+    A::Two(_) => 4,
+    A::Three(_) => 5,
+  }
 }
 
 //! > function_name
@@ -467,18 +501,63 @@ foo
 enum A {
   One: (),
   Two: (),
+  Three: (),
+  Four: (),
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match arm - not a variant.
- --> lib.cairo:8:5
-    _ => {},
-    ^
+error: Unreachable pattern arm.
+ --> lib.cairo:12:5
+    A::Two(_) => 4,
+    ^*******^
+
+error: Unreachable pattern arm.
+ --> lib.cairo:13:5
+    A::Three(_) => 5,
+    ^*********^
 
 //! > lowering_flat
 Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v3) => blk2,
+    A::Three(v5) => blk3,
+    A::Four(v7) => blk4,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+End:
+  Goto(blk5, {v2 -> v9})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 2u
+End:
+  Goto(blk5, {v4 -> v9})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 3u
+End:
+  Goto(blk5, {v6 -> v9})
+
+blk4:
+Statements:
+  (v8: core::felt252) <- 3u
+End:
+  Goto(blk5, {v8 -> v9})
+
+blk5:
+Statements:
+End:
+  Return(v9)
 
 //! > ==========================================================================
 
@@ -488,11 +567,11 @@ Parameters: v0: test::A
 test_function_lowering
 
 //! > function
-fn foo() {
+fn foo() -> felt252 {
   match get_a() {
-    A::Two(_) => {},
-    A::One(_) => {},
-  };
+      A::Two(_) => { 2 },
+      A::One(_) => { 1 },
+  }
 }
 
 //! > function_name
@@ -509,13 +588,33 @@ extern fn get_a() -> A nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match arm - variants must be the same order as enum declaration.
- --> lib.cairo:9:5
-    A::Two(_) => {},
-    ^*******^
 
 //! > lowering_flat
 Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::get_a() {
+    A::One => blk1,
+    A::Two => blk2,
+  })
+
+blk1:
+Statements:
+  (v0: core::felt252) <- 1u
+End:
+  Goto(blk3, {v0 -> v2})
+
+blk2:
+Statements:
+  (v1: core::felt252) <- 2u
+End:
+  Goto(blk3, {v1 -> v2})
+
+blk3:
+Statements:
+End:
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -525,11 +624,11 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo(a: A) {
+fn foo(a: A) -> felt252 {
   match a {
-    A::Two(_) => {},
-    A::One(_) => {},
-  };
+      A::Two(_) => { 2 },
+      A::One(_) => { 1 },
+  }
 }
 
 //! > function_name
@@ -544,13 +643,33 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match arm - variants must be the same order as enum declaration.
- --> lib.cairo:7:5
-    A::Two(_) => {},
-    ^*******^
 
 //! > lowering_flat
 Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+End:
+  Goto(blk3, {v2 -> v5})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 2u
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -582,3 +701,78 @@ error: Unsupported matched value. Currently, only matches on enums and felt252s 
 
 //! > lowering_flat
 Parameters: v0: (core::felt252, core::felt252)
+
+//! > ==========================================================================
+
+//! > Match with complex patterns.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: Option<Option<felt252>>) -> felt252 {
+    match a {
+        Option::Some(Option::Some(x)) => x,
+        Option::None(_) => 1,
+        
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Inner patterns are not in this context.
+ --> lib.cairo:3:22
+        Option::Some(Option::Some(x)) => x,
+                     ^*************^
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+
+//! > ==========================================================================
+
+//! > Test missing arms.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: A) -> felt252 {
+  match a {
+    A::Two(_) => 2,
+    A::One(_) => 1,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+  Three: (),
+  Four: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Enum variant `Three` not covered.
+ --> lib.cairo:8:3
+  match a {
+  ^*******^
+
+error: Enum variant `Four` not covered.
+ --> lib.cairo:8:3
+  match a {
+  ^*******^
+
+//! > lowering_flat
+Parameters: v0: test::A
+

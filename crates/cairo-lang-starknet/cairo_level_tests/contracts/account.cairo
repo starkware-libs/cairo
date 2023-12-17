@@ -2,7 +2,9 @@
 mod account {
     use core::num::traits::Zero;
     use core::ecdsa::check_ecdsa_signature;
-    use starknet::{account::Call, ContractAddress, call_contract_syscall, SyscallResultTrait};
+    use starknet::{
+        account::Call, ContractAddress, syscalls::call_contract_syscall, SyscallResultTrait
+    };
 
     #[storage]
     struct Storage {

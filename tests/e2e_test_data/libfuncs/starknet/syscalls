@@ -155,7 +155,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: u64) -> (GasBuiltin, System, core
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> starknet::SyscallResult<Box<starknet::ExecutionInfo>> {
+fn foo() -> starknet::SyscallResult<Box<starknet::info::ExecutionInfo>> {
     starknet::info::get_execution_info_syscall()
 }
 
@@ -323,7 +323,7 @@ SmallE2ETestRunner
 fn foo(
     address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Span::<felt252>
 ) -> starknet::SyscallResult<Span<felt252>> {
-    starknet::call_contract_syscall(address, entry_point_selector, calldata)
+    starknet::syscalls::call_contract_syscall(address, entry_point_selector, calldata)
 }
 
 //! > casm

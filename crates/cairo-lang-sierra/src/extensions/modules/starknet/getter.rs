@@ -234,9 +234,9 @@ fn get_tx_info_v2_type(
             GenericArg::Type(u128_ty),
             // paymaster_data
             GenericArg::Type(felt252_span_ty.clone()),
-            // nonce_data_availabilty_mode
+            // nonce_data_availability_mode
             GenericArg::Type(u32_ty.clone()),
-            // fee_data_availabilty_mode
+            // fee_data_availability_mode
             GenericArg::Type(u32_ty),
             // account_deployment_data
             GenericArg::Type(felt252_span_ty),

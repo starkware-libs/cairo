@@ -49,6 +49,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
+mod range_reduction;
 mod starknet;
 mod structure;
 
@@ -79,6 +80,9 @@ pub enum InvocationError {
     IntegerOverflow,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
+    // TODO(lior): Remove this error once not used.
+    #[error("This libfunc does not support pre-cost metadata yet.")]
+    PreCostMetadataNotSupported,
 }
 
 /// Describes a simple change in the ap tracking itself.
@@ -175,6 +179,13 @@ impl BranchChanges {
 /// Validates that a new temp or local var have valid references in their matching expression.
 fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &ReferenceExpression) {
     match ref_info {
+        OutputVarReferenceInfo::SameAsParam { .. } => {}
+        _ if expression.cells.is_empty() => {
+            assert_matches!(ref_info, OutputVarReferenceInfo::ZeroSized);
+        }
+        OutputVarReferenceInfo::ZeroSized => {
+            unreachable!("Non empty ReferenceExpression for zero sized variable.")
+        }
         OutputVarReferenceInfo::NewTempVar { .. } => {
             expression.cells.iter().for_each(|cell| {
                 assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::AP, .. }))
@@ -191,9 +202,7 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
                 .iter()
                 .for_each(|cell| assert_matches!(cell, CellExpression::Deref(_)));
         }
-        OutputVarReferenceInfo::SameAsParam { .. }
-        | OutputVarReferenceInfo::PartialParam { .. }
-        | OutputVarReferenceInfo::Deferred(_) => {}
+        OutputVarReferenceInfo::PartialParam { .. } | OutputVarReferenceInfo::Deferred(_) => {}
     };
 }
 
@@ -214,7 +223,8 @@ fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         | OutputVarReferenceInfo::SimpleDerefs
         | OutputVarReferenceInfo::NewLocalVar
         | OutputVarReferenceInfo::PartialParam { .. }
-        | OutputVarReferenceInfo::Deferred(_) => None,
+        | OutputVarReferenceInfo::Deferred(_)
+        | OutputVarReferenceInfo::ZeroSized => None,
     }
 }
 
@@ -639,6 +649,7 @@ pub fn compile_invocation(
             felt252_dict::build_entry(libfunc, builder)
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
     }
 }
 

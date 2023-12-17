@@ -513,7 +513,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalOr => {
+                SyntaxKind::TerminalOr
+                    if parent_kind(db, self) != Some(SyntaxKind::PatternListOr) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         13,
                         BreakLinePointIndentation::Indented,
@@ -587,7 +589,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     breaking_frequency: 2,
                 }
             }
-            SyntaxKind::UsePathList => {
+            SyntaxKind::PatternListOr | SyntaxKind::UsePathList => {
                 let mut properties = BreakLinePointProperties::new(
                     6,
                     BreakLinePointIndentation::NotIndented,
@@ -597,6 +599,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 properties.set_single_breakpoint();
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
+
             _ => BreakLinePointsPositions::None,
         }
     }
@@ -623,7 +626,7 @@ impl SyntaxNodeFormat for SyntaxNode {
 
 /// For statement lists, returns if we want these as a single line.
 fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
-    // Currently, we only want single line blocks for match arms, with a single statments, with no
+    // Currently, we only want single line blocks for match arms, with a single statements, with no
     // single line comments.
     grandparent_kind(db, node) == Some(SyntaxKind::MatchArm)
         && db.get_children(node.clone()).len() == 1
