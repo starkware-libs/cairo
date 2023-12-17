@@ -72,6 +72,9 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn is_self_referential(&self, type_id: semantic::TypeId) -> Maybe<bool>;
 
     /// Returns the semantic type ids the type is directly dependent on.
+    ///
+    /// A type depends on another type if it contains or may contain it, as a field or by holding a
+    /// reference to it.
     #[salsa::invoke(crate::types::type_dependencies)]
     fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<Vec<semantic::TypeId>>>;
 
