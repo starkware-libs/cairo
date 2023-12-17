@@ -26,6 +26,7 @@ impl NoGenericArgsGenericType for SystemType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// Trait for implementing a library function for syscalls.

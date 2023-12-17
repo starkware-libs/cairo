@@ -156,6 +156,8 @@ pub struct DeclaredTypeInfo {
     pub duplicatable: bool,
     /// The size of an element of this type.
     pub zero_sized: bool,
+    /// Can the type be used as a constant.
+    pub constable: bool,
 }
 
 /// A concrete type (the generic parent type and the generic arguments).

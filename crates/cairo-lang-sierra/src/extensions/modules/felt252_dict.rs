@@ -50,6 +50,7 @@ fn specialize_with_dict_value_param(
         droppable,
         duplicatable: _,
         zero_sized: _,
+        constable: _,
     }: TypeInfo,
 ) -> Result<TypeInfo, SpecializationError> {
     // Checking for specific types allowed as dictionary values.
@@ -91,6 +92,7 @@ fn specialize_with_dict_value_param(
             droppable: false,
             storable: true,
             zero_sized: false,
+            constable: false,
         })
     } else {
         Err(SpecializationError::UnsupportedGenericArg)

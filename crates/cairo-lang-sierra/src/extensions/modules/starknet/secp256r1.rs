@@ -10,6 +10,7 @@ impl NoGenericArgsGenericType for Secp256r1PointType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 #[derive(Default)]

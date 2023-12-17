@@ -88,6 +88,7 @@ impl StructConcreteType {
                 droppable,
                 storable: true,
                 zero_sized,
+                constable: false,
             },
             members,
         })

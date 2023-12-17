@@ -38,6 +38,7 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
                 droppable,
                 storable: true,
                 zero_sized: false,
+                constable: false,
             })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)

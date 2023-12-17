@@ -21,4 +21,5 @@ impl NoGenericArgsGenericType for SegmentArenaType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }

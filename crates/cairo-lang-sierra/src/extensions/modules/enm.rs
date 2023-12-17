@@ -96,6 +96,7 @@ impl EnumConcreteType {
                 droppable,
                 storable: true,
                 zero_sized: false,
+                constable: false,
             },
             variants,
         })

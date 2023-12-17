@@ -21,6 +21,7 @@ impl NoGenericArgsGenericType for EcOpType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// An EC point is a pair (x,y) on the curve.
@@ -32,6 +33,7 @@ impl NoGenericArgsGenericType for EcPointType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// An EC state is an EC point and a pointer to a random EC point shift.
@@ -43,6 +45,7 @@ impl NoGenericArgsGenericType for EcStateType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 define_libfunc_hierarchy! {

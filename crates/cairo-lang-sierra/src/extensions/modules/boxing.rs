@@ -26,7 +26,14 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
         TypeInfo { storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable {
-            Ok(TypeInfo { long_id, zero_sized: false, storable, droppable, duplicatable })
+            Ok(TypeInfo {
+                long_id,
+                zero_sized: false,
+                storable,
+                droppable,
+                duplicatable,
+                constable: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

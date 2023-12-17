@@ -22,6 +22,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// Libfunc for creating a constant storage address.
@@ -72,6 +73,7 @@ impl NoGenericArgsGenericType for ClassHashType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// Libfunc for creating a constant storage address.

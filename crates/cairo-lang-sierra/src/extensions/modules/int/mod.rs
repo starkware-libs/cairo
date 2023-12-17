@@ -77,6 +77,7 @@ impl<TIntTraits: IntTraits> NoGenericArgsGenericType for IntType<TIntTraits> {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 /// Libfunc for creating a constant integer.

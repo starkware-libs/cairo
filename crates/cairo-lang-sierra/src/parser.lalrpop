@@ -30,12 +30,14 @@ DeclaredTypeInfo: Option<DeclaredTypeInfo> = {
         "drop:" <droppable:Bool> ","
         "dup:" <duplicatable:Bool> ","
         "zero_sized:" <zero_sized:Bool>
+        "constable:" <constable:Bool>
     "]"
     => Some(DeclaredTypeInfo {
         storable,
         droppable,
         duplicatable,
         zero_sized,
+        constable,
     }),
     => None,
 }

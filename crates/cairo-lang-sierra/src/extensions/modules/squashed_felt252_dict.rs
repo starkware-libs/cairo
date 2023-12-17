@@ -28,6 +28,7 @@ impl GenericTypeArgGenericType for SquashedFelt252DictTypeWrapped {
                 droppable,
                 duplicatable: false,
                 zero_sized: false,
+                constable: false,
             })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)

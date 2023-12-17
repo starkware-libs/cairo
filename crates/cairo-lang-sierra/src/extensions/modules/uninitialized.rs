@@ -24,6 +24,7 @@ impl GenericTypeArgGenericType for UninitializedTypeWrapped {
                 droppable: true,
                 duplicatable: false,
                 zero_sized,
+                constable: false,
             })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)

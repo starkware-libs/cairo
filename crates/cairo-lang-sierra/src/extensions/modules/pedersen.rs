@@ -19,6 +19,7 @@ impl NoGenericArgsGenericType for PedersenType {
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
     const ZERO_SIZED: bool = false;
+    const CONSTABLE: bool = false;
 }
 
 define_libfunc_hierarchy! {
