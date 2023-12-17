@@ -16,7 +16,9 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
+use syntax::attribute::consts::MUST_USE_ATTR;
 
+use super::attribute::SemanticQueryAttrs;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -139,6 +141,16 @@ impl GenericFunctionId {
             GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
             GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
+        }
+    }
+    /// Returns whether the function has the `#[must_use]` attribute.
+    pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+        match self {
+            crate::items::functions::GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
+            crate::items::functions::GenericFunctionId::Impl(id) => {
+                id.function.has_attr(db, MUST_USE_ATTR)
+            }
+            crate::items::functions::GenericFunctionId::Extern(_) => Ok(false),
         }
     }
 }

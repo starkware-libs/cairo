@@ -13,7 +13,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -49,7 +48,6 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -2132,11 +2130,7 @@ pub fn compute_statement_semantic(
             }
             let ty: TypeId = expr.ty();
             if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(ty) {
-                if match concrete {
-                    ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR)?,
-                    ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR)?,
-                    ConcreteTypeId::Extern(_) => false,
-                } {
+                if concrete.is_must_use(db)? {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
                 }
             }
@@ -2145,15 +2139,7 @@ pub fn compute_statement_semantic(
                     .lookup_intern_function(expr_function_call.function)
                     .function
                     .generic_function;
-                if match generic_function_id {
-                    crate::items::functions::GenericFunctionId::Free(id) => {
-                        id.has_attr(db, MUST_USE_ATTR)?
-                    }
-                    crate::items::functions::GenericFunctionId::Impl(id) => {
-                        id.function.has_attr(db, MUST_USE_ATTR)?
-                    }
-                    crate::items::functions::GenericFunctionId::Extern(_) => false,
-                } {
+                if generic_function_id.is_must_use(db)? {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseFunction);
                 }
             }
