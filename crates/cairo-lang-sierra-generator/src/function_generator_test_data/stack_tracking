@@ -44,7 +44,7 @@ test_function_generator
 //! > function
 fn foo() -> (felt252, felt252) {
     let tuple = get_val();
-    let (a, b) = tuple;
+    let (_a, b) = tuple;
     // Call drop explicitly to avoid the `struct_deconstruct` above from being optimized out.
     drop::<felt252>(b);
     tuple
@@ -59,13 +59,7 @@ fn get_val() -> (felt252, felt252) {
   (13, 17)
 }
 
-fn test_func(a: felt252, b: felt252) {}
-
 //! > semantic_diagnostics
-warning: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:9:10
-    let (a, b) = tuple;
-         ^
 
 //! > lowering_diagnostics
 
