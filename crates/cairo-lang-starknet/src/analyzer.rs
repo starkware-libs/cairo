@@ -14,7 +14,10 @@ impl AnalyzerPlugin for ABIAnalyzer {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
         let mut diagnostics = vec![];
         if let Some(contract) = module_contract(db, module_id) {
-            if let Err(err) = AbiBuilder::submodule_as_contract_abi(db, contract.submodule_id) {
+            if let Err(err) = AbiBuilder::default()
+                .add_submodule_contract(db, contract.submodule_id)
+                .and_then(|builder| builder.extra_validations(db, contract.submodule_id))
+            {
                 if !matches!(err, ABIError::SemanticError) {
                     // TODO(orizi): Enable getting several diagnostics.
                     diagnostics.push(PluginDiagnostic::warning(
