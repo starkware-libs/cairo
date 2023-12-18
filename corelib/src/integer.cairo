@@ -310,7 +310,9 @@ impl U8PartialOrd of PartialOrd<u8> {
     }
 }
 
-extern fn u8_overflowing_add(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+pub(crate) extern fn u8_overflowing_add(
+    lhs: u8, rhs: u8
+) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 extern fn u8_overflowing_sub(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 
 pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
