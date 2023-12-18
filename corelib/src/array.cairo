@@ -140,9 +140,10 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<T>> {
-        let length = *serialized.pop_front()?;
-        let mut arr = array_new();
-        Option::Some(deserialize_array_helper(ref serialized, arr, length)?.span())
+        let length = *serialized.pop_front()?;;
+        let res = serialized.slice(0, length);
+        serialized = serialized.slice(length, serialized.len() - length);
+        Option::Some(Span { snapshot: res })
     }
 }
 
