@@ -2,8 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, Upcast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
@@ -13,6 +13,15 @@ use crate::semantic;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, test_function_diagnostics, SemanticDatabaseForTesting,
 };
+
+cairo_lang_test_utils::test_file_test!(
+    expand_inline_macros,
+    "src/expr/expansion_test_data",
+    {
+        inline_macros: "inline_macros",
+    },
+    test_expand_expr
+);
 
 cairo_lang_test_utils::test_file_test!(
     expr_diagnostics,
@@ -63,6 +72,35 @@ cairo_lang_test_utils::test_file_test!(
     test_expr_semantics
 );
 
+/// Tests the syntactic expansion of a given expression. Can be use to test the expansion of inline
+/// macros.
+fn test_expand_expr(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &SemanticDatabaseForTesting::default();
+    let (test_expr, diagnostics) = setup_test_expr(
+        db,
+        inputs["expr_code"].as_str(),
+        inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
+        inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
+    )
+    .split();
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+
+    let error = verify_diagnostics_expectation(args, &diagnostics);
+
+    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            ("expanded_code".into(), format!("        {expanded_code}")),
+            ("diagnostics".into(), diagnostics),
+        ]),
+        error,
+    }
+}
+
+/// Tests the semantic representation of a given expression.
 fn test_expr_semantics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
