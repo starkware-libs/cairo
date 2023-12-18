@@ -96,30 +96,47 @@ impl FormattingInfo {
             return Err(unsupported_bracket_diagnostic(db, syntax).diagnostics);
         };
         let argument_list_elements = arguments.arguments(db).elements(db);
-        let Some((formatter_arg, without_formatter_args)) = argument_list_elements.split_first()
-        else {
+        let mut args_iter = argument_list_elements.iter();
+        let Some(formatter_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
                 arguments.lparen(db).stable_ptr().untyped(),
                 "Macro expected formatter argument.".to_string(),
             )]);
         };
-        let Some((format_string_arg, args)) = without_formatter_args.split_first() else {
+        let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
+            return Err(vec![PluginDiagnostic::error(
+                formatter_arg.stable_ptr().untyped(),
+                "Formatter argument must unnamed.".to_string(),
+            )]);
+        };
+        if matches!(formatter_expr, ast::Expr::String(_)) {
+            return Err(vec![PluginDiagnostic::error(
+                formatter_arg.stable_ptr().untyped(),
+                "Formatter argument must not be a string literal.".to_string(),
+            )]);
+        }
+        let Some(format_string_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
                 arguments.lparen(db).stable_ptr().untyped(),
                 "Macro expected format string argument.".to_string(),
             )]);
         };
+        let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
+            return Err(vec![PluginDiagnostic::error(
+                format_string_arg.stable_ptr().untyped(),
+                "Format string argument must be unnamed.".to_string(),
+            )]);
+        };
+        let Some(format_string) = try_extract_matches!(format_string_expr, ast::Expr::String)
+            .and_then(|arg| arg.string_value(db))
+        else {
+            return Err(vec![PluginDiagnostic::error(
+                format_string_arg.stable_ptr().untyped(),
+                "Format string argument must be a string literal.".to_string(),
+            )]);
+        };
         let mut diagnostics = vec![];
-        let format_string = try_extract_unnamed_arg(db, format_string_arg)
-            .and_then(|arg| try_extract_matches!(arg, ast::Expr::String)?.string_value(db))
-            .on_none(|| {
-                diagnostics.push(PluginDiagnostic::error(
-                    format_string_arg.stable_ptr().untyped(),
-                    "Argument must be a string literal.".to_string(),
-                ))
-            });
-        let args: Vec<_> = args
-            .iter()
+        let args: Vec<_> = args_iter
             .filter_map(|arg| {
                 try_extract_unnamed_arg(db, arg).on_none(|| {
                     diagnostics.push(PluginDiagnostic::error(
@@ -136,7 +153,7 @@ impl FormattingInfo {
             formatter_arg_node: RewriteNode::new_trimmed(formatter_arg.as_syntax_node()),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
-            format_string: format_string.unwrap(),
+            format_string,
             args,
         })
     }

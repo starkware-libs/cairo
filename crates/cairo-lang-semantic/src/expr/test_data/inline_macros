@@ -209,12 +209,12 @@ error: Plugin diagnostic: Macro expected format string argument.
    write!(f);
          ^
 
-error: Plugin diagnostic: Argument must be a string literal.
- --> lib.cairo:15:17
+error: Plugin diagnostic: Formatter argument must not be a string literal.
+ --> lib.cairo:15:11
    write!("{}", ba);
-                ^^
+          ^**^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:18:14
    write!(f, ba);
              ^^
@@ -356,12 +356,12 @@ error: Plugin diagnostic: Macro expected format string argument.
    writeln!(f);
            ^
 
-error: Plugin diagnostic: Argument must be a string literal.
- --> lib.cairo:15:19
+error: Plugin diagnostic: Formatter argument must not be a string literal.
+ --> lib.cairo:15:13
    writeln!("{}", ba);
-                  ^^
+            ^**^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:18:16
    writeln!(f, ba);
                ^^
@@ -466,7 +466,7 @@ error: Plugin diagnostic: Macro expected format string argument.
    format!();
           ^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:12
    format!(ba);
            ^^
@@ -566,7 +566,7 @@ error: Plugin diagnostic: Macro expected format string argument.
    print!();
          ^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:11
    print!(ba);
           ^^
@@ -666,7 +666,7 @@ error: Plugin diagnostic: Macro expected format string argument.
    println!();
            ^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:13
    println!(ba);
             ^^
@@ -761,7 +761,7 @@ error: Plugin diagnostic: Macro `panic` does not support this bracket type.
    panic!["{}", ba];
          ^
 
-error: Plugin diagnostic: Argument must be a string literal.
+error: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:11
    panic!(ba);
           ^^
