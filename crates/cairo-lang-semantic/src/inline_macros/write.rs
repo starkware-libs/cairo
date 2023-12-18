@@ -191,14 +191,15 @@ impl FormattingInfo {
                     format_iter.next();
                     continue;
                 }
-                let Some(argument_info) = extract_argument(&mut format_iter) else {
-                    diagnostics.push(PluginDiagnostic::error(
-                        self.format_string_arg.as_syntax_node().stable_ptr(),
-                        "Invalid format string: expected `}`, variable name, or formatting \
-                         modifiers."
-                            .to_string(),
-                    ));
-                    return;
+                let argument_info = match extract_placeholder_argument(&mut format_iter) {
+                    Ok(argument_info) => argument_info,
+                    Err(error_message) => {
+                        diagnostics.push(PluginDiagnostic::error(
+                            self.format_string_arg.as_syntax_node().stable_ptr(),
+                            format!("Invalid format string: {error_message}."),
+                        ));
+                        return;
+                    }
                 };
                 match argument_info.source {
                     ArgumentSource::Positional(positional) => {
@@ -325,7 +326,7 @@ impl FormattingInfo {
         ident_count: &mut usize,
         pending_chars: &mut String,
         arg: RewriteNode,
-        fmt_type: FormatType,
+        fmt_type: FormattingTrait,
     ) {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
         self.add_indentation(builder, *ident_count);
@@ -367,7 +368,7 @@ struct ArgumentInfo {
     /// The source of the argument.
     source: ArgumentSource,
     /// The format type to use.
-    fmt_type: FormatType,
+    fmt_type: FormattingTrait,
 }
 
 /// The source of an argument.
@@ -381,70 +382,81 @@ enum ArgumentSource {
 }
 
 /// The format type to use.
-enum FormatType {
+enum FormattingTrait {
     /// Got `{}` and we should use the `Display` trait.
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
     Debug,
 }
-impl fmt::Display for FormatType {
+impl fmt::Display for FormattingTrait {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FormatType::Display => write!(f, "Display"),
-            FormatType::Debug => write!(f, "Debug"),
+            FormattingTrait::Display => write!(f, "Display"),
+            FormattingTrait::Debug => write!(f, "Debug"),
         }
     }
 }
 
-/// Extracts an argument from a format string.
-fn extract_argument(
+/// Extracts a placeholder argument from a format string. On error, returns Err with a relevant
+/// error string.
+fn extract_placeholder_argument(
     format_iter: &mut std::iter::Peekable<std::iter::Enumerate<std::str::Chars<'_>>>,
-) -> Option<ArgumentInfo> {
-    let mut arg_value = String::new();
-    let mut fmt_value = String::new();
-    let mut proper_break = false;
+) -> Result<ArgumentInfo, &'static str> {
+    // The part before the ':' (if any), indicating the name of the parameter.
+    let mut parameter_name = String::new();
+    // The part after the ':' (if any), indicating the formatting specification.
+    let mut formatting_spec = String::new();
+    let mut placeholder_terminated = false;
     for (_, c) in format_iter.by_ref() {
         if c == '}' {
-            proper_break = true;
+            placeholder_terminated = true;
             break;
         }
         if c == ':' {
             for (_, c) in format_iter.by_ref() {
                 if c == '}' {
-                    proper_break = true;
+                    placeholder_terminated = true;
                     break;
                 }
+                if c == ':' {
+                    return Err("Unexpected character in placeholder: the formatting \
+                                specification part (after the ':') can not contain a ':'");
+                }
                 if c.is_ascii_graphic() {
-                    fmt_value.push(c);
+                    formatting_spec.push(c);
                 } else {
-                    return None;
+                    return Err("Unexpected character in placeholder: the formatting \
+                                specification part (after the ':') can only contain graphic \
+                                characters");
                 }
             }
             break;
         }
         if c.is_ascii_alphanumeric() || c == '_' {
-            arg_value.push(c);
+            parameter_name.push(c);
         } else {
-            return None;
+            return Err("Unexpected character in placeholder: parameter name can only contain \
+                        alphanumeric characters and '_'. You may be missing a ':'");
         }
     }
-    if !proper_break {
-        return None;
+    if !placeholder_terminated {
+        return Err("Unterminated placeholder: no matching '}' for '{'");
     }
-    Some(ArgumentInfo {
-        source: if arg_value.is_empty() {
-            ArgumentSource::Next
-        } else if let Ok(positional) = arg_value.parse::<usize>() {
-            ArgumentSource::Positional(positional)
-        } else {
-            ArgumentSource::Named(arg_value)
-        },
-        fmt_type: if fmt_value.is_empty() {
-            FormatType::Display
-        } else if fmt_value == "?" {
-            FormatType::Debug
-        } else {
-            return None;
-        },
-    })
+    let fmt_type = if formatting_spec.is_empty() {
+        FormattingTrait::Display
+    } else if formatting_spec == "?" {
+        FormattingTrait::Debug
+    } else {
+        return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
+    };
+    let source = if parameter_name.is_empty() {
+        ArgumentSource::Next
+    } else if let Ok(position) = parameter_name.parse::<usize>() {
+        ArgumentSource::Positional(position)
+    } else if parameter_name.starts_with(|c: char| c.is_ascii_digit()) {
+        return Err("Invalid parameter name");
+    } else {
+        ArgumentSource::Named(parameter_name)
+    };
+    Ok(ArgumentInfo { source, fmt_type })
 }
