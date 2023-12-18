@@ -145,12 +145,49 @@ pub struct AbiBuilder {
     ctor: Option<FunctionWithBodyId>,
 }
 impl AbiBuilder {
-    /// Creates a Starknet contract ABI from a ModuleId.
-    pub fn submodule_as_contract_abi(
+    /// Returns the finalized ABI.
+    pub fn finalize(self) -> Contract {
+        self.abi
+    }
+
+    /// Runs extra validations on the ABI for warnings only.
+    pub fn extra_validations(
+        self,
         db: &dyn SemanticGroup,
         submodule_id: SubmoduleId,
-    ) -> Result<Contract, ABIError> {
-        let mut builder = Self::default();
+    ) -> Result<Self, ABIError> {
+        let is_account_contract =
+            submodule_id.has_attr_with_arg(db, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG)?;
+        if is_account_contract {
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if !self.entry_point_names.contains(*selector) {
+                    return Err(ABIError::EntryPointMissingForAccountContract {
+                        selector: selector.to_string(),
+                    });
+                }
+            }
+        } else {
+            // Attribute must exist on the submdule, otherwise wouldn't have got here.
+            if !submodule_id.find_attr(db, CONTRACT_ATTR)?.unwrap().args.is_empty() {
+                return Err(ABIError::IllegalContractAttrArgs);
+            }
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if self.entry_point_names.contains(*selector) {
+                    return Err(ABIError::EntryPointSupportedOnlyOnAccountContract {
+                        selector: selector.to_string(),
+                    });
+                }
+            }
+        }
+        Ok(self)
+    }
+
+    /// Adds a Starknet contract module to the ABI.
+    pub fn add_submodule_contract(
+        mut self,
+        db: &dyn SemanticGroup,
+        submodule_id: SubmoduleId,
+    ) -> Result<Self, ABIError> {
         let module_id = ModuleId::Submodule(submodule_id);
 
         let mut free_functions = Vec::new();
@@ -199,31 +236,31 @@ impl AbiBuilder {
             // TODO(v3): deprecate the external attribute.
             if impl_def.has_attr(db, EXTERNAL_ATTR)? {
                 if is_of_interface {
-                    builder.add_embedded_impl(db, impl_def, None)?;
+                    self.add_embedded_impl(db, impl_def, None)?;
                 } else {
-                    builder.add_non_interface_impl(db, impl_def, storage_type)?;
+                    self.add_non_interface_impl(db, impl_def, storage_type)?;
                 }
             } else if is_impl_abi_embed(db, impl_def)? {
                 if !is_of_interface {
                     return Err(ABIError::EmbeddedImplMustBeInterface);
                 }
-                builder.add_embedded_impl(db, impl_def, None)?;
+                self.add_embedded_impl(db, impl_def, None)?;
             } else if is_impl_abi_per_item(db, impl_def)? {
                 if is_of_interface {
                     return Err(ABIError::ContractInterfaceImplCannotBePerItem);
                 }
-                builder.add_per_item_impl(db, impl_def, storage_type)?;
+                self.add_per_item_impl(db, impl_def, storage_type)?;
             }
         }
         for impl_alias in impl_aliases {
             if impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)? {
-                builder.add_embedded_impl_alias(db, impl_alias)?;
+                self.add_embedded_impl_alias(db, impl_alias)?;
             }
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
         for free_function_id in free_functions {
-            builder.maybe_add_function_with_body(
+            self.maybe_add_function_with_body(
                 db,
                 FunctionWithBodyId::Free(free_function_id),
                 storage_type,
@@ -244,34 +281,10 @@ impl AbiBuilder {
                 // Get the TypeId of the enum.
                 let ty =
                     db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
-                builder.add_event(db, ty)?;
+                self.add_event(db, ty)?;
             }
         }
-        let is_account_contract =
-            submodule_id.has_attr_with_arg(db, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG)?;
-        if is_account_contract {
-            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                if !builder.entry_point_names.contains(*selector) {
-                    return Err(ABIError::EntryPointMissingForAccountContract {
-                        selector: selector.to_string(),
-                    });
-                }
-            }
-        } else {
-            // Attribute must exist on the submdule, otherwise wouldn't have got here.
-            if !submodule_id.find_attr(db, CONTRACT_ATTR)?.unwrap().args.is_empty() {
-                return Err(ABIError::IllegalContractAttrArgs);
-            }
-            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                if builder.entry_point_names.contains(*selector) {
-                    return Err(ABIError::EntryPointSupportedOnlyOnAccountContract {
-                        selector: selector.to_string(),
-                    });
-                }
-            }
-        }
-
-        Ok(builder.abi)
+        Ok(self)
     }
 
     /// Adds an interface to the ABI.
