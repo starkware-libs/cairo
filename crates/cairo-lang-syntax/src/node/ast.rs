@@ -4817,6 +4817,8 @@ impl TypedSyntaxNode for WrappedArgListMissing {
 pub enum Pattern {
     Underscore(TerminalUnderscore),
     Literal(TerminalLiteralNumber),
+    False(TerminalFalse),
+    True(TerminalTrue),
     ShortString(TerminalShortString),
     String(TerminalString),
     Identifier(PatternIdentifier),
@@ -4842,6 +4844,16 @@ impl From<TerminalUnderscorePtr> for PatternPtr {
 }
 impl From<TerminalLiteralNumberPtr> for PatternPtr {
     fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFalsePtr> for PatternPtr {
+    fn from(value: TerminalFalsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTruePtr> for PatternPtr {
+    fn from(value: TerminalTruePtr) -> Self {
         Self(value.0)
     }
 }
@@ -4887,6 +4899,16 @@ impl From<TerminalUnderscoreGreen> for PatternGreen {
 }
 impl From<TerminalLiteralNumberGreen> for PatternGreen {
     fn from(value: TerminalLiteralNumberGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFalseGreen> for PatternGreen {
+    fn from(value: TerminalFalseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTrueGreen> for PatternGreen {
+    fn from(value: TerminalTrueGreen) -> Self {
         Self(value.0)
     }
 }
@@ -4943,6 +4965,8 @@ impl TypedSyntaxNode for Pattern {
             SyntaxKind::TerminalLiteralNumber => {
                 Pattern::Literal(TerminalLiteralNumber::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalFalse => Pattern::False(TerminalFalse::from_syntax_node(db, node)),
+            SyntaxKind::TerminalTrue => Pattern::True(TerminalTrue::from_syntax_node(db, node)),
             SyntaxKind::TerminalShortString => {
                 Pattern::ShortString(TerminalShortString::from_syntax_node(db, node))
             }
@@ -4963,6 +4987,8 @@ impl TypedSyntaxNode for Pattern {
         match self {
             Pattern::Underscore(x) => x.as_syntax_node(),
             Pattern::Literal(x) => x.as_syntax_node(),
+            Pattern::False(x) => x.as_syntax_node(),
+            Pattern::True(x) => x.as_syntax_node(),
             Pattern::ShortString(x) => x.as_syntax_node(),
             Pattern::String(x) => x.as_syntax_node(),
             Pattern::Identifier(x) => x.as_syntax_node(),
@@ -4982,6 +5008,8 @@ impl Pattern {
         match kind {
             SyntaxKind::TerminalUnderscore => true,
             SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalFalse => true,
+            SyntaxKind::TerminalTrue => true,
             SyntaxKind::TerminalShortString => true,
             SyntaxKind::TerminalString => true,
             SyntaxKind::PatternIdentifier => true,

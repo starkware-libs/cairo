@@ -74,7 +74,7 @@ impl Pattern {
             Pattern::Variable(pattern) => pattern.stable_ptr,
             Pattern::Struct(pattern) => pattern.stable_ptr.into(),
             Pattern::Tuple(pattern) => pattern.stable_ptr.into(),
-            Pattern::EnumVariant(pattern) => pattern.stable_ptr.into(),
+            Pattern::EnumVariant(pattern) => pattern.stable_ptr,
             Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
             Pattern::Missing(pattern) => pattern.stable_ptr,
         }
@@ -149,7 +149,7 @@ pub struct PatternEnumVariant {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
-    pub stable_ptr: ast::PatternEnumPtr,
+    pub stable_ptr: ast::PatternPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
