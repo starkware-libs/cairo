@@ -164,7 +164,7 @@ fn foo() {
    write!(f, ba);
 
    // Non existing inline argument.
-   write!(f, "{non_existing}");
+   write!(f, "{non_existing}").unwrap();
 
    // Non existing provide argument.
    write!(f, "{}", non_existing).unwrap();
@@ -221,13 +221,8 @@ error: Plugin diagnostic: Format string argument must be a string literal.
 
 error: Identifier not found.
  --> lib.cairo:21:16
-   write!(f, "{non_existing}");
+   write!(f, "{non_existing}").unwrap();
                ^**********^
-
-warning: Unhandled `#[must_use]` type `core::result::Result::<(), core::fmt::Error>`
- --> lib.cairo:21:4
-   write!(f, "{non_existing}");
-   ^*************************^
 
 error: Identifier not found.
  --> lib.cairo:24:20
@@ -320,7 +315,7 @@ fn foo() {
    writeln!(f, "{non_existing}").unwrap();
 
    // Non existing provide argument.
-   writeln!(f, "{}", non_existing);
+   writeln!(f, "{}", non_existing).unwrap();
 
    // Too many arguments.
    writeln!(f, "{}", ba, 1);
@@ -332,7 +327,13 @@ fn foo() {
    writeln!(f, "{2}{1}{0}", ba, 1);
 
    // Unused arguments.
-   writeln!(f, "{2}{0}", ba, 2, 1);
+   writeln!(f, "{2}{0}", ba, 2, 1, 4);
+
+   // Badly terminated `{`.
+   writeln!(f, "{?}");
+   writeln!(f, "{x|}");
+   writeln!(f, "{");
+   writeln!(f, "{x");
 }
 
 //! > function_name
@@ -373,13 +374,8 @@ error: Identifier not found.
 
 error: Identifier not found.
  --> lib.cairo:24:22
-   writeln!(f, "{}", non_existing);
+   writeln!(f, "{}", non_existing).unwrap();
                      ^**********^
-
-warning: Unhandled `#[must_use]` type `core::result::Result::<(), core::fmt::Error>`
- --> lib.cairo:24:4
-   writeln!(f, "{}", non_existing);
-   ^*****************************^
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:27:26
@@ -398,8 +394,33 @@ error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 
 
 error: Plugin diagnostic: Unused argument.
  --> lib.cairo:36:30
-   writeln!(f, "{2}{0}", ba, 2, 1);
+   writeln!(f, "{2}{0}", ba, 2, 1, 4);
                              ^
+
+error: Plugin diagnostic: Unused argument.
+ --> lib.cairo:36:36
+   writeln!(f, "{2}{0}", ba, 2, 1, 4);
+                                   ^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:39:16
+   writeln!(f, "{?}");
+               ^***^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:40:16
+   writeln!(f, "{x|}");
+               ^****^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:41:16
+   writeln!(f, "{");
+               ^*^
+
+error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
+ --> lib.cairo:42:16
+   writeln!(f, "{x");
+               ^**^
 
 warning: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:8
