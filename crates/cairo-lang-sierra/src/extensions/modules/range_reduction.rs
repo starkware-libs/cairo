@@ -2,8 +2,13 @@ use cairo_felt::Felt252;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::Zero;
 
+use super::bytes31::Bytes31Type;
 use super::felt252::Felt252Type;
 use super::felt252_bounded::Felt252BoundedType;
+use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
+use super::int::signed128::Sint128Type;
+use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -46,19 +51,50 @@ impl SignatureBasedConcreteLibfunc for Felt252BoundedConstrainRange {
 
 /// Returns the Range bounds from the given type info.
 fn extract_bounds(ty_info: &TypeInfo) -> Result<Range, SpecializationError> {
-    return if ty_info.long_id.generic_id == Felt252BoundedType::id() {
-        let [GenericArg::Value(lower), GenericArg::Value(upper)] =
-            ty_info.long_id.generic_args.as_slice()
-        else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-        Ok(Range { lower: lower.clone(), upper: upper.clone() + 1 })
-    } else if ty_info.long_id.generic_id == Felt252Type::id() {
-        Ok(Range { lower: 0.into(), upper: Felt252::prime().into() })
-    } else {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    };
-    // TODO(TomerStarkware): support additional types.
+    match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
+        (id, []) if *id == Felt252Type::id() => {
+            Ok(Range { lower: 0.into(), upper: Felt252::prime().into() })
+        }
+        (id, []) if *id == Uint8Type::id() => {
+            Ok(Range { lower: u8::MIN.into(), upper: u8::MAX.into() })
+        }
+        (id, []) if *id == Uint16Type::id() => {
+            Ok(Range { lower: u16::MIN.into(), upper: u16::MAX.into() })
+        }
+        (id, []) if *id == Uint32Type::id() => {
+            Ok(Range { lower: u32::MIN.into(), upper: u32::MAX.into() })
+        }
+        (id, []) if *id == Uint64Type::id() => {
+            Ok(Range { lower: u64::MIN.into(), upper: u64::MAX.into() })
+        }
+        (id, []) if *id == Uint128Type::id() => {
+            Ok(Range { lower: u128::MIN.into(), upper: u128::MAX.into() })
+        }
+        (id, []) if *id == Sint8Type::id() => {
+            Ok(Range { lower: i8::MIN.into(), upper: i8::MAX.into() })
+        }
+        (id, []) if *id == Sint16Type::id() => {
+            Ok(Range { lower: i16::MIN.into(), upper: i16::MAX.into() })
+        }
+        (id, []) if *id == Sint32Type::id() => {
+            Ok(Range { lower: i32::MIN.into(), upper: i32::MAX.into() })
+        }
+        (id, []) if *id == Sint64Type::id() => {
+            Ok(Range { lower: i64::MIN.into(), upper: i64::MAX.into() })
+        }
+        (id, []) if *id == Sint128Type::id() => {
+            Ok(Range { lower: i128::MIN.into(), upper: i128::MAX.into() })
+        }
+        (id, []) if *id == Bytes31Type::id() => {
+            Ok(Range { lower: 0.into(), upper: BigInt::from(2).pow(248) })
+        }
+        (id, [GenericArg::Value(lower), GenericArg::Value(upper)])
+            if *id == Felt252BoundedType::id() =>
+        {
+            Ok(Range { lower: lower.clone(), upper: upper + 1 })
+        }
+        _ => Err(SpecializationError::UnsupportedGenericArg),
+    }
 }
 #[derive(Default)]
 
