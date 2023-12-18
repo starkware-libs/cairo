@@ -83,7 +83,7 @@ fn test_valdiate_gas_cost() {
             selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
             calldata: array![
                 0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0
-            ]
+            ].span()
         },
         Call {
             to: contract_address,
@@ -98,7 +98,7 @@ fn test_valdiate_gas_cost() {
                 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
                 0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8,
                 0x65586264
-            ]
+            ].span()
         },
     ];
 
@@ -115,5 +115,5 @@ fn test_valdiate_gas_cost() {
     test_contract::__wrapper____validate__(serialized_args);
     let available_gas3 = core::testing::get_available_gas();
     let gas_usage = available_gas2 - available_gas3;
-    assert!(gas_usage == 117930, "Unexpected entry point cost `{gas_usage}`.");
+    assert!(gas_usage == 60030, "Unexpected entry point cost `{gas_usage}`.");
 }
