@@ -181,11 +181,24 @@ fn foo() {
    // Unused arguments.
    write!(f, "{2}{0}", ba, 2, 1, 4);
 
-   // Badly terminated `{`.
-    write!(f, "{?}");
-    write!(f, "{x|}");
-    write!(f, "{");
-    write!(f, "{x");
+   // --- Bad placeholder arguments.
+
+   // Bad parameter names.
+   write!(f, "{3a}");
+   write!(f, "{a-b}");
+   write!(f, "{a b}");
+   write!(f, "{?}");
+   write!(f, "{x|}");
+
+   // Bad formatting specifications.
+   write!(f, "{::x}");
+   write!(f, "{:x:y}");
+   write!(f, "{:x ?}");
+   write!(f, "{:??}");
+
+   // Non terminated `{`.
+   write!(f, "{");
+   write!(f, "{x");
 }
 
 //! > function_name
@@ -254,25 +267,60 @@ error: Plugin diagnostic: Unused argument.
    write!(f, "{2}{0}", ba, 2, 1, 4);
                                  ^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:39:15
-    write!(f, "{?}");
-              ^***^
+error: Plugin diagnostic: Invalid format string: Invalid parameter name.
+ --> lib.cairo:41:14
+   write!(f, "{3a}");
+             ^****^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:40:15
-    write!(f, "{x|}");
-              ^****^
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:42:14
+   write!(f, "{a-b}");
+             ^*****^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:41:15
-    write!(f, "{");
-              ^*^
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:43:14
+   write!(f, "{a b}");
+             ^*****^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:42:15
-    write!(f, "{x");
-              ^**^
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:44:14
+   write!(f, "{?}");
+             ^***^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:45:14
+   write!(f, "{x|}");
+             ^****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+ --> lib.cairo:48:14
+   write!(f, "{::x}");
+             ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+ --> lib.cairo:49:14
+   write!(f, "{:x:y}");
+             ^******^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can only contain graphic characters.
+ --> lib.cairo:50:14
+   write!(f, "{:x ?}");
+             ^******^
+
+error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display` and `Debug` are supported.
+ --> lib.cairo:51:14
+   write!(f, "{:??}");
+             ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
+ --> lib.cairo:54:14
+   write!(f, "{");
+             ^*^
+
+error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
+ --> lib.cairo:55:14
+   write!(f, "{x");
+             ^**^
 
 warning: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:8
@@ -329,9 +377,22 @@ fn foo() {
    // Unused arguments.
    writeln!(f, "{2}{0}", ba, 2, 1, 4);
 
-   // Badly terminated `{`.
+   // --- Bad placeholder arguments.
+
+   // Bad parameter names.
+   writeln!(f, "{3a}");
+   writeln!(f, "{a-b}");
+   writeln!(f, "{a b}");
    writeln!(f, "{?}");
    writeln!(f, "{x|}");
+
+   // Bad formatting specifications.
+   writeln!(f, "{::x}");
+   writeln!(f, "{:x:y}");
+   writeln!(f, "{:x ?}");
+   writeln!(f, "{:??}");
+
+   // Non terminated `{`.
    writeln!(f, "{");
    writeln!(f, "{x");
 }
@@ -402,23 +463,58 @@ error: Plugin diagnostic: Unused argument.
    writeln!(f, "{2}{0}", ba, 2, 1, 4);
                                    ^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:39:16
+error: Plugin diagnostic: Invalid format string: Invalid parameter name.
+ --> lib.cairo:41:16
+   writeln!(f, "{3a}");
+               ^****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:42:16
+   writeln!(f, "{a-b}");
+               ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:43:16
+   writeln!(f, "{a b}");
+               ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:44:16
    writeln!(f, "{?}");
                ^***^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:40:16
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
+ --> lib.cairo:45:16
    writeln!(f, "{x|}");
                ^****^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:41:16
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+ --> lib.cairo:48:16
+   writeln!(f, "{::x}");
+               ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+ --> lib.cairo:49:16
+   writeln!(f, "{:x:y}");
+               ^******^
+
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can only contain graphic characters.
+ --> lib.cairo:50:16
+   writeln!(f, "{:x ?}");
+               ^******^
+
+error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display` and `Debug` are supported.
+ --> lib.cairo:51:16
+   writeln!(f, "{:??}");
+               ^*****^
+
+error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
+ --> lib.cairo:54:16
    writeln!(f, "{");
                ^*^
 
-error: Plugin diagnostic: Invalid format string: expected `}`, variable name, or formatting modifiers.
- --> lib.cairo:42:16
+error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
+ --> lib.cairo:55:16
    writeln!(f, "{x");
                ^**^
 
