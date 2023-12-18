@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
-    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    StructId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
@@ -16,6 +16,9 @@ use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
     TypeId, TypeLongId,
 };
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -27,7 +30,8 @@ use thiserror::Error;
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
-    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
+    L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -181,7 +185,7 @@ impl AbiBuilder {
             }
             // Forbid a struct named Event.
             if struct_name == EVENT_TYPE_NAME {
-                return Err(ABIError::EventMustBeEnum);
+                return Err(ABIError::EventMustBeEnum(struct_id));
             }
         }
         let Some(storage_type) = storage_type else {
@@ -553,14 +557,31 @@ impl AbiBuilder {
                         if kind == EventFieldKind::Nested {
                             add_selector(&name)?;
                         }
-                        let field = self.add_event_field(db, kind, concrete_variant.ty, name)?;
+                        let field =
+                            self.add_event_field(db, kind, concrete_variant.ty, name.clone())?;
                         if kind == EventFieldKind::Flat {
                             if let EventInfo::Enum(inner) = &self.event_info[&concrete_variant.ty] {
                                 for selector in inner {
                                     add_selector(selector)?;
                                 }
                             } else {
-                                return Err(ABIError::EventFlatVariantMustBeEnum);
+                                let bad_attr = concrete_variant
+                                    .concrete_enum_id
+                                    .enum_id(db)
+                                    .stable_ptr(db.upcast())
+                                    .lookup(db.upcast())
+                                    .variants(db.upcast())
+                                    .elements(db.upcast())
+                                    .into_iter()
+                                    .find_map(|v| {
+                                        if v.name(db.upcast()).text(db.upcast()) == name {
+                                            v.find_attr(db.upcast(), FLAT_ATTR)
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .expect("Impossible mismatch between AuxData and syntax");
+                                return Err(ABIError::EventFlatVariantMustBeEnum(bad_attr));
                             }
                         }
                         Ok(field)
@@ -749,9 +770,9 @@ pub enum ABIError {
     #[error("Semantic error")]
     SemanticError,
     #[error("Event must be an enum.")]
-    EventMustBeEnum,
+    EventMustBeEnum(StructId),
     #[error("`starknet::Event` variant marked with `#[flat]` must be an enum.")]
-    EventFlatVariantMustBeEnum,
+    EventFlatVariantMustBeEnum(ast::Attribute),
     #[error("Event must have no generic parameters.")]
     EventWithGenericParams,
     #[error("Event type must derive `starknet::Event`.")]
@@ -787,6 +808,30 @@ pub enum ABIError {
     InvalidDuplicatedItem { description: String },
     #[error("Duplicate entry point: '{name}'. This is not currently supported.")]
     DuplicateEntryPointName { name: String },
+}
+impl ABIError {
+    pub fn location(&self, db: &dyn SemanticGroup) -> Option<SyntaxStablePtrId> {
+        // TODO(orizi): Add more error locations.
+        match self {
+            ABIError::SemanticError => None,
+            ABIError::EventMustBeEnum(id) => Some(id.stable_ptr(db.upcast()).untyped()),
+            ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr().untyped()),
+            ABIError::EventWithGenericParams => None,
+            ABIError::EventNotDerived => None,
+            ABIError::EventSelectorDuplication { .. } => None,
+            ABIError::ExpectedOneGenericParam => None,
+            ABIError::MultipleConstructors => None,
+            ABIError::NoStorage => None,
+            ABIError::MultipleStorages => None,
+            ABIError::UnexpectedType => None,
+            ABIError::EntrypointMustHaveSelf => None,
+            ABIError::EmbeddedImplMustBeInterface => None,
+            ABIError::EmbeddedImplNotEmbeddable => None,
+            ABIError::ContractInterfaceImplCannotBePerItem => None,
+            ABIError::InvalidDuplicatedItem { .. } => None,
+            ABIError::DuplicateEntryPointName { .. } => None,
+        }
+    }
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {
