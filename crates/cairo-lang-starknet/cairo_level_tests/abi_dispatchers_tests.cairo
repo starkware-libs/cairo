@@ -93,7 +93,7 @@ fn test_validate_gas_cost() {
             selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
             calldata: array![
                 0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0
-            ]
+            ].span()
         },
         Call {
             to: contract_address,
@@ -108,7 +108,7 @@ fn test_validate_gas_cost() {
                 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
                 0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8,
                 0x65586264
-            ]
+            ].span()
         },
     ];
     let post_call_building_gas = withdraw_and_get_available_gas();
@@ -124,8 +124,8 @@ fn test_validate_gas_cost() {
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
         call_building_gas_usage == 6650
-            && serialization_gas_usage == 106250
-            && entry_point_gas_usage == 400030,
+            && serialization_gas_usage == 104450
+            && entry_point_gas_usage == 357130,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.
