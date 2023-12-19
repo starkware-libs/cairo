@@ -226,8 +226,10 @@ fn compile_contract_with_prepared_and_checked_db(
         abi: Some(
             AbiBuilder::default()
                 .add_submodule_contract(db, contract.submodule_id)
-                .with_context(|| "Could not create ABI from contract submodule")?
-                .finalize(),
+                .ok()
+                .with_context(|| "Unexpected error while generating ABI.")?
+                .finalize()
+                .with_context(|| "Could not create ABI from contract submodule")?,
         ),
     };
     contract_class.sanity_check();

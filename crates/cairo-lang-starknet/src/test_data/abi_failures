@@ -126,6 +126,16 @@ warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'
     #[abi(embed_v0)]
     ^**************^
 
+warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
+ --> lib.cairo:58:5
+    #[abi(embed_v0)]
+    ^**************^
+
+warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
+ --> lib.cairo:61:5
+    #[external(v0)]
+    ^*************^
+
 //! > ==========================================================================
 
 //! > Test embed impl of non-interface trait.

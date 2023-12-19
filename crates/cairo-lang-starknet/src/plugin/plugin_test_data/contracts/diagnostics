@@ -125,6 +125,11 @@ warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self
 #[starknet::contract]
 ^*******************^
 
+warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
 //! > ==========================================================================
 
 //! > Test invalid constructor name.
@@ -1350,6 +1355,11 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point names for account contracts only.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point names for account contracts only.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
