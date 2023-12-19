@@ -11,7 +11,7 @@ use super::{
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
 use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
-use crate::{ConcreteTraitId, GenericArgumentId, GenericParam, TypeLongId};
+use crate::{ConcreteTraitId, GenericArgumentId, GenericParam, TypeId, TypeLongId};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -36,6 +36,10 @@ pub enum Ambiguity {
     WillNotInfer {
         concrete_trait_id: ConcreteTraitId,
     },
+    NegativeImplWithUnresolvedGenericArgs {
+        impl_id: ImplId,
+        ty: TypeId,
+    },
 }
 impl Ambiguity {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
@@ -57,6 +61,11 @@ impl Ambiguity {
                     concrete_trait_id.debug(db)
                 )
             }
+            Ambiguity::NegativeImplWithUnresolvedGenericArgs { impl_id, ty } => format!(
+                "Cannot infer negative impl in {:?}. as it contains the unresolved type {:?}",
+                { impl_id }.debug(db),
+                ty.debug(db)
+            ),
         }
     }
 }
@@ -148,11 +157,29 @@ impl Solver {
                         continue;
                     };
 
+                    let concrete_trait_id = rewriter.rewrite(neg_impl)?.concrete_trait?;
+                    for garg in concrete_trait_id.generic_args(db) {
+                        let GenericArgumentId::Type(ty) = garg else {
+                            continue;
+                        };
+
+                        if let TypeLongId::Var(_) = db.lookup_intern_type(ty) {
+                            if !ty.is_inference_complete(db) {
+                                // If we have any type variables in the generic arguments, then we
+                                // cannot tell if the negative impl is valid or not.
+                                return Ok(SolutionSet::Ambiguous(
+                                    Ambiguity::NegativeImplWithUnresolvedGenericArgs {
+                                        impl_id: candidate_solver.candidate_impl,
+                                        ty,
+                                    },
+                                ));
+                            }
+                        }
+                    }
+
                     if !matches!(
-                        inference.trait_solution_set(
-                            rewriter.rewrite(neg_impl)?.concrete_trait?,
-                            self.lookup_context.clone(),
-                        )?,
+                        inference
+                            .trait_solution_set(concrete_trait_id, self.lookup_context.clone())?,
                         SolutionSet::None
                     ) {
                         // If a negative impl has an impl, then we should skip it.

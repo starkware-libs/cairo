@@ -74,6 +74,17 @@ impl TypeId {
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
         db.lookup_intern_type(*self).head(db)
     }
+
+    pub fn is_inference_complete(&self, db: &dyn SemanticGroup) -> bool {
+        match db.lookup_intern_type(*self) {
+            TypeLongId::Concrete(_) => true,
+            TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_inference_complete(db)),
+            TypeLongId::Snapshot(ty) => ty.is_inference_complete(db),
+            TypeLongId::GenericParameter(_) => false,
+            TypeLongId::Var(_) => false,
+            TypeLongId::Missing(_) => false,
+        }
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
