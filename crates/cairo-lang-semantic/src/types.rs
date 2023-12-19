@@ -74,6 +74,18 @@ impl TypeId {
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
         db.lookup_intern_type(*self).head(db)
     }
+
+    /// Returns true if all the inner type are concrete.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match db.lookup_intern_type(*self) {
+            TypeLongId::Concrete(_) => true,
+            TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
+            TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
+            TypeLongId::GenericParameter(_) => false,
+            TypeLongId::Var(_) => false,
+            TypeLongId::Missing(_) => false,
+        }
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
