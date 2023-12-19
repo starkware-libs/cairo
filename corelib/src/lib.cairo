@@ -351,5 +351,8 @@ mod test;
 // Module for testing only.
 pub mod testing;
 
+// Metaprogramming.
+pub mod metaprogramming;
+
 // Preludes.
 mod prelude;
