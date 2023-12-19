@@ -14,6 +14,7 @@ FunctionCall(
     ExprFunctionCall {
         function: test::foo,
         args: [],
+        coupon_arg: None,
         ty: (),
     },
 )
