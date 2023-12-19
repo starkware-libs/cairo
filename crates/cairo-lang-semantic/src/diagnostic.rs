@@ -638,6 +638,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
             }
+            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
+                "The __coupon__ argument cannot have modifiers.".into()
+            }
         }
     }
 
@@ -947,6 +950,7 @@ pub enum SemanticDiagnosticKind {
         name: SmolStr,
     },
     CouponForExternFunctionNotAllowed,
+    CouponArgumentNoModifiers,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

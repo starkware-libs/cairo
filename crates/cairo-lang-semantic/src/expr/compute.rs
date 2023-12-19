@@ -1894,12 +1894,43 @@ pub fn get_variable_by_name(
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
     function_id: FunctionId,
-    named_args: Vec<NamedArg>,
+    mut named_args: Vec<NamedArg>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx.db.concrete_function_signature(function_id)?;
+
+    // Check if the last item in named_args, has the argument name "__coupon__" and remove it, if
+    // so.
+    let mut coupon_arg: Option<ExprId> = None;
+    if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
+        if name_terminal.text(ctx.db.upcast()) == "__coupon__" {
+            // Check that the argument type is correct.
+            let expected_ty = ctx.db.intern_type(TypeLongId::Coupon(function_id));
+            let arg_typ = arg.ty();
+            let actual_ty = ctx.reduce_ty(arg_typ);
+            if !arg_typ.is_missing(ctx.db)
+                && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
+            {
+                ctx.diagnostics.report_by_ptr(
+                    arg.stable_ptr().untyped(),
+                    WrongArgumentType { expected_ty, actual_ty },
+                );
+            }
+
+            // Check that the argument is not mutable/reference.
+            if *mutability != Mutability::Immutable {
+                ctx.diagnostics
+                    .report_by_ptr(arg.stable_ptr().untyped(), CouponArgumentNoModifiers);
+            }
+
+            coupon_arg = Some(arg.id);
+
+            // Remove the __coupon__ argument from the argument list.
+            named_args.pop();
+        }
+    }
 
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
@@ -1957,8 +1988,13 @@ fn expr_function_call(
         });
     }
 
-    let expr_function_call =
-        ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
+    let expr_function_call = ExprFunctionCall {
+        function: function_id,
+        args,
+        coupon_arg,
+        ty: signature.return_type,
+        stable_ptr,
+    };
     // Check panicable.
     if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call)? {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
