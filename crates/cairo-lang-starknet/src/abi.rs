@@ -148,25 +148,33 @@ pub struct AbiBuilder {
 
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
+
+    /// Accumulated errors.
+    errors: Vec<ABIError>,
 }
 impl AbiBuilder {
     /// Returns the finalized ABI.
-    pub fn finalize(self) -> Contract {
-        self.abi
+    pub fn finalize(self) -> Result<Contract, ABIError> {
+        if let Some(err) = self.errors.into_iter().next() { Err(err) } else { Ok(self.abi) }
+    }
+
+    /// Returns the errors accumulated by the builder.
+    pub fn errors(&self) -> &[ABIError] {
+        &self.errors
     }
 
     /// Runs extra validations on the ABI to for warnings only.
     pub fn extra_validations(
-        self,
+        mut self,
         db: &dyn SemanticGroup,
         submodule_id: SubmoduleId,
-    ) -> Result<Self, ABIError> {
+    ) -> Maybe<Self> {
         let is_account_contract =
             submodule_id.has_attr_with_arg(db, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG)?;
         if is_account_contract {
             for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
                 if !self.entry_point_names.contains(*selector) {
-                    return Err(ABIError::EntryPointMissingForAccountContract {
+                    self.errors.push(ABIError::EntryPointMissingForAccountContract {
                         selector: selector.to_string(),
                     });
                 }
@@ -174,11 +182,11 @@ impl AbiBuilder {
         } else {
             // Attribute must exist on the submdule, otherwise wouldn't have got here.
             if !submodule_id.find_attr(db, CONTRACT_ATTR)?.unwrap().args.is_empty() {
-                return Err(ABIError::IllegalContractAttrArgs);
+                self.errors.push(ABIError::IllegalContractAttrArgs);
             }
             for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
                 if self.entry_point_names.contains(*selector) {
-                    return Err(ABIError::EntryPointSupportedOnlyOnAccountContract {
+                    self.errors.push(ABIError::EntryPointSupportedOnlyOnAccountContract {
                         selector: selector.to_string(),
                     });
                 }
@@ -192,7 +200,7 @@ impl AbiBuilder {
         mut self,
         db: &dyn SemanticGroup,
         submodule_id: SubmoduleId,
-    ) -> Result<Self, ABIError> {
+    ) -> Maybe<Self> {
         let module_id = ModuleId::Submodule(submodule_id);
 
         let mut free_functions = Vec::new();
@@ -220,7 +228,7 @@ impl AbiBuilder {
             let source = Source::Struct(concrete_struct_id);
             if struct_name == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
-                    return Err(ABIError::MultipleStorages(source));
+                    self.errors.push(ABIError::MultipleStorages(source));
                 }
                 storage_type =
                     Some(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(
@@ -229,11 +237,12 @@ impl AbiBuilder {
             }
             // Forbid a struct named Event.
             if struct_name == EVENT_TYPE_NAME {
-                return Err(ABIError::EventMustBeEnum(source));
+                self.errors.push(ABIError::EventMustBeEnum(source));
             }
         }
         let Some(storage_type) = storage_type else {
-            return Err(ABIError::NoStorage);
+            self.errors.push(ABIError::NoStorage);
+            return Ok(self);
         };
 
         // Add impls to ABI.
@@ -243,25 +252,30 @@ impl AbiBuilder {
             // TODO(v3): deprecate the external attribute.
             if impl_def.has_attr(db, EXTERNAL_ATTR)? {
                 if is_of_interface {
-                    self.add_embedded_impl(db, source, impl_def, None)?;
+                    self.add_embedded_impl(db, source, impl_def, None)
+                        .unwrap_or_else(|err| self.errors.push(err));
                 } else {
-                    self.add_non_interface_impl(db, source, impl_def, storage_type)?;
+                    self.add_non_interface_impl(db, source, impl_def, storage_type)
+                        .unwrap_or_else(|err| self.errors.push(err));
                 }
             } else if is_impl_abi_embed(db, impl_def)? {
                 if !is_of_interface {
-                    return Err(ABIError::EmbeddedImplMustBeInterface(source));
+                    self.errors.push(ABIError::EmbeddedImplMustBeInterface(source));
                 }
-                self.add_embedded_impl(db, source, impl_def, None)?;
+                self.add_embedded_impl(db, source, impl_def, None)
+                    .unwrap_or_else(|err| self.errors.push(err));
             } else if is_impl_abi_per_item(db, impl_def)? {
                 if is_of_interface {
-                    return Err(ABIError::ContractInterfaceImplCannotBePerItem(source));
+                    self.errors.push(ABIError::ContractInterfaceImplCannotBePerItem(source));
                 }
-                self.add_per_item_impl(db, impl_def, storage_type)?;
+                self.add_per_item_impl(db, impl_def, storage_type)
+                    .unwrap_or_else(|err| self.errors.push(err));
             }
         }
         for impl_alias in impl_aliases {
             if impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)? {
-                self.add_embedded_impl_alias(db, impl_alias)?;
+                self.add_embedded_impl_alias(db, impl_alias)
+                    .unwrap_or_else(|err| self.errors.push(err));
             }
         }
 
@@ -271,7 +285,8 @@ impl AbiBuilder {
                 db,
                 FunctionWithBodyId::Free(free_function_id),
                 storage_type,
-            )?;
+            )
+            .unwrap_or_else(|err| self.errors.push(err));
         }
 
         // Add events to ABI.
@@ -283,12 +298,13 @@ impl AbiBuilder {
                     db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
                 // Check that the enum has no generic parameters.
                 if !db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
-                    return Err(ABIError::EventWithGenericParams(Source::Enum(concrete_enum_id)));
+                    self.errors
+                        .push(ABIError::EventWithGenericParams(Source::Enum(concrete_enum_id)));
                 }
                 // Get the TypeId of the enum.
                 let ty =
                     db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
-                self.add_event(db, ty)?;
+                self.add_event(db, ty).unwrap_or_else(|err| self.errors.push(err));
             }
         }
         Ok(self)

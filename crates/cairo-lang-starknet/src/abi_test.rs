@@ -7,6 +7,7 @@ use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expec
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::abi::AbiBuilder;
+use crate::plugin::consts::CONTRACT_ATTR;
 use crate::starknet_plugin_suite;
 
 /// Helper function for testing ABI failures.
@@ -25,11 +26,12 @@ pub fn test_abi_failure(
     let submodules = db.module_submodules_ids(module.module_id).unwrap();
     let contract_submodule = submodules
         .iter()
-        .find(|submodule| submodule.has_attr(db, "starknet::contract").unwrap())
+        .find(|submodule| submodule.has_attr(db, CONTRACT_ATTR).unwrap())
         .expect("No starknet::contract found in input code.");
     let abi_error = AbiBuilder::default()
         .add_submodule_contract(db, *contract_submodule)
-        .map(|b| b.finalize())
+        .expect("No basic errors")
+        .finalize()
         .unwrap_err();
 
     let test_error = verify_diagnostics_expectation(args, &diagnostics);
