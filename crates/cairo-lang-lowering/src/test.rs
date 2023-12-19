@@ -32,6 +32,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         call :"call",
         constant :"constant",
+        coupon :"coupon",
         literal :"literal",
         destruct :"destruct",
         enums :"enums",

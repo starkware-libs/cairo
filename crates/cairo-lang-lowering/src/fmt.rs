@@ -213,12 +213,20 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
-        let mut inputs = self.inputs.iter().peekable();
-        while let Some(var) = inputs.next() {
-            var.fmt(f, ctx)?;
-            if inputs.peek().is_some() {
+        let mut first = true;
+        for var in &self.inputs {
+            if !first {
                 write!(f, ", ")?;
             }
+            var.fmt(f, ctx)?;
+            first = false;
+        }
+        if let Some(var) = self.coupon_input {
+            if !first {
+                write!(f, ", ")?;
+            }
+            write!(f, "__coupon__: ")?;
+            var.fmt(f, ctx)?;
         }
         write!(f, ")")
     }

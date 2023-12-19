@@ -11,6 +11,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
+use itertools::chain;
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
@@ -209,7 +210,7 @@ impl Statement {
     pub fn inputs(&self) -> Vec<VarUsage> {
         match &self {
             Statement::Literal(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.inputs.clone(),
+            Statement::Call(stmt) => stmt.all_inputs(),
             Statement::StructConstruct(stmt) => stmt.inputs.clone(),
             Statement::StructDestructure(stmt) => vec![stmt.input],
             Statement::EnumConstruct(stmt) => vec![stmt.input],
@@ -246,10 +247,17 @@ pub struct StatementCall {
     pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VarUsage>,
+    pub coupon_input: Option<VarUsage>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
     pub location: LocationId,
+}
+impl StatementCall {
+    /// Returns all the inputs of the function, including the coupon is exists.
+    pub fn all_inputs(&self) -> Vec<VarUsage> {
+        chain!(&self.inputs, &self.coupon_input).cloned().collect()
+    }
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a

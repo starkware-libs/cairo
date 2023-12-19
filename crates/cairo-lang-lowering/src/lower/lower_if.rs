@@ -147,6 +147,7 @@ pub fn lower_expr_if_eq(
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_a, lowered_b],
+            coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location: ctx

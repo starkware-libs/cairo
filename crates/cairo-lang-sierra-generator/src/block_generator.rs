@@ -329,6 +329,11 @@ fn generate_statement_call_code(
             ),
         ])
     } else {
+        assert!(
+            statement.coupon_input.is_none(),
+            "Extern functions cannot have a __coupon__ argument."
+        );
+
         // Dup variables as needed.
         let mut statements: Vec<pre_sierra::Statement> = vec![];
         let inputs_after_dup = maybe_add_dup_statements(
