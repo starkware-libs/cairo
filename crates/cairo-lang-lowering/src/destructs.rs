@@ -295,6 +295,7 @@ pub fn add_destructs(
                         Statement::Call(StatementCall {
                             function: semantic_function.lowered(db),
                             inputs: vec![VarUsage { var_id, location }],
+                            coupon_input: None,
                             outputs: vec![output_var],
                             location: lowered.variables[var_id].location,
                         }),
@@ -326,6 +327,7 @@ pub fn add_destructs(
                                     .into_iter()
                                     .map(|var_id| VarUsage { var_id, location })
                                     .collect(),
+                                coupon_input: None,
                                 outputs: vec![panic_var, output_var],
                                 location: lowered.variables[panic_var].location,
                             }),
@@ -356,6 +358,7 @@ pub fn add_destructs(
                                         VarUsage { var_id: vars[0], location },
                                         VarUsage { var_id, location },
                                     ],
+                                    coupon_input: None,
                                     outputs: vec![vars[0], output_var],
                                     location: lowered.variables[tuple_var].location,
                                 }),
