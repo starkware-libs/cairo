@@ -538,6 +538,11 @@ warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an 
     #[abi(embed_v0)]
     ^**************^
 
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:31:5
+    #[abi(embed_v0)]
+    ^**************^
+
 //! > ==========================================================================
 
 //! > Test embeddable impl with existing drop impl.
