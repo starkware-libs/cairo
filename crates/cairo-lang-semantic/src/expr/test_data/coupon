@@ -1,4 +1,4 @@
-//! > Test coupon.
+//! > Test coupon type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -174,3 +174,51 @@ error: Trait has no implementation in context: core::traits::Drop::<test::m::bar
  --> lib.cairo:19:5
     use_drop(x);
     ^******^
+
+//! > ==========================================================================
+
+//! > Test coupon_call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+fn bar<S, T>(x: T) {
+}
+
+fn bar2<S, T>(x: T) {
+}
+
+//! > function
+fn foo(x: bar::<u8, u16>::Coupon) {
+    bar(1); // Cannot infer S.
+    bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
+
+    bar2(1, __coupon__: x); // Wrong coupon type.
+    bar(1, mut __coupon__: x); // Wrong mutability.
+    bar(1, ref __coupon__: x); // Wrong mutability.
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::bar2::<?6, ?7>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
+ --> lib.cairo:10:25
+    bar2(1, __coupon__: x); // Wrong coupon type.
+                        ^
+
+error: The __coupon__ argument cannot have modifiers.
+ --> lib.cairo:11:28
+    bar(1, mut __coupon__: x); // Wrong mutability.
+                           ^
+
+error: The __coupon__ argument cannot have modifiers.
+ --> lib.cairo:12:28
+    bar(1, ref __coupon__: x); // Wrong mutability.
+                           ^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:7:5
+    bar(1); // Cannot infer S.
+    ^*^

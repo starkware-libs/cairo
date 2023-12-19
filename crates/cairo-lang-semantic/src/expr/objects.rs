@@ -304,6 +304,7 @@ pub enum ExprFunctionCallArg {
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
+    pub coupon_arg: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
