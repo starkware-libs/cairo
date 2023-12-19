@@ -2064,7 +2064,7 @@
       ],
       [
         70,
-        "function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize>"
+        "function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize>"
       ],
       [
         71,
@@ -2416,7 +2416,7 @@
       ],
       [
         158,
-        "function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>>"
+        "function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>>"
       ],
       [
         159,
@@ -2788,7 +2788,7 @@
       ],
       [
         251,
-        "function_call<user@core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize>"
+        "function_call<user@core::array::SpanFelt252Serde::serialize>"
       ],
       [
         252,
@@ -3122,7 +3122,7 @@
       ],
       [
         11,
-        "core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize"
+        "core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize"
       ],
       [
         12,
@@ -3158,7 +3158,7 @@
       ],
       [
         20,
-        "core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>"
+        "core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>"
       ],
       [
         21,
@@ -3194,7 +3194,7 @@
       ],
       [
         29,
-        "core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize"
+        "core::array::SpanFelt252Serde::serialize"
       ],
       [
         30,
