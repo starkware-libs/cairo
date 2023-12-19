@@ -6,7 +6,7 @@ test_expr_semantics
 //! > expr_code
 consteval_int!(4 + 5)
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 9,
@@ -14,7 +14,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -26,7 +26,7 @@ test_expr_semantics
 //! > expr_code
 consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 47,
@@ -34,7 +34,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -46,7 +46,7 @@ test_expr_semantics
 //! > expr_code
 consteval_int!(255 + 1 - 1)
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 255,
@@ -54,7 +54,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -66,7 +66,7 @@ test_expr_semantics
 //! > expr_code
 array![1, 2, 3]
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -163,7 +163,7 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -175,7 +175,7 @@ test_expr_semantics
 //! > expr_code
 array![]
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -203,7 +203,7 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0
  --> lib.cairo[array_inline_macro]:2:67
             let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
@@ -221,7 +221,7 @@ test_expr_semantics
 //! > expr_code
 array![10, 11, 12].span()
 
-//! > expected
+//! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
         function: core::array::ArrayImpl::<core::felt252>::span,
@@ -333,4 +333,4 @@ FunctionCall(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

@@ -8,7 +8,7 @@ test_expr_semantics
 //! > expr_code
 (1 + 2, (2, 3))
 
-//! > expected
+//! > expected_semantics
 Tuple(
     ExprTuple {
         items: [
@@ -60,4 +60,4 @@ Tuple(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

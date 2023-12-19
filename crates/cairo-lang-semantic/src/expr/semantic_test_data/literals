@@ -6,7 +6,7 @@ test_expr_semantics
 //! > expr_code
 7
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 7,
@@ -14,7 +14,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -26,7 +26,7 @@ test_expr_semantics
 //! > expr_code
 0x123
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 291,
@@ -34,7 +34,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -46,7 +46,7 @@ test_expr_semantics
 //! > expr_code
 12_felt252
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 12,
@@ -54,7 +54,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -66,7 +66,7 @@ test_expr_semantics
 //! > expr_code
 16_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 16,
@@ -74,7 +74,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -86,7 +86,7 @@ test_expr_semantics
 //! > expr_code
 0x16_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 22,
@@ -94,7 +94,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -106,7 +106,7 @@ test_expr_semantics
 //! > expr_code
 'a'
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 97,
@@ -114,7 +114,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -126,7 +126,7 @@ test_expr_semantics
 //! > expr_code
 'B'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 66,
@@ -134,7 +134,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -146,7 +146,7 @@ test_expr_semantics
 //! > expr_code
 'hello world'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 126207244316550804821666916,
@@ -154,7 +154,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -166,7 +166,7 @@ test_expr_semantics
 //! > expr_code
 '\''
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 39,
@@ -174,7 +174,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -186,7 +186,7 @@ test_expr_semantics
 //! > expr_code
 '\x12\x34'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 4660,
@@ -194,7 +194,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -206,7 +206,7 @@ test_expr_semantics
 //! > expr_code
 86_400_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -214,7 +214,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -226,7 +226,7 @@ test_expr_semantics
 //! > expr_code
 8_6_4_0_0_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -234,7 +234,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -246,7 +246,7 @@ test_expr_semantics
 //! > expr_code
 86_400
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -254,7 +254,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -266,7 +266,7 @@ test_expr_semantics
 //! > expr_code
 8_6_4_0_0
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -274,7 +274,7 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -286,7 +286,7 @@ test_expr_semantics
 //! > expr_code
 0x1_f32
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 7986,
@@ -294,4 +294,4 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

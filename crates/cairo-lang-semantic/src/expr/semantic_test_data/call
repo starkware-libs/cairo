@@ -9,7 +9,7 @@ fn foo() {6;}
 //! > expr_code
 foo()
 
-//! > expected
+//! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
         function: test::foo,
@@ -18,4 +18,4 @@ FunctionCall(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

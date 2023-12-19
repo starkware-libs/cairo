@@ -6,7 +6,7 @@ test_expr_semantics
 //! > expr_code
 {6;8;}
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -36,7 +36,7 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -48,7 +48,7 @@ test_expr_semantics
 //! > expr_code
 {6;8;9}
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -85,4 +85,4 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
