@@ -29,7 +29,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
+    CONSTRUCTOR_ATTR, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG, CONTRACT_STATE_NAME,
     EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
     L1_HANDLER_ATTR,
 };
@@ -244,6 +245,29 @@ impl AbiBuilder {
                 let ty =
                     db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
                 builder.add_event(db, ty)?;
+            }
+        }
+        let is_account_contract =
+            submodule_id.has_attr_with_arg(db, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG)?;
+        if is_account_contract {
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if !builder.entry_point_names.contains(*selector) {
+                    return Err(ABIError::EntryPointMissingForAccountContract {
+                        selector: selector.to_string(),
+                    });
+                }
+            }
+        } else {
+            // Attribute must exist on the submdule, otherwise wouldn't have got here.
+            if !submodule_id.find_attr(db, CONTRACT_ATTR)?.unwrap().args.is_empty() {
+                return Err(ABIError::IllegalContractAttrArgs);
+            }
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if builder.entry_point_names.contains(*selector) {
+                    return Err(ABIError::EntryPointSupportedOnlyOnAccountContract {
+                        selector: selector.to_string(),
+                    });
+                }
             }
         }
 
@@ -808,6 +832,12 @@ pub enum ABIError {
     InvalidDuplicatedItem { description: String },
     #[error("Duplicate entry point: '{name}'. This is not currently supported.")]
     DuplicateEntryPointName { name: String },
+    #[error("Only supported argument for #[starknet::contract] is `account` or nothing.")]
+    IllegalContractAttrArgs,
+    #[error("`{selector}` is a reserved entry point names for account contracts only.")]
+    EntryPointSupportedOnlyOnAccountContract { selector: String },
+    #[error("`{selector}` entry point must exist for account contracts.")]
+    EntryPointMissingForAccountContract { selector: String },
 }
 impl ABIError {
     pub fn location(&self, db: &dyn SemanticGroup) -> Option<SyntaxStablePtrId> {
@@ -830,6 +860,9 @@ impl ABIError {
             ABIError::ContractInterfaceImplCannotBePerItem => None,
             ABIError::InvalidDuplicatedItem { .. } => None,
             ABIError::DuplicateEntryPointName { .. } => None,
+            ABIError::IllegalContractAttrArgs => None,
+            ABIError::EntryPointSupportedOnlyOnAccountContract { .. } => None,
+            ABIError::EntryPointMissingForAccountContract { .. } => None,
         }
     }
 }
