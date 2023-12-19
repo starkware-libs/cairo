@@ -1,7 +1,7 @@
 //! > Test match
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 let a: felt252 = 3;
@@ -60,7 +60,7 @@ Match(
 //! > Test match bool
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 let a = true;
@@ -130,7 +130,7 @@ Match(
 //! > Test match_or
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 enum A {
@@ -227,7 +227,7 @@ Match(
 //! > Test match with or pattern with arm variables.
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 struct P {
@@ -449,7 +449,7 @@ Match(
 //! > Test match with or pattern, with missing arm variables.
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: true)
 
 //! > module_code
 struct P {
@@ -694,7 +694,7 @@ error: Missing variable in pattern.
 //! > Test match with or pattern, with incompatible types for arm variables.
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: true)
 
 //! > module_code
 struct P {
@@ -899,7 +899,7 @@ error: Match arms have incompatible types: "core::integer::u8" and "core::intege
 //! > Test match with or pattern, with unused arm variables.
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: true)
 
 //! > module_code
 enum MyEnum {

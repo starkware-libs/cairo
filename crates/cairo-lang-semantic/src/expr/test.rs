@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
@@ -64,7 +65,7 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_expr_semantics(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
     let (test_expr, diagnostics) = setup_test_expr(
@@ -76,10 +77,15 @@ fn test_expr_semantics(
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("expected_semantics".into(), format!("{:#?}", expr.debug(&expr_formatter))),
-        ("expected_diagnostics".into(), diagnostics),
-    ]))
+
+    let error = verify_diagnostics_expectation(args, &diagnostics);
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            ("expected_semantics".into(), format!("{:#?}", expr.debug(&expr_formatter))),
+            ("expected_diagnostics".into(), diagnostics),
+        ]),
+        error,
+    }
 }
 
 #[test]
