@@ -552,7 +552,6 @@ fn foo(a: A) -> felt252 {
   }
 }
 
-
 //! > function_name
 foo
 
