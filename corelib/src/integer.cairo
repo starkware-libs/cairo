@@ -4,6 +4,7 @@ use core::traits::{Into, TryInto, Default, Felt252DictValue};
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use core::array::ArrayTrait;
 use core::array::SpanTrait;
+use core::metaprogramming::TypeEqual;
 
 // TODO(spapini): Add method for const creation from Integer.
 pub trait NumericLiteral<T>;
@@ -1655,103 +1656,20 @@ impl UpcastableI32I128 of Upcastable<i32, i128>;
 impl UpcastableU64U128 of Upcastable<u64, u128>;
 impl UpcastableU64I128 of Upcastable<u64, i128>;
 impl UpcastableI64I128 of Upcastable<i64, i128>;
-// Marks `FromType` as downcastable to `ToType`.
+// Marks a type as an int that is downcastable to other downcastable ints.
 // Do not add user code implementing this trait.
-trait Downcastable<FromType, ToType>;
-impl DowncastableU8I8 of Downcastable<u8, i8>;
-impl DowncastableU8I16 of Downcastable<u8, i16>;
-impl DowncastableU8U16 of Downcastable<u8, u16>;
-impl DowncastableU8I32 of Downcastable<u8, i32>;
-impl DowncastableU8U32 of Downcastable<u8, u32>;
-impl DowncastableU8I64 of Downcastable<u8, i64>;
-impl DowncastableU8U64 of Downcastable<u8, u64>;
-impl DowncastableU8I128 of Downcastable<u8, i128>;
-impl DowncastableU8U128 of Downcastable<u8, u128>;
-impl DowncastableI8U8 of Downcastable<i8, u8>;
-impl DowncastableI8I16 of Downcastable<i8, i16>;
-impl DowncastableI8U16 of Downcastable<i8, u16>;
-impl DowncastableI8I32 of Downcastable<i8, i32>;
-impl DowncastableI8U32 of Downcastable<i8, u32>;
-impl DowncastableI8I64 of Downcastable<i8, i64>;
-impl DowncastableI8U64 of Downcastable<i8, u64>;
-impl DowncastableI8I128 of Downcastable<i8, i128>;
-impl DowncastableI8U128 of Downcastable<i8, u128>;
+trait DowncastableInt<T>;
+impl DowncastableU8 of DowncastableInt<u8>;
+impl DowncastableI8 of DowncastableInt<i8>;
+impl DowncastableU16 of DowncastableInt<u16>;
+impl DowncastableI16 of DowncastableInt<i16>;
+impl DowncastableU32 of DowncastableInt<u32>;
+impl DowncastableI32 of DowncastableInt<i32>;
+impl DowncastableU64 of DowncastableInt<u64>;
+impl DowncastableI64 of DowncastableInt<i64>;
+impl DowncastableU128 of DowncastableInt<u128>;
+impl DowncastableI128 of DowncastableInt<i128>;
 
-impl DowncastableU16I8 of Downcastable<u16, i8>;
-impl DowncastableU16U8 of Downcastable<u16, u8>;
-impl DowncastableU16I16 of Downcastable<u16, i16>;
-impl DowncastableU16I32 of Downcastable<u16, i32>;
-impl DowncastableU16U32 of Downcastable<u16, u32>;
-impl DowncastableU16I64 of Downcastable<u16, i64>;
-impl DowncastableU16U64 of Downcastable<u16, u64>;
-impl DowncastableU16I128 of Downcastable<u16, i128>;
-impl DowncastableU16U128 of Downcastable<u16, u128>;
-impl DowncastableI16I8 of Downcastable<i16, i8>;
-impl DowncastableI16U8 of Downcastable<i16, u8>;
-impl DowncastableI16U16 of Downcastable<i16, u16>;
-impl DowncastableI16I32 of Downcastable<i16, i32>;
-impl DowncastableI16U32 of Downcastable<i16, u32>;
-impl DowncastableI16I64 of Downcastable<i16, i64>;
-impl DowncastableI16U64 of Downcastable<i16, u64>;
-impl DowncastableI16I128 of Downcastable<i16, i128>;
-impl DowncastableI16U128 of Downcastable<i16, u128>;
-
-impl DowncastableU32I8 of Downcastable<u32, i8>;
-impl DowncastableU32U8 of Downcastable<u32, u8>;
-impl DowncastableU32I16 of Downcastable<u32, i16>;
-impl DowncastableU32U16 of Downcastable<u32, u16>;
-impl DowncastableU32I32 of Downcastable<u32, i32>;
-impl DowncastableU32I64 of Downcastable<u32, i64>;
-impl DowncastableU32U64 of Downcastable<u32, u64>;
-impl DowncastableU32I128 of Downcastable<u32, i128>;
-impl DowncastableU32U128 of Downcastable<u32, u128>;
-impl DowncastableI32I8 of Downcastable<i32, i8>;
-impl DowncastableI32U8 of Downcastable<i32, u8>;
-impl DowncastableI32I16 of Downcastable<i32, i16>;
-impl DowncastableI32U16 of Downcastable<i32, u16>;
-impl DowncastableI32U32 of Downcastable<i32, u32>;
-impl DowncastableI32I64 of Downcastable<i32, i64>;
-impl DowncastableI32U64 of Downcastable<i32, u64>;
-impl DowncastableI32I128 of Downcastable<i32, i128>;
-impl DowncastableI32U128 of Downcastable<i32, u128>;
-
-impl DowncastableU64I8 of Downcastable<u64, i8>;
-impl DowncastableU64U8 of Downcastable<u64, u8>;
-impl DowncastableU64I16 of Downcastable<u64, i16>;
-impl DowncastableU64U16 of Downcastable<u64, u16>;
-impl DowncastableU64I32 of Downcastable<u64, i32>;
-impl DowncastableU64U32 of Downcastable<u64, u32>;
-impl DowncastableU64I64 of Downcastable<u64, i64>;
-impl DowncastableU64I128 of Downcastable<u64, i128>;
-impl DowncastableU64U128 of Downcastable<u64, u128>;
-impl DowncastableI64I8 of Downcastable<i64, i8>;
-impl DowncastableI64U8 of Downcastable<i64, u8>;
-impl DowncastableI64I16 of Downcastable<i64, i16>;
-impl DowncastableI64U16 of Downcastable<i64, u16>;
-impl DowncastableI64I32 of Downcastable<i64, i32>;
-impl DowncastableI64U32 of Downcastable<i64, u32>;
-impl DowncastableI64U64 of Downcastable<i64, u64>;
-impl DowncastableI64I128 of Downcastable<i64, i128>;
-impl DowncastableI64U128 of Downcastable<i64, u128>;
-
-impl DowncastableU128I8 of Downcastable<u128, i8>;
-impl DowncastableU128U8 of Downcastable<u128, u8>;
-impl DowncastableU128I16 of Downcastable<u128, i16>;
-impl DowncastableU128U16 of Downcastable<u128, u16>;
-impl DowncastableU128I32 of Downcastable<u128, i32>;
-impl DowncastableU128U32 of Downcastable<u128, u32>;
-impl DowncastableU128I64 of Downcastable<u128, i64>;
-impl DowncastableU128U64 of Downcastable<u128, u64>;
-impl DowncastableU128I128 of Downcastable<u128, i128>;
-impl DowncastableI128I8 of Downcastable<i128, i8>;
-impl DowncastableI128U8 of Downcastable<i128, u8>;
-impl DowncastableI128I16 of Downcastable<i128, i16>;
-impl DowncastableI128U16 of Downcastable<i128, u16>;
-impl DowncastableI128I32 of Downcastable<i128, i32>;
-impl DowncastableI128U32 of Downcastable<i128, u32>;
-impl DowncastableI128I64 of Downcastable<i128, i64>;
-impl DowncastableI128U64 of Downcastable<i128, u64>;
-impl DowncastableI128U128 of Downcastable<i128, u128>;
 
 /// Default values
 impl U8Default of Default<u8> {
@@ -1839,7 +1757,7 @@ impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     }
 }
 
-impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
+impl DowncastableIntTryInto<From, To, +DowncastableInt<From>, +DowncastableInt<To>, -TypeEqual<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }

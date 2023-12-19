@@ -148,11 +148,24 @@ impl Solver {
                         continue;
                     };
 
+                    let concrete_trait_id = rewriter.rewrite(neg_impl)?.concrete_trait?;
+                    for garg in concrete_trait_id.generic_args(db) {
+                        let GenericArgumentId::Type(ty) = garg else {
+                            continue;
+                        };
+
+                        if let TypeLongId::Var(_) = db.lookup_intern_type(ty) {
+                            // If we have any type variables in the generic arguments, then we
+                            // cannot tell if the negative impl is valid or not.
+                            return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
+                                concrete_trait_id,
+                            }));
+                        }
+                    }
+
                     if !matches!(
-                        inference.trait_solution_set(
-                            rewriter.rewrite(neg_impl)?.concrete_trait?,
-                            self.lookup_context.clone(),
-                        )?,
+                        inference
+                            .trait_solution_set(concrete_trait_id, self.lookup_context.clone())?,
                         SolutionSet::None
                     ) {
                         // If a negative impl has an impl, then we should skip it.
