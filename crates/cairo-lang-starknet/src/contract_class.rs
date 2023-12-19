@@ -224,8 +224,7 @@ fn compile_contract_with_prepared_and_checked_db(
         contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
         entry_points_by_type,
         abi: Some(
-            AbiBuilder::default()
-                .add_submodule_contract(db, contract.submodule_id)
+            AbiBuilder::from_submodule(db, contract.submodule_id, Default::default())
                 .ok()
                 .with_context(|| "Unexpected error while generating ABI.")?
                 .finalize()
