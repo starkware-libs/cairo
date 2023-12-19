@@ -224,7 +224,7 @@ Match(
 
 //! > ==========================================================================
 
-//! > Test match_or_variables
+//! > Test match with or pattern with arm variables.
 
 //! > test_runner_name
 test_expr_semantics
@@ -236,8 +236,8 @@ struct P {
     z: u8
 }
 enum MyEnum<T> {
-    A: felt252,
-    B: (felt252, felt252),
+    A: u8,
+    B: (u8, felt252),
     C: (T, u8, u8),
     D: P,
 }
@@ -264,7 +264,7 @@ Match(
                         variant: ConcreteVariant {
                             concrete_enum_id: test::MyEnum::<core::integer::u8>,
                             id: VariantId(test::A),
-                            ty: core::felt252,
+                            ty: core::integer::u8,
                             idx: 0,
                         },
                         inner_pattern: Some(
@@ -285,7 +285,7 @@ Match(
                         variant: ConcreteVariant {
                             concrete_enum_id: test::MyEnum::<core::integer::u8>,
                             id: VariantId(test::B),
-                            ty: (core::felt252, core::felt252),
+                            ty: (core::integer::u8, core::felt252),
                             idx: 1,
                         },
                         inner_pattern: Some(
@@ -301,7 +301,7 @@ Match(
                                             },
                                         ),
                                     ],
-                                    ty: (core::felt252, core::felt252),
+                                    ty: (core::integer::u8, core::felt252),
                                 },
                             ),
                         ),
@@ -438,24 +438,15 @@ Match(
                 ),
             },
         ],
-        ty: core::felt252,
+        ty: core::integer::u8,
     },
 )
 
 //! > expected_diagnostics
-error: Match arms have incompatible types: "core::felt252" and "?2"
- --> lib.cairo:15:60
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
-                                                           ^***^
-
-error: Match arms have incompatible types: "core::felt252" and "?3"
- --> lib.cairo:15:60
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
-                                                           ^***^
 
 //! > ==========================================================================
 
-//! > Test match_or_missing_variables
+//! > Test match with or pattern, with missing arm variables.
 
 //! > test_runner_name
 test_expr_semantics
@@ -478,7 +469,7 @@ let a: MyEnum<u8> = MyEnum::A(9);
 
 //! > expr_code
 match a {
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
 }
 
@@ -528,8 +519,10 @@ Match(
                                         Variable(
                                             t,
                                         ),
-                                        Variable(
-                                            y,
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::felt252,
+                                            },
                                         ),
                                     ],
                                     ty: (core::felt252, core::felt252),
@@ -678,32 +671,27 @@ Match(
 //! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:14:45
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                                             ^
 
 error: Identifier not found.
  --> lib.cairo:14:41
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                                         ^
-
-warning: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:14:34
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
-                                 ^
 
 error: Missing variable in pattern.
  --> lib.cairo:14:5
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
     ^**********^
 
 error: Missing variable in pattern.
  --> lib.cairo:14:20
-    MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
+    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                    ^***************^
 
 //! > ==========================================================================
 
-//! > Test match_or_wrong_type
+//! > Test match with or pattern, with incompatible types for arm variables.
 
 //! > test_runner_name
 test_expr_semantics
@@ -726,8 +714,8 @@ let a: MyEnum<u32> = MyEnum::A(9);
 
 //! > expr_code
 match a {
-    MyEnum::A(x) | MyEnum::B((x, _)) => x.into(),
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t.into(),
+    MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
 }
 
 //! > expected_semantics
@@ -754,18 +742,8 @@ Match(
                         ty: test::MyEnum::<core::integer::u32>,
                     },
                 ),
-                expression: FunctionCall(
-                    ExprFunctionCall {
-                        function: core::integer::UpcastableInto::<core::integer::u8, core::integer::u32, core::integer::UpcastableU8U32>::into,
-                        args: [
-                            Value(
-                                Var(
-                                    LocalVarId(test::x),
-                                ),
-                            ),
-                        ],
-                        ty: core::integer::u32,
-                    },
+                expression: Var(
+                    LocalVarId(test::x),
                 ),
             },
             MatchArm {
@@ -797,18 +775,8 @@ Match(
                         ty: test::MyEnum::<core::integer::u32>,
                     },
                 ),
-                expression: FunctionCall(
-                    ExprFunctionCall {
-                        function: core::integer::UpcastableInto::<core::integer::u8, core::integer::u32, core::integer::UpcastableU8U32>::into,
-                        args: [
-                            Value(
-                                Var(
-                                    LocalVarId(test::x),
-                                ),
-                            ),
-                        ],
-                        ty: core::integer::u32,
-                    },
+                expression: Var(
+                    LocalVarId(test::x),
                 ),
             },
             MatchArm {
@@ -832,8 +800,10 @@ Match(
                                                 ty: core::integer::u8,
                                             },
                                         ),
-                                        Variable(
-                                            t,
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::integer::u8,
+                                            },
                                         ),
                                     ],
                                     ty: (core::integer::u32, core::integer::u8, core::integer::u8),
@@ -843,33 +813,8 @@ Match(
                         ty: test::MyEnum::<core::integer::u32>,
                     },
                 ),
-                expression: FunctionCall(
-                    ExprFunctionCall {
-                        function: core::integer::U32Add::add,
-                        args: [
-                            Value(
-                                Var(
-                                    LocalVarId(test::x),
-                                ),
-                            ),
-                            Value(
-                                FunctionCall(
-                                    ExprFunctionCall {
-                                        function: core::integer::UpcastableInto::<core::integer::u8, core::integer::u32, core::integer::UpcastableU8U32>::into,
-                                        args: [
-                                            Value(
-                                                Var(
-                                                    LocalVarId(test::t),
-                                                ),
-                                            ),
-                                        ],
-                                        ty: core::integer::u32,
-                                    },
-                                ),
-                            ),
-                        ],
-                        ty: core::integer::u32,
-                    },
+                expression: Var(
+                    LocalVarId(test::x),
                 ),
             },
             MatchArm {
@@ -914,8 +859,10 @@ Match(
                                                 ty: core::integer::u8,
                                                 visibility: Private,
                                             },
-                                            Variable(
-                                                t,
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
                                             ),
                                         ),
                                     ],
@@ -927,47 +874,126 @@ Match(
                         ty: test::MyEnum::<core::integer::u32>,
                     },
                 ),
-                expression: FunctionCall(
-                    ExprFunctionCall {
-                        function: core::integer::U8Add::add,
-                        args: [
-                            Value(
-                                Var(
-                                    LocalVarId(test::x),
-                                ),
-                            ),
-                            Value(
-                                FunctionCall(
-                                    ExprFunctionCall {
-                                        function: core::traits::TIntoT::<core::integer::u8>::into,
-                                        args: [
-                                            Value(
-                                                Var(
-                                                    LocalVarId(test::t),
-                                                ),
-                                            ),
-                                        ],
-                                        ty: core::integer::u8,
-                                    },
-                                ),
-                            ),
-                        ],
-                        ty: core::integer::u8,
-                    },
+                expression: Var(
+                    LocalVarId(test::x),
                 ),
             },
         ],
-        ty: core::integer::u32,
+        ty: core::integer::u8,
     },
 )
 
 //! > expected_diagnostics
 error: Expected type "core::integer::u32", found: "core::integer::u8".
  --> lib.cairo:15:40
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t.into(),
+    MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
                                        ^
 
-error: Match arms have incompatible types: "?3" and "?11"
+error: Match arms have incompatible types: "core::integer::u8" and "core::integer::u32"
  --> lib.cairo:15:60
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t.into(),
-                                                           ^**********^
+    MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
+                                                           ^
+
+//! > ==========================================================================
+
+//! > Test match with or pattern, with unused arm variables.
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+enum MyEnum {
+    A: u8,
+    B: (u8, u8),
+}
+
+//! > function_body
+let a: MyEnum = MyEnum::A(9);
+
+//! > expr_code
+match a {
+    MyEnum::A(x) | MyEnum::B((x, _)) => 1,
+}
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum,
+                            id: VariantId(test::A),
+                            ty: core::integer::u8,
+                            idx: 0,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+                expression: Literal(
+                    ExprLiteral {
+                        value: 1,
+                        ty: core::felt252,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum,
+                            id: VariantId(test::B),
+                            ty: (core::integer::u8, core::integer::u8),
+                            idx: 1,
+                        },
+                        inner_pattern: Some(
+                            Tuple(
+                                PatternTuple {
+                                    field_patterns: [
+                                        Variable(
+                                            x,
+                                        ),
+                                        Otherwise(
+                                            PatternOtherwise {
+                                                ty: core::integer::u8,
+                                            },
+                                        ),
+                                    ],
+                                    ty: (core::integer::u8, core::integer::u8),
+                                },
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+                expression: Literal(
+                    ExprLiteral {
+                        value: 1,
+                        ty: core::felt252,
+                    },
+                ),
+            },
+        ],
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:7:15
+    MyEnum::A(x) | MyEnum::B((x, _)) => 1,
+              ^
+
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:7:31
+    MyEnum::A(x) | MyEnum::B((x, _)) => 1,
+                              ^
