@@ -23,8 +23,8 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
-    PrivRawFileContentQuery,
+    get_originating_location, init_dev_corelib, AsFilesGroupMut, CrateConfiguration, CrateSettings,
+    FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
@@ -857,11 +857,11 @@ impl LanguageServer for Backend {
             let identifier =
                 ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
             let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
-            let found_file = stable_ptr.file_id(syntax_db);
-            let found_uri = get_uri(db, found_file);
-
             let node = stable_ptr.lookup(syntax_db);
+            let found_file = stable_ptr.file_id(syntax_db);
             let span = node.span_without_trivia(syntax_db);
+            let (found_file, span) = get_originating_location(db.upcast(), found_file, span);
+            let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
             let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
