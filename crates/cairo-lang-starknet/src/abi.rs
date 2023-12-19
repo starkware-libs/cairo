@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
-    StructId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
@@ -96,11 +96,16 @@ impl Contract {
     /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
     /// specifies whether duplication is OK or not.
     /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
-    fn insert_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+    fn insert_item(&mut self, item: Item, prevent_dups: Option<Source>) -> Result<(), ABIError> {
         let item_description = item.description();
         let already_existed = !self.items.insert(item);
-        if already_existed && prevent_dups {
-            return Err(ABIError::InvalidDuplicatedItem { description: item_description });
+        if already_existed {
+            if let Some(source) = prevent_dups {
+                return Err(ABIError::InvalidDuplicatedItem {
+                    description: item_description,
+                    source_ptr: source,
+                });
+            }
         }
 
         Ok(())
@@ -126,7 +131,7 @@ enum EventInfo {
 
 #[derive(Default)]
 pub struct AbiBuilder {
-    // The constructed ABI.
+    /// The constructed ABI.
     abi: Contract,
 
     /// List of type that were included abi.
@@ -210,20 +215,21 @@ impl AbiBuilder {
         let mut storage_type = None;
         for struct_id in structs {
             let struct_name = struct_id.name(db.upcast());
+            let concrete_struct_id =
+                db.intern_concrete_struct(ConcreteStructLongId { struct_id, generic_args: vec![] });
+            let source = Source::Struct(concrete_struct_id);
             if struct_name == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
-                    return Err(ABIError::MultipleStorages);
+                    return Err(ABIError::MultipleStorages(source));
                 }
-                storage_type = Some(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(
-                    db.intern_concrete_struct(ConcreteStructLongId {
-                        struct_id,
-                        generic_args: vec![],
-                    }),
-                ))));
+                storage_type =
+                    Some(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(
+                        concrete_struct_id,
+                    ))));
             }
             // Forbid a struct named Event.
             if struct_name == EVENT_TYPE_NAME {
-                return Err(ABIError::EventMustBeEnum(struct_id));
+                return Err(ABIError::EventMustBeEnum(source));
             }
         }
         let Some(storage_type) = storage_type else {
@@ -232,22 +238,23 @@ impl AbiBuilder {
 
         // Add impls to ABI.
         for impl_def in impl_defs {
+            let source = Source::Impl(impl_def);
             let is_of_interface = db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)?;
             // TODO(v3): deprecate the external attribute.
             if impl_def.has_attr(db, EXTERNAL_ATTR)? {
                 if is_of_interface {
-                    self.add_embedded_impl(db, impl_def, None)?;
+                    self.add_embedded_impl(db, source, impl_def, None)?;
                 } else {
-                    self.add_non_interface_impl(db, impl_def, storage_type)?;
+                    self.add_non_interface_impl(db, source, impl_def, storage_type)?;
                 }
             } else if is_impl_abi_embed(db, impl_def)? {
                 if !is_of_interface {
-                    return Err(ABIError::EmbeddedImplMustBeInterface);
+                    return Err(ABIError::EmbeddedImplMustBeInterface(source));
                 }
-                self.add_embedded_impl(db, impl_def, None)?;
+                self.add_embedded_impl(db, source, impl_def, None)?;
             } else if is_impl_abi_per_item(db, impl_def)? {
                 if is_of_interface {
-                    return Err(ABIError::ContractInterfaceImplCannotBePerItem);
+                    return Err(ABIError::ContractInterfaceImplCannotBePerItem(source));
                 }
                 self.add_per_item_impl(db, impl_def, storage_type)?;
             }
@@ -271,13 +278,13 @@ impl AbiBuilder {
         for enum_id in enums {
             let enm_name = enum_id.name(db.upcast());
             if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(db.upcast(), EVENT_ATTR)? {
-                // Check that the enum has no generic parameters.
-                if !db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
-                    return Err(ABIError::EventWithGenericParams);
-                }
                 // Get the ConcreteEnumId from the EnumId.
                 let concrete_enum_id =
                     db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
+                // Check that the enum has no generic parameters.
+                if !db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
+                    return Err(ABIError::EventWithGenericParams(Source::Enum(concrete_enum_id)));
+                }
                 // Get the TypeId of the enum.
                 let ty =
                     db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
@@ -288,23 +295,28 @@ impl AbiBuilder {
     }
 
     /// Adds an interface to the ABI.
-    fn add_interface(&mut self, db: &dyn SemanticGroup, trait_id: TraitId) -> Result<(), ABIError> {
+    fn add_interface(
+        &mut self,
+        db: &dyn SemanticGroup,
+        source: Source,
+        trait_id: TraitId,
+    ) -> Result<(), ABIError> {
         // Get storage type
         let generic_params = db.trait_generic_params(trait_id)?;
         let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
-            return Err(ABIError::ExpectedOneGenericParam);
+            return Err(ABIError::ExpectedOneGenericParam(source));
         };
         let storage_type = db.intern_type(TypeLongId::GenericParameter(storage_type.id));
 
         let interface_path = trait_id.full_path(db.upcast());
         let mut items = Vec::new();
         for function in db.trait_functions(trait_id).unwrap_or_default().values() {
-            self.add_entry_point_name(function.name(db.upcast()).into())?;
+            self.add_entry_point_name(function.name(db.upcast()).into(), source)?;
             items.push(self.trait_function_as_abi(db, *function, storage_type)?);
         }
 
         let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
-        self.add_abi_item(interface_item, true)?;
+        self.add_abi_item(interface_item, true, source)?;
 
         Ok(())
     }
@@ -314,13 +326,14 @@ impl AbiBuilder {
     fn add_non_interface_impl(
         &mut self,
         db: &dyn SemanticGroup,
+        source: Source,
         impl_def_id: ImplDefId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
         let trait_id = db.impl_def_trait(impl_def_id)?;
         for function in db.trait_functions(trait_id).unwrap_or_default().values() {
             let function_abi = self.trait_function_as_abi(db, *function, storage_type)?;
-            self.add_abi_item(function_abi, true)?;
+            self.add_abi_item(function_abi, true, source)?;
         }
 
         Ok(())
@@ -331,6 +344,7 @@ impl AbiBuilder {
     fn add_embedded_impl(
         &mut self,
         db: &dyn SemanticGroup,
+        source: Source,
         impl_def_id: ImplDefId,
         impl_alias_name: Option<String>,
     ) -> Result<(), ABIError> {
@@ -343,8 +357,8 @@ impl AbiBuilder {
 
         let abi_name = impl_alias_name.unwrap_or(impl_name.into());
         let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
-        self.add_abi_item(impl_item, true)?;
-        self.add_interface(db, trait_id)?;
+        self.add_abi_item(impl_item, true, source)?;
+        self.add_interface(db, source, trait_id)?;
 
         Ok(())
     }
@@ -372,20 +386,21 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         impl_alias_id: ImplAliasId,
     ) -> Result<(), ABIError> {
+        let source = Source::ImplAlias(impl_alias_id);
         let impl_def = db.impl_alias_impl_def(impl_alias_id)?;
 
         // Verify the impl definition has #[starknet::embeddable].
         if !impl_def.has_attr(db, EMBEDDABLE_ATTR)? {
-            return Err(ABIError::EmbeddedImplNotEmbeddable);
+            return Err(ABIError::EmbeddedImplNotEmbeddable(source));
         }
 
         // Verify the trait is marked as #[starknet::interface].
         if !db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)? {
-            return Err(ABIError::EmbeddedImplMustBeInterface);
+            return Err(ABIError::EmbeddedImplMustBeInterface(source));
         }
 
         // Add the impl to the ABI.
-        self.add_embedded_impl(db, impl_def, Some(impl_alias_id.name(db.upcast()).into()))?;
+        self.add_embedded_impl(db, source, impl_def, Some(impl_alias_id.name(db.upcast()).into()))?;
 
         Ok(())
     }
@@ -418,7 +433,7 @@ impl AbiBuilder {
         let signature = db.function_with_body_signature(function_with_body_id)?;
 
         let function = self.function_as_abi(db, &name, signature, storage_type)?;
-        self.add_abi_item(function, true)?;
+        self.add_abi_item(function, true, Source::Function(function_with_body_id))?;
 
         Ok(())
     }
@@ -430,8 +445,9 @@ impl AbiBuilder {
         function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
+        let source = Source::Function(function_with_body_id);
         if self.ctor.is_some() {
-            return Err(ABIError::MultipleConstructors);
+            return Err(ABIError::MultipleConstructors(source));
         }
         self.ctor = Some(function_with_body_id);
         let name = function_with_body_id.name(db.upcast()).into();
@@ -444,7 +460,7 @@ impl AbiBuilder {
         }
 
         let constructor_item = Item::Constructor(Constructor { name, inputs });
-        self.add_abi_item(constructor_item, true)?;
+        self.add_abi_item(constructor_item, true, source)?;
 
         Ok(())
     }
@@ -466,7 +482,7 @@ impl AbiBuilder {
 
         let l1_handler_item =
             Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability });
-        self.add_abi_item(l1_handler_item, true)?;
+        self.add_abi_item(l1_handler_item, true, Source::Function(function_with_body_id))?;
 
         Ok(())
     }
@@ -556,7 +572,9 @@ impl AbiBuilder {
 
         let concrete = try_extract_matches!(db.lookup_intern_type(type_id), TypeLongId::Concrete)
             .ok_or(ABIError::UnexpectedType)?;
-        let event_kind = match fetch_event_data(db, type_id).ok_or(ABIError::EventNotDerived)? {
+        let (event_kind, source) = match fetch_event_data(db, type_id)
+            .ok_or(ABIError::EventNotDerived)?
+        {
             EventData::Struct { members } => {
                 let ConcreteTypeId::Struct(concrete_struct_id) = concrete else {
                     unreachable!();
@@ -571,7 +589,7 @@ impl AbiBuilder {
                     })
                     .collect::<Result<_, ABIError>>()?;
                 self.event_info.insert(type_id, EventInfo::Struct);
-                EventKind::Struct { members: event_fields }
+                (EventKind::Struct { members: event_fields }, Source::Struct(concrete_struct_id))
             }
             EventData::Enum { variants } => {
                 let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
@@ -625,11 +643,11 @@ impl AbiBuilder {
                     })
                     .collect::<Result<_, ABIError>>()?;
                 self.event_info.insert(type_id, EventInfo::Enum(selectors));
-                EventKind::Enum { variants: event_fields }
+                (EventKind::Enum { variants: event_fields }, Source::Enum(concrete_enum_id))
             }
         };
         let event_item = Item::Event(Event { name: type_id.format(db), kind: event_kind });
-        self.add_abi_item(event_item, true)?;
+        self.add_abi_item(event_item, true, source)?;
 
         Ok(())
     }
@@ -689,12 +707,12 @@ impl AbiBuilder {
             ConcreteTypeId::Struct(id) => {
                 let members = self.add_and_get_struct_members(db, id)?;
                 let struct_item = Item::Struct(Struct { name: concrete.format(db), members });
-                self.add_abi_item(struct_item, true)?;
+                self.add_abi_item(struct_item, true, Source::Struct(id))?;
             }
             ConcreteTypeId::Enum(id) => {
                 let variants = self.add_and_get_enum_variants(db, id)?;
                 let enum_item = Item::Enum(Enum { name: concrete.format(db), variants });
-                self.add_abi_item(enum_item, true)?;
+                self.add_abi_item(enum_item, true, Source::Enum(id))?;
             }
             ConcreteTypeId::Extern(_) => {}
         }
@@ -737,23 +755,28 @@ impl AbiBuilder {
 
     /// Adds an item to the ABI.
     /// Returns OK on success, or an ABIError on failure.
-    fn add_abi_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+    fn add_abi_item(
+        &mut self,
+        item: Item,
+        prevent_dups: bool,
+        source: Source,
+    ) -> Result<(), ABIError> {
         if let Some(name) = match &item {
             Item::Function(item) => Some(item.name.to_string()),
             Item::Constructor(item) => Some(item.name.to_string()),
             Item::L1Handler(item) => Some(item.name.to_string()),
             _ => None,
         } {
-            self.add_entry_point_name(name)?;
+            self.add_entry_point_name(name, source)?;
         }
 
-        self.abi.insert_item(item, prevent_dups)
+        self.abi.insert_item(item, prevent_dups.then_some(source))
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
-    fn add_entry_point_name(&mut self, name: String) -> Result<(), ABIError> {
+    fn add_entry_point_name(&mut self, name: String, source: Source) -> Result<(), ABIError> {
         if !self.entry_point_names.insert(name.clone()) {
-            return Err(ABIError::DuplicateEntryPointName { name });
+            return Err(ABIError::DuplicateEntryPointName { name, source_ptr: source });
         }
         Ok(())
     }
@@ -807,44 +830,44 @@ pub enum ABIError {
     #[error("Semantic error")]
     SemanticError,
     #[error("Event must be an enum.")]
-    EventMustBeEnum(StructId),
+    EventMustBeEnum(Source),
     #[error("`starknet::Event` variant marked with `#[flat]` must be an enum.")]
     EventFlatVariantMustBeEnum(ast::Attribute),
     #[error("Event must have no generic parameters.")]
-    EventWithGenericParams,
+    EventWithGenericParams(Source),
     #[error("Event type must derive `starknet::Event`.")]
     EventNotDerived,
     #[error("Event `{event}` has duplicate selector `{selector}`.")]
     EventSelectorDuplication { event: String, selector: String },
     #[error("Interfaces must have exactly one generic parameter.")]
-    ExpectedOneGenericParam,
+    ExpectedOneGenericParam(Source),
     #[error("Contracts must have only one constructor.")]
-    MultipleConstructors,
+    MultipleConstructors(Source),
     #[error("Contracts must have a Storage struct.")]
     NoStorage,
     #[error("Contracts must have only one Storage struct.")]
-    MultipleStorages,
+    MultipleStorages(Source),
     #[error("Got unexpected type.")]
     UnexpectedType,
     #[error("Entrypoints must have a self first param.")]
     EntrypointMustHaveSelf,
     #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
-    EmbeddedImplMustBeInterface,
+    EmbeddedImplMustBeInterface(Source),
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
-    EmbeddedImplNotEmbeddable,
+    EmbeddedImplNotEmbeddable(Source),
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
          #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
          non-interface trait."
     )]
-    ContractInterfaceImplCannotBePerItem,
+    ContractInterfaceImplCannotBePerItem(Source),
     #[error(
         "Invalid duplicated item: {description} is used twice in the same contract. This is not \
          supported."
     )]
-    InvalidDuplicatedItem { description: String },
+    InvalidDuplicatedItem { description: String, source_ptr: Source },
     #[error("Duplicate entry point: '{name}'. This is not currently supported.")]
-    DuplicateEntryPointName { name: String },
+    DuplicateEntryPointName { name: String, source_ptr: Source },
     #[error("Only supported argument for #[starknet::contract] is `account` or nothing.")]
     IllegalContractAttrArgs,
     #[error("`{selector}` is a reserved entry point names for account contracts only.")]
@@ -857,22 +880,24 @@ impl ABIError {
         // TODO(orizi): Add more error locations.
         match self {
             ABIError::SemanticError => None,
-            ABIError::EventMustBeEnum(id) => Some(id.stable_ptr(db.upcast()).untyped()),
             ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr().untyped()),
-            ABIError::EventWithGenericParams => None,
             ABIError::EventNotDerived => None,
             ABIError::EventSelectorDuplication { .. } => None,
-            ABIError::ExpectedOneGenericParam => None,
-            ABIError::MultipleConstructors => None,
             ABIError::NoStorage => None,
-            ABIError::MultipleStorages => None,
             ABIError::UnexpectedType => None,
             ABIError::EntrypointMustHaveSelf => None,
-            ABIError::EmbeddedImplMustBeInterface => None,
-            ABIError::EmbeddedImplNotEmbeddable => None,
-            ABIError::ContractInterfaceImplCannotBePerItem => None,
-            ABIError::InvalidDuplicatedItem { .. } => None,
-            ABIError::DuplicateEntryPointName { .. } => None,
+            ABIError::EventMustBeEnum(source)
+            | ABIError::EventWithGenericParams(source)
+            | ABIError::ExpectedOneGenericParam(source)
+            | ABIError::MultipleConstructors(source)
+            | ABIError::MultipleStorages(source)
+            | ABIError::EmbeddedImplMustBeInterface(source)
+            | ABIError::EmbeddedImplNotEmbeddable(source)
+            | ABIError::ContractInterfaceImplCannotBePerItem(source)
+            | ABIError::InvalidDuplicatedItem { source_ptr: source, .. }
+            | ABIError::DuplicateEntryPointName { source_ptr: source, .. } => {
+                Some(source.location(db))
+            }
             ABIError::IllegalContractAttrArgs => None,
             ABIError::EntryPointSupportedOnlyOnAccountContract { .. } => None,
             ABIError::EntryPointMissingForAccountContract { .. } => None,
@@ -882,6 +907,29 @@ impl ABIError {
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {
         ABIError::SemanticError
+    }
+}
+
+/// The source of an ABI item, used for error reporting.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Source {
+    Function(FunctionWithBodyId),
+    Impl(ImplDefId),
+    ImplAlias(ImplAliasId),
+    Struct(cairo_lang_semantic::ConcreteStructId),
+    Enum(cairo_lang_semantic::ConcreteEnumId),
+    Trait(TraitId),
+}
+impl Source {
+    fn location(&self, db: &dyn SemanticGroup) -> SyntaxStablePtrId {
+        match self {
+            Source::Function(id) => id.untyped_stable_ptr(db.upcast()),
+            Source::Impl(id) => id.untyped_stable_ptr(db.upcast()),
+            Source::ImplAlias(id) => id.untyped_stable_ptr(db.upcast()),
+            Source::Struct(id) => id.struct_id(db).untyped_stable_ptr(db.upcast()),
+            Source::Enum(id) => id.enum_id(db).untyped_stable_ptr(db.upcast()),
+            Source::Trait(id) => id.untyped_stable_ptr(db.upcast()),
+        }
     }
 }
 

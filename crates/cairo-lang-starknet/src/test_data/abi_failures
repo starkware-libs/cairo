@@ -122,9 +122,9 @@ Duplicate entry point: 'foo'. This is not currently supported.
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:38:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:56:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -154,9 +154,9 @@ An embedded impl must be an impl of a trait marked with #[starknet::interface].
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:5:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:10:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -189,6 +189,6 @@ An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet:
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
- --> lib.cairo:6:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:11:5
+    #[abi(per_item)]
+    ^**************^
