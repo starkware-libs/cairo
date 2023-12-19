@@ -247,9 +247,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -534,9 +534,9 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
     ^*********************************************************^
 
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:23:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:28:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -726,6 +726,6 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^
