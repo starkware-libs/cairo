@@ -623,6 +623,50 @@ impl<'db> Inference<'db> {
             SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
         }
     }
+
+    fn fun_name(
+        &mut self,
+        mut inference: super::Inference<'_>,
+        db: &dyn SemanticGroup,
+    ) -> Result<(), InferenceError> {
+        Ok(if let ImplId::Concrete(concrete_impl) = self.candidate_impl {
+            let concrete_impl = inference.rewrite(concrete_impl).no_err();
+            let mut rewriter =
+                SubstitutionRewriter { db, substitution: &concrete_impl.substitution(db)? };
+
+            for garg in db.impl_def_generic_params(concrete_impl.impl_def_id(db.upcast()))? {
+                let GenericParam::NegImpl(neg_impl) = garg else {
+                    continue;
+                };
+
+                let concrete_trait_id = rewriter.rewrite(neg_impl)?.concrete_trait?;
+                for garg in concrete_trait_id.generic_args(db) {
+                    let GenericArgumentId::Type(ty) = garg else {
+                        continue;
+                    };
+
+                    if let TypeLongId::Var(_) = db.lookup_intern_type(ty) {
+                        if !ty.is_fully_concrete(db) {
+                            return Ok(SolutionSet::Ambiguous(
+                                Ambiguity::NegativeImplWithUnresolvedGenericArgs {
+                                    impl_id: self.candidate_impl,
+                                    ty,
+                                },
+                            ));
+                        }
+                    }
+                }
+
+                if !matches!(
+                    inference.trait_solution_set(concrete_trait_id, self.lookup_context.clone())?,
+                    SolutionSet::None
+                ) {
+                    // If a negative impl has an impl, then we should skip it.
+                    return Ok(SolutionSet::None);
+                }
+            }
+        })
+    }
 }
 
 impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
