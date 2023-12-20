@@ -632,7 +632,9 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
         CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
         CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
-        CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        CoreConcreteLibfunc::FunctionCall(libfunc) | CoreConcreteLibfunc::CouponCall(libfunc) => {
+            function_call::build(libfunc, builder)
+        }
         CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
         CoreConcreteLibfunc::ApTracking(_) => misc::build_update_ap_tracking(builder),
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),

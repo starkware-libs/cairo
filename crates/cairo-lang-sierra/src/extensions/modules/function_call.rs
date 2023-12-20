@@ -1,8 +1,11 @@
+use itertools::chain;
+
+use super::coupon::CouponType;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
     SpecializationContext,
 };
-use crate::extensions::{NamedLibfunc, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{NamedLibfunc, NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Returns the [OutputVarInfo] instances for the return types of the given function signature.
@@ -81,5 +84,49 @@ pub struct FunctionCallConcreteLibfunc {
 impl SignatureBasedConcreteLibfunc for FunctionCallConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
+    }
+}
+
+/// Libfunc used to call user functions.
+#[derive(Default)]
+pub struct CouponCallLibfunc {}
+impl NamedLibfunc for CouponCallLibfunc {
+    type Concrete = FunctionCallConcreteLibfunc;
+    const STR_ID: &'static str = "coupon_call";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let [GenericArg::UserFunc(function_id)] = args else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        let signature = context.get_function_signature(function_id)?;
+        let ap_change = context.get_function_ap_change(function_id)?;
+
+        let coupon_ty = context
+            .get_concrete_type(CouponType::id(), &[GenericArg::UserFunc(function_id.clone())])?;
+        Ok(LibfuncSignature::new_non_branch(
+            chain!(signature.param_types.iter().cloned(), [coupon_ty]).collect(),
+            get_output_var_infos(context, signature)?,
+            ap_change,
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let [GenericArg::UserFunc(function_id)] = args else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        Ok(Self::Concrete {
+            function: context.get_function(function_id)?,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }

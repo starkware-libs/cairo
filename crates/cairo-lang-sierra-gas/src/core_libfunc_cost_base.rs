@@ -130,6 +130,7 @@ pub fn core_libfunc_cost(
                 function: function.clone(),
             }]
         }
+        CouponCall(_) => vec![ConstCost::steps(2).into()],
         Bool(libfunc) => match libfunc {
             BoolConcreteLibfunc::And(_) => vec![ConstCost::steps(0).into()],
             BoolConcreteLibfunc::Not(_) => vec![ConstCost::steps(1).into()],

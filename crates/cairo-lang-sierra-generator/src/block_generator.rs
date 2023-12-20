@@ -285,7 +285,11 @@ fn generate_statement_call_code(
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Check if this is a user defined function or a libfunc.
-    let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
+    let (body, libfunc_id) = get_concrete_libfunc_id(
+        context.get_db(),
+        statement.function,
+        statement.coupon_input.is_some(),
+    );
     // Checks if the call invalidates ap tracking.
     let libfunc_signature = get_libfunc_signature(context.get_db(), libfunc_id.clone());
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
@@ -303,7 +307,7 @@ fn generate_statement_call_code(
         let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
         let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-        for (idx, var_usage) in statement.inputs.iter().enumerate() {
+        for (idx, var_usage) in statement.all_inputs().iter().enumerate() {
             let use_location = UseLocation { statement_location: *statement_location, idx };
             let should_dup = should_dup(context, &use_location);
             let var = context.get_sierra_variable(var_usage.var_id);
@@ -414,7 +418,7 @@ fn generate_match_extern_code(
         maybe_add_dup_statements(context, statement_location, &match_info.inputs, &mut statements)?;
     // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), match_info.function);
+        get_concrete_libfunc_id(context.get_db(), match_info.function, false);
 
     generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
     Ok(statements)

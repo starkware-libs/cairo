@@ -147,7 +147,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Felt252Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
-        CoreConcreteLibfunc::FunctionCall(libfunc) => {
+        CoreConcreteLibfunc::FunctionCall(libfunc) | CoreConcreteLibfunc::CouponCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {

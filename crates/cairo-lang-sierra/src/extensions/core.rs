@@ -15,6 +15,7 @@ use super::felt252_bounded::Felt252BoundedType;
 use super::felt252_dict::{
     Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
 };
+use super::function_call::CouponCallLibfunc;
 use super::gas::BuiltinCostsType;
 use super::int::signed::{
     Sint16Libfunc, Sint16Type, Sint32Libfunc, Sint32Type, Sint64Libfunc, Sint64Type, Sint8Libfunc,
@@ -100,6 +101,7 @@ define_libfunc_hierarchy! {
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
+        CouponCall(CouponCallLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
