@@ -57,6 +57,14 @@ pub enum ProgramRegistryError {
     LibfuncInvocationBranchResultCountMismatch(StatementIdx, usize),
     #[error("#{0}: Libfunc invocation branch #{1} target mismatch")]
     LibfuncInvocationBranchTargetMismatch(StatementIdx, usize),
+    #[error("#{src}: Branch jump backwards to {dst}")]
+    BranchBackwards { src: StatementIdx, dst: StatementIdx },
+    #[error("#{src}: Branch jump to a non-branch align statement #{dst}")]
+    BranchNotToBranchAlign { src: StatementIdx, dst: StatementIdx },
+    #[error("#{src1}, #{src2}: Jump to the same statement #{dst}")]
+    MultipleJumpsToSameStatement { src1: StatementIdx, src2: StatementIdx, dst: StatementIdx },
+    #[error("#{0}: Jump out of range")]
+    JumpOutOfRange(StatementIdx),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -144,20 +152,22 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 }
             }
         }
+        let mut branches = HashMap::<StatementIdx, StatementIdx>::default();
         for (i, statement) in program.statements.iter().enumerate() {
             let Statement::Invocation(invocation) = statement else {
                 continue;
             };
             let libfunc = self.get_libfunc(&invocation.libfunc_id)?;
+            let curr = StatementIdx(i);
             if invocation.args.len() != libfunc.param_signatures().len() {
                 return Err(Box::new(ProgramRegistryError::LibfuncInvocationInputCountMismatch(
-                    StatementIdx(i),
+                    curr,
                 )));
             }
             let libfunc_branches = libfunc.branch_signatures();
             if invocation.branches.len() != libfunc_branches.len() {
                 return Err(Box::new(ProgramRegistryError::LibfuncInvocationBranchCountMismatch(
-                    StatementIdx(i),
+                    curr,
                 )));
             }
             let libfunc_fallthrough = libfunc.fallthrough();
@@ -167,7 +177,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 if invocation_branch.results.len() != libfunc_branch.vars.len() {
                     return Err(Box::new(
                         ProgramRegistryError::LibfuncInvocationBranchResultCountMismatch(
-                            StatementIdx(i),
+                            curr,
                             branch_index,
                         ),
                     ));
@@ -177,10 +187,44 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 {
                     return Err(Box::new(
                         ProgramRegistryError::LibfuncInvocationBranchTargetMismatch(
-                            StatementIdx(i),
+                            curr,
                             branch_index,
                         ),
                     ));
+                }
+                if !matches!(libfunc_branch.ap_change, SierraApChange::BranchAlign) {
+                    if let Some(prev) = branches.get(&curr) {
+                        return Err(Box::new(ProgramRegistryError::BranchNotToBranchAlign {
+                            src: *prev,
+                            dst: curr,
+                        }));
+                    }
+                }
+                let next = curr.next(&invocation_branch.target);
+                if next.0 >= program.statements.len() {
+                    return Err(Box::new(ProgramRegistryError::JumpOutOfRange(curr)));
+                }
+                if libfunc_branches.len() > 1 {
+                    if next.0 < i {
+                        return Err(Box::new(ProgramRegistryError::BranchBackwards {
+                            src: curr,
+                            dst: next,
+                        }));
+                    }
+                    match branches.entry(next) {
+                        Entry::Occupied(e) => {
+                            return Err(Box::new(
+                                ProgramRegistryError::MultipleJumpsToSameStatement {
+                                    src1: *e.get(),
+                                    src2: curr,
+                                    dst: next,
+                                },
+                            ));
+                        }
+                        Entry::Vacant(e) => {
+                            e.insert(curr);
+                        }
+                    }
                 }
             }
         }
