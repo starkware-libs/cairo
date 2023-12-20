@@ -906,6 +906,24 @@ of the libfunc or return statement.";
 
                 foo@0() -> ();
             "}, "Error from program registry: Error during type specialization";
+            "Invalid const data.")]
+#[test_case(indoc! {"
+                type u8 = u8;
+                type const<u8, 256> = const<u8, 256>;
+
+                return ();
+
+                foo@0() -> ();
+            "}, "Error from program registry: Error during type specialization";
+            "Out of range const data.")]
+#[test_case(indoc! {"
+                type ECPoint = ECPoint;
+                type const<ECPoint, 5> = const<ECPoint, 5>;
+
+                return ();
+
+                foo@0() -> ();
+            "}, "Error from program registry: Error during type specialization";
             "Non constable const type.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();

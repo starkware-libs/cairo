@@ -153,17 +153,15 @@ pub fn extract_const_value(
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     const_type: &ConstConcreteType,
 ) -> Result<Vec<BigInt>, CompilationError> {
-    let const_core_type = registry.get_type(&const_type.inner_ty).unwrap();
-    match const_core_type {
-        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252(_) => {
-            if let [GenericArg::Value(value)] = &const_type.inner_data[..] {
-                Ok(vec![value.clone()])
-            } else {
-                Err(CompilationError::ConstDataMismatch)
-            }
-        }
-        _ => Err(CompilationError::UnsupportedConstType),
-    }
+    // For now, only values are supported.
+    return const_type
+        .inner_data
+        .iter()
+        .map(|arg| match arg {
+            GenericArg::Value(value) => Ok(value.clone()),
+            _ => Err(CompilationError::ConstDataMismatch),
+        })
+        .collect();
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
