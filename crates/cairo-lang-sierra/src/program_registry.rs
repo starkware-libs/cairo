@@ -57,6 +57,14 @@ pub enum ProgramRegistryError {
     LibfuncInvocationBranchResultCountMismatch(StatementIdx, usize),
     #[error("#{0}: Libfunc invocation branch #{1} target mismatch")]
     LibfuncInvocationBranchTargetMismatch(StatementIdx, usize),
+    #[error("#{src}: Branch jump backwards to {dst}")]
+    BranchBackwards { src: StatementIdx, dst: StatementIdx },
+    #[error("#{src}: Branch jump to a non-branch align statement #{dst}")]
+    BranchNotToBranchAlign { src: StatementIdx, dst: StatementIdx },
+    #[error("#{src1}, #{src2}: Jump to the same statement #{dst}")]
+    MultipleJumpsToSameStatement { src1: StatementIdx, src2: StatementIdx, dst: StatementIdx },
+    #[error("#{0}: Jump out of range")]
+    JumpOutOfRange(StatementIdx),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -145,8 +153,12 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 }
             }
         }
+        // A branches map, mapping from a destination statement to the statement that jumps to it.
+        // Assuming branches into branch alignments only, this should be a bijection.
+        let mut branches: HashMap<StatementIdx, StatementIdx> =
+            HashMap::<StatementIdx, StatementIdx>::default();
         for (i, statement) in program.statements.iter().enumerate() {
-            self.validate_statement(StatementIdx(i), statement)?;
+            self.validate_statement(program, StatementIdx(i), statement, &mut branches)?;
         }
         Ok(())
     }
@@ -154,8 +166,10 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     /// Checks the validity of a statement.
     fn validate_statement(
         &self,
+        program: &Program,
         index: StatementIdx,
         statement: &Statement,
+        branches: &mut HashMap<StatementIdx, StatementIdx>,
     ) -> Result<(), Box<ProgramRegistryError>> {
         let Statement::Invocation(invocation) = statement else {
             return Ok(());
@@ -189,6 +203,38 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                     index,
                     branch_index,
                 )));
+            }
+            if !matches!(libfunc_branch.ap_change, SierraApChange::BranchAlign) {
+                if let Some(prev) = branches.get(&index) {
+                    return Err(Box::new(ProgramRegistryError::BranchNotToBranchAlign {
+                        src: *prev,
+                        dst: index,
+                    }));
+                }
+            }
+            let next = index.next(&invocation_branch.target);
+            if next.0 >= program.statements.len() {
+                return Err(Box::new(ProgramRegistryError::JumpOutOfRange(index)));
+            }
+            if libfunc_branches.len() > 1 {
+                if next.0 < index.0 {
+                    return Err(Box::new(ProgramRegistryError::BranchBackwards {
+                        src: index,
+                        dst: next,
+                    }));
+                }
+                match branches.entry(next) {
+                    Entry::Occupied(e) => {
+                        return Err(Box::new(ProgramRegistryError::MultipleJumpsToSameStatement {
+                            src1: *e.get(),
+                            src2: index,
+                            dst: next,
+                        }));
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(index);
+                    }
+                }
             }
         }
         Ok(())
