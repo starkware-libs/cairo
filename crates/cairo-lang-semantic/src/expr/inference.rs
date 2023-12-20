@@ -596,22 +596,25 @@ impl<'db> Inference<'db> {
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
 
         // Don't try to resolve impls if the first generic param is a variable.
-        let generic_args = concrete_trait_id.generic_args(self.db);
-        match generic_args.get(0) {
-            Some(GenericArgumentId::Type(ty)) => {
-                if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
+        for garg in concrete_trait_id.generic_args(self.db) {
+            match garg {
+                GenericArgumentId::Type(ty) => {
+                    if let TypeLongId::Var(_) = self.db.lookup_intern_type(ty) {
+                        // Don't try to infer such impls.
+                        return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
+                            concrete_trait_id,
+                        }));
+                    }
+                }
+                GenericArgumentId::Impl(ImplId::ImplVar(_)) => {
                     // Don't try to infer such impls.
                     return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
                         concrete_trait_id,
                     }));
                 }
+                _ => {}
             }
-            Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
-                // Don't try to infer such impls.
-                return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer { concrete_trait_id }));
-            }
-            _ => {}
-        };
+        }
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
