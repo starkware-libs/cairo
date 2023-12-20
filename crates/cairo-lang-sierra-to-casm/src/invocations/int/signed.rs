@@ -21,6 +21,8 @@ pub fn build_sint_from_felt252(
     min_value: i128,
     max_value: i128,
 ) -> Result<CompiledInvocation, InvocationError> {
+    assert!(min_value <= 0, "min_value must be non-positive");
+    assert!(max_value > 0, "max_value must be positive");
     let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
