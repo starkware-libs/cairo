@@ -1,7 +1,14 @@
-use crate::extensions::lib_func::SignatureSpecializationContext;
+use super::function_call::SignatureAndFunctionConcreteLibfunc;
+use crate::define_libfunc_hierarchy;
+use crate::extensions::lib_func::{
+    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
+};
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, SpecializationError};
+use crate::extensions::{
+    args_as_single_type, args_as_single_user_func, ConcreteType, NamedLibfunc, NamedType,
+    OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -56,5 +63,58 @@ pub struct CouponConcreteType {
 impl ConcreteType for CouponConcreteType {
     fn info(&self) -> &TypeInfo {
         &self.info
+    }
+}
+
+define_libfunc_hierarchy! {
+    pub enum CouponLibfunc {
+        Buy(CouponBuyLibfunc),
+    }, CouponConcreteLibfunc
+}
+
+/// Libfunc for buying a coupon for a function. The cost of the coupon is the cost of running the
+/// function (not including the `call` and `ret` instructions).
+/// The coupon can be used to pay in advance for running the function, and run it later for
+/// free (paying only for the `call` and `ret` instructions) using `coupon_call`.
+#[derive(Default)]
+pub struct CouponBuyLibfunc {}
+impl NamedLibfunc for CouponBuyLibfunc {
+    type Concrete = SignatureAndFunctionConcreteLibfunc;
+    const STR_ID: &'static str = "coupon_buy";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let coupon_ty = args_as_single_type(args)?;
+        if context.get_type_info(coupon_ty.clone())?.long_id.generic_id != CouponType::id() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo { ty: coupon_ty, ref_info: OutputVarReferenceInfo::ZeroSized }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn crate::extensions::lib_func::SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let coupon_ty = args_as_single_type(args)?;
+        let long_id = context.get_type_info(coupon_ty.clone())?.long_id;
+        if long_id.generic_id != CouponType::id() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        let function_id = args_as_single_user_func(&long_id.generic_args)?;
+
+        Ok(SignatureAndFunctionConcreteLibfunc {
+            function: context.get_function(&function_id)?,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }

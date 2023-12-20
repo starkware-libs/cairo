@@ -354,6 +354,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
         CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
+        CoreConcreteLibfunc::Coupon(_) => unimplemented!(),
     }
 }
 

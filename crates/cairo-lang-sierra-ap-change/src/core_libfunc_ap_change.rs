@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
@@ -330,6 +331,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Bytes31ConcreteLibfunc::TryFromFelt252(_) => {
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
+        },
+        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
         },
     }
 }
