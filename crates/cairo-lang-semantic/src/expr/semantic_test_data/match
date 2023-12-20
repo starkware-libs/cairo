@@ -12,7 +12,7 @@ match a {
     _ => 1,
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -53,7 +53,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -71,7 +71,7 @@ match a {
     false => 1,
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -123,7 +123,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -148,7 +148,7 @@ match a {
     A::C => 1,
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -220,7 +220,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -251,7 +251,7 @@ match a {
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -442,7 +442,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 error: Match arms have incompatible types: "core::felt252" and "?2"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
@@ -482,7 +482,7 @@ match a {
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -675,7 +675,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:14:45
     MyEnum::A(x) | MyEnum::B((t, y)) => x + t,
@@ -730,7 +730,7 @@ match a {
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t.into(),
 }
 
-//! > expected
+//! > expected_semantics
 Match(
     ExprMatch {
         matched_expr: Var(
@@ -961,7 +961,7 @@ Match(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 error: Expected type "core::integer::u32", found: "core::integer::u8".
  --> lib.cairo:15:40
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t.into(),

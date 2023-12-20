@@ -28,7 +28,7 @@ let a = A {
     a.c.a;
 }
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -101,7 +101,7 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -122,7 +122,7 @@ let b = 2;
 //! > expr_code
 A { a: 1, b }
 
-//! > expected
+//! > expected_semantics
 StructCtor(
     ExprStructCtor {
         concrete_struct_id: test::A,
@@ -147,4 +147,4 @@ StructCtor(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

@@ -9,7 +9,7 @@ let mut a = 5;
 //! > expr_code
 a = a * 3
 
-//! > expected
+//! > expected_semantics
 Assignment(
     ExprAssignment {
         ref_arg: LocalVarId(test::a),
@@ -38,4 +38,4 @@ Assignment(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

@@ -77,8 +77,8 @@ fn test_expr_semantics(
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     TestRunnerResult::success(OrderedHashMap::from([
-        ("expected".into(), format!("{:#?}", expr.debug(&expr_formatter))),
-        ("semantic_diagnostics".into(), diagnostics),
+        ("expected_semantics".into(), format!("{:#?}", expr.debug(&expr_formatter))),
+        ("expected_diagnostics".into(), diagnostics),
     ]))
 }
 
