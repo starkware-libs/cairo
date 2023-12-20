@@ -138,8 +138,8 @@ impl Solver {
             };
 
             if let ImplId::Concrete(concrete_impl) = candidate_solver.candidate_impl {
-                let concrete_impl =
-                    candidate_solver.inference_data.inference(db).rewrite(concrete_impl).no_err();
+                let mut inference = candidate_solver.inference_data.inference(db);
+                let concrete_impl = inference.rewrite(concrete_impl).no_err();
                 let mut rewriter =
                     SubstitutionRewriter { db, substitution: &concrete_impl.substitution(db)? };
 
@@ -148,14 +148,11 @@ impl Solver {
                         continue;
                     };
 
-                    let (canonical_trait, _canonicalizer) = CanonicalTrait::canonicalize(
-                        db,
-                        candidate_solver.inference_data.inference_id,
-                        rewriter.rewrite(neg_impl)?.concrete_trait?,
-                    );
-
                     if !matches!(
-                        db.canonic_trait_solutions(canonical_trait, self.lookup_context.clone())?,
+                        inference.trait_solution_set(
+                            rewriter.rewrite(neg_impl)?.concrete_trait?,
+                            self.lookup_context.clone(),
+                        )?,
                         SolutionSet::None
                     ) {
                         // If a negative impl has an impl, then we should skip it.
