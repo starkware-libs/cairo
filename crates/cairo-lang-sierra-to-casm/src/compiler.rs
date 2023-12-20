@@ -155,7 +155,19 @@ pub fn extract_const_value(
 ) -> Result<Vec<BigInt>, CompilationError> {
     let const_core_type = registry.get_type(&const_type.inner_ty).unwrap();
     match const_core_type {
-        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252(_) => {
+        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Uint8(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Uint16(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Uint32(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Uint64(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Uint128(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Sint8(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Sint16(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Sint32(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Sint64(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Sint128(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Bytes31(_)
+        | cairo_lang_sierra::extensions::core::CoreTypeConcrete::Felt252Bounded(_) => {
             if let [GenericArg::Value(value)] = &const_type.inner_data[..] {
                 Ok(vec![value.clone()])
             } else {
