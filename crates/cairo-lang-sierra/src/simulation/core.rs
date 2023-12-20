@@ -21,7 +21,7 @@ use crate::extensions::felt252::{
     Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
 use crate::extensions::felt252_dict::Felt252DictConcreteLibfunc;
-use crate::extensions::function_call::FunctionCallConcreteLibfunc;
+use crate::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
@@ -90,8 +90,8 @@ pub fn simulate<
             },
             _ => unimplemented!(),
         },
-        FunctionCall(FunctionCallConcreteLibfunc { function, .. })
-        | CouponCall(FunctionCallConcreteLibfunc { function, .. }) => {
+        FunctionCall(SignatureAndFunctionConcreteLibfunc { function, .. })
+        | CouponCall(SignatureAndFunctionConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
         Gas(WithdrawGas(_)) => {

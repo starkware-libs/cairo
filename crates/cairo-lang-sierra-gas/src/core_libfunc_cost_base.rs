@@ -14,7 +14,7 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
-use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
@@ -124,7 +124,7 @@ pub fn core_libfunc_cost(
     info_provider: &dyn CostInfoProvider,
 ) -> Vec<BranchCost> {
     match libfunc {
-        FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
+        FunctionCall(SignatureAndFunctionConcreteLibfunc { function, .. }) => {
             vec![BranchCost::FunctionCall {
                 const_cost: ConstCost::steps(2),
                 function: function.clone(),
