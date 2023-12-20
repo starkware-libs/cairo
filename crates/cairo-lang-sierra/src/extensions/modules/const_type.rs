@@ -1,7 +1,6 @@
 use cairo_lang_utils::try_extract_matches;
 
 use super::boxing::BoxType;
-use super::felt252::Felt252Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
@@ -9,6 +8,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
+use crate::extensions::utils::extract_bounds;
 use crate::extensions::{
     ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
     SpecializationError,
@@ -25,10 +25,10 @@ impl NamedType for ConstType {
 
     fn specialize(
         &self,
-        _context: &dyn TypeSpecializationContext,
+        context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Self::Concrete::new(args)
+        Self::Concrete::new(context, args)
     }
 }
 
@@ -40,7 +40,10 @@ pub struct ConstConcreteType {
 }
 
 impl ConstConcreteType {
-    fn new(args: &[GenericArg]) -> Result<Self, SpecializationError> {
+    fn new(
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
         let mut args_iter = args.iter();
         let inner_ty = args_iter
             .next()
@@ -48,6 +51,7 @@ impl ConstConcreteType {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         // Extract the rest of the arguments as the inner data.
         let inner_data = args_iter.cloned().collect::<Vec<_>>();
+        validate_const_data(context, inner_ty, &inner_data)?;
         let storable = false;
         let duplicatable = false;
         let droppable = false;
@@ -61,6 +65,25 @@ impl ConstConcreteType {
         };
         Ok(ConstConcreteType { info, inner_ty: inner_ty.clone(), inner_data })
     }
+}
+
+/// Validates that the inner data is valid for the inner type.
+fn validate_const_data(
+    context: &dyn TypeSpecializationContext,
+    inner_ty: &ConcreteTypeId,
+    inner_data: &[GenericArg],
+) -> Result<(), SpecializationError> {
+    let inner_type_info = context.get_type_info(inner_ty.clone())?;
+    // For now, only simple types, i.e. types with range, are supported.
+    let type_range = extract_bounds(&inner_type_info)?;
+    if let [GenericArg::Value(value)] = inner_data {
+        if value < &type_range.lower || value >= &type_range.upper {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+    } else {
+        return Err(SpecializationError::WrongNumberOfGenericArgs);
+    };
+    Ok(())
 }
 
 impl ConcreteType for ConstConcreteType {
@@ -100,14 +123,16 @@ impl ConstAsBoxLibfuncWrapped {
             [_] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
-        // TODO(Gil): Get the type from the generic arg.
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        let boxed_felt252_ty = context.get_wrapped_concrete_type(BoxType::id(), felt252_ty)?;
+        let generic_args = context.get_type_info(ty.clone())?.long_id.generic_args;
+        let [GenericArg::Type(inner_ty), ..] = generic_args.as_slice() else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+        let boxed_inner_ty = context.get_wrapped_concrete_type(BoxType::id(), inner_ty.clone())?;
         Ok(ConstAsBoxConcreteLibfunc {
             signature: LibfuncSignature::new_non_branch(
                 vec![],
                 vec![OutputVarInfo {
-                    ty: boxed_felt252_ty,
+                    ty: boxed_inner_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
                 SierraApChange::Known { new_vars_only: true },
