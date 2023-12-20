@@ -434,28 +434,31 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
         "Merge stack with zero_sized variable.")]
 #[test_case(indoc! {"
         type felt252 = felt252;
+        type u8 = u8;
         type const<felt252, 5> = const<felt252, 5>;
-        type const<felt252, 17> = const<felt252, 17>;
+        type const<u8, 17> = const<u8, 17>;
         type BoxFelt252 = Box<felt252>;
-        
+        type Box<u8> = Box<u8>;
         
         libfunc const_as_box<const<felt252, 5>> = const_as_box<const<felt252, 5>>;
-        libfunc const_as_box<const<felt252, 17>> = const_as_box<const<felt252, 17>>;
+        libfunc const_as_box<const<u8, 17>> = const_as_box<const<u8, 17>>;
         libfunc unbox<felt252> = unbox<felt252>;
+        libfunc unbox<u8> = unbox<u8>;
         libfunc store_temp_felt252 = store_temp<felt252>;
+        libfunc store_temp_u8 = store_temp<u8>;
         libfunc drop<felt252> = drop<felt252>;
-        
+        libfunc drop<u8> = drop<u8>;
         
         const_as_box<const<felt252, 5>>() -> ([1]);
-        const_as_box<const<felt252, 17>>() -> ([2]);
+        const_as_box<const<u8, 17>>() -> ([2]);
         const_as_box<const<felt252, 5>>() -> ([3]);
         unbox<felt252>([1]) -> ([1]);
-        unbox<felt252>([2]) -> ([2]);
+        unbox<u8>([2]) -> ([2]);
         unbox<felt252>([3]) -> ([3]);
         store_temp_felt252([1]) -> ([1]);
         drop<felt252>([1]) -> ();
-        store_temp_felt252([2]) -> ([2]);
-        drop<felt252>([2]) -> ();
+        store_temp_u8([2]) -> ([2]);
+        drop<u8>([2]) -> ();
         store_temp_felt252([3]) -> ([3]);
         return([3]);
         
@@ -905,8 +908,17 @@ of the libfunc or return statement.";
             return ();
 
             foo@0() -> ();
-        "}, "Const data does not match the declared const type.";
+        "}, "Error from program registry: Error during type specialization";
         "Non constable const type.")]
+#[test_case(indoc! {"
+        type u8 = u8;
+        type const<u8, 1000> = const<u8, 1000>;
+
+        return ();
+
+        foo@0() -> ();
+    "}, "Error from program registry: Error during type specialization";
+    "Out of range const u8.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
