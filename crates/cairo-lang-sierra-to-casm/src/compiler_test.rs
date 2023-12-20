@@ -555,28 +555,28 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 felt252_add([1], [2], [3]) -> ([4]);
                 return();
                 test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation input count mismatch";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
-            "output type mismatch")]
+            "}, "Error from program registry: #0: Libfunc invocation branch #0 result count mismatch";
+            "output count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation branch count mismatch";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation branch #0 target mismatch";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
