@@ -1,7 +1,7 @@
 //! > Test call
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 fn foo() {6;}

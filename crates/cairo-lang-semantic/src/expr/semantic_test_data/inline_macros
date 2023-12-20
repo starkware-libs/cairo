@@ -1,7 +1,7 @@
 //! > Test consteval_int! simple usage
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 consteval_int!(4 + 5)
@@ -21,7 +21,7 @@ Literal(
 //! > Test consteval_int! complex usage
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
@@ -41,7 +41,7 @@ Literal(
 //! > Test consteval_int! handle temporary overflow
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 consteval_int!(255 + 1 - 1)
@@ -61,7 +61,7 @@ Literal(
 //! > Test array macro
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 array![1, 2, 3]
@@ -170,7 +170,7 @@ Block(
 //! > Test array macro empty
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: true)
 
 //! > expr_code
 array![]
@@ -214,7 +214,7 @@ error: Type annotations needed. Failed to infer ?0
 //! > Test array macro with method call
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 

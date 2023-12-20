@@ -1,7 +1,7 @@
 //! > Test member access
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 struct A {
@@ -108,7 +108,7 @@ Block(
 //! > Test struct constructor
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 struct A {

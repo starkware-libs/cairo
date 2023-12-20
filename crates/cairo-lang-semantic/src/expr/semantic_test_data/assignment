@@ -1,7 +1,7 @@
 //! > Test assignment
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 let mut a = 5;
