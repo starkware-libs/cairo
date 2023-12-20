@@ -144,7 +144,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                storage_struct_ast.stable_ptr().untyped(),
                 format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
             )],
             remove_original_item: false,

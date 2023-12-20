@@ -1775,9 +1775,9 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:3:5
+    struct Storage {
+    ^**************^
 
 //! > ==========================================================================
 
