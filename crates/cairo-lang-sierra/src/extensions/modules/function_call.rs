@@ -1,11 +1,13 @@
 use itertools::chain;
 
-use super::coupon::CouponType;
+use super::coupon::coupon_ty;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
     SpecializationContext,
 };
-use crate::extensions::{NamedLibfunc, NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    args_as_single_user_func, NamedLibfunc, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Returns the [OutputVarInfo] instances for the return types of the given function signature.
@@ -48,12 +50,10 @@ impl NamedLibfunc for FunctionCallLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let [GenericArg::UserFunc(function_id)] = args else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
+        let function_id = args_as_single_user_func(args)?;
 
-        let signature = context.get_function_signature(function_id)?;
-        let ap_change = context.get_function_ap_change(function_id)?;
+        let signature = context.get_function_signature(&function_id)?;
+        let ap_change = context.get_function_ap_change(&function_id)?;
         Ok(LibfuncSignature::new_non_branch(
             signature.param_types.clone(),
             get_output_var_infos(context, signature)?,
@@ -66,12 +66,10 @@ impl NamedLibfunc for FunctionCallLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let [GenericArg::UserFunc(function_id)] = args else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
+        let function_id = args_as_single_user_func(args)?;
 
         Ok(Self::Concrete {
-            function: context.get_function(function_id)?,
+            function: context.get_function(&function_id)?,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
     }
@@ -99,15 +97,12 @@ impl NamedLibfunc for CouponCallLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let [GenericArg::UserFunc(function_id)] = args else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
+        let function_id = args_as_single_user_func(args)?;
 
-        let signature = context.get_function_signature(function_id)?;
-        let ap_change = context.get_function_ap_change(function_id)?;
+        let signature = context.get_function_signature(&function_id)?;
+        let ap_change = context.get_function_ap_change(&function_id)?;
 
-        let coupon_ty = context
-            .get_concrete_type(CouponType::id(), &[GenericArg::UserFunc(function_id.clone())])?;
+        let coupon_ty = coupon_ty(context, function_id.clone())?;
         Ok(LibfuncSignature::new_non_branch(
             chain!(signature.param_types.iter().cloned(), [coupon_ty]).collect(),
             get_output_var_infos(context, signature)?,
@@ -120,12 +115,10 @@ impl NamedLibfunc for CouponCallLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let [GenericArg::UserFunc(function_id)] = args else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
+        let function_id = args_as_single_user_func(args)?;
 
         Ok(Self::Concrete {
-            function: context.get_function(function_id)?,
+            function: context.get_function(&function_id)?,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
     }
