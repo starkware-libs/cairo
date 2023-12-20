@@ -6,7 +6,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
-use cairo_lang_sierra::extensions::range_reduction::Range;
+use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::{BigInt, ToBigInt};
 
 use super::{build_const, build_small_diff, build_small_wide_mul};
