@@ -5,7 +5,7 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
-use super::coupon::CouponType;
+use super::coupon::{CouponLibfunc, CouponType};
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -101,6 +101,7 @@ define_libfunc_hierarchy! {
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
+        Coupon(CouponLibfunc),
         CouponCall(CouponCallLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),

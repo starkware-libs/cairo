@@ -6,6 +6,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
@@ -418,6 +419,14 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 7, holes: 0, range_checks: 3 }).into(),
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
+        },
+        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(libfunc) => {
+                vec![BranchCost::FunctionCall {
+                    const_cost: ConstCost::default(),
+                    function: libfunc.function.clone(),
+                }]
+            }
         },
     }
 }
