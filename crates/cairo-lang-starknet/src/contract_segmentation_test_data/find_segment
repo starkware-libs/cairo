@@ -33,15 +33,16 @@ function1:
 felt252_const_0() -> (zero);  // 15
 return();  // 16
 
-function0@0() -> ();
+// Order is reversed to check the sorting.
 function1@15() -> ();
+function0@0() -> ();
 
 //! > segments
-Ok([[0, 3, 5, 12], [15]])
+Ok([0, 15])
 
 //! > ==========================================================================
 
-//! > jump outside function (fallthrough)
+//! > No function start at zero
 
 //! > test_runner_name
 FindSegmentTest
@@ -51,71 +52,12 @@ type felt252 = felt252;
 
 libfunc felt252_const_0 = felt252_const<0>;
 
-felt252_const_0() -> (zero);  // 0
-// Falls through to function1.
-felt252_const_0() -> (zero);  // 1
+return();  // 0
 
 function1:
-felt252_const_0() -> (zero);  // 2
-felt252_const_0() -> (zero);  // 3
-return();  // 4
-
-function0@0() -> ();
-function1@2() -> ();
-
-//! > segments
-Err(JumpOutsideFunction(StatementIdx(1)))
-
-//! > ==========================================================================
-
-//! > jump outside function (after)
-
-//! > test_runner_name
-FindSegmentTest
-
-//! > sierra
-type felt252 = felt252;
-
-libfunc felt252_const_0 = felt252_const<0>;
-
-function0:
-felt252_const_0() -> (zero); // 0
-jump() { function1() };  // 1
-return();  // 2
-
-function1:
-felt252_const_0() -> (zero);  // 3
-return();  // 4
-
-function0@0() -> ();
-function1@3() -> ();
-
-//! > segments
-Err(JumpOutsideFunction(StatementIdx(1)))
-
-//! > ==========================================================================
-
-//! > jump outside function (before)
-
-//! > test_runner_name
-FindSegmentTest
-
-//! > sierra
-type felt252 = felt252;
-
-libfunc felt252_const_0 = felt252_const<0>;
-
-function0:
-felt252_const_0() -> (zero);  // 0
 return();  // 1
 
-function1:
-felt252_const_0() -> (zero); // 2
-jump() { function0() };  // 3
-return();  // 4
-
-function0@0() -> ();
-function1@2() -> ();
+function1@1() -> ();
 
 //! > segments
-Err(JumpOutsideFunction(StatementIdx(3)))
+Err(NoFunctionStartAtZero)
