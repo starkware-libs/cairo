@@ -1,7 +1,8 @@
+use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{ConcreteType, NamedType, SpecializationError};
-use crate::ids::{FunctionId, GenericTypeId};
+use crate::ids::{FunctionId, GenericTypeId, ConcreteTypeId};
 use crate::program::GenericArg;
 
 /// Coupon type `Coupon<function>` (`function::Coupon`) which represents that the cost of a
@@ -37,6 +38,14 @@ impl NamedType for CouponType {
             function_id,
         })
     }
+}
+
+/// Returns the type `Coupon<func>`.
+pub fn coupon_ty(
+    context: &dyn SignatureSpecializationContext,
+    function_id: FunctionId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(CouponType::id(), &[GenericArg::UserFunc(function_id)])
 }
 
 /// Concrete type information for `Coupon<function>`.
