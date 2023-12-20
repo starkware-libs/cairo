@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::chain;
+use itertools::{chain, izip};
 use thiserror::Error;
 
 use crate::extensions::lib_func::{
@@ -11,11 +11,13 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, ExtensionError, GenericLibfunc, GenericLibfuncEx, GenericType, GenericTypeEx,
+    ConcreteLibfunc, ConcreteType, ExtensionError, GenericLibfunc, GenericLibfuncEx, GenericType,
+    GenericTypeEx,
 };
 use crate::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{
-    DeclaredTypeInfo, Function, FunctionSignature, GenericArg, Program, TypeDeclaration,
+    BranchTarget, DeclaredTypeInfo, Function, FunctionSignature, GenericArg, Program, Statement,
+    StatementIdx, TypeDeclaration,
 };
 
 #[cfg(test)]
@@ -47,6 +49,14 @@ pub enum ProgramRegistryError {
     TypeInfoDeclarationMismatch(ConcreteTypeId),
     #[error("Function parameter type must be storable")]
     FunctionWithUnstorableType { func_id: FunctionId, ty: ConcreteTypeId },
+    #[error("#{0}: Libfunc invocation input count mismatch")]
+    LibfuncInvocationInputCountMismatch(StatementIdx),
+    #[error("#{0}: Libfunc invocation branch count mismatch")]
+    LibfuncInvocationBranchCountMismatch(StatementIdx),
+    #[error("#{0}: Libfunc invocation branch #{1} result count mismatch")]
+    LibfuncInvocationBranchResultCountMismatch(StatementIdx, usize),
+    #[error("#{0}: Libfunc invocation branch #{1} target mismatch")]
+    LibfuncInvocationBranchTargetMismatch(StatementIdx, usize),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -83,7 +93,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
             },
         )?;
         let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
-        registry.validate()?;
+        registry.validate(program)?;
         Ok(registry)
     }
 
@@ -123,7 +133,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     /// Checks the validity of the [ProgramRegistry].
     ///
     /// Checks that all the parameter and return types are storable.
-    fn validate(&self) -> Result<(), Box<ProgramRegistryError>> {
+    fn validate(&self, program: &Program) -> Result<(), Box<ProgramRegistryError>> {
         for func in self.functions.values() {
             for ty in chain!(func.signature.param_types.iter(), func.signature.ret_types.iter()) {
                 if !self.get_type(ty)?.info().storable {
@@ -132,6 +142,55 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                         ty: ty.clone(),
                     }));
                 }
+            }
+        }
+        for (i, statement) in program.statements.iter().enumerate() {
+            self.validate_statement(StatementIdx(i), statement)?;
+        }
+        Ok(())
+    }
+
+    /// Checks the validity of a statement.
+    ///
+    /// Some of the checks may be checked again later, but this is a good place to fail early, as
+    /// well as document most ways  describing a valid sierra program.
+    fn validate_statement(
+        &self,
+        index: StatementIdx,
+        statement: &Statement,
+    ) -> Result<(), Box<ProgramRegistryError>> {
+        let Statement::Invocation(invocation) = statement else {
+            return Ok(());
+        };
+        let libfunc = self.get_libfunc(&invocation.libfunc_id)?;
+        if invocation.args.len() != libfunc.param_signatures().len() {
+            return Err(Box::new(ProgramRegistryError::LibfuncInvocationInputCountMismatch(index)));
+        }
+        let libfunc_branches = libfunc.branch_signatures();
+        if invocation.branches.len() != libfunc_branches.len() {
+            return Err(Box::new(ProgramRegistryError::LibfuncInvocationBranchCountMismatch(
+                index,
+            )));
+        }
+        let libfunc_fallthrough = libfunc.fallthrough();
+        for (branch_index, (invocation_branch, libfunc_branch)) in
+            izip!(&invocation.branches, libfunc_branches).enumerate()
+        {
+            if invocation_branch.results.len() != libfunc_branch.vars.len() {
+                return Err(Box::new(
+                    ProgramRegistryError::LibfuncInvocationBranchResultCountMismatch(
+                        index,
+                        branch_index,
+                    ),
+                ));
+            }
+            if matches!(libfunc_fallthrough, Some(target) if target == branch_index)
+                != (invocation_branch.target == BranchTarget::Fallthrough)
+            {
+                return Err(Box::new(ProgramRegistryError::LibfuncInvocationBranchTargetMismatch(
+                    index,
+                    branch_index,
+                )));
             }
         }
         Ok(())
