@@ -24,9 +24,9 @@ Event type must derive `starknet::Event`.
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Event type must derive `starknet::Event`.
- --> lib.cairo:4:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:12:9
+        A: super::A
+        ^*********^
 
 error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
  --> lib.cairo[starknet_derive]:8:34
@@ -103,9 +103,9 @@ Event `test::test_contract::Event` has duplicate selector `Dup`.
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
- --> lib.cairo:6:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:16:9
+        Dup: super::B,
+        ^***********^
 
 //! > ==========================================================================
 

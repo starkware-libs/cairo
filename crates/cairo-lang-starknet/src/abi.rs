@@ -320,16 +320,16 @@ impl<'a> AbiBuilder<'a> {
                 let concrete_enum_id = self
                     .db
                     .intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
+                let source = Source::Enum(concrete_enum_id);
                 // Check that the enum has no generic parameters.
                 if !self.db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
-                    self.errors
-                        .push(ABIError::EventWithGenericParams(Source::Enum(concrete_enum_id)));
+                    self.errors.push(ABIError::EventWithGenericParams(source));
                 }
                 // Get the TypeId of the enum.
                 let ty = self
                     .db
                     .intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
-                self.add_event(ty).unwrap_or_else(|err| self.errors.push(err));
+                self.add_event(ty, source).unwrap_or_else(|err| self.errors.push(err));
             }
         }
         Ok(())
@@ -591,7 +591,7 @@ impl<'a> AbiBuilder<'a> {
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
-    fn add_event(&mut self, type_id: TypeId) -> Result<(), ABIError> {
+    fn add_event(&mut self, type_id: TypeId, source: Source) -> Result<(), ABIError> {
         if self.event_info.contains_key(&type_id) {
             // The event was handled previously.
             return Ok(());
@@ -601,7 +601,7 @@ impl<'a> AbiBuilder<'a> {
             try_extract_matches!(self.db.lookup_intern_type(type_id), TypeLongId::Concrete)
                 .ok_or(ABIError::UnexpectedType)?;
         let (event_kind, source) = match fetch_event_data(self.db, type_id)
-            .ok_or(ABIError::EventNotDerived)?
+            .ok_or(ABIError::EventNotDerived(source))?
         {
             EventData::Struct { members } => {
                 let ConcreteTypeId::Struct(concrete_struct_id) = concrete else {
@@ -613,7 +613,7 @@ impl<'a> AbiBuilder<'a> {
                     .map(|(name, kind)| {
                         let concrete_member = &concrete_members[name.clone()];
                         let ty = concrete_member.ty;
-                        self.add_event_field(kind, ty, name)
+                        self.add_event_field(kind, ty, name, Source::Member(concrete_member.id))
                     })
                     .collect::<Result<_, ABIError>>()?;
                 self.event_info.insert(type_id, EventInfo::Struct);
@@ -624,11 +624,12 @@ impl<'a> AbiBuilder<'a> {
                     unreachable!();
                 };
                 let mut selectors = HashSet::new();
-                let mut add_selector = |selector: &str| {
+                let mut add_selector = |selector: &str, source_ptr| {
                     if !selectors.insert(selector.to_string()) {
                         Err(ABIError::EventSelectorDuplication {
                             event: type_id.format(self.db),
                             selector: selector.to_string(),
+                            source_ptr,
                         })
                     } else {
                         Ok(())
@@ -637,15 +638,16 @@ impl<'a> AbiBuilder<'a> {
                 let concrete_variants = self.db.concrete_enum_variants(concrete_enum_id)?;
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
+                        let source = Source::Variant(concrete_variant.id);
                         if kind == EventFieldKind::Nested {
-                            add_selector(&name)?;
+                            add_selector(&name, source)?;
                         }
                         let field =
-                            self.add_event_field(kind, concrete_variant.ty, name.clone())?;
+                            self.add_event_field(kind, concrete_variant.ty, name.clone(), source)?;
                         if kind == EventFieldKind::Flat {
                             if let EventInfo::Enum(inner) = &self.event_info[&concrete_variant.ty] {
                                 for selector in inner {
-                                    add_selector(selector)?;
+                                    add_selector(selector, source)?;
                                 }
                             } else {
                                 let bad_attr = concrete_variant
@@ -686,10 +688,11 @@ impl<'a> AbiBuilder<'a> {
         kind: EventFieldKind,
         ty: TypeId,
         name: SmolStr,
+        source: Source,
     ) -> Result<EventField, ABIError> {
         match kind {
             EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(ty)?,
-            EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(ty)?,
+            EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(ty, source)?,
         };
         Ok(EventField { name: name.into(), ty: ty.format(self.db), kind })
     }
@@ -870,9 +873,9 @@ pub enum ABIError {
     #[error("Event must have no generic parameters.")]
     EventWithGenericParams(Source),
     #[error("Event type must derive `starknet::Event`.")]
-    EventNotDerived,
+    EventNotDerived(Source),
     #[error("Event `{event}` has duplicate selector `{selector}`.")]
-    EventSelectorDuplication { event: String, selector: String },
+    EventSelectorDuplication { event: String, selector: String, source_ptr: Source },
     #[error("Interfaces must have exactly one generic parameter.")]
     ExpectedOneGenericParam(Source),
     #[error("Contracts must have only one constructor.")]
@@ -915,12 +918,12 @@ impl ABIError {
         match self {
             ABIError::SemanticError => None,
             ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr().untyped()),
-            ABIError::EventNotDerived => None,
-            ABIError::EventSelectorDuplication { .. } => None,
             ABIError::NoStorage => None,
             ABIError::UnexpectedType => None,
             ABIError::EntrypointMustHaveSelf => None,
-            ABIError::EventMustBeEnum(source)
+            ABIError::EventNotDerived(source)
+            | ABIError::EventSelectorDuplication { source_ptr: source, .. }
+            | ABIError::EventMustBeEnum(source)
             | ABIError::EventWithGenericParams(source)
             | ABIError::ExpectedOneGenericParam(source)
             | ABIError::MultipleConstructors(source)
@@ -951,7 +954,9 @@ pub enum Source {
     Impl(ImplDefId),
     ImplAlias(ImplAliasId),
     Struct(cairo_lang_semantic::ConcreteStructId),
+    Member(cairo_lang_defs::ids::MemberId),
     Enum(cairo_lang_semantic::ConcreteEnumId),
+    Variant(cairo_lang_defs::ids::VariantId),
     Trait(TraitId),
 }
 impl Source {
@@ -961,7 +966,9 @@ impl Source {
             Source::Impl(id) => id.untyped_stable_ptr(db.upcast()),
             Source::ImplAlias(id) => id.untyped_stable_ptr(db.upcast()),
             Source::Struct(id) => id.struct_id(db).untyped_stable_ptr(db.upcast()),
+            Source::Member(id) => id.untyped_stable_ptr(db.upcast()),
             Source::Enum(id) => id.enum_id(db).untyped_stable_ptr(db.upcast()),
+            Source::Variant(id) => id.untyped_stable_ptr(db.upcast()),
             Source::Trait(id) => id.untyped_stable_ptr(db.upcast()),
         }
     }
