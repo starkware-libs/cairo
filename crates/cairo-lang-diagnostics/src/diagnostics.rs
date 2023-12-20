@@ -6,8 +6,8 @@ use core::fmt;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_filesystem::db::{get_originating_location, FilesGroup};
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
@@ -59,20 +59,8 @@ impl DiagnosticLocation {
 
     /// Get the location of the originating user code.
     pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
-        let mut result = self.clone();
-        while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
-            db.lookup_intern_file(result.file_id)
-        {
-            if let Some(span) =
-                code_mappings.iter().find_map(|mapping| mapping.translate(result.span))
-            {
-                result.span = span;
-                result.file_id = parent;
-            } else {
-                break;
-            }
-        }
-        result
+        let (file_id, span) = get_originating_location(db, self.file_id, self.span);
+        Self { file_id, span }
     }
 }
 
