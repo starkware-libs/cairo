@@ -159,7 +159,7 @@ libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account:
 libfunc snapshot_take<Array<core::array::Span::<core::felt252>>> = snapshot_take<Array<core::array::Span::<core::felt252>>>;
 libfunc drop<Array<core::array::Span::<core::felt252>>> = drop<Array<core::array::Span::<core::felt252>>>;
 libfunc store_temp<Snapshot<Array<core::array::Span::<core::felt252>>>> = store_temp<Snapshot<Array<core::array::Span::<core::felt252>>>>;
-libfunc function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize> = function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize>;
+libfunc function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize> = function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>> = enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>;
 libfunc struct_deconstruct<Tuple<Array<felt252>, Unit>> = struct_deconstruct<Tuple<Array<felt252>, Unit>>;
 libfunc function_call<user@cairo_level_tests::contracts::account::account::constructor> = function_call<user@cairo_level_tests::contracts::account::account::constructor>;
@@ -247,7 +247,7 @@ libfunc array_len<core::array::Span::<core::felt252>> = array_len<core::array::S
 libfunc u32_to_felt252 = u32_to_felt252;
 libfunc struct_construct<core::array::Span::<core::array::Span::<core::felt252>>> = struct_construct<core::array::Span::<core::array::Span::<core::felt252>>>;
 libfunc store_temp<core::array::Span::<core::array::Span::<core::felt252>>> = store_temp<core::array::Span::<core::array::Span::<core::felt252>>>;
-libfunc function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>> = function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>>;
+libfunc function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>> = function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>>;
 libfunc struct_construct<Tuple<Array<felt252>, Unit>> = struct_construct<Tuple<Array<felt252>, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0> = enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>> = store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>;
@@ -340,7 +340,7 @@ libfunc enum_init<core::option::Option::<core::box::Box::<@core::array::Span::<c
 libfunc store_local<Snapshot<Array<core::array::Span::<core::felt252>>>> = store_local<Snapshot<Array<core::array::Span::<core::felt252>>>>;
 libfunc enum_match<core::option::Option::<core::box::Box::<@core::array::Span::<core::felt252>>>> = enum_match<core::option::Option::<core::box::Box::<@core::array::Span::<core::felt252>>>>;
 libfunc unbox<core::array::Span::<core::felt252>> = unbox<core::array::Span::<core::felt252>>;
-libfunc function_call<user@core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize> = function_call<user@core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize>;
+libfunc function_call<user@core::array::SpanFelt252Serde::serialize> = function_call<user@core::array::SpanFelt252Serde::serialize>;
 libfunc drop<Snapshot<Array<core::array::Span::<core::felt252>>>> = drop<Snapshot<Array<core::array::Span::<core::felt252>>>>;
 libfunc drop<Uninitialized<Snapshot<Array<core::array::Span::<core::felt252>>>>> = drop<Uninitialized<Snapshot<Array<core::array::Span::<core::felt252>>>>>;
 libfunc drop<core::array::Span::<core::array::Span::<core::felt252>>> = drop<core::array::Span::<core::array::Span::<core::felt252>>>;
@@ -898,7 +898,7 @@ store_temp<RangeCheck>([41]) -> ([41]); // 481
 store_temp<GasBuiltin>([42]) -> ([42]); // 482
 store_temp<Snapshot<Array<core::array::Span::<core::felt252>>>>([50]) -> ([50]); // 483
 store_temp<Array<felt252>>([46]) -> ([46]); // 484
-function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize>([41], [42], [50], [46]) -> ([51], [52], [53]); // 485
+function_call<user@core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize>([41], [42], [50], [46]) -> ([51], [52], [53]); // 485
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([53]) { fallthrough([54]) 500([55]) }; // 486
 branch_align() -> (); // 487
 struct_deconstruct<Tuple<Array<felt252>, Unit>>([54]) -> ([56], [57]); // 488
@@ -1519,7 +1519,7 @@ store_temp<RangeCheck>([0]) -> ([0]); // 1102
 store_temp<GasBuiltin>([1]) -> ([1]); // 1103
 store_temp<core::array::Span::<core::array::Span::<core::felt252>>>([11]) -> ([11]); // 1104
 store_temp<Array<felt252>>([10]) -> ([10]); // 1105
-function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>>([0], [1], [11], [10]) -> ([12], [13], [14]); // 1106
+function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>>([0], [1], [11], [10]) -> ([12], [13], [14]); // 1106
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([14]) { fallthrough([15]) 1118([16]) }; // 1107
 branch_align() -> (); // 1108
 struct_deconstruct<Tuple<Array<felt252>, Unit>>([15]) -> ([17], [18]); // 1109
@@ -2062,7 +2062,7 @@ store_temp<RangeCheck>([7]) -> ([7]); // 1645
 store_temp<GasBuiltin>([8]) -> ([8]); // 1646
 store_temp<core::array::Span::<core::felt252>>([21]) -> ([21]); // 1647
 store_temp<Array<felt252>>([3]) -> ([3]); // 1648
-function_call<user@core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize>([7], [8], [21], [3]) -> ([22], [23], [24]); // 1649
+function_call<user@core::array::SpanFelt252Serde::serialize>([7], [8], [21], [3]) -> ([22], [23], [24]); // 1649
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([24]) { fallthrough([25]) 1674([26]) }; // 1650
 branch_align() -> (); // 1651
 struct_construct<core::array::Span::<core::array::Span::<core::felt252>>>([4]) -> ([27]); // 1652
@@ -2072,7 +2072,7 @@ store_temp<RangeCheck>([22]) -> ([22]); // 1655
 store_temp<GasBuiltin>([23]) -> ([23]); // 1656
 store_temp<core::array::Span::<core::array::Span::<core::felt252>>>([27]) -> ([27]); // 1657
 store_temp<Array<felt252>>([28]) -> ([28]); // 1658
-function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>>([22], [23], [27], [28]) -> ([30], [31], [32]); // 1659
+function_call<user@core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>>([22], [23], [27], [28]) -> ([30], [31], [32]); // 1659
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([32]) { fallthrough([33]) 1668([34]) }; // 1660
 branch_align() -> (); // 1661
 struct_deconstruct<Tuple<Array<felt252>, Unit>>([33]) -> ([35], [36]); // 1662
@@ -2637,7 +2637,7 @@ core::Felt252Serde::serialize@867([0]: felt252, [1]: Array<felt252>) -> (Array<f
 core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize@872([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>);
 cairo_level_tests::contracts::account::account::AccountContractImpl::__validate__@923([0]: RangeCheck, [1]: EcOp, [2]: GasBuiltin, [3]: System, [4]: cairo_level_tests::contracts::account::account::ContractState, [5]: Array<core::starknet::account::Call>) -> (RangeCheck, EcOp, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>);
 cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__@950([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::account::account::ContractState, [4]: Array<core::starknet::account::Call>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>);
-core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize@1092([0]: RangeCheck, [1]: GasBuiltin, [2]: Snapshot<Array<core::array::Span::<core::felt252>>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
+core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize@1092([0]: RangeCheck, [1]: GasBuiltin, [2]: Snapshot<Array<core::array::Span::<core::felt252>>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 cairo_level_tests::contracts::account::account::constructor@1124([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::account::account::ContractState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>);
 core::starknet::info::get_tx_info@1147([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::TxInfo>,)>);
 cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::read@1171([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::account::account::public_key::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
@@ -2646,7 +2646,7 @@ core::ecdsa::check_ecdsa_signature@1223([0]: RangeCheck, [1]: EcOp, [2]: felt252
 core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>@1407([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<core::starknet::account::Call>, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>);
 core::starknet::info::get_caller_address@1492([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]@1516([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
-core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>@1619([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::array::Span::<core::felt252>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
+core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>@1619([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::array::Span::<core::felt252>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::write@1710([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::account::account::public_key::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>);
 core::starknet::info::get_execution_info@1747([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
 core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@1775([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::felt252,)>);
@@ -2655,7 +2655,7 @@ core::ec::EcPointAdd::add@1811([0]: EcPoint, [1]: EcPoint) -> (EcPoint);
 core::ec::EcPointSub::sub@1839([0]: EcPoint, [1]: EcPoint) -> (EcPoint);
 core::starknet::account::CallSerde::deserialize@1852([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>);
 core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@1922([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::serialize@1934([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
+core::array::SpanFelt252Serde::serialize@1934([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1966([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);
 core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@1978([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
 core::starknet::contract_address::ContractAddressSerde::deserialize@1990([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
