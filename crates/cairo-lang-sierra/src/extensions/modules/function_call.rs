@@ -42,7 +42,7 @@ fn get_output_var_infos(
 #[derive(Default)]
 pub struct FunctionCallLibfunc {}
 impl NamedLibfunc for FunctionCallLibfunc {
-    type Concrete = FunctionCallConcreteLibfunc;
+    type Concrete = SignatureAndFunctionConcreteLibfunc;
     const STR_ID: &'static str = "function_call";
 
     fn specialize_signature(
@@ -75,11 +75,11 @@ impl NamedLibfunc for FunctionCallLibfunc {
     }
 }
 
-pub struct FunctionCallConcreteLibfunc {
+pub struct SignatureAndFunctionConcreteLibfunc {
     pub function: Function,
     pub signature: LibfuncSignature,
 }
-impl SignatureBasedConcreteLibfunc for FunctionCallConcreteLibfunc {
+impl SignatureBasedConcreteLibfunc for SignatureAndFunctionConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
@@ -89,7 +89,7 @@ impl SignatureBasedConcreteLibfunc for FunctionCallConcreteLibfunc {
 #[derive(Default)]
 pub struct CouponCallLibfunc {}
 impl NamedLibfunc for CouponCallLibfunc {
-    type Concrete = FunctionCallConcreteLibfunc;
+    type Concrete = SignatureAndFunctionConcreteLibfunc;
     const STR_ID: &'static str = "coupon_call";
 
     fn specialize_signature(
