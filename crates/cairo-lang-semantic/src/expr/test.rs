@@ -91,9 +91,10 @@ fn test_expand_expr(
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = format!("{expanded_code}").replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
-            ("expanded_code".into(), format!("        {expanded_code}")),
+            ("expanded_code".into(), expanded_code),
             ("diagnostics".into(), diagnostics),
         ]),
         error,

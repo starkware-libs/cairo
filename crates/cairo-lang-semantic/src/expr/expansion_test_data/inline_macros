@@ -7,7 +7,7 @@ test_expand_expr(expect_diagnostics: false)
 consteval_int!(4 + 5)
 
 //! > expanded_code
-        9
+9
 
 //! > diagnostics
 
@@ -22,7 +22,7 @@ test_expand_expr(expect_diagnostics: false)
 consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
 
 //! > expanded_code
-        47
+47
 
 //! > diagnostics
 
@@ -37,7 +37,7 @@ test_expand_expr(expect_diagnostics: false)
 consteval_int!(255 + 1 - 1)
 
 //! > expanded_code
-        255
+255
 
 //! > diagnostics
 
@@ -52,13 +52,13 @@ test_expand_expr(expect_diagnostics: false)
 array![1, 2, 3]
 
 //! > expanded_code
-        {
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,3);
-            __array_builder_macro_result__
-        }
+{
+    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,3);
+    __array_builder_macro_result__
+}
 
 //! > diagnostics
 
@@ -73,10 +73,10 @@ test_expand_expr(expect_diagnostics: true)
 array![]
 
 //! > expanded_code
-        {
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-            __array_builder_macro_result__
-        }
+{
+    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+    __array_builder_macro_result__
+}
 
 //! > diagnostics
 error: Type annotations needed. Failed to infer ?0
