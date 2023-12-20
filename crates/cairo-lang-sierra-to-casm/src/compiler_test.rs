@@ -505,8 +505,9 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 felt252_add([1], [2]) -> ([4]);
                 felt252_add([3], [4]) -> ([5]);
+                return([5]);
 
-                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
+                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> (felt252);
             "},
             "#1: One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt252_add")]
