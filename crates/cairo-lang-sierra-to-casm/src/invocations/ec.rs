@@ -24,7 +24,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EcConcreteLibfunc::IsZero(_) => build_is_zero(builder),
+        EcConcreteLibfunc::IsZero(_) => build_ec_point_is_zero(builder),
         EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
         EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new_nz(builder),
@@ -260,7 +260,7 @@ fn build_ec_point_unwrap(
 }
 
 /// Generates casm instructions for `ec_point_is_zero()`.
-fn build_is_zero(
+fn build_ec_point_is_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
@@ -366,6 +366,8 @@ fn build_ec_state_add(
         jump NotSameX if denominator != 0;
         // X coordinate is identical; either the sum of the points is the point at infinity (not
         // allowed), or the points are equal, which is also not allowed (doubling).
+        // Since the base state should be random - the only way to get the same point twice is if 
+        // the prover chose a non-random state, so we explicitly fail.
         fail;
         NotSameX:
         tempvar numerator = py - sy;
