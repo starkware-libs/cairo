@@ -99,19 +99,19 @@ enum Event {}
 
 
     struct ContractState {
-        var: var::ContractMemberState,
-        zero_size: zero_size::ContractMemberState,
-        mapping: mapping::ContractMemberState,
-        zero_size_mapping: zero_size_mapping::ContractMemberState,
+        var: __member_module_var::ContractMemberState,
+        zero_size: __member_module_zero_size::ContractMemberState,
+        mapping: __member_module_mapping::ContractMemberState,
+        zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var: var::ContractMemberState {},
-            zero_size: zero_size::ContractMemberState {},
-            mapping: mapping::ContractMemberState {},
-            zero_size_mapping: zero_size_mapping::ContractMemberState {},
+            var: __member_module_var::ContractMemberState {},
+            zero_size: __member_module_zero_size::ContractMemberState {},
+            mapping: __member_module_mapping::ContractMemberState {},
+            zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -120,8 +120,8 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
-    use var::InternalContractMemberStateTrait as varContractMemberStateTrait;
-    mod var {
+    use __member_module_var::InternalContractMemberStateTrait as varContractMemberStateTrait;
+    mod __member_module_var {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -163,8 +163,8 @@ enum Event {}
             }
         }
     }
-    use zero_size::InternalContractMemberStateTrait as zero_sizeContractMemberStateTrait;
-    mod zero_size {
+    use __member_module_zero_size::InternalContractMemberStateTrait as zero_sizeContractMemberStateTrait;
+    mod __member_module_zero_size {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -206,8 +206,8 @@ enum Event {}
             }
         }
     }
-    use mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
-    mod mapping {
+    use __member_module_mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
+    mod __member_module_mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -250,8 +250,8 @@ enum Event {}
             }
         }
     }
-    use zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
-    mod zero_size_mapping {
+    use __member_module_zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
+    mod __member_module_zero_size_mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;

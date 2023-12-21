@@ -29,9 +29,9 @@ type Tuple<Box<core::starknet::info::v2::ExecutionInfo>> = Struct<ut@[1325343513
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)> = Enum<ut@[1261927754835514914776054027365235561646535770460075557734124965374903769288], Tuple<Box<core::starknet::info::v2::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState = Struct<ut@[1390069245357392602837165230016138060685774153841338407364165330831250109759]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())> = Enum<ut@[827822514944366259388923755571351367250922293267035942710738694302499519930], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState = Struct<ut@[100966411835069658490891798308509601034614659758948371104122490934210467421]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())> = Enum<ut@[981593320705770534798195346490721151835339965221255128589227414188376241933], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::starknet::eth_address::EthAddress = Struct<ut@[1419112166713589647553078383662074811959269827268228095533398309649743955461], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet = Struct<ut@[1379949929603052168535686289300270048384728816133613999424659757414432053683], core::starknet::eth_address::EthAddress> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet = Struct<ut@[1145025410662323122318000779287686133541046515156942176173172390879672442712], ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -45,12 +45,12 @@ type cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher = Stru
 type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState = Struct<ut@[1606014333836040534260520008411658533154314992994719669504204533048978174083]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())> = Enum<ut@[948983818409298089154139374487672627515130921361632732770653649678356377327], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState = Struct<ut@[330728396568448422410453615181286219926244621036650694088027798376010020097]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())> = Enum<ut@[371119483397683820334195855831053387680180226320664541260663992567011977984], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState = Struct<ut@[922618962215645733761364371569980831797229580020396818923336444492910843292]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())> = Enum<ut@[64883143497638158082544686873383377631844371927824994758071670830117289247], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState = Struct<ut@[71388189776827616281175507994170328162308811853724769773082026444486074069]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())> = Enum<ut@[1183223065722887822918039220335273220278059998536491910289273019503738215619], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<felt252> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@[28492023476188870970024821741919305102523279873289445804499878455420379737], Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -60,7 +60,7 @@ type core::panics::PanicResult::<(core::starknet::contract_address::ContractAddr
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::integer::u256> = Enum<ut@[523703995564884992331731899845619438921868538240978529314873467267171327154], core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@[1730591083647345995550560488717538099208395506321115194079300232838727341527], ContractAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::token_bridge::token_bridge::ContractState = Struct<ut@[781233942909679793303062245275356660335615348637642097709023472292933656408], cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::contracts::token_bridge::token_bridge::ContractState = Struct<ut@[781233942909679793303062245275356660335615348637642097709023472292933656408], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())> = Enum<ut@[744256717674666719412122963298687331393978831256833870064248251563697002207], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::starknet::eth_address::EthAddress> = Enum<ut@[1041380713995109073193357785424402913334657540506511497447002411869299412344], core::starknet::eth_address::EthAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -113,9 +113,9 @@ libfunc store_temp<core::array::Span::<core::felt252>> = store_temp<core::array:
 libfunc function_call<user@core::starknet::eth_address::EthAddressSerde::deserialize> = function_call<user@core::starknet::eth_address::EthAddressSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::starknet::eth_address::EthAddress>> = enum_match<core::option::Option::<core::starknet::eth_address::EthAddress>>;
 libfunc drop<core::starknet::eth_address::EthAddress> = drop<core::starknet::eth_address::EthAddress>;
-libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>;
-libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>;
-libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>;
 libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>;
 libfunc store_temp<core::starknet::eth_address::EthAddress> = store_temp<core::starknet::eth_address::EthAddress>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge>;
@@ -146,16 +146,16 @@ libfunc enum_init<core::option::Option::<core::starknet::eth_address::EthAddress
 libfunc function_call<user@core::starknet::info::get_caller_address> = function_call<user@core::starknet::info::get_caller_address>;
 libfunc enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>> = enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState> = struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>;
-libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read>;
+libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::read>;
 libfunc struct_deconstruct<Tuple<ContractAddress>> = struct_deconstruct<Tuple<ContractAddress>>;
 libfunc snapshot_take<ContractAddress> = snapshot_take<ContractAddress>;
 libfunc rename<ContractAddress> = rename<ContractAddress>;
 libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc felt252_sub = felt252_sub;
 libfunc felt252_is_zero = felt252_is_zero;
-libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>;
+libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>> = enum_match<core::panics::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
 libfunc felt252_const<0> = felt252_const<0>;
@@ -168,17 +168,17 @@ libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc bool_not_impl = bool_not_impl;
 libfunc enum_match<core::bool> = enum_match<core::bool>;
-libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>;
-libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>;
-libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>;
 libfunc felt252_const<2013105824254760083698114694758106795707028307> = felt252_const<2013105824254760083698114694758106795707028307>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>;
 libfunc dup<core::starknet::eth_address::EthAddress> = dup<core::starknet::eth_address::EthAddress>;
 libfunc function_call<user@core::starknet::eth_address::EthAddressIntoFelt252::into> = function_call<user@core::starknet::eth_address::EthAddressIntoFelt252::into>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>>;
 libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>>;
@@ -193,13 +193,13 @@ libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>;
 libfunc store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>> = store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>;
-libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read>;
+libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read>;
 libfunc felt252_const<7863694625996581757838692818417470702703443> = felt252_const<7863694625996581757838692818417470702703443>;
 libfunc dup<ContractAddress> = dup<ContractAddress>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>>;
 libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>>;
@@ -245,9 +245,9 @@ libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Eve
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>>;
 libfunc felt252_const<435285461855291105107993099906934166952343452266605277236313> = felt252_const<435285461855291105107993099906934166952343452266605277236313>;
 libfunc felt252_const<131930903298366587672081961760732987202149934256979> = felt252_const<131930903298366587672081961760732987202149934256979>;
-libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>;
 libfunc dup<felt252> = dup<felt252>;
 libfunc function_call<user@core::integer::u256_from_felt252> = function_call<user@core::integer::u256_from_felt252>;
 libfunc u128_const<0> = u128_const<0>;
@@ -291,20 +291,20 @@ libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt252
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>;
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>;
 libfunc struct_deconstruct<Tuple<Unit>> = struct_deconstruct<Tuple<Unit>>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 1>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into>;
 libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::Event> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::Event>;
 libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::Event> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::Event>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data>;
 libfunc emit_event_syscall = emit_event_syscall;
 libfunc storage_base_address_const<841860433736651593546282235841978572674005179665527839815333381321756641199> = storage_base_address_const<841860433736651593546282235841978572674005179665527839815333381321756641199>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 1>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into>;
 libfunc u128s_from_felt252 = u128s_from_felt252;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<core::option::Option::<core::integer::u128>, 0>;
@@ -331,10 +331,10 @@ libfunc felt252_const<1507223130418436849305243811231109659194926959767924360305
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into>;
 libfunc felt252_const<802923932379249060478396516088274507280253357766502127308257678452511330952> = felt252_const<802923932379249060478396516088274507280253357766502127308257678452511330952>;
 libfunc function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into> = function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 1>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc snapshot_take<u128> = snapshot_take<u128>;
 libfunc rename<u128> = rename<u128>;
@@ -571,9 +571,9 @@ get_builtin_costs() -> ([28]); // 190
 store_temp<BuiltinCosts>([28]) -> ([28]); // 191
 withdraw_gas_all([8], [5], [28]) { fallthrough([29], [30]) 224([31], [32]) }; // 192
 branch_align() -> (); // 193
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>() -> ([33]); // 194
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>() -> ([34]); // 195
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>() -> ([35]); // 196
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>() -> ([33]); // 194
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>() -> ([34]); // 195
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>() -> ([35]); // 196
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([33], [34], [35]) -> ([36]); // 197
 store_temp<RangeCheck>([29]) -> ([29]); // 198
 store_temp<GasBuiltin>([30]) -> ([30]); // 199
@@ -682,9 +682,9 @@ get_builtin_costs() -> ([28]); // 301
 store_temp<BuiltinCosts>([28]) -> ([28]); // 302
 withdraw_gas_all([8], [5], [28]) { fallthrough([29], [30]) 335([31], [32]) }; // 303
 branch_align() -> (); // 304
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>() -> ([33]); // 305
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>() -> ([34]); // 306
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>() -> ([35]); // 307
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>() -> ([33]); // 305
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>() -> ([34]); // 306
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>() -> ([35]); // 307
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([33], [34], [35]) -> ([36]); // 308
 store_temp<RangeCheck>([29]) -> ([29]); // 309
 store_temp<GasBuiltin>([30]) -> ([30]); // 310
@@ -799,9 +799,9 @@ get_builtin_costs() -> ([33]); // 418
 store_temp<BuiltinCosts>([33]) -> ([33]); // 419
 withdraw_gas_all([13], [5], [33]) { fallthrough([34], [35]) 453([36], [37]) }; // 420
 branch_align() -> (); // 421
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>() -> ([38]); // 422
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>() -> ([39]); // 423
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>() -> ([40]); // 424
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>() -> ([38]); // 422
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>() -> ([39]); // 423
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>() -> ([40]); // 424
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([38], [39], [40]) -> ([41]); // 425
 store_temp<RangeCheck>([34]) -> ([34]); // 426
 store_temp<GasBuiltin>([35]) -> ([35]); // 427
@@ -940,9 +940,9 @@ get_builtin_costs() -> ([37]); // 559
 store_temp<BuiltinCosts>([37]) -> ([37]); // 560
 withdraw_gas_all([17], [5], [37]) { fallthrough([38], [39]) 595([40], [41]) }; // 561
 branch_align() -> (); // 562
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>() -> ([42]); // 563
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>() -> ([43]); // 564
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>() -> ([44]); // 565
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>() -> ([42]); // 563
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>() -> ([43]); // 564
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>() -> ([44]); // 565
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([42], [43], [44]) -> ([45]); // 566
 store_temp<RangeCheck>([38]) -> ([38]); // 567
 store_temp<GasBuiltin>([39]) -> ([39]); // 568
@@ -1088,9 +1088,9 @@ get_builtin_costs() -> ([28]); // 707
 store_temp<BuiltinCosts>([28]) -> ([28]); // 708
 withdraw_gas_all([8], [5], [28]) { fallthrough([29], [30]) 741([31], [32]) }; // 709
 branch_align() -> (); // 710
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>() -> ([33]); // 711
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>() -> ([34]); // 712
-struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>() -> ([35]); // 713
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>() -> ([33]); // 711
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>() -> ([34]); // 712
+struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>() -> ([35]); // 713
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([33], [34], [35]) -> ([36]); // 714
 store_temp<GasBuiltin>([30]) -> ([30]); // 715
 store_temp<System>([2]) -> ([2]); // 716
@@ -1189,11 +1189,11 @@ function_call<user@core::starknet::info::get_caller_address>([1], [2]) -> ([5], 
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) { fallthrough([8]) 1011([9]) }; // 809
 branch_align() -> (); // 810
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([3]) -> ([10], [11], [12]); // 811
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([10]) -> ([13], [14]); // 812
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([10]) -> ([13], [14]); // 812
 store_temp<RangeCheck>([0]) -> ([0]); // 813
 store_temp<GasBuiltin>([5]) -> ([5]); // 814
 store_temp<System>([6]) -> ([6]); // 815
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read>([0], [5], [6], [14]) -> ([15], [16], [17], [18]); // 816
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::read>([0], [5], [6], [14]) -> ([15], [16], [17], [18]); // 816
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([18]) { fallthrough([19]) 999([20]) }; // 817
 branch_align() -> (); // 818
 struct_deconstruct<Tuple<ContractAddress>>([8]) -> ([21]); // 819
@@ -1216,10 +1216,10 @@ felt252_sub([35], [36]) -> ([37]); // 835
 store_temp<felt252>([37]) -> ([37]); // 836
 felt252_is_zero([37]) { fallthrough() 981([38]) }; // 837
 branch_align() -> (); // 838
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> ([39], [40]); // 839
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> ([39], [40]); // 839
 store_temp<GasBuiltin>([16]) -> ([16]); // 840
 store_temp<System>([17]) -> ([17]); // 841
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>([16], [17], [40]) -> ([41], [42], [43]); // 842
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read>([16], [17], [40]) -> ([41], [42], [43]); // 842
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([43]) { fallthrough([44]) 970([45]) }; // 843
 branch_align() -> (); // 844
 struct_deconstruct<Tuple<felt252>>([44]) -> ([46]); // 845
@@ -1265,10 +1265,10 @@ store_temp<core::bool>([77]) -> ([77]); // 884
 enum_match<core::bool>([77]) { fallthrough([78]) 904([79]) }; // 885
 branch_align() -> (); // 886
 drop<Unit>([78]) -> (); // 887
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 888
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 889
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 888
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 889
 drop<core::starknet::eth_address::EthAddress>([59]) -> (); // 890
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([39]) -> (); // 891
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([39]) -> (); // 891
 array_new<felt252>() -> ([80]); // 892
 felt252_const<2013105824254760083698114694758106795707028307>() -> ([81]); // 893
 store_temp<felt252>([81]) -> ([81]); // 894
@@ -1289,10 +1289,10 @@ function_call<user@core::starknet::eth_address::EthAddressIntoFelt252::into>([86
 store_temp<GasBuiltin>([41]) -> ([41]); // 909
 store_temp<System>([42]) -> ([42]); // 910
 store_temp<felt252>([87]) -> ([87]); // 911
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>([41], [42], [39], [87]) -> ([88], [89], [90]); // 912
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>([90]) { fallthrough([91]) 942([92]) }; // 913
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::write>([41], [42], [39], [87]) -> ([88], [89], [90]); // 912
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>>([90]) { fallthrough([91]) 942([92]) }; // 913
 branch_align() -> (); // 914
-struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>([91]) -> ([93], [94]); // 915
+struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>>([91]) -> ([93], [94]); // 915
 drop<Unit>([94]) -> (); // 916
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([59]) -> ([95]); // 917
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([13], [93], [12]) -> ([96]); // 918
@@ -1320,8 +1320,8 @@ store_temp<System>([98]) -> ([98]); // 939
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([107]) -> ([107]); // 940
 return([15], [97], [98], [107]); // 941
 branch_align() -> (); // 942
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 943
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 944
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 943
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 944
 drop<core::starknet::eth_address::EthAddress>([59]) -> (); // 945
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([92]) -> ([108]); // 946
 store_temp<RangeCheck>([15]) -> ([15]); // 947
@@ -1331,9 +1331,9 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_brid
 return([15], [88], [89], [108]); // 951
 branch_align() -> (); // 952
 drop<NonZero<felt252>>([58]) -> (); // 953
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 954
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 955
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([39]) -> (); // 956
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 954
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 955
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([39]) -> (); // 956
 drop<core::starknet::eth_address::EthAddress>([4]) -> (); // 957
 array_new<felt252>() -> ([109]); // 958
 felt252_const<2054155436302874063144879540528839771367000972005206782634847091967300>() -> ([110]); // 959
@@ -1348,9 +1348,9 @@ store_temp<System>([42]) -> ([42]); // 967
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([114]) -> ([114]); // 968
 return([15], [41], [42], [114]); // 969
 branch_align() -> (); // 970
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 971
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 972
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([39]) -> (); // 973
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 971
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 972
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([39]) -> (); // 973
 drop<core::starknet::eth_address::EthAddress>([4]) -> (); // 974
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([45]) -> ([115]); // 975
 store_temp<RangeCheck>([15]) -> ([15]); // 976
@@ -1361,9 +1361,9 @@ return([15], [41], [42], [115]); // 980
 branch_align() -> (); // 981
 drop<NonZero<felt252>>([38]) -> (); // 982
 drop<core::starknet::eth_address::EthAddress>([4]) -> (); // 983
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 984
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 985
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 986
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 984
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 985
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 986
 array_new<felt252>() -> ([116]); // 987
 felt252_const<5649753149270704239157030308953>() -> ([117]); // 988
 store_temp<felt252>([117]) -> ([117]); // 989
@@ -1378,9 +1378,9 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_brid
 return([15], [16], [17], [121]); // 998
 branch_align() -> (); // 999
 drop<core::starknet::eth_address::EthAddress>([4]) -> (); // 1000
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1001
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 1002
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1003
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1001
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 1002
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1003
 drop<Tuple<ContractAddress>>([8]) -> (); // 1004
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([20]) -> ([122]); // 1005
 store_temp<RangeCheck>([15]) -> ([15]); // 1006
@@ -1427,11 +1427,11 @@ function_call<user@core::starknet::info::get_caller_address>([1], [2]) -> ([5], 
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) { fallthrough([8]) 1255([9]) }; // 1047
 branch_align() -> (); // 1048
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([3]) -> ([10], [11], [12]); // 1049
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([10]) -> ([13], [14]); // 1050
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([10]) -> ([13], [14]); // 1050
 store_temp<RangeCheck>([0]) -> ([0]); // 1051
 store_temp<GasBuiltin>([5]) -> ([5]); // 1052
 store_temp<System>([6]) -> ([6]); // 1053
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read>([0], [5], [6], [14]) -> ([15], [16], [17], [18]); // 1054
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::read>([0], [5], [6], [14]) -> ([15], [16], [17], [18]); // 1054
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([18]) { fallthrough([19]) 1243([20]) }; // 1055
 branch_align() -> (); // 1056
 struct_deconstruct<Tuple<ContractAddress>>([8]) -> ([21]); // 1057
@@ -1454,11 +1454,11 @@ felt252_sub([35], [36]) -> ([37]); // 1073
 store_temp<felt252>([37]) -> ([37]); // 1074
 felt252_is_zero([37]) { fallthrough() 1225([38]) }; // 1075
 branch_align() -> (); // 1076
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> ([39], [40]); // 1077
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> ([39], [40]); // 1077
 store_temp<RangeCheck>([15]) -> ([15]); // 1078
 store_temp<GasBuiltin>([16]) -> ([16]); // 1079
 store_temp<System>([17]) -> ([17]); // 1080
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read>([15], [16], [17], [40]) -> ([41], [42], [43], [44]); // 1081
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read>([15], [16], [17], [40]) -> ([41], [42], [43], [44]); // 1081
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([44]) { fallthrough([45]) 1214([46]) }; // 1082
 branch_align() -> (); // 1083
 struct_deconstruct<Tuple<ContractAddress>>([45]) -> ([47]); // 1084
@@ -1511,10 +1511,10 @@ store_temp<core::bool>([85]) -> ([85]); // 1130
 enum_match<core::bool>([85]) { fallthrough([86]) 1150([87]) }; // 1131
 branch_align() -> (); // 1132
 drop<Unit>([86]) -> (); // 1133
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1134
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1134
 drop<ContractAddress>([64]) -> (); // 1135
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1136
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([39]) -> (); // 1137
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1136
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([39]) -> (); // 1137
 array_new<felt252>() -> ([88]); // 1138
 felt252_const<7863694625996581757838692818417470702703443>() -> ([89]); // 1139
 store_temp<felt252>([89]) -> ([89]); // 1140
@@ -1533,10 +1533,10 @@ store_temp<GasBuiltin>([42]) -> ([42]); // 1152
 store_temp<System>([43]) -> ([43]); // 1153
 dup<ContractAddress>([64]) -> ([64], [94]); // 1154
 store_temp<ContractAddress>([94]) -> ([94]); // 1155
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write>([42], [43], [39], [94]) -> ([95], [96], [97]); // 1156
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>([97]) { fallthrough([98]) 1186([99]) }; // 1157
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write>([42], [43], [39], [94]) -> ([95], [96], [97]); // 1156
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>([97]) { fallthrough([98]) 1186([99]) }; // 1157
 branch_align() -> (); // 1158
-struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>([98]) -> ([100], [101]); // 1159
+struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>>([98]) -> ([100], [101]); // 1159
 drop<Unit>([101]) -> (); // 1160
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([64]) -> ([102]); // 1161
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([13], [11], [100]) -> ([103]); // 1162
@@ -1564,9 +1564,9 @@ store_temp<System>([105]) -> ([105]); // 1183
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([114]) -> ([114]); // 1184
 return([41], [104], [105], [114]); // 1185
 branch_align() -> (); // 1186
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1187
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1187
 drop<ContractAddress>([64]) -> (); // 1188
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1189
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1189
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([99]) -> ([115]); // 1190
 store_temp<RangeCheck>([41]) -> ([41]); // 1191
 store_temp<GasBuiltin>([95]) -> ([95]); // 1192
@@ -1575,9 +1575,9 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_brid
 return([41], [95], [96], [115]); // 1195
 branch_align() -> (); // 1196
 drop<NonZero<felt252>>([63]) -> (); // 1197
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1198
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([39]) -> (); // 1199
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1200
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1198
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([39]) -> (); // 1199
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1200
 drop<ContractAddress>([4]) -> (); // 1201
 array_new<felt252>() -> ([116]); // 1202
 felt252_const<8024456162111895508134220083409193625115250751146126158458242352452>() -> ([117]); // 1203
@@ -1592,9 +1592,9 @@ store_temp<System>([43]) -> ([43]); // 1211
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([121]) -> ([121]); // 1212
 return([41], [42], [43], [121]); // 1213
 branch_align() -> (); // 1214
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1215
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([39]) -> (); // 1216
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1217
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1215
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([39]) -> (); // 1216
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1217
 drop<ContractAddress>([4]) -> (); // 1218
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([46]) -> ([122]); // 1219
 store_temp<RangeCheck>([41]) -> ([41]); // 1220
@@ -1604,10 +1604,10 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_brid
 return([41], [42], [43], [122]); // 1224
 branch_align() -> (); // 1225
 drop<NonZero<felt252>>([38]) -> (); // 1226
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1227
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1227
 drop<ContractAddress>([4]) -> (); // 1228
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1229
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 1230
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1229
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 1230
 array_new<felt252>() -> ([123]); // 1231
 felt252_const<5649753149270704239157030308953>() -> ([124]); // 1232
 store_temp<felt252>([124]) -> ([124]); // 1233
@@ -1621,10 +1621,10 @@ store_temp<System>([17]) -> ([17]); // 1240
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([128]) -> ([128]); // 1241
 return([15], [16], [17], [128]); // 1242
 branch_align() -> (); // 1243
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([11]) -> (); // 1244
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1244
 drop<ContractAddress>([4]) -> (); // 1245
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([13]) -> (); // 1246
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([12]) -> (); // 1247
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1246
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 1247
 drop<Tuple<ContractAddress>>([8]) -> (); // 1248
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([20]) -> ([129]); // 1249
 store_temp<RangeCheck>([15]) -> ([15]); // 1250
@@ -1881,10 +1881,10 @@ store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1500
 store_temp<core::option::Option::<core::felt252>>([17]) -> ([17]); // 1501
 return([10], [17]); // 1502
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([3]) -> ([7], [8], [9]); // 1503
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([8]) -> ([10], [11]); // 1504
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([8]) -> ([10], [11]); // 1504
 store_temp<GasBuiltin>([1]) -> ([1]); // 1505
 store_temp<System>([2]) -> ([2]); // 1506
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>([1], [2], [11]) -> ([12], [13], [14]); // 1507
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read>([1], [2], [11]) -> ([12], [13], [14]); // 1507
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([14]) { fallthrough([15]) 1606([16]) }; // 1508
 branch_align() -> (); // 1509
 snapshot_take<felt252>([4]) -> ([17], [18]); // 1510
@@ -1968,9 +1968,9 @@ branch_align() -> (); // 1587
 drop<NonZero<felt252>>([25]) -> (); // 1588
 drop<ContractAddress>([5]) -> (); // 1589
 drop<core::integer::u256>([6]) -> (); // 1590
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([9]) -> (); // 1591
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([10]) -> (); // 1592
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([7]) -> (); // 1593
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([9]) -> (); // 1591
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([10]) -> (); // 1592
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([7]) -> (); // 1593
 array_new<felt252>() -> ([59]); // 1594
 felt252_const<435285461855291105107993099906934166952343452266605277236313>() -> ([60]); // 1595
 store_temp<felt252>([60]) -> ([60]); // 1596
@@ -1986,9 +1986,9 @@ return([0], [12], [13], [64]); // 1605
 branch_align() -> (); // 1606
 drop<ContractAddress>([5]) -> (); // 1607
 drop<core::integer::u256>([6]) -> (); // 1608
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([9]) -> (); // 1609
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([10]) -> (); // 1610
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([7]) -> (); // 1611
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([9]) -> (); // 1609
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([10]) -> (); // 1610
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([7]) -> (); // 1611
 drop<felt252>([4]) -> (); // 1612
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([16]) -> ([65]); // 1613
 store_temp<RangeCheck>([0]) -> ([0]); // 1614
@@ -2046,10 +2046,10 @@ struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::Con
 store_temp<GasBuiltin>([0]) -> ([0]); // 1666
 store_temp<System>([1]) -> ([1]); // 1667
 store_temp<ContractAddress>([4]) -> ([4]); // 1668
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write>([0], [1], [34], [4]) -> ([37], [38], [39]); // 1669
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>([39]) { fallthrough([40]) 1682([41]) }; // 1670
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write>([0], [1], [34], [4]) -> ([37], [38], [39]); // 1669
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>([39]) { fallthrough([40]) 1682([41]) }; // 1670
 branch_align() -> (); // 1671
-struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>([40]) -> ([42], [43]); // 1672
+struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>([40]) -> ([42], [43]); // 1672
 drop<Unit>([43]) -> (); // 1673
 struct_construct<Unit>() -> ([44]); // 1674
 struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([42], [35], [36]) -> ([45]); // 1675
@@ -2060,8 +2060,8 @@ store_temp<System>([38]) -> ([38]); // 1679
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([47]) -> ([47]); // 1680
 return([37], [38], [47]); // 1681
 branch_align() -> (); // 1682
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([35]) -> (); // 1683
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([36]) -> (); // 1684
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([35]) -> (); // 1683
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([36]) -> (); // 1684
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>([41]) -> ([48]); // 1685
 store_temp<GasBuiltin>([37]) -> ([37]); // 1686
 store_temp<System>([38]) -> ([38]); // 1687
@@ -2116,7 +2116,7 @@ store_temp<GasBuiltin>([2]) -> ([2]); // 1735
 store_temp<System>([3]) -> ([3]); // 1736
 store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([16]) -> ([16]); // 1737
 return([2], [3], [16]); // 1738
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([3]) -> (); // 1739
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([3]) -> (); // 1739
 storage_base_address_const<1029731857676939251764310060221759735616133968799083538322288083634503518595>() -> ([4]); // 1740
 storage_address_from_base([4]) -> ([5]); // 1741
 u32_const<0>() -> ([6]); // 1742
@@ -2175,7 +2175,7 @@ store_temp<GasBuiltin>([19]) -> ([19]); // 1794
 store_temp<System>([20]) -> ([20]); // 1795
 store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([35]) -> ([35]); // 1796
 return([18], [19], [20], [35]); // 1797
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([2]) -> (); // 1798
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([2]) -> (); // 1798
 storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039>() -> ([3]); // 1799
 storage_address_from_base([3]) -> ([4]); // 1800
 u32_const<0>() -> ([5]); // 1801
@@ -2215,8 +2215,8 @@ return([1]); // 1834
 storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039>() -> ([4]); // 1835
 storage_address_from_base([4]) -> ([5]); // 1836
 u32_const<0>() -> ([6]); // 1837
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([2]) -> ([7], [8]); // 1838
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([8]) -> (); // 1839
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([2]) -> ([7], [8]); // 1838
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([8]) -> (); // 1839
 store_temp<u32>([6]) -> ([6]); // 1840
 store_temp<StorageAddress>([5]) -> ([5]); // 1841
 storage_write_syscall([0], [1], [6], [5], [3]) { fallthrough([9], [10]) 1850([11], [12], [13]) }; // 1842
@@ -2236,18 +2236,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([20]) { fallthrough([21]) 1865([22]) }; // 1856
 branch_align() -> (); // 1857
 struct_deconstruct<Tuple<Unit>>([21]) -> ([23]); // 1858
-struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>([7], [23]) -> ([24]); // 1859
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 0>([24]) -> ([25]); // 1860
+struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>>([7], [23]) -> ([24]); // 1859
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 0>([24]) -> ([25]); // 1860
 store_temp<GasBuiltin>([16]) -> ([16]); // 1861
 store_temp<System>([17]) -> ([17]); // 1862
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>([25]) -> ([25]); // 1863
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>>([25]) -> ([25]); // 1863
 return([16], [17], [25]); // 1864
 branch_align() -> (); // 1865
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([7]) -> (); // 1866
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 1>([22]) -> ([26]); // 1867
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([7]) -> (); // 1866
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>, 1>([22]) -> ([26]); // 1867
 store_temp<GasBuiltin>([16]) -> ([16]); // 1868
 store_temp<System>([17]) -> ([17]); // 1869
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>([26]) -> ([26]); // 1870
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>>([26]) -> ([26]); // 1870
 return([16], [17], [26]); // 1871
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([3]) -> ([3]); // 1872
 function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into>([3]) -> ([4]); // 1873
@@ -2298,7 +2298,7 @@ store_temp<GasBuiltin>([25]) -> ([25]); // 1917
 store_temp<System>([26]) -> ([26]); // 1918
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>([35]) -> ([35]); // 1919
 return([25], [26], [35]); // 1920
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([3]) -> (); // 1921
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([3]) -> (); // 1921
 storage_base_address_const<841860433736651593546282235841978572674005179665527839815333381321756641199>() -> ([4]); // 1922
 storage_address_from_base([4]) -> ([5]); // 1923
 u32_const<0>() -> ([6]); // 1924
@@ -2361,8 +2361,8 @@ storage_base_address_const<84186043373665159354628223584197857267400517966552783
 contract_address_to_felt252([3]) -> ([5]); // 1981
 storage_address_from_base([4]) -> ([6]); // 1982
 u32_const<0>() -> ([7]); // 1983
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([2]) -> ([8], [9]); // 1984
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([9]) -> (); // 1985
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([2]) -> ([8], [9]); // 1984
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([9]) -> (); // 1985
 store_temp<u32>([7]) -> ([7]); // 1986
 store_temp<StorageAddress>([6]) -> ([6]); // 1987
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1996([12], [13], [14]) }; // 1988
@@ -2382,18 +2382,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 2011([23]) }; // 2002
 branch_align() -> (); // 2003
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 2004
-struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 2005
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 0>([25]) -> ([26]); // 2006
+struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 2005
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 0>([25]) -> ([26]); // 2006
 store_temp<GasBuiltin>([17]) -> ([17]); // 2007
 store_temp<System>([18]) -> ([18]); // 2008
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>([26]) -> ([26]); // 2009
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>([26]) -> ([26]); // 2009
 return([17], [18], [26]); // 2010
 branch_align() -> (); // 2011
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([8]) -> (); // 2012
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 1>([23]) -> ([27]); // 2013
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([8]) -> (); // 2012
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>, 1>([23]) -> ([27]); // 2013
 store_temp<GasBuiltin>([17]) -> ([17]); // 2014
 store_temp<System>([18]) -> ([18]); // 2015
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>([27]) -> ([27]); // 2016
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>([27]) -> ([27]); // 2016
 return([17], [18], [27]); // 2017
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([3]) -> ([3]); // 2018
 function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into>([3]) -> ([4]); // 2019
@@ -2459,12 +2459,12 @@ store_temp<RangeCheck>([4]) -> ([8]); // 2078
 store_temp<core::option::Option::<core::integer::u128>>([11]) -> ([9]); // 2079
 return([8], [9]); // 2080
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([3]) -> ([4], [5], [6]); // 2081
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([4]) -> (); // 2082
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>([5]) -> (); // 2083
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([4]) -> (); // 2082
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([5]) -> (); // 2083
 store_temp<RangeCheck>([0]) -> ([0]); // 2084
 store_temp<GasBuiltin>([1]) -> ([1]); // 2085
 store_temp<System>([2]) -> ([2]); // 2086
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read>([0], [1], [2], [6]) -> ([7], [8], [9], [10]); // 2087
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read>([0], [1], [2], [6]) -> ([7], [8], [9], [10]); // 2087
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([10]) { fallthrough([11]) 2144([12]) }; // 2088
 branch_align() -> (); // 2089
 struct_deconstruct<Tuple<ContractAddress>>([11]) -> ([13]); // 2090
@@ -2578,11 +2578,11 @@ store_temp<System>([27]) -> ([27]); // 2197
 store_temp<core::panics::PanicResult::<((),)>>([36]) -> ([36]); // 2198
 return([26], [27], [36]); // 2199
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([2]) -> ([3], [4], [5]); // 2200
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([3]) -> (); // 2201
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>([5]) -> (); // 2202
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([3]) -> (); // 2201
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([5]) -> (); // 2202
 store_temp<GasBuiltin>([0]) -> ([0]); // 2203
 store_temp<System>([1]) -> ([1]); // 2204
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>([0], [1], [4]) -> ([6], [7], [8]); // 2205
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read>([0], [1], [4]) -> ([6], [7], [8]); // 2205
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([8]) { fallthrough([9]) 2256([10]) }; // 2206
 branch_align() -> (); // 2207
 struct_deconstruct<Tuple<felt252>>([9]) -> ([11]); // 2208
@@ -2790,8 +2790,8 @@ storage_base_address_const<10297318576769392517643100602217597356161339687990835
 contract_address_to_felt252([3]) -> ([5]); // 2410
 storage_address_from_base([4]) -> ([6]); // 2411
 u32_const<0>() -> ([7]); // 2412
-snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([2]) -> ([8], [9]); // 2413
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([9]) -> (); // 2414
+snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([2]) -> ([8], [9]); // 2413
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([9]) -> (); // 2414
 store_temp<u32>([7]) -> ([7]); // 2415
 store_temp<StorageAddress>([6]) -> ([6]); // 2416
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 2425([12], [13], [14]) }; // 2417
@@ -2811,18 +2811,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 2440([23]) }; // 2431
 branch_align() -> (); // 2432
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 2433
-struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 2434
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 0>([25]) -> ([26]); // 2435
+struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 2434
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 0>([25]) -> ([26]); // 2435
 store_temp<GasBuiltin>([17]) -> ([17]); // 2436
 store_temp<System>([18]) -> ([18]); // 2437
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>([26]) -> ([26]); // 2438
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>([26]) -> ([26]); // 2438
 return([17], [18], [26]); // 2439
 branch_align() -> (); // 2440
-drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>([8]) -> (); // 2441
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 1>([23]) -> ([27]); // 2442
+drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([8]) -> (); // 2441
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 1>([23]) -> ([27]); // 2442
 store_temp<GasBuiltin>([17]) -> ([17]); // 2443
 store_temp<System>([18]) -> ([18]); // 2444
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>([27]) -> ([27]); // 2445
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>([27]) -> ([27]); // 2445
 return([17], [18], [27]); // 2446
 u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 2454([4], [5], [6]) }; // 2447
 branch_align() -> (); // 2448
@@ -3164,13 +3164,13 @@ cairo_level_tests::contracts::token_bridge::token_bridge::handle_deposit@1503([0
 cairo_level_tests::contracts::token_bridge::token_bridge::constructor@1619([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>);
 core::starknet::eth_address::Felt252TryIntoEthAddress::try_into@1690([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::eth_address::EthAddress>);
 core::starknet::info::get_caller_address@1715([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read@1739([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read@1798([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::read@1739([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::read@1798([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
 core::starknet::eth_address::EthAddressIntoFelt252::into@1832([0]: core::starknet::eth_address::EthAddress) -> (felt252);
-cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write@1835([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::InternalContractMemberStateImpl::write@1835([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())>);
 cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>@1872([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>);
-cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read@1921([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write@1980([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read@1921([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write@1980([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>);
 cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>@2018([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>);
 core::integer::u128_try_from_felt252@2067([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l2_token@2081([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
@@ -3179,7 +3179,7 @@ cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initi
 cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent>@2262([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>);
 cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_mint@2311([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher, [3]: ContractAddress, [4]: core::integer::u256) -> (GasBuiltin, System, core::panics::PanicResult::<((),)>);
 cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>@2360([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, [3]: cairo_level_tests::contracts::token_bridge::token_bridge::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>);
-cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write@2409([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>);
+cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write@2409([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>);
 core::integer::u256_from_felt252@2447([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::u256);
 core::integer::U256PartialOrd::lt@2459([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::bool);
 core::starknet::info::get_execution_info@2513([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);

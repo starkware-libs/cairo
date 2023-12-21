@@ -510,17 +510,17 @@ component:
 
 
     struct ComponentState<TContractState> {
-        data: data::ComponentMemberState,
-        map: map::ComponentMemberState,
-        my_type_var: my_type_var::ComponentMemberState,
+        data: __member_module_data::ComponentMemberState,
+        map: __member_module_map::ComponentMemberState,
+        my_type_var: __member_module_my_type_var::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
-            map: map::ComponentMemberState {},
-            my_type_var: my_type_var::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
+            map: __member_module_map::ComponentMemberState {},
+            my_type_var: __member_module_my_type_var::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -529,7 +529,7 @@ component:
         unsafe_new_component_state::<TContractState>()
     }
     
-    mod data {
+    mod __member_module_data {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
@@ -543,7 +543,7 @@ component:
             }
         }
     }
-    mod map {
+    mod __member_module_map {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;
@@ -559,7 +559,7 @@ component:
             }
         }
     }
-    mod my_type_var {
+    mod __member_module_my_type_var {
         use super::ContractAddress;
         use super::MyTrait;
         use super::Event;

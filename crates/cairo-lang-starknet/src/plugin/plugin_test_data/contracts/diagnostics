@@ -293,13 +293,13 @@ enum Event {}
 
 
     struct ContractState {
-        mapping: mapping::ContractMemberState,
+        mapping: __member_module_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            mapping: mapping::ContractMemberState {},
+            mapping: __member_module_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -374,20 +374,20 @@ error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
         mapping: Map::<felt252, felt252>,
                  ^*********************^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:5:9
-        mapping: Map::<felt252, felt252>,
-        ^*****^
+error: Identifier not found.
+ --> lib.cairo[contract]:7:18
+        mapping: __member_module_mapping::ContractMemberState,
+                 ^*********************^
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> lib.cairo[contract]:9:5
     impl ContractStateDrop of Drop<ContractState> {}
     ^**********************************************^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:5:9
-        mapping: Map::<felt252, felt252>,
-        ^*****^
+error: Identifier not found.
+ --> lib.cairo[contract]:13:22
+            mapping: __member_module_mapping::ContractMemberState {},
+                     ^*********************^
 
 //! > ==========================================================================
 
@@ -1566,7 +1566,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1602,13 +1602,13 @@ enum Event {}
 
 
     struct ContractState {
-        same_name: same_name::ContractMemberState,
+        same_name: __member_module_same_name::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            same_name: same_name::ContractMemberState {},
+            same_name: __member_module_same_name::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1617,8 +1617,8 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
-    use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
-    mod same_name {
+    use __member_module_same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
+    mod __member_module_same_name {
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -1715,10 +1715,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The name `same_name` is defined multiple times.
- --> lib.cairo:5:9
-        same_name: felt252,
-        ^*******^
 
 //! > ==========================================================================
 

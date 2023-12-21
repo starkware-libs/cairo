@@ -68,7 +68,7 @@ mod counter_contract {
 
 
     struct ContractState {
-        counter: counter::ContractMemberState,
+        counter: __member_module_counter::ContractMemberState,
         upgradable: upgradable_comp::ComponentState<ContractState>,
         ownable: ownable_comp::ComponentState<ContractState>,
     }
@@ -76,14 +76,14 @@ mod counter_contract {
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            counter: counter::ContractMemberState {},
+            counter: __member_module_counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
-    use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod counter {
+    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
@@ -835,7 +835,7 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
 
 
     struct ContractState {
-        counter: counter::ContractMemberState,
+        counter: __member_module_counter::ContractMemberState,
         upgradable: upgradable_comp::ComponentState<ContractState>,
         ownable: ownable_comp::ComponentState<ContractState>,
     }
@@ -843,14 +843,14 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            counter: counter::ContractMemberState {},
+            counter: __member_module_counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
-    use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod counter {
+    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
