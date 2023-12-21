@@ -15,8 +15,8 @@ use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
-use crate::diagnostic::LoweringDiagnostic;
-use crate::ids::FunctionId;
+use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
+use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
@@ -275,7 +275,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
-    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<FunctionId>>;
+    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
@@ -478,7 +478,19 @@ fn function_with_body_lowering_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
-        diagnostics.extend(lowered.diagnostics.clone())
+        diagnostics.extend(lowered.diagnostics.clone());
+        if flag_add_withdraw_gas(db) && !lowered.signature.panicable && db.in_cycle(function_id)? {
+            let location = Location {
+                stable_location: function_id
+                    .base_semantic_function(db)
+                    .stable_location(db.upcast()),
+                notes: vec![],
+            };
+            diagnostics.add(LoweringDiagnostic {
+                location,
+                kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
+            });
+        }
     }
 
     diagnostics.extend(
