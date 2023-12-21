@@ -37,10 +37,10 @@
     "0x1289347a53bd537cb2be622dc3ef1bae97ae391de352ed7871b08a409f130a8",
     "0x53746f7261676541646472657373",
     "0x53746f726167654261736541646472657373",
-    "0x20f40c2c750e4ddd113d6094e3b9e66b047731766233d2a0e36d53cceada553",
+    "0x1fd4c2df1e8c493966b4b5155bcf09cfec203323527379e4d4bbe95176d38b0",
     "0x800000000000000f00000000000000000000000000000003",
     "0xd",
-    "0x3f03acf9eb0b54515373ddff3325e70d968c069b58297ed62f4e12f24d2fc83",
+    "0x6c2ae61f0bc3ef56c5521849990aae982cd7e7f5498d90703357b20fb3e86d",
     "0xe",
     "0x800000000000000700000000000000000000000000000002",
     "0x3ab802bcce3a9ca953b0e1f31a5b29eb27a9b727c891e24300e1b5cc57387ba",
@@ -441,15 +441,15 @@
       ],
       [
         13,
-        "cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState"
+        "cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState"
       ],
       [
         14,
-        "Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>"
       ],
       [
         15,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>"
       ],
       [
         16,
@@ -679,7 +679,7 @@
       ],
       [
         40,
-        "struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>"
       ],
       [
         41,
@@ -779,11 +779,11 @@
       ],
       [
         65,
-        "snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>"
       ],
       [
         66,
-        "function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read>"
       ],
       [
         67,
@@ -791,15 +791,15 @@
       ],
       [
         68,
-        "function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write>"
       ],
       [
         69,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>"
       ],
       [
         70,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>"
       ],
       [
         71,
@@ -819,7 +819,7 @@
       ],
       [
         75,
-        "drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>"
       ],
       [
         76,
@@ -927,19 +927,19 @@
       ],
       [
         102,
-        "struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>"
       ],
       [
         103,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 0>"
       ],
       [
         104,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>"
       ],
       [
         105,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 1>"
       ],
       [
         106,
@@ -997,7 +997,7 @@
       ],
       [
         5,
-        "cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read"
       ],
       [
         6,
@@ -1005,7 +1005,7 @@
       ],
       [
         7,
-        "cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write"
       ],
       [
         8,
