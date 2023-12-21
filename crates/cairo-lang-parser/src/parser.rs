@@ -791,6 +791,7 @@ impl<'a> Parser<'a> {
 
         match self.peek().kind {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
+            SyntaxKind::TerminalType => Ok(self.expect_trait_item_type(attributes).into()),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<TraitItem>(
@@ -814,6 +815,15 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
         TraitItemFunction::new_green(self.db, attributes, declaration, body)
+    }
+
+    /// Assumes the current token is Type.
+    /// Expected pattern: `type <name>;`
+    fn expect_trait_item_type(&mut self, attributes: AttributeListGreen) -> TraitItemTypeGreen {
+        let type_kw = self.take::<TerminalType>();
+        let name = self.parse_identifier();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        TraitItemType::new_green(self.db, attributes, type_kw, name, semicolon)
     }
 
     /// Assumes the current token is Impl.
@@ -917,12 +927,12 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => {
                 Ok(self.expect_function_with_body(attributes, visibility).into())
             }
+            SyntaxKind::TerminalType => Ok(self.expect_type_alias(attributes, visibility).into()),
             // These are not supported semantically.
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes, visibility).into()),
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes, visibility).into()),
             SyntaxKind::TerminalStruct => Ok(self.expect_struct(attributes, visibility).into()),
             SyntaxKind::TerminalEnum => Ok(self.expect_enum(attributes, visibility).into()),
-            SyntaxKind::TerminalType => Ok(self.expect_type_alias(attributes, visibility).into()),
             SyntaxKind::TerminalExtern => Ok(self.expect_extern_impl_item(attributes, visibility)),
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes, visibility).into()),
