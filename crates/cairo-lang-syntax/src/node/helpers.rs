@@ -6,8 +6,8 @@ use super::ast::{
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
     ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
     StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
-    TraitItemFunctionPtr, Variant, WrappedArgList,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemAssociatedType,
+    TraitItemFunction, TraitItemFunctionPtr, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -279,10 +279,16 @@ impl QueryAttrs for TraitItemFunction {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for TraitItemAssociatedType {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             TraitItem::Function(item) => item.attributes_elements(db),
+            TraitItem::AssociatedType(item) => item.attributes_elements(db),
             TraitItem::Missing(_) => vec![],
         }
     }
@@ -319,6 +325,7 @@ impl QueryAttrs for ImplItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             ImplItem::Function(item) => item.attributes_elements(db),
+            ImplItem::AssociatedType(item) => item.attributes_elements(db),
             ImplItem::Constant(item) => item.attributes_elements(db),
             ImplItem::Module(item) => item.attributes_elements(db),
             ImplItem::Use(item) => item.attributes_elements(db),
@@ -329,7 +336,6 @@ impl QueryAttrs for ImplItem {
             ImplItem::ImplAlias(item) => item.attributes_elements(db),
             ImplItem::Struct(item) => item.attributes_elements(db),
             ImplItem::Enum(item) => item.attributes_elements(db),
-            ImplItem::TypeAlias(item) => item.attributes_elements(db),
             ImplItem::Missing(_) => vec![],
         }
     }

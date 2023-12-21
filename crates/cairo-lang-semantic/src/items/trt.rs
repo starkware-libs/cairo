@@ -23,7 +23,7 @@ use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{report_unsupported_associated_item, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
@@ -370,6 +370,9 @@ pub fn priv_trait_semantic_definition_data(
                         );
                     }
                     function_asts.insert(trait_func_id, func);
+                }
+                ast::TraitItem::AssociatedType(ty) => {
+                    report_unsupported_associated_item(&mut diagnostics, ty.type_kw(syntax_db))
                 }
                 ast::TraitItem::Missing(_) => {}
             }

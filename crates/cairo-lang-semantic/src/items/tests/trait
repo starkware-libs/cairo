@@ -656,3 +656,35 @@ error: Not a trait.
  --> lib.cairo:10:14
 impl imp4 of inner_imp {}
              ^*******^
+
+//! > ==========================================================================
+
+//! > Test unsupported associated items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   type X;
+}
+impl MyImpl of MyTrait {
+   type X = u32;
+}
+
+//! > expected_diagnostics
+error: Associated items are not yet supported.
+ --> lib.cairo:2:4
+   type X;
+   ^**^
+
+error: Associated items are not yet supported.
+ --> lib.cairo:5:4
+   type X = u32;
+   ^**^

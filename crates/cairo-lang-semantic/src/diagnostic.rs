@@ -11,10 +11,11 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -638,6 +639,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
             }
+            SemanticDiagnosticKind::UnsupportedAssociatedItem => {
+                "Associated items are not yet supported.".into()
+            }
         }
     }
 
@@ -947,6 +951,7 @@ pub enum SemanticDiagnosticKind {
     GenericArgOutOfOrder {
         name: SmolStr,
     },
+    UnsupportedAssociatedItem,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1031,4 +1036,15 @@ impl TraitInferenceErrors {
             })
             .join("\n")
     }
+}
+
+/// A temporary helper function to report diagnostics of unsupported associated items.
+pub fn report_unsupported_associated_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedAssociatedItem,
+    );
 }

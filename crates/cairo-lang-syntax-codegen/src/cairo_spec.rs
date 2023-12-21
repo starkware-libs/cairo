@@ -502,8 +502,9 @@ pub fn get_spec() -> Vec<Node> {
     .add_list("TraitItemList", "TraitItem")
     .add_enum(EnumBuilder::new("TraitItem")
         .missing("Missing")
-        // TODO(spapini): types and constants.
+        // TODO(yuval): associated constants and impls.
         .node("Function")
+        .node("AssociatedType")
     )
     .add_struct(StructBuilder::new("TraitItemMissing"))
     .add_struct(StructBuilder::new("TraitItemFunction")
@@ -511,6 +512,12 @@ pub fn get_spec() -> Vec<Node> {
          // TODO(ilya): Use only the name as key node.
         .key_node("declaration", "FunctionDeclaration")
         .node("body", "MaybeTraitFunctionBody")
+    )
+    .add_struct(StructBuilder::new("TraitItemAssociatedType")
+        .node("attributes" ,"AttributeList")
+        .node("type_kw", "TerminalType")
+        .key_node("name", "TerminalIdentifier")
+        .node("semicolon", "TerminalSemicolon")
     )
     .add_enum(EnumBuilder::new("MaybeTraitFunctionBody")
         .node_with_explicit_kind("Some", "ExprBlock")
@@ -544,8 +551,9 @@ pub fn get_spec() -> Vec<Node> {
     .add_list("ImplItemList", "ImplItem")
     .add_enum(EnumBuilder::new("ImplItem")
         .missing("Missing")
-        // TODO(spapini): types and constants.
+        // TODO(yuval): associated constants and impls.
         .node_with_explicit_kind("Function", "FunctionWithBody")
+        .node_with_explicit_kind("AssociatedType", "ItemTypeAlias")
         // These are not supported semantically.
         .node_with_explicit_kind("Constant", "ItemConstant")
         .node_with_explicit_kind("Module", "ItemModule")
@@ -557,7 +565,6 @@ pub fn get_spec() -> Vec<Node> {
         .node_with_explicit_kind("ImplAlias", "ItemImplAlias")
         .node_with_explicit_kind("Struct", "ItemStruct")
         .node_with_explicit_kind("Enum", "ItemEnum")
-        .node_with_explicit_kind("TypeAlias", "ItemTypeAlias")
     )
     .add_struct(StructBuilder::new("ImplItemMissing"))
     .add_struct(StructBuilder::new("ItemImplAlias")

@@ -242,8 +242,16 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     false,
                 ));
             }
-            // ignore the missing item.
+            // Ignore the missing item.
             ast::TraitItem::Missing(_) => {}
+            // Associated items are not yet supported.
+            ast::TraitItem::AssociatedType(ty) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    ty.type_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support associated items.".to_string(),
+                ));
+                continue;
+            }
         }
     }
 
