@@ -5,14 +5,10 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 trait Foo<T>;
-impl FooImpl<S> of Foo::<S> {
-    fn foo(a: int) -> felt252 {
-        return a;
-    }
-}
+impl FooImpl<S> of Foo<S> {}
 
 //! > top_level_kind
-SyntaxFile
+ItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -20,51 +16,48 @@ FunctionWithBody
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: SyntaxFile
-    ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemTrait)
-    │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── visibility (kind: VisibilityDefault) []
-    │   │   ├── trait_kw (kind: TokenTrait): 'trait'
-    │   │   ├── name (kind: TokenIdentifier): 'Foo'
-    │   │   ├── generic_params (kind: WrappedGenericParamList)
-    │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   └── item #0 (kind: GenericParamType)
-    │   │   │   │       └── name (kind: TokenIdentifier): 'T'
-    │   │   │   └── rangle (kind: TokenGT): '>'
-    │   │   └── body (kind: TokenSemicolon): ';'
-    │   └── child #1 (kind: ItemImpl)
-    │       ├── attributes (kind: AttributeList) []
-    │       ├── visibility (kind: VisibilityDefault) []
-    │       ├── impl_kw (kind: TokenImpl): 'impl'
-    │       ├── name (kind: TokenIdentifier): 'FooImpl'
-    │       ├── generic_params (kind: WrappedGenericParamList)
-    │       │   ├── langle (kind: TokenLT): '<'
-    │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParamType)
-    │       │   │       └── name (kind: TokenIdentifier): 'S'
-    │       │   └── rangle (kind: TokenGT): '>'
-    │       ├── of_kw (kind: TokenOf): 'of'
-    │       ├── trait_path (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentWithGenericArgs)
-    │       │       ├── ident (kind: TokenIdentifier): 'Foo'
-    │       │       ├── separator (kind: TokenColonColon): '::'
-    │       │       └── generic_args (kind: GenericArgs)
-    │       │           ├── langle (kind: TokenLT): '<'
-    │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgUnnamed)
-    │       │           │       └── value (kind: GenericArgValueExpr)
-    │       │           │           └── expr (kind: ExprPath)
-    │       │           │               └── item #0 (kind: PathSegmentSimple)
-    │       │           │                   └── ident (kind: TokenIdentifier): 'S'
-    │       │           └── rangle (kind: TokenGT): '>'
-    │       └── body (kind: ImplBody)
-    │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── items (kind: ImplItemList)
-    │           │   └── child #0 (kind: FunctionWithBody) <ignored>
-    │           └── rbrace (kind: TokenRBrace): '}'
-    └── eof (kind: TokenEndOfFile).
+└── Top level kind: ItemList
+    ├── child #0 (kind: ItemTrait)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── visibility (kind: VisibilityDefault) []
+    │   ├── trait_kw (kind: TokenTrait): 'trait'
+    │   ├── name (kind: TokenIdentifier): 'Foo'
+    │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   ├── langle (kind: TokenLT): '<'
+    │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   └── item #0 (kind: GenericParamType)
+    │   │   │       └── name (kind: TokenIdentifier): 'T'
+    │   │   └── rangle (kind: TokenGT): '>'
+    │   └── body (kind: TokenSemicolon): ';'
+    └── child #1 (kind: ItemImpl)
+        ├── attributes (kind: AttributeList) []
+        ├── visibility (kind: VisibilityDefault) []
+        ├── impl_kw (kind: TokenImpl): 'impl'
+        ├── name (kind: TokenIdentifier): 'FooImpl'
+        ├── generic_params (kind: WrappedGenericParamList)
+        │   ├── langle (kind: TokenLT): '<'
+        │   ├── generic_params (kind: GenericParamList)
+        │   │   └── item #0 (kind: GenericParamType)
+        │   │       └── name (kind: TokenIdentifier): 'S'
+        │   └── rangle (kind: TokenGT): '>'
+        ├── of_kw (kind: TokenOf): 'of'
+        ├── trait_path (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentWithGenericArgs)
+        │       ├── ident (kind: TokenIdentifier): 'Foo'
+        │       ├── separator (kind: OptionTerminalColonColonEmpty) []
+        │       └── generic_args (kind: GenericArgs)
+        │           ├── langle (kind: TokenLT): '<'
+        │           ├── generic_args (kind: GenericArgList)
+        │           │   └── item #0 (kind: GenericArgUnnamed)
+        │           │       └── value (kind: GenericArgValueExpr)
+        │           │           └── expr (kind: ExprPath)
+        │           │               └── item #0 (kind: PathSegmentSimple)
+        │           │                   └── ident (kind: TokenIdentifier): 'S'
+        │           └── rangle (kind: TokenGT): '>'
+        └── body (kind: ImplBody)
+            ├── lbrace (kind: TokenLBrace): '{'
+            ├── items (kind: ImplItemList) []
+            └── rbrace (kind: TokenRBrace): '}'
 
 //! > ==========================================================================
 
@@ -77,99 +70,71 @@ test_partial_parser_tree(expect_diagnostics: false)
 trait Foo<T> {
     fn foo<S>(x: T, y: S);
 }
-impl FooImpl<S> of Foo::<S> {}
+impl FooImpl<W> of Foo::<u8> {
+    fn foo<W>(x: u8, y: W) {
+    }
+}
 
 //! > top_level_kind
-SyntaxFile
+ItemList
 
 //! > ignored_kinds
+FunctionDeclaration
+FunctionWithBody
 
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: SyntaxFile
-    ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemTrait)
-    │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── visibility (kind: VisibilityDefault) []
-    │   │   ├── trait_kw (kind: TokenTrait): 'trait'
-    │   │   ├── name (kind: TokenIdentifier): 'Foo'
-    │   │   ├── generic_params (kind: WrappedGenericParamList)
-    │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   └── item #0 (kind: GenericParamType)
-    │   │   │   │       └── name (kind: TokenIdentifier): 'T'
-    │   │   │   └── rangle (kind: TokenGT): '>'
-    │   │   └── body (kind: TraitBody)
-    │   │       ├── lbrace (kind: TokenLBrace): '{'
-    │   │       ├── items (kind: TraitItemList)
-    │   │       │   └── child #0 (kind: TraitItemFunction)
-    │   │       │       ├── attributes (kind: AttributeList) []
-    │   │       │       ├── declaration (kind: FunctionDeclaration)
-    │   │       │       │   ├── function_kw (kind: TokenFunction): 'fn'
-    │   │       │       │   ├── name (kind: TokenIdentifier): 'foo'
-    │   │       │       │   ├── generic_params (kind: WrappedGenericParamList)
-    │   │       │       │   │   ├── langle (kind: TokenLT): '<'
-    │   │       │       │   │   ├── generic_params (kind: GenericParamList)
-    │   │       │       │   │   │   └── item #0 (kind: GenericParamType)
-    │   │       │       │   │   │       └── name (kind: TokenIdentifier): 'S'
-    │   │       │       │   │   └── rangle (kind: TokenGT): '>'
-    │   │       │       │   └── signature (kind: FunctionSignature)
-    │   │       │       │       ├── lparen (kind: TokenLParen): '('
-    │   │       │       │       ├── parameters (kind: ParamList)
-    │   │       │       │       │   ├── item #0 (kind: Param)
-    │   │       │       │       │   │   ├── modifiers (kind: ModifierList) []
-    │   │       │       │       │   │   ├── name (kind: TokenIdentifier): 'x'
-    │   │       │       │       │   │   └── type_clause (kind: TypeClause)
-    │   │       │       │       │   │       ├── colon (kind: TokenColon): ':'
-    │   │       │       │       │   │       └── ty (kind: ExprPath)
-    │   │       │       │       │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       │   │               └── ident (kind: TokenIdentifier): 'T'
-    │   │       │       │       │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │       │       │   └── item #1 (kind: Param)
-    │   │       │       │       │       ├── modifiers (kind: ModifierList) []
-    │   │       │       │       │       ├── name (kind: TokenIdentifier): 'y'
-    │   │       │       │       │       └── type_clause (kind: TypeClause)
-    │   │       │       │       │           ├── colon (kind: TokenColon): ':'
-    │   │       │       │       │           └── ty (kind: ExprPath)
-    │   │       │       │       │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       │                   └── ident (kind: TokenIdentifier): 'S'
-    │   │       │       │       ├── rparen (kind: TokenRParen): ')'
-    │   │       │       │       ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
-    │   │       │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
-    │   │       │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
-    │   │       │       └── body (kind: TokenSemicolon): ';'
-    │   │       └── rbrace (kind: TokenRBrace): '}'
-    │   └── child #1 (kind: ItemImpl)
-    │       ├── attributes (kind: AttributeList) []
-    │       ├── visibility (kind: VisibilityDefault) []
-    │       ├── impl_kw (kind: TokenImpl): 'impl'
-    │       ├── name (kind: TokenIdentifier): 'FooImpl'
-    │       ├── generic_params (kind: WrappedGenericParamList)
-    │       │   ├── langle (kind: TokenLT): '<'
-    │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParamType)
-    │       │   │       └── name (kind: TokenIdentifier): 'S'
-    │       │   └── rangle (kind: TokenGT): '>'
-    │       ├── of_kw (kind: TokenOf): 'of'
-    │       ├── trait_path (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentWithGenericArgs)
-    │       │       ├── ident (kind: TokenIdentifier): 'Foo'
-    │       │       ├── separator (kind: TokenColonColon): '::'
-    │       │       └── generic_args (kind: GenericArgs)
-    │       │           ├── langle (kind: TokenLT): '<'
-    │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgUnnamed)
-    │       │           │       └── value (kind: GenericArgValueExpr)
-    │       │           │           └── expr (kind: ExprPath)
-    │       │           │               └── item #0 (kind: PathSegmentSimple)
-    │       │           │                   └── ident (kind: TokenIdentifier): 'S'
-    │       │           └── rangle (kind: TokenGT): '>'
-    │       └── body (kind: ImplBody)
-    │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── items (kind: ImplItemList) []
-    │           └── rbrace (kind: TokenRBrace): '}'
-    └── eof (kind: TokenEndOfFile).
+└── Top level kind: ItemList
+    ├── child #0 (kind: ItemTrait)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── visibility (kind: VisibilityDefault) []
+    │   ├── trait_kw (kind: TokenTrait): 'trait'
+    │   ├── name (kind: TokenIdentifier): 'Foo'
+    │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   ├── langle (kind: TokenLT): '<'
+    │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   └── item #0 (kind: GenericParamType)
+    │   │   │       └── name (kind: TokenIdentifier): 'T'
+    │   │   └── rangle (kind: TokenGT): '>'
+    │   └── body (kind: TraitBody)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── items (kind: TraitItemList)
+    │       │   └── child #0 (kind: TraitItemFunction)
+    │       │       ├── attributes (kind: AttributeList) []
+    │       │       ├── declaration (kind: FunctionDeclaration) <ignored>
+    │       │       └── body (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── child #1 (kind: ItemImpl)
+        ├── attributes (kind: AttributeList) []
+        ├── visibility (kind: VisibilityDefault) []
+        ├── impl_kw (kind: TokenImpl): 'impl'
+        ├── name (kind: TokenIdentifier): 'FooImpl'
+        ├── generic_params (kind: WrappedGenericParamList)
+        │   ├── langle (kind: TokenLT): '<'
+        │   ├── generic_params (kind: GenericParamList)
+        │   │   └── item #0 (kind: GenericParamType)
+        │   │       └── name (kind: TokenIdentifier): 'W'
+        │   └── rangle (kind: TokenGT): '>'
+        ├── of_kw (kind: TokenOf): 'of'
+        ├── trait_path (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentWithGenericArgs)
+        │       ├── ident (kind: TokenIdentifier): 'Foo'
+        │       ├── separator (kind: TokenColonColon): '::'
+        │       └── generic_args (kind: GenericArgs)
+        │           ├── langle (kind: TokenLT): '<'
+        │           ├── generic_args (kind: GenericArgList)
+        │           │   └── item #0 (kind: GenericArgUnnamed)
+        │           │       └── value (kind: GenericArgValueExpr)
+        │           │           └── expr (kind: ExprPath)
+        │           │               └── item #0 (kind: PathSegmentSimple)
+        │           │                   └── ident (kind: TokenIdentifier): 'u8'
+        │           └── rangle (kind: TokenGT): '>'
+        └── body (kind: ImplBody)
+            ├── lbrace (kind: TokenLBrace): '{'
+            ├── items (kind: ImplItemList)
+            │   └── child #0 (kind: FunctionWithBody) <ignored>
+            └── rbrace (kind: TokenRBrace): '}'
 
 //! > ==========================================================================
 
@@ -226,3 +191,67 @@ ItemStruct
     │           │   └── child #1 (kind: ItemStruct) <ignored>
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test associated type in trait.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+trait MyTrait {
+    type MyType;
+}
+
+//! > top_level_kind
+TraitBody
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: TraitBody
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── items (kind: TraitItemList)
+    │   └── child #0 (kind: TraitItemAssociatedType)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── type_kw (kind: TokenType): 'type'
+    │       ├── name (kind: TokenIdentifier): 'MyType'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test associated type in impl.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+impl MyImpl of MyTrait {
+    type MyType = u32;
+}
+
+//! > top_level_kind
+ImplBody
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ImplBody
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── items (kind: ImplItemList)
+    │   └── child #0 (kind: ImplItemAssociatedType)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── type_kw (kind: TokenType): 'type'
+    │       ├── name (kind: TokenIdentifier): 'MyType'
+    │       ├── eq (kind: TokenEq): '='
+    │       ├── ty (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'u32'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── rbrace (kind: TokenRBrace): '}'
