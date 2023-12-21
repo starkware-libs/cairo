@@ -379,6 +379,9 @@ pub fn priv_trait_semantic_definition_data(
                     constant.const_kw(syntax_db),
                     "Constant",
                 ),
+                ast::TraitItem::Impl(imp) => {
+                    report_unsupported_trait_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
+                }
                 ast::TraitItem::Missing(_) => {}
             }
         }
