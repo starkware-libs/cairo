@@ -24,7 +24,8 @@ impl MyImpl2<T> of MyTrait::<T> {
     extern type DummyType;
 
     trait DummyTrait;
-    impl DummyImpl of MyTrait::<T>;
+    impl DummyImpl1 = MyImpl;
+    impl DummyImpl2 of MyTrait::<T>;
 
     struct DummyStruct {}
 
@@ -46,6 +47,26 @@ impl MyImpl2<T> of MyTrait::<T> {
 impl abc of abc;
 
 //! > expected_diagnostics
+error: Missing token TerminalEq.
+ --> lib.cairo:16:20
+    impl DummyImpl2 of MyTrait::<T>;
+                   ^
+
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:16:23
+    impl DummyImpl2 of MyTrait::<T>;
+                      ^
+
+error: 'of' is a reserved identifier.
+ --> lib.cairo:16:21
+    impl DummyImpl2 of MyTrait::<T>;
+                    ^^
+
+error: Skipped tokens. Expected: impl item or an attribute.
+ --> lib.cairo:16:24
+    impl DummyImpl2 of MyTrait::<T>;
+                       ^***********^
+
 error: Type not found.
  --> lib.cairo:3:35
     fn param_test(ref a: u128) -> bad_type nopanic;
@@ -81,68 +102,73 @@ error: `trait` is not allowed inside impl.
     trait DummyTrait;
     ^***^
 
-error: `impl` is not allowed inside impl.
+error: Impl items are not yet supported in impls.
  --> lib.cairo:15:5
-    impl DummyImpl of MyTrait::<T>;
+    impl DummyImpl1 = MyImpl;
+    ^**^
+
+error: Impl items are not yet supported in impls.
+ --> lib.cairo:16:5
+    impl DummyImpl2 of MyTrait::<T>;
     ^**^
 
 error: `struct` is not allowed inside impl.
- --> lib.cairo:17:5
+ --> lib.cairo:18:5
     struct DummyStruct {}
     ^****^
 
 error: `enum` is not allowed inside impl.
- --> lib.cairo:19:5
+ --> lib.cairo:20:5
     enum DummyEnum {}
     ^**^
 
 error: Impl function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
- --> lib.cairo:21:5
+ --> lib.cairo:22:5
     fn my_bar() {
     ^***********^
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
- --> lib.cairo:25:19
+ --> lib.cairo:26:19
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^********************************^
 
 error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt252`.
- --> lib.cairo:25:22
+ --> lib.cairo:26:22
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                      ^*****^
 
 error: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
- --> lib.cairo:25:19
+ --> lib.cairo:26:19
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^
 
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
- --> lib.cairo:25:18
+ --> lib.cairo:26:18
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                  ^******************************************^
 
 error: Return type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `<missing>`, actual: `core::integer::u128`.
- --> lib.cairo:25:58
+ --> lib.cairo:26:58
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                                                          ^**^
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
- --> lib.cairo:25:63
+ --> lib.cairo:26:63
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                                                               ^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
- --> lib.cairo:29:18
+ --> lib.cairo:30:18
     fn no_ret_ty(ref a: u128) {
                  ^*^
 
 error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt252`, actual: `()`.
- --> lib.cairo:29:31
+ --> lib.cairo:30:31
     fn no_ret_ty(ref a: u128) {
                               ^
 
 error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
- --> lib.cairo:34:13
+ --> lib.cairo:35:13
 impl abc of abc;
             ^*^
 
@@ -674,11 +700,16 @@ foo
 trait MyTrait {
    type X;
    const Y: usize;
+   impl Z of OtherTrait;
 }
 impl MyImpl of MyTrait {
    type X = u32;
    const Y: usize = 3;
+   impl Z = OtherImpl;
 }
+
+trait OtherTrait {}
+impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
 error: Type items are not yet supported in traits.
@@ -691,12 +722,22 @@ error: Constant items are not yet supported in traits.
    const Y: usize;
    ^***^
 
+error: Impl items are not yet supported in traits.
+ --> lib.cairo:4:4
+   impl Z of OtherTrait;
+   ^**^
+
 error: Type items are not yet supported in impls.
- --> lib.cairo:6:4
+ --> lib.cairo:7:4
    type X = u32;
    ^**^
 
 error: Constant items are not yet supported in impls.
- --> lib.cairo:7:4
+ --> lib.cairo:8:4
    const Y: usize = 3;
    ^***^
+
+error: Impl items are not yet supported in impls.
+ --> lib.cairo:9:4
+   impl Z = OtherImpl;
+   ^**^

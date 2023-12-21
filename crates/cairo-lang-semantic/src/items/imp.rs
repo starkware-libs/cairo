@@ -533,9 +533,6 @@ pub fn priv_impl_definition_data(
                 ImplItem::Trait(trt) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
                 }
-                ImplItem::Impl(imp) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
-                }
                 ImplItem::Struct(structure) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
@@ -543,9 +540,6 @@ pub fn priv_impl_definition_data(
                 ),
                 ImplItem::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
-                }
-                ImplItem::ImplAlias(imp) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
                 ImplItem::Function(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
@@ -570,6 +564,9 @@ pub fn priv_impl_definition_data(
                     constant.const_kw(syntax_db),
                     "Constant",
                 ),
+                ImplItem::Impl(imp) => {
+                    report_unsupported_impl_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
+                }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
             }
