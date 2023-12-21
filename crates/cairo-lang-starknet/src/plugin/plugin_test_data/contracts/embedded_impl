@@ -128,13 +128,13 @@ enum Event {}
 
 
     struct ContractState {
-        value: value::ContractMemberState,
+        value: __member_module_value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            value: value::ContractMemberState {},
+            value: __member_module_value::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -143,8 +143,8 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
-    use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
-    mod value {
+    use __member_module_value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
+    mod __member_module_value {
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {

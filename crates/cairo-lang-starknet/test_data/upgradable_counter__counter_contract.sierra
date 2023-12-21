@@ -33,9 +33,9 @@ type core::panics::PanicResult::<(core::starknet::contract_address::ContractAddr
 type cairo_level_tests::components::ownable::ownable::Event = Enum<ut@[159242497304001286940502695884045556513608061648114012756954426931007373496]> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::components::upgradable::upgradable::ContractUpgraded = Struct<ut@[490972161598209863077531322394939192593223352735052593875815113206383537707], ClassHash, ClassHash> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::components::upgradable::upgradable::Event = Enum<ut@[1346187285187926958152874808647298752454881932532435783006741964050099118326], cairo_level_tests::components::upgradable::upgradable::ContractUpgraded> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState = Struct<ut@[1186854368046941107895299343889673361494663665010817360526566028886521570916]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())> = Enum<ut@[274836150194012989781821546319810876563021993092871808461706456417985875163], Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState = Struct<ut@[1762769995302605311800875157106974671377979017369573429318414191180308179951]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())> = Enum<ut@[673920150332919082692250521699387108333554184391449359956716644943405723184], Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<ClassHash> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], ClassHash> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)> = Enum<ut@[969374312812843405330799566391731125080446474874945865068681345265185465554], Tuple<ClassHash>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased = Struct<ut@[199484990607557857512355595925387699443874824955951559808061636842253834929], u128> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -48,17 +48,17 @@ type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@
 type core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>> = Enum<ut@[1270906046977841141060978118411832258207934732743670527139603475143660678225], u128, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = Struct<ut@[1461197178289460063413154251392053977322243085191401250637052871687269521025], cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = Struct<ut@[1461197178289460063413154251392053977322243085191401250637052871687269521025], cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())> = Enum<ut@[1714491154234372702764135373397338221931515733007095170124707571712915961911], Tuple<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState = Struct<ut@[1533259739244637970695916451375224095862707984254714044425758461860551661567]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())> = Enum<ut@[620588709613592593776534147670487475032731155616464176429224332069733074123], Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState = Struct<ut@[769310526114460789716800352299875775269389201902976612054913172498107002138]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())> = Enum<ut@[726533020072793505895140175281276587730525760211690814948813453694071698273], Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::starknet::class_hash::ClassHash> = Enum<ut@[493736775033725363157054297470501650633772441792138880764454750794311906069], ClassHash, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState = Struct<ut@[158193660642562149932434882246085179036223866843151123481256396986298184290]> [storable: true, drop: true, dup: true, zero_sized: true];
-type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = Struct<ut@[1416814373318548953219077169895273597556430774741024497748886732314000354978], cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
-type cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState = Struct<ut@[1045771049389955888909039172568328869506877767619585932438301247437482972028], cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState = Struct<ut@[445638078296155389806370471967846643768878360000311548040093156318362912746]> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = Struct<ut@[1416814373318548953219077169895273597556430774741024497748886732314000354978], cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState = Struct<ut@[1045771049389955888909039172568328869506877767619585932438301247437482972028], cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())> = Enum<ut@[1647851022803147870919459882193472595982834239331376726786004055974661533151], Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -97,10 +97,10 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
-libfunc struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState> = struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>;
-libfunc struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState> = struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState> = struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState> = struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>;
 libfunc struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
-libfunc struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
+libfunc struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
 libfunc struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
 libfunc struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>;
 libfunc snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>;
@@ -151,7 +151,7 @@ libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::cou
 libfunc struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState> = struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>;
 libfunc drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
 libfunc drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
-libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<u128>> = struct_construct<Tuple<u128>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u128,)>> = store_temp<core::panics::PanicResult::<(core::integer::u128,)>>;
@@ -160,12 +160,12 @@ libfunc u128s_from_felt252 = u128s_from_felt252;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<core::option::Option::<core::integer::u128>, 0>;
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<core::option::Option::<core::integer::u128>, 1>;
-libfunc snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>;
+libfunc snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>;
 libfunc dup<u128> = dup<u128>;
 libfunc function_call<user@core::integer::U128Add::add> = function_call<user@core::integer::U128Add::add>;
-libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>;
 libfunc struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased> = struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>;
 libfunc store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased> = store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>;
 libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent>> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent>>;
@@ -174,7 +174,7 @@ libfunc struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter:
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>;
-libfunc drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState> = drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState> = drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>;
 libfunc function_call<user@core::integer::U128Sub::sub> = function_call<user@core::integer::U128Sub::sub>;
 libfunc struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased> = struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>;
 libfunc store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased> = store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>;
@@ -210,10 +210,10 @@ libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>;
 libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
 libfunc struct_deconstruct<Tuple<Unit>> = struct_deconstruct<Tuple<Unit>>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 1>;
 libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent::into> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent::into>;
 libfunc snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event> = snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>;
 libfunc drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event> = drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>;
@@ -236,21 +236,21 @@ libfunc dup<ClassHash> = dup<ClassHash>;
 libfunc replace_class_syscall = replace_class_syscall;
 libfunc function_call<user@core::result::ResultTraitImpl::<(), core::array::Array::<core::felt252>>::unwrap::<core::array::ArrayDrop::<core::felt252, core::felt252Drop>>> = function_call<user@core::result::ResultTraitImpl::<(), core::array::Array::<core::felt252>>::unwrap::<core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>;
 libfunc struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
-libfunc snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState> = snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>;
-libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read>;
+libfunc snapshot_take<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState> = snapshot_take<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>> = enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>>;
 libfunc struct_deconstruct<Tuple<ClassHash>> = struct_deconstruct<Tuple<ClassHash>>;
 libfunc struct_construct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded> = struct_construct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>;
 libfunc store_temp<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded> = store_temp<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>;
 libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp::emit::<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded, cairo_level_tests::components::upgradable::upgradable::EventContractUpgradedIntoEvent>> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp::emit::<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded, cairo_level_tests::components::upgradable::upgradable::EventContractUpgradedIntoEvent>>;
-libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>;
 libfunc struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>> = struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 1>;
-libfunc drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState> = drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>;
+libfunc drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState> = drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>;
 libfunc enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>;
 libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u128>> = enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc drop<felt252> = drop<felt252>;
@@ -274,7 +274,7 @@ libfunc store_temp<cairo_level_tests::components::ownable::ownable::Event> = sto
 libfunc function_call<user@cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data>;
 libfunc enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 1> = enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 1>;
 libfunc struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>> = struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>;
-libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>> = enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>;
 libfunc function_call<user@core::starknet::info::get_caller_address> = function_call<user@core::starknet::info::get_caller_address>;
 libfunc struct_deconstruct<Tuple<ContractAddress>> = struct_deconstruct<Tuple<ContractAddress>>;
@@ -305,17 +305,17 @@ libfunc function_call<user@cairo_level_tests::components::upgradable::upgradable
 libfunc enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 2> = enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 2>;
 libfunc function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>>> = function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>>>;
 libfunc class_hash_to_felt252 = class_hash_to_felt252;
-libfunc struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 1>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased> = struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased> = struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>;
 libfunc enum_match<cairo_level_tests::components::upgradable::upgradable::Event> = enum_match<cairo_level_tests::components::upgradable::upgradable::Event>;
 libfunc felt252_const<230192814789850291994621760810535338129013919481720626953423731987611497567> = felt252_const<230192814789850291994621760810535338129013919481720626953423731987611497567>;
 libfunc function_call<user@cairo_level_tests::components::upgradable::upgradable::ContractUpgradedIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::components::upgradable::upgradable::ContractUpgradedIsEvent::append_keys_and_data>;
 libfunc enum_match<cairo_level_tests::components::ownable::ownable::Event> = enum_match<cairo_level_tests::components::ownable::ownable::Event>;
-libfunc drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
+libfunc drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
 libfunc storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192> = storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>;
 libfunc function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into> = function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>;
 libfunc enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>> = enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
@@ -392,10 +392,10 @@ get_builtin_costs() -> ([23]); // 29
 store_temp<BuiltinCosts>([23]) -> ([23]); // 30
 withdraw_gas_all([4], [5], [23]) { fallthrough([24], [25]) 71([26], [27]) }; // 31
 branch_align() -> (); // 32
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([28]); // 33
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([29]); // 34
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([28]); // 33
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([29]); // 34
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([29]) -> ([30]); // 35
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([31]); // 36
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([31]); // 36
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([31]) -> ([32]); // 37
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([28], [30], [32]) -> ([33]); // 38
 snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([33]) -> ([34], [35]); // 39
@@ -517,10 +517,10 @@ get_builtin_costs() -> ([41]); // 154
 store_temp<BuiltinCosts>([41]) -> ([41]); // 155
 withdraw_gas_all([21], [5], [41]) { fallthrough([42], [43]) 190([44], [45]) }; // 156
 branch_align() -> (); // 157
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([46]); // 158
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([47]); // 159
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([46]); // 158
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([47]); // 159
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([47]) -> ([48]); // 160
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([49]); // 161
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([49]); // 161
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([49]) -> ([50]); // 162
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([46], [48], [50]) -> ([51]); // 163
 store_temp<RangeCheck>([42]) -> ([42]); // 164
@@ -659,10 +659,10 @@ get_builtin_costs() -> ([41]); // 296
 store_temp<BuiltinCosts>([41]) -> ([41]); // 297
 withdraw_gas_all([21], [5], [41]) { fallthrough([42], [43]) 332([44], [45]) }; // 298
 branch_align() -> (); // 299
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([46]); // 300
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([47]); // 301
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([46]); // 300
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([47]); // 301
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([47]) -> ([48]); // 302
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([49]); // 303
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([49]); // 303
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([49]) -> ([50]); // 304
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([46], [48], [50]) -> ([51]); // 305
 store_temp<RangeCheck>([42]) -> ([42]); // 306
@@ -779,10 +779,10 @@ get_builtin_costs() -> ([28]); // 416
 store_temp<BuiltinCosts>([28]) -> ([28]); // 417
 withdraw_gas_all([8], [5], [28]) { fallthrough([29], [30]) 452([31], [32]) }; // 418
 branch_align() -> (); // 419
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([33]); // 420
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([34]); // 421
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([33]); // 420
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([34]); // 421
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([34]) -> ([35]); // 422
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([36]); // 423
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([36]); // 423
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([36]) -> ([37]); // 424
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([33], [35], [37]) -> ([38]); // 425
 store_temp<RangeCheck>([29]) -> ([29]); // 426
@@ -914,10 +914,10 @@ get_builtin_costs() -> ([41]); // 551
 store_temp<BuiltinCosts>([41]) -> ([41]); // 552
 withdraw_gas_all([21], [5], [41]) { fallthrough([42], [43]) 587([44], [45]) }; // 553
 branch_align() -> (); // 554
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([46]); // 555
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([47]); // 556
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([46]); // 555
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([47]); // 556
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([47]) -> ([48]); // 557
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([49]); // 558
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([49]); // 558
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([49]) -> ([50]); // 559
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([46], [48], [50]) -> ([51]); // 560
 store_temp<GasBuiltin>([43]) -> ([43]); // 561
@@ -1002,7 +1002,7 @@ drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_lev
 store_temp<RangeCheck>([0]) -> ([0]); // 640
 store_temp<GasBuiltin>([1]) -> ([1]); // 641
 store_temp<System>([2]) -> ([2]); // 642
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>([0], [1], [2], [4]) -> ([7], [8], [9], [10]); // 643
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>([0], [1], [2], [4]) -> ([7], [8], [9], [10]); // 643
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([10]) { fallthrough([11]) 654([12]) }; // 644
 branch_align() -> (); // 645
 struct_deconstruct<Tuple<u128>>([11]) -> ([13]); // 646
@@ -1035,11 +1035,11 @@ store_temp<RangeCheck>([4]) -> ([8]); // 672
 store_temp<core::option::Option::<core::integer::u128>>([11]) -> ([9]); // 673
 return([8], [9]); // 674
 struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([3]) -> ([5], [6], [7]); // 675
-snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([5]) -> ([8], [9]); // 676
+snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([5]) -> ([8], [9]); // 676
 store_temp<RangeCheck>([0]) -> ([0]); // 677
 store_temp<GasBuiltin>([1]) -> ([1]); // 678
 store_temp<System>([2]) -> ([2]); // 679
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>([0], [1], [2], [9]) -> ([10], [11], [12], [13]); // 680
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>([0], [1], [2], [9]) -> ([10], [11], [12], [13]); // 680
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([13]) { fallthrough([14]) 746([15]) }; // 681
 branch_align() -> (); // 682
 struct_deconstruct<Tuple<u128>>([14]) -> ([16]); // 683
@@ -1054,10 +1054,10 @@ struct_deconstruct<Tuple<u128>>([20]) -> ([22]); // 691
 store_temp<GasBuiltin>([11]) -> ([11]); // 692
 store_temp<System>([12]) -> ([12]); // 693
 store_temp<u128>([22]) -> ([22]); // 694
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>([11], [12], [8], [22]) -> ([23], [24], [25]); // 695
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>([25]) { fallthrough([26]) 725([27]) }; // 696
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>([11], [12], [8], [22]) -> ([23], [24], [25]); // 695
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>([25]) { fallthrough([26]) 725([27]) }; // 696
 branch_align() -> (); // 697
-struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>([26]) -> ([28], [29]); // 698
+struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>([26]) -> ([28], [29]); // 698
 drop<Unit>([29]) -> (); // 699
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>([4]) -> ([30]); // 700
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([28], [6], [7]) -> ([31]); // 701
@@ -1098,7 +1098,7 @@ branch_align() -> (); // 735
 drop<u128>([4]) -> (); // 736
 drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([7]) -> (); // 737
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([6]) -> (); // 738
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([8]) -> (); // 739
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([8]) -> (); // 739
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>([21]) -> ([44]); // 740
 store_temp<RangeCheck>([18]) -> ([18]); // 741
 store_temp<GasBuiltin>([11]) -> ([11]); // 742
@@ -1109,7 +1109,7 @@ branch_align() -> (); // 746
 drop<u128>([4]) -> (); // 747
 drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([7]) -> (); // 748
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([6]) -> (); // 749
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([8]) -> (); // 750
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([8]) -> (); // 750
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>([15]) -> ([45]); // 751
 store_temp<RangeCheck>([10]) -> ([10]); // 752
 store_temp<GasBuiltin>([11]) -> ([11]); // 753
@@ -1117,11 +1117,11 @@ store_temp<System>([12]) -> ([12]); // 754
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>([45]) -> ([45]); // 755
 return([10], [11], [12], [45]); // 756
 struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([3]) -> ([5], [6], [7]); // 757
-snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([5]) -> ([8], [9]); // 758
+snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([5]) -> ([8], [9]); // 758
 store_temp<RangeCheck>([0]) -> ([0]); // 759
 store_temp<GasBuiltin>([1]) -> ([1]); // 760
 store_temp<System>([2]) -> ([2]); // 761
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>([0], [1], [2], [9]) -> ([10], [11], [12], [13]); // 762
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>([0], [1], [2], [9]) -> ([10], [11], [12], [13]); // 762
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([13]) { fallthrough([14]) 828([15]) }; // 763
 branch_align() -> (); // 764
 struct_deconstruct<Tuple<u128>>([14]) -> ([16]); // 765
@@ -1136,10 +1136,10 @@ struct_deconstruct<Tuple<u128>>([20]) -> ([22]); // 773
 store_temp<GasBuiltin>([11]) -> ([11]); // 774
 store_temp<System>([12]) -> ([12]); // 775
 store_temp<u128>([22]) -> ([22]); // 776
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>([11], [12], [8], [22]) -> ([23], [24], [25]); // 777
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>([25]) { fallthrough([26]) 807([27]) }; // 778
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>([11], [12], [8], [22]) -> ([23], [24], [25]); // 777
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>([25]) { fallthrough([26]) 807([27]) }; // 778
 branch_align() -> (); // 779
-struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>([26]) -> ([28], [29]); // 780
+struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>([26]) -> ([28], [29]); // 780
 drop<Unit>([29]) -> (); // 781
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>([4]) -> ([30]); // 782
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([28], [6], [7]) -> ([31]); // 783
@@ -1180,7 +1180,7 @@ branch_align() -> (); // 817
 drop<u128>([4]) -> (); // 818
 drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([7]) -> (); // 819
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([6]) -> (); // 820
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([8]) -> (); // 821
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([8]) -> (); // 821
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>([21]) -> ([44]); // 822
 store_temp<RangeCheck>([18]) -> ([18]); // 823
 store_temp<GasBuiltin>([11]) -> ([11]); // 824
@@ -1191,7 +1191,7 @@ branch_align() -> (); // 828
 drop<u128>([4]) -> (); // 829
 drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([7]) -> (); // 830
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([6]) -> (); // 831
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([8]) -> (); // 832
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([8]) -> (); // 832
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>([15]) -> ([45]); // 833
 store_temp<RangeCheck>([10]) -> ([10]); // 834
 store_temp<GasBuiltin>([11]) -> ([11]); // 835
@@ -1222,7 +1222,7 @@ store_temp<RangeCheck>([0]) -> ([0]); // 859
 store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 860
 store_temp<core::option::Option::<core::starknet::class_hash::ClassHash>>([12]) -> ([12]); // 861
 return([0], [2], [12]); // 862
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([5]); // 863
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([5]); // 863
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([5]) -> ([6]); // 864
 store_temp<RangeCheck>([0]) -> ([0]); // 865
 store_temp<GasBuiltin>([1]) -> ([1]); // 866
@@ -1252,10 +1252,10 @@ struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_con
 store_temp<GasBuiltin>([0]) -> ([0]); // 890
 store_temp<System>([1]) -> ([1]); // 891
 store_temp<u128>([3]) -> ([3]); // 892
-function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>([0], [1], [4], [3]) -> ([7], [8], [9]); // 893
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>([9]) { fallthrough([10]) 906([11]) }; // 894
+function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>([0], [1], [4], [3]) -> ([7], [8], [9]); // 893
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>([9]) { fallthrough([10]) 906([11]) }; // 894
 branch_align() -> (); // 895
-struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>([10]) -> ([12], [13]); // 896
+struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>([10]) -> ([12], [13]); // 896
 drop<Unit>([13]) -> (); // 897
 struct_construct<Unit>() -> ([14]); // 898
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([12], [5], [6]) -> ([15]); // 899
@@ -1273,7 +1273,7 @@ store_temp<GasBuiltin>([7]) -> ([7]); // 910
 store_temp<System>([8]) -> ([8]); // 911
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>([18]) -> ([18]); // 912
 return([7], [8], [18]); // 913
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([3]) -> (); // 914
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([3]) -> (); // 914
 storage_base_address_const<223925651276572801467025322450506123433664924558092583619131301620304795732>() -> ([4]); // 915
 storage_address_from_base([4]) -> ([5]); // 916
 u32_const<0>() -> ([6]); // 917
@@ -1362,8 +1362,8 @@ storage_base_address_const<22392565127657280146702532245050612343366492455809258
 u128_to_felt252([3]) -> ([5]); // 1000
 storage_address_from_base([4]) -> ([6]); // 1001
 u32_const<0>() -> ([7]); // 1002
-snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([2]) -> ([8], [9]); // 1003
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([9]) -> (); // 1004
+snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([2]) -> ([8], [9]); // 1003
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([9]) -> (); // 1004
 store_temp<u32>([7]) -> ([7]); // 1005
 store_temp<StorageAddress>([6]) -> ([6]); // 1006
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1015([12], [13], [14]) }; // 1007
@@ -1383,18 +1383,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 1030([23]) }; // 1021
 branch_align() -> (); // 1022
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 1023
-struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 1024
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 0>([25]) -> ([26]); // 1025
+struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 1024
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 0>([25]) -> ([26]); // 1025
 store_temp<GasBuiltin>([17]) -> ([17]); // 1026
 store_temp<System>([18]) -> ([18]); // 1027
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>([26]) -> ([26]); // 1028
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>([26]) -> ([26]); // 1028
 return([17], [18], [26]); // 1029
 branch_align() -> (); // 1030
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([8]) -> (); // 1031
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 1>([23]) -> ([27]); // 1032
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([8]) -> (); // 1031
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 1>([23]) -> ([27]); // 1032
 store_temp<GasBuiltin>([17]) -> ([17]); // 1033
 store_temp<System>([18]) -> ([18]); // 1034
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>([27]) -> ([27]); // 1035
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>([27]) -> ([27]); // 1035
 return([17], [18], [27]); // 1036
 store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>([3]) -> ([3]); // 1037
 function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent::into>([3]) -> ([4]); // 1038
@@ -1578,11 +1578,11 @@ enum_match<core::panics::PanicResult::<((),)>>([27]) { fallthrough([28]) 1280([2
 branch_align() -> (); // 1216
 drop<Tuple<Unit>>([28]) -> (); // 1217
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([5]) -> ([30]); // 1218
-snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([30]) -> ([31], [32]); // 1219
+snapshot_take<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([30]) -> ([31], [32]); // 1219
 store_temp<RangeCheck>([9]) -> ([9]); // 1220
 store_temp<GasBuiltin>([23]) -> ([23]); // 1221
 store_temp<System>([24]) -> ([24]); // 1222
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read>([9], [23], [24], [32]) -> ([33], [34], [35], [36]); // 1223
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read>([9], [23], [24], [32]) -> ([33], [34], [35], [36]); // 1223
 enum_match<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>>([36]) { fallthrough([37]) 1271([38]) }; // 1224
 branch_align() -> (); // 1225
 struct_deconstruct<Tuple<ClassHash>>([37]) -> ([39]); // 1226
@@ -1601,10 +1601,10 @@ struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::Compon
 store_temp<GasBuiltin>([43]) -> ([43]); // 1239
 store_temp<System>([44]) -> ([44]); // 1240
 store_temp<ClassHash>([4]) -> ([4]); // 1241
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write>([43], [44], [50], [4]) -> ([51], [52], [53]); // 1242
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>([53]) { fallthrough([54]) 1256([55]) }; // 1243
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write>([43], [44], [50], [4]) -> ([51], [52], [53]); // 1242
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>([53]) { fallthrough([54]) 1256([55]) }; // 1243
 branch_align() -> (); // 1244
-struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>([54]) -> ([56], [57]); // 1245
+struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>([54]) -> ([56], [57]); // 1245
 drop<Unit>([57]) -> (); // 1246
 struct_construct<Unit>() -> ([58]); // 1247
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([56]) -> ([59]); // 1248
@@ -1632,7 +1632,7 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradabl
 return([33], [43], [44], [63]); // 1270
 branch_align() -> (); // 1271
 drop<ClassHash>([4]) -> (); // 1272
-drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([31]) -> (); // 1273
+drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([31]) -> (); // 1273
 enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 1>([38]) -> ([64]); // 1274
 store_temp<RangeCheck>([33]) -> ([33]); // 1275
 store_temp<GasBuiltin>([34]) -> ([34]); // 1276
@@ -1754,24 +1754,24 @@ enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Ev
 store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>([1]) -> ([1]); // 1392
 return([1]); // 1393
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([0]) -> (); // 1394
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([1]); // 1395
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([2]); // 1396
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([1]); // 1395
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([2]); // 1396
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([2]) -> ([3]); // 1397
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([4]); // 1398
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([4]); // 1398
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([4]) -> ([5]); // 1399
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([1], [3], [5]) -> ([6]); // 1400
 snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([6]) -> ([7], [8]); // 1401
 drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([7]) -> (); // 1402
 return([8]); // 1403
 struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([0]) -> ([1], [2], [3]); // 1404
-drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>([1]) -> (); // 1405
+drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>([1]) -> (); // 1405
 drop<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([2]) -> (); // 1406
 return([3]); // 1407
 struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([3]) -> ([4]); // 1408
 store_temp<RangeCheck>([0]) -> ([0]); // 1409
 store_temp<GasBuiltin>([1]) -> ([1]); // 1410
 store_temp<System>([2]) -> ([2]); // 1411
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 1412
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 1412
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 1470([10]) }; // 1413
 branch_align() -> (); // 1414
 store_temp<GasBuiltin>([6]) -> ([6]); // 1415
@@ -1851,7 +1851,7 @@ branch_align() -> (); // 1488
 enum_init<core::panics::PanicResult::<((),)>, 1>([4]) -> ([8]); // 1489
 store_temp<core::panics::PanicResult::<((),)>>([8]) -> ([8]); // 1490
 return([8]); // 1491
-drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([3]) -> (); // 1492
+drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([3]) -> (); // 1492
 storage_base_address_const<122428454986788377403067048277966546957631643527964214274804601770769789817>() -> ([4]); // 1493
 storage_address_from_base([4]) -> ([5]); // 1494
 u32_const<0>() -> ([6]); // 1495
@@ -1912,10 +1912,10 @@ store_temp<core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>
 return([18], [19], [20], [35]); // 1550
 store_temp<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([3]) -> ([3]); // 1551
 function_call<user@cairo_level_tests::components::upgradable::upgradable::EventContractUpgradedIntoEvent::into>([3]) -> ([4]); // 1552
-struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>() -> ([5]); // 1553
-struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>() -> ([6]); // 1554
+struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>() -> ([5]); // 1553
+struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>() -> ([6]); // 1554
 struct_construct<cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([6]) -> ([7]); // 1555
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([8]); // 1556
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([8]); // 1556
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>([8]) -> ([9]); // 1557
 struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>([5], [7], [9]) -> ([10]); // 1558
 enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 2>([4]) -> ([11]); // 1559
@@ -1944,8 +1944,8 @@ storage_base_address_const<12242845498678837740306704827796654695763164352796421
 class_hash_to_felt252([3]) -> ([5]); // 1582
 storage_address_from_base([4]) -> ([6]); // 1583
 u32_const<0>() -> ([7]); // 1584
-snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([2]) -> ([8], [9]); // 1585
-drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([9]) -> (); // 1586
+snapshot_take<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([2]) -> ([8], [9]); // 1585
+drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([9]) -> (); // 1586
 store_temp<u32>([7]) -> ([7]); // 1587
 store_temp<StorageAddress>([6]) -> ([6]); // 1588
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1597([12], [13], [14]) }; // 1589
@@ -1965,18 +1965,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 1612([23]) }; // 1603
 branch_align() -> (); // 1604
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 1605
-struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1606
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1607
+struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1606
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1607
 store_temp<GasBuiltin>([17]) -> ([17]); // 1608
 store_temp<System>([18]) -> ([18]); // 1609
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>([26]) -> ([26]); // 1610
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>([26]) -> ([26]); // 1610
 return([17], [18], [26]); // 1611
 branch_align() -> (); // 1612
-drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>([8]) -> (); // 1613
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1614
+drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>([8]) -> (); // 1613
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1614
 store_temp<GasBuiltin>([17]) -> ([17]); // 1615
 store_temp<System>([18]) -> ([18]); // 1616
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>([27]) -> ([27]); // 1617
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>([27]) -> ([27]); // 1617
 return([17], [18], [27]); // 1618
 struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>([0]) -> ([3]); // 1619
 rename<u128>([3]) -> ([4]); // 1620
@@ -2009,7 +2009,7 @@ return([6], [7], [9]); // 1646
 drop<Array<felt252>>([1]) -> (); // 1647
 drop<Array<felt252>>([2]) -> (); // 1648
 enum_match<cairo_level_tests::components::ownable::ownable::Event>([0]) { }; // 1649
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([3]) -> (); // 1650
+drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>([3]) -> (); // 1650
 storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1651
 storage_address_from_base([4]) -> ([5]); // 1652
 u32_const<0>() -> ([6]); // 1653
@@ -2295,9 +2295,9 @@ cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContr
 core::starknet::class_hash::ClassHashSerde::deserialize@839([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::class_hash::ClassHash>);
 cairo_level_tests::components::upgradable::upgradable::UpgradableImpl::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop>::upgrade@863([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, [4]: ClassHash) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::constructor@889([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>);
-cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read@914([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read@914([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@973([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u128,)>);
-cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write@999([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>);
+cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write@999([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent>@1037([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, [3]: cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>);
 core::integer::U128Sub::sub@1086([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u128,)>);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterDecreasedIntoEvent>@1112([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, [3]: cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>);
@@ -2313,14 +2313,14 @@ cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponent
 cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp::get_component@1404([0]: cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState) -> (cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>);
 cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp>::validate_ownership@1408([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
 core::result::ResultTraitImpl::<(), core::array::Array::<core::felt252>>::unwrap::<core::array::ArrayDrop::<core::felt252, core::felt252Drop>>@1477([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read@1492([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read@1492([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::class_hash::ClassHash,)>);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp::emit::<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded, cairo_level_tests::components::upgradable::upgradable::EventContractUpgradedIntoEvent>@1551([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, [3]: cairo_level_tests::components::upgradable::upgradable::ContractUpgraded) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write@1581([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, [3]: ClassHash) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write@1581([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, [3]: ClassHash) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreasedIsEvent::append_keys_and_data@1619([0]: cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
 cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreasedIsEvent::append_keys_and_data@1627([0]: cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
 cairo_level_tests::components::upgradable::upgradable::EventIsEvent::append_keys_and_data@1635([0]: cairo_level_tests::components::upgradable::upgradable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
 cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data@1647([0]: cairo_level_tests::components::ownable::ownable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read@1650([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read@1650([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::starknet::info::get_caller_address@1709([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::result::ResultTraitImpl::<(), core::array::Array::<core::felt252>>::expect::<core::array::ArrayDrop::<core::felt252, core::felt252Drop>>@1733([0]: core::result::Result::<(), core::array::Array::<core::felt252>>, [1]: felt252) -> (core::panics::PanicResult::<((),)>);
 core::starknet::class_hash::Felt252TryIntoClassHash::try_into@1749([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::class_hash::ClassHash>);
