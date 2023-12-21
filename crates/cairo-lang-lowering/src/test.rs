@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         call :"call",
         constant :"constant",
+        cycles :"cycles",
         literal :"literal",
         destruct :"destruct",
         enums :"enums",
