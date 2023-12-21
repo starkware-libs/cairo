@@ -10682,6 +10682,7 @@ pub enum TraitItem {
     Function(TraitItemFunction),
     Type(TraitItemType),
     Constant(TraitItemConstant),
+    Impl(TraitItemImpl),
     Missing(TraitItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10709,6 +10710,11 @@ impl From<TraitItemConstantPtr> for TraitItemPtr {
         Self(value.0)
     }
 }
+impl From<TraitItemImplPtr> for TraitItemPtr {
+    fn from(value: TraitItemImplPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TraitItemMissingPtr> for TraitItemPtr {
     fn from(value: TraitItemMissingPtr) -> Self {
         Self(value.0)
@@ -10726,6 +10732,11 @@ impl From<TraitItemTypeGreen> for TraitItemGreen {
 }
 impl From<TraitItemConstantGreen> for TraitItemGreen {
     fn from(value: TraitItemConstantGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitItemImplGreen> for TraitItemGreen {
+    fn from(value: TraitItemImplGreen) -> Self {
         Self(value.0)
     }
 }
@@ -10753,6 +10764,7 @@ impl TypedSyntaxNode for TraitItem {
             SyntaxKind::TraitItemConstant => {
                 TraitItem::Constant(TraitItemConstant::from_syntax_node(db, node))
             }
+            SyntaxKind::TraitItemImpl => TraitItem::Impl(TraitItemImpl::from_syntax_node(db, node)),
             SyntaxKind::TraitItemMissing => {
                 TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node))
             }
@@ -10764,6 +10776,7 @@ impl TypedSyntaxNode for TraitItem {
             TraitItem::Function(x) => x.as_syntax_node(),
             TraitItem::Type(x) => x.as_syntax_node(),
             TraitItem::Constant(x) => x.as_syntax_node(),
+            TraitItem::Impl(x) => x.as_syntax_node(),
             TraitItem::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -10778,6 +10791,7 @@ impl TraitItem {
             SyntaxKind::TraitItemFunction => true,
             SyntaxKind::TraitItemType => true,
             SyntaxKind::TraitItemConstant => true,
+            SyntaxKind::TraitItemImpl => true,
             SyntaxKind::TraitItemMissing => true,
             _ => false,
         }
@@ -11127,6 +11141,115 @@ impl TypedSyntaxNode for TraitItemConstant {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitItemConstantPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemImpl {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl TraitItemImpl {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_IMPL_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_OF_KW: usize = 3;
+    pub const INDEX_TRAIT_PATH: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        impl_kw: TerminalImplGreen,
+        name: TerminalIdentifierGreen,
+        of_kw: TerminalOfGreen,
+        trait_path: ExprPathGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> TraitItemImplGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, impl_kw.0, name.0, of_kw.0, trait_path.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitItemImplGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemImpl,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl TraitItemImpl {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
+        TerminalImpl::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn of_kw(&self, db: &dyn SyntaxGroup) -> TerminalOf {
+        TerminalOf::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemImplPtr(pub SyntaxStablePtrId);
+impl TraitItemImplPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> TraitItemImpl {
+        TraitItemImpl::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemImplGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemImpl {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemImpl);
+    type StablePtr = TraitItemImplPtr;
+    type Green = TraitItemImplGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemImplGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemImpl,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalImpl::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalOf::missing(db).0,
+                    ExprPath::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemImpl,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemImpl
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemImplPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11644,13 +11767,12 @@ pub enum ImplItem {
     Function(FunctionWithBody),
     Type(ItemTypeAlias),
     Constant(ItemConstant),
+    Impl(ItemImplAlias),
     Module(ItemModule),
     Use(ItemUse),
     ExternFunction(ItemExternFunction),
     ExternType(ItemExternType),
     Trait(ItemTrait),
-    Impl(ItemImpl),
-    ImplAlias(ItemImplAlias),
     Struct(ItemStruct),
     Enum(ItemEnum),
     Missing(ImplItemMissing),
@@ -11680,6 +11802,11 @@ impl From<ItemConstantPtr> for ImplItemPtr {
         Self(value.0)
     }
 }
+impl From<ItemImplAliasPtr> for ImplItemPtr {
+    fn from(value: ItemImplAliasPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemModulePtr> for ImplItemPtr {
     fn from(value: ItemModulePtr) -> Self {
         Self(value.0)
@@ -11702,16 +11829,6 @@ impl From<ItemExternTypePtr> for ImplItemPtr {
 }
 impl From<ItemTraitPtr> for ImplItemPtr {
     fn from(value: ItemTraitPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ItemImplPtr> for ImplItemPtr {
-    fn from(value: ItemImplPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ItemImplAliasPtr> for ImplItemPtr {
-    fn from(value: ItemImplAliasPtr) -> Self {
         Self(value.0)
     }
 }
@@ -11745,6 +11862,11 @@ impl From<ItemConstantGreen> for ImplItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemImplAliasGreen> for ImplItemGreen {
+    fn from(value: ItemImplAliasGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemModuleGreen> for ImplItemGreen {
     fn from(value: ItemModuleGreen) -> Self {
         Self(value.0)
@@ -11767,16 +11889,6 @@ impl From<ItemExternTypeGreen> for ImplItemGreen {
 }
 impl From<ItemTraitGreen> for ImplItemGreen {
     fn from(value: ItemTraitGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ItemImplGreen> for ImplItemGreen {
-    fn from(value: ItemImplGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ItemImplAliasGreen> for ImplItemGreen {
-    fn from(value: ItemImplAliasGreen) -> Self {
         Self(value.0)
     }
 }
@@ -11814,6 +11926,7 @@ impl TypedSyntaxNode for ImplItem {
             SyntaxKind::ItemConstant => {
                 ImplItem::Constant(ItemConstant::from_syntax_node(db, node))
             }
+            SyntaxKind::ItemImplAlias => ImplItem::Impl(ItemImplAlias::from_syntax_node(db, node)),
             SyntaxKind::ItemModule => ImplItem::Module(ItemModule::from_syntax_node(db, node)),
             SyntaxKind::ItemUse => ImplItem::Use(ItemUse::from_syntax_node(db, node)),
             SyntaxKind::ItemExternFunction => {
@@ -11823,10 +11936,6 @@ impl TypedSyntaxNode for ImplItem {
                 ImplItem::ExternType(ItemExternType::from_syntax_node(db, node))
             }
             SyntaxKind::ItemTrait => ImplItem::Trait(ItemTrait::from_syntax_node(db, node)),
-            SyntaxKind::ItemImpl => ImplItem::Impl(ItemImpl::from_syntax_node(db, node)),
-            SyntaxKind::ItemImplAlias => {
-                ImplItem::ImplAlias(ItemImplAlias::from_syntax_node(db, node))
-            }
             SyntaxKind::ItemStruct => ImplItem::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => ImplItem::Enum(ItemEnum::from_syntax_node(db, node)),
             SyntaxKind::ImplItemMissing => {
@@ -11840,13 +11949,12 @@ impl TypedSyntaxNode for ImplItem {
             ImplItem::Function(x) => x.as_syntax_node(),
             ImplItem::Type(x) => x.as_syntax_node(),
             ImplItem::Constant(x) => x.as_syntax_node(),
+            ImplItem::Impl(x) => x.as_syntax_node(),
             ImplItem::Module(x) => x.as_syntax_node(),
             ImplItem::Use(x) => x.as_syntax_node(),
             ImplItem::ExternFunction(x) => x.as_syntax_node(),
             ImplItem::ExternType(x) => x.as_syntax_node(),
             ImplItem::Trait(x) => x.as_syntax_node(),
-            ImplItem::Impl(x) => x.as_syntax_node(),
-            ImplItem::ImplAlias(x) => x.as_syntax_node(),
             ImplItem::Struct(x) => x.as_syntax_node(),
             ImplItem::Enum(x) => x.as_syntax_node(),
             ImplItem::Missing(x) => x.as_syntax_node(),
@@ -11863,13 +11971,12 @@ impl ImplItem {
             SyntaxKind::FunctionWithBody => true,
             SyntaxKind::ItemTypeAlias => true,
             SyntaxKind::ItemConstant => true,
+            SyntaxKind::ItemImplAlias => true,
             SyntaxKind::ItemModule => true,
             SyntaxKind::ItemUse => true,
             SyntaxKind::ItemExternFunction => true,
             SyntaxKind::ItemExternType => true,
             SyntaxKind::ItemTrait => true,
-            SyntaxKind::ItemImpl => true,
-            SyntaxKind::ItemImplAlias => true,
             SyntaxKind::ItemStruct => true,
             SyntaxKind::ItemEnum => true,
             SyntaxKind::ImplItemMissing => true,

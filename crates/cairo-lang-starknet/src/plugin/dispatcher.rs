@@ -258,6 +258,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 ));
                 continue;
             }
+            ast::TraitItem::Impl(imp) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    imp.impl_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support impl items.".to_string(),
+                ));
+                continue;
+            }
         }
     }
 
