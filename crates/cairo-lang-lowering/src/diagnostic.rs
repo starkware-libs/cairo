@@ -85,6 +85,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "
                 .into()
             }
+            LoweringDiagnosticKind::NoPanicFunctionCycle => {
+                "Call cycle of `nopanic` functions is not allowed.".into()
+            },
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
@@ -132,6 +135,7 @@ pub enum LoweringDiagnosticKind {
     NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
+    NoPanicFunctionCycle,
     LiteralError(LiteralError),
     UnsupportedPattern,
 }
