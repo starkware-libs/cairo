@@ -524,6 +524,7 @@ impl GenericParamLongId {
         let name_green = TerminalIdentifierGreen(key_fields[0]);
         Some(name_green.identifier(db))
     }
+
     pub fn debug_name(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.name(db).unwrap_or_else(|| "_".into())
     }
@@ -562,6 +563,27 @@ impl GenericParamId {
     pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
         db.lookup_intern_generic_param(*self).debug_name(db.upcast())
     }
+    pub fn format(&self, db: &dyn DefsGroup) -> String {
+        let long_ids = db.lookup_intern_generic_param(*self);
+        let SyntaxStablePtr::Child { key_fields, kind, .. } =
+            db.lookup_intern_stable_ptr(long_ids.1.0)
+        else {
+            unreachable!()
+        };
+
+        let syntax_db = db.upcast();
+        if matches!(
+            kind,
+            SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
+        ) {
+            // For anonymous impls print the declaration.
+            return self.stable_location(db).syntax_node(db).get_text_without_trivia(syntax_db);
+        }
+
+        let name_green = TerminalIdentifierGreen(key_fields[0]);
+        name_green.identifier(syntax_db).into()
+    }
+
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
         db.lookup_intern_generic_param(*self).kind(db.upcast())
     }

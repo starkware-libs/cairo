@@ -50,7 +50,7 @@ impl GenericArgumentId {
         match self {
             GenericArgumentId::Type(ty) => ty.format(db),
             GenericArgumentId::Literal(lit) => lit.format(db),
-            GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
+            GenericArgumentId::Impl(imp) => imp.format(db).into(),
             GenericArgumentId::NegImpl => "_".into(),
         }
     }
