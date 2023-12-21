@@ -1026,7 +1026,6 @@ fn validate_cast_bounds_strictly_contained<
     +PartialEq<SubType>,
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
-    +TryInto<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
     +TryInto<felt252, SuperType>
 >(
@@ -1053,7 +1052,6 @@ fn validate_cast_bounds_contained_same_min<
     +PartialEq<SubType>,
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
-    +TryInto<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
     +TryInto<felt252, SuperType>
 >(
