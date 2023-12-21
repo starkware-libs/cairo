@@ -6,7 +6,7 @@ use super::ast::{
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
     ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
     StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
     TraitItemFunctionPtr, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
@@ -284,11 +284,17 @@ impl QueryAttrs for TraitItemType {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for TraitItemConstant {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             TraitItem::Function(item) => item.attributes_elements(db),
             TraitItem::Type(item) => item.attributes_elements(db),
+            TraitItem::Constant(item) => item.attributes_elements(db),
             TraitItem::Missing(_) => vec![],
         }
     }

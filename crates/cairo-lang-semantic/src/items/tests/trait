@@ -659,7 +659,7 @@ impl imp4 of inner_imp {}
 
 //! > ==========================================================================
 
-//! > Test unsupported associated items.
+//! > Test unsupported items in trait/impl.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -673,9 +673,11 @@ foo
 //! > module_code
 trait MyTrait {
    type X;
+   const Y: usize;
 }
 impl MyImpl of MyTrait {
    type X = u32;
+   const Y: usize = 3;
 }
 
 //! > expected_diagnostics
@@ -684,7 +686,17 @@ error: Type items are not yet supported in traits.
    type X;
    ^**^
 
+error: Constant items are not yet supported in traits.
+ --> lib.cairo:3:4
+   const Y: usize;
+   ^***^
+
 error: Type items are not yet supported in impls.
- --> lib.cairo:5:4
+ --> lib.cairo:6:4
    type X = u32;
    ^**^
+
+error: Constant items are not yet supported in impls.
+ --> lib.cairo:7:4
+   const Y: usize = 3;
+   ^***^
