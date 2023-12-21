@@ -374,6 +374,10 @@ pub fn priv_trait_semantic_definition_data(
                 ast::TraitItem::AssociatedType(ty) => {
                     report_unsupported_associated_item(&mut diagnostics, ty.type_kw(syntax_db))
                 }
+                ast::TraitItem::AssociatedConstant(constant) => report_unsupported_associated_item(
+                    &mut diagnostics,
+                    constant.const_kw(syntax_db),
+                ),
                 ast::TraitItem::Missing(_) => {}
             }
         }

@@ -10681,6 +10681,7 @@ impl TypedSyntaxNode for TraitItemList {
 pub enum TraitItem {
     Function(TraitItemFunction),
     AssociatedType(TraitItemAssociatedType),
+    AssociatedConstant(TraitItemAssociatedConstant),
     Missing(TraitItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10703,6 +10704,11 @@ impl From<TraitItemAssociatedTypePtr> for TraitItemPtr {
         Self(value.0)
     }
 }
+impl From<TraitItemAssociatedConstantPtr> for TraitItemPtr {
+    fn from(value: TraitItemAssociatedConstantPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TraitItemMissingPtr> for TraitItemPtr {
     fn from(value: TraitItemMissingPtr) -> Self {
         Self(value.0)
@@ -10715,6 +10721,11 @@ impl From<TraitItemFunctionGreen> for TraitItemGreen {
 }
 impl From<TraitItemAssociatedTypeGreen> for TraitItemGreen {
     fn from(value: TraitItemAssociatedTypeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitItemAssociatedConstantGreen> for TraitItemGreen {
+    fn from(value: TraitItemAssociatedConstantGreen) -> Self {
         Self(value.0)
     }
 }
@@ -10741,6 +10752,9 @@ impl TypedSyntaxNode for TraitItem {
             SyntaxKind::TraitItemAssociatedType => {
                 TraitItem::AssociatedType(TraitItemAssociatedType::from_syntax_node(db, node))
             }
+            SyntaxKind::TraitItemAssociatedConstant => TraitItem::AssociatedConstant(
+                TraitItemAssociatedConstant::from_syntax_node(db, node),
+            ),
             SyntaxKind::TraitItemMissing => {
                 TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node))
             }
@@ -10751,6 +10765,7 @@ impl TypedSyntaxNode for TraitItem {
         match self {
             TraitItem::Function(x) => x.as_syntax_node(),
             TraitItem::AssociatedType(x) => x.as_syntax_node(),
+            TraitItem::AssociatedConstant(x) => x.as_syntax_node(),
             TraitItem::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -10764,6 +10779,7 @@ impl TraitItem {
         match kind {
             SyntaxKind::TraitItemFunction => true,
             SyntaxKind::TraitItemAssociatedType => true,
+            SyntaxKind::TraitItemAssociatedConstant => true,
             SyntaxKind::TraitItemMissing => true,
             _ => false,
         }
@@ -11010,6 +11026,109 @@ impl TypedSyntaxNode for TraitItemAssociatedType {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitItemAssociatedTypePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemAssociatedConstant {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl TraitItemAssociatedConstant {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_CONST_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_TYPE_CLAUSE: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        const_kw: TerminalConstGreen,
+        name: TerminalIdentifierGreen,
+        type_clause: TypeClauseGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> TraitItemAssociatedConstantGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, const_kw.0, name.0, type_clause.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitItemAssociatedConstantGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemAssociatedConstant,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl TraitItemAssociatedConstant {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
+        TerminalConst::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
+        TypeClause::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemAssociatedConstantPtr(pub SyntaxStablePtrId);
+impl TraitItemAssociatedConstantPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> TraitItemAssociatedConstant {
+        TraitItemAssociatedConstant::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemAssociatedConstantGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemAssociatedConstant {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemAssociatedConstant);
+    type StablePtr = TraitItemAssociatedConstantPtr;
+    type Green = TraitItemAssociatedConstantGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemAssociatedConstantGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemAssociatedConstant,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalConst::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TypeClause::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemAssociatedConstant,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemAssociatedConstant
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemAssociatedConstantPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11526,7 +11645,7 @@ impl TypedSyntaxNode for ImplItemList {
 pub enum ImplItem {
     Function(FunctionWithBody),
     AssociatedType(ItemTypeAlias),
-    Constant(ItemConstant),
+    AssociatedConstant(ItemConstant),
     Module(ItemModule),
     Use(ItemUse),
     ExternFunction(ItemExternFunction),
@@ -11697,7 +11816,7 @@ impl TypedSyntaxNode for ImplItem {
                 ImplItem::AssociatedType(ItemTypeAlias::from_syntax_node(db, node))
             }
             SyntaxKind::ItemConstant => {
-                ImplItem::Constant(ItemConstant::from_syntax_node(db, node))
+                ImplItem::AssociatedConstant(ItemConstant::from_syntax_node(db, node))
             }
             SyntaxKind::ItemModule => ImplItem::Module(ItemModule::from_syntax_node(db, node)),
             SyntaxKind::ItemUse => ImplItem::Use(ItemUse::from_syntax_node(db, node)),
@@ -11724,7 +11843,7 @@ impl TypedSyntaxNode for ImplItem {
         match self {
             ImplItem::Function(x) => x.as_syntax_node(),
             ImplItem::AssociatedType(x) => x.as_syntax_node(),
-            ImplItem::Constant(x) => x.as_syntax_node(),
+            ImplItem::AssociatedConstant(x) => x.as_syntax_node(),
             ImplItem::Module(x) => x.as_syntax_node(),
             ImplItem::Use(x) => x.as_syntax_node(),
             ImplItem::ExternFunction(x) => x.as_syntax_node(),

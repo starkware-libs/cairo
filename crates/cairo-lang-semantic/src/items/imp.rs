@@ -511,11 +511,6 @@ pub fn priv_impl_definition_data(
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
-                ImplItem::Constant(constant) => report_invalid_impl_item(
-                    syntax_db,
-                    &mut diagnostics,
-                    constant.const_kw(syntax_db),
-                ),
                 ImplItem::Module(module) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
@@ -572,6 +567,10 @@ pub fn priv_impl_definition_data(
                 ImplItem::AssociatedType(ty) => {
                     report_unsupported_associated_item(&mut diagnostics, ty.type_kw(syntax_db))
                 }
+                ImplItem::AssociatedConstant(constant) => report_unsupported_associated_item(
+                    &mut diagnostics,
+                    constant.const_kw(syntax_db),
+                ),
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
             }

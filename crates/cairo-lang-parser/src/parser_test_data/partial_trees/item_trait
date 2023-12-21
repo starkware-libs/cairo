@@ -257,3 +257,76 @@ ImplBody
     │       │       └── ident (kind: TokenIdentifier): 'u32'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test associated const in trait.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+trait MyTrait {
+    const MyConst: u32;
+}
+
+//! > top_level_kind
+TraitBody
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: TraitBody
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── items (kind: TraitItemList)
+    │   └── child #0 (kind: TraitItemAssociatedConstant)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── const_kw (kind: TokenConst): 'const'
+    │       ├── name (kind: TokenIdentifier): 'MyConst'
+    │       ├── type_clause (kind: TypeClause)
+    │       │   ├── colon (kind: TokenColon): ':'
+    │       │   └── ty (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test associated const in impl.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+impl MyImpl of MyTrait {
+    const MyConst: u32 = 3;
+}
+
+//! > top_level_kind
+ImplBody
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ImplBody
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── items (kind: ImplItemList)
+    │   └── child #0 (kind: ItemConstant)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── const_kw (kind: TokenConst): 'const'
+    │       ├── name (kind: TokenIdentifier): 'MyConst'
+    │       ├── type_clause (kind: TypeClause)
+    │       │   ├── colon (kind: TokenColon): ':'
+    │       │   └── ty (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       ├── eq (kind: TokenEq): '='
+    │       ├── value (kind: TokenLiteralNumber): '3'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── rbrace (kind: TokenRBrace): '}'

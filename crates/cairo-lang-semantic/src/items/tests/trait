@@ -673,9 +673,11 @@ foo
 //! > module_code
 trait MyTrait {
    type X;
+   const Y: usize;
 }
 impl MyImpl of MyTrait {
    type X = u32;
+   const Y: usize = 3;
 }
 
 //! > expected_diagnostics
@@ -685,6 +687,16 @@ error: Associated items are not yet supported.
    ^**^
 
 error: Associated items are not yet supported.
- --> lib.cairo:5:4
+ --> lib.cairo:3:4
+   const Y: usize;
+   ^***^
+
+error: Associated items are not yet supported.
+ --> lib.cairo:6:4
    type X = u32;
    ^**^
+
+error: Associated items are not yet supported.
+ --> lib.cairo:7:4
+   const Y: usize = 3;
+   ^***^

@@ -695,6 +695,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 #[starknet::interface]
 trait IContract<T> {
     type X;
+    const Y: usize;
 
     fn empty(self: @T);
 }
@@ -705,10 +706,20 @@ error: Plugin diagnostic: `starknet::interface` does not yet support associated 
     type X;
     ^**^
 
+error: Plugin diagnostic: `starknet::interface` does not yet support associated items.
+ --> lib.cairo:4:5
+    const Y: usize;
+    ^***^
+
 error: Associated items are not yet supported.
  --> lib.cairo:3:5
     type X;
     ^**^
+
+error: Associated items are not yet supported.
+ --> lib.cairo:4:5
+    const Y: usize;
+    ^***^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -716,6 +727,7 @@ lib.cairo:
 #[starknet::interface]
 trait IContract<T> {
     type X;
+    const Y: usize;
 
     fn empty(self: @T);
 }

@@ -252,6 +252,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 ));
                 continue;
             }
+            ast::TraitItem::AssociatedConstant(constant) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    constant.const_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support associated items.".to_string(),
+                ));
+                continue;
+            }
         }
     }
 
