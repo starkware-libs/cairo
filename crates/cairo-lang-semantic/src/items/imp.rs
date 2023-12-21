@@ -84,7 +84,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
                 if i > 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{:?}", arg.debug(db))?;
+                write!(f, "{}", arg.format(db))?;
             }
             write!(f, ">")?;
         }
@@ -136,6 +136,15 @@ impl ImplId {
                 generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
             }
             ImplId::ImplVar(var) => format!("{var:?}").into(),
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        match self {
+            ImplId::Concrete(concrete_impl) => {
+                format!("{:?}", concrete_impl.debug(db.elongate()))
+            }
+            ImplId::GenericParameter(generic_param_impl) => generic_param_impl.format(db.upcast()),
+            ImplId::ImplVar(var) => format!("{var:?}"),
         }
     }
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
