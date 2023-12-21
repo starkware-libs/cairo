@@ -100,6 +100,7 @@ pub enum SyntaxKind {
     TraitItemMissing,
     TraitItemFunction,
     TraitItemAssociatedType,
+    TraitItemAssociatedConstant,
     ItemImpl,
     ItemInlineMacro,
     ImplBody,

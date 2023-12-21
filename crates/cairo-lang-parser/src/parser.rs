@@ -792,6 +792,7 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
             SyntaxKind::TerminalType => Ok(self.expect_trait_associated_type(attributes).into()),
+            SyntaxKind::TerminalConst => Ok(self.expect_trait_associated_const(attributes).into()),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<TraitItem>(
@@ -827,6 +828,29 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         TraitItemAssociatedType::new_green(self.db, attributes, type_kw, name, semicolon)
+    }
+
+    /// Assumes the current token is Const.
+    /// Expected pattern: `const <name>: <type>;`
+    fn expect_trait_associated_const(
+        &mut self,
+        attributes: AttributeListGreen,
+    ) -> TraitItemAssociatedConstantGreen {
+        let const_kw = self.take::<TerminalConst>();
+        let name = self.parse_identifier();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(eq, semicolon, top_level),
+        });
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+
+        TraitItemAssociatedConstant::new_green(
+            self.db,
+            attributes,
+            const_kw,
+            name,
+            type_clause,
+            semicolon,
+        )
     }
 
     /// Assumes the current token is Impl.
@@ -931,8 +955,8 @@ impl<'a> Parser<'a> {
                 Ok(self.expect_function_with_body(attributes, visibility).into())
             }
             SyntaxKind::TerminalType => Ok(self.expect_impl_associated_type(attributes).into()),
-            // These are not supported semantically.
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes, visibility).into()),
+            // These are not supported semantically.
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes, visibility).into()),
             SyntaxKind::TerminalStruct => Ok(self.expect_struct(attributes, visibility).into()),
             SyntaxKind::TerminalEnum => Ok(self.expect_enum(attributes, visibility).into()),

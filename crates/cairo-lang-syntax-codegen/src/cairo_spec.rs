@@ -502,9 +502,10 @@ pub fn get_spec() -> Vec<Node> {
     .add_list("TraitItemList", "TraitItem")
     .add_enum(EnumBuilder::new("TraitItem")
         .missing("Missing")
-        // TODO(yuval): associated constants and impls.
+        // TODO(yuval): associated impls.
         .node("Function")
         .node("AssociatedType")
+        .node("AssociatedConstant")
     )
     .add_struct(StructBuilder::new("TraitItemMissing"))
     .add_struct(StructBuilder::new("TraitItemFunction")
@@ -517,6 +518,13 @@ pub fn get_spec() -> Vec<Node> {
         .node("attributes" ,"AttributeList")
         .node("type_kw", "TerminalType")
         .key_node("name", "TerminalIdentifier")
+        .node("semicolon", "TerminalSemicolon")
+    )
+    .add_struct(StructBuilder::new("TraitItemAssociatedConstant")
+        .node("attributes" ,"AttributeList")
+        .node("const_kw", "TerminalConst")
+        .key_node("name", "TerminalIdentifier")
+        .node("type_clause", "TypeClause")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_enum(EnumBuilder::new("MaybeTraitFunctionBody")
@@ -551,11 +559,11 @@ pub fn get_spec() -> Vec<Node> {
     .add_list("ImplItemList", "ImplItem")
     .add_enum(EnumBuilder::new("ImplItem")
         .missing("Missing")
-        // TODO(yuval): associated constants and impls.
+        // TODO(yuval): associated impls.
         .node_with_explicit_kind("Function", "FunctionWithBody")
         .node("AssociatedType")
+        .node_with_explicit_kind("AssociatedConstant", "ItemConstant")
         // These are not supported semantically.
-        .node_with_explicit_kind("Constant", "ItemConstant")
         .node_with_explicit_kind("Module", "ItemModule")
         .node_with_explicit_kind("Use", "ItemUse")
         .node_with_explicit_kind("ExternFunction", "ItemExternFunction")

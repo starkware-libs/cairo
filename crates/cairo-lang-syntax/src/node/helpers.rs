@@ -6,8 +6,8 @@ use super::ast::{
     ItemExternFunctionPtr, ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule,
     ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized,
     Statement, StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemAssociatedType,
-    TraitItemFunction, TraitItemFunctionPtr, Variant, WrappedArgList,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemAssociatedConstant,
+    TraitItemAssociatedType, TraitItemFunction, TraitItemFunctionPtr, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -284,11 +284,17 @@ impl QueryAttrs for TraitItemAssociatedType {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for TraitItemAssociatedConstant {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             TraitItem::Function(item) => item.attributes_elements(db),
             TraitItem::AssociatedType(item) => item.attributes_elements(db),
+            TraitItem::AssociatedConstant(item) => item.attributes_elements(db),
             TraitItem::Missing(_) => vec![],
         }
     }
@@ -331,7 +337,7 @@ impl QueryAttrs for ImplItem {
         match self {
             ImplItem::Function(item) => item.attributes_elements(db),
             ImplItem::AssociatedType(item) => item.attributes_elements(db),
-            ImplItem::Constant(item) => item.attributes_elements(db),
+            ImplItem::AssociatedConstant(item) => item.attributes_elements(db),
             ImplItem::Module(item) => item.attributes_elements(db),
             ImplItem::Use(item) => item.attributes_elements(db),
             ImplItem::ExternFunction(item) => item.attributes_elements(db),
