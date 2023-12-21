@@ -133,9 +133,25 @@ impl ImplId {
         match self {
             ImplId::Concrete(concrete_impl) => concrete_impl.name(db),
             ImplId::GenericParameter(generic_param_impl) => {
-                generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
+                generic_param_impl.name(db.upcast()).unwrap_or_else(|| {
+                    // For anonymous impls print the declaration.
+                    generic_param_impl
+                        .stable_location(db.upcast())
+                        .syntax_node(db.upcast())
+                        .get_text_without_trivia(db.upcast())
+                        .into()
+                })
             }
             ImplId::ImplVar(var) => format!("{var:?}").into(),
+        }
+    }
+
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            ImplId::Concrete(concrete_impl) => {
+                format!("{:?}", concrete_impl.debug(db.elongate())).into()
+            }
+            _ => self.name(db),
         }
     }
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
