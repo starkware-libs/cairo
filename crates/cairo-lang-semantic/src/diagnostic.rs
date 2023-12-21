@@ -601,6 +601,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NegativeImplsNotEnabled => {
                 "Negative impls are not enabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
+                "Negative impls supported only on impls.".into()
+            }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
@@ -832,6 +835,7 @@ pub enum SemanticDiagnosticKind {
     UnusedVariable,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
+    NegativeImplsOnlyOnImpls,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
