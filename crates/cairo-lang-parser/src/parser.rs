@@ -793,6 +793,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
             SyntaxKind::TerminalType => Ok(self.expect_trait_associated_type(attributes).into()),
             SyntaxKind::TerminalConst => Ok(self.expect_trait_associated_const(attributes).into()),
+            SyntaxKind::TerminalImpl => Ok(self.expect_trait_associated_impl(attributes).into()),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<TraitItem>(
@@ -854,23 +855,27 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
+    /// Expected pattern: `impl <name> of <trait_path>;`
+    fn expect_trait_associated_impl(
+        &mut self,
+        attributes: AttributeListGreen,
+    ) -> TraitItemAssociatedImplGreen {
+        let impl_kw = self.take::<TerminalImpl>();
+        let name = self.parse_identifier();
+        let of_kw = self.take::<TerminalOf>();
+        let trait_path = self.parse_type_path();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        TraitItemAssociatedImpl::new_green(
+            self.db, attributes, impl_kw, name, of_kw, trait_path, semicolon,
+        )
+    }
+
+    /// Assumes the current token is Impl.
     fn expect_item_impl(
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
     ) -> ItemGreen {
-        match self.expect_impl_inner(attributes, visibility) {
-            ImplItemOrAlias::Item(green) => green.into(),
-            ImplItemOrAlias::Alias(green) => green.into(),
-        }
-    }
-
-    /// Assumes the current token is Impl.
-    fn expect_impl_item_impl(
-        &mut self,
-        attributes: AttributeListGreen,
-        visibility: VisibilityGreen,
-    ) -> ImplItemGreen {
         match self.expect_impl_inner(attributes, visibility) {
             ImplItemOrAlias::Item(green) => green.into(),
             ImplItemOrAlias::Alias(green) => green.into(),
@@ -956,6 +961,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalType => Ok(self.expect_impl_associated_type(attributes).into()),
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes, visibility).into()),
+            SyntaxKind::TerminalImpl => Ok(self.expect_impl_associated_impl(attributes).into()),
             // These are not supported semantically.
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes, visibility).into()),
             SyntaxKind::TerminalStruct => Ok(self.expect_struct(attributes, visibility).into()),
@@ -963,7 +969,6 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalExtern => Ok(self.expect_extern_impl_item(attributes, visibility)),
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes, visibility).into()),
-            SyntaxKind::TerminalImpl => Ok(self.expect_impl_item_impl(attributes, visibility)),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<ImplItem>(
@@ -989,6 +994,24 @@ impl<'a> Parser<'a> {
         let ty = self.parse_type_expr();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ImplItemAssociatedType::new_green(self.db, attributes, type_kw, name, eq, ty, semicolon)
+    }
+
+    /// Assumes the current token is Impl.
+    /// Expected pattern: `impl <name> = <path>;`
+    fn expect_impl_associated_impl(
+        &mut self,
+        attributes: AttributeListGreen,
+    ) -> ImplItemAssociatedImplGreen {
+        let impl_kw = self.take::<TerminalImpl>();
+        let name = self.parse_identifier();
+
+        let eq = self.take::<TerminalEq>();
+        let impl_path = self.parse_type_path();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+
+        ImplItemAssociatedImpl::new_green(
+            self.db, attributes, impl_kw, name, eq, impl_path, semicolon,
+        )
     }
 
     /// Assumes the current token is TerminalNot.

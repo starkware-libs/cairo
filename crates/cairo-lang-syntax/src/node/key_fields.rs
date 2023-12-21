@@ -267,6 +267,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::TraitItemAssociatedConstant => {
             vec![/* name */ children[2]]
         }
+        SyntaxKind::TraitItemAssociatedImpl => {
+            vec![/* name */ children[2]]
+        }
         SyntaxKind::ItemImpl => {
             vec![/* name */ children[3]]
         }
@@ -281,6 +284,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::ImplItemAssociatedType => {
+            vec![/* name */ children[2]]
+        }
+        SyntaxKind::ImplItemAssociatedImpl => {
             vec![/* name */ children[2]]
         }
         SyntaxKind::ItemImplAlias => {
