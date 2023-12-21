@@ -793,6 +793,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Ok(self.expect_trait_function(attributes).into()),
             SyntaxKind::TerminalType => Ok(self.expect_trait_item_type(attributes).into()),
             SyntaxKind::TerminalConst => Ok(self.expect_trait_item_const(attributes).into()),
+            SyntaxKind::TerminalImpl => Ok(self.expect_trait_item_impl(attributes).into()),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<TraitItem>(
@@ -844,41 +845,59 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
+    /// Expected pattern: `impl <name> of <trait_path>;`
+    fn expect_trait_item_impl(&mut self, attributes: AttributeListGreen) -> TraitItemImplGreen {
+        let impl_kw = self.take::<TerminalImpl>();
+        let name = self.parse_identifier();
+        let of_kw = self.take::<TerminalOf>();
+        let trait_path = self.parse_type_path();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        TraitItemImpl::new_green(self.db, attributes, impl_kw, name, of_kw, trait_path, semicolon)
+    }
+
+    /// Assumes the current token is Impl.
     fn expect_item_impl(
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
     ) -> ItemGreen {
-        match self.expect_impl_inner(attributes, visibility) {
+        match self.expect_impl_inner(attributes, visibility, false) {
             ImplItemOrAlias::Item(green) => green.into(),
             ImplItemOrAlias::Alias(green) => green.into(),
         }
     }
 
     /// Assumes the current token is Impl.
+    /// Expects an impl impl-item (impl alias syntax): `impl <name> = <path>;`.
     fn expect_impl_item_impl(
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
     ) -> ImplItemGreen {
-        match self.expect_impl_inner(attributes, visibility) {
-            ImplItemOrAlias::Item(green) => green.into(),
+        match self.expect_impl_inner(attributes, visibility, true) {
             ImplItemOrAlias::Alias(green) => green.into(),
+            ImplItemOrAlias::Item(_) => {
+                unreachable!("`expect_impl_inner(..., true)` must return Alias")
+            }
         }
     }
 
     /// Assumes the current token is Impl.
+    /// Expects either an impl item (`impl <name> of <trait_path> {<impl_body>}`) or and impl alias
+    /// `impl <name> = <path>;`.
+    /// If `only_allow_alias` is true, always returns a ImplItemOrAlias::Alias.
     fn expect_impl_inner(
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
+        only_allow_alias: bool,
     ) -> ImplItemOrAlias {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
 
-        if self.peek().kind == SyntaxKind::TerminalEq {
-            let eq = self.take::<TerminalEq>();
+        if self.peek().kind == SyntaxKind::TerminalEq || only_allow_alias {
+            let eq = self.parse_token::<TerminalEq>();
             let impl_path = self.parse_type_path();
             let semicolon = self.parse_token::<TerminalSemicolon>();
 
@@ -946,6 +965,9 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalType => Ok(self.expect_type_alias(attributes, visibility).into()),
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes, visibility).into()),
+            SyntaxKind::TerminalImpl => {
+                Ok(self.expect_impl_item_impl(attributes, visibility).into())
+            }
             // These are not supported semantically.
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes, visibility).into()),
             SyntaxKind::TerminalStruct => Ok(self.expect_struct(attributes, visibility).into()),
@@ -953,7 +975,6 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalExtern => Ok(self.expect_extern_impl_item(attributes, visibility)),
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes, visibility).into()),
-            SyntaxKind::TerminalImpl => Ok(self.expect_impl_item_impl(attributes, visibility)),
             _ => {
                 if has_attrs {
                     Ok(self.skip_taken_node_and_return_missing::<ImplItem>(
