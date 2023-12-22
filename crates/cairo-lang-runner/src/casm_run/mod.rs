@@ -2091,6 +2091,55 @@ pub struct RunFunctionContext<'a> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 
+pub fn run_function_with_runner(
+    vm: &mut VirtualMachine,
+    data_len: usize,
+    additional_initialization: fn(
+        context: RunFunctionContext<'_>,
+    ) -> Result<(), Box<CairoRunError>>,
+    hint_processor: &mut dyn HintProcessor,
+    runner: &mut CairoRunner,
+) -> Result<(), Box<CairoRunError>> {
+    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
+
+    additional_initialization(RunFunctionContext { vm, data_len })?;
+
+    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.relocate(vm, true).map_err(CairoRunError::from)?;
+    Ok(())
+}
+
+pub fn build_cairo_runner(
+    data: Vec<MaybeRelocatable>,
+    builtins: Vec<BuiltinName>,
+    hints_dict: HashMap<usize, Vec<HintParams>>,
+) -> Result<CairoRunner, Box<CairoRunError>> {
+    let program = Program::new(
+        builtins,
+        data,
+        Some(0),
+        hints_dict,
+        ReferenceManager { references: Vec::new() },
+        HashMap::new(),
+        vec![],
+        None,
+    )
+    .map_err(CairoRunError::from)?;
+    CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
+}
+
+pub fn build_program_data<'a, Instructions>(instructions: Instructions) -> Vec<MaybeRelocatable>
+where
+    Instructions: Iterator<Item = &'a Instruction> + Clone,
+{
+    instructions
+        .flat_map(|inst| inst.assemble().encode())
+        .map(Felt252::from)
+        .map(MaybeRelocatable::from)
+        .collect()
+}
+
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a, Instructions>(
@@ -2106,35 +2155,12 @@ pub fn run_function<'a, 'b: 'a, Instructions>(
 where
     Instructions: Iterator<Item = &'a Instruction> + Clone,
 {
-    let data: Vec<MaybeRelocatable> = instructions
-        .flat_map(|inst| inst.assemble().encode())
-        .map(Felt252::from)
-        .map(MaybeRelocatable::from)
-        .collect();
+    let data = build_program_data(instructions);
 
     let data_len = data.len();
-    let program = Program::new(
-        builtins,
-        data,
-        Some(0),
-        hints_dict,
-        ReferenceManager { references: Vec::new() },
-        HashMap::new(),
-        vec![],
-        None,
-    )
-    .map_err(CairoRunError::from)?;
-    let mut runner = CairoRunner::new(&program, "all_cairo", false)
-        .map_err(CairoRunError::from)
-        .map_err(Box::new)?;
+    let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
-    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
-
-    additional_initialization(RunFunctionContext { vm, data_len })?;
-
-    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(vm, true).map_err(CairoRunError::from)?;
+    run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
 
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
@@ -2176,7 +2202,11 @@ impl FormattedItem {
     }
     /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
     pub fn quote_if_string(self) -> String {
-        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
+        if self.is_string {
+            format!("\"{}\"", self.item)
+        } else {
+            self.item
+        }
     }
 }
 
