@@ -17,6 +17,9 @@ struct Args {
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
+    /// Whether to allow warnings.
+    #[arg(long)]
+    allow_warnings: bool,
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
     filter: String,
@@ -43,7 +46,7 @@ fn main() -> anyhow::Result<()> {
         include_ignored: args.include_ignored,
     };
 
-    let runner = TestRunner::new(&args.path, args.starknet, config)?;
+    let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;
     runner.run()?;
 
     Ok(())
