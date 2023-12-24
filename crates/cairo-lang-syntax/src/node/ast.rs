@@ -10681,6 +10681,7 @@ impl TypedSyntaxNode for TraitItemList {
 pub enum TraitItem {
     Function(TraitItemFunction),
     Type(TraitItemType),
+    Constant(TraitItemConstant),
     Missing(TraitItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10703,6 +10704,11 @@ impl From<TraitItemTypePtr> for TraitItemPtr {
         Self(value.0)
     }
 }
+impl From<TraitItemConstantPtr> for TraitItemPtr {
+    fn from(value: TraitItemConstantPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TraitItemMissingPtr> for TraitItemPtr {
     fn from(value: TraitItemMissingPtr) -> Self {
         Self(value.0)
@@ -10715,6 +10721,11 @@ impl From<TraitItemFunctionGreen> for TraitItemGreen {
 }
 impl From<TraitItemTypeGreen> for TraitItemGreen {
     fn from(value: TraitItemTypeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitItemConstantGreen> for TraitItemGreen {
+    fn from(value: TraitItemConstantGreen) -> Self {
         Self(value.0)
     }
 }
@@ -10739,6 +10750,9 @@ impl TypedSyntaxNode for TraitItem {
                 TraitItem::Function(TraitItemFunction::from_syntax_node(db, node))
             }
             SyntaxKind::TraitItemType => TraitItem::Type(TraitItemType::from_syntax_node(db, node)),
+            SyntaxKind::TraitItemConstant => {
+                TraitItem::Constant(TraitItemConstant::from_syntax_node(db, node))
+            }
             SyntaxKind::TraitItemMissing => {
                 TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node))
             }
@@ -10749,6 +10763,7 @@ impl TypedSyntaxNode for TraitItem {
         match self {
             TraitItem::Function(x) => x.as_syntax_node(),
             TraitItem::Type(x) => x.as_syntax_node(),
+            TraitItem::Constant(x) => x.as_syntax_node(),
             TraitItem::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -10762,6 +10777,7 @@ impl TraitItem {
         match kind {
             SyntaxKind::TraitItemFunction => true,
             SyntaxKind::TraitItemType => true,
+            SyntaxKind::TraitItemConstant => true,
             SyntaxKind::TraitItemMissing => true,
             _ => false,
         }
@@ -11008,6 +11024,109 @@ impl TypedSyntaxNode for TraitItemType {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitItemTypePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemConstant {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl TraitItemConstant {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_CONST_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_TYPE_CLAUSE: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        const_kw: TerminalConstGreen,
+        name: TerminalIdentifierGreen,
+        type_clause: TypeClauseGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> TraitItemConstantGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, const_kw.0, name.0, type_clause.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitItemConstantGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemConstant,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl TraitItemConstant {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
+        TerminalConst::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
+        TypeClause::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemConstantPtr(pub SyntaxStablePtrId);
+impl TraitItemConstantPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> TraitItemConstant {
+        TraitItemConstant::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemConstantGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemConstant {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemConstant);
+    type StablePtr = TraitItemConstantPtr;
+    type Green = TraitItemConstantGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemConstantGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::TraitItemConstant,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalConst::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TypeClause::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemConstant,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemConstant
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemConstantPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

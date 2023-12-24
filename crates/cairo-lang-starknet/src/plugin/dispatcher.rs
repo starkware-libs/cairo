@@ -251,6 +251,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 ));
                 continue;
             }
+            ast::TraitItem::Constant(constant) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    constant.const_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support constant items.".to_string(),
+                ));
+                continue;
+            }
         }
     }
 
