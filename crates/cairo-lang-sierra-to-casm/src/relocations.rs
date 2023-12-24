@@ -98,18 +98,27 @@ pub fn relocate_instructions(
     let mut relocations_iter = relocations.iter();
     let mut relocation_entry = relocations_iter.next();
     for (instruction_idx, instruction) in instructions.iter_mut().enumerate() {
-        match relocation_entry {
-            Some(RelocationEntry { instruction_idx: relocation_idx, relocation })
-                if *relocation_idx == instruction_idx =>
-            {
+        if let Some(RelocationEntry { instruction_idx: relocation_idx, relocation }) =
+            relocation_entry
+        {
+            if *relocation_idx == instruction_idx {
                 relocation.apply(program_offset, statement_offsets, instruction);
                 relocation_entry = relocations_iter.next();
+            } else {
+                assert!(
+                    *relocation_idx > instruction_idx,
+                    "Relocation for already handled instruction #{relocation_idx} - currently \
+                     handling #{instruction_idx}."
+                );
             }
-            _ => (),
-        };
+        }
 
         program_offset += instruction.body.op_size();
     }
+    assert!(
+        relocation_entry.is_none(),
+        "No relocations should be left when done with all instructions."
+    );
 }
 
 /// Represents a list of instructions with their relocations.
