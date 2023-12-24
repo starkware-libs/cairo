@@ -14,18 +14,17 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::{self, ImplItem, MaybeImplBody, OptionReturnTypeClause};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
-use syntax::node::ast::GenericArg;
+use syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -38,7 +37,7 @@ use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLon
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{report_unsupported_impl_item, NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -559,9 +558,6 @@ pub fn priv_impl_definition_data(
                 ImplItem::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
-                ImplItem::TypeAlias(ty) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
-                }
                 ImplItem::ImplAlias(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
@@ -579,6 +575,9 @@ pub fn priv_impl_definition_data(
                         );
                     }
                     function_asts.insert(impl_function_id, func);
+                }
+                ImplItem::Type(ty) => {
+                    report_unsupported_impl_item(&mut diagnostics, ty.type_kw(syntax_db), "Type")
                 }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}

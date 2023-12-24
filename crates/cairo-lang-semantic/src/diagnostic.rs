@@ -11,10 +11,11 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -641,6 +642,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
             }
+            SemanticDiagnosticKind::UnsupportedTraitItem { kind } => {
+                format!("{kind} items are not yet supported in traits.")
+            }
+            SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
+                format!("{kind} items are not yet supported in impls.")
+            }
         }
     }
 
@@ -951,6 +958,12 @@ pub enum SemanticDiagnosticKind {
     GenericArgOutOfOrder {
         name: SmolStr,
     },
+    UnsupportedTraitItem {
+        kind: String,
+    },
+    UnsupportedImplItem {
+        kind: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1035,4 +1048,28 @@ impl TraitInferenceErrors {
             })
             .join("\n")
     }
+}
+
+/// A helper function to report diagnostics of yet-unsupported trait items.
+pub fn report_unsupported_trait_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedTraitItem { kind: item_kind.into() },
+    );
+}
+
+/// A helper function to report diagnostics of yet-unsupported impl items.
+pub fn report_unsupported_impl_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedImplItem { kind: item_kind.into() },
+    );
 }
