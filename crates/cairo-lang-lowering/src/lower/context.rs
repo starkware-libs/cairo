@@ -287,6 +287,15 @@ impl LoweredExpr {
             }
         }
     }
+    pub fn location(&self) -> LocationId {
+        match &self {
+            LoweredExpr::AtVariable(VarUsage { location, .. })
+            | LoweredExpr::Tuple { location, .. }
+            | LoweredExpr::ExternEnum(LoweredExprExternEnum { location, .. })
+            | LoweredExpr::Member(_, location)
+            | LoweredExpr::Snapshot { location, .. } => *location,
+        }
+    }
 }
 
 /// Lazy expression value of an extern call returning an enum.
