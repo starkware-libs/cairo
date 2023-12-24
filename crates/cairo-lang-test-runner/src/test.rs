@@ -9,7 +9,7 @@ fn test_compiled_serialization() {
     use std::path::PathBuf;
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_data");
 
-    let compiler = TestCompiler::try_new(&path, true).unwrap();
+    let compiler = TestCompiler::try_new(&path, true, false).unwrap();
     let compiled = compiler.build().unwrap();
     let serialized = serde_json::to_string_pretty(&compiled).unwrap();
     let deserialized: TestCompilation = serde_json::from_str(&serialized).unwrap();

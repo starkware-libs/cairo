@@ -24,6 +24,9 @@ struct Args {
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
+    /// Allows the compilation to succeed with warnings.
+    #[arg(long)]
+    allow_warnings: bool,
     /// In cases where gas is available, the amount of provided gas.
     #[arg(long)]
     available_gas: Option<usize>,
@@ -42,7 +45,11 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if DiagnosticsReporter::stderr().check(db) {
+    let mut reporter = DiagnosticsReporter::stderr();
+    if args.allow_warnings {
+        reporter = reporter.allow_warnings();
+    }
+    if reporter.check(db) {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
