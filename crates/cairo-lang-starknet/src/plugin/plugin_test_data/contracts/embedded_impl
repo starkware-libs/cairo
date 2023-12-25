@@ -130,13 +130,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub value: value::ContractMemberState,
+        pub value: __member_module_value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            value: value::ContractMemberState {},
+            value: __member_module_value::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -145,8 +145,8 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
-    mod value {
+    use __member_module_value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
+    mod __member_module_value {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
@@ -246,10 +246,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -533,10 +533,15 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
 
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:23:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:28:5
+    #[abi(embed_v0)]
+    ^**************^
+
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:31:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -725,7 +730,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^

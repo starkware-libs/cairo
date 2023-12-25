@@ -6,6 +6,8 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -23,12 +25,17 @@ use once_cell::sync::Lazy;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> =
-    Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
+static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
+    Mutex::new(db)
+});
 static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+
+    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
     Mutex::new(db)
 });
 
@@ -189,37 +196,32 @@ fn run_e2e_test(
         };
 
     // Compute the metadata.
-    let mut metadata_config = MetadataComputationConfig {
-        function_set_costs: enforced_costs,
-        linear_gas_solver: false,
-        linear_ap_change_solver: false,
-    };
-    let metadata = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
+    let mut metadata_config =
+        MetadataComputationConfig { function_set_costs: enforced_costs, ..Default::default() };
+    let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
     // Compile to casm.
-    let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
-        .unwrap()
-        .to_string();
+    let casm =
+        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_with_linear, true)
+            .unwrap()
+            .to_string();
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
     if params.metadata_computation {
-        metadata_config.linear_gas_solver = true;
-        metadata_config.linear_ap_change_solver = true;
-        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config).unwrap();
-        res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
-        res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
-        res.insert("ap_solution".into(), format!("{}", metadata.ap_change_info));
-        res.insert(
-            "ap_solution_no_solver".into(),
-            format!("{}", metadata_no_solver.ap_change_info),
-        );
+        metadata_config.linear_gas_solver = false;
+        metadata_config.linear_ap_change_solver = false;
+        let metadata_with_lp = calc_metadata(&sierra_program, metadata_config).unwrap();
+        res.insert("gas_solution_lp".into(), format!("{}", metadata_with_lp.gas_info));
+        res.insert("gas_solution_linear".into(), format!("{}", metadata_with_linear.gas_info));
+        res.insert("ap_solution_lp".into(), format!("{}", metadata_with_lp.ap_change_info));
+        res.insert("ap_solution_linear".into(), format!("{}", metadata_with_linear.ap_change_info));
 
         // Compile again, this time with the no-solver metadata.
-        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_no_solver, true)
+        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_with_lp, true)
             .unwrap();
     } else {
-        let function_costs_str = metadata
+        let function_costs_str = metadata_with_linear
             .gas_info
             .function_costs
             .iter()

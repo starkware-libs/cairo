@@ -17,14 +17,14 @@ pub struct PanicablePlugin;
 const PANIC_WITH_ATTR: &str = "panic_with";
 
 impl MacroPlugin for PanicablePlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         let (declaration, attributes, visibility) = match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => (
+            ast::ModuleItem::ExternFunction(extern_func_ast) => (
                 extern_func_ast.declaration(db),
                 extern_func_ast.attributes(db),
                 extern_func_ast.visibility(db),
             ),
-            ast::Item::FreeFunction(free_func_ast) => (
+            ast::ModuleItem::FreeFunction(free_func_ast) => (
                 free_func_ast.declaration(db),
                 free_func_ast.attributes(db),
                 free_func_ast.visibility(db),

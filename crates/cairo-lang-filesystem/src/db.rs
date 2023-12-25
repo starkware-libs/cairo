@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
-use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId};
-use crate::span::{FileSummary, TextOffset, TextWidth};
+use crate::ids::{
+    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+};
+use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
 #[cfg(test)]
 #[path = "db_test.rs"]
@@ -249,4 +251,23 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
 }
 fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+/// Returns the location of the originating user code.
+pub fn get_originating_location(
+    db: &dyn FilesGroup,
+    mut file_id: FileId,
+    mut span: TextSpan,
+) -> (FileId, TextSpan) {
+    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+        db.lookup_intern_file(file_id)
+    {
+        if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
+            span = origin;
+            file_id = parent;
+        } else {
+            break;
+        }
+    }
+    (file_id, span)
 }

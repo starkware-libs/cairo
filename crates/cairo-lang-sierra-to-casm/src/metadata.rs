@@ -48,7 +48,7 @@ impl Default for MetadataComputationConfig {
         Self {
             function_set_costs: Default::default(),
             linear_gas_solver: true,
-            linear_ap_change_solver: false,
+            linear_ap_change_solver: true,
         }
     }
 }

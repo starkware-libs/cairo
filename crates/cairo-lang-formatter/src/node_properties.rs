@@ -145,7 +145,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
         match self.kind(db) {
-            SyntaxKind::ItemList | SyntaxKind::ImplItemList | SyntaxKind::TraitItemList => 2,
+            SyntaxKind::ModuleItemList | SyntaxKind::ImplItemList | SyntaxKind::TraitItemList => 2,
             SyntaxKind::StatementList => 1,
             _ => 0,
         }
@@ -155,7 +155,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         match parent_kind(db, self) {
             // TODO(Gil): protected zone preferences should be local for each syntax node.
             Some(
-                SyntaxKind::ItemList
+                SyntaxKind::ModuleItemList
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::TraitItemList
                 | SyntaxKind::StatementList,
@@ -307,7 +307,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListParenthesized
                 | SyntaxKind::StructArgListBraced
                 | SyntaxKind::StatementList
-                | SyntaxKind::ItemList
+                | SyntaxKind::ModuleItemList
                 | SyntaxKind::TraitItemList
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
@@ -322,7 +322,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     ) -> BreakLinePointsPositions {
         // TODO(Gil): Make it easier to order the break points precedence.
         match parent_kind(db, self) {
-            Some(SyntaxKind::ItemList) => {
+            Some(SyntaxKind::ModuleItemList) => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     1,
                     BreakLinePointIndentation::NotIndented,
@@ -346,7 +346,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     false,
                 ))
             }
-            Some(SyntaxKind::ModuleBody) if self.kind(db) == SyntaxKind::ItemList => {
+            Some(SyntaxKind::ModuleBody) if self.kind(db) == SyntaxKind::ModuleItemList => {
                 BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
                     14,
                     BreakLinePointIndentation::IndentedWithTail,

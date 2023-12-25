@@ -23,28 +23,28 @@ type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)> = Enum<ut@[1261927754835514914776054027365235561646535770460075557734124965374903769288], Tuple<Box<core::starknet::info::v2::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>> = Enum<ut@[1066622978309758327526672597483202623059871376667747795906567598633136308279], ContractAddress, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
-type cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState = Struct<ut@[158193660642562149932434882246085179036223866843151123481256396986298184290]> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState = Struct<ut@[445638078296155389806370471967846643768878360000311548040093156318362912746]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())> = Enum<ut@[1003225903539139736889983463340674541297019814679148968315784673520703227768], Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())> = Enum<ut@[112832450226058367164977860415051406107011125730925129388187635690865337230], Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@[455598176897554951975518433047350165683642644060968901071973598007398862489], Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>> = Enum<ut@[1270906046977841141060978118411832258207934732743670527139603475143660678225], u128, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = Struct<ut@[58237049251456622370461467575865464743062008573046115994396901321700186682], cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = Struct<ut@[58237049251456622370461467575865464743062008573046115994396901321700186682], cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())> = Enum<ut@[1259191721975983090529145689629815073886227797467879922682638352909852218378], Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState = Struct<ut@[412439700708814533390511286735904422720714054336507657390589508218269965827]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())> = Enum<ut@[985791281236138091884192488809455870320997520182396033269838215654355496833], Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState = Struct<ut@[964427574887896617639032672766473346100326558702059356790152252341576217446]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())> = Enum<ut@[1013262458262163754336027107654106745247259776584307140107109925178298886945], Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@[1730591083647345995550560488717538099208395506321115194079300232838727341527], ContractAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<ContractAddress> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)> = Enum<ut@[1755495716650718146618285999245067208715119157433192891177430770370212750677], Tuple<ContractAddress>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState = Struct<ut@[67091600520275649206413789794142256801811525777101752914279955992754998058], cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState = Struct<ut@[67091600520275649206413789794142256801811525777101752914279955992754998058], cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())> = Enum<ut@[1215500036461073012146894703225021904041766856420197220854534589385224710122], Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -83,9 +83,9 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
-libfunc struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
+libfunc struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
 libfunc struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
-libfunc struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState> = struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState> = struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>;
 libfunc struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>;
 libfunc snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>;
 libfunc drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>;
@@ -140,7 +140,7 @@ libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_b
 libfunc felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914> = felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState> = struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>;
 libfunc drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
-libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<u128>> = struct_construct<Tuple<u128>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u128,)>> = store_temp<core::panics::PanicResult::<(core::integer::u128,)>>;
@@ -153,14 +153,14 @@ libfunc snapshot_take<cairo_level_tests::components::ownable::ownable::Component
 libfunc function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership> = function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership>;
 libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
 libfunc drop<Tuple<Unit>> = drop<Tuple<Unit>>;
-libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>;
 libfunc struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>;
-libfunc drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState> = drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState> = drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>;
 libfunc function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp::get_component> = function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp::get_component>;
 libfunc function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::owner> = function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::owner>;
 libfunc struct_construct<Tuple<ContractAddress>> = struct_construct<Tuple<ContractAddress>>;
@@ -193,7 +193,7 @@ libfunc felt252_const<476442828812030857794232422692155113556837216824> = felt25
 libfunc enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 1>;
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall>;
 libfunc struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>> = struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>;
-libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>;
 libfunc function_call<user@core::starknet::info::get_caller_address> = function_call<user@core::starknet::info::get_caller_address>;
 libfunc felt252_sub = felt252_sub;
 libfunc felt252_is_zero = felt252_is_zero;
@@ -204,29 +204,29 @@ libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_const<27063539617145597287547105838> = felt252_const<27063539617145597287547105838>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 libfunc drop<Tuple<ContractAddress>> = drop<Tuple<ContractAddress>>;
-libfunc snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>;
+libfunc snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>;
 libfunc storage_write_syscall = storage_write_syscall;
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>;
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>;
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>;
 libfunc struct_deconstruct<Tuple<Unit>> = struct_deconstruct<Tuple<Unit>>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 1>;
 libfunc enum_init<core::option::Option::<core::felt252>, 0> = enum_init<core::option::Option::<core::felt252>, 0>;
 libfunc store_temp<core::option::Option::<core::felt252>> = store_temp<core::option::Option::<core::felt252>>;
 libfunc enum_init<core::option::Option::<core::felt252>, 1> = enum_init<core::option::Option::<core::felt252>, 1>;
-libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>;
 libfunc struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>> = struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>;
 libfunc enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>;
-libfunc drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
+libfunc drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
 libfunc storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192> = storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>;
 libfunc function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into> = function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>;
 libfunc enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>;
@@ -242,11 +242,11 @@ libfunc struct_deconstruct<core::starknet::info::v2::ExecutionInfo> = struct_dec
 libfunc drop<Box<core::starknet::info::BlockInfo>> = drop<Box<core::starknet::info::BlockInfo>>;
 libfunc drop<Box<core::starknet::info::v2::TxInfo>> = drop<Box<core::starknet::info::v2::TxInfo>>;
 libfunc enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>;
-libfunc snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState> = snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>;
-libfunc struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>;
+libfunc snapshot_take<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState> = snapshot_take<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>;
+libfunc struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 1>;
 libfunc enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>;
 libfunc get_execution_info_v2_syscall = get_execution_info_v2_syscall;
 libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
@@ -292,9 +292,9 @@ get_builtin_costs() -> ([23]); // 29
 store_temp<BuiltinCosts>([23]) -> ([23]); // 30
 withdraw_gas_all([4], [5], [23]) { fallthrough([24], [25]) 69([26], [27]) }; // 31
 branch_align() -> (); // 32
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([28]); // 33
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([28]); // 33
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([28]) -> ([29]); // 34
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>() -> ([30]); // 35
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>() -> ([30]); // 35
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([29], [30]) -> ([31]); // 36
 snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([31]) -> ([32], [33]); // 37
 drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([32]) -> (); // 38
@@ -414,9 +414,9 @@ get_builtin_costs() -> ([41]); // 151
 store_temp<BuiltinCosts>([41]) -> ([41]); // 152
 withdraw_gas_all([21], [5], [41]) { fallthrough([42], [43]) 185([44], [45]) }; // 153
 branch_align() -> (); // 154
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([46]); // 155
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([46]); // 155
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([46]) -> ([47]); // 156
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>() -> ([48]); // 157
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>() -> ([48]); // 157
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([47], [48]) -> ([49]); // 158
 store_temp<RangeCheck>([42]) -> ([42]); // 159
 store_temp<GasBuiltin>([43]) -> ([43]); // 160
@@ -527,9 +527,9 @@ get_builtin_costs() -> ([23]); // 264
 store_temp<BuiltinCosts>([23]) -> ([23]); // 265
 withdraw_gas_all([4], [5], [23]) { fallthrough([24], [25]) 305([26], [27]) }; // 266
 branch_align() -> (); // 267
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([28]); // 268
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([28]); // 268
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([28]) -> ([29]); // 269
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>() -> ([30]); // 270
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>() -> ([30]); // 270
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([29], [30]) -> ([31]); // 271
 snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([31]) -> ([32], [33]); // 272
 drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([32]) -> (); // 273
@@ -629,9 +629,9 @@ get_builtin_costs() -> ([28]); // 366
 store_temp<BuiltinCosts>([28]) -> ([28]); // 367
 withdraw_gas_all([8], [5], [28]) { fallthrough([29], [30]) 400([31], [32]) }; // 368
 branch_align() -> (); // 369
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([33]); // 370
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([33]); // 370
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([33]) -> ([34]); // 371
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>() -> ([35]); // 372
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>() -> ([35]); // 372
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([34], [35]) -> ([36]); // 373
 store_temp<RangeCheck>([29]) -> ([29]); // 374
 store_temp<GasBuiltin>([30]) -> ([30]); // 375
@@ -766,9 +766,9 @@ store_temp<BuiltinCosts>([46]) -> ([46]); // 503
 withdraw_gas_all([26], [5], [46]) { fallthrough([47], [48]) 538([49], [50]) }; // 504
 branch_align() -> (); // 505
 disable_ap_tracking() -> (); // 506
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([51]); // 507
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([51]); // 507
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([51]) -> ([52]); // 508
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>() -> ([53]); // 509
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>() -> ([53]); // 509
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([52], [53]) -> ([54]); // 510
 store_temp<GasBuiltin>([48]) -> ([48]); // 511
 store_temp<System>([2]) -> ([2]); // 512
@@ -871,7 +871,7 @@ drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_lev
 store_temp<RangeCheck>([0]) -> ([0]); // 609
 store_temp<GasBuiltin>([1]) -> ([1]); // 610
 store_temp<System>([2]) -> ([2]); // 611
-function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read>([0], [1], [2], [5]) -> ([6], [7], [8], [9]); // 612
+function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read>([0], [1], [2], [5]) -> ([6], [7], [8], [9]); // 612
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([9]) { fallthrough([10]) 623([11]) }; // 613
 branch_align() -> (); // 614
 struct_deconstruct<Tuple<u128>>([10]) -> ([12]); // 615
@@ -915,10 +915,10 @@ drop<Tuple<Unit>>([13]) -> (); // 652
 store_temp<GasBuiltin>([10]) -> ([10]); // 653
 store_temp<System>([11]) -> ([11]); // 654
 store_temp<u128>([4]) -> ([4]); // 655
-function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>([10], [11], [6], [4]) -> ([15], [16], [17]); // 656
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([17]) { fallthrough([18]) 670([19]) }; // 657
+function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write>([10], [11], [6], [4]) -> ([15], [16], [17]); // 656
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>([17]) { fallthrough([18]) 670([19]) }; // 657
 branch_align() -> (); // 658
-struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([18]) -> ([20], [21]); // 659
+struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>([18]) -> ([20], [21]); // 659
 drop<Unit>([21]) -> (); // 660
 struct_construct<Unit>() -> ([22]); // 661
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([7], [20]) -> ([23]); // 662
@@ -940,7 +940,7 @@ return([9], [15], [16], [26]); // 677
 branch_align() -> (); // 678
 drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([7]) -> (); // 679
 drop<u128>([4]) -> (); // 680
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> (); // 681
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([6]) -> (); // 681
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([14]) -> ([27]); // 682
 store_temp<RangeCheck>([9]) -> ([9]); // 683
 store_temp<GasBuiltin>([10]) -> ([10]); // 684
@@ -1003,7 +1003,7 @@ store_temp<RangeCheck>([0]) -> ([0]); // 740
 store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]); // 741
 store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([12]) -> ([12]); // 742
 return([0], [2], [12]); // 743
-struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>() -> ([5]); // 744
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([5]); // 744
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([6]); // 745
 store_temp<RangeCheck>([0]) -> ([0]); // 746
 store_temp<GasBuiltin>([1]) -> ([1]); // 747
@@ -1039,12 +1039,12 @@ branch_align() -> (); // 776
 store_temp<GasBuiltin>([7]) -> ([7]); // 777
 store_temp<System>([8]) -> ([8]); // 778
 store_temp<u128>([4]) -> ([4]); // 779
-function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>([7], [8], [6], [4]) -> ([12], [13], [14]); // 780
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([14]) { fallthrough([15]) 795([16]) }; // 781
+function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write>([7], [8], [6], [4]) -> ([12], [13], [14]); // 780
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>([14]) { fallthrough([15]) 795([16]) }; // 781
 branch_align() -> (); // 782
 struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([10]) -> ([17], [18]); // 783
 drop<Unit>([18]) -> (); // 784
-struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([15]) -> ([19], [20]); // 785
+struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>([15]) -> ([19], [20]); // 785
 drop<Unit>([20]) -> (); // 786
 struct_construct<Unit>() -> ([21]); // 787
 struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([17], [19]) -> ([22]); // 788
@@ -1063,13 +1063,13 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownab
 return([12], [13], [25]); // 801
 branch_align() -> (); // 802
 drop<u128>([4]) -> (); // 803
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([6]) -> (); // 804
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([6]) -> (); // 804
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>([11]) -> ([26]); // 805
 store_temp<GasBuiltin>([7]) -> ([7]); // 806
 store_temp<System>([8]) -> ([8]); // 807
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>([26]) -> ([26]); // 808
 return([7], [8], [26]); // 809
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([3]) -> (); // 810
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([3]) -> (); // 810
 storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 811
 storage_address_from_base([4]) -> ([5]); // 812
 u32_const<0>() -> ([6]); // 813
@@ -1132,7 +1132,7 @@ struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentSta
 store_temp<RangeCheck>([0]) -> ([0]); // 870
 store_temp<GasBuiltin>([1]) -> ([1]); // 871
 store_temp<System>([2]) -> ([2]); // 872
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 873
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 873
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 931([10]) }; // 874
 branch_align() -> (); // 875
 store_temp<GasBuiltin>([6]) -> ([6]); // 876
@@ -1201,8 +1201,8 @@ storage_base_address_const<91690777249172926237653410298221994783082898499625723
 u128_to_felt252([3]) -> ([5]); // 939
 storage_address_from_base([4]) -> ([6]); // 940
 u32_const<0>() -> ([7]); // 941
-snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> ([8], [9]); // 942
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([9]) -> (); // 943
+snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([2]) -> ([8], [9]); // 942
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([9]) -> (); // 943
 store_temp<u32>([7]) -> ([7]); // 944
 store_temp<StorageAddress>([6]) -> ([6]); // 945
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 954([12], [13], [14]) }; // 946
@@ -1222,27 +1222,27 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 969([23]) }; // 960
 branch_align() -> (); // 961
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 962
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 963
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 964
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 963
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 964
 store_temp<GasBuiltin>([17]) -> ([17]); // 965
 store_temp<System>([18]) -> ([18]); // 966
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([26]) -> ([26]); // 967
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>([26]) -> ([26]); // 967
 return([17], [18], [26]); // 968
 branch_align() -> (); // 969
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([8]) -> (); // 970
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 971
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([8]) -> (); // 970
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 971
 store_temp<GasBuiltin>([17]) -> ([17]); // 972
 store_temp<System>([18]) -> ([18]); // 973
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>([27]) -> ([27]); // 974
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>([27]) -> ([27]); // 974
 return([17], [18], [27]); // 975
 struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([0]) -> ([1], [2]); // 976
-drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>([2]) -> (); // 977
+drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>([2]) -> (); // 977
 return([1]); // 978
 struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([3]) -> ([4]); // 979
 store_temp<RangeCheck>([0]) -> ([0]); // 980
 store_temp<GasBuiltin>([1]) -> ([1]); // 981
 store_temp<System>([2]) -> ([2]); // 982
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 983
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 983
 enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([8]) { fallthrough([9]) 994([10]) }; // 984
 branch_align() -> (); // 985
 struct_deconstruct<Tuple<ContractAddress>>([9]) -> ([11]); // 986
@@ -1305,10 +1305,10 @@ struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentSta
 store_temp<GasBuiltin>([8]) -> ([8]); // 1043
 store_temp<System>([9]) -> ([9]); // 1044
 store_temp<ContractAddress>([4]) -> ([4]); // 1045
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([8], [9], [13], [4]) -> ([14], [15], [16]); // 1046
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([16]) { fallthrough([17]) 1060([18]) }; // 1047
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write>([8], [9], [13], [4]) -> ([14], [15], [16]); // 1046
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>([16]) { fallthrough([17]) 1060([18]) }; // 1047
 branch_align() -> (); // 1048
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([17]) -> ([19], [20]); // 1049
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>([17]) -> ([19], [20]); // 1049
 drop<Unit>([20]) -> (); // 1050
 struct_construct<Unit>() -> ([21]); // 1051
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([19]) -> ([22]); // 1052
@@ -1339,10 +1339,10 @@ struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentSta
 store_temp<GasBuiltin>([0]) -> ([0]); // 1077
 store_temp<System>([1]) -> ([1]); // 1078
 store_temp<ContractAddress>([3]) -> ([3]); // 1079
-function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>([0], [1], [4], [3]) -> ([5], [6], [7]); // 1080
-enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([7]) { fallthrough([8]) 1093([9]) }; // 1081
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write>([0], [1], [4], [3]) -> ([5], [6], [7]); // 1080
+enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>([7]) { fallthrough([8]) 1093([9]) }; // 1081
 branch_align() -> (); // 1082
-struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8]) -> ([10], [11]); // 1083
+struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>([8]) -> ([10], [11]); // 1083
 drop<Unit>([11]) -> (); // 1084
 struct_construct<Unit>() -> ([12]); // 1085
 struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([10]) -> ([13]); // 1086
@@ -1370,7 +1370,7 @@ struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]);
 enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>([6]) -> ([7]); // 1108
 store_temp<core::panics::PanicResult::<(core::integer::u128,)>>([7]) -> ([7]); // 1109
 return([7]); // 1110
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([3]) -> (); // 1111
+drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>([3]) -> (); // 1111
 storage_base_address_const<907111799109225873672206001743429201758838553092777504370151546632448000192>() -> ([4]); // 1112
 storage_address_from_base([4]) -> ([5]); // 1113
 u32_const<0>() -> ([6]); // 1114
@@ -1469,8 +1469,8 @@ storage_base_address_const<90711179910922587367220600174342920175883855309277750
 contract_address_to_felt252([3]) -> ([5]); // 1207
 storage_address_from_base([4]) -> ([6]); // 1208
 u32_const<0>() -> ([7]); // 1209
-snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([2]) -> ([8], [9]); // 1210
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([9]) -> (); // 1211
+snapshot_take<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>([2]) -> ([8], [9]); // 1210
+drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>([9]) -> (); // 1211
 store_temp<u32>([7]) -> ([7]); // 1212
 store_temp<StorageAddress>([6]) -> ([6]); // 1213
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 1222([12], [13], [14]) }; // 1214
@@ -1490,18 +1490,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 1237([23]) }; // 1228
 branch_align() -> (); // 1229
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 1230
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1231
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1232
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>([8], [24]) -> ([25]); // 1231
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 0>([25]) -> ([26]); // 1232
 store_temp<GasBuiltin>([17]) -> ([17]); // 1233
 store_temp<System>([18]) -> ([18]); // 1234
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([26]) -> ([26]); // 1235
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>([26]) -> ([26]); // 1235
 return([17], [18], [26]); // 1236
 branch_align() -> (); // 1237
-drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>([8]) -> (); // 1238
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1239
+drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>([8]) -> (); // 1238
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 1>([23]) -> ([27]); // 1239
 store_temp<GasBuiltin>([17]) -> ([17]); // 1240
 store_temp<System>([18]) -> ([18]); // 1241
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>([27]) -> ([27]); // 1242
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>([27]) -> ([27]); // 1242
 return([17], [18], [27]); // 1243
 contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1250([4]) }; // 1244
 branch_align() -> (); // 1245
@@ -1581,9 +1581,9 @@ core::starknet::contract_address::ContractAddressSerde::serialize@710([0]: Contr
 core::starknet::contract_address::ContractAddressSerde::deserialize@720([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::transfer_ownership@744([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
 cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::constructor@770([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, [3]: ContractAddress, [4]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read@810([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read@810([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
 cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::validate_ownership@869([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<((),)>);
-cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write@938([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>);
+cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write@938([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>);
 cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp::get_component@976([0]: cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState) -> (cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>);
 cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::owner@979([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::Felt252Serde::serialize@1001([0]: felt252, [1]: Array<felt252>) -> (Array<felt252>, Unit);
@@ -1591,10 +1591,10 @@ core::Felt252Serde::deserialize@1006([0]: core::array::Span::<core::felt252>) ->
 cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::transfer_ownership@1034([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [4]: ContractAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
 cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable_comp>::init_ownable@1076([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>);
 core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall@1099([0]: core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u128,)>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read@1111([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read@1111([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::starknet::info::get_caller_address@1170([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1194([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);
-core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write@1206([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>);
+core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write@1206([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>);
 core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1244([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@1256([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 core::starknet::info::get_execution_info@1268([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);

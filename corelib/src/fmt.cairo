@@ -143,3 +143,46 @@ impl DebugTuple4<
         write!(f, ")")
     }
 }
+
+impl ArrayTDebug<T, +Debug<T>, +Copy<T>> of Debug<Array<T>> {
+    fn fmt(self: @Array<T>, ref f: Formatter) -> Result<(), Error> {
+        Debug::fmt(@self.span(), ref f)
+    }
+}
+
+impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
+    fn fmt(self: @Span<T>, ref f: Formatter) -> Result<(), Error> {
+        let mut self = *self;
+        write!(f, "[")?;
+        loop {
+            match self.pop_front() {
+                Option::Some(value) => {
+                    if Debug::fmt(value, ref f).is_err() {
+                        break Result::Err(Error {});
+                    };
+                    if self.is_empty() {
+                        break Result::Ok(());
+                    }
+                    if write!(f, ", ").is_err() {
+                        break Result::Err(Error {});
+                    };
+                },
+                Option::None => { break Result::Ok(()); }
+            };
+        }?;
+        write!(f, "]")
+    }
+}
+
+/// Impls for `Debug` for types that can be converted into `felt252` using the `Into` trait.
+/// Usage example:
+/// ```ignore
+/// impl MyTypeDebug = core::fmt::into_felt252_based::DebugImpl<MyType>;`
+/// ```
+pub mod into_felt252_based {
+    pub impl DebugImpl<T, +Into<T, felt252>, +Copy<T>> of core::fmt::Debug<T> {
+        fn fmt(self: @T, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+            core::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
+        }
+    }
+}

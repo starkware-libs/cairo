@@ -63,13 +63,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -78,7 +78,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -312,13 +312,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -327,7 +327,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -549,13 +549,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -564,7 +564,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -795,13 +795,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -810,7 +810,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -1048,13 +1048,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -1063,7 +1063,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -1312,13 +1312,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -1327,7 +1327,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -1583,13 +1583,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -1598,7 +1598,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -1651,13 +1651,13 @@ contract:
 
 
     pub struct ContractState {
-        pub test_component_storage: test_component_storage::ContractMemberState,
+        pub test_component_storage: __member_module_test_component_storage::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            test_component_storage: test_component_storage::ContractMemberState {},
+            test_component_storage: __member_module_test_component_storage::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1666,8 +1666,8 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
-    mod test_component_storage {
+    use __member_module_test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
+    mod __member_module_test_component_storage {
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -1854,13 +1854,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -1869,7 +1869,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -2150,13 +2150,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -2165,7 +2165,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -2400,13 +2400,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -2415,7 +2415,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
@@ -2471,13 +2471,13 @@ pub enum Event {}
 
 
     pub struct ComponentState<TContractState> {
-        pub data: data::ComponentMemberState,
+        pub data: __member_module_data::ComponentMemberState,
     }
     impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
     pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
         ComponentState::<TContractState> {
-            data: data::ComponentMemberState {},
+            data: __member_module_data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -2486,7 +2486,7 @@ pub enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    pub mod data {
+    pub mod __member_module_data {
         #[derive(Copy, Drop)]
         pub struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {

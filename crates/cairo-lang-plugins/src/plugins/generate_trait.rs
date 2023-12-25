@@ -15,9 +15,9 @@ pub struct GenerateTraitPlugin;
 const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         match item_ast {
-            ast::Item::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
+            ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
             _ => PluginResult::default(),
         }
     }

@@ -60,3 +60,15 @@ impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
         null()
     }
 }
+
+impl NullableDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Nullable<T>> {
+    fn fmt(self: @Nullable<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        match match_nullable(self.as_snapshot()) {
+            FromNullableResult::Null => write!(f, "null"),
+            FromNullableResult::NotNull(value) => {
+                write!(f, "&")?;
+                TDebug::fmt(value.unbox(), ref f)
+            },
+        }
+    }
+}

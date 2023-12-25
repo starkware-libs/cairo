@@ -36,7 +36,7 @@ fn bar() {
 //! > enforced_costs
 test::bar 10000
 
-//! > gas_solution
+//! > gas_solution_lp
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9780})
 #8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9680})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -48,7 +48,7 @@ test::bar 10000
 test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19460})
@@ -60,14 +60,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #2: 2
 #8: 2
 
 test::bar: 1
 test::foo: 10
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #2: 2
 #8: 2
 
@@ -227,7 +227,7 @@ fn bar() {
 //! > enforced_costs
 test::bar 10000
 
-//! > gas_solution
+//! > gas_solution_lp
 #0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9430})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -241,7 +241,7 @@ test::bar 10000
 test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -255,14 +255,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #13: 4
 #19: 2
 
 test::bar: 1
 test::foo: 11
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #13: 4
 #19: 2
 
@@ -420,7 +420,7 @@ fn bar() {
 //! > enforced_costs
 test::bar 2000
 
-//! > gas_solution
+//! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -434,7 +434,7 @@ test::bar 2000
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -448,7 +448,7 @@ test::bar: OrderedHashMap({Const: 2000})
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #12: 4
 #18: 6
 #24: 4
@@ -456,7 +456,7 @@ test::bar: OrderedHashMap({Const: 2000})
 test::bar: 1
 test::foo: 10
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #12: 4
 #18: 6
 #24: 4
@@ -601,7 +601,7 @@ fn bar() {
 test::bar 10000
 test::foo 100000
 
-//! > gas_solution
+//! > gas_solution_lp
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #9: OrderedHashMap({Const: 79300})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -614,7 +614,7 @@ test::foo 100000
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 79300})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -627,14 +627,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #13: 2
 #27: 3
 
 test::bar: 1
 test::foo: 8
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #13: 2
 #27: 3
 
@@ -755,7 +755,7 @@ fn foo(cond: bool) {
     }
 }
 
-//! > gas_solution
+//! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10070})
@@ -764,7 +764,7 @@ fn foo(cond: bool) {
 test::function_with_branch_align: OrderedHashMap({Const: 810})
 test::foo: OrderedHashMap({Const: 13600})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10270})
@@ -773,14 +773,14 @@ test::foo: OrderedHashMap({Const: 13600})
 test::function_with_branch_align: OrderedHashMap({Const: 300})
 test::foo: OrderedHashMap({Const: 13600})
 
-//! > ap_solution
+//! > ap_solution_lp
 #1: 41
 #6: 41
 
 test::function_with_branch_align: 42
 test::foo: 135
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #12: 123
 
 test::function_with_branch_align: 1
@@ -1267,20 +1267,19 @@ test::function_with_branch_align@0([0]: core::bool) -> (felt252);
 test::foo@11([0]: core::bool) -> (Unit);
 
 //! > casm
-jmp rel 8 if [fp + -3] != 0;
-ap += 41;
+jmp rel 6 if [fp + -3] != 0;
 [ap + 0] = 2, ap++;
-jmp rel 6;
-ap += 41;
+jmp rel 4;
 [ap + 0] = 1, ap++;
 ret;
-jmp rel 16 if [fp + -3] != 0;
+jmp rel 18 if [fp + -3] != 0;
+ap += 123;
 [ap + 0] = 0, ap++;
-call rel -17;
+call rel -15;
 [ap + 0] = 0, ap++;
-call rel -21;
+call rel -19;
 [ap + 0] = 0, ap++;
-call rel -25;
+call rel -23;
 jmp rel 272;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;
