@@ -5,7 +5,7 @@
     "0x0",
     "0x2",
     "0x4",
-    "0x0",
+    "0x1",
     "0x193",
     "0x6d",
     "0x3b",
@@ -63,11 +63,11 @@
     "0x14",
     "0x16",
     "0x25bafed1db971ec9d9883af3e1e08a185480f03f54ed88b3c1ffa951cde4037",
-    "0x5988d0fd94c88164c17a9bbc3bfc77844f8a59f28416ac9a9743ef428cb262",
+    "0xfc38e3028d257735c705c1ddf7a05097dbab6cf186f4ad3d958ab4ddbac7ea",
     "0x800000000000000f00000000000000000000000000000003",
     "0x19",
     "0x1a",
-    "0x237ce44eb5b637634208b73ad771adf973d23390aa2c20992e7953b9337c778",
+    "0x3fdc642f0aa6ce1c263af1c2c0e010d7a440f6972baf819c9fc6751c66a38e",
     "0x1b",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0x4e6f6e5a65726f",
@@ -81,9 +81,9 @@
     "0x23",
     "0x800000000000000700000000000000000000000000000003",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0xe96ebebf1f16f5b43715d929df5feb6c27c90325a754daef0e60f71c1f9e03",
+    "0x221d8beed3a131a2b38be4bf7ccaa1f0d56869ccf699e86d899d29e9ff73366",
     "0x26",
-    "0x22df026d62837ad7e53902516aaa1b9d9610ce92857b26a06eef5a0e5bbef81",
+    "0x23d7c796ca9da3f6be63f492af07bc24c7182937a3595e0a1a1ddb40dac6b21",
     "0x27",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x29",
@@ -955,7 +955,7 @@
       ],
       [
         25,
-        "cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState"
+        "cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState"
       ],
       [
         26,
@@ -963,11 +963,11 @@
       ],
       [
         27,
-        "Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>"
       ],
       [
         28,
-        "core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>"
       ],
       [
         29,
@@ -1007,15 +1007,15 @@
       ],
       [
         38,
-        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState"
       ],
       [
         39,
-        "Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>"
       ],
       [
         40,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>"
       ],
       [
         41,
@@ -1193,7 +1193,7 @@
       ],
       [
         25,
-        "struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         26,
@@ -1201,7 +1201,7 @@
       ],
       [
         27,
-        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>"
       ],
       [
         28,
@@ -1421,7 +1421,7 @@
       ],
       [
         82,
-        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read>"
       ],
       [
         83,
@@ -1473,15 +1473,15 @@
       ],
       [
         95,
-        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write>"
       ],
       [
         96,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>"
       ],
       [
         97,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>"
       ],
       [
         98,
@@ -1501,7 +1501,7 @@
       ],
       [
         102,
-        "drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>"
       ],
       [
         103,
@@ -1633,7 +1633,7 @@
       ],
       [
         135,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>"
       ],
       [
         136,
@@ -1677,7 +1677,7 @@
       ],
       [
         146,
-        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState>"
       ],
       [
         147,
@@ -1705,19 +1705,19 @@
       ],
       [
         153,
-        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>"
       ],
       [
         154,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 0>"
       ],
       [
         155,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>>"
       ],
       [
         156,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, ())>, 1>"
       ],
       [
         157,
@@ -1733,15 +1733,15 @@
       ],
       [
         160,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write>"
       ],
       [
         161,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>"
       ],
       [
         162,
-        "struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>"
       ],
       [
         163,
@@ -1765,7 +1765,7 @@
       ],
       [
         168,
-        "drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         169,
@@ -1829,23 +1829,23 @@
       ],
       [
         184,
-        "snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         185,
-        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>"
       ],
       [
         186,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 0>"
       ],
       [
         187,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>"
       ],
       [
         188,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 1>"
       ],
       [
         189,
@@ -1947,7 +1947,7 @@
       ],
       [
         13,
-        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::read"
       ],
       [
         14,
@@ -1955,7 +1955,7 @@
       ],
       [
         15,
-        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::InternalContractMemberStateImpl::write"
       ],
       [
         16,
@@ -1987,7 +1987,7 @@
       ],
       [
         23,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read"
       ],
       [
         24,
@@ -1999,7 +1999,7 @@
       ],
       [
         26,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::write"
       ],
       [
         27,

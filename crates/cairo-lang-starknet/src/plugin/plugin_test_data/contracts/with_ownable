@@ -45,21 +45,31 @@ mod ownable_balance {
     }
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
         pub balance: balance::ContractMemberState,
+||||||| a4de08fbd
+    struct ContractState {
+        ownable: ownable_comp::ComponentState<ContractState>,
+        balance: balance::ContractMemberState,
+=======
+    struct ContractState {
+        ownable: ownable_comp::ComponentState<ContractState>,
+        balance: __member_module_balance::ContractMemberState,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: balance::ContractMemberState {},
+            balance: __member_module_balance::ContractMemberState {},
         }
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    mod balance {
+    use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
@@ -303,21 +313,31 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
         pub balance: balance::ContractMemberState,
+||||||| a4de08fbd
+    struct ContractState {
+        ownable: ownable_comp::ComponentState<ContractState>,
+        balance: balance::ContractMemberState,
+=======
+    struct ContractState {
+        ownable: ownable_comp::ComponentState<ContractState>,
+        balance: __member_module_balance::ContractMemberState,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: balance::ContractMemberState {},
+            balance: __member_module_balance::ContractMemberState {},
         }
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    mod balance {
+    use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;

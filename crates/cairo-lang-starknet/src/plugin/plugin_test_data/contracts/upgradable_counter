@@ -67,23 +67,35 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub counter: counter::ContractMemberState,
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
+||||||| a4de08fbd
+    struct ContractState {
+        counter: counter::ContractMemberState,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
+=======
+    struct ContractState {
+        counter: __member_module_counter::ContractMemberState,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            counter: counter::ContractMemberState {},
+            counter: __member_module_counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
-    use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod counter {
+    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;
@@ -831,23 +843,35 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub counter: counter::ContractMemberState,
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
+||||||| a4de08fbd
+    struct ContractState {
+        counter: counter::ContractMemberState,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
+=======
+    struct ContractState {
+        counter: __member_module_counter::ContractMemberState,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            counter: counter::ContractMemberState {},
+            counter: __member_module_counter::ContractMemberState {},
             upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
-    use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
-    mod counter {
+    use __member_module_counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    mod __member_module_counter {
         use super::upgradable_comp;
         use super::ownable_comp;
         use super::Event;

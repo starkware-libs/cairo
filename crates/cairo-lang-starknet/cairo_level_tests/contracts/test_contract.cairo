@@ -24,7 +24,8 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        my_storage_var: felt252
+        my_storage_var: felt252,
+        core: felt252,
     }
 
     fn internal_func() -> felt252 {

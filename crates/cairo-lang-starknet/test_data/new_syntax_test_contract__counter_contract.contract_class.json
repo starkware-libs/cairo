@@ -5,9 +5,19 @@
     "0x0",
     "0x2",
     "0x4",
+<<<<<<< HEAD
     "0x0",
     "0x1e3",
     "0x1d",
+||||||| a4de08fbd
+    "0x0",
+    "0x1e6",
+    "0x1a",
+=======
+    "0x1",
+    "0x1e6",
+    "0x1a",
+>>>>>>> origin/dev-v2.4.1
     "0x3a",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
@@ -68,22 +78,22 @@
     "0x2cf4ead4392e987c9b56754a10f0a8e0f13776791e096fa6503893f05582c51",
     "0x53746f7261676541646472657373",
     "0x53746f726167654261736541646472657373",
-    "0x3a2d4c1dc9c23ea9787a2f074af6cf207889bfb18a3d30bce9f958ee4853684",
+    "0x5f9ba7bb1e3ab853302e4d189cd71c31812d61c87bbbaacd05a870e2b9c58e",
     "0x800000000000000f00000000000000000000000000000003",
     "0x1e",
-    "0x6a807512a14b9d0a24ae042ac01c7e304a6fc778c5f32464ab247fbfbc080",
+    "0x32797cfd718485b794f4d616dc87e4514dfc7320c4c2591d2c60c6444c08d5a",
     "0x1f",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
     "0xa853c166304d20fb0711becf2cbdf482dee3cac4e9717d040b7a7ab1df7eec",
     "0x22",
     "0x16f978af685e97356e52dc72c0268103fe4e3da6737d775ae536e888c6da3fb",
     "0x24",
-    "0x57dde8b492b764b6f80451352f242660836d2fd63763780e49a4d9e5ce95d0",
+    "0x3a7214ee108234448d320f65b0a66653002a47ada19f026a4ef0c113f7a06d2",
     "0x26",
-    "0x376dd03c55c07a136ced8aa87df02615bfc9d71a433f5649b80e4a387b09838",
+    "0x1abcbc112d0889260e6aa5870451817957d2c838d4a06694179ac783ae09d10",
     "0x27",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
-    "0x3e8be53440f4e80fa5d07389e0d6476b9b30d36a954f21efe9cafbe6688aa9e",
+    "0x273f3cc17fe2301389c973b7db33b29cd0995dd22dc21d230f55c36b4a722c0",
     "0x2e46b8b465a0524402c90af86e61c40458512738f2658af68620b8d2d401ec1",
     "0x2a",
     "0x800000000000000f00000000000000000000000000000004",
@@ -1121,15 +1131,15 @@
       ],
       [
         30,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState"
       ],
       [
         31,
-        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, Unit>"
       ],
       [
         32,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, ())>"
       ],
       [
         33,
@@ -1153,15 +1163,15 @@
       ],
       [
         38,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState"
       ],
       [
         39,
-        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, Unit>"
       ],
       [
         40,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, ())>"
       ],
       [
         41,
@@ -1169,7 +1179,7 @@
       ],
       [
         42,
-        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::data::ComponentMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::__member_module_data::ComponentMemberState"
       ],
       [
         43,
@@ -1335,7 +1345,7 @@
       ],
       [
         25,
-        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::test_component::data::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::test_component::__member_module_data::ComponentMemberState>"
       ],
       [
         26,
@@ -1343,11 +1353,11 @@
       ],
       [
         27,
-        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         28,
-        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState>"
       ],
       [
         29,
@@ -1543,11 +1553,11 @@
       ],
       [
         77,
-        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState>"
       ],
       [
         78,
-        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>"
       ],
       [
         79,
@@ -1583,7 +1593,7 @@
       ],
       [
         87,
-        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         88,
@@ -1595,15 +1605,15 @@
       ],
       [
         90,
-        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>"
       ],
       [
         91,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, ())>>"
       ],
       [
         92,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, Unit>>"
       ],
       [
         93,
@@ -1639,15 +1649,15 @@
       ],
       [
         101,
-        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         102,
-        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState>"
       ],
       [
         103,
-        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::InternalContractMemberStateImpl::read>"
       ],
       [
         104,
@@ -1727,19 +1737,19 @@
       ],
       [
         123,
-        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::InternalContractMemberStateImpl::write>"
       ],
       [
         124,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, ())>>"
       ],
       [
         125,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, Unit>>"
       ],
       [
         126,
-        "drop<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, Unit>>"
       ],
       [
         127,
@@ -1831,19 +1841,19 @@
       ],
       [
         149,
-        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, Unit>>"
       ],
       [
         150,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, ())>, 0>"
       ],
       [
         151,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, ())>>"
       ],
       [
         152,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::ContractMemberState, ())>, 1>"
       ],
       [
         153,
@@ -2011,19 +2021,19 @@
       ],
       [
         194,
-        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, Unit>>"
       ],
       [
         195,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, ())>, 0>"
       ],
       [
         196,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, ())>>"
       ],
       [
         197,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::ContractMemberState, ())>, 1>"
       ],
       [
         198,
@@ -2249,7 +2259,7 @@
       ],
       [
         10,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read"
       ],
       [
         11,
@@ -2257,7 +2267,7 @@
       ],
       [
         12,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write"
       ],
       [
         13,
@@ -2265,7 +2275,7 @@
       ],
       [
         14,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::InternalContractMemberStateImpl::read"
       ],
       [
         15,
@@ -2285,7 +2295,7 @@
       ],
       [
         19,
-        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__member_module_other_contract::InternalContractMemberStateImpl::write"
       ],
       [
         20,

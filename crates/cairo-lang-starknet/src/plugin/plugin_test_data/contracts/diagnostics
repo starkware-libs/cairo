@@ -296,14 +296,22 @@ contract:
 pub enum Event {}
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub mapping: mapping::ContractMemberState,
+||||||| a4de08fbd
+    struct ContractState {
+        mapping: mapping::ContractMemberState,
+=======
+    struct ContractState {
+        mapping: __member_module_mapping::ContractMemberState,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            mapping: mapping::ContractMemberState {},
+            mapping: __member_module_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -375,20 +383,44 @@ error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
         mapping: Map::<felt252, felt252>,
                  ^*********************^
 
+<<<<<<< HEAD
 error: Identifier not found.
  --> lib.cairo:5:9
         mapping: Map::<felt252, felt252>,
         ^*****^
+||||||| a4de08fbd
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:5:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+=======
+error: Identifier not found.
+ --> lib.cairo[contract]:7:18
+        mapping: __member_module_mapping::ContractMemberState,
+                 ^*********************^
+>>>>>>> origin/dev-v2.4.1
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> lib.cairo[contract]:9:5
     impl ContractStateDrop of Drop<ContractState> {}
     ^**********************************************^
 
+<<<<<<< HEAD
 error: Identifier not found.
  --> lib.cairo:5:9
         mapping: Map::<felt252, felt252>,
         ^*****^
+||||||| a4de08fbd
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:5:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+=======
+error: Identifier not found.
+ --> lib.cairo[contract]:13:22
+            mapping: __member_module_mapping::ContractMemberState {},
+                     ^*********************^
+>>>>>>> origin/dev-v2.4.1
 
 //! > ==========================================================================
 
@@ -1560,7 +1592,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1595,14 +1627,22 @@ contract:
 pub enum Event {}
 
 
+<<<<<<< HEAD
     pub struct ContractState {
         pub same_name: same_name::ContractMemberState,
+||||||| a4de08fbd
+    struct ContractState {
+        same_name: same_name::ContractMemberState,
+=======
+    struct ContractState {
+        same_name: __member_module_same_name::ContractMemberState,
+>>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            same_name: same_name::ContractMemberState {},
+            same_name: __member_module_same_name::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1611,8 +1651,8 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
-    mod same_name {
+    use __member_module_same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
+    mod __member_module_same_name {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
@@ -1706,10 +1746,18 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+<<<<<<< HEAD
 error: The name `same_name` is defined multiple times.
  --> lib.cairo:5:9
         same_name: felt252,
         ^*******^
+||||||| a4de08fbd
+error: Plugin diagnostic: The name `same_name` is defined multiple times.
+ --> lib.cairo:5:9
+        same_name: felt252,
+        ^*******^
+=======
+>>>>>>> origin/dev-v2.4.1
 
 //! > ==========================================================================
 
