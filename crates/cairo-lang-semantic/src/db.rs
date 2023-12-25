@@ -5,8 +5,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId,
-    LookupItemId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitFunctionId, TraitId,
-    TraitTypeId, UseId, VariantId,
+    ImplTypeId, LookupItemId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitFunctionId,
+    TraitId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -588,6 +588,16 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>>;
+    /// Returns the type items in the impl.
+    #[salsa::invoke(items::imp::impl_types)]
+    fn impl_types(&self, impl_def_id: ImplDefId) -> Maybe<OrderedHashMap<SmolStr, ImplTypeId>>;
+    /// Returns the impl type item that matches the given trait type item, if exists.
+    #[salsa::invoke(items::imp::impl_type_by_trait_type)]
+    fn impl_type_by_trait_type(
+        &self,
+        impl_def_id: ImplDefId,
+        trait_type_id: TraitTypeId,
+    ) -> Maybe<Option<ImplTypeId>>;
     /// Private query to compute definition data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(
