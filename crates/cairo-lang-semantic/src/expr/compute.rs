@@ -8,8 +8,8 @@ use std::sync::Arc;
 use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
-    TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
+    MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -59,8 +59,8 @@ use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Varia
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{
-    GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral, PatternStruct,
-    Signature,
+    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
+    PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -1202,21 +1202,6 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::Enum(enum_pattern) => {
-            // Peel all snapshot wrappers.
-            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
-
-            // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
-                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                .ok_or(())
-                .or_else(|_| {
-                    // Don't add a diagnostic if the type is missing.
-                    // A diagnostic should've already been added.
-                    ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(enum_pattern, UnexpectedEnumPattern { ty }))
-                })?;
-
-            // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(
                 ctx.diagnostics,
@@ -1226,16 +1211,13 @@ fn maybe_compute_pattern_semantic(
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
 
-            // Check that these are the same enums.
-            if generic_variant.enum_id != concrete_enum.enum_id(ctx.db) {
-                return Err(ctx.diagnostics.report(
-                    &path,
-                    WrongEnum {
-                        expected_enum: concrete_enum.enum_id(ctx.db),
-                        actual_enum: generic_variant.enum_id,
-                    },
-                ));
-            }
+            let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                generic_variant.enum_id,
+            )?;
+
             // TODO(lior): Should we report a diagnostic here?
             let concrete_variant = ctx
                 .db
@@ -1412,6 +1394,14 @@ fn maybe_compute_pattern_semantic(
                 false_literal_expr(ctx, pattern_false.stable_ptr().into()),
                 Expr::EnumVariantCtor
             );
+
+            extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+            )?;
+
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
                 stable_ptr: pattern_false.stable_ptr().into(),
@@ -1424,6 +1414,13 @@ fn maybe_compute_pattern_semantic(
                 true_literal_expr(ctx, pattern_true.stable_ptr().into()),
                 Expr::EnumVariantCtor
             );
+            extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+            )?;
+
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
                 stable_ptr: pattern_true.stable_ptr().into(),
@@ -1439,6 +1436,35 @@ fn maybe_compute_pattern_semantic(
     Ok(pattern)
 }
 
+/// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.
+fn extract_concrete_enum_from_pattern_and_validate(
+    ctx: &mut ComputationContext<'_>,
+    pattern: &ast::Pattern,
+    ty: TypeId,
+    enum_id: EnumId,
+) -> Maybe<(ConcreteEnumId, usize)> {
+    // Peel all snapshot wrappers.
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
+    // Check that type is an enum, and get the concrete enum from it.
+    let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+        .ok_or(())
+        .or_else(|_| {
+            // Don't add a diagnostic if the type is missing.
+            // A diagnostic should've already been added.
+            ty.check_not_missing(ctx.db)?;
+            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern { ty }))
+        })?;
+    // Check that these are the same enums.
+    if enum_id != concrete_enum.enum_id(ctx.db) {
+        return Err(ctx.diagnostics.report(
+            pattern,
+            WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: enum_id },
+        ));
+    }
+    Ok((concrete_enum, n_snapshots))
+}
 /// Creates a local variable pattern.
 fn create_variable_pattern(
     ctx: &mut ComputationContext<'_>,
