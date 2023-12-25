@@ -439,7 +439,11 @@ define_language_element_id!(
     lookup_intern_extern_type,
     name
 );
+
+// --- Trait ---
 define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
+
+// --- Trait functions ---
 define_language_element_id_partial!(
     TraitFunctionId,
     TraitFunctionLongId,
@@ -462,6 +466,32 @@ impl TopLevelLanguageElementId for TraitFunctionId {
 
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         db.lookup_intern_trait_function(*self).name(db)
+    }
+}
+
+// --- Trait type items ---
+define_language_element_id_partial!(
+    TraitTypeId,
+    TraitTypeLongId,
+    ast::TraitItemType,
+    lookup_intern_trait_type,
+    name
+);
+impl TraitTypeId {
+    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+        let TraitTypeLongId(module_file_id, ptr) = db.lookup_intern_trait_type(*self);
+        // Trait type ast lies 3 levels bellow the trait ast.
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        db.intern_trait(TraitLongId(module_file_id, trait_ptr))
+    }
+}
+impl TopLevelLanguageElementId for TraitTypeId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_trait_type(*self).name(db)
     }
 }
 

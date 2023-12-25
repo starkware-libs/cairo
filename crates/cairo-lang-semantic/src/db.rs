@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId,
     LookupItemId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitFunctionId, TraitId,
-    UseId, VariantId,
+    TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -366,12 +366,31 @@ pub trait SemanticGroup:
         trait_id: TraitId,
         name: SmolStr,
     ) -> Maybe<Option<TraitFunctionId>>;
+    /// Returns the type items of a trait.
+    #[salsa::invoke(items::trt::trait_types)]
+    fn trait_types(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>>;
+    /// Returns the type item with the given name of the given trait, if exists.
+    #[salsa::invoke(items::trt::trait_type_by_name)]
+    fn trait_type_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitTypeId>>;
     /// Private query to compute definition data about a trait.
     #[salsa::invoke(items::trt::priv_trait_semantic_definition_data)]
     fn priv_trait_semantic_definition_data(
         &self,
         trait_id: TraitId,
     ) -> Maybe<items::trt::TraitDefinitionData>;
+
+    // Trait type.
+    // ================
+    /// Returns the semantic diagnostics of a trait type.
+    #[salsa::invoke(items::trt::trait_type_diagnostics)]
+    fn trait_type_diagnostics(&self, trait_type_id: TraitTypeId)
+    -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the attributes of a trait type.
+    #[salsa::invoke(items::trt::trait_type_attributes)]
+    fn trait_type_attributes(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<Attribute>>;
+    /// Private query to compute data about a trait type.
+    #[salsa::invoke(items::trt::priv_trait_type_data)]
+    fn priv_trait_type_data(&self, type_id: TraitTypeId) -> Maybe<items::item_type::ItemTypeData>;
 
     // Trait function.
     // ================
