@@ -62,7 +62,7 @@ error: 'of' is a reserved identifier.
     impl DummyImpl2 of MyTrait::<T>;
                     ^^
 
-error: Skipped tokens. Expected: impl item or an attribute.
+error: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
  --> lib.cairo:16:24
     impl DummyImpl2 of MyTrait::<T>;
                        ^***********^

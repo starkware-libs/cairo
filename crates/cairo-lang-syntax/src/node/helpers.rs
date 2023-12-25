@@ -2,12 +2,12 @@ use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
-    ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
-    ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
-    StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
-    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, Variant, WrappedArgList,
+    ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
+    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
+    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
+    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
+    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
+    TraitItemImpl, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -312,23 +312,23 @@ impl QueryAttrs for ItemInlineMacro {
     }
 }
 
-impl QueryAttrs for Item {
+impl QueryAttrs for ModuleItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
-            Item::Constant(item) => item.attributes_elements(db),
-            Item::Module(item) => item.attributes_elements(db),
-            Item::FreeFunction(item) => item.attributes_elements(db),
-            Item::Use(item) => item.attributes_elements(db),
-            Item::ExternFunction(item) => item.attributes_elements(db),
-            Item::ExternType(item) => item.attributes_elements(db),
-            Item::Trait(item) => item.attributes_elements(db),
-            Item::Impl(item) => item.attributes_elements(db),
-            Item::ImplAlias(item) => item.attributes_elements(db),
-            Item::Struct(item) => item.attributes_elements(db),
-            Item::Enum(item) => item.attributes_elements(db),
-            Item::TypeAlias(item) => item.attributes_elements(db),
-            Item::InlineMacro(item) => item.attributes_elements(db),
-            Item::Missing(_) => vec![],
+            ModuleItem::Constant(item) => item.attributes_elements(db),
+            ModuleItem::Module(item) => item.attributes_elements(db),
+            ModuleItem::FreeFunction(item) => item.attributes_elements(db),
+            ModuleItem::Use(item) => item.attributes_elements(db),
+            ModuleItem::ExternFunction(item) => item.attributes_elements(db),
+            ModuleItem::ExternType(item) => item.attributes_elements(db),
+            ModuleItem::Trait(item) => item.attributes_elements(db),
+            ModuleItem::Impl(item) => item.attributes_elements(db),
+            ModuleItem::ImplAlias(item) => item.attributes_elements(db),
+            ModuleItem::Struct(item) => item.attributes_elements(db),
+            ModuleItem::Enum(item) => item.attributes_elements(db),
+            ModuleItem::TypeAlias(item) => item.attributes_elements(db),
+            ModuleItem::InlineMacro(item) => item.attributes_elements(db),
+            ModuleItem::Missing(_) => vec![],
         }
     }
 }

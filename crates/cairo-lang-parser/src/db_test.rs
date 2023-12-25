@@ -1,6 +1,6 @@
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::{
-    ItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
+    ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
@@ -26,7 +26,7 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxF
         SyntaxNode::new_root(
             db,
             file_id,
-            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal).0,
+            SyntaxFile::new_green(db, ModuleItemList::new_green(db, vec![]), eof_terminal).0,
         ),
     )
 }
