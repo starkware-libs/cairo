@@ -17,7 +17,7 @@ ItemInlineMacro
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
     ├── name (kind: TokenIdentifier): 'inline_macro'
-    ├── bang (kind: TokenNot): '!'
+    ├── bang (kind: TokenBang): '!'
     ├── arguments (kind: ArgListParenthesized)
     │   ├── lparen (kind: TokenLParen): '('
     │   ├── arguments (kind: ArgList)
@@ -54,7 +54,7 @@ ItemInlineMacro
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
     ├── name (kind: TokenIdentifier): 'inline_macro'
-    ├── bang (kind: TokenNot): '!'
+    ├── bang (kind: TokenBang): '!'
     ├── arguments (kind: ArgListBracketed)
     │   ├── lbrack (kind: TokenLBrack): '['
     │   ├── arguments (kind: ArgList)
@@ -91,7 +91,7 @@ ItemInlineMacro
 └── Top level kind: ItemInlineMacro
     ├── attributes (kind: AttributeList) []
     ├── name (kind: TokenIdentifier): 'inline_macro'
-    ├── bang (kind: TokenNot): '!'
+    ├── bang (kind: TokenBang): '!'
     ├── arguments (kind: ArgListBraced)
     │   ├── lbrace (kind: TokenLBrace): '{'
     │   ├── arguments (kind: ArgList)
@@ -137,7 +137,7 @@ ItemInlineMacro
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── name (kind: TokenIdentifier): 'inline_macro'
-    ├── bang (kind: TokenNot): '!'
+    ├── bang (kind: TokenBang): '!'
     ├── arguments (kind: ArgListParenthesized)
     │   ├── lparen (kind: TokenLParen): '('
     │   ├── arguments (kind: ArgList)
@@ -356,7 +356,7 @@ macro!
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'macro'
-    │   ├── bang (kind: TokenNot): '!'
+    │   ├── bang (kind: TokenBang): '!'
     │   ├── arguments: Missing []
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>
@@ -394,7 +394,7 @@ identifier!(1,2
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'identifier'
-    │   ├── bang (kind: TokenNot): '!'
+    │   ├── bang (kind: TokenBang): '!'
     │   ├── arguments (kind: ArgListParenthesized)
     │   │   ├── lparen (kind: TokenLParen): '('
     │   │   ├── arguments (kind: ArgList)
@@ -439,7 +439,7 @@ identifier!(1,2)
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'identifier'
-    │   ├── bang (kind: TokenNot): '!'
+    │   ├── bang (kind: TokenBang): '!'
     │   ├── arguments (kind: ArgListParenthesized)
     │   │   ├── lparen (kind: TokenLParen): '('
     │   │   ├── arguments (kind: ArgList)
