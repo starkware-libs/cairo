@@ -16,6 +16,7 @@ pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
 use semantic::items::imp::ImplId;
+use semantic::MatchArmSelector;
 
 use self::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -300,8 +301,8 @@ pub struct StatementDesnap {
 /// An arm of a match statement.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatchArm {
-    /// The id of the arm variant.
-    pub variant_id: ConcreteVariant,
+    /// The selector of the arm.
+    pub arm_selector: MatchArmSelector,
 
     /// The block_id where the relevant arm is implemented.
     pub block_id: BlockId,

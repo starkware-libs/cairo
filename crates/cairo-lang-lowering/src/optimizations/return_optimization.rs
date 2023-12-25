@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_semantic as semantic;
+use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
@@ -228,7 +229,10 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 return Pattern::None;
             };
 
-            if &&(arm.variant_id) != variant {
+            let MatchArmSelector::VariantId(variant_id) = &arm.arm_selector else {
+                return Pattern::None;
+            };
+            if &variant_id != variant {
                 return Pattern::None;
             }
 
