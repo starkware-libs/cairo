@@ -96,7 +96,7 @@ pub trait RebuilderEx: Rebuilder {
                             .arms
                             .iter()
                             .map(|arm| MatchArm {
-                                variant_id: arm.variant_id.clone(),
+                                arm_selector: arm.arm_selector.clone(),
                                 block_id: self.map_block_id(arm.block_id),
                                 var_ids: arm
                                     .var_ids
@@ -114,7 +114,7 @@ pub trait RebuilderEx: Rebuilder {
                             .arms
                             .iter()
                             .map(|arm| MatchArm {
-                                variant_id: arm.variant_id.clone(),
+                                arm_selector: arm.arm_selector.clone(),
                                 block_id: self.map_block_id(arm.block_id),
                                 var_ids: arm
                                     .var_ids
