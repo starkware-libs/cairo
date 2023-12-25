@@ -130,64 +130,24 @@ contract:
 
 #[event]
 #[derive(Drop, starknet::Event)]
-<<<<<<< HEAD
 pub enum Event {}
 
 
     pub struct ContractState {
-        pub var_felt252: var_felt252::ContractMemberState,
-        pub var_u8: var_u8::ContractMemberState,
-        pub var_u16: var_u16::ContractMemberState,
-        pub var_u32: var_u32::ContractMemberState,
-        pub var_u64: var_u64::ContractMemberState,
-        pub var_u128: var_u128::ContractMemberState,
-        pub var_bool: var_bool::ContractMemberState,
-        pub felt252_to_u128: felt252_to_u128::ContractMemberState,
-        pub u128_to_bool: u128_to_bool::ContractMemberState,
-        pub bool_to_felt252: bool_to_felt252::ContractMemberState,
-        pub outer_type_var: outer_type_var::ContractMemberState,
-        pub outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
-        pub inner_type_var: inner_type_var::ContractMemberState,
-        pub inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
-||||||| a4de08fbd
-enum Event {}
-
-
-    struct ContractState {
-        var_felt252: var_felt252::ContractMemberState,
-        var_u8: var_u8::ContractMemberState,
-        var_u16: var_u16::ContractMemberState,
-        var_u32: var_u32::ContractMemberState,
-        var_u64: var_u64::ContractMemberState,
-        var_u128: var_u128::ContractMemberState,
-        var_bool: var_bool::ContractMemberState,
-        felt252_to_u128: felt252_to_u128::ContractMemberState,
-        u128_to_bool: u128_to_bool::ContractMemberState,
-        bool_to_felt252: bool_to_felt252::ContractMemberState,
-        outer_type_var: outer_type_var::ContractMemberState,
-        outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
-        inner_type_var: inner_type_var::ContractMemberState,
-        inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
-=======
-enum Event {}
-
-
-    struct ContractState {
-        var_felt252: __member_module_var_felt252::ContractMemberState,
-        var_u8: __member_module_var_u8::ContractMemberState,
-        var_u16: __member_module_var_u16::ContractMemberState,
-        var_u32: __member_module_var_u32::ContractMemberState,
-        var_u64: __member_module_var_u64::ContractMemberState,
-        var_u128: __member_module_var_u128::ContractMemberState,
-        var_bool: __member_module_var_bool::ContractMemberState,
-        felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState,
-        u128_to_bool: __member_module_u128_to_bool::ContractMemberState,
-        bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState,
-        outer_type_var: __member_module_outer_type_var::ContractMemberState,
-        outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState,
-        inner_type_var: __member_module_inner_type_var::ContractMemberState,
-        inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub var_felt252: __member_module_var_felt252::ContractMemberState,
+        pub var_u8: __member_module_var_u8::ContractMemberState,
+        pub var_u16: __member_module_var_u16::ContractMemberState,
+        pub var_u32: __member_module_var_u32::ContractMemberState,
+        pub var_u64: __member_module_var_u64::ContractMemberState,
+        pub var_u128: __member_module_var_u128::ContractMemberState,
+        pub var_bool: __member_module_var_bool::ContractMemberState,
+        pub felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState,
+        pub u128_to_bool: __member_module_u128_to_bool::ContractMemberState,
+        pub bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState,
+        pub outer_type_var: __member_module_outer_type_var::ContractMemberState,
+        pub outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState,
+        pub inner_type_var: __member_module_inner_type_var::ContractMemberState,
+        pub inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -481,16 +441,8 @@ enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
-    pub mod felt252_to_u128 {
-||||||| a4de08fbd
-    use felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
-    mod felt252_to_u128 {
-=======
     use __member_module_felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
-    mod __member_module_felt252_to_u128 {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_felt252_to_u128 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -528,16 +480,8 @@ enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
-    pub mod u128_to_bool {
-||||||| a4de08fbd
-    use u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
-    mod u128_to_bool {
-=======
     use __member_module_u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
-    mod __member_module_u128_to_bool {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_u128_to_bool {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -575,16 +519,8 @@ enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
-    pub mod bool_to_felt252 {
-||||||| a4de08fbd
-    use bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
-    mod bool_to_felt252 {
-=======
     use __member_module_bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
-    mod __member_module_bool_to_felt252 {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_bool_to_felt252 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -660,16 +596,8 @@ enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
-    pub mod outer_type_to_outer_type {
-||||||| a4de08fbd
-    use outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
-    mod outer_type_to_outer_type {
-=======
     use __member_module_outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
-    mod __member_module_outer_type_to_outer_type {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_outer_type_to_outer_type {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -745,16 +673,8 @@ enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
-    pub mod inner_type_to_inner_type {
-||||||| a4de08fbd
-    use inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
-    mod inner_type_to_inner_type {
-=======
     use __member_module_inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
-    mod __member_module_inner_type_to_inner_type {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_inner_type_to_inner_type {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}

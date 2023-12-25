@@ -45,19 +45,9 @@ mod ownable_balance {
     }
 
 
-<<<<<<< HEAD
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: balance::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
-=======
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: __member_module_balance::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -313,19 +303,9 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
     }
 
 
-<<<<<<< HEAD
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: balance::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: balance::ContractMemberState,
-=======
-    struct ContractState {
-        ownable: ownable_comp::ComponentState<ContractState>,
-        balance: __member_module_balance::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]

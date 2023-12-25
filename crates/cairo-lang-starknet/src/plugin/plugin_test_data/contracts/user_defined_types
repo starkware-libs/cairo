@@ -98,25 +98,11 @@ contract:
 pub enum Event {}
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub var: var::ContractMemberState,
-        pub zero_size: zero_size::ContractMemberState,
-        pub mapping: mapping::ContractMemberState,
-        pub zero_size_mapping: zero_size_mapping::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        var: var::ContractMemberState,
-        zero_size: zero_size::ContractMemberState,
-        mapping: mapping::ContractMemberState,
-        zero_size_mapping: zero_size_mapping::ContractMemberState,
-=======
-    struct ContractState {
-        var: __member_module_var::ContractMemberState,
-        zero_size: __member_module_zero_size::ContractMemberState,
-        mapping: __member_module_mapping::ContractMemberState,
-        zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub var: __member_module_var::ContractMemberState,
+        pub zero_size: __member_module_zero_size::ContractMemberState,
+        pub mapping: __member_module_mapping::ContractMemberState,
+        pub zero_size_mapping: __member_module_zero_size_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -220,16 +206,8 @@ pub enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
-    pub mod mapping {
-||||||| a4de08fbd
-    use mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
-    mod mapping {
-=======
     use __member_module_mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
-    mod __member_module_mapping {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;
@@ -272,16 +250,8 @@ pub enum Event {}
             }
         }
     }
-<<<<<<< HEAD
-    use zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
-    pub mod zero_size_mapping {
-||||||| a4de08fbd
-    use zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
-    mod zero_size_mapping {
-=======
     use __member_module_zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
-    mod __member_module_zero_size_mapping {
->>>>>>> origin/dev-v2.4.1
+    pub mod __member_module_zero_size_mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
         use super::ZeroSize;

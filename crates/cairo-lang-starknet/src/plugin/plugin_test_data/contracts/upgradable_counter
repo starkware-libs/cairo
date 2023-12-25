@@ -67,22 +67,10 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub counter: counter::ContractMemberState,
+        pub counter: __member_module_counter::ContractMemberState,
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
-||||||| a4de08fbd
-    struct ContractState {
-        counter: counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
-=======
-    struct ContractState {
-        counter: __member_module_counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
->>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -843,22 +831,10 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub counter: counter::ContractMemberState,
+        pub counter: __member_module_counter::ContractMemberState,
         pub upgradable: upgradable_comp::ComponentState<ContractState>,
         pub ownable: ownable_comp::ComponentState<ContractState>,
-||||||| a4de08fbd
-    struct ContractState {
-        counter: counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
-=======
-    struct ContractState {
-        counter: __member_module_counter::ContractMemberState,
-        upgradable: upgradable_comp::ComponentState<ContractState>,
-        ownable: ownable_comp::ComponentState<ContractState>,
->>>>>>> origin/dev-v2.4.1
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]

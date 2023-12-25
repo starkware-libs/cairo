@@ -129,16 +129,8 @@ contract:
 pub enum Event {}
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub value: value::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        value: value::ContractMemberState,
-=======
-    struct ContractState {
-        value: __member_module_value::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub value: __member_module_value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]

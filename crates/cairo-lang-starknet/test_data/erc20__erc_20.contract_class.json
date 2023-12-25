@@ -5,19 +5,9 @@
     "0x0",
     "0x2",
     "0x4",
-<<<<<<< HEAD
-    "0x0",
+    "0x1",
     "0x321",
     "0xdf",
-||||||| a4de08fbd
-    "0x0",
-    "0x323",
-    "0xdd",
-=======
-    "0x1",
-    "0x323",
-    "0xdd",
->>>>>>> origin/dev-v2.4.1
     "0x58",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
@@ -3373,53 +3363,15 @@
       ],
       [
         179,
-<<<<<<< HEAD
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        "felt252_const<0>"
-      ],
-      [
-        180,
-        "felt252_sub"
-      ],
-      [
-        181,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-=======
-        "felt252_const<0>"
-      ],
-      [
-        180,
-        "felt252_sub"
-      ],
-      [
-        181,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         180,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        182,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-=======
-        182,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         181,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        183,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, Unit>>"
-=======
-        183,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         182,
@@ -3454,80 +3406,32 @@
         "felt252_const<7300388948442106731950660484798539862217172507820428101544021685107>"
       ],
       [
-<<<<<<< HEAD
         190,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::total_supply::InternalContractMemberStateImpl::write>"
-||||||| a4de08fbd
-        192,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::total_supply::InternalContractMemberStateImpl::write>"
-=======
-        192,
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::InternalContractMemberStateImpl::write>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         191,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        193,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>>"
-=======
-        193,
         "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         192,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::balances::InternalContractMemberStateImpl::write>"
-||||||| a4de08fbd
-        194,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::balances::InternalContractMemberStateImpl::write>"
-=======
-        194,
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::InternalContractMemberStateImpl::write>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         193,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        195,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>>"
-=======
-        195,
         "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         194,
         "contract_address_const<0>"
       ],
       [
-<<<<<<< HEAD
         195,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        197,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-=======
-        197,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         196,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        198,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, Unit>>"
-=======
-        198,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         197,
@@ -3546,40 +3450,16 @@
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::erc20::erc_20::Event, core::traits::TIntoT::<cairo_level_tests::contracts::erc20::erc_20::Event>>>"
       ],
       [
-<<<<<<< HEAD
         201,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        203,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-=======
-        203,
         "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         202,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        204,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-=======
-        204,
         "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         203,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        205,
-        "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-=======
-        205,
         "drop<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         204,
@@ -3670,28 +3550,12 @@
         "function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
       ],
       [
-<<<<<<< HEAD
         226,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::balances::InternalContractMemberStateImpl::address>"
-||||||| a4de08fbd
-        228,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::balances::InternalContractMemberStateImpl::address>"
-=======
-        228,
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::InternalContractMemberStateImpl::address>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         227,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::allowances::InternalContractMemberStateImpl::address>"
-||||||| a4de08fbd
-        229,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::allowances::InternalContractMemberStateImpl::address>"
-=======
-        229,
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::InternalContractMemberStateImpl::address>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         228,
@@ -3762,16 +3626,8 @@
         "felt252_const<395754877894504967531585582359572169455970492464>"
       ],
       [
-<<<<<<< HEAD
         245,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState>"
-||||||| a4de08fbd
-        247,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState>"
-=======
-        247,
         "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         246,
@@ -3806,40 +3662,16 @@
         "felt252_const<101313248740993271302566317381896466254801065025584>"
       ],
       [
-<<<<<<< HEAD
         254,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::allowances::InternalContractMemberStateImpl::write>"
-||||||| a4de08fbd
-        256,
-        "function_call<user@cairo_level_tests::contracts::erc20::erc_20::allowances::InternalContractMemberStateImpl::write>"
-=======
-        256,
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::InternalContractMemberStateImpl::write>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         255,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        257,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>>"
-=======
-        257,
         "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         256,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        258,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, Unit>>"
-=======
-        258,
         "struct_deconstruct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         257,
@@ -3870,16 +3702,8 @@
         "felt252_const<39879774624085075084607933104993585622903>"
       ],
       [
-<<<<<<< HEAD
         264,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState>"
-||||||| a4de08fbd
-        266,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState>"
-=======
-        266,
         "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         265,
@@ -3910,284 +3734,100 @@
         "struct_deconstruct<Tuple<Unit>>"
       ],
       [
-<<<<<<< HEAD
         272,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        274,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, Unit>>"
-=======
-        274,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         273,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        275,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>, 0>"
-=======
-        275,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         274,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        276,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>>"
-=======
-        276,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         275,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        277,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::name::ContractMemberState, ())>, 1>"
-=======
-        277,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_name::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         276,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState>"
-||||||| a4de08fbd
-        278,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState>"
-=======
-        278,
         "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         277,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        279,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, Unit>>"
-=======
-        279,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         278,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        280,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>, 0>"
-=======
-        280,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         279,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        281,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>>"
-=======
-        281,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         280,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        282,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::symbol::ContractMemberState, ())>, 1>"
-=======
-        282,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_symbol::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         281,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState>"
-||||||| a4de08fbd
-        283,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState>"
-=======
-        283,
         "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         282,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        284,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, Unit>>"
-=======
-        284,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         283,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        285,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>, 0>"
-=======
-        285,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         284,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        286,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>>"
-=======
-        286,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         285,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        287,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::decimals::ContractMemberState, ())>, 1>"
-=======
-        287,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_decimals::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         286,
         "function_call<user@core::integer::Storeu256::write>"
       ],
       [
-<<<<<<< HEAD
         287,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState>"
-||||||| a4de08fbd
-        289,
-        "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState>"
-=======
-        289,
         "snapshot_take<cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         288,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        290,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, Unit>>"
-=======
-        290,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         289,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        291,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>, 0>"
-=======
-        291,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         290,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        292,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>>"
-=======
-        292,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         291,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        293,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::total_supply::ContractMemberState, ())>, 1>"
-=======
-        293,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_total_supply::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         292,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        294,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, Unit>>"
-=======
-        294,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         293,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        295,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>, 0>"
-=======
-        295,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         294,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        296,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>>"
-=======
-        296,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         295,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        297,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::balances::ContractMemberState, ())>, 1>"
-=======
-        297,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_balances::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         296,
@@ -4338,52 +3978,20 @@
         "function_call<user@cairo_level_tests::contracts::erc20::erc_20::EventTransferIntoEvent::into>"
       ],
       [
-<<<<<<< HEAD
         333,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        335,
-        "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, Unit>>"
-=======
-        335,
         "struct_construct<Tuple<cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         334,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        336,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>, 0>"
-=======
-        336,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         335,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        337,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>>"
-=======
-        337,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         336,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        338,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::allowances::ContractMemberState, ())>, 1>"
-=======
-        338,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         337,

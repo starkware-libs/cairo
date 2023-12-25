@@ -32,16 +32,8 @@ mod hello_starknet {
 pub enum Event {}
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub balance: balance::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        balance: balance::ContractMemberState,
-=======
-    struct ContractState {
-        balance: __member_module_balance::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -533,16 +525,8 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 pub enum Event {}
 
 
-<<<<<<< HEAD
     pub struct ContractState {
-        pub balance: balance::ContractMemberState,
-||||||| a4de08fbd
-    struct ContractState {
-        balance: balance::ContractMemberState,
-=======
-    struct ContractState {
-        balance: __member_module_balance::ContractMemberState,
->>>>>>> origin/dev-v2.4.1
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]

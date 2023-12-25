@@ -135,10 +135,10 @@ fn get_simple_storage_member_code(
 ) -> StorageMemberCodePieces {
     let name_node = member.name(db).as_syntax_node();
     let name = member.name(db).text(db);
-    let member_module_path = RewriteNode::RewriteText {
-        origin: name_node.span_without_trivia(db),
-        text: format!("__member_module_{name}"),
-    };
+    let member_module_path = RewriteNode::mapped_text(
+        &format!("__member_module_{name}"),
+        name_node.span_without_trivia(db),
+    );
     let member_node = RewriteNode::interpolate_patched(
         &format!("$name$: $member_module_path$::{}", starknet_module_kind.get_member_state_name()),
         &[
@@ -409,13 +409,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         }
         StarknetModuleKind::Component => format!(
             "
-<<<<<<< HEAD
-    pub mod $storage_member_name$ {{$extra_uses$
-||||||| a4de08fbd
-    mod $storage_member_name$ {{$extra_uses$
-=======
-    mod $member_module_path$ {{$extra_uses$
->>>>>>> origin/dev-v2.4.1
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         impl Storage{member_state_name}Impl of \
@@ -444,13 +438,7 @@ fn handle_legacy_mapping_storage_member(
                 "
     use $member_module_path$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-<<<<<<< HEAD
-    pub mod $storage_member_name$ {{$extra_uses$
-||||||| a4de08fbd
-    mod $storage_member_name$ {{$extra_uses$
-=======
-    mod $member_module_path$ {{$extra_uses$
->>>>>>> origin/dev-v2.4.1
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
@@ -493,13 +481,7 @@ fn handle_legacy_mapping_storage_member(
         }
         StarknetModuleKind::Component => format!(
             "
-<<<<<<< HEAD
-    pub mod $storage_member_name$ {{$extra_uses$
-||||||| a4de08fbd
-    mod $storage_member_name$ {{$extra_uses$
-=======
-    mod $member_module_path$ {{$extra_uses$
->>>>>>> origin/dev-v2.4.1
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
 

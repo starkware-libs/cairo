@@ -2436,41 +2436,23 @@
       ],
       [
         163,
-        "function_call<user@cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::account::account::__member_module_public_key::InternalContractMemberStateImpl::write>"
       ],
       [
         164,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>>"
       ],
       [
         165,
-<<<<<<< HEAD
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        "function_call<user@cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::write>"
-=======
-        "function_call<user@cairo_level_tests::contracts::account::account::__member_module_public_key::InternalContractMemberStateImpl::write>"
->>>>>>> origin/dev-v2.4.1
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, Unit>>"
       ],
       [
         166,
-<<<<<<< HEAD
         "struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Unit>>"
-||||||| a4de08fbd
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
-=======
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         167,
-<<<<<<< HEAD
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>, 0>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         168,
@@ -2522,7 +2504,7 @@
       ],
       [
         180,
-        "drop<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState>"
       ],
       [
         181,
@@ -2530,13 +2512,7 @@
       ],
       [
         182,
-<<<<<<< HEAD
         "storage_address_from_base"
-||||||| a4de08fbd
-        "drop<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
-=======
-        "drop<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         183,
@@ -2827,16 +2803,8 @@
         "drop<core::array::Span::<core::array::Span::<core::felt252>>>"
       ],
       [
-<<<<<<< HEAD
         255,
-        "snapshot_take<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
-||||||| a4de08fbd
-        256,
-        "snapshot_take<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
-=======
-        256,
         "snapshot_take<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         256,
@@ -2867,52 +2835,20 @@
         "struct_deconstruct<Tuple<Unit>>"
       ],
       [
-<<<<<<< HEAD
         263,
-        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
-||||||| a4de08fbd
-        264,
-        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
-=======
-        264,
         "struct_construct<Tuple<cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         264,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 0>"
-||||||| a4de08fbd
-        265,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 0>"
-=======
-        265,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         265,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
-||||||| a4de08fbd
-        266,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
-=======
-        266,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         266,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 1>"
-||||||| a4de08fbd
-        267,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 1>"
-=======
-        267,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         267,

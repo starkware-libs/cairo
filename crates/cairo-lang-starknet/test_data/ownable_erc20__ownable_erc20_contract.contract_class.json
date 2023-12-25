@@ -4150,41 +4150,23 @@
       ],
       [
         235,
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, Unit>>"
       ],
       [
         236,
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, Unit>>"
       ],
       [
         237,
-<<<<<<< HEAD
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, Unit>>"
       ],
       [
         238,
-<<<<<<< HEAD
         "felt252_is_zero"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         239,
-<<<<<<< HEAD
         "enum_init<core::bool, 1>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         240,
@@ -4212,75 +4194,39 @@
       ],
       [
         246,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberStateDrop>::write>"
       ],
       [
         247,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, ())>>"
       ],
       [
         248,
-<<<<<<< HEAD
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
-||||||| a4de08fbd
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::write>"
-=======
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberStateDrop>::write>"
->>>>>>> origin/dev-v2.4.1
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         249,
-<<<<<<< HEAD
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
-=======
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>>"
       ],
       [
         250,
-<<<<<<< HEAD
         "contract_address_const<0>"
-||||||| a4de08fbd
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
-=======
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         251,
-<<<<<<< HEAD
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
-=======
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>"
       ],
       [
         252,
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, Unit>>"
       ],
       [
         253,
-<<<<<<< HEAD
         "struct_construct<cairo_level_tests::components::erc20::erc20::TransferEvent>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         254,
-<<<<<<< HEAD
         "enum_init<cairo_level_tests::components::erc20::erc20::Event, 0>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         255,
@@ -4292,41 +4238,23 @@
       ],
       [
         257,
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>"
       ],
       [
         258,
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, Unit>>"
       ],
       [
         259,
-<<<<<<< HEAD
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
-=======
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, Unit>>"
       ],
       [
         260,
-<<<<<<< HEAD
         "storage_base_address_const<1528802474226268325865027367859591458315299653151958663884057507666229546336>"
-||||||| a4de08fbd
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
-=======
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         261,
-<<<<<<< HEAD
         "storage_address_from_base"
-||||||| a4de08fbd
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
-=======
-        "drop<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         262,
@@ -4410,31 +4338,19 @@
       ],
       [
         282,
-        "function_call<user@cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl::address>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::__member_module_balances::StorageMapComponentMemberStateImpl::address>"
       ],
       [
         283,
-        "function_call<user@cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl::address>"
       ],
       [
         284,
-<<<<<<< HEAD
         "function_call<user@core::starknet::info::get_execution_info>"
-||||||| a4de08fbd
-        "function_call<user@cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl::address>"
-=======
-        "function_call<user@cairo_level_tests::components::erc20::erc20::__member_module_balances::StorageMapComponentMemberStateImpl::address>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         285,
-<<<<<<< HEAD
         "enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>"
-||||||| a4de08fbd
-        "function_call<user@cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address>"
-=======
-        "function_call<user@cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl::address>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         286,
@@ -4466,7 +4382,7 @@
       ],
       [
         293,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>"
       ],
       [
         294,
@@ -4474,13 +4390,7 @@
       ],
       [
         295,
-<<<<<<< HEAD
         "function_call<user@cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::TransferEvent, cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent>>"
-||||||| a4de08fbd
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
-=======
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         296,
@@ -4508,41 +4418,23 @@
       ],
       [
         302,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         303,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>>"
       ],
       [
         304,
-<<<<<<< HEAD
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
-=======
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
->>>>>>> origin/dev-v2.4.1
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, Unit>>"
       ],
       [
         305,
-<<<<<<< HEAD
         "struct_construct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
-||||||| a4de08fbd
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
-=======
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         306,
-<<<<<<< HEAD
         "store_temp<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
-||||||| a4de08fbd
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
-=======
-        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         307,
@@ -4566,7 +4458,7 @@
       ],
       [
         312,
-        "drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         313,
@@ -4574,13 +4466,7 @@
       ],
       [
         314,
-<<<<<<< HEAD
         "function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>"
-||||||| a4de08fbd
-        "drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
-=======
-        "drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         315,
@@ -4631,16 +4517,8 @@
         "drop<Tuple<ContractAddress>>"
       ],
       [
-<<<<<<< HEAD
         327,
-        "snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
-||||||| a4de08fbd
-        328,
-        "snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
-=======
-        328,
         "snapshot_take<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         328,
@@ -4667,344 +4545,120 @@
         "struct_deconstruct<Tuple<Unit>>"
       ],
       [
-<<<<<<< HEAD
         334,
-        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        335,
-        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
-=======
-        335,
         "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         335,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        336,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>"
-=======
-        336,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         336,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        337,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
-=======
-        337,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         337,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        338,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>"
-=======
-        338,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         338,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
-||||||| a4de08fbd
-        339,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
-=======
-        339,
         "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         339,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        340,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
-=======
-        340,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         340,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        341,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 0>"
-=======
-        341,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         341,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        342,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>>"
-=======
-        342,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         342,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        343,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 1>"
-=======
-        343,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         343,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
-||||||| a4de08fbd
-        344,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
-=======
-        344,
         "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         344,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        345,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
-=======
-        345,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         345,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        346,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 0>"
-=======
-        346,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         346,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        347,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>>"
-=======
-        347,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         347,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        348,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 1>"
-=======
-        348,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         348,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
-||||||| a4de08fbd
-        349,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
-=======
-        349,
         "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         349,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        350,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
-=======
-        350,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         350,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        351,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 0>"
-=======
-        351,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         351,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        352,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>>"
-=======
-        352,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         352,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        353,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 1>"
-=======
-        353,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         353,
         "function_call<user@core::integer::Storeu256::write>"
       ],
       [
-<<<<<<< HEAD
         354,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
-||||||| a4de08fbd
-        355,
-        "snapshot_take<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
-=======
-        355,
         "snapshot_take<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         355,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        356,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
-=======
-        356,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         356,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        357,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 0>"
-=======
-        357,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         357,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        358,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
-=======
-        358,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         358,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        359,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 1>"
-=======
-        359,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         359,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        360,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
-=======
-        360,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         360,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        361,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 0>"
-=======
-        361,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         361,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        362,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
-=======
-        362,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         362,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        363,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 1>"
-=======
-        363,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         363,
@@ -5151,52 +4805,20 @@
         "function_call<user@cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent::into>"
       ],
       [
-<<<<<<< HEAD
         399,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
-||||||| a4de08fbd
-        400,
-        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
-=======
-        400,
         "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, Unit>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         400,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 0>"
-||||||| a4de08fbd
-        401,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 0>"
-=======
-        401,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>, 0>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         401,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
-||||||| a4de08fbd
-        402,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
-=======
-        402,
         "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
-<<<<<<< HEAD
         402,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 1>"
-||||||| a4de08fbd
-        403,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 1>"
-=======
-        403,
         "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>, 1>"
->>>>>>> origin/dev-v2.4.1
       ],
       [
         403,
