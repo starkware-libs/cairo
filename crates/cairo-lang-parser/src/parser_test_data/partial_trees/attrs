@@ -31,7 +31,7 @@ fn custom_name() {}
 fn arbitrary_token_tree() {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 ExprBlock
@@ -42,7 +42,7 @@ VariantList
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemEnum)
     │   ├── attributes (kind: AttributeList)
     │   │   └── child #0 (kind: Attribute)
@@ -94,7 +94,7 @@ VariantList
     │   ├── name (kind: TokenIdentifier): 'empty'
     │   └── body (kind: ModuleBody)
     │       ├── lbrace (kind: TokenLBrace): '{'
-    │       ├── items (kind: ItemList) []
+    │       ├── items (kind: ModuleItemList) []
     │       └── rbrace (kind: TokenRBrace): '}'
     ├── child #2 (kind: ItemStruct)
     │   ├── attributes (kind: AttributeList)

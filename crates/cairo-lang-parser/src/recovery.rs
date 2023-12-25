@@ -76,7 +76,7 @@ macro_rules! eq {
 }
 pub(crate) use eq;
 
-macro_rules! top_level {
+macro_rules! module_item_kw {
     () => {
         SyntaxKind::TerminalConst
             | SyntaxKind::TerminalEnum
@@ -90,7 +90,7 @@ macro_rules! top_level {
             | SyntaxKind::TerminalUse
     };
 }
-pub(crate) use top_level;
+pub(crate) use module_item_kw;
 
 macro_rules! block {
     () => {
