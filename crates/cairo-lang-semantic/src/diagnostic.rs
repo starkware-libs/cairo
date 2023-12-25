@@ -121,6 +121,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_id.name(defs_db)
                 )
             }
+            SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
+                format!("Generic parameters are not supported in {scope} item {item_kind}.")
+            }
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
@@ -703,6 +706,10 @@ pub enum SemanticDiagnosticKind {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
+    },
+    GenericsNotSupportedInItem {
+        scope: String,
+        item_kind: String,
     },
     UnexpectedGenericArgs,
     UnknownMember,
