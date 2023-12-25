@@ -712,11 +712,6 @@ trait OtherTrait {}
 impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
-error: Type items are not yet supported in traits.
- --> lib.cairo:2:4
-   type X;
-   ^**^
-
 error: Constant items are not yet supported in traits.
  --> lib.cairo:3:4
    const Y: usize;

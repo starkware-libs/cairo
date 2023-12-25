@@ -3,14 +3,13 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId,
-    TraitFunctionId, TraitFunctionLongId, TraitId,
+    TraitFunctionId, TraitFunctionLongId, TraitId, TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::TraitItemFunction;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -21,6 +20,7 @@ use super::function_with_body::{get_implicit_precedence, get_inline_config, Func
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
+use super::item_type::ItemTypeData;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{report_unsupported_trait_item, SemanticDiagnostics};
@@ -279,6 +279,7 @@ pub fn priv_trait_semantic_declaration_data(
 pub struct TraitDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
+    item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
 }
 
 // --- Selectors ---
@@ -297,6 +298,9 @@ pub fn trait_semantic_definition_diagnostics(
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
+    }
+    for trait_type_id in data.item_type_asts.keys() {
+        diagnostics.extend(db.trait_type_diagnostics(*trait_type_id));
     }
 
     diagnostics.build()
@@ -327,12 +331,29 @@ pub fn trait_function_by_name(
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_asts].
-pub fn trait_function_asts(
+/// Query implementation of [crate::db::SemanticGroup::trait_types].
+pub fn trait_types(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>> {
-    Ok(db.priv_trait_semantic_definition_data(trait_id)?.function_asts)
+) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>> {
+    Ok(db
+        .priv_trait_semantic_definition_data(trait_id)?
+        .item_type_asts
+        .keys()
+        .map(|type_id| {
+            let type_long_id = db.lookup_intern_trait_type(*type_id);
+            (type_long_id.name(db.upcast()), *type_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
+pub fn trait_type_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitTypeId>> {
+    Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
 
 // --- Computation ---
@@ -352,6 +373,7 @@ pub fn priv_trait_semantic_definition_data(
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     let mut function_asts = OrderedHashMap::default();
+    let mut item_type_asts = OrderedHashMap::default();
     let mut trait_item_names = OrderedHashSet::default();
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -361,18 +383,28 @@ pub fn priv_trait_semantic_definition_data(
                         module_file_id,
                         func.stable_ptr(),
                     ));
-                    if !trait_item_names.insert(trait_func_id.name(db.upcast())) {
+                    let name_node = func.declaration(syntax_db).name(syntax_db);
+                    let name = name_node.text(syntax_db);
+                    if !trait_item_names.insert(name.clone()) {
                         diagnostics.report_by_ptr(
-                            func.declaration(syntax_db).name(syntax_db).stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes {
-                                name: trait_func_id.name(db.upcast()),
-                            },
+                            name_node.stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.into() },
                         );
                     }
                     function_asts.insert(trait_func_id, func);
                 }
                 ast::TraitItem::Type(ty) => {
-                    report_unsupported_trait_item(&mut diagnostics, ty.type_kw(syntax_db), "Type")
+                    let trait_type_id =
+                        db.intern_trait_type(TraitTypeLongId(module_file_id, ty.stable_ptr()));
+                    let name_node = ty.name(syntax_db);
+                    let name = name_node.text(syntax_db);
+                    if !trait_item_names.insert(name.clone()) {
+                        diagnostics.report_by_ptr(
+                            name_node.stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.into() },
+                        );
+                    }
+                    item_type_asts.insert(trait_type_id, ty);
                 }
                 ast::TraitItem::Constant(constant) => report_unsupported_trait_item(
                     &mut diagnostics,
@@ -387,7 +419,45 @@ pub fn priv_trait_semantic_definition_data(
         }
     }
 
-    Ok(TraitDefinitionData { diagnostics: diagnostics.build(), function_asts })
+    Ok(TraitDefinitionData { diagnostics: diagnostics.build(), function_asts, item_type_asts })
+}
+
+// === Trait type ===
+
+// --- Selectors ---
+/// Query implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
+pub fn trait_type_diagnostics(
+    db: &dyn SemanticGroup,
+    trait_type_id: TraitTypeId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_trait_type_data(trait_type_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_type_attributes].
+pub fn trait_type_attributes(
+    db: &dyn SemanticGroup,
+    trait_type_id: TraitTypeId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_trait_type_data(trait_type_id)?.attributes)
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_type_data].
+pub fn priv_trait_type_data(
+    db: &dyn SemanticGroup,
+    trait_type_id: TraitTypeId,
+) -> Maybe<ItemTypeData> {
+    let syntax_db = db.upcast();
+    let module_file_id = trait_type_id.module_file_id(db.upcast());
+    let diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let trait_id = trait_type_id.trait_id(db.upcast());
+    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let type_syntax = &data.item_type_asts[trait_type_id];
+
+    let attributes = type_syntax.attributes(syntax_db).structurize(syntax_db);
+
+    Ok(ItemTypeData { diagnostics: diagnostics.build(), attributes })
 }
 
 // === Trait function Declaration ===

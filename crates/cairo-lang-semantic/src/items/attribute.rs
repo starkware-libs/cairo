@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
     EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ModuleId,
-    StructId, SubmoduleId, TraitFunctionId, TraitId,
+    StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -101,6 +101,11 @@ impl SemanticQueryAttrs for ConcreteStructId {
 impl SemanticQueryAttrs for TraitId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         db.trait_attributes(*self)
+    }
+}
+impl SemanticQueryAttrs for TraitTypeId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.trait_type_attributes(*self)
     }
 }
 impl SemanticQueryAttrs for TraitFunctionId {
