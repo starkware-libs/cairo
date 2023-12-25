@@ -14,6 +14,7 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
+use crate::relocations::InstructionsWithRelocations;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(

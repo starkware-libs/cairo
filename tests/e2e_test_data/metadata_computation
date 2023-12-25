@@ -227,16 +227,8 @@ fn bar() {
 //! > enforced_costs
 test::bar 10000
 
-<<<<<<< HEAD
-//! > gas_solution
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-||||||| 780c374ea
-//! > gas_solution
-#0: OrderedHashMap({Const: 0})
-=======
 //! > gas_solution_lp
-#0: OrderedHashMap({Const: 0})
->>>>>>> origin/main
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9430})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
