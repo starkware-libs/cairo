@@ -359,18 +359,9 @@ define_language_element_id_partial!(
 impl ImplFunctionId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
         let ImplFunctionLongId(module_file_id, ptr) = db.lookup_intern_impl_function(*self);
-        // TODO(spapini): Use a parent function.
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(ptr.untyped())
-        else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let impl_ptr = ast::ItemImplPtr(parent);
+
+        // Impl function ast lies 3 levels below the impl ast.
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
         db.intern_impl(ImplDefLongId(module_file_id, impl_ptr))
     }
 }
@@ -459,20 +450,8 @@ define_language_element_id_partial!(
 impl TraitFunctionId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitFunctionLongId(module_file_id, ptr) = db.lookup_intern_trait_function(*self);
-        // Trait function ast lies a few levels bellow the trait ast.
-        // Fetch the grand grand grand parent.
-        // TODO(spapini): Use a parent function.
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(ptr.untyped())
-        else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let trait_ptr = ast::ItemTraitPtr(parent);
+        // Trait function ast lies 3 levels below the trait ast.
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
         db.intern_trait(TraitLongId(module_file_id, trait_ptr))
     }
 }
