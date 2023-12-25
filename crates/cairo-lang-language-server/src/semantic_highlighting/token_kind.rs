@@ -100,7 +100,7 @@ impl SemanticTokenKind {
         match parent_kind {
             SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
             SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
-            _ if ast::Item::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
+            _ if ast::ModuleItem::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
             SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
             SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
             SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),

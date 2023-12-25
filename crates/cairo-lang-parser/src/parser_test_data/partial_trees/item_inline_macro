@@ -295,14 +295,14 @@ fn foo() {}
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 identifier
 ^********^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   └── child #0 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
@@ -335,7 +335,7 @@ macro!
 fn foo() {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -352,7 +352,7 @@ macro!
       ^
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'macro'
@@ -373,7 +373,7 @@ identifier!(1,2
 fn foo() {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -390,7 +390,7 @@ identifier!(1,2
                ^
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'identifier'
@@ -423,7 +423,7 @@ identifier!(1,2)
 fn foo() {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -435,7 +435,7 @@ identifier!(1,2)
                 ^
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'identifier'
@@ -468,7 +468,7 @@ identifier(x)
 fn foo() {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -486,7 +486,7 @@ identifier(x)
              ^
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
     │   ├── name (kind: TokenIdentifier): 'identifier'

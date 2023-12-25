@@ -38,7 +38,7 @@ fn has_derive<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup, derived_type:
 }
 
 /// Handles the derive attributes for the given item.
-pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
     let mut builder = PatchBuilder::new(db);
     let mut diagnostics = vec![];
     let mut aux_data = None;

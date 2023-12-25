@@ -16,7 +16,7 @@ false
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
@@ -446,7 +446,7 @@ false
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []

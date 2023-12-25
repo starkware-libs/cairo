@@ -16,7 +16,7 @@ false
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
@@ -90,7 +90,7 @@ true
 
 //! > expected_tree
 └── [36mroot[0m (kind: SyntaxFile)
-    ├── [36mitems[0m (kind: ItemList)
+    ├── [36mitems[0m (kind: ModuleItemList)
     │   ├── [36mchild #0[0m (kind: ItemUse)
     │   │   ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │   │   ├── [36mvisibility[0m (kind: VisibilityDefault)[95m [][0m

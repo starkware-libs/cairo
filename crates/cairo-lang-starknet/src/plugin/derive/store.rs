@@ -11,12 +11,12 @@ use crate::plugin::consts::STORE_TRAIT;
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive(
     db: &dyn SyntaxGroup,
-    item_ast: &ast::Item,
+    item_ast: &ast::ModuleItem,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<RewriteNode> {
     match item_ast {
-        ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
-        ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
+        ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast),
+        ast::ModuleItem::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
         _ => None,
     }
 }
