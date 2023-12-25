@@ -96,7 +96,7 @@ pub fn calc_gas_precost_info(
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    calc_gas_info_inner(
+    let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
             let libfunc = registry
@@ -106,7 +106,22 @@ pub fn calc_gas_precost_info(
         },
         function_set_costs,
         &registry,
-    )
+    )?;
+    // Make sure `withdraw_gas` libfuncs return 0 valued variables for all tokens.
+    for (i, statement) in program.statements.iter().enumerate() {
+        if let Statement::Invocation(invocation) = statement {
+            if matches!(
+                registry.get_libfunc(&invocation.libfunc_id),
+                Ok(CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)))
+            ) {
+                for token in CostTokenType::iter_precost() {
+                    // Check that the variable was not assigned a value, and set it to zero.
+                    assert_eq!(info.variable_values.insert((StatementIdx(i), *token), 0), None);
+                }
+            }
+        }
+    }
+    Ok(info)
 }
 
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
