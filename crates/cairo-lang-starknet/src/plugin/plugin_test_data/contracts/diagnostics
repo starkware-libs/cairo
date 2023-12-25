@@ -297,13 +297,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub mapping: mapping::ContractMemberState,
+        pub mapping: __member_module_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            mapping: mapping::ContractMemberState {},
+            mapping: __member_module_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1560,7 +1560,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1596,13 +1596,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub same_name: same_name::ContractMemberState,
+        pub same_name: __member_module_same_name::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            same_name: same_name::ContractMemberState {},
+            same_name: __member_module_same_name::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1611,8 +1611,8 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
-    mod same_name {
+    use __member_module_same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
+    mod __member_module_same_name {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
@@ -1706,10 +1706,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: The name `same_name` is defined multiple times.
- --> lib.cairo:5:9
-        same_name: felt252,
-        ^*******^
 
 //! > ==========================================================================
 

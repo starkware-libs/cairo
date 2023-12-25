@@ -11,15 +11,15 @@ type core::result::Result::<core::integer::u32, core::integer::u32> = Enum<ut@[1
 type core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>> = Enum<ut@[524003219444735287687030798827450068479256419439950915710756081966976676008], u32, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState = Struct<ut@[931575366124480472426357624251845617354947604525826383033006504839226434899]> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())> = Enum<ut@[1781387740005720930682481380973216617410472495527421840971235902228215823491], Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState = Struct<ut@[899850927368171171110342079628889872086124955335950415857236765303567628464]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())> = Enum<ut@[191115560399885190452685958928692854846054686840088326376539649784245643373], Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<u32> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u32> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@[1659953998214361493297819749706350407888426802510745378863793391306403973050], Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState = Struct<ut@[1485009899782688042060399617739788060188100107776362615914734447780953597014], cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
+type cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState = Struct<ut@[1485009899782688042060399617739788060188100107776362615914734447780953597014], cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())> = Enum<ut@[314696354561934033823110721195499468479618633265339217574420006753046392647], Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -71,7 +71,7 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
-libfunc struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState> = struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>;
+libfunc struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState> = struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>;
 libfunc struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState> = struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>;
 libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance>;
 libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>;
@@ -96,17 +96,17 @@ libfunc enum_init<core::option::Option::<core::integer::u32>, 0> = enum_init<cor
 libfunc store_temp<core::option::Option::<core::integer::u32>> = store_temp<core::option::Option::<core::integer::u32>>;
 libfunc enum_init<core::option::Option::<core::integer::u32>, 1> = enum_init<core::option::Option::<core::integer::u32>, 1>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState> = struct_deconstruct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>;
-libfunc snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>;
-libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read>;
+libfunc snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>;
+libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read>;
 libfunc function_call<user@core::integer::U32Add::add> = function_call<user@core::integer::U32Add::add>;
-libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>;
-libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>;
+libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write>;
+libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>;
+libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>;
 libfunc struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 1>;
-libfunc drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState> = drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>;
+libfunc drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState> = drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>;
 libfunc struct_construct<Tuple<u32>> = struct_construct<Tuple<u32>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u32,)>> = store_temp<core::panics::PanicResult::<(core::integer::u32,)>>;
@@ -133,10 +133,10 @@ libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>;
 libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
 libfunc struct_deconstruct<Tuple<Unit>> = struct_deconstruct<Tuple<Unit>>;
-libfunc struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>;
-libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 1>;
+libfunc struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>;
+libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 1>;
 libfunc enum_match<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>>;
 libfunc enum_match<core::result::Result::<core::integer::u32, core::integer::u32>> = enum_match<core::result::Result::<core::integer::u32, core::integer::u32>>;
 libfunc drop<felt252> = drop<felt252>;
@@ -206,7 +206,7 @@ get_builtin_costs() -> ([41]); // 56
 store_temp<BuiltinCosts>([41]) -> ([41]); // 57
 withdraw_gas_all([21], [5], [41]) { fallthrough([42], [43]) 88([44], [45]) }; // 58
 branch_align() -> (); // 59
-struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>() -> ([46]); // 60
+struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>() -> ([46]); // 60
 struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([46]) -> ([47]); // 61
 store_temp<RangeCheck>([42]) -> ([42]); // 62
 store_temp<GasBuiltin>([43]) -> ([43]); // 63
@@ -317,7 +317,7 @@ get_builtin_costs() -> ([23]); // 167
 store_temp<BuiltinCosts>([23]) -> ([23]); // 168
 withdraw_gas_all([4], [5], [23]) { fallthrough([24], [25]) 205([26], [27]) }; // 169
 branch_align() -> (); // 170
-struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>() -> ([28]); // 171
+struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>() -> ([28]); // 171
 struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([28]) -> ([29]); // 172
 snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([29]) -> ([30], [31]); // 173
 drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([30]) -> (); // 174
@@ -391,11 +391,11 @@ store_temp<RangeCheck>([4]) -> ([6]); // 241
 store_temp<core::option::Option::<core::integer::u32>>([9]) -> ([7]); // 242
 return([6], [7]); // 243
 struct_deconstruct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([3]) -> ([5]); // 244
-snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([5]) -> ([6], [7]); // 245
+snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([5]) -> ([6], [7]); // 245
 store_temp<RangeCheck>([0]) -> ([0]); // 246
 store_temp<GasBuiltin>([1]) -> ([1]); // 247
 store_temp<System>([2]) -> ([2]); // 248
-function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read>([0], [1], [2], [7]) -> ([8], [9], [10], [11]); // 249
+function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read>([0], [1], [2], [7]) -> ([8], [9], [10], [11]); // 249
 enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([11]) { fallthrough([12]) 292([13]) }; // 250
 branch_align() -> (); // 251
 struct_deconstruct<Tuple<u32>>([12]) -> ([14]); // 252
@@ -409,10 +409,10 @@ struct_deconstruct<Tuple<u32>>([17]) -> ([19]); // 259
 store_temp<GasBuiltin>([9]) -> ([9]); // 260
 store_temp<System>([10]) -> ([10]); // 261
 store_temp<u32>([19]) -> ([19]); // 262
-function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write>([9], [10], [6], [19]) -> ([20], [21], [22]); // 263
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>([22]) { fallthrough([23]) 277([24]) }; // 264
+function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write>([9], [10], [6], [19]) -> ([20], [21], [22]); // 263
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>([22]) { fallthrough([23]) 277([24]) }; // 264
 branch_align() -> (); // 265
-struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>([23]) -> ([25], [26]); // 266
+struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>([23]) -> ([25], [26]); // 266
 drop<Unit>([26]) -> (); // 267
 struct_construct<Unit>() -> ([27]); // 268
 struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([25]) -> ([28]); // 269
@@ -431,7 +431,7 @@ store_temp<System>([21]) -> ([21]); // 281
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>([31]) -> ([31]); // 282
 return([15], [20], [21], [31]); // 283
 branch_align() -> (); // 284
-drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([6]) -> (); // 285
+drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([6]) -> (); // 285
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 1>([18]) -> ([32]); // 286
 store_temp<RangeCheck>([15]) -> ([15]); // 287
 store_temp<GasBuiltin>([9]) -> ([9]); // 288
@@ -439,7 +439,7 @@ store_temp<System>([10]) -> ([10]); // 289
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>([32]) -> ([32]); // 290
 return([15], [9], [10], [32]); // 291
 branch_align() -> (); // 292
-drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([6]) -> (); // 293
+drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([6]) -> (); // 293
 drop<u32>([4]) -> (); // 294
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 1>([13]) -> ([33]); // 295
 store_temp<RangeCheck>([8]) -> ([8]); // 296
@@ -451,7 +451,7 @@ struct_deconstruct<cairo_level_tests::contracts::hello_starknet::hello_starknet:
 store_temp<RangeCheck>([0]) -> ([0]); // 302
 store_temp<GasBuiltin>([1]) -> ([1]); // 303
 store_temp<System>([2]) -> ([2]); // 304
-function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 305
+function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read>([0], [1], [2], [4]) -> ([5], [6], [7], [8]); // 305
 enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([8]) { fallthrough([9]) 316([10]) }; // 306
 branch_align() -> (); // 307
 struct_deconstruct<Tuple<u32>>([9]) -> ([11]); // 308
@@ -469,7 +469,7 @@ store_temp<GasBuiltin>([6]) -> ([6]); // 319
 store_temp<System>([7]) -> ([7]); // 320
 store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([14]) -> ([14]); // 321
 return([5], [6], [7], [14]); // 322
-drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([3]) -> (); // 323
+drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([3]) -> (); // 323
 storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 324
 storage_address_from_base([4]) -> ([5]); // 325
 u32_const<0>() -> ([6]); // 326
@@ -558,8 +558,8 @@ storage_base_address_const<91690777249172926237653410298221994783082898499625723
 u32_to_felt252([3]) -> ([5]); // 409
 storage_address_from_base([4]) -> ([6]); // 410
 u32_const<0>() -> ([7]); // 411
-snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([2]) -> ([8], [9]); // 412
-drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([9]) -> (); // 413
+snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([2]) -> ([8], [9]); // 412
+drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([9]) -> (); // 413
 store_temp<u32>([7]) -> ([7]); // 414
 store_temp<StorageAddress>([6]) -> ([6]); // 415
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([10], [11]) 424([12], [13], [14]) }; // 416
@@ -579,18 +579,18 @@ function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>
 enum_match<core::panics::PanicResult::<((),)>>([21]) { fallthrough([22]) 439([23]) }; // 430
 branch_align() -> (); // 431
 struct_deconstruct<Tuple<Unit>>([22]) -> ([24]); // 432
-struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 433
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 434
+struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>([8], [24]) -> ([25]); // 433
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 0>([25]) -> ([26]); // 434
 store_temp<GasBuiltin>([17]) -> ([17]); // 435
 store_temp<System>([18]) -> ([18]); // 436
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>([26]) -> ([26]); // 437
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>([26]) -> ([26]); // 437
 return([17], [18], [26]); // 438
 branch_align() -> (); // 439
-drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState>([8]) -> (); // 440
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 441
+drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([8]) -> (); // 440
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>, 1>([23]) -> ([27]); // 441
 store_temp<GasBuiltin>([17]) -> ([17]); // 442
 store_temp<System>([18]) -> ([18]); // 443
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>>([27]) -> ([27]); // 444
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>>([27]) -> ([27]); // 444
 return([17], [18], [27]); // 445
 enum_match<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 452([2]) }; // 446
 branch_align() -> (); // 447
@@ -638,9 +638,9 @@ cairo_level_tests::contracts::hello_starknet::hello_starknet::__wrapper__HelloSt
 core::integer::Felt252TryIntoU32::try_into@232([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u32>);
 cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance@244([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, [4]: u32) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>);
 cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::get_balance@301([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u32,)>);
-cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::read@323([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u32,)>);
+cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::read@323([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u32,)>);
 core::integer::U32Add::add@382([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u32,)>);
-cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::InternalContractMemberStateImpl::write@408([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, [3]: u32) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::balance::ContractMemberState, ())>);
+cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::InternalContractMemberStateImpl::write@408([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, [3]: u32) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())>);
 core::starknet::SyscallResultTraitImpl::<core::integer::u32>::unwrap_syscall@446([0]: core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u32,)>);
 core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>@458([0]: core::result::Result::<core::integer::u32, core::integer::u32>, [1]: felt252) -> (core::panics::PanicResult::<(core::integer::u32,)>);
 core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@474([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<((),)>);

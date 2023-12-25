@@ -5,7 +5,7 @@
     "0x0",
     "0x2",
     "0x4",
-    "0x0",
+    "0x1",
     "0x240",
     "0x1c0",
     "0x49",
@@ -76,10 +76,10 @@
     "0x115e1619dbce8ee9231b08e663d9fd13cbd416d0d874c02e64afb8b1da46e2b",
     "0x2f9ea3d94fb80544ff09622d6f9ee29308ecd6486ec2405b55fe7bee4fca0f6",
     "0x21",
-    "0x29fbc5b3824027f15453046607759ed3b17a9408a64b7853d81742f1b326664",
+    "0x3e5b1451696ac95ebd14fcbf98676d0131d6a38ecff1786799ed3f720b66bef",
     "0x800000000000000f00000000000000000000000000000003",
     "0x23",
-    "0x9b8d3f6326ac38daf785c87554b812226b8591d6bc065051858a70026bccdb",
+    "0x17d6cdfaab807489c34c9ee8d2e0efbba8afbbcd65f513509783fc776972e30",
     "0x24",
     "0x224a57ba2504f0018c4fd92c0f0e6ef13a37bf8d3d6479b8faa16fc36f624d2",
     "0x26",
@@ -104,12 +104,12 @@
     "0x3ca5e1b5889d470d360dca2dd97f1fb209997f4de004753afbde7849b287837",
     "0x33",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x363cb548dd7ed3e7f74ed7d3388fa4f4ee23f92831942e2a1570ce3906117ff",
+    "0x1b36a115a3ef83b83db51a444cdba850e465364ac93ef31c5b3a57785eaed1a",
     "0x36",
-    "0x15f3da29663b7d472bae10537060401af2905b06bc88f0a2fa7811190bf04cb",
+    "0x19b33ff77a1f6f3d375fa2b510df8d854f7fdefcc33776465987d04156f7361",
     "0x37",
     "0x11771f2d3e7dc3ed5afe7eae405dfd127619490dec57ceaa021ac8bc2b9b315",
-    "0x5988d0fd94c88164c17a9bbc3bfc77844f8a59f28416ac9a9743ef428cb262",
+    "0xfc38e3028d257735c705c1ddf7a05097dbab6cf186f4ad3d958ab4ddbac7ea",
     "0x321e375e10332ed59b4953ac8937929222b8a9c9ae22a1a8a0dd745d7a9eea2",
     "0x3a",
     "0x800000000000000f00000000000000000000000000000004",
@@ -1419,15 +1419,15 @@
       ],
       [
         35,
-        "cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState"
+        "cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState"
       ],
       [
         36,
-        "Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>"
       ],
       [
         37,
-        "core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>"
       ],
       [
         38,
@@ -1495,15 +1495,15 @@
       ],
       [
         54,
-        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState"
       ],
       [
         55,
-        "Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>"
       ],
       [
         56,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>"
       ],
       [
         57,
@@ -1511,7 +1511,7 @@
       ],
       [
         58,
-        "cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState"
+        "cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState"
       ],
       [
         59,
@@ -1673,11 +1673,11 @@
       ],
       [
         25,
-        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         26,
-        "struct_construct<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>"
       ],
       [
         27,
@@ -1685,7 +1685,7 @@
       ],
       [
         28,
-        "struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         29,
@@ -1889,7 +1889,7 @@
       ],
       [
         79,
-        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read>"
       ],
       [
         80,
@@ -1925,7 +1925,7 @@
       ],
       [
         88,
-        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         89,
@@ -1937,15 +1937,15 @@
       ],
       [
         91,
-        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write>"
       ],
       [
         92,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>"
       ],
       [
         93,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>"
       ],
       [
         94,
@@ -1981,7 +1981,7 @@
       ],
       [
         102,
-        "drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState>"
       ],
       [
         103,
@@ -2125,19 +2125,19 @@
       ],
       [
         138,
-        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, Unit>>"
       ],
       [
         139,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 0>"
       ],
       [
         140,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>>"
       ],
       [
         141,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::ContractMemberState, ())>, 1>"
       ],
       [
         142,
@@ -2229,11 +2229,11 @@
       ],
       [
         164,
-        "snapshot_take<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>"
       ],
       [
         165,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read>"
       ],
       [
         166,
@@ -2257,15 +2257,15 @@
       ],
       [
         171,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write>"
       ],
       [
         172,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>"
       ],
       [
         173,
-        "struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>"
       ],
       [
         174,
@@ -2285,7 +2285,7 @@
       ],
       [
         178,
-        "drop<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState>"
+        "drop<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState>"
       ],
       [
         179,
@@ -2381,7 +2381,7 @@
       ],
       [
         202,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read>"
       ],
       [
         203,
@@ -2505,19 +2505,19 @@
       ],
       [
         233,
-        "struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, Unit>>"
       ],
       [
         234,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 0>"
       ],
       [
         235,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>>"
       ],
       [
         236,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, ())>, 1>"
       ],
       [
         237,
@@ -2545,7 +2545,7 @@
       ],
       [
         243,
-        "drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
+        "drop<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>"
       ],
       [
         244,
@@ -2767,7 +2767,7 @@
       ],
       [
         12,
-        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::read"
       ],
       [
         13,
@@ -2775,7 +2775,7 @@
       ],
       [
         14,
-        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__member_module_counter::InternalContractMemberStateImpl::write"
       ],
       [
         15,
@@ -2839,7 +2839,7 @@
       ],
       [
         30,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::read"
       ],
       [
         31,
@@ -2847,7 +2847,7 @@
       ],
       [
         32,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::current_implementation::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::class_hash::ClassHash, core::felt252, core::starknet::storage_access::StorePackingClassHash, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::upgradable::upgradable::__member_module_current_implementation::ComponentMemberStateDrop>::write"
       ],
       [
         33,
@@ -2867,7 +2867,7 @@
       ],
       [
         37,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::__member_module_owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreUsingPacking::<core::starknet::contract_address::ContractAddress, core::felt252, core::starknet::storage_access::StorePackingContractAddress, core::starknet::storage_access::StoreFelt252>, cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberStateDrop>::read"
       ],
       [
         38,
