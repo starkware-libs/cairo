@@ -295,11 +295,11 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let enum_id = concrete_enum_id.enum_id(db);
         db.enum_variants(enum_id)?
-            .into_iter()
-            .map(|(_, variant_id)| {
+            .values()
+            .map(|variant_id| {
                 db.concrete_enum_variant(
                     concrete_enum_id,
-                    &db.variant_semantic(enum_id, variant_id)?,
+                    &db.variant_semantic(enum_id, *variant_id)?,
                 )
             })
             .collect()

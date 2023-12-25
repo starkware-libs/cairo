@@ -1,6 +1,6 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-  "compiler_version": "2.4.0",
+  "compiler_version": "2.4.1",
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",
@@ -55,9 +55,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0xa3f",
+||||||| 780c374ea
+    "0xa47",
+=======
+    "0xa43",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0xa3e",
+||||||| 780c374ea
+    "0xa46",
+=======
+    "0xa42",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -226,9 +238,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x994",
+||||||| 780c374ea
+    "0x99c",
+=======
+    "0x998",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x993",
+||||||| 780c374ea
+    "0x99b",
+=======
+    "0x997",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -370,9 +394,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x904",
+||||||| 780c374ea
+    "0x90c",
+=======
+    "0x908",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x903",
+||||||| 780c374ea
+    "0x90b",
+=======
+    "0x907",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -526,9 +562,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x868",
+||||||| 780c374ea
+    "0x870",
+=======
+    "0x86c",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x867",
+||||||| 780c374ea
+    "0x86f",
+=======
+    "0x86b",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -681,9 +729,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x7cd",
+||||||| 780c374ea
+    "0x7d5",
+=======
+    "0x7d1",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x7cc",
+||||||| 780c374ea
+    "0x7d4",
+=======
+    "0x7d0",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -805,7 +865,13 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x18d",
+||||||| 780c374ea
+    "0x18f",
+=======
+    "0x18b",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
     "0x7d",
     "0x480080037fff8000",
@@ -838,7 +904,13 @@
     "0x48127ff67fff8000",
     "0x48127ff67fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x181",
+||||||| 780c374ea
+    "0x183",
+=======
+    "0x17f",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
     "0x51",
     "0x480a7ffa7fff8000",
@@ -847,7 +919,13 @@
     "0x480680017fff8000",
     "0x0",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1a9",
+||||||| 780c374ea
+    "0x1ab",
+=======
+    "0x1a7",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
     "0x3d",
     "0x48127ffc7fff8000",
@@ -856,7 +934,13 @@
     "0x480680017fff8000",
     "0x1",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1a0",
+||||||| 780c374ea
+    "0x1a2",
+=======
+    "0x19e",
+>>>>>>> origin/main
     "0x480080007ff08000",
     "0x20680017fff7ffc",
     "0x28",
@@ -867,7 +951,13 @@
     "0x48127ffb7fff8000",
     "0x480080007ff98000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1b7",
+||||||| 780c374ea
+    "0x1b9",
+=======
+    "0x1b5",
+>>>>>>> origin/main
     "0x20680017fff7fff",
     "0x11",
     "0x40780017fff7fff",
@@ -978,7 +1068,7 @@
     "0x48127ffa7fff8000",
     "0x480080007ff88000",
     "0x1104800180018000",
-    "0x20a",
+    "0x206",
     "0x20680017fff7ffa",
     "0xc",
     "0x48127ff87fff8000",
@@ -1047,22 +1137,18 @@
     "0x480a7ffa7fff8000",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x245",
+    "0x241",
     "0x20680017fff7ffd",
-    "0x5d",
-    "0x4824800180007fff",
-    "0x0",
+    "0x59",
     "0x20680017fff7fff",
-    "0x4b",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
+    "0x49",
+    "0x48127ffb7fff8000",
+    "0x48127ffb7fff8000",
     "0x1104800180018000",
-    "0x91",
+    "0x8f",
     "0x20680017fff7ffd",
-    "0x3d",
+    "0x3b",
     "0x480080007fff8000",
-    "0x4824800180007fff",
-    "0x0",
     "0x20680017fff7fff",
     "0x6",
     "0x480680017fff8000",
@@ -1082,8 +1168,8 @@
     "0x494e56414c49445f54585f56455253494f4e",
     "0x400080007ffe7fff",
     "0x480a7ff97fff8000",
-    "0x48127ff37fff8000",
-    "0x48127ff37fff8000",
+    "0x48127ff47fff8000",
+    "0x48127ff47fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
@@ -1093,8 +1179,8 @@
     "0x40780017fff7fff",
     "0x1",
     "0x480a7ff97fff8000",
-    "0x48127ff47fff8000",
-    "0x48127ff47fff8000",
+    "0x48127ff57fff8000",
+    "0x48127ff57fff8000",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x48127ffa7fff8000",
@@ -1133,8 +1219,8 @@
     "0x494e56414c49445f43414c4c4552",
     "0x400080007ffe7fff",
     "0x480a7ff97fff8000",
-    "0x48127ff77fff8000",
-    "0x48127ff77fff8000",
+    "0x48127ff87fff8000",
+    "0x48127ff87fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
@@ -2187,8 +2273,16 @@
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffa77",
     "0x40137ff27fff8001",
+||||||| 780c374ea
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffa71",
+    "0x40137ff07fff8001",
+=======
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffa75",
+    "0x40137ff07fff8001",
+>>>>>>> origin/main
     "0x20680017fff7ffe",
     "0x3c",
     "0x48127fee7fff8000",
@@ -2352,7 +2446,13 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9d2",
+||||||| 780c374ea
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9cc",
+=======
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9d0",
+>>>>>>> origin/main
     "0x20680017fff7ffe",
     "0x2b",
     "0xa0680017fff8004",
@@ -2520,7 +2620,13 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9d8",
+||||||| 780c374ea
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9d2",
+=======
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff9d6",
+>>>>>>> origin/main
     "0x48127ff37fff8000",
     "0x48127ff17fff8000",
     "0x48127ff37fff8000",
@@ -2604,7 +2710,13 @@
     "0x480a7ff97fff8000",
     "0x480a7ffa7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff8d6",
+||||||| 780c374ea
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff8ce",
+=======
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffff8d2",
+>>>>>>> origin/main
     "0x20680017fff7ffe",
     "0x27",
     "0x400280007ffc7fff",
@@ -3544,7 +3656,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1703,
+||||||| 780c374ea
+      1709,
+=======
+      1705,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -3559,7 +3677,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1784,
+||||||| 780c374ea
+      1790,
+=======
+      1786,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -3572,7 +3696,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1810,
+||||||| 780c374ea
+      1816,
+=======
+      1812,
+>>>>>>> origin/main
       [
         {
           "TestLessThanOrEqual": {
@@ -3594,7 +3724,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1898,
+||||||| 780c374ea
+      1904,
+=======
+      1900,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -3607,7 +3743,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1923,
+||||||| 780c374ea
+      1929,
+=======
+      1925,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -3622,7 +3764,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1968,
+||||||| 780c374ea
+      1974,
+=======
+      1970,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -3637,7 +3785,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2029,
+||||||| 780c374ea
+      2035,
+=======
+      2031,
+>>>>>>> origin/main
       [
         {
           "RandomEcPoint": {
@@ -3665,7 +3819,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2091,
+||||||| 780c374ea
+      2097,
+=======
+      2093,
+>>>>>>> origin/main
       [
         {
           "RandomEcPoint": {
@@ -3693,7 +3853,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2353,
+||||||| 780c374ea
+      2359,
+=======
+      2355,
+>>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -3715,7 +3881,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2357,
+||||||| 780c374ea
+      2363,
+=======
+      2359,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -3744,7 +3916,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2367,
+||||||| 780c374ea
+      2373,
+=======
+      2369,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -3773,7 +3951,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2425,
+||||||| 780c374ea
+      2433,
+=======
+      2429,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -3786,7 +3970,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2479,
+||||||| 780c374ea
+      2487,
+=======
+      2483,
+>>>>>>> origin/main
       [
         {
           "TestLessThanOrEqual": {
@@ -3808,7 +3998,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2553,
+||||||| 780c374ea
+      2561,
+=======
+      2557,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -3821,7 +4017,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2572,
+||||||| 780c374ea
+      2580,
+=======
+      2576,
+>>>>>>> origin/main
       [
         {
           "TestLessThanOrEqual": {
@@ -3843,7 +4045,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       2655,
+||||||| 780c374ea
+      2663,
+=======
+      2659,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -4176,99 +4384,195 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1703,
+||||||| 780c374ea
+      1709,
+=======
+      1705,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -7])"
       ]
     ],
     [
+<<<<<<< HEAD
       1784,
+||||||| 780c374ea
+      1790,
+=======
+      1786,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1810,
+||||||| 780c374ea
+      1816,
+=======
+      1812,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = 8140 <= memory[fp + -7]"
       ]
     ],
     [
+<<<<<<< HEAD
       1898,
+||||||| 780c374ea
+      1904,
+=======
+      1900,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1923,
+||||||| 780c374ea
+      1929,
+=======
+      1925,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
+<<<<<<< HEAD
       1968,
+||||||| 780c374ea
+      1974,
+=======
+      1970,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
+<<<<<<< HEAD
       2029,
+||||||| 780c374ea
+      2035,
+=======
+      2031,
+>>>>>>> origin/main
       [
         "\nfrom starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import random_ec_point\n(memory[ap + 4], memory[ap + 5]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)\n",
         "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 6] = __boxed_segment\n__boxed_segment += 2\n"
       ]
     ],
     [
+<<<<<<< HEAD
       2091,
+||||||| 780c374ea
+      2097,
+=======
+      2093,
+>>>>>>> origin/main
       [
         "\nfrom starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import random_ec_point\n(memory[ap + 4], memory[ap + 5]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)\n",
         "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 6] = __boxed_segment\n__boxed_segment += 2\n"
       ]
     ],
     [
+<<<<<<< HEAD
       2353,
+||||||| 780c374ea
+      2359,
+=======
+      2355,
+>>>>>>> origin/main
       [
         "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
       ]
     ],
     [
+<<<<<<< HEAD
       2357,
+||||||| 780c374ea
+      2363,
+=======
+      2359,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
       ]
     ],
     [
+<<<<<<< HEAD
       2367,
+||||||| 780c374ea
+      2373,
+=======
+      2369,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
       ]
     ],
     [
+<<<<<<< HEAD
       2425,
+||||||| 780c374ea
+      2433,
+=======
+      2429,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       2479,
+||||||| 780c374ea
+      2487,
+=======
+      2483,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = 4370 <= memory[fp + -7]"
       ]
     ],
     [
+<<<<<<< HEAD
       2553,
+||||||| 780c374ea
+      2561,
+=======
+      2557,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       2572,
+||||||| 780c374ea
+      2580,
+=======
+      2576,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = 4570 <= memory[fp + -8]"
       ]
     ],
     [
+<<<<<<< HEAD
       2655,
+||||||| 780c374ea
+      2663,
+=======
+      2659,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]

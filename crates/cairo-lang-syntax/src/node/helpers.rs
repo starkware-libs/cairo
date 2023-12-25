@@ -2,12 +2,12 @@ use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
-    ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
-    ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, Statement,
-    StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemFunction,
-    TraitItemFunctionPtr, Variant, WrappedArgList,
+    ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
+    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
+    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
+    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
+    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
+    TraitItemImpl, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -279,10 +279,28 @@ impl QueryAttrs for TraitItemFunction {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for TraitItemType {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+impl QueryAttrs for TraitItemConstant {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+impl QueryAttrs for TraitItemImpl {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             TraitItem::Function(item) => item.attributes_elements(db),
+            TraitItem::Type(item) => item.attributes_elements(db),
+            TraitItem::Constant(item) => item.attributes_elements(db),
+            TraitItem::Impl(item) => item.attributes_elements(db),
             TraitItem::Missing(_) => vec![],
         }
     }
@@ -294,23 +312,23 @@ impl QueryAttrs for ItemInlineMacro {
     }
 }
 
-impl QueryAttrs for Item {
+impl QueryAttrs for ModuleItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
-            Item::Constant(item) => item.attributes_elements(db),
-            Item::Module(item) => item.attributes_elements(db),
-            Item::FreeFunction(item) => item.attributes_elements(db),
-            Item::Use(item) => item.attributes_elements(db),
-            Item::ExternFunction(item) => item.attributes_elements(db),
-            Item::ExternType(item) => item.attributes_elements(db),
-            Item::Trait(item) => item.attributes_elements(db),
-            Item::Impl(item) => item.attributes_elements(db),
-            Item::ImplAlias(item) => item.attributes_elements(db),
-            Item::Struct(item) => item.attributes_elements(db),
-            Item::Enum(item) => item.attributes_elements(db),
-            Item::TypeAlias(item) => item.attributes_elements(db),
-            Item::InlineMacro(item) => item.attributes_elements(db),
-            Item::Missing(_) => vec![],
+            ModuleItem::Constant(item) => item.attributes_elements(db),
+            ModuleItem::Module(item) => item.attributes_elements(db),
+            ModuleItem::FreeFunction(item) => item.attributes_elements(db),
+            ModuleItem::Use(item) => item.attributes_elements(db),
+            ModuleItem::ExternFunction(item) => item.attributes_elements(db),
+            ModuleItem::ExternType(item) => item.attributes_elements(db),
+            ModuleItem::Trait(item) => item.attributes_elements(db),
+            ModuleItem::Impl(item) => item.attributes_elements(db),
+            ModuleItem::ImplAlias(item) => item.attributes_elements(db),
+            ModuleItem::Struct(item) => item.attributes_elements(db),
+            ModuleItem::Enum(item) => item.attributes_elements(db),
+            ModuleItem::TypeAlias(item) => item.attributes_elements(db),
+            ModuleItem::InlineMacro(item) => item.attributes_elements(db),
+            ModuleItem::Missing(_) => vec![],
         }
     }
 }
@@ -319,17 +337,16 @@ impl QueryAttrs for ImplItem {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
             ImplItem::Function(item) => item.attributes_elements(db),
+            ImplItem::Type(item) => item.attributes_elements(db),
             ImplItem::Constant(item) => item.attributes_elements(db),
+            ImplItem::Impl(item) => item.attributes_elements(db),
             ImplItem::Module(item) => item.attributes_elements(db),
             ImplItem::Use(item) => item.attributes_elements(db),
             ImplItem::ExternFunction(item) => item.attributes_elements(db),
             ImplItem::ExternType(item) => item.attributes_elements(db),
             ImplItem::Trait(item) => item.attributes_elements(db),
-            ImplItem::Impl(item) => item.attributes_elements(db),
-            ImplItem::ImplAlias(item) => item.attributes_elements(db),
             ImplItem::Struct(item) => item.attributes_elements(db),
             ImplItem::Enum(item) => item.attributes_elements(db),
-            ImplItem::TypeAlias(item) => item.attributes_elements(db),
             ImplItem::Missing(_) => vec![],
         }
     }

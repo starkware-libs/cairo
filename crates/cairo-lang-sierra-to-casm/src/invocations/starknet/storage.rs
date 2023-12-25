@@ -25,7 +25,7 @@ pub fn build_storage_address_from_base_and_offset(
     ))
 }
 
-/// Handles the storage_base_address_const libfunc.
+/// Handles the storage_base_address_from_felt252 libfunc.
 pub fn build_storage_base_address_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

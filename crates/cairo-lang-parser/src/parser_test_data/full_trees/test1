@@ -13,7 +13,7 @@ false
 false
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
 ;
 ^
@@ -40,7 +40,7 @@ error: Missing tokens. Expected an item after attributes.
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
@@ -848,7 +848,7 @@ true
 false
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
 ;
 ^
@@ -875,7 +875,7 @@ error: Missing tokens. Expected an item after attributes.
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []

@@ -128,7 +128,7 @@ fn validate_module(
         };
     };
     let Some(storage_struct_ast) = body.items(db).elements(db).into_iter().find(|item| {
-        matches!(item, ast::Item::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
+        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
     }) else {
         return PluginResult {
             code: None,
@@ -144,7 +144,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                storage_struct_ast.stable_ptr().untyped(),
                 format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
             )],
             remove_original_item: false,
@@ -235,11 +235,11 @@ pub(super) fn handle_module_by_storage(
 /// Adds extra uses, to be used in the generated submodules.
 fn maybe_add_extra_use(
     db: &dyn SyntaxGroup,
-    item: ast::Item,
+    item: ast::ModuleItem,
     extra_uses: &mut OrderedHashMap<smol_str::SmolStr, String>,
 ) {
     if let Some(ident) = match item {
-        ast::Item::Use(item) => {
+        ast::ModuleItem::Use(item) => {
             let leaves = get_all_path_leafs(db, item.use_path(db));
             for leaf in leaves {
                 extra_uses
@@ -248,22 +248,22 @@ fn maybe_add_extra_use(
             }
             None
         }
-        ast::Item::Constant(item) => Some(item.name(db)),
-        ast::Item::Module(item) => Some(item.name(db)),
-        ast::Item::Impl(item) => Some(item.name(db)),
+        ast::ModuleItem::Constant(item) => Some(item.name(db)),
+        ast::ModuleItem::Module(item) => Some(item.name(db)),
+        ast::ModuleItem::Impl(item) => Some(item.name(db)),
         // Skip the storage struct, that only generates other code, but its code itself is ignored.
-        ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
-        ast::Item::Struct(item) => Some(item.name(db)),
-        ast::Item::Enum(item) => Some(item.name(db)),
-        ast::Item::TypeAlias(item) => Some(item.name(db)),
+        ast::ModuleItem::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
+        ast::ModuleItem::Struct(item) => Some(item.name(db)),
+        ast::ModuleItem::Enum(item) => Some(item.name(db)),
+        ast::ModuleItem::TypeAlias(item) => Some(item.name(db)),
         // These items are not directly required in generated inner modules.
-        ast::Item::ExternFunction(_)
-        | ast::Item::ExternType(_)
-        | ast::Item::Trait(_)
-        | ast::Item::FreeFunction(_)
-        | ast::Item::ImplAlias(_)
-        | ast::Item::Missing(_)
-        | ast::Item::InlineMacro(_) => None,
+        ast::ModuleItem::ExternFunction(_)
+        | ast::ModuleItem::ExternType(_)
+        | ast::ModuleItem::Trait(_)
+        | ast::ModuleItem::FreeFunction(_)
+        | ast::ModuleItem::ImplAlias(_)
+        | ast::ModuleItem::Missing(_)
+        | ast::ModuleItem::InlineMacro(_) => None,
     } {
         extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
     }

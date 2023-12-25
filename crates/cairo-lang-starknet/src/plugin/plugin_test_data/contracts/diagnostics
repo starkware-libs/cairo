@@ -120,7 +120,12 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
     fn bar(_n: u32) {}
            ^*****^
 
-error: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
+warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
@@ -292,13 +297,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub mapping: mapping::ContractMemberState,
+        pub mapping: __member_module_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            mapping: mapping::ContractMemberState {},
+            mapping: __member_module_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -993,7 +998,7 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(ref self: ContractState, x: T) {
           ^*^
 
-error: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
+warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
@@ -1160,7 +1165,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test account contract_entry point on a non-account contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: *)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1349,6 +1354,15 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point names for account contracts only.
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^*************^
+
+warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point names for account contracts only.
+ --> lib.cairo:11:5
+    #[external(v0)]
+    ^*************^
 
 //! > ==========================================================================
 
@@ -1546,7 +1560,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1582,13 +1596,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub same_name: same_name::ContractMemberState,
+        pub same_name: __member_module_same_name::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            same_name: same_name::ContractMemberState {},
+            same_name: __member_module_same_name::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1597,8 +1611,8 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
-    mod same_name {
+    use __member_module_same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
+    mod __member_module_same_name {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
@@ -1692,10 +1706,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: The name `same_name` is defined multiple times.
- --> lib.cairo:5:9
-        same_name: felt252,
-        ^*******^
 
 //! > ==========================================================================
 
@@ -1761,9 +1771,9 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:3:5
+    struct Storage {
+    ^**************^
 
 //! > ==========================================================================
 

@@ -14,7 +14,6 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
-use crate::relocations::InstructionsWithRelocations;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
@@ -243,16 +242,17 @@ fn build_withdraw_gas_given_cost_table(
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (InstructionsWithRelocations { instructions, relocations, .. }, _) =
-        get_pointer_after_program_code(1);
-    Ok(builder.build(
-        instructions,
-        relocations,
-        [vec![ReferenceExpression::from_cell(CellExpression::DoubleDeref(
-            CellRef { register: Register::AP, offset: -1 },
-            0,
-        ))]
-        .into_iter()]
-        .into_iter(),
+    let (pre_instructions, ap_change) = get_pointer_after_program_code(1);
+    let mut casm_builder = CasmBuilder::default();
+    casm_builder.increase_ap_change(ap_change);
+    let cost_builtin_ptr = casm_builder.add_var(CellExpression::DoubleDeref(
+        CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
+        0,
+    ));
+    Ok(builder.build_from_casm_builder_ex(
+        casm_builder,
+        [("Fallthrough", &[&[cost_builtin_ptr]], None)],
+        Default::default(),
+        pre_instructions,
     ))
 }

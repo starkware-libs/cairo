@@ -21,7 +21,7 @@ pub struct ConfigPlugin;
 const CFG_ATTR: &str = "cfg";
 
 impl MacroPlugin for ConfigPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         let cfg_set = db.cfg_set();
         let mut diagnostics = vec![];
         if should_drop(db, &cfg_set, &item_ast, &mut diagnostics) {
@@ -55,11 +55,11 @@ impl MacroPlugin for ConfigPlugin {
 fn handle_undropped_item<'a>(
     db: &'a dyn SyntaxGroup,
     cfg_set: &CfgSet,
-    item_ast: ast::Item,
+    item_ast: ast::ModuleItem,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<PatchBuilder<'a>> {
     match item_ast {
-        ast::Item::Trait(trait_item) => {
+        ast::ModuleItem::Trait(trait_item) => {
             let body = try_extract_matches!(trait_item.body(db), ast::MaybeTraitBody::Some)?;
             let items =
                 get_kept_items_nodes(db, cfg_set, &body.items(db).elements(db), diagnostics)?;
@@ -75,7 +75,7 @@ fn handle_undropped_item<'a>(
             builder.add_node(body.rbrace(db).as_syntax_node());
             Some(builder)
         }
-        ast::Item::Impl(impl_item) => {
+        ast::ModuleItem::Impl(impl_item) => {
             let body = try_extract_matches!(impl_item.body(db), ast::MaybeImplBody::Some)?;
             let items =
                 get_kept_items_nodes(db, cfg_set, &body.items(db).elements(db), diagnostics)?;
