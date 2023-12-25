@@ -12,10 +12,10 @@ use crate::test_config::try_extract_test_config;
 pub struct TestPlugin;
 
 impl MacroPlugin for TestPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         PluginResult {
             code: None,
-            diagnostics: if let ast::Item::FreeFunction(free_func_ast) = item_ast {
+            diagnostics: if let ast::ModuleItem::FreeFunction(free_func_ast) = item_ast {
                 try_extract_test_config(db, free_func_ast.attributes(db).structurize(db)).err()
             } else {
                 None

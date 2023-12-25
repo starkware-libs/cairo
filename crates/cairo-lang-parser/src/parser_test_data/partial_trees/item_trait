@@ -8,7 +8,7 @@ trait Foo<T>;
 impl FooImpl<S> of Foo<S> {}
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionWithBody
@@ -16,7 +16,7 @@ FunctionWithBody
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemTrait)
     │   ├── attributes (kind: AttributeList) []
     │   ├── visibility (kind: VisibilityDefault) []
@@ -76,7 +76,7 @@ impl FooImpl<W> of Foo::<u8> {
 }
 
 //! > top_level_kind
-ItemList
+ModuleItemList
 
 //! > ignored_kinds
 FunctionDeclaration
@@ -85,7 +85,7 @@ FunctionWithBody
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: ItemList
+└── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemTrait)
     │   ├── attributes (kind: AttributeList) []
     │   ├── visibility (kind: VisibilityDefault) []
@@ -162,7 +162,7 @@ ItemStruct
 
 //! > expected_tree
 └── Top level kind: SyntaxFile
-    ├── items (kind: ItemList)
+    ├── items (kind: ModuleItemList)
     │   └── child #0 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
@@ -170,7 +170,7 @@ ItemStruct
     │       ├── name (kind: TokenIdentifier): 'x'
     │       └── body (kind: ModuleBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── items (kind: ItemList)
+    │           ├── items (kind: ModuleItemList)
     │           │   ├── child #0 (kind: ItemTrait)
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── visibility (kind: VisibilityDefault) []
