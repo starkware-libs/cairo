@@ -328,12 +328,6 @@ pub trait SemanticGroup:
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
-    /// Returns the asts of the functions of a trait.
-    #[salsa::invoke(items::trt::trait_function_asts)]
-    fn trait_function_asts(
-        &self,
-        trait_id: TraitId,
-    ) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>>;
     /// Returns the resolution resolved_items of a trait.
     #[salsa::invoke(items::trt::trait_resolver_data)]
     fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
