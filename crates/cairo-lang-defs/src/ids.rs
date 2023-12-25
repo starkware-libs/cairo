@@ -348,7 +348,37 @@ impl UnstableSalsaId for FreeFunctionId {
     }
 }
 
+// --- Impls ---
 define_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, lookup_intern_impl, name);
+
+// --- Impl types ---
+define_language_element_id_partial!(
+    ImplTypeId,
+    ImplTypeLongId,
+    ast::ItemTypeAlias,
+    lookup_intern_impl_type,
+    name
+);
+impl ImplTypeId {
+    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+        let ImplTypeLongId(module_file_id, ptr) = db.lookup_intern_impl_type(*self);
+
+        // Impl type ast lies 3 levels bellow the impl ast.
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        db.intern_impl(ImplDefLongId(module_file_id, impl_ptr))
+    }
+}
+impl TopLevelLanguageElementId for ImplTypeId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_impl_type(*self).name(db)
+    }
+}
+
+// --- Impl functions ---
 define_language_element_id_partial!(
     ImplFunctionId,
     ImplFunctionLongId,
