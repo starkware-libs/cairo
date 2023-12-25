@@ -1267,20 +1267,19 @@ test::function_with_branch_align@0([0]: core::bool) -> (felt252);
 test::foo@11([0]: core::bool) -> (Unit);
 
 //! > casm
-jmp rel 8 if [fp + -3] != 0;
-ap += 41;
+jmp rel 6 if [fp + -3] != 0;
 [ap + 0] = 2, ap++;
-jmp rel 6;
-ap += 41;
+jmp rel 4;
 [ap + 0] = 1, ap++;
 ret;
-jmp rel 16 if [fp + -3] != 0;
+jmp rel 18 if [fp + -3] != 0;
+ap += 123;
 [ap + 0] = 0, ap++;
-call rel -17;
+call rel -15;
 [ap + 0] = 0, ap++;
-call rel -21;
+call rel -19;
 [ap + 0] = 0, ap++;
-call rel -25;
+call rel -23;
 jmp rel 272;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;
