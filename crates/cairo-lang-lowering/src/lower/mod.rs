@@ -18,7 +18,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    Pattern, PatternEnumVariant, TypeLongId,
+    MatchArmSelector, Pattern, PatternEnumVariant, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -1170,7 +1170,11 @@ fn lower_expr_match(
         concrete_enum_id,
         input: match_input,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1269,7 +1273,11 @@ fn lower_optimized_extern_match(
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1355,12 +1363,16 @@ fn lower_expr_felt252_arm(
         inputs: vec![if_input],
         arms: vec![
             MatchArm {
-                variant_id: corelib::jump_nz_zero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    semantic_db,
+                )),
                 block_id,
                 var_ids: vec![],
             },
             MatchArm {
-                variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    semantic_db,
+                )),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
@@ -1562,12 +1574,12 @@ fn lower_expr_error_propagate(
         input: match_input,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: vec![expr_var],
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: vec![err_value],
             },
@@ -1628,12 +1640,12 @@ fn lower_optimized_extern_error_propagate(
         inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: block_ok_input_vars,
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: block_err_input_vars,
             },

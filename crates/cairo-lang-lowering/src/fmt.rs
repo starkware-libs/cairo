@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_semantic::items::enm::MatchArmSelector;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
 use itertools::Itertools;
@@ -251,9 +252,22 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for MatchArmSelector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        match self {
+            MatchArmSelector::VariantId(variant_id) => {
+                write!(f, "{:?}", variant_id.debug(ctx))
+            }
+            MatchArmSelector::Value(s) => {
+                write!(f, "{:?}", s.value)
+            }
+        }
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "    {:?}", self.variant_id.debug(ctx))?;
+        write!(f, "    {:?}", self.arm_selector.debug(ctx))?;
 
         if !self.var_ids.is_empty() {
             write!(f, "(")?;

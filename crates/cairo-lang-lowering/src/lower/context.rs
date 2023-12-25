@@ -15,7 +15,7 @@ use itertools::{zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
-use semantic::{ExprVarMemberPath, TypeLongId};
+use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -370,7 +370,11 @@ impl LoweredExprExternEnum {
             function: self.function.lowered(ctx.db),
             inputs: self.inputs,
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-                .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+                .map(|((variant_id, block_id), var_ids)| MatchArm {
+                    arm_selector: MatchArmSelector::VariantId(variant_id),
+                    block_id,
+                    var_ids,
+                })
                 .collect(),
             location: self.location,
         });

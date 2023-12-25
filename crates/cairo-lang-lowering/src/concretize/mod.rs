@@ -58,18 +58,14 @@ pub fn concretize_lowered(
             }
         }
         if let FlatBlockEnd::Match { info } = &mut block.end {
-            match info {
-                crate::MatchInfo::Enum(s) => {
-                    for MatchArm { variant_id, .. } in s.arms.iter_mut() {
-                        *variant_id = rewriter.rewrite(variant_id.clone())?;
-                    }
-                }
+            for MatchArm { arm_selector: variant_id, .. } in match info {
+                crate::MatchInfo::Enum(s) => s.arms.iter_mut(),
                 crate::MatchInfo::Extern(s) => {
                     s.function = concretize_function(db, &mut rewriter, s.function)?;
-                    for MatchArm { variant_id, .. } in s.arms.iter_mut() {
-                        *variant_id = rewriter.rewrite(variant_id.clone())?;
-                    }
+                    s.arms.iter_mut()
                 }
+            } {
+                *variant_id = rewriter.rewrite(variant_id.clone())?;
             }
         }
     }
