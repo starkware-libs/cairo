@@ -458,7 +458,7 @@ fn generate_match_code(
     let ap_tracking_enabled = context.get_ap_tracking();
 
     // Generate the blocks.
-    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(arms) {
+    for (i, MatchArm { arm_selector: _, block_id, var_ids: _ }) in enumerate(arms) {
         // Reset ap_tracking to the state before the match.
         context.set_ap_tracking(ap_tracking_enabled);
 
