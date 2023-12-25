@@ -293,6 +293,7 @@ pub fn trait_semantic_definition_diagnostics(
         return Diagnostics::default();
     };
 
+    // TODO(yuval): move this into priv_trait_semantic_definition_data.
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));

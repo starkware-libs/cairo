@@ -5,8 +5,8 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    ImplFunctionId, ImplFunctionLongId, ImplTypeId, LanguageElementId, LookupItemId, ModuleId,
+    ModuleItemId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -424,6 +424,7 @@ pub fn priv_impl_declaration_data_inner(
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
+    type_asts: OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>,
 }
 
 // --- Selectors ---
@@ -439,6 +440,7 @@ pub fn impl_semantic_definition_diagnostics(
         return Diagnostics::default();
     };
 
+    // TODO(yuval): move this into priv_impl_definition_data.
     diagnostics.extend(data.diagnostics);
     for impl_function_id in data.function_asts.keys() {
         diagnostics.extend(db.impl_function_declaration_diagnostics(*impl_function_id));
@@ -475,6 +477,38 @@ pub fn impl_function_by_trait_function(
     for impl_function_id in db.priv_impl_definition_data(impl_def_id)?.function_asts.keys() {
         if db.lookup_intern_impl_function(*impl_function_id).name(defs_db) == name {
             return Ok(Some(*impl_function_id));
+        }
+    }
+    Ok(None)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_types].
+pub fn impl_types(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
+    Ok(db
+        .priv_impl_definition_data(impl_def_id)?
+        .type_item_asts
+        .keys()
+        .map(|type_item_id| {
+            let type_item_long_id = db.lookup_intern_impl_type(*type_item_id);
+            (type_item_long_id.name(db.upcast()), *type_item_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
+pub fn impl_type_by_trait_type(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_type_id: TraitTypeId,
+) -> Maybe<Option<ImplTypeId>> {
+    let defs_db = db.upcast();
+    let name = trait_type_id.name(defs_db);
+    for impl_type_id in db.priv_impl_definition_data(impl_def_id)?.type_item_asts.keys() {
+        if db.lookup_intern_impl_type(*impl_type_id).name(defs_db) == name {
+            return Ok(Some(*impl_type_id));
         }
     }
     Ok(None)
