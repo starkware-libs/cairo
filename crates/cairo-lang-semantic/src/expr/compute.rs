@@ -1408,10 +1408,35 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::False(pattern_false) => {
+            // Peel all snapshot wrappers.
+            let (_, long_ty) = peel_snapshots(ctx.db, ty);
+
+            // Check that type is an enum, and get the concrete enum from it.
+            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                .ok_or(())
+                .or_else(|_| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(pattern_false, UnexpectedEnumPattern { ty }))
+                })?;
+
             let enum_expr = extract_matches!(
                 false_literal_expr(ctx, pattern_false.stable_ptr().into()),
                 Expr::EnumVariantCtor
             );
+
+            // Check that these are the same enums.
+            if enum_expr.variant.concrete_enum_id != concrete_enum {
+                return Err(ctx.diagnostics.report(
+                    pattern_false,
+                    WrongEnum {
+                        expected_enum: concrete_enum.enum_id(ctx.db),
+                        actual_enum: enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+                    },
+                ));
+            }
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
                 stable_ptr: pattern_false.stable_ptr().into(),
@@ -1420,10 +1445,36 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::True(pattern_true) => {
+            // Peel all snapshot wrappers.
+            let (_, long_ty) = peel_snapshots(ctx.db, ty);
+
+            // Check that type is an enum, and get the concrete enum from it.
+            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                .ok_or(())
+                .or_else(|_| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(pattern_true, UnexpectedEnumPattern { ty }))
+                })?;
+
             let enum_expr = extract_matches!(
                 true_literal_expr(ctx, pattern_true.stable_ptr().into()),
                 Expr::EnumVariantCtor
             );
+
+            // Check that these are the same enums.
+            if enum_expr.variant.concrete_enum_id != concrete_enum {
+                return Err(ctx.diagnostics.report(
+                    pattern_true,
+                    WrongEnum {
+                        expected_enum: concrete_enum.enum_id(ctx.db),
+                        actual_enum: enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+                    },
+                ));
+            }
+
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
                 stable_ptr: pattern_true.stable_ptr().into(),
