@@ -1,5 +1,6 @@
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
+use semantic::MatchArmSelector;
 
 use super::block_builder::BlockBuilder;
 use super::context::{LoweredExpr, LoweringContext, LoweringResult, VarRequest};
@@ -80,12 +81,12 @@ pub fn lower_logical_op(
         input: lhs,
         arms: vec![
             MatchArm {
-                variant_id: corelib::false_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
                 block_id: lhs_false_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
             MatchArm {
-                variant_id: corelib::true_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
                 block_id: lhs_true_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
