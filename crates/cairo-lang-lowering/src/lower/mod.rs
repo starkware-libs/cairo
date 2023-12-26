@@ -17,8 +17,8 @@ use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    Pattern, PatternEnumVariant, TypeLongId,
+    ConcreteTypeId, ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath,
+    GenericArgumentId, Pattern, PatternEnumVariant, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -162,14 +162,21 @@ pub fn lower_loop_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
     signature: Signature,
-    expr: &semantic::ExprLoop,
+    loop_expr_id: semantic::ExprId,
 ) -> Maybe<FlatLowered> {
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature)?;
-    ctx.current_loop_expr = Some(expr.clone());
+    ctx.current_loop_expr_id = Some(loop_expr_id);
+
+    let semantic_block_id = match &ctx.function_body.exprs[loop_expr_id] {
+        semantic::Expr::Loop(loop_expr) => loop_expr.body,
+        semantic::Expr::While(while_expr) => while_expr.bo,
+        _ => unreachable!(),
+    };
 
     // Fetch body block expr.
     let semantic_block =
-        extract_matches!(&ctx.function_body.exprs[expr.body], semantic::Expr::Block).clone();
+        extract_matches!(&ctx.function_body.exprs[semantic_block_id], semantic::Expr::Block)
+            .clone();
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -193,7 +200,7 @@ pub fn lower_loop_function(
             lower_expr_block(&mut ctx, &mut builder, &semantic_block)?;
             // Add recursive call.
             let signature = ctx.signature.clone();
-            call_loop_func(&mut ctx, signature, &mut builder, expr)
+            call_loop_func(&mut ctx, signature, &mut builder, loop_expr_id)
         })();
         let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr)?;
 
@@ -326,8 +333,12 @@ pub fn lower_statement(
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
             log::trace!("Lowering a continue statement.");
-            let loop_expr = ctx.current_loop_expr.clone().unwrap();
-            let lowered_expr = call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
+            let lowered_expr = call_loop_func(
+                ctx,
+                ctx.signature.clone(),
+                builder,
+                ctx.current_loop_expr_id.unwrap(),
+            )?;
             let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
@@ -342,6 +353,10 @@ pub fn lower_statement(
                 Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
             };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
+        }
+        semantic::Statement::While(semantic::StatementWhile { condition, .. }) => {
+            log::trace!("Lowering a while statement.");
+            let _lowered_expr = lower_expr(ctx, builder, *condition)?;
         }
     }
     Ok(())
@@ -503,7 +518,7 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, builder),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
-        semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, builder),
+        semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, builder, expr_id),
         semantic::Expr::Var(expr) => {
             let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
@@ -914,6 +929,7 @@ fn lower_expr_loop(
     ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprLoop,
     builder: &mut BlockBuilder,
+    loop_expr_id: ExprId,
 ) -> LoweringResult<LoweredExpr> {
     let usage = &ctx.block_usages.block_usages[expr.body];
 
@@ -932,19 +948,19 @@ fn lower_expr_loop(
     // Get the function id.
     let function = ctx.db.intern_lowering_function_with_body(FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
-        element: expr.body,
+        element: loop_expr_id,
     });
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
-    let lowered = lower_loop_function(encapsulating_ctx, function, signature.clone(), expr)
+    let lowered = lower_loop_function(encapsulating_ctx, function, signature.clone(), loop_expr_id)
         .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
-    encapsulating_ctx.lowerings.insert(expr.body, lowered);
+    encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.current_loop_expr = Some(expr.clone());
+    ctx.current_loop_expr_id = Some(loop_expr_id);
 
-    call_loop_func(ctx, signature, builder, expr)
+    call_loop_func(ctx, signature, builder, loop_expr_id)
 }
 
 /// Adds a call to an inner loop-generated function.
@@ -952,15 +968,17 @@ fn call_loop_func(
     ctx: &mut LoweringContext<'_, '_>,
     signature: Signature,
     builder: &mut BlockBuilder,
-    expr: &semantic::ExprLoop,
+    loop_expr_id: ExprId,
 ) -> LoweringResult<LoweredExpr> {
+    let expr =
+        extract_matches!(&ctx.function_body.exprs[loop_expr_id], semantic::Expr::Loop).clone();
     let stable_ptr = expr.stable_ptr.untyped();
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Call it.
     let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
-        element: expr.body,
+        element: loop_expr_id,
     }));
     let inputs = signature
         .params
