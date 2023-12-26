@@ -4,20 +4,24 @@ use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
 use super::strongly_connected_components::concrete_function_with_body_scc;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::DependencyType;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
 pub struct ConcreteFunctionWithBodyPostInlineNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
+    pub dependency_type: DependencyType,
 }
 impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self
-            .db
-            .concrete_function_with_body_postinline_direct_callees_with_body(self.function_id)
+        let Ok(direct_callees) =
+            self.db.concrete_function_with_body_postinline_direct_callees_with_body(
+                self.function_id,
+                self.dependency_type,
+            )
         else {
             return vec![];
         };
@@ -26,6 +30,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
             .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
                 function_id: callee,
                 db: self.db,
+                dependency_type: self.dependency_type,
             })
             .collect()
     }
@@ -36,7 +41,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
 }
 impl<'a> ComputeScc for ConcreteFunctionWithBodyPostInlineNode<'a> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
-        concrete_function_with_body_scc(self.db, self.function_id)
+        concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }
 }
 
@@ -44,14 +49,17 @@ impl<'a> ComputeScc for ConcreteFunctionWithBodyPostInlineNode<'a> {
 pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
+    pub dependency_type: DependencyType,
 }
 impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self
-            .db
-            .concrete_function_with_body_postpanic_direct_callees_with_body(self.function_id)
+        let Ok(direct_callees) =
+            self.db.concrete_function_with_body_postpanic_direct_callees_with_body(
+                self.function_id,
+                self.dependency_type,
+            )
         else {
             return vec![];
         };
@@ -60,6 +68,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
             .map(|callee| ConcreteFunctionWithBodyPostPanicNode {
                 function_id: callee,
                 db: self.db,
+                dependency_type: self.dependency_type,
             })
             .collect()
     }
@@ -70,6 +79,6 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
 }
 impl<'a> ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'a> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
-        concrete_function_with_body_scc(self.db, self.function_id)
+        concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }
 }
