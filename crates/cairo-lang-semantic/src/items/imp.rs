@@ -14,18 +14,17 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::{self, ImplItem, MaybeImplBody, OptionReturnTypeClause};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
-use syntax::node::ast::GenericArg;
+use syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -38,7 +37,7 @@ use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLon
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{report_unsupported_impl_item, NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -84,7 +83,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
                 if i > 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "{:?}", arg.debug(db))?;
+                write!(f, "{}", arg.format(db))?;
             }
             write!(f, ">")?;
         }
@@ -104,6 +103,12 @@ impl ConcreteImplId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
+    }
+    pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
+        Ok(GenericSubstitution::new(
+            &db.impl_def_generic_params(self.impl_def_id(db))?,
+            &db.lookup_intern_concrete_impl(*self).generic_args,
+        ))
     }
 }
 
@@ -130,6 +135,15 @@ impl ImplId {
                 generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
             }
             ImplId::ImplVar(var) => format!("{var:?}").into(),
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        match self {
+            ImplId::Concrete(concrete_impl) => {
+                format!("{:?}", concrete_impl.debug(db.elongate()))
+            }
+            ImplId::GenericParameter(generic_param_impl) => generic_param_impl.format(db.upcast()),
+            ImplId::ImplVar(var) => format!("{var:?}"),
         }
     }
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
@@ -504,11 +518,6 @@ pub fn priv_impl_definition_data(
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
-                ImplItem::Constant(constant) => report_invalid_impl_item(
-                    syntax_db,
-                    &mut diagnostics,
-                    constant.const_kw(syntax_db),
-                ),
                 ImplItem::Module(module) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
@@ -533,9 +542,6 @@ pub fn priv_impl_definition_data(
                 ImplItem::Trait(trt) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
                 }
-                ImplItem::Impl(imp) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
-                }
                 ImplItem::Struct(structure) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
@@ -543,12 +549,6 @@ pub fn priv_impl_definition_data(
                 ),
                 ImplItem::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
-                }
-                ImplItem::TypeAlias(ty) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
-                }
-                ImplItem::ImplAlias(imp) => {
-                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
                 ImplItem::Function(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
@@ -564,6 +564,17 @@ pub fn priv_impl_definition_data(
                         );
                     }
                     function_asts.insert(impl_function_id, func);
+                }
+                ImplItem::Type(ty) => {
+                    report_unsupported_impl_item(&mut diagnostics, ty.type_kw(syntax_db), "Type")
+                }
+                ImplItem::Constant(constant) => report_unsupported_impl_item(
+                    &mut diagnostics,
+                    constant.const_kw(syntax_db),
+                    "Constant",
+                ),
+                ImplItem::Impl(imp) => {
+                    report_unsupported_impl_item(&mut diagnostics, imp.impl_kw(syntax_db), "Impl")
                 }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
@@ -749,7 +760,7 @@ pub fn module_impl_ids_for_trait_filter(
     Ok(res)
 }
 
-/// Cycle handeling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
+/// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
 pub fn module_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
     _cycle: &[String],

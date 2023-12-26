@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
-use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId};
-use crate::span::{FileSummary, TextOffset, TextWidth};
+use crate::ids::{
+    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+};
+use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
 #[cfg(test)]
 #[path = "db_test.rs"]
@@ -20,16 +22,25 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateConfiguration {
-    /// The root directry of the crate.
+    /// The root directory of the crate.
     pub root: Directory,
-    /// The cairo edition of the crate.
-    pub edition: Edition,
+    pub settings: CrateSettings,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root, edition: Edition::default() }
+        Self { root, settings: CrateSettings::default() }
     }
+}
+
+/// Same as `CrateConfiguration` but without the root directory..
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrateSettings {
+    /// The crate's Cairo edition.
+    pub edition: Edition,
+
+    #[serde(default)]
+    pub experimental_features: ExperimentalFeaturesConfig,
 }
 
 /// The Cairo edition of a crate.
@@ -73,6 +84,12 @@ impl Edition {
             Self::V2023_11 => false,
         }
     }
+}
+
+/// Configuration per crate.
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperimentalFeaturesConfig {
+    pub negative_impls: bool,
 }
 
 // Salsa database interface.
@@ -128,10 +145,25 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     db.set_cfg_set(Arc::new(CfgSet::new()));
 }
 
-pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
+pub fn init_dev_corelib_from_directory(
+    db: &mut (dyn FilesGroup + 'static),
+    core_lib_dir: Directory,
+) {
     let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
-    let core_root_dir = Directory::Real(path);
-    db.set_crate_config(core_crate, Some(CrateConfiguration::default_for_root(core_root_dir)));
+    db.set_crate_config(
+        core_crate,
+        Some(CrateConfiguration {
+            root: core_lib_dir,
+            settings: CrateSettings {
+                edition: Edition::V2023_11,
+                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
+            },
+        }),
+    );
+}
+
+pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
+    init_dev_corelib_from_directory(db, Directory::Real(core_lib_dir));
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {
@@ -188,7 +220,7 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match db.lookup_intern_crate(crt) {
         CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, root } => Some(CrateConfiguration::default_for_root(root)),
+        CrateLongId::Virtual { name: _, config } => Some(config),
     }
 }
 
@@ -219,4 +251,23 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
 }
 fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+/// Returns the location of the originating user code.
+pub fn get_originating_location(
+    db: &dyn FilesGroup,
+    mut file_id: FileId,
+    mut span: TextSpan,
+) -> (FileId, TextSpan) {
+    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+        db.lookup_intern_file(file_id)
+    {
+        if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
+            span = origin;
+            file_id = parent;
+        } else {
+            break;
+        }
+    }
+    (file_id, span)
 }

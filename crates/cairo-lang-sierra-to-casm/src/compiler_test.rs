@@ -386,6 +386,52 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
             ret;
         "};
         "merge unit param")]
+#[test_case(indoc! {"
+            type felt252 = felt252;
+            type NonZeroFelt252 = NonZero<felt252>;
+            type Unit = Struct<ut@Tuple>;
+
+            libfunc branch_align = branch_align;
+            libfunc jump = jump;
+            libfunc felt252_is_zero = felt252_is_zero;
+            libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+            libfunc revoke_ap_tracking = revoke_ap_tracking;
+            libfunc store_temp_felt252 = store_temp<felt252>;
+            libfunc drop_Unit = drop<Unit>;
+            libfunc struct_construct<Unit> = struct_construct<Unit>;
+            libfunc felt252_const<1> = felt252_const<1>;
+            libfunc call_foo = function_call<user@foo>;
+
+            felt252_is_zero([1]) { fallthrough() 5([1]) };
+            branch_align() -> ();
+            call_foo() -> ([2], [3]);
+            drop_Unit([3]) -> ();
+            jump() { 9() };
+            branch_align() -> ();              // 5
+            drop_nz_felt252([1]) -> ();
+            call_foo() -> ([2], [3]);
+            drop_Unit([3]) -> ();
+            return ([2]);                      // 9
+
+            struct_construct<Unit>() -> ([33]); // foo()
+            felt252_const<1>() -> ([1]);
+            store_temp_felt252([1]) -> ([1]);
+            return ([1], [33]);
+
+            test_program@0([1]: felt252) -> (felt252);
+            foo@10() -> (felt252, Unit);
+        "},
+        false,
+        indoc! {"
+            jmp rel 6 if [fp + -3] != 0;
+            call rel 7;
+            jmp rel 4;
+            call rel 3;
+            ret;
+            [ap + 0] = 1, ap++;
+            ret;
+        "};
+        "Merge stack with zero_sized variable.")]
 
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
@@ -459,8 +505,9 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 felt252_add([1], [2]) -> ([4]);
                 felt252_add([3], [4]) -> ([5]);
+                return([5]);
 
-                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
+                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> (felt252);
             "},
             "#1: One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt252_add")]
@@ -509,28 +556,28 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 felt252_add([1], [2], [3]) -> ([4]);
                 return();
                 test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation input count mismatch";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
-            "output type mismatch")]
+            "}, "Error from program registry: #0: Libfunc invocation branch #0 result count mismatch";
+            "output count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation branch count mismatch";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 libfunc felt252_add = felt252_add;
                 felt252_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt252, [2]: felt252) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, "Error from program registry: #0: Libfunc invocation branch #0 target mismatch";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt252 = felt252;

@@ -185,6 +185,7 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
             ty: felt252_ty,
             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
         };
+        // TODO(orizi): Consider making the returned `y` value non-zero.
         Ok(LibfuncSignature::new_non_branch(
             vec![nonzero_ecpoint_ty],
             vec![felt252_partial_param_0_output_info.clone(), felt252_partial_param_0_output_info],

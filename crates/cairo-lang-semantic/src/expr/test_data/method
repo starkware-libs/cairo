@@ -6,7 +6,7 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo() -> Option::<felt252> {
     let x = Option::None;
-    x.is_some();
+    let _ = x.is_some();
     x
 }
 

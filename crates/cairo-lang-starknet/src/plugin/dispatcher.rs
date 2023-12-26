@@ -209,7 +209,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),
                     "contract_address",
-                    "call_contract_syscall",
+                    "syscalls::call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
                     true,
@@ -227,7 +227,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     dispatcher_signature(db, &declaration, &safe_contract_caller_name, false),
                     entry_point_selector.clone(),
                     "contract_address",
-                    "call_contract_syscall",
+                    "syscalls::call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
                     false,
@@ -242,8 +242,29 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     false,
                 ));
             }
-            // ignore the missing item.
+            // Ignore the missing item.
             ast::TraitItem::Missing(_) => {}
+            ast::TraitItem::Type(ty) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    ty.type_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support type items.".to_string(),
+                ));
+                continue;
+            }
+            ast::TraitItem::Constant(constant) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    constant.const_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support constant items.".to_string(),
+                ));
+                continue;
+            }
+            ast::TraitItem::Impl(imp) => {
+                diagnostics.push(PluginDiagnostic::error(
+                    imp.impl_kw(db).stable_ptr().untyped(),
+                    "`starknet::interface` does not yet support impl items.".to_string(),
+                ));
+                continue;
+            }
         }
     }
 

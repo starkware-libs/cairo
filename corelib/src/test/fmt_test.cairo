@@ -4,6 +4,7 @@ fn test_format() {
     assert(format!("{}", ba) == ba, 'byte array bad formatting');
     assert(format!("{}", 97_felt252) == "97", 'felt252 bad formatting');
     assert(format!("{}", 97_usize) == "97", 'usize bad formatting');
+    assert(format!("{}", 34 - 5) == "29", 'expression bad formatting');
     assert(format!("no_format") == "no_format", 'no args bad formatting');
     assert(format!("{}{}", 12_usize, 14_u32) == "1214", 'two args bad formatting');
     assert(format!("{0}{0}", 12_usize) == "1212", 'positional bad formatting');
@@ -59,4 +60,19 @@ fn test_format_debug() {
         ) == "StructExample { felt_value: 6, bool_value: false, byte_array_value: \"ByteArray\", enum_value: EnumExample::BoolValue(true) }",
         'bad derive struct formatting'
     );
+    assert(
+        format!("{:?}", ((), (1,), (2, 3), (4, 5, 6))) == "((), (1,), (2, 3), (4, 5, 6))",
+        'bad tuple fmt'
+    );
+    assert(format!("{:?}", core::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
+    assert(
+        format!("{:?}", core::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+    );
+    assert(format!("{:?}", core::nullable::null::<felt252>()) == "null", 'bad null fmt');
+}
+
+#[test]
+fn test_array_debug() {
+    let arr = array![1, 2, 3];
+    assert(format!("{:?}", arr) == "[1, 2, 3]", 'bad array fmt');
 }

@@ -34,6 +34,7 @@ pub trait Felt252DictTrait<T> {
     /// Requires the `Copy` trait.
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
+    #[must_use]
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
 }
 impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {

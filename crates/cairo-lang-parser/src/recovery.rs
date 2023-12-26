@@ -13,6 +13,13 @@ macro_rules! is_of_kind {
 }
 pub(crate) use is_of_kind;
 
+macro_rules! match_arrow {
+    () => {
+        SyntaxKind::TerminalMatchArrow
+    };
+}
+pub(crate) use match_arrow;
+
 macro_rules! lbrace {
     () => {
         SyntaxKind::TerminalLBrace
@@ -69,7 +76,7 @@ macro_rules! eq {
 }
 pub(crate) use eq;
 
-macro_rules! top_level {
+macro_rules! module_item_kw {
     () => {
         SyntaxKind::TerminalConst
             | SyntaxKind::TerminalEnum
@@ -83,7 +90,7 @@ macro_rules! top_level {
             | SyntaxKind::TerminalUse
     };
 }
-pub(crate) use top_level;
+pub(crate) use module_item_kw;
 
 macro_rules! block {
     () => {

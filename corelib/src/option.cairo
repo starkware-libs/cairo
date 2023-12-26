@@ -1,8 +1,18 @@
 #[must_use]
-#[derive(Copy, Drop, Serde, PartialEq)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
 pub enum Option<T> {
     Some: T,
     None,
+}
+
+pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>> {
+    #[inline(always)]
+    fn destruct(self: Option<T>) nopanic {
+        match self {
+            Option::Some(x) => x.destruct(),
+            Option::None => (),
+        };
+    }
 }
 
 pub trait OptionTrait<T> {
@@ -14,8 +24,10 @@ pub trait OptionTrait<T> {
     /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
     fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E>;
     /// Returns `true` if the `Option` is `Option::Some`.
+    #[must_use]
     fn is_some(self: @Option<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
+    #[must_use]
     fn is_none(self: @Option<T>) -> bool;
     /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns the provided default.
     fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T;

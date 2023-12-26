@@ -20,8 +20,8 @@ libfunc felt252_const<3> = felt252_const<3>;
 libfunc felt252_const<4> = felt252_const<4>;
 libfunc felt252_const<5> = felt252_const<5>;
 libfunc function_call<user@examples::fib_match::fib> = function_call<user@examples::fib_match::fib>;
-libfunc felt252_mul = felt252_mul;
 libfunc store_local<felt252> = store_local<felt252>;
+libfunc felt252_mul = felt252_mul;
 libfunc felt252_add = felt252_add;
 libfunc rename<felt252> = rename<felt252>;
 
@@ -35,7 +35,7 @@ drop<felt252>([0]) -> (); // 6
 drop<Uninitialized<felt252>>([2]) -> (); // 7
 felt252_const<1>() -> ([5]); // 8
 store_temp<felt252>([5]) -> ([6]); // 9
-jump() { 92() }; // 10
+jump() { 93() }; // 10
 branch_align() -> (); // 11
 drop<NonZero<felt252>>([4]) -> (); // 12
 felt252_const<1>() -> ([7]); // 13
@@ -49,7 +49,7 @@ drop<felt252>([0]) -> (); // 20
 drop<Uninitialized<felt252>>([2]) -> (); // 21
 felt252_const<1>() -> ([11]); // 22
 store_temp<felt252>([11]) -> ([12]); // 23
-jump() { 91() }; // 24
+jump() { 92() }; // 24
 branch_align() -> (); // 25
 drop<NonZero<felt252>>([10]) -> (); // 26
 felt252_const<2>() -> ([13]); // 27
@@ -63,7 +63,7 @@ drop<felt252>([0]) -> (); // 34
 drop<Uninitialized<felt252>>([2]) -> (); // 35
 felt252_const<2>() -> ([17]); // 36
 store_temp<felt252>([17]) -> ([18]); // 37
-jump() { 90() }; // 38
+jump() { 91() }; // 38
 branch_align() -> (); // 39
 drop<NonZero<felt252>>([16]) -> (); // 40
 felt252_const<3>() -> ([19]); // 41
@@ -77,7 +77,7 @@ drop<felt252>([0]) -> (); // 48
 drop<Uninitialized<felt252>>([2]) -> (); // 49
 felt252_const<3>() -> ([23]); // 50
 store_temp<felt252>([23]) -> ([24]); // 51
-jump() { 89() }; // 52
+jump() { 90() }; // 52
 branch_align() -> (); // 53
 drop<NonZero<felt252>>([22]) -> (); // 54
 felt252_const<4>() -> ([25]); // 55
@@ -91,32 +91,33 @@ drop<felt252>([0]) -> (); // 62
 drop<Uninitialized<felt252>>([2]) -> (); // 63
 felt252_const<5>() -> ([29]); // 64
 store_temp<felt252>([29]) -> ([30]); // 65
-jump() { 88() }; // 66
+jump() { 89() }; // 66
 branch_align() -> (); // 67
 drop<NonZero<felt252>>([28]) -> (); // 68
 felt252_const<4>() -> ([31]); // 69
 dup<felt252>([0]) -> ([0], [32]); // 70
 felt252_sub([32], [31]) -> ([33]); // 71
 store_temp<felt252>([33]) -> ([33]); // 72
-function_call<user@examples::fib_match::fib>([33]) -> ([34]); // 73
-felt252_const<5>() -> ([35]); // 74
-store_temp<felt252>([35]) -> ([35]); // 75
-felt252_mul([35], [34]) -> ([1]); // 76
-felt252_const<5>() -> ([36]); // 77
-felt252_sub([0], [36]) -> ([37]); // 78
-store_temp<felt252>([37]) -> ([37]); // 79
-store_local<felt252>([2], [1]) -> ([1]); // 80
-function_call<user@examples::fib_match::fib>([37]) -> ([38]); // 81
+function_call<user@examples::fib_match::fib>([33]) -> ([1]); // 73
+felt252_const<5>() -> ([34]); // 74
+felt252_sub([0], [34]) -> ([35]); // 75
+store_temp<felt252>([35]) -> ([35]); // 76
+store_local<felt252>([2], [1]) -> ([1]); // 77
+function_call<user@examples::fib_match::fib>([35]) -> ([36]); // 78
+felt252_const<5>() -> ([37]); // 79
+store_temp<felt252>([37]) -> ([37]); // 80
+felt252_mul([37], [1]) -> ([38]); // 81
 felt252_const<3>() -> ([39]); // 82
 store_temp<felt252>([39]) -> ([39]); // 83
-felt252_mul([39], [38]) -> ([40]); // 84
-store_temp<felt252>([40]) -> ([40]); // 85
-felt252_add([1], [40]) -> ([41]); // 86
-store_temp<felt252>([41]) -> ([30]); // 87
-rename<felt252>([30]) -> ([24]); // 88
-rename<felt252>([24]) -> ([18]); // 89
-rename<felt252>([18]) -> ([12]); // 90
-rename<felt252>([12]) -> ([6]); // 91
-return([6]); // 92
+felt252_mul([39], [36]) -> ([40]); // 84
+store_temp<felt252>([38]) -> ([38]); // 85
+store_temp<felt252>([40]) -> ([40]); // 86
+felt252_add([38], [40]) -> ([41]); // 87
+store_temp<felt252>([41]) -> ([30]); // 88
+rename<felt252>([30]) -> ([24]); // 89
+rename<felt252>([24]) -> ([18]); // 90
+rename<felt252>([18]) -> ([12]); // 91
+rename<felt252>([12]) -> ([6]); // 92
+return([6]); // 93
 
 examples::fib_match::fib@0([0]: felt252) -> (felt252);

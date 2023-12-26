@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_starknet::allowed_libfuncs::ListSelector;
@@ -18,6 +19,9 @@ struct Args {
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
+    /// Allows the compilation to succeed with warnings.
+    #[arg(long)]
+    allow_warnings: bool,
     // The contract fully qualified path.
     #[arg(short, long)]
     contract_path: Option<String>,
@@ -43,10 +47,18 @@ fn main() -> anyhow::Result<()> {
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
+    let mut diagnostics_reporter = DiagnosticsReporter::stderr();
+    if args.allow_warnings {
+        diagnostics_reporter = diagnostics_reporter.allow_warnings();
+    }
     let res = starknet_compile(
         args.path,
         args.contract_path,
-        Some(CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() }),
+        Some(CompilerConfig {
+            replace_ids: args.replace_ids,
+            diagnostics_reporter,
+            ..CompilerConfig::default()
+        }),
         Some(list_selector),
     )?;
     match args.output {

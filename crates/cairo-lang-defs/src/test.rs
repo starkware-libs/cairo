@@ -220,9 +220,9 @@ impl GeneratedFileAuxData for DummyAuxData {
 #[derive(Debug)]
 struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         match item_ast {
-            ast::Item::Struct(struct_ast) => {
+            ast::ModuleItem::Struct(struct_ast) => {
                 let remove_original_item = struct_ast.has_attr(db, "remove_original");
                 PluginResult {
                     code: Some(PluginGeneratedFile {
@@ -235,7 +235,7 @@ impl MacroPlugin for DummyPlugin {
                     remove_original_item,
                 }
             }
-            ast::Item::FreeFunction(free_function_ast) => PluginResult {
+            ast::ModuleItem::FreeFunction(free_function_ast) => PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
@@ -310,8 +310,8 @@ fn test_plugin_remove_original() {
 #[derive(Debug)]
 struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction)
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::ModuleItem::FreeFunction)
         else {
             return PluginResult::default();
         };
@@ -331,8 +331,8 @@ impl MacroPlugin for RemoveOrigPlugin {
 #[derive(Debug)]
 struct FooToBarPlugin;
 impl MacroPlugin for FooToBarPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction)
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::ModuleItem::FreeFunction)
         else {
             return PluginResult::default();
         };

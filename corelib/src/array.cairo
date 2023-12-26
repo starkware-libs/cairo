@@ -4,6 +4,7 @@ use core::box::BoxTrait;
 use core::gas::withdraw_gas;
 use core::option::OptionTrait;
 use core::serde::Serde;
+use core::metaprogramming::TypeEqual;
 
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -64,14 +65,17 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
         array_at(self, index).unbox()
     }
     #[inline(always)]
+    #[must_use]
     fn len(self: @Array<T>) -> usize {
         array_len(self)
     }
     #[inline(always)]
+    #[must_use]
     fn is_empty(self: @Array<T>) -> bool {
         self.len() == 0_usize
     }
     #[inline(always)]
+    #[must_use]
     fn span(self: @Array<T>) -> Span<T> {
         Span { snapshot: self }
     }
@@ -130,7 +134,21 @@ pub struct Span<T> {
 impl SpanCopy<T> of Copy<Span<T>>;
 impl SpanDrop<T> of Drop<Span<T>>;
 
-impl SpanSerde<T, +Serde<T>, +Drop<T>> of Serde<Span<T>> {
+impl SpanFelt252Serde of Serde<Span<felt252>> {
+    fn serialize(self: @Span<felt252>, ref output: Array<felt252>) {
+        (*self).len().serialize(ref output);
+        serialize_array_helper(*self, ref output)
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Span<felt252>> {
+        let length: u32 = (*serialized.pop_front()?).try_into()?;
+        let res = serialized.slice(0, length);
+        serialized = serialized.slice(length, serialized.len() - length);
+        Option::Some(res)
+    }
+}
+
+impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>> {
     fn serialize(self: @Span<T>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
         serialize_array_helper(*self, ref output)
@@ -178,10 +196,12 @@ pub impl SpanImpl<T> of SpanTrait<T> {
         Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
     }
     #[inline(always)]
+    #[must_use]
     fn len(self: Span<T>) -> usize {
         array_len(self.snapshot)
     }
     #[inline(always)]
+    #[must_use]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
     }

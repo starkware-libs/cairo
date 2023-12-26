@@ -34,7 +34,7 @@ use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamTy
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::literals::LiteralId;
-use crate::substitution::{HasDb, SemanticRewriter};
+use crate::substitution::{HasDb, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
 use crate::{
     add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
@@ -622,6 +622,66 @@ impl<'db> Inference<'db> {
             }
             SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
         }
+    }
+
+    /// Validate that the given impl is valid based on its negative impls arguments.
+    /// Returns `SolutionSet::Unique(canonical_impl)` if the impl is valid and
+    /// SolutionSet::Ambiguous(...) otherwise.
+    fn validate_neg_impls(
+        &mut self,
+        lookup_context: &ImplLookupContext,
+        canonical_impl: CanonicalImpl,
+    ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
+        let ImplId::Concrete(concrete_impl) = canonical_impl.0 else {
+            return Ok(SolutionSet::Unique(canonical_impl));
+        };
+        let concrete_impl = self.rewrite(concrete_impl).no_err();
+        let mut rewriter = SubstitutionRewriter {
+            db: self.db,
+            substitution: &concrete_impl.substitution(self.db)?,
+        };
+
+        for garg in self.db.impl_def_generic_params(concrete_impl.impl_def_id(self.db))? {
+            let GenericParam::NegImpl(neg_impl) = garg else {
+                continue;
+            };
+
+            let concrete_trait_id = rewriter.rewrite(neg_impl)?.concrete_trait?;
+            for garg in concrete_trait_id.generic_args(self.db) {
+                let GenericArgumentId::Type(ty) = garg else {
+                    continue;
+                };
+
+                // If the negative impl has a generic argument that is not fully
+                // concrete we can't tell if we should rule out the candidate impl.
+                // For example if we have -TypeEqual<S, T> we can't tell if S and
+                // T are going to be assigned the same concrete type.
+                // We return `SolutionSet::Ambiguous` here to indicate that more
+                // information is needed.
+                if let TypeLongId::Var(_) = self.db.lookup_intern_type(ty) {
+                    if !ty.is_fully_concrete(self.db) {
+                        // TODO(ilya): Try to detect the ambiguity earlier in the
+                        // inference process.
+                        return Ok(SolutionSet::Ambiguous(
+                            Ambiguity::NegativeImplWithUnresolvedGenericArgs {
+                                impl_id: ImplId::Concrete(concrete_impl),
+                                ty,
+                            },
+                        ));
+                    }
+                }
+            }
+
+            if !matches!(
+                self.trait_solution_set(concrete_trait_id, lookup_context.clone())?,
+                SolutionSet::None
+            ) {
+                // If a negative impl has an impl, then we should skip it.
+                return Ok(SolutionSet::None);
+            }
+        }
+
+        Ok(SolutionSet::Unique(canonical_impl))
     }
 }
 

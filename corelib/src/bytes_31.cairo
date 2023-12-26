@@ -62,35 +62,29 @@ pub(crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
 
 impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
 
-// TODO(yuval): implement all `into`s using `integer::upcast(self)`.
 pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
-        let as_felt: felt252 = self.into();
-        as_felt.try_into().unwrap()
+        core::integer::upcast(self)
     }
 }
 impl U16IntoBytes31 of Into<u16, bytes31> {
     fn into(self: u16) -> bytes31 {
-        let as_felt: felt252 = self.into();
-        as_felt.try_into().unwrap()
+        core::integer::upcast(self)
     }
 }
 impl U32IntoBytes31 of Into<u32, bytes31> {
     fn into(self: u32) -> bytes31 {
-        let as_felt: felt252 = self.into();
-        as_felt.try_into().unwrap()
+        core::integer::upcast(self)
     }
 }
 impl U64IntoBytes31 of Into<u64, bytes31> {
     fn into(self: u64) -> bytes31 {
-        let as_felt: felt252 = self.into();
-        as_felt.try_into().unwrap()
+        core::integer::upcast(self)
     }
 }
 pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
-        let as_felt: felt252 = self.into();
-        as_felt.try_into().unwrap()
+        core::integer::upcast(self)
     }
 }
 

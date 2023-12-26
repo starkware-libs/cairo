@@ -71,6 +71,7 @@ extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic
 #[generate_trait]
 pub impl EcStateImpl of EcStateTrait {
     /// Initializes an EC computation with the zero point.
+    #[must_use]
     fn init() -> EcState {
         ec_state_init()
     }

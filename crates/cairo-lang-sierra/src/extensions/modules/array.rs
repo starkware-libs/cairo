@@ -7,6 +7,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext, WrapSignatureAndTypeGenericLibfunc,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
@@ -26,6 +27,7 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
 
     fn calc_info(
         &self,
+        _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
         TypeInfo { storable, droppable, zero_sized, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {

@@ -128,6 +128,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::PatternList => vec![],
+        SyntaxKind::PatternListOr => vec![],
         SyntaxKind::PatternStructParamWithExpr => {
             vec![]
         }
@@ -206,8 +207,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* name */ children[1]]
         }
         SyntaxKind::VariantList => vec![],
-        SyntaxKind::ItemList => vec![],
-        SyntaxKind::ItemMissing => {
+        SyntaxKind::ModuleItemList => vec![],
+        SyntaxKind::ModuleItemMissing => {
             vec![]
         }
         SyntaxKind::Attribute => {
@@ -259,6 +260,15 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TraitItemFunction => {
             vec![/* declaration */ children[1]]
+        }
+        SyntaxKind::TraitItemType => {
+            vec![/* name */ children[2]]
+        }
+        SyntaxKind::TraitItemConstant => {
+            vec![/* name */ children[2]]
+        }
+        SyntaxKind::TraitItemImpl => {
+            vec![/* name */ children[2]]
         }
         SyntaxKind::ItemImpl => {
             vec![/* name */ children[3]]

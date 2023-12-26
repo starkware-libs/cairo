@@ -27,7 +27,7 @@ pub fn compress<Result: Extend<BigUintAsHex>>(values: &[BigUintAsHex], result: &
             packed_value *= padded_code_size;
             packed_value += code[&value.value];
         }
-        result.extend([BigUintAsHex { value: packed_value }].into_iter());
+        result.extend([BigUintAsHex { value: packed_value }]);
     }
 }
 
@@ -51,10 +51,9 @@ pub fn decompress<Result: Extend<BigUintAsHex>>(
         let mut v = packed_value.value.clone();
         for _ in 0..curr_words {
             let (remaining, code_word) = v.div_mod_floor(&padded_code_size);
-            result.extend(
-                [BigUintAsHex { value: code.get(code_word.to_usize().unwrap())?.value.clone() }]
-                    .into_iter(),
-            );
+            result.extend([BigUintAsHex {
+                value: code.get(code_word.to_usize().unwrap())?.value.clone(),
+            }]);
             v = remaining;
         }
         remaining_unpacked_size -= curr_words;

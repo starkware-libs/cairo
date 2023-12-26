@@ -4,7 +4,7 @@ pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) no
 
 
 /// State for Pedersen hash.
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Debug)]
 pub struct HashState {
     pub state: felt252,
 }

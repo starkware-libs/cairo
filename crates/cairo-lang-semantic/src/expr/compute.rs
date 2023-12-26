@@ -8,12 +8,11 @@ use std::sync::Arc;
 use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
-    TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
+    MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
-use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -49,7 +48,6 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -61,8 +59,8 @@ use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Varia
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{
-    GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral, PatternStruct,
-    Signature,
+    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
+    PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -797,32 +795,74 @@ fn compute_expr_match_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
-    let pattern_and_expr_options: Vec<_> = syntax_arms
+    let patterns_and_exprs: Vec<_> = syntax_arms
         .iter()
-        .map(|syntax_arm| {
+        .flat_map(|syntax_arm| {
             let arm_expr_syntax = syntax_arm.expression(syntax_db);
-            ctx.run_in_subscope(|new_ctx| {
-                // Typecheck pattern, and introduce the new variables to the subscope.
-                // Note that if the arm expr is a block, there will be *another* subscope
-                // for it.
-                let pattern =
-                    compute_pattern_semantic(new_ctx, &syntax_arm.pattern(syntax_db), expr.ty());
-                let variables = pattern.variables(&new_ctx.patterns);
-                for v in variables {
-                    let var_def = Variable::Local(v.var.clone());
-                    // TODO(spapini): Wrap this in a function to couple with semantic_defs
-                    // insertion.
-                    new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
-                    new_ctx.semantic_defs.insert(var_def.id(), var_def);
+
+            let mut arm_patterns_variables = UnorderedHashMap::default();
+            let (patterns_and_exprs, patterns_variables_len): (Vec<_>, Vec<_>) = syntax_arm
+                .patterns(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .map(|pattern_syntax| {
+                    // Typecheck pattern, and introduce the new variables to the subscope.
+                    // Note that if the arm expr is a block, there will be *another* subscope
+                    // for it.
+                    ctx.run_in_subscope(|new_ctx| {
+                        let pattern: PatternAndId =
+                            compute_pattern_semantic(new_ctx, pattern_syntax, expr.ty());
+                        let variables = pattern.variables(&new_ctx.patterns);
+                        let variables_len = variables.len();
+                        for variable in variables {
+                            match arm_patterns_variables.entry(variable.name.clone()) {
+                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                    if *entry.get() != variable.var.ty {
+                                        new_ctx.diagnostics.report(
+                                            &variable
+                                                .var
+                                                .stable_ptr(db.upcast())
+                                                .lookup(db.upcast()),
+                                            WrongType {
+                                                expected_ty: *entry.get(),
+                                                actual_ty: variable.var.ty,
+                                            },
+                                        );
+                                    }
+                                }
+                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(variable.var.ty);
+                                }
+                            }
+                            let var_def = Variable::Local(variable.var.clone());
+                            // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                            // insertion.
+                            new_ctx.environment.variables.insert(variable.name, var_def.clone());
+                            new_ctx.semantic_defs.insert(var_def.id(), var_def);
+                        }
+                        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
+                        ((pattern, arm_expr), variables_len)
+                    })
+                })
+                .unzip();
+
+            for (pattern_syntax, variables_len) in syntax_arm
+                .patterns(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .zip(patterns_variables_len.iter())
+            {
+                if *variables_len != arm_patterns_variables.len() {
+                    ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
                 }
-                let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                Ok((pattern, arm_expr))
-            })
+            }
+
+            patterns_and_exprs
         })
         .collect();
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
-    for (_, expr) in pattern_and_expr_options.iter().flatten() {
+    for (_, expr) in patterns_and_exprs.iter() {
         if let Err((match_ty, arm_ty)) =
             helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
         {
@@ -833,8 +873,7 @@ fn compute_expr_match_semantic(
         }
     }
     // Compute semantic representation of the match arms.
-    let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
-    let semantic_arms = pattern_and_exprs
+    let semantic_arms = patterns_and_exprs
         .into_iter()
         .map(|(pattern, arm_expr)| MatchArm { pattern: pattern.id, expression: arm_expr.id })
         .collect();
@@ -1163,21 +1202,6 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::Enum(enum_pattern) => {
-            // Peel all snapshot wrappers.
-            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
-
-            // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
-                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                .ok_or(())
-                .or_else(|_| {
-                    // Don't add a diagnostic if the type is missing.
-                    // A diagnostic should've already been added.
-                    ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(enum_pattern, UnexpectedEnumPattern { ty }))
-                })?;
-
-            // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(
                 ctx.diagnostics,
@@ -1187,16 +1211,13 @@ fn maybe_compute_pattern_semantic(
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
 
-            // Check that these are the same enums.
-            if generic_variant.enum_id != concrete_enum.enum_id(ctx.db) {
-                return Err(ctx.diagnostics.report(
-                    &path,
-                    WrongEnum {
-                        expected_enum: concrete_enum.enum_id(ctx.db),
-                        actual_enum: generic_variant.enum_id,
-                    },
-                ));
-            }
+            let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                generic_variant.enum_id,
+            )?;
+
             // TODO(lior): Should we report a diagnostic here?
             let concrete_variant = ctx
                 .db
@@ -1218,7 +1239,7 @@ fn maybe_compute_pattern_semantic(
                 variant: concrete_variant,
                 inner_pattern,
                 ty,
-                stable_ptr: enum_pattern.stable_ptr(),
+                stable_ptr: enum_pattern.stable_ptr().into(),
             })
         }
         ast::Pattern::Path(path) => {
@@ -1368,12 +1389,81 @@ fn maybe_compute_pattern_semantic(
                 stable_ptr: pattern_tuple.stable_ptr(),
             })
         }
+        ast::Pattern::False(pattern_false) => {
+            let enum_expr = extract_matches!(
+                false_literal_expr(ctx, pattern_false.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+
+            extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+            )?;
+
+            Pattern::EnumVariant(PatternEnumVariant {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_false.stable_ptr().into(),
+                ty,
+                inner_pattern: None,
+            })
+        }
+        ast::Pattern::True(pattern_true) => {
+            let enum_expr = extract_matches!(
+                true_literal_expr(ctx, pattern_true.stable_ptr().into()),
+                Expr::EnumVariantCtor
+            );
+            extract_concrete_enum_from_pattern_and_validate(
+                ctx,
+                pattern_syntax,
+                ty,
+                enum_expr.variant.concrete_enum_id.enum_id(ctx.db),
+            )?;
+
+            Pattern::EnumVariant(PatternEnumVariant {
+                variant: enum_expr.variant,
+                stable_ptr: pattern_true.stable_ptr().into(),
+                ty,
+                inner_pattern: None,
+            })
+        }
     };
     ctx.resolver
         .inference()
         .conform_ty(pattern.ty(), ty)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
     Ok(pattern)
+}
+
+/// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.
+fn extract_concrete_enum_from_pattern_and_validate(
+    ctx: &mut ComputationContext<'_>,
+    pattern: &ast::Pattern,
+    ty: TypeId,
+    enum_id: EnumId,
+) -> Maybe<(ConcreteEnumId, usize)> {
+    // Peel all snapshot wrappers.
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
+    // Check that type is an enum, and get the concrete enum from it.
+    let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+        .ok_or(())
+        .or_else(|_| {
+            // Don't add a diagnostic if the type is missing.
+            // A diagnostic should've already been added.
+            ty.check_not_missing(ctx.db)?;
+            Err(ctx.diagnostics.report(pattern, UnexpectedEnumPattern { ty }))
+        })?;
+    // Check that these are the same enums.
+    if enum_id != concrete_enum.enum_id(ctx.db) {
+        return Err(ctx.diagnostics.report(
+            pattern,
+            WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: enum_id },
+        ));
+    }
+    Ok((concrete_enum, n_snapshots))
 }
 
 /// Creates a local variable pattern.
@@ -2091,12 +2181,17 @@ pub fn compute_statement_semantic(
             }
             let ty: TypeId = expr.ty();
             if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(ty) {
-                if match concrete {
-                    ConcreteTypeId::Struct(id) => id.has_attr(db, MUST_USE_ATTR)?,
-                    ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR)?,
-                    ConcreteTypeId::Extern(_) => false,
-                } {
+                if concrete.is_must_use(db)? {
                     ctx.diagnostics.report(&expr_syntax, UnhandledMustUseType { ty });
+                }
+            }
+            if let Expr::FunctionCall(expr_function_call) = &expr.expr {
+                let generic_function_id = db
+                    .lookup_intern_function(expr_function_call.function)
+                    .function
+                    .generic_function;
+                if generic_function_id.is_must_use(db)? {
+                    ctx.diagnostics.report(&expr_syntax, UnhandledMustUseFunction);
                 }
             }
             semantic::Statement::Expr(semantic::StatementExpr {

@@ -34,7 +34,7 @@ impl EntryPointKind {
         if has_v0_attribute(
             db,
             diagnostics,
-            &ast::Item::FreeFunction(item_function.clone()),
+            &ast::ModuleItem::FreeFunction(item_function.clone()),
             EXTERNAL_ATTR,
         ) {
             Some(EntryPointKind::External)
@@ -312,7 +312,7 @@ fn generate_entry_point_wrapper(
     } else {
         formatdoc! {"
             {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
-                let mut arr = core::array::array_new();
+                let mut arr = ArrayTrait::new();
                 // References.$ref_appends$
                 // Result.{append_res}
                 core::array::ArrayTrait::span(@arr)"
