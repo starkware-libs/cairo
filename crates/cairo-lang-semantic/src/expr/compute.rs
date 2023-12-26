@@ -94,6 +94,15 @@ impl Deref for PatternAndId {
 #[derive(Debug, Clone)]
 pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 
+// Context inside loops.
+#[derive(Debug, Clone)]
+enum LoopContext {
+    /// Not inside a loop
+    None,
+    /// Context inside a `loop`
+    Loop(FlowMergeTypeHelper),
+}
+
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
@@ -107,7 +116,7 @@ pub struct ComputationContext<'ctx> {
     pub statements: Arena<semantic::Statement>,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    loop_flow_merge: Option<FlowMergeTypeHelper>,
+    loop_ctx: LoopContext,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -131,7 +140,7 @@ impl<'ctx> ComputationContext<'ctx> {
             patterns: Arena::default(),
             statements: Arena::default(),
             semantic_defs,
-            loop_flow_merge: None,
+            loop_ctx: LoopContext::None,
         }
     }
 
@@ -749,6 +758,7 @@ pub fn compute_expr_block_semantic(
 }
 
 /// Helper for merging the return types of branch blocks (match or if else).
+#[derive(Debug, Clone)]
 struct FlowMergeTypeHelper {
     never_type: TypeId,
     final_type: Option<TypeId>,
@@ -938,10 +948,31 @@ fn compute_expr_loop_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let (body, new_flow_merge) = ctx.run_in_subscope(|new_ctx| {
-        let old_flow_merge = new_ctx.loop_flow_merge.replace(FlowMergeTypeHelper::new(db));
+    let (body, loop_ctx) = compute_loop_body_semantic(
+        ctx,
+        syntax.body(syntax_db),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db)),
+    );
+    Ok(Expr::Loop(ExprLoop {
+        body,
+        ty: extract_matches!(loop_ctx, LoopContext::Loop).get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
 
-        let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
+/// Computes the semantic model for a body of a loop.
+fn compute_loop_body_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: ast::ExprBlock,
+    loop_ctx: LoopContext,
+) -> (ExprId, LoopContext) {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    ctx.run_in_subscope(|new_ctx| {
+        let old_loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, loop_ctx);
+
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
         let tail = get_tail_expression(syntax_db, statements.as_slice());
         if tail.is_some() {
@@ -964,9 +995,7 @@ fn compute_expr_loop_semantic(
             }
         }
 
-        let new_flow_merge =
-            std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
-
+        let loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, old_loop_ctx);
         let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
@@ -974,14 +1003,8 @@ fn compute_expr_loop_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
 
-        (body, new_flow_merge)
-    });
-
-    Ok(Expr::Loop(ExprLoop {
-        body,
-        ty: new_flow_merge.get_final_type(),
-        stable_ptr: syntax.stable_ptr().into(),
-    }))
+        (body, loop_ctx)
+    })
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
@@ -1002,7 +1025,7 @@ fn compute_expr_error_propagate_semantic(
         UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
     )?;
     // Disallow error propagation inside a loop.
-    if ctx.loop_flow_merge.is_some() {
+    if !matches!(ctx.loop_ctx, LoopContext::None) {
         ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
     }
     let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, func_signature.return_type)
@@ -2173,7 +2196,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Continue(continue_syntax) => {
-            if ctx.loop_flow_merge.is_none() {
+            if matches!(ctx.loop_ctx, LoopContext::None) {
                 return Err(ctx
                     .diagnostics
                     .report(continue_syntax, ContinueOnlyAllowedInsideALoop));
@@ -2183,7 +2206,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            if ctx.loop_flow_merge.is_some() {
+            if !matches!(ctx.loop_ctx, LoopContext::None) {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
 
@@ -2226,7 +2249,7 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
-            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+            let LoopContext::Loop(flow_merge) = &mut ctx.loop_ctx else {
                 return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
             };
             if let Err((current_ty, break_ty)) =
