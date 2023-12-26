@@ -108,16 +108,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
             SemanticDiagnosticKind::NotAnImpl => "Not an impl.".into(),
-            SemanticDiagnosticKind::FunctionNotMemberOfTrait {
+            SemanticDiagnosticKind::ImplItemNotInTrait {
                 impl_def_id,
-                impl_function_id,
+                impl_item_name,
                 trait_id,
+                item_kind,
             } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Impl function `{}::{}` is not a member of trait `{}`.",
+                    "Impl {item_kind} `{}::{}` is not a member of trait `{}`.",
                     impl_def_id.name(defs_db),
-                    impl_function_id.name(defs_db),
+                    impl_item_name,
                     trait_id.name(defs_db)
                 )
             }
@@ -698,10 +699,11 @@ pub enum SemanticDiagnosticKind {
     NotAType,
     NotATrait,
     NotAnImpl,
-    FunctionNotMemberOfTrait {
+    ImplItemNotInTrait {
         impl_def_id: ImplDefId,
-        impl_function_id: ImplFunctionId,
+        impl_item_name: SmolStr,
         trait_id: TraitId,
+        item_kind: String,
     },
     GenericsNotSupportedInItem {
         scope: String,
