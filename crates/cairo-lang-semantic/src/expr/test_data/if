@@ -19,7 +19,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If condition has type "core::felt252", expected bool.
+error: Condition has type "core::felt252", expected bool.
  --> lib.cairo:3:8
     if x {
        ^
@@ -57,7 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If condition has type "core::integer::u64", expected bool.
+error: Condition has type "core::integer::u64", expected bool.
  --> lib.cairo:3:8
     if x {
        ^

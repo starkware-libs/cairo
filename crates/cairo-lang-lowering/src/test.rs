@@ -53,6 +53,7 @@ cairo_lang_test_utils::test_file_test!(
         tests :"tests",
         tuple :"tuple",
         strings :"strings",
+        while_ :"while",
     },
     test_function_lowering
 );

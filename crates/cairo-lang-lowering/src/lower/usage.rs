@@ -164,6 +164,10 @@ impl BlockUsages {
                 self.block_usages.insert(expr_id, usage);
             }
             Expr::Loop(expr) => self.handle_expr(function_body, expr.body, current),
+            Expr::While(expr) => {
+                self.handle_expr(function_body, expr.condition, current);
+                self.handle_expr(function_body, expr.body, current);
+            }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
                     match arg {
