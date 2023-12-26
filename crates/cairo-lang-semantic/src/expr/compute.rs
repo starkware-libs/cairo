@@ -2240,6 +2240,11 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
+        ast::Statement::While(while_syntax) => {
+            return Err(ctx
+                .diagnostics
+                .report_by_ptr(while_syntax.stable_ptr().untyped(), WhileNotSupported));
+        }
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))

@@ -181,6 +181,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::StatementBreak => {
             vec![]
         }
+        SyntaxKind::StatementWhile => {
+            vec![]
+        }
         SyntaxKind::Param => {
             vec![/* name */ children[1]]
         }
@@ -398,6 +401,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenIf => vec![],
         SyntaxKind::TerminalIf => {
+            vec![]
+        }
+        SyntaxKind::TokenWhile => vec![],
+        SyntaxKind::TerminalWhile => {
             vec![]
         }
         SyntaxKind::TokenLoop => vec![],

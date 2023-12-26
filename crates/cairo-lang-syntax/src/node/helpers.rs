@@ -5,9 +5,9 @@ use super::ast::{
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
     ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
     ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
-    TraitItemImpl, TraitItemType, Variant, WrappedArgList,
+    StatementContinue, StatementExpr, StatementLet, StatementReturn, StatementWhile,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
+    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -398,6 +398,13 @@ impl QueryAttrs for StatementExpr {
         self.attributes(db).elements(db)
     }
 }
+
+impl QueryAttrs for StatementWhile {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
 /// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
 /// should be added here.
 impl QueryAttrs for SyntaxNode {
@@ -482,6 +489,7 @@ impl QueryAttrs for Statement {
             Statement::Return(statement) => statement.attributes_elements(db),
             Statement::Let(statement) => statement.attributes_elements(db),
             Statement::Expr(statement) => statement.attributes_elements(db),
+            Statement::While(statement) => statement.attributes_elements(db),
             Statement::Missing(_) => vec![],
         }
     }

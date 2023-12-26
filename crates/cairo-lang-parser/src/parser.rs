@@ -1613,8 +1613,8 @@ impl<'a> Parser<'a> {
         ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
     }
 
-    /// Assumes the current token is `Loop`.
-    /// Expected pattern: `loop <block>`.
+    /// Assumes the current token is `While`.
+    /// Expected pattern: `loop expr <block>`.
     fn expect_loop_expr(&mut self) -> ExprLoopGreen {
         let loop_kw = self.take::<TerminalLoop>();
         let body = self.parse_block();
@@ -1813,6 +1813,14 @@ impl<'a> Parser<'a> {
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Ok(StatementBreak::new_green(self.db, attributes, break_kw, expr, semicolon).into())
             }
+            SyntaxKind::TerminalWhile => {
+                let while_kw = self.take::<TerminalWhile>();
+                let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+                let body = self.parse_block();
+
+                Ok(StatementWhile::new_green(self.db, attributes, while_kw, condition, body).into())
+            }
+
             _ => match self.try_parse_expr() {
                 Ok(expr) => {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {

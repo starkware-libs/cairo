@@ -1,0 +1,22 @@
+//! > While loop.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    while true {
+        1;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: While loop are not supported yet.
+ --> lib.cairo:2:5
+    while true {
+    ^**********^

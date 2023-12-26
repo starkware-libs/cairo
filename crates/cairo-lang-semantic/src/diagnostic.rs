@@ -648,6 +648,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
+            SemanticDiagnosticKind::WhileNotSupported => "While loop are not supported yet.".into(),
         }
     }
 
@@ -964,6 +965,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedImplItem {
         kind: String,
     },
+    WhileNotSupported,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
