@@ -14,9 +14,9 @@ use crate::graph_algorithms::strongly_connected_components::concrete_function_wi
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, Signature};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
-    VarRemapping, VarUsage, VariableId,
+    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo,
+    MatchInfo, Statement, StatementCall, StatementEnumConstruct, StatementStructConstruct,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -327,8 +327,9 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: FunctionId) -> Maybe
 pub trait MayPanicTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
     /// Returns whether a [ConcreteFunctionWithBodyId] may panic.
     fn function_with_body_may_panic(&self, function: ConcreteFunctionWithBodyId) -> Maybe<bool> {
-        let scc_representative =
-            self.upcast().concrete_function_with_body_scc_representative(function);
+        let scc_representative = self
+            .upcast()
+            .concrete_function_with_body_scc_representative(function, DependencyType::Call);
         self.upcast().scc_may_panic(scc_representative)
     }
 }
@@ -337,7 +338,7 @@ impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> MayPanicTrait<'a> for T {}
 /// Query implementation of [crate::db::LoweringGroup::scc_may_panic].
 pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<bool> {
     // Find the SCC representative.
-    let scc_functions = concrete_function_with_body_scc(db, scc.0);
+    let scc_functions = concrete_function_with_body_scc(db, scc.0, DependencyType::Call);
     for function in scc_functions {
         if db.needs_withdraw_gas(function)? {
             return Ok(true);
@@ -346,10 +347,16 @@ pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
             return Ok(true);
         }
         // For each direct callee, find if it may panic.
-        let direct_callees = db.concrete_function_with_body_postinline_direct_callees(function)?;
+        let direct_callees = db.concrete_function_with_body_postinline_direct_callees(
+            function,
+            DependencyType::Call,
+        )?;
         for direct_callee in direct_callees {
             if let Some(callee_body) = direct_callee.body(db.upcast())? {
-                let callee_scc = db.concrete_function_with_body_scc_representative(callee_body);
+                let callee_scc = db.concrete_function_with_body_scc_representative(
+                    callee_body,
+                    DependencyType::Call,
+                );
                 if callee_scc != scc && db.scc_may_panic(callee_scc)? {
                     return Ok(true);
                 }
