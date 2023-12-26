@@ -4,6 +4,7 @@ mod box_test;
 mod byte_array_test;
 mod bytes31_test;
 mod cmp_test;
+mod coupon_test;
 mod dict_test;
 mod ec_test;
 mod felt_test;
