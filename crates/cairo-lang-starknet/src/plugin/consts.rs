@@ -23,7 +23,8 @@ pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
-pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
+pub const CONTRACT_ATTR: &str = "starknet::contract";
+pub const CONTRACT_ATTR_ACCOUNT_ARG: &str = "account";
 pub(super) const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
@@ -40,6 +41,11 @@ pub const NESTED_ATTR: &str = "nested";
 pub const FLAT_ATTR: &str = "flat";
 pub const KEY_ATTR: &str = "key";
 pub const SERDE_ATTR: &str = "serde";
+
+pub const VALIDATE_ENTRY_POINT_SELECTOR: &str = "__validate__";
+pub const EXECUTE_ENTRY_POINT_SELECTOR: &str = "__execute__";
+pub const ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS: &[&str] =
+    &[VALIDATE_ENTRY_POINT_SELECTOR, EXECUTE_ENTRY_POINT_SELECTOR];
 
 // ABI attribute
 pub const ABI_ATTR: &str = "abi";

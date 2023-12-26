@@ -63,7 +63,7 @@ ItemStruct
     ├── name (kind: TokenIdentifier): 'my_mod'
     └── body (kind: ModuleBody)
         ├── lbrace (kind: TokenLBrace): '{'
-        ├── items (kind: ItemList)
+        ├── items (kind: ModuleItemList)
         │   ├── child #0 (kind: ItemTrait) <ignored>
         │   ├── child #1 (kind: ItemImpl) <ignored>
         │   ├── child #2 (kind: FunctionWithBody) <ignored>

@@ -10,8 +10,8 @@ use super::{
 };
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
-use crate::substitution::{SemanticRewriter, SubstitutionRewriter};
-use crate::{ConcreteTraitId, GenericArgumentId, GenericParam, TypeLongId};
+use crate::substitution::SemanticRewriter;
+use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -36,13 +36,17 @@ pub enum Ambiguity {
     WillNotInfer {
         concrete_trait_id: ConcreteTraitId,
     },
+    NegativeImplWithUnresolvedGenericArgs {
+        impl_id: ImplId,
+        ty: TypeId,
+    },
 }
 impl Ambiguity {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
                 let impls_str =
-                    impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
+                    impls.iter().map(|imp| format!("`{}`", imp.format(db.upcast()))).join(", ");
                 format!(
                     "Trait `{:?}` has multiple implementations, in: {impls_str}",
                     concrete_trait_id.debug(db)
@@ -57,6 +61,11 @@ impl Ambiguity {
                     concrete_trait_id.debug(db)
                 )
             }
+            Ambiguity::NegativeImplWithUnresolvedGenericArgs { impl_id, ty } => format!(
+                "Cannot infer negative impl in `{}` as it contains the unresolved type `{}`",
+                { impl_id }.format(db),
+                ty.format(db)
+            ),
         }
     }
 }
@@ -143,37 +152,9 @@ impl Solver {
     ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
         let mut unique_solution: Option<CanonicalImpl> = None;
         for candidate_solver in &mut self.candidate_solvers {
-            let Ok(mut candidate_solution_set) = candidate_solver.solution_set(db) else {
+            let Ok(candidate_solution_set) = candidate_solver.solution_set(db) else {
                 continue;
             };
-
-            if let ImplId::Concrete(concrete_impl) = candidate_solver.candidate_impl {
-                let concrete_impl =
-                    candidate_solver.inference_data.inference(db).rewrite(concrete_impl).no_err();
-                let mut rewriter =
-                    SubstitutionRewriter { db, substitution: &concrete_impl.substitution(db)? };
-
-                for garg in db.impl_def_generic_params(concrete_impl.impl_def_id(db.upcast()))? {
-                    let GenericParam::NegImpl(neg_impl) = garg else {
-                        continue;
-                    };
-
-                    let (canonical_trait, _canonicalizer) = CanonicalTrait::canonicalize(
-                        db,
-                        candidate_solver.inference_data.inference_id,
-                        rewriter.rewrite(neg_impl)?.concrete_trait?,
-                    );
-
-                    if !matches!(
-                        db.canonic_trait_solutions(canonical_trait, self.lookup_context.clone())?,
-                        SolutionSet::None
-                    ) {
-                        // If a negative impl has an impl, then we should skip it.
-                        candidate_solution_set = SolutionSet::None;
-                        break;
-                    }
-                }
-            }
 
             let candidate_solution = match candidate_solution_set {
                 SolutionSet::None => continue,
@@ -239,22 +220,21 @@ impl CandidateSolver {
         let solution_set = inference.solution_set()?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
+            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
             SolutionSet::Unique(_) => {
                 let candidate_impl = inference.rewrite(self.candidate_impl).no_err();
-                let canonical_impl =
-                    CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding);
-                match canonical_impl {
-                    Ok(canonical_impl) => SolutionSet::Unique(canonical_impl),
+                match CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding) {
+                    Ok(canonical_impl) => {
+                        inference.validate_neg_impls(&self.lookup_context, canonical_impl)?
+                    }
                     Err(MapperError(var)) => {
-                        // Free variable.
-                        SolutionSet::Ambiguous(Ambiguity::FreeVariable {
-                            impl_id: self.candidate_impl,
+                        return Ok(SolutionSet::Ambiguous(Ambiguity::FreeVariable {
+                            impl_id: candidate_impl,
                             var,
-                        })
+                        }));
                     }
                 }
             }
-            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
         })
     }
 }

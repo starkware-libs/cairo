@@ -10,7 +10,7 @@ pub extern fn hades_permutation(
 ) -> (felt252, felt252, felt252) implicits(Poseidon) nopanic;
 
 /// State for Poseidon hash.
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Debug)]
 pub struct HashState {
     pub s0: felt252,
     pub s1: felt252,

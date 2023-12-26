@@ -423,19 +423,19 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 &mut plugin_diagnostics,
             );
             match item_ast {
-                ast::Item::Constant(constant) => {
+                ast::ModuleItem::Constant(constant) => {
                     let item_id =
                         db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr()));
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
-                ast::Item::Module(module) => {
+                ast::ModuleItem::Module(module) => {
                     let item_id =
                         db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
-                ast::Item::Use(us) => {
+                ast::ModuleItem::Use(us) => {
                     let path_leaves = get_all_path_leafs(db.upcast(), us.use_path(syntax_db));
                     for path_leaf in path_leaves {
                         let path_leaf_id =
@@ -444,7 +444,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         items.push(ModuleItemId::Use(path_leaf_id));
                     }
                 }
-                ast::Item::FreeFunction(function) => {
+                ast::ModuleItem::FreeFunction(function) => {
                     let item_id = db.intern_free_function(FreeFunctionLongId(
                         module_file_id,
                         function.stable_ptr(),
@@ -452,7 +452,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
-                ast::Item::ExternFunction(extern_function) => {
+                ast::ModuleItem::ExternFunction(extern_function) => {
                     let item_id = db.intern_extern_function(ExternFunctionLongId(
                         module_file_id,
                         extern_function.stable_ptr(),
@@ -460,7 +460,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
-                ast::Item::ExternType(extern_type) => {
+                ast::ModuleItem::ExternType(extern_type) => {
                     let item_id = db.intern_extern_type(ExternTypeLongId(
                         module_file_id,
                         extern_type.stable_ptr(),
@@ -468,28 +468,28 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
-                ast::Item::Trait(trt) => {
+                ast::ModuleItem::Trait(trt) => {
                     let item_id = db.intern_trait(TraitLongId(module_file_id, trt.stable_ptr()));
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
-                ast::Item::Impl(imp) => {
+                ast::ModuleItem::Impl(imp) => {
                     let item_id = db.intern_impl(ImplDefLongId(module_file_id, imp.stable_ptr()));
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
-                ast::Item::Struct(structure) => {
+                ast::ModuleItem::Struct(structure) => {
                     let item_id =
                         db.intern_struct(StructLongId(module_file_id, structure.stable_ptr()));
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
-                ast::Item::Enum(enm) => {
+                ast::ModuleItem::Enum(enm) => {
                     let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
-                ast::Item::TypeAlias(type_alias) => {
+                ast::ModuleItem::TypeAlias(type_alias) => {
                     let item_id = db.intern_type_alias(TypeAliasLongId(
                         module_file_id,
                         type_alias.stable_ptr(),
@@ -497,7 +497,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
-                ast::Item::ImplAlias(impl_alias) => {
+                ast::ModuleItem::ImplAlias(impl_alias) => {
                     let item_id = db.intern_impl_alias(ImplAliasLongId(
                         module_file_id,
                         impl_alias.stable_ptr(),
@@ -505,7 +505,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
-                ast::Item::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
+                ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic::error(
                         inline_macro_ast.stable_ptr().untyped(),
@@ -515,7 +515,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         ),
                     ),
                 )),
-                ast::Item::Missing(_) => {}
+                ast::ModuleItem::Missing(_) => {}
             }
         }
     }
@@ -582,12 +582,12 @@ fn validate_attributes(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
     module_file_id: ModuleFileId,
-    item_ast: &ast::Item,
+    item_ast: &ast::ModuleItem,
     plugin_diagnostics: &mut Vec<(ModuleFileId, PluginDiagnostic)>,
 ) {
     validate_attributes_flat(db, allowed_attributes, module_file_id, item_ast, plugin_diagnostics);
     match item_ast {
-        ast::Item::Trait(item) => {
+        ast::ModuleItem::Trait(item) => {
             if let ast::MaybeTraitBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
@@ -598,7 +598,7 @@ fn validate_attributes(
                 );
             }
         }
-        ast::Item::Impl(item) => {
+        ast::ModuleItem::Impl(item) => {
             if let ast::MaybeImplBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
@@ -609,7 +609,7 @@ fn validate_attributes(
                 );
             }
         }
-        ast::Item::Struct(item) => {
+        ast::ModuleItem::Struct(item) => {
             validate_attributes_element_list(
                 db,
                 allowed_attributes,
@@ -618,7 +618,7 @@ fn validate_attributes(
                 plugin_diagnostics,
             );
         }
-        ast::Item::Enum(item) => {
+        ast::ModuleItem::Enum(item) => {
             validate_attributes_element_list(
                 db,
                 allowed_attributes,

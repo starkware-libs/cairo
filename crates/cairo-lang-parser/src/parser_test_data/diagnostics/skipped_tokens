@@ -7,7 +7,7 @@ get_diagnostics
 skipped tokens
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 skipped tokens
 ^************^
@@ -25,7 +25,7 @@ skipped tokens
 fn bar() {}
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:1
 skipped tokens
 ^************^
@@ -41,7 +41,7 @@ get_diagnostics
 skipped   tokens
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 skipped   tokens
 ^**************^
@@ -59,7 +59,7 @@ skipped  \\ Comment
   tokens
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 skipped  \\ Comment
 ^*****************^
@@ -77,7 +77,7 @@ skipped  \\ Comment
   tokens  fn foo() {}
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 skipped  \\ Comment
 ^*****************^

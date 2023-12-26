@@ -96,30 +96,47 @@ impl FormattingInfo {
             return Err(unsupported_bracket_diagnostic(db, syntax).diagnostics);
         };
         let argument_list_elements = arguments.arguments(db).elements(db);
-        let Some((formatter_arg, without_formatter_args)) = argument_list_elements.split_first()
-        else {
+        let mut args_iter = argument_list_elements.iter();
+        let Some(formatter_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
                 arguments.lparen(db).stable_ptr().untyped(),
                 "Macro expected formatter argument.".to_string(),
             )]);
         };
-        let Some((format_string_arg, args)) = without_formatter_args.split_first() else {
+        let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
+            return Err(vec![PluginDiagnostic::error(
+                formatter_arg.stable_ptr().untyped(),
+                "Formatter argument must unnamed.".to_string(),
+            )]);
+        };
+        if matches!(formatter_expr, ast::Expr::String(_)) {
+            return Err(vec![PluginDiagnostic::error(
+                formatter_arg.stable_ptr().untyped(),
+                "Formatter argument must not be a string literal.".to_string(),
+            )]);
+        }
+        let Some(format_string_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
                 arguments.lparen(db).stable_ptr().untyped(),
                 "Macro expected format string argument.".to_string(),
             )]);
         };
+        let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
+            return Err(vec![PluginDiagnostic::error(
+                format_string_arg.stable_ptr().untyped(),
+                "Format string argument must be unnamed.".to_string(),
+            )]);
+        };
+        let Some(format_string) = try_extract_matches!(format_string_expr, ast::Expr::String)
+            .and_then(|arg| arg.string_value(db))
+        else {
+            return Err(vec![PluginDiagnostic::error(
+                format_string_arg.stable_ptr().untyped(),
+                "Format string argument must be a string literal.".to_string(),
+            )]);
+        };
         let mut diagnostics = vec![];
-        let format_string = try_extract_unnamed_arg(db, format_string_arg)
-            .and_then(|arg| try_extract_matches!(arg, ast::Expr::String)?.string_value(db))
-            .on_none(|| {
-                diagnostics.push(PluginDiagnostic::error(
-                    format_string_arg.stable_ptr().untyped(),
-                    "Argument must be a string literal.".to_string(),
-                ))
-            });
-        let args: Vec<_> = args
-            .iter()
+        let args: Vec<_> = args_iter
             .filter_map(|arg| {
                 try_extract_unnamed_arg(db, arg).on_none(|| {
                     diagnostics.push(PluginDiagnostic::error(
@@ -136,7 +153,7 @@ impl FormattingInfo {
             formatter_arg_node: RewriteNode::new_trimmed(formatter_arg.as_syntax_node()),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
-            format_string: format_string.unwrap(),
+            format_string,
             args,
         })
     }
@@ -174,17 +191,18 @@ impl FormattingInfo {
                     format_iter.next();
                     continue;
                 }
-                let Some(argument_info) = extract_argument(&mut format_iter) else {
-                    diagnostics.push(PluginDiagnostic::error(
-                        self.format_string_arg.as_syntax_node().stable_ptr(),
-                        "Invalid format string: expected `}`, variable name, or formatting \
-                         modifiers."
-                            .to_string(),
-                    ));
-                    return;
+                let argument_info = match extract_placeholder_argument(&mut format_iter) {
+                    Ok(argument_info) => argument_info,
+                    Err(error_message) => {
+                        diagnostics.push(PluginDiagnostic::error(
+                            self.format_string_arg.as_syntax_node().stable_ptr(),
+                            format!("Invalid format string: {error_message}."),
+                        ));
+                        return;
+                    }
                 };
                 match argument_info.source {
-                    ArgumentSource::Positional(positional) => {
+                    PlaceholderArgumentSource::Positional(positional) => {
                         let Some(arg) = self.args.get(positional) else {
                             diagnostics.push(PluginDiagnostic::error(
                                 self.format_string_arg.as_syntax_node().stable_ptr(),
@@ -201,33 +219,31 @@ impl FormattingInfo {
                             builder,
                             &mut ident_count,
                             &mut pending_chars,
-                            RewriteNode::RewriteText {
-                                origin: arg.as_syntax_node().span_without_trivia(builder.db),
-                                text: format!("__write_macro_arg{positional}__"),
-                            },
-                            argument_info.fmt_type,
+                            RewriteNode::mapped_text(
+                                &format!("__write_macro_arg{positional}__"),
+                                arg.as_syntax_node().span_without_trivia(builder.db),
+                            ),
+                            argument_info.formatting_trait,
                         );
                     }
-                    ArgumentSource::Next => {
+                    PlaceholderArgumentSource::Next => {
                         if let Some(i) = next_arg_index.next() {
                             arg_used[i] = true;
                             self.append_formatted_arg(
                                 builder,
                                 &mut ident_count,
                                 &mut pending_chars,
-                                RewriteNode::RewriteText {
-                                    origin: self.args[i]
-                                        .as_syntax_node()
-                                        .span_without_trivia(builder.db),
-                                    text: format!("__write_macro_arg{i}__"),
-                                },
-                                argument_info.fmt_type,
+                                RewriteNode::mapped_text(
+                                    &format!("__write_macro_arg{i}__"),
+                                    self.args[i].as_syntax_node().span_without_trivia(builder.db),
+                                ),
+                                argument_info.formatting_trait,
                             );
                         } else {
                             missing_args += 1;
                         }
                     }
-                    ArgumentSource::Named(argument) => {
+                    PlaceholderArgumentSource::Named(argument) => {
                         let start = format_string_base
                             .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
                         let end = start.add_width(TextWidth::from_str(&argument));
@@ -237,12 +253,9 @@ impl FormattingInfo {
                             &mut pending_chars,
                             RewriteNode::new_modified(vec![
                                 RewriteNode::text("@"),
-                                RewriteNode::RewriteText {
-                                    text: argument,
-                                    origin: TextSpan { start, end },
-                                },
+                                RewriteNode::mapped_text(&argument, TextSpan { start, end }),
                             ]),
-                            argument_info.fmt_type,
+                            argument_info.formatting_trait,
                         );
                     }
                 }
@@ -313,7 +326,7 @@ impl FormattingInfo {
         ident_count: &mut usize,
         pending_chars: &mut String,
         arg: RewriteNode,
-        fmt_type: FormatType,
+        fmt_type: FormattingTrait,
     ) {
         self.flush_pending_chars(builder, pending_chars, *ident_count);
         self.add_indentation(builder, *ident_count);
@@ -350,89 +363,101 @@ impl FormattingInfo {
     }
 }
 
-/// Information about the argument to inject into the formatter.
-struct ArgumentInfo {
+/// Information about a placeholder argument of a format string, to inject into the formatter.
+struct PlaceholderArgumentInfo {
     /// The source of the argument.
-    source: ArgumentSource,
-    /// The format type to use.
-    fmt_type: FormatType,
+    source: PlaceholderArgumentSource,
+    /// The formatting trait to use (e.g. `Display`, `Debug`).
+    formatting_trait: FormattingTrait,
 }
 
-/// The source of an argument.
-enum ArgumentSource {
-    /// The argument is given by a position index.
+/// The source of a placeholder argument.
+enum PlaceholderArgumentSource {
+    /// The placeholder argument is given by a position index.
     Positional(usize),
-    /// The argument is given by the next argument.
+    /// The placeholder argument is given by the next argument.
     Next,
-    /// The argument is given by a name.
+    /// The placeholder argument is given by a name.
     Named(String),
 }
 
-/// The format type to use.
-enum FormatType {
+/// A formatting trait is a specific method for how to format placeholder arguments within a format
+/// string.
+enum FormattingTrait {
     /// Got `{}` and we should use the `Display` trait.
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
     Debug,
 }
-impl fmt::Display for FormatType {
+impl fmt::Display for FormattingTrait {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FormatType::Display => write!(f, "Display"),
-            FormatType::Debug => write!(f, "Debug"),
+            FormattingTrait::Display => write!(f, "Display"),
+            FormattingTrait::Debug => write!(f, "Debug"),
         }
     }
 }
 
-/// Extracts an argument from a format string.
-fn extract_argument(
+/// Extracts a placeholder argument from a format string. On error, returns Err with a relevant
+/// error string.
+fn extract_placeholder_argument(
     format_iter: &mut std::iter::Peekable<std::iter::Enumerate<std::str::Chars<'_>>>,
-) -> Option<ArgumentInfo> {
-    let mut arg_value = String::new();
-    let mut fmt_value = String::new();
-    let mut proper_break = false;
+) -> Result<PlaceholderArgumentInfo, &'static str> {
+    // The part before the ':' (if any), indicating the name of the parameter.
+    let mut parameter_name = String::new();
+    // The part after the ':' (if any), indicating the formatting specification.
+    let mut formatting_spec = String::new();
+    let mut placeholder_terminated = false;
     for (_, c) in format_iter.by_ref() {
         if c == '}' {
-            proper_break = true;
+            placeholder_terminated = true;
             break;
         }
         if c == ':' {
             for (_, c) in format_iter.by_ref() {
                 if c == '}' {
-                    proper_break = true;
+                    placeholder_terminated = true;
                     break;
                 }
+                if c == ':' {
+                    return Err("Unexpected character in placeholder: the formatting \
+                                specification part (after the ':') can not contain a ':'");
+                }
                 if c.is_ascii_graphic() {
-                    fmt_value.push(c);
+                    formatting_spec.push(c);
                 } else {
-                    return None;
+                    return Err("Unexpected character in placeholder: the formatting \
+                                specification part (after the ':') can only contain graphic \
+                                characters");
                 }
             }
             break;
         }
         if c.is_ascii_alphanumeric() || c == '_' {
-            arg_value.push(c);
+            parameter_name.push(c);
         } else {
-            return None;
+            return Err("Unexpected character in placeholder: parameter name can only contain \
+                        alphanumeric characters and '_'. You may be missing a ':'");
         }
     }
-    if !proper_break {
-        return None;
+    if !placeholder_terminated {
+        return Err("Unterminated placeholder: no matching '}' for '{'");
     }
-    Some(ArgumentInfo {
-        source: if arg_value.is_empty() {
-            ArgumentSource::Next
-        } else if let Ok(positional) = arg_value.parse::<usize>() {
-            ArgumentSource::Positional(positional)
-        } else {
-            ArgumentSource::Named(arg_value)
-        },
-        fmt_type: if fmt_value.is_empty() {
-            FormatType::Display
-        } else if fmt_value == "?" {
-            FormatType::Debug
-        } else {
-            return None;
-        },
-    })
+    let fmt_type = if formatting_spec.is_empty() {
+        FormattingTrait::Display
+    } else if formatting_spec == "?" {
+        FormattingTrait::Debug
+    } else {
+        return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
+    };
+    let source = if parameter_name.is_empty() {
+        PlaceholderArgumentSource::Next
+    } else if let Ok(position) = parameter_name.parse::<usize>() {
+        PlaceholderArgumentSource::Positional(position)
+    } else if parameter_name.starts_with(|c: char| c.is_ascii_digit()) {
+        return Err("Invalid parameter name");
+    } else {
+        PlaceholderArgumentSource::Named(parameter_name)
+    };
+    Ok(PlaceholderArgumentInfo { source, formatting_trait: fmt_type })
 }

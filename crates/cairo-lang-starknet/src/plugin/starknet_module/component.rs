@@ -66,14 +66,16 @@ pub(super) fn generate_component_specific_code(
 fn handle_component_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
+    item: &ast::ModuleItem,
     data: &mut ComponentGenerationData,
 ) {
     match &item {
-        ast::Item::Impl(item_impl) => {
+        ast::ModuleItem::Impl(item_impl) => {
             handle_component_impl(db, diagnostics, item_impl, data);
         }
-        ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
+        ast::ModuleItem::Struct(item_struct)
+            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+        {
             handle_storage_struct(
                 db,
                 diagnostics,

@@ -65,3 +65,5 @@ pub(crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
         self.address.print();
     }
 }
+
+impl DebugEthAddress = core::fmt::into_felt252_based::DebugImpl<EthAddress>;

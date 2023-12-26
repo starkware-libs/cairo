@@ -227,6 +227,7 @@ pub fn validate_under_limit<const K: u8>(
                 assert x = *(range_check++);
                 assert diff = x - u128_limit_minus_1;
                 jump Done if diff != 0;
+                // As x cannot be 2**128 - 1, this is unreachable.
                 fail;
             };
         }

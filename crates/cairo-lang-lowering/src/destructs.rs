@@ -372,7 +372,7 @@ pub fn add_destructs(
                             ];
                             lowered.blocks[block_id]
                                 .statements
-                                .splice(insert_index..insert_index, statements.into_iter());
+                                .splice(insert_index..insert_index, statements);
                         }
                     }
                 }
