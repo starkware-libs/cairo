@@ -372,3 +372,12 @@ impl MatchInfo {
         }
     }
 }
+
+/// Used in graph algorithms, and describes how to construct the edges in function dependency graph.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DependencyType {
+    /// A function depends on another function if it may call it.
+    Call,
+    /// A function depends on another function if its cost depends on the other function's cost.
+    Cost,
+}
