@@ -5,6 +5,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
@@ -652,6 +653,10 @@ pub fn compile_invocation(
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
         CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
+        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(_) => Ok(builder
+                .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
+        },
     }
 }
 

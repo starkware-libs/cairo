@@ -1418,3 +1418,92 @@ jmp rel 272;
 [ap + 0] = [ap + -1] + 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;
 ret;
+
+//! > ==========================================================================
+
+//! > coupons
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+// TODO(lior): Use gas::redeposit_gas once it's there.
+extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+extern fn coupon_buy<T>() -> T nopanic;
+impl DropCoupon of Drop<bar::Coupon>;
+
+fn foo(x: felt252) {
+    let c1: bar::Coupon = coupon_buy();
+    let _c2: bar::Coupon = coupon_buy();
+    let _c3: bar::Coupon = coupon_buy();
+    bar(__coupon__: c1);
+}
+
+#[inline(never)]
+fn bar() {
+    redeposit_gas();
+}
+
+//! > enforced_costs
+test::bar 2000
+
+//! > gas_solution
+#11: OrderedHashMap({Const: 1900})
+
+test::foo: OrderedHashMap({Const: 6300})
+test::bar: OrderedHashMap({Const: 2000})
+
+//! > gas_solution_no_solver
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1900})
+
+test::foo: OrderedHashMap({Const: 6300})
+test::bar: OrderedHashMap({Const: 2000})
+
+//! > ap_solution
+test::bar: 1
+test::foo: 4
+
+//! > ap_solution_no_solver
+test::foo: 4
+test::bar: 1
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Coupon<user@test::bar> = Coupon<user@test::bar> [storable: true, drop: true, dup: false, zero_sized: true];
+
+libfunc drop<felt252> = drop<felt252>;
+libfunc coupon_buy<Coupon<user@test::bar>> = coupon_buy<Coupon<user@test::bar>>;
+libfunc drop<Coupon<user@test::bar>> = drop<Coupon<user@test::bar>>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc coupon_call<user@test::bar> = coupon_call<user@test::bar>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc redeposit_gas = redeposit_gas;
+
+drop<felt252>([1]) -> (); // 0
+coupon_buy<Coupon<user@test::bar>>() -> ([2]); // 1
+coupon_buy<Coupon<user@test::bar>>() -> ([3]); // 2
+drop<Coupon<user@test::bar>>([3]) -> (); // 3
+coupon_buy<Coupon<user@test::bar>>() -> ([4]); // 4
+drop<Coupon<user@test::bar>>([4]) -> (); // 5
+store_temp<GasBuiltin>([0]) -> ([0]); // 6
+coupon_call<user@test::bar>([0], [2]) -> ([5], [6]); // 7
+drop<Unit>([6]) -> (); // 8
+struct_construct<Unit>() -> ([7]); // 9
+return([5], [7]); // 10
+redeposit_gas([0]) -> ([1]); // 11
+struct_construct<Unit>() -> ([2]); // 12
+store_temp<GasBuiltin>([1]) -> ([1]); // 13
+return([1], [2]); // 14
+
+test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
+test::bar@11([0]: GasBuiltin) -> (GasBuiltin, Unit);
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+call rel 3;
+ret;
+[ap + 0] = [fp + -3] + 1900, ap++;
+ret;

@@ -324,6 +324,8 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("snapshot_take", vec![type_arg("felt252")] => Ok(()); "snapshot_take<felt252>")]
 #[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
             "snapshot_take<SnapshotRangeCheck>")]
+#[test_case("coupon_buy", vec![type_arg("felt252")] => Err(UnsupportedGenericArg);
+            "coupon_buy<felt252>")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

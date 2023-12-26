@@ -53,3 +53,86 @@ return([1]); // 9
 
 test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> (Unit);
 test::bar::<core::integer::u8, core::integer::u8Drop>@6([0]: u8) -> (felt252);
+
+//! > ==========================================================================
+
+//! > coupon_buy
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+impl DropCoupon<T, impl DropImpl: Drop<T>> of Drop<bar::<T, DropImpl>::Coupon>;
+extern fn coupon_buy<T>() -> T nopanic;
+
+fn foo() {
+    // Buy coupons.
+    let (c0, _c1) = buy_coupons();
+    // Use coupons.
+    bar(0, __coupon__: c0);
+}
+
+fn buy_coupons() -> (bar::<u8>::Coupon, bar::<u8>::Coupon) {
+    (coupon_buy(), coupon_buy())
+}
+
+fn bar<T, +Drop<T>>(x: T) -> felt252 {
+    10
+}
+
+//! > casm
+call rel 7;
+[ap + 0] = 0, ap++;
+call rel 4;
+ret;
+ret;
+[ap + 0] = 10, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 700})
+test::buy_coupons: OrderedHashMap({Const: 200})
+test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
+type Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = Struct<ut@Tuple, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> [storable: true, drop: true, dup: false, zero_sized: true];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc function_call<user@test::buy_coupons> = function_call<user@test::buy_coupons>;
+libfunc struct_deconstruct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>> = struct_deconstruct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>;
+libfunc drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
+libfunc u8_const<0> = u8_const<0>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
+libfunc struct_construct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>> = struct_construct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>;
+libfunc drop<u8> = drop<u8>;
+libfunc felt252_const<10> = felt252_const<10>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+function_call<user@test::buy_coupons>() -> ([0]); // 0
+struct_deconstruct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0]) -> ([1], [2]); // 1
+drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([2]) -> (); // 2
+u8_const<0>() -> ([3]); // 3
+store_temp<u8>([3]) -> ([3]); // 4
+coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([3], [1]) -> ([4]); // 5
+drop<felt252>([4]) -> (); // 6
+struct_construct<Unit>() -> ([5]); // 7
+return([5]); // 8
+coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([0]); // 9
+coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([1]); // 10
+struct_construct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0], [1]) -> ([2]); // 11
+return([2]); // 12
+drop<u8>([0]) -> (); // 13
+felt252_const<10>() -> ([1]); // 14
+store_temp<felt252>([1]) -> ([1]); // 15
+return([1]); // 16
+
+test::foo@0() -> (Unit);
+test::buy_coupons@9() -> (Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>);
+test::bar::<core::integer::u8, core::integer::u8Drop>@13([0]: u8) -> (felt252);
