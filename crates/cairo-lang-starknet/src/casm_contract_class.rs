@@ -348,6 +348,7 @@ impl CasmContractClass {
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
+            skip_non_linear_solver_comparisons: false,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
