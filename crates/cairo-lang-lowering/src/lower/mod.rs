@@ -507,6 +507,7 @@ fn lower_expr(
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
         semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, builder, expr_id),
+        semantic::Expr::While(_) => todo!(),
         semantic::Expr::Var(expr) => {
             let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
