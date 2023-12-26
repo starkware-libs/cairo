@@ -94,6 +94,15 @@ impl Deref for PatternAndId {
 #[derive(Debug, Clone)]
 pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 
+/// Context inside loops.
+#[derive(Debug, Clone)]
+enum LoopContext {
+    /// Context inside a `loop`
+    Loop(FlowMergeTypeHelper),
+    /// Context inside a `while` loop
+    While,
+}
+
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
@@ -107,7 +116,7 @@ pub struct ComputationContext<'ctx> {
     pub statements: Arena<semantic::Statement>,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    loop_flow_merge: Option<FlowMergeTypeHelper>,
+    loop_ctx: Option<LoopContext>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -131,7 +140,7 @@ impl<'ctx> ComputationContext<'ctx> {
             patterns: Arena::default(),
             statements: Arena::default(),
             semantic_defs,
-            loop_flow_merge: None,
+            loop_ctx: None,
         }
     }
 
@@ -281,6 +290,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
         ast::Expr::While(expr_while) => {
+            compute_expr_while_semantic(ctx, expr_while)?;
             Err(ctx.diagnostics.report_by_ptr(expr_while.stable_ptr().untyped(), WhileNotSupported))
         }
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
@@ -752,6 +762,7 @@ pub fn compute_expr_block_semantic(
 }
 
 /// Helper for merging the return types of branch blocks (match or if else).
+#[derive(Debug, Clone)]
 struct FlowMergeTypeHelper {
     never_type: TypeId,
     final_type: Option<TypeId>,
@@ -891,14 +902,7 @@ fn compute_expr_match_semantic(
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-
-    let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
-    if ctx.resolver.inference().conform_ty(expr.ty(), core_bool_ty(ctx.db)).is_err() {
-        ctx.diagnostics.report_by_ptr(
-            expr.stable_ptr().untyped(),
-            IfConditionNotBool { condition_ty: expr.ty() },
-        );
-    }
+    let condition = compute_bool_condition_semantic(ctx, &syntax.condition(syntax_db)).id;
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
@@ -925,7 +929,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
     Ok(Expr::If(ExprIf {
-        condition: expr.id,
+        condition,
         if_block: ctx.exprs.alloc(if_block),
         else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
@@ -941,10 +945,50 @@ fn compute_expr_loop_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let (body, new_flow_merge) = ctx.run_in_subscope(|new_ctx| {
-        let old_flow_merge = new_ctx.loop_flow_merge.replace(FlowMergeTypeHelper::new(db));
+    let (body, loop_ctx) = compute_loop_body_semantic(
+        ctx,
+        syntax.body(syntax_db),
+        LoopContext::Loop(FlowMergeTypeHelper::new(db)),
+    );
+    Ok(Expr::Loop(ExprLoop {
+        body,
+        ty: extract_matches!(loop_ctx, LoopContext::Loop).get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
 
-        let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
+/// Computes the semantic model of an expression of type [ast::ExprWhile].
+fn compute_expr_while_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprWhile,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let condition = compute_bool_condition_semantic(ctx, &syntax.condition(syntax_db)).id;
+    let (body, _loop_ctx) =
+        compute_loop_body_semantic(ctx, syntax.body(syntax_db), LoopContext::While);
+    Ok(Expr::While(ExprWhile {
+        condition,
+        body,
+        ty: unit_ty(ctx.db),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+/// Computes the semantic model for a body of a loop.
+fn compute_loop_body_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: ast::ExprBlock,
+    loop_ctx: LoopContext,
+) -> (ExprId, LoopContext) {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    ctx.run_in_subscope(|new_ctx| {
+        let old_loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, Some(loop_ctx));
+
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
         let tail = get_tail_expression(syntax_db, statements.as_slice());
         if tail.is_some() {
@@ -967,9 +1011,7 @@ fn compute_expr_loop_semantic(
             }
         }
 
-        let new_flow_merge =
-            std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
-
+        let loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, old_loop_ctx).unwrap();
         let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
@@ -977,14 +1019,8 @@ fn compute_expr_loop_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
 
-        (body, new_flow_merge)
-    });
-
-    Ok(Expr::Loop(ExprLoop {
-        body,
-        ty: new_flow_merge.get_final_type(),
-        stable_ptr: syntax.stable_ptr().into(),
-    }))
+        (body, loop_ctx)
+    })
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
@@ -1005,7 +1041,7 @@ fn compute_expr_error_propagate_semantic(
         UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
     )?;
     // Disallow error propagation inside a loop.
-    if ctx.loop_flow_merge.is_some() {
+    if ctx.loop_ctx.is_some() {
         ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
     }
     let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, func_signature.return_type)
@@ -2203,7 +2239,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Continue(continue_syntax) => {
-            if ctx.loop_flow_merge.is_none() {
+            if ctx.loop_ctx.is_none() {
                 return Err(ctx
                     .diagnostics
                     .report(continue_syntax, ContinueOnlyAllowedInsideALoop));
@@ -2213,7 +2249,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            if ctx.loop_flow_merge.is_some() {
+            if ctx.loop_ctx.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
 
@@ -2256,14 +2292,25 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
-            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
-                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
-            };
-            if let Err((current_ty, break_ty)) =
-                flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, ty)
-            {
-                ctx.diagnostics
-                    .report_by_ptr(stable_ptr, IncompatibleLoopBreakTypes { current_ty, break_ty });
+            match &mut ctx.loop_ctx {
+                None => {
+                    return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+                }
+                Some(LoopContext::Loop(flow_merge)) => {
+                    if let Err((current_ty, break_ty)) =
+                        flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, ty)
+                    {
+                        ctx.diagnostics.report_by_ptr(
+                            stable_ptr,
+                            IncompatibleLoopBreakTypes { current_ty, break_ty },
+                        );
+                    };
+                }
+                Some(LoopContext::While) => {
+                    if expr_option.is_some() {
+                        ctx.diagnostics.report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
+                    };
+                }
             };
             semantic::Statement::Break(semantic::StatementBreak {
                 expr_option,
@@ -2273,6 +2320,22 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))
+}
+
+/// Computes the semantic model of an expression and reports diaganostics if
+/// the expession does not evaluate to a boolean value.
+fn compute_bool_condition_semantic(
+    ctx: &mut ComputationContext<'_>,
+    condition_syntax: &ast::Expr,
+) -> ExprAndId {
+    let condition = compute_expr_semantic(ctx, condition_syntax);
+    if ctx.resolver.inference().conform_ty(condition.ty(), core_bool_ty(ctx.db)).is_err() {
+        ctx.diagnostics.report_by_ptr(
+            condition.stable_ptr().untyped(),
+            ConditionNotBool { condition_ty: condition.ty() },
+        );
+    }
+    condition
 }
 
 /// Validates a struct member is visible and otherwise adds a diagnostic.
