@@ -5,7 +5,7 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, ImplTypeId, ImplTypeLongId, LanguageElementId,
+    ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeId, ImplTypeLongId, LanguageElementId,
     LookupItemId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
     TraitTypeId,
 };
@@ -33,9 +33,12 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
 use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
-use super::item_type::ItemTypeDeclarationData;
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use super::type_alias::{
+    type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
+    type_alias_semantic_data_helper, TypeAliasData,
+};
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -50,7 +53,6 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::resolve_type;
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -426,8 +428,9 @@ pub fn priv_impl_declaration_data_inner(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    // TODO(yg-other-pr): arc?
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
-    item_type_asts: OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>,
+    item_type_asts: Arc<OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>>,
 }
 
 // --- Selectors ---
@@ -489,16 +492,23 @@ pub fn impl_function_by_trait_function(
 pub fn impl_types(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<OrderedHashMap<SmolStr, ImplTypeId>> {
-    Ok(db
-        .priv_impl_definition_data(impl_def_id)?
-        .item_type_asts
-        .keys()
-        .map(|type_item_id| {
-            let type_item_long_id = db.lookup_intern_impl_type(*type_item_id);
-            (type_item_long_id.name(db.upcast()), *type_item_id)
-        })
-        .collect())
+) -> Maybe<Arc<OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.item_type_asts)
+}
+/// Query implementation of [crate::db::SemanticGroup::impl_type_ids].
+pub fn impl_type_ids(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Arc<Vec<ImplTypeId>>> {
+    Ok(Arc::new(db.impl_types(impl_def_id)?.keys().copied().collect()))
+}
+/// Query implementation of [crate::db::SemanticGroup::impl_type_by_id].
+pub fn impl_type_by_id(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+) -> Maybe<Option<ast::ItemTypeAlias>> {
+    let impl_types = db.impl_types(impl_type_id.impl_def_id(db.upcast()))?;
+    Ok(impl_types.get(&impl_type_id).cloned())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
@@ -653,7 +663,7 @@ pub fn priv_impl_definition_data(
     Ok(ImplDefinitionData {
         diagnostics: diagnostics.build(),
         function_asts,
-        item_type_asts: OrderedHashMap::default(),
+        item_type_asts: item_type_asts.into(),
     })
 }
 
@@ -1127,154 +1137,242 @@ pub fn filter_candidate_traits(
     candidates
 }
 
-// === Impl Item Type Declaration ===
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplItemTypeDeclarationData {
-    pub type_declaration_data: ItemTypeDeclarationData,
-    trait_type_id: Maybe<TraitTypeId>,
-}
+// === Impl Item Type ===
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_declaration_diagnostics].
-pub fn impl_type_declaration_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_semantic_diagnostics].
+pub fn impl_type_semantic_diagnostics(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_type_declaration_data(impl_type_id)
-        .map(|data| data.type_declaration_data.diagnostics)
-        .unwrap_or_default()
+    db.priv_impl_type_semantic_data(impl_type_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_attributes].
-pub fn impl_type_attributes(
-    db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_impl_type_declaration_data(impl_type_id)?.type_declaration_data.attributes)
+/// Query implementation of [crate::db::SemanticGroup::impl_type_resolved_type].
+pub fn impl_type_resolved_type(db: &dyn SemanticGroup, impl_type_id: ImplTypeId) -> Maybe<TypeId> {
+    db.priv_impl_type_semantic_data(impl_type_id)?.resolved_type
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_trait_type].
-pub fn impl_type_trait_type(
+/// Query implementation of [crate::db::SemanticGroup::impl_type_generic_params].
+pub fn impl_type_generic_params(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
-) -> Maybe<TraitTypeId> {
-    db.priv_impl_type_declaration_data(impl_type_id)?.trait_type_id
+) -> Maybe<Vec<GenericParam>> {
+    Ok(db.priv_impl_type_generic_params_data(impl_type_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_resolver_data].
+pub fn impl_type_resolver_data(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_impl_type_semantic_data(impl_type_id)?.resolver_data)
 }
 
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_declaration_data].
-pub fn priv_impl_type_declaration_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_semantic_data].
+pub fn priv_impl_type_semantic_data(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
-) -> Maybe<ImplItemTypeDeclarationData> {
+) -> Maybe<TypeAliasData> {
     let module_file_id = impl_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let impl_def_id = impl_type_id.impl_def_id(db.upcast());
-    let data = db.priv_impl_definition_data(impl_def_id)?;
-    let item_type_syntax = &data.item_type_asts[impl_type_id];
-    let syntax_db = db.upcast();
+    let impl_types = db.impl_types(impl_type_id.impl_def_id(db.upcast()))?;
+    let impl_type_ast = impl_types.get(&impl_type_id).to_maybe()?;
+    let generic_params_data = db.priv_impl_type_generic_params_data(impl_type_id)?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_id));
 
-    let trait_type_id = validate_impl_type(db, &mut diagnostics, impl_type_id, item_type_syntax);
-
-    let attributes = item_type_syntax.attributes(syntax_db).structurize(syntax_db);
-
-    Ok(ImplItemTypeDeclarationData {
-        type_declaration_data: ItemTypeDeclarationData {
-            diagnostics: diagnostics.build(),
-            attributes,
-        },
-        trait_type_id,
-    })
+    type_alias_semantic_data_helper(
+        db,
+        module_file_id,
+        impl_type_ast,
+        lookup_item_id,
+        generic_params_data,
+    )
 }
 
-/// Validates the impl item type, and returns the matching trait type id.
-fn validate_impl_type(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    impl_type_id: ImplTypeId,
-    impl_type_syntax: &ast::ItemTypeAlias,
-) -> Maybe<TraitTypeId> {
-    let defs_db = db.upcast();
-    let impl_def_id = impl_type_id.impl_def_id(defs_db);
-    let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
-    let trait_id = concrete_trait_id.trait_id(db);
-    let type_name = impl_type_id.name(defs_db);
-    let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
-        diagnostics.report(
-            impl_type_syntax,
-            ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name: type_name,
-                trait_id,
-                item_kind: "type".into(),
-            },
-        )
-    })?;
-
-    // TODO(yuval): add validations for generic parameters once they are supported.
-
-    Ok(trait_type_id)
-}
-
-// === Impl Item Type Assignment ===
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ItemTypeAssignmentData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub assignment: Arc<ItemTypeAssignment>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ItemTypeAssignment {
-    pub value: semantic::TypeId,
-}
-
-// --- Selectors ---
-
-/// Query implementation of [crate::db::SemanticGroup::impl_type_definition_diagnostics].
-pub fn impl_type_definition_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_generic_params_data].
+pub fn priv_impl_type_generic_params_data(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_type_assignment_data(impl_type_id).map(|data| data.diagnostics).unwrap_or_default()
+) -> Maybe<GenericParamsData> {
+    let module_file_id = impl_type_id.module_file_id(db.upcast());
+    let impl_type_ast = db.impl_type_by_id(impl_type_id)?.to_maybe()?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_id));
+
+    type_alias_generic_params_data_helper(db, module_file_id, &impl_type_ast, lookup_item_id)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_type_value].
-pub fn impl_type_value(db: &dyn SemanticGroup, impl_type_id: ImplTypeId) -> Maybe<TypeId> {
-    Ok(db.priv_impl_type_assignment_data(impl_type_id)?.assignment.value)
-}
-
-// --- Computation ---
-
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_type_assignment_data].
-pub fn priv_impl_type_assignment_data(
+/// Cycle handling for [crate::db::SemanticGroup::priv_impl_type_semantic_data].
+pub fn priv_impl_type_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    impl_type_id: ImplTypeId,
-) -> Maybe<ItemTypeAssignmentData> {
-    let syntax_db = db.upcast();
-    let defs_db = db.upcast();
-    let module_file_id = impl_type_id.module_file_id(defs_db);
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let impl_def_id = impl_type_id.impl_def_id(defs_db);
-    let data = db.priv_impl_definition_data(impl_def_id)?;
-    let impl_type_ast = &data.item_type_asts[impl_type_id];
+    _cycle: &[String],
+    impl_type_id: &ImplTypeId,
+) -> Maybe<TypeAliasData> {
+    let module_file_id = impl_type_id.module_file_id(db.upcast());
+    let impl_types = db.impl_types(impl_type_id.impl_def_id(db.upcast()))?;
+    let impl_type_ast = impl_types.get(impl_type_id).to_maybe()?;
+    let generic_params_data = db.priv_impl_type_generic_params_data(*impl_type_id)?;
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(*impl_type_id));
 
-    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ImplType(impl_type_id));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    let value_type =
-        resolve_type(db, &mut diagnostics, &mut resolver, &impl_type_ast.ty(syntax_db));
-
-    Ok(ItemTypeAssignmentData {
-        diagnostics: diagnostics.build(),
-        assignment: Arc::new(ItemTypeAssignment { value: value_type }),
-    })
+    type_alias_semantic_data_cycle_helper(
+        db,
+        module_file_id,
+        impl_type_ast,
+        lookup_item_id,
+        generic_params_data,
+    )
 }
+
+// // === Impl Item Type Declaration ===
+
+// #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+// #[debug_db(dyn SemanticGroup + 'static)]
+// pub struct ImplItemTypeDeclarationData {
+//     pub type_declaration_data: ItemTypeDeclarationData,
+//     trait_type_id: Maybe<TraitTypeId>,
+// }
+
+// // --- Selectors ---
+
+// /// Query implementation of [crate::db::SemanticGroup::impl_type_declaration_diagnostics].
+// pub fn impl_type_declaration_diagnostics(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Diagnostics<SemanticDiagnostic> {
+//     db.priv_impl_type_declaration_data(impl_type_id)
+//         .map(|data| data.type_declaration_data.diagnostics)
+//         .unwrap_or_default()
+// }
+
+// /// Query implementation of [crate::db::SemanticGroup::impl_type_attributes].
+// pub fn impl_type_attributes(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Maybe<Vec<Attribute>> {
+//     Ok(db.priv_impl_type_declaration_data(impl_type_id)?.type_declaration_data.attributes)
+// }
+
+// /// Query implementation of [crate::db::SemanticGroup::impl_type_trait_type].
+// pub fn impl_type_trait_type(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Maybe<TraitTypeId> {
+//     db.priv_impl_type_declaration_data(impl_type_id)?.trait_type_id
+// }
+
+// // --- Computation ---
+
+// /// Query implementation of [crate::db::SemanticGroup::priv_impl_type_declaration_data].
+// pub fn priv_impl_type_declaration_data(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Maybe<ImplItemTypeDeclarationData> {
+//     let module_file_id = impl_type_id.module_file_id(db.upcast());
+//     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+//     let impl_def_id = impl_type_id.impl_def_id(db.upcast());
+//     let data = db.priv_impl_definition_data(impl_def_id)?;
+//     let item_type_syntax = &data.item_type_asts[impl_type_id];
+//     let syntax_db = db.upcast();
+
+//     let trait_type_id = validate_impl_type(db, &mut diagnostics, impl_type_id, item_type_syntax);
+
+//     let attributes = item_type_syntax.attributes(syntax_db).structurize(syntax_db);
+
+//     Ok(ImplItemTypeDeclarationData {
+//         type_declaration_data: ItemTypeDeclarationData {
+//             diagnostics: diagnostics.build(),
+//             attributes,
+//         },
+//         trait_type_id,
+//     })
+// }
+
+// /// Validates the impl item type, and returns the matching trait type id.
+// fn validate_impl_type(
+//     db: &dyn SemanticGroup,
+//     diagnostics: &mut SemanticDiagnostics,
+//     impl_type_id: ImplTypeId,
+//     impl_type_syntax: &ast::ItemTypeAlias,
+// ) -> Maybe<TraitTypeId> {
+//     let defs_db = db.upcast();
+//     let impl_def_id = impl_type_id.impl_def_id(defs_db);
+//     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
+//     let trait_id = concrete_trait_id.trait_id(db);
+//     let type_name = impl_type_id.name(defs_db);
+//     let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
+//         diagnostics.report(
+//             impl_type_syntax,
+//             ImplItemNotInTrait {
+//                 impl_def_id,
+//                 impl_item_name: type_name,
+//                 trait_id,
+//                 item_kind: "type".into(),
+//             },
+//         )
+//     })?;
+
+//     // TODO(yuval): add validations for generic parameters once they are supported.
+
+//     Ok(trait_type_id)
+// }
+
+// // === Impl Item Type Assignment ===
+
+// #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+// #[debug_db(dyn SemanticGroup + 'static)]
+// pub struct ItemTypeAssignmentData {
+//     pub diagnostics: Diagnostics<SemanticDiagnostic>,
+//     pub assignment: Arc<ItemTypeAssignment>,
+// }
+
+// #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+// #[debug_db(dyn SemanticGroup + 'static)]
+// pub struct ItemTypeAssignment {
+//     pub value: semantic::TypeId,
+// }
+
+// // --- Selectors ---
+
+// /// Query implementation of [crate::db::SemanticGroup::impl_type_definition_diagnostics].
+// pub fn impl_type_definition_diagnostics(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Diagnostics<SemanticDiagnostic> {
+//     db.priv_impl_type_assignment_data(impl_type_id).map(|data|
+// data.diagnostics).unwrap_or_default() }
+
+// /// Query implementation of [crate::db::SemanticGroup::impl_type_value].
+// pub fn impl_type_value(db: &dyn SemanticGroup, impl_type_id: ImplTypeId) -> Maybe<TypeId> {
+//     Ok(db.priv_impl_type_assignment_data(impl_type_id)?.assignment.value)
+// }
+
+// // --- Computation ---
+
+// /// Query implementation of [crate::db::SemanticGroup::priv_impl_type_assignment_data].
+// pub fn priv_impl_type_assignment_data(
+//     db: &dyn SemanticGroup,
+//     impl_type_id: ImplTypeId,
+// ) -> Maybe<ItemTypeAssignmentData> {
+//     let syntax_db = db.upcast();
+//     let defs_db = db.upcast();
+//     let module_file_id = impl_type_id.module_file_id(defs_db);
+//     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+//     let impl_def_id = impl_type_id.impl_def_id(defs_db);
+//     let data = db.priv_impl_definition_data(impl_def_id)?;
+//     let impl_type_ast = &data.item_type_asts[impl_type_id];
+
+//     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ImplType(impl_type_id));
+//     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+//     let value_type =
+//         resolve_type(db, &mut diagnostics, &mut resolver, &impl_type_ast.ty(syntax_db));
+
+//     Ok(ItemTypeAssignmentData {
+//         diagnostics: diagnostics.build(),
+//         assignment: Arc::new(ItemTypeAssignment { value: value_type }),
+//     })
+// }
 
 // === Impl Function Declaration ===
 
@@ -1328,8 +1426,9 @@ pub fn priv_impl_function_generic_params_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
-    let inference_id =
-        InferenceId::LookupItemGenerics(LookupItemId::ImplFunction(impl_function_id));
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
+        ImplItemId::Function(impl_function_id),
+    ));
     let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
     let mut resolver =
         Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
@@ -1429,8 +1528,9 @@ pub fn priv_impl_function_declaration_data(
 
     let generic_params_data = db.priv_impl_function_generic_params_data(impl_function_id)?;
     let generic_params = generic_params_data.generic_params;
-    let inference_id =
-        InferenceId::LookupItemGenerics(LookupItemId::ImplFunction(impl_function_id));
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
+        ImplItemId::Function(impl_function_id),
+    ));
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
@@ -1689,8 +1789,9 @@ pub fn priv_impl_function_body_data(
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
     let parent_resolver_data = declaration.function_declaration_data.resolver_data;
-    let inference_id =
-        InferenceId::LookupItemDefinition(LookupItemId::ImplFunction(impl_function_id));
+    let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ImplItem(
+        ImplItemId::Function(impl_function_id),
+    ));
     let resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment = declaration.function_declaration_data.environment;

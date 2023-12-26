@@ -363,7 +363,7 @@ impl ImplTypeId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
         let ImplTypeLongId(module_file_id, ptr) = db.lookup_intern_impl_type(*self);
 
-        // Impl type ast lies 3 levels bellow the impl ast.
+        // Impl type ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
         db.intern_impl(ImplDefLongId(module_file_id, impl_ptr))
     }
@@ -634,6 +634,8 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     }
 }
 
+// TODO(yuval): make this hierarchical: module/trait/impl and then subitems. Add
+// ImplItem(ImplTypeId) and TraitItem(ImplTypeId).
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of an item with generic parameters.
@@ -847,7 +849,7 @@ impl From<GenericItemId> for LookupItemId {
                 LookupItemId::ModuleItem(ModuleItemId::ExternFunction(id))
             }
             GenericItemId::TraitFunc(id) => LookupItemId::TraitItem(TraitItemId::Function(id)),
-            GenericItemId::ImplFunc(id) => LookupItemId::ImplFunction(id),
+            GenericItemId::ImplFunc(id) => LookupItemId::ImplItem(ImplItemId::Function(id)),
             GenericItemId::Trait(id) => LookupItemId::ModuleItem(ModuleItemId::Trait(id)),
             GenericItemId::Impl(id) => LookupItemId::ModuleItem(ModuleItemId::Impl(id)),
             GenericItemId::Struct(id) => LookupItemId::ModuleItem(ModuleItemId::Struct(id)),
@@ -884,14 +886,35 @@ impl TraitItemId {
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
+    /// Id for direct children of an impl.
+    pub enum ImplItemId {
+        Function(ImplFunctionId),
+        Type(ImplTypeId),
+    }
+}
+impl ImplItemId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            ImplItemId::Function(id) => id.name(db),
+            ImplItemId::Type(id) => id.name(db),
+        }
+    }
+    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
+        match self {
+            ImplItemId::Function(id) => id.impl_def_id(db),
+            ImplItemId::Type(id) => id.impl_def_id(db),
+        }
+    }
+}
+
+define_language_element_id_as_enum! {
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
     /// Semantic info lookups should be performed against these items.
     pub enum LookupItemId {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
-        // TODO(yg): Replace with ImplItemId.
-        ImplFunction(ImplFunctionId),
-        ImplType(ImplTypeId),
+        ImplItem(ImplItemId),
     }
 }

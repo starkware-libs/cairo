@@ -574,7 +574,16 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the type items in the impl.
     #[salsa::invoke(items::imp::impl_types)]
-    fn impl_types(&self, impl_def_id: ImplDefId) -> Maybe<OrderedHashMap<SmolStr, ImplTypeId>>;
+    fn impl_types(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<Arc<OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>>>;
+    /// Returns the ids of the type items in the impl.
+    #[salsa::invoke(items::imp::impl_type_ids)]
+    fn impl_type_ids(&self, impl_def_id: ImplDefId) -> Maybe<Arc<Vec<ImplTypeId>>>;
+    /// Returns the impl AST of the impl type that matches the given id, if exists.
+    #[salsa::invoke(items::imp::impl_type_by_id)]
+    fn impl_type_by_id(&self, impl_type_id: ImplTypeId) -> Maybe<Option<ast::ItemTypeAlias>>;
     /// Returns the impl type item that matches the given trait type item, if exists.
     #[salsa::invoke(items::imp::impl_type_by_trait_type)]
     fn impl_type_by_trait_type(
@@ -582,6 +591,7 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_type_id: TraitTypeId,
     ) -> Maybe<Option<ImplTypeId>>;
+    // TODO(yg-other-pr): change to impl_function_ids which returns Maybe<Arc<Vec<ImplFunctionId>>>
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(
@@ -607,37 +617,32 @@ pub trait SemanticGroup:
 
     // Impl type.
     // ================
-    /// Returns the semantic diagnostics of an impl type's declaration (the part before the `=`).
-    #[salsa::invoke(items::imp::impl_type_declaration_diagnostics)]
-    fn impl_type_declaration_diagnostics(
+    /// Returns the semantic diagnostics of an impl item type.
+    #[salsa::invoke(items::imp::impl_type_semantic_diagnostics)]
+    fn impl_type_semantic_diagnostics(
         &self,
         impl_type_id: ImplTypeId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the attributes of an impl type.
-    #[salsa::invoke(items::imp::impl_type_attributes)]
-    fn impl_type_attributes(&self, impl_type_id: ImplTypeId) -> Maybe<Vec<Attribute>>;
-    /// Private query to compute data about an impl type declaration.
-    #[salsa::invoke(items::imp::priv_impl_type_declaration_data)]
-    fn priv_impl_type_declaration_data(
-        &self,
-        impl_type_id: ImplTypeId,
-    ) -> Maybe<items::imp::ImplItemTypeDeclarationData>;
+    /// Returns the resolved type of an impl item type.
+    #[salsa::invoke(items::imp::impl_type_resolved_type)]
+    fn impl_type_resolved_type(&self, impl_type_id: ImplTypeId) -> Maybe<TypeId>;
+    /// Returns the generic parameters of an impl item type.
+    #[salsa::invoke(items::imp::impl_type_generic_params)]
+    fn impl_type_generic_params(&self, enum_id: ImplTypeId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the resolution resolved_items of an impl item type.
+    #[salsa::invoke(items::imp::impl_type_resolver_data)]
+    fn impl_type_resolver_data(&self, impl_type_id: ImplTypeId) -> Maybe<Arc<ResolverData>>;
 
-    /// Returns the semantic diagnostics of an impl type definition (declaration + assignment).
-    #[salsa::invoke(items::imp::impl_type_definition_diagnostics)]
-    fn impl_type_definition_diagnostics(
+    /// Private query to compute data about an impl item type.
+    #[salsa::invoke(items::imp::priv_impl_type_semantic_data)]
+    #[salsa::cycle(items::imp::priv_impl_type_semantic_data_cycle)]
+    fn priv_impl_type_semantic_data(
         &self,
         impl_type_id: ImplTypeId,
-    ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the assigned value type of an impl item type.
-    #[salsa::invoke(items::imp::impl_type_value)]
-    fn impl_type_value(&self, impl_type_id: ImplTypeId) -> Maybe<TypeId>;
-    /// Private query to compute data about an impl type definition (declaration + assignment)
-    #[salsa::invoke(items::imp::priv_impl_type_assignment_data)]
-    fn priv_impl_type_assignment_data(
-        &self,
-        impl_type_id: ImplTypeId,
-    ) -> Maybe<items::imp::ItemTypeAssignmentData>;
+    ) -> Maybe<items::type_alias::TypeAliasData>;
+    /// Private query to compute data about the generic parameters of an impl item type.
+    #[salsa::invoke(items::imp::priv_impl_type_generic_params_data)]
+    fn priv_impl_type_generic_params_data(&self, enum_id: ImplTypeId) -> Maybe<GenericParamsData>;
 
     // Impl function.
     // ================
@@ -1254,11 +1259,12 @@ fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Ar
             }
             cairo_lang_defs::ids::TraitItemId::Type(id) => vec![db.trait_type_resolver_data(id)],
         },
-        LookupItemId::ImplFunction(id) => {
-            vec![db.impl_function_resolver_data(id), db.impl_function_body_resolver_data(id)]
-        }
-        // TODO(yg)
-        LookupItemId::ImplType(_id) => vec![],
+        LookupItemId::ImplItem(id) => match id {
+            cairo_lang_defs::ids::ImplItemId::Function(id) => {
+                vec![db.impl_function_resolver_data(id), db.impl_function_body_resolver_data(id)]
+            }
+            cairo_lang_defs::ids::ImplItemId::Type(id) => vec![db.impl_type_resolver_data(id)],
+        },
     }
     .into_iter()
     .flatten()

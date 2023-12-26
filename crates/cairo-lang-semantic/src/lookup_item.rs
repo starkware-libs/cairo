@@ -29,7 +29,7 @@ impl LookupItemEx for LookupItemId {
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                 Some(FunctionWithBodyId::Free(*free_function_id))
             }
-            LookupItemId::ImplFunction(impl_function_id) => {
+            LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
                 Some(FunctionWithBodyId::Impl(*impl_function_id))
             }
             _ => None,
@@ -38,14 +38,8 @@ impl LookupItemEx for LookupItemId {
 
     fn resolver_context(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
-            // TODO(yg): unite those.
-            LookupItemId::ImplFunction(impl_function_id) => {
-                let impl_def_id = impl_function_id.impl_def_id(db.upcast());
-                let resolver_data = impl_def_id.resolver_data(db.upcast())?;
-                Ok(resolver_data)
-            }
-            LookupItemId::ImplType(impl_type_id) => {
-                let impl_def_id = impl_type_id.impl_def_id(db.upcast());
+            LookupItemId::ImplItem(impl_item_id) => {
+                let impl_def_id = impl_item_id.impl_def_id(db.upcast());
                 let resolver_data = impl_def_id.resolver_data(db.upcast())?;
                 Ok(resolver_data)
             }
@@ -70,9 +64,7 @@ impl HasResolverData for LookupItemId {
         match self {
             LookupItemId::ModuleItem(item) => item.resolver_data(db),
             LookupItemId::TraitItem(item) => item.resolver_data(db),
-            // TODO(yg): unite
-            LookupItemId::ImplFunction(item) => item.resolver_data(db),
-            LookupItemId::ImplType(item) => item.resolver_data(db),
+            LookupItemId::ImplItem(item) => item.resolver_data(db),
         }
     }
 }
@@ -92,6 +84,15 @@ impl HasResolverData for ModuleItemId {
             ModuleItemId::Enum(item) => item.resolver_data(db),
             ModuleItemId::TypeAlias(item) => item.resolver_data(db),
             ModuleItemId::Trait(item) => item.resolver_data(db),
+        }
+    }
+}
+
+impl HasResolverData for ImplItemId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        match self {
+            ImplItemId::Function(item) => item.resolver_data(db),
+            ImplItemId::Type(item) => item.resolver_data(db),
         }
     }
 }
@@ -182,6 +183,12 @@ impl HasResolverData for TraitTypeId {
 impl HasResolverData for TraitFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_function_resolver_data(*self)
+    }
+}
+
+impl HasResolverData for ImplTypeId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.impl_type_resolver_data(*self)
     }
 }
 
