@@ -642,22 +642,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
             }
-<<<<<<< HEAD
-            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
-                "Coupon cannot be used with extern functions.".into()
-            }
-            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
-                "The __coupon__ argument cannot have modifiers.".into()
-            }
-||||||| 3bbfa784f
-=======
             SemanticDiagnosticKind::UnsupportedTraitItem { kind } => {
                 format!("{kind} items are not yet supported in traits.")
             }
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
->>>>>>> origin/sierra-minor-update
+            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
+                "Coupon cannot be used with extern functions.".into()
+            }
+            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
+                "The __coupon__ argument cannot have modifiers.".into()
+            }
         }
     }
 
@@ -968,18 +964,14 @@ pub enum SemanticDiagnosticKind {
     GenericArgOutOfOrder {
         name: SmolStr,
     },
-<<<<<<< HEAD
-    CouponForExternFunctionNotAllowed,
-    CouponArgumentNoModifiers,
-||||||| 3bbfa784f
-=======
     UnsupportedTraitItem {
         kind: String,
     },
     UnsupportedImplItem {
         kind: String,
     },
->>>>>>> origin/sierra-minor-update
+    CouponForExternFunctionNotAllowed,
+    CouponArgumentNoModifiers,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
