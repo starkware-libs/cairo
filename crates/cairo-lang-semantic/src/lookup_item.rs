@@ -38,8 +38,14 @@ impl LookupItemEx for LookupItemId {
 
     fn resolver_context(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
+            // TODO(yg): unite those.
             LookupItemId::ImplFunction(impl_function_id) => {
                 let impl_def_id = impl_function_id.impl_def_id(db.upcast());
+                let resolver_data = impl_def_id.resolver_data(db.upcast())?;
+                Ok(resolver_data)
+            }
+            LookupItemId::ImplType(impl_type_id) => {
+                let impl_def_id = impl_type_id.impl_def_id(db.upcast());
                 let resolver_data = impl_def_id.resolver_data(db.upcast())?;
                 Ok(resolver_data)
             }
@@ -64,7 +70,9 @@ impl HasResolverData for LookupItemId {
         match self {
             LookupItemId::ModuleItem(item) => item.resolver_data(db),
             LookupItemId::TraitItem(item) => item.resolver_data(db),
+            // TODO(yg): unite
             LookupItemId::ImplFunction(item) => item.resolver_data(db),
+            LookupItemId::ImplType(item) => item.resolver_data(db),
         }
     }
 }

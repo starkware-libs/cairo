@@ -890,7 +890,8 @@ define_language_element_id_as_enum! {
     pub enum LookupItemId {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
-        // TODO(spapini): Replace with ImplItemId.
+        // TODO(yg): Replace with ImplItemId.
         ImplFunction(ImplFunctionId),
+        ImplType(ImplTypeId),
     }
 }
