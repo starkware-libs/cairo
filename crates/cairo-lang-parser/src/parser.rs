@@ -1191,6 +1191,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLoop if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_loop_expr().into())
             }
+            SyntaxKind::TerminalWhile if lbrace_allowed == LbraceAllowed::Allow => {
+                Ok(self.expect_while_expr().into())
+            }
 
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -1620,6 +1623,16 @@ impl<'a> Parser<'a> {
         let body = self.parse_block();
 
         ExprLoop::new_green(self.db, loop_kw, body)
+    }
+
+    /// Assumes the current token is `While`.
+    /// Expected pattern: `while <expr> <block>`.
+    fn expect_while_expr(&mut self) -> ExprWhileGreen {
+        let while_kw = self.take::<TerminalWhile>();
+        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let body = self.parse_block();
+
+        ExprWhile::new_green(self.db, while_kw, condition, body)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
