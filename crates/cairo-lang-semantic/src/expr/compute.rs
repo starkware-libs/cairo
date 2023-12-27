@@ -289,10 +289,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
-        ast::Expr::While(expr_while) => {
-            compute_expr_while_semantic(ctx, expr_while)?;
-            Err(ctx.diagnostics.report_by_ptr(expr_while.stable_ptr().untyped(), WhileNotSupported))
-        }
+        ast::Expr::While(expr_while) => compute_expr_while_semantic(ctx, expr_while),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
         ast::Expr::InlineMacro(expr) => compute_expr_inline_macro_semantic(ctx, expr),
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
