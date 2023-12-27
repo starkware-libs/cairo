@@ -43,7 +43,7 @@ test::bar 10000
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #38: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#51: OrderedHashMap({Const: 9900})
+#51: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9900})
 
 test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
@@ -236,7 +236,7 @@ test::bar 10000
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10160})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 450})
 #29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#40: OrderedHashMap({Const: 9900})
+#40: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9900})
 
 test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
@@ -429,7 +429,7 @@ test::bar 2000
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1260})
 #18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1710})
 #24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#33: OrderedHashMap({Const: 1900})
+#33: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1900})
 
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
@@ -603,13 +603,13 @@ test::foo 100000
 
 //! > gas_solution_lp
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#9: OrderedHashMap({Const: 79300})
+#9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 79300})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#15: OrderedHashMap({Const: 89080})
+#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 89080})
 #21: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#29: OrderedHashMap({Const: 10170})
-#33: OrderedHashMap({Const: 9900})
+#29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10170})
+#33: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9900})
 
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
@@ -834,6 +834,146 @@ ap += 1;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 2, ap++;
+ret;
+
+//! > ==========================================================================
+
+//! > Function non-const redeposit.
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+// TODO(lior): Use gas::redeposit_gas once it's there.
+extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+
+fn foo(x: felt252) {
+    if x == 0 {
+        bar();
+        bar();
+        bar();
+        return ();
+    } else {
+        redeposit_gas();
+        return ();
+    }
+}
+
+#[inline(never)]
+fn bar() {
+    1 & 2_u128;
+}
+
+//! > gas_solution_lp
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, Const: 1310})
+
+test::foo: OrderedHashMap({Bitwise: 3, Const: 2500})
+test::bar: OrderedHashMap({Bitwise: 1, Const: 500})
+
+//! > gas_solution_linear
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, Const: 1310})
+
+test::foo: OrderedHashMap({Bitwise: 3, Const: 2500})
+test::bar: OrderedHashMap({Bitwise: 1, Const: 500})
+
+//! > ap_solution_lp
+#13: 9
+
+test::bar: 3
+test::foo: 18
+
+//! > ap_solution_linear
+#13: 9
+
+test::foo: 18
+test::bar: 3
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc redeposit_gas = redeposit_gas;
+libfunc u128_const<1> = u128_const<1>;
+libfunc u128_const<2> = u128_const<2>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+
+felt252_is_zero([2]) { fallthrough() 13([3]) }; // 0
+branch_align() -> (); // 1
+store_temp<Bitwise>([1]) -> ([1]); // 2
+function_call<user@test::bar>([1]) -> ([4], [5]); // 3
+drop<Unit>([5]) -> (); // 4
+function_call<user@test::bar>([4]) -> ([6], [7]); // 5
+drop<Unit>([7]) -> (); // 6
+function_call<user@test::bar>([6]) -> ([8], [9]); // 7
+drop<Unit>([9]) -> (); // 8
+struct_construct<Unit>() -> ([10]); // 9
+store_temp<GasBuiltin>([0]) -> ([0]); // 10
+store_temp<Bitwise>([8]) -> ([8]); // 11
+return([0], [8], [10]); // 12
+branch_align() -> (); // 13
+drop<NonZero<felt252>>([3]) -> (); // 14
+redeposit_gas([0]) -> ([11]); // 15
+struct_construct<Unit>() -> ([12]); // 16
+store_temp<GasBuiltin>([11]) -> ([11]); // 17
+store_temp<Bitwise>([1]) -> ([1]); // 18
+return([11], [1], [12]); // 19
+u128_const<1>() -> ([1]); // 20
+u128_const<2>() -> ([2]); // 21
+store_temp<u128>([1]) -> ([1]); // 22
+store_temp<u128>([2]) -> ([2]); // 23
+bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 24
+drop<u128>([4]) -> (); // 25
+drop<u128>([5]) -> (); // 26
+drop<u128>([6]) -> (); // 27
+struct_construct<Unit>() -> ([7]); // 28
+store_temp<Bitwise>([3]) -> ([3]); // 29
+return([3], [7]); // 30
+
+test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: felt252) -> (GasBuiltin, Bitwise, Unit);
+test::bar@20([0]: Bitwise) -> (Bitwise, Unit);
+
+//! > casm
+jmp rel 12 if [fp + -3] != 0;
+[ap + 0] = [fp + -4], ap++;
+call rel 24;
+call rel 22;
+call rel 20;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+ap += 9;
+call rel 22;
+[ap + 0] = [ap + -1] + 21, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 1], ap++;
+[ap + 0] = [ap + -1] * 3, ap++;
+[ap + 0] = [ap + -1] + 1310, ap++;
+[ap + 0] = [fp + -5] + [ap + -1], ap++;
+[ap + 0] = [fp + -4], ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = 2, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = [fp + -3] + 5, ap++;
 ret;
 
 //! > ==========================================================================

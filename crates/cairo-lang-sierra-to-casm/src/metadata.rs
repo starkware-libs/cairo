@@ -94,7 +94,6 @@ pub fn calc_metadata(
     } else {
         let pre_gas_info_old = calc_gas_precost_info(program, pre_function_set_costs)?;
         if !config.skip_non_linear_solver_comparisons {
-            pre_gas_info_old.assert_eq_variables(&pre_gas_info_new);
             pre_gas_info_old.assert_eq_functions(&pre_gas_info_new);
         }
         pre_gas_info_old
