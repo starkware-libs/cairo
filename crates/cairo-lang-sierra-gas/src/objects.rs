@@ -1,4 +1,4 @@
-use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -105,12 +105,9 @@ impl WithdrawGasBranchInfo {
         token_usages: TokenUsages,
     ) -> ConstCost {
         let cost_computation: i32 =
-            BuiltinCostWithdrawGasLibfunc::cost_computation_steps(token_usages).into_or_panic();
+            BuiltinCostsType::cost_computation_steps(self.with_builtin_costs, token_usages)
+                .into_or_panic();
         let mut steps = 3 + cost_computation;
-        // If we require builtin costs, we need to add steps for builtin cost table fetch.
-        if !self.with_builtin_costs && cost_computation > 0 {
-            steps += 4;
-        }
         // Failure branch have some additional costs.
         if !self.success {
             if self.with_builtin_costs || cost_computation > 0 {
