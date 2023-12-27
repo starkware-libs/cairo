@@ -79,6 +79,140 @@ test::bar@17() -> (Unit);
 
 //! > ==========================================================================
 
+//! > redeposit_gas libfunc with builtin costs
+
+//! > test_runner_name
+SmallE2ETestRunnerSkipAddGas
+
+//! > cairo
+// TODO(lior): Use gas::redeposit_gas once it's there.
+extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+
+fn foo(x: felt252) {
+    if x == 0 {
+	1 & 2_u128;
+	1 & 2_u128;
+	pedersen::pedersen(1, 1);
+        return ();
+    } else {
+        redeposit_gas();
+        return ();
+    }
+}
+
+#[inline(never)]
+fn bar() {
+}
+
+//! > casm
+jmp rel 28 if [fp + -3] != 0;
+ap += 3;
+[ap + 0] = 1, ap++;
+[ap + 0] = 2, ap++;
+[ap + -2] = [[fp + -5] + 0];
+[ap + -1] = [[fp + -5] + 1];
+[ap + 0] = 1, ap++;
+[ap + 0] = 2, ap++;
+[ap + -2] = [[fp + -5] + 5];
+[ap + -1] = [[fp + -5] + 6];
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -4] + 0];
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5] + 10, ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+ret;
+call rel 17;
+[ap + 0] = [ap + -1] + 16, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -1] + 430, ap++;
+[ap + 0] = [[ap + -3] + 1], ap++;
+[ap + 0] = [ap + -1] * 2, ap++;
+[ap + 0] = [ap + -1] + [ap + -3], ap++;
+[ap + 0] = [fp + -6] + [ap + -1], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+ret;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 2, Pedersen: 1, Const: 1730})
+test::bar: OrderedHashMap({})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc u128_const<1> = u128_const<1>;
+libfunc u128_const<2> = u128_const<2>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc pedersen = pedersen;
+libfunc drop<felt252> = drop<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Pedersen> = store_temp<Pedersen>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc redeposit_gas = redeposit_gas;
+
+felt252_is_zero([3]) { fallthrough() 29([4]) }; // 0
+branch_align() -> (); // 1
+u128_const<1>() -> ([5]); // 2
+u128_const<2>() -> ([6]); // 3
+store_temp<u128>([5]) -> ([5]); // 4
+store_temp<u128>([6]) -> ([6]); // 5
+bitwise([1], [5], [6]) -> ([7], [8], [9], [10]); // 6
+drop<u128>([8]) -> (); // 7
+drop<u128>([9]) -> (); // 8
+drop<u128>([10]) -> (); // 9
+u128_const<1>() -> ([11]); // 10
+u128_const<2>() -> ([12]); // 11
+store_temp<u128>([11]) -> ([11]); // 12
+store_temp<u128>([12]) -> ([12]); // 13
+bitwise([7], [11], [12]) -> ([13], [14], [15], [16]); // 14
+drop<u128>([14]) -> (); // 15
+drop<u128>([15]) -> (); // 16
+drop<u128>([16]) -> (); // 17
+felt252_const<1>() -> ([17]); // 18
+felt252_const<1>() -> ([18]); // 19
+store_temp<felt252>([17]) -> ([17]); // 20
+store_temp<felt252>([18]) -> ([18]); // 21
+pedersen([2], [17], [18]) -> ([19], [20]); // 22
+drop<felt252>([20]) -> (); // 23
+struct_construct<Unit>() -> ([21]); // 24
+store_temp<GasBuiltin>([0]) -> ([0]); // 25
+store_temp<Bitwise>([13]) -> ([13]); // 26
+store_temp<Pedersen>([19]) -> ([19]); // 27
+return([0], [13], [19], [21]); // 28
+branch_align() -> (); // 29
+drop<NonZero<felt252>>([4]) -> (); // 30
+redeposit_gas([0]) -> ([22]); // 31
+struct_construct<Unit>() -> ([23]); // 32
+store_temp<GasBuiltin>([22]) -> ([22]); // 33
+store_temp<Bitwise>([1]) -> ([1]); // 34
+store_temp<Pedersen>([2]) -> ([2]); // 35
+return([22], [1], [2], [23]); // 36
+struct_construct<Unit>() -> ([0]); // 37
+return([0]); // 38
+
+test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasBuiltin, Bitwise, Pedersen, Unit);
+test::bar@37() -> (Unit);
+
+//! > ==========================================================================
+
 //! > withdraw_gas use no builtins
 
 //! > test_runner_name

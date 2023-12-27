@@ -199,7 +199,7 @@ fn run_e2e_test(
     let mut metadata_config =
         MetadataComputationConfig { function_set_costs: enforced_costs, ..Default::default() };
     let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
-
+    println!("Metadata: {}", metadata_with_linear.gas_info);
     // Compile to casm.
     let casm =
         cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_with_linear, true)
