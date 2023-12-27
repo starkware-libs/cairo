@@ -34,7 +34,7 @@ impl EntryPointKind {
         if has_v0_attribute(
             db,
             diagnostics,
-            &ast::Item::FreeFunction(item_function.clone()),
+            &ast::ModuleItem::FreeFunction(item_function.clone()),
             EXTERNAL_ATTR,
         ) {
             Some(EntryPointKind::External)

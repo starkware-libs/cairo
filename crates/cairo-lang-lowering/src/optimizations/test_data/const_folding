@@ -1,0 +1,41 @@
+//! > Test const folding simple scenario.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let b = a - 0;
+   b - 0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0u
+  (v5: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 0u
+  (v6: core::felt252) <- core::felt252_sub(v5, v3)
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0u
+  (v5: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 0u
+  (v6: core::felt252) <- core::felt252_sub(v0, v3)
+End:
+  Return(v0)

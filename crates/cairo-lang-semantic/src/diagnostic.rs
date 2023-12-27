@@ -11,10 +11,11 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -315,6 +316,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
             }
+            SemanticDiagnosticKind::MissingVariableInPattern => {
+                "Missing variable in pattern.".into()
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{member_name}" on struct "{}"."#,
@@ -598,6 +602,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NegativeImplsNotEnabled => {
                 "Negative impls are not enabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
+                "Negative impls supported only on impls.".into()
+            }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
@@ -634,6 +641,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedTraitItem { kind } => {
+                format!("{kind} items are not yet supported in traits.")
+            }
+            SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
+                format!("{kind} items are not yet supported in impls.")
             }
             SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
@@ -773,6 +786,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound {
         name: SmolStr,
     },
+    MissingVariableInPattern,
     StructMemberRedefinition {
         struct_id: StructId,
         member_name: SmolStr,
@@ -834,6 +848,7 @@ pub enum SemanticDiagnosticKind {
     UnusedVariable,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
+    NegativeImplsOnlyOnImpls,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -949,6 +964,12 @@ pub enum SemanticDiagnosticKind {
     GenericArgOutOfOrder {
         name: SmolStr,
     },
+    UnsupportedTraitItem {
+        kind: String,
+    },
+    UnsupportedImplItem {
+        kind: String,
+    },
     CouponForExternFunctionNotAllowed,
     CouponArgumentNoModifiers,
 }
@@ -1035,4 +1056,28 @@ impl TraitInferenceErrors {
             })
             .join("\n")
     }
+}
+
+/// A helper function to report diagnostics of yet-unsupported trait items.
+pub fn report_unsupported_trait_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedTraitItem { kind: item_kind.into() },
+    );
+}
+
+/// A helper function to report diagnostics of yet-unsupported impl items.
+pub fn report_unsupported_impl_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedImplItem { kind: item_kind.into() },
+    );
 }

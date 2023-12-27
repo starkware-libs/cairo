@@ -126,6 +126,18 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
 
+        let mut opt_same_as_param_idx = None;
+        for (idx, ty) in member_types.iter().cloned().enumerate() {
+            if !context.get_type_info(ty)?.zero_sized {
+                if opt_same_as_param_idx.is_some() {
+                    // There are multiple non-zero sized items, can't use the same param.
+                    opt_same_as_param_idx = None;
+                    break;
+                }
+                opt_same_as_param_idx = Some(idx);
+            }
+        }
+
         Ok(LibfuncSignature::new_non_branch_ex(
             member_types
                 .into_iter()
@@ -140,6 +152,8 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
                 ty: struct_type,
                 ref_info: if type_info.zero_sized {
                     OutputVarReferenceInfo::ZeroSized
+                } else if let Some(param_idx) = opt_same_as_param_idx {
+                    OutputVarReferenceInfo::SameAsParam { param_idx }
                 } else {
                     OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
                 },

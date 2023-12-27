@@ -135,9 +135,17 @@ fn get_simple_storage_member_code(
 ) -> StorageMemberCodePieces {
     let name_node = member.name(db).as_syntax_node();
     let name = member.name(db).text(db);
+    let member_module_path = RewriteNode::mapped_text(
+        &format!("__member_module_{name}"),
+        name_node.span_without_trivia(db),
+    );
     let member_node = RewriteNode::interpolate_patched(
-        &format!("$name$: $name$::{}", starknet_module_kind.get_member_state_name()),
-        &[("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
+        &format!("$name$: $member_module_path$::{}", starknet_module_kind.get_member_state_name()),
+        &[
+            ("name".to_string(), RewriteNode::new_trimmed(name_node.clone())),
+            ("member_module_path".to_string(), member_module_path.clone()),
+        ]
+        .into(),
     );
     let member_code = RewriteNode::interpolate_patched(
         "\n        pub $member$,",
@@ -169,6 +177,7 @@ fn get_simple_storage_member_code(
                         "storage_member_name".to_string(),
                         RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                     ),
+                    ("member_module_path".to_string(), member_module_path),
                     ("extra_uses".to_string(), extra_uses_node),
                     ("key_type".to_string(), key_type_path),
                     ("value_type".to_string(), value_type_path),
@@ -192,6 +201,7 @@ fn get_simple_storage_member_code(
                         "storage_member_name".to_string(),
                         RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                     ),
+                    ("member_module_path".to_string(), member_module_path),
                     ("extra_uses".to_string(), extra_uses_node),
                     ("type_path".to_string(), type_path),
                 ]
@@ -356,9 +366,9 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         StarknetModuleKind::Contract => {
             format!(
                 "
-    use $storage_member_name$::Internal{member_state_name}Trait as \
+    use $member_module_path$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-    mod $storage_member_name$ {{$extra_uses$
+    mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
@@ -399,7 +409,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         }
         StarknetModuleKind::Component => format!(
             "
-    pub mod $storage_member_name$ {{$extra_uses$
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         impl Storage{member_state_name}Impl of \
@@ -426,9 +436,9 @@ fn handle_legacy_mapping_storage_member(
         StarknetModuleKind::Contract => {
             format!(
                 "
-    use $storage_member_name$::Internal{member_state_name}Trait as \
+    use $member_module_path$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-    pub mod $storage_member_name$ {{$extra_uses$
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
@@ -471,7 +481,7 @@ fn handle_legacy_mapping_storage_member(
         }
         StarknetModuleKind::Component => format!(
             "
-    pub mod $storage_member_name$ {{$extra_uses$
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
 

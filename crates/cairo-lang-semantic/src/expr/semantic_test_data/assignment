@@ -1,7 +1,7 @@
 //! > Test assignment
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 let mut a = 5;
@@ -9,7 +9,7 @@ let mut a = 5;
 //! > expr_code
 a = a * 3
 
-//! > expected
+//! > expected_semantics
 Assignment(
     ExprAssignment {
         ref_arg: LocalVarId(test::a),
@@ -39,4 +39,4 @@ Assignment(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

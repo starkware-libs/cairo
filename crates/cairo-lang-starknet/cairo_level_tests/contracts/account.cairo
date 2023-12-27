@@ -1,4 +1,4 @@
-#[starknet::contract]
+#[starknet::contract(account)]
 mod account {
     use core::num::traits::Zero;
     use core::ecdsa::check_ecdsa_signature;

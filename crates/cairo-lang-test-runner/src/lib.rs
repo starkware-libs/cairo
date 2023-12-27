@@ -47,8 +47,13 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
-    pub fn new(path: &Path, starknet: bool, config: TestRunConfig) -> Result<Self> {
-        let compiler = TestCompiler::try_new(path, starknet)?;
+    pub fn new(
+        path: &Path,
+        starknet: bool,
+        allow_warnings: bool,
+        config: TestRunConfig,
+    ) -> Result<Self> {
+        let compiler = TestCompiler::try_new(path, starknet, allow_warnings)?;
         Ok(Self { compiler, config })
     }
 
@@ -159,7 +164,7 @@ impl TestCompiler {
     ///
     /// * `path` - The path to compile and run its tests
     /// * `starknet` - Add the starknet plugin to run the tests
-    pub fn try_new(path: &Path, starknet: bool) -> Result<Self> {
+    pub fn try_new(path: &Path, starknet: bool, allow_warnings: bool) -> Result<Self> {
         let db = &mut {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
@@ -173,8 +178,11 @@ impl TestCompiler {
         };
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
-
-        if DiagnosticsReporter::stderr().with_crates(&main_crate_ids).check(db) {
+        let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
+        if allow_warnings {
+            reporter = reporter.allow_warnings();
+        }
+        if reporter.check(db) {
             bail!("failed to compile: {}", path.display());
         }
 
@@ -266,6 +274,7 @@ pub fn run_tests(
             function_set_costs,
             linear_gas_solver: true,
             linear_ap_change_solver: true,
+            skip_non_linear_solver_comparisons: false,
         }),
         contracts_info,
     )

@@ -30,20 +30,22 @@ use self::starknet_module::{handle_module, handle_module_by_storage};
 pub struct StarkNetPlugin;
 
 impl MacroPlugin for StarkNetPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         match item_ast {
-            ast::Item::Module(module_ast) => handle_module(db, module_ast),
-            ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
-            ast::Item::Impl(impl_ast) if impl_ast.has_attr(db, EMBEDDABLE_ATTR) => {
+            ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),
+            ast::ModuleItem::Trait(trait_ast) => handle_trait(db, trait_ast),
+            ast::ModuleItem::Impl(impl_ast) if impl_ast.has_attr(db, EMBEDDABLE_ATTR) => {
                 handle_embeddable(db, impl_ast)
             }
-            ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
+            ast::ModuleItem::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_module_by_storage(db, struct_ast).unwrap_or_default()
             }
-            ast::Item::Struct(_) | ast::Item::Enum(_) if derive_needed(&item_ast, db) => {
+            ast::ModuleItem::Struct(_) | ast::ModuleItem::Enum(_)
+                if derive_needed(&item_ast, db) =>
+            {
                 handle_derive(db, item_ast)
             }
-            ast::Item::InlineMacro(inline_macro_ast)
+            ast::ModuleItem::InlineMacro(inline_macro_ast)
                 if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
             {
                 // The macro is expanded in handle_module_by_storage, but we also need to remove the

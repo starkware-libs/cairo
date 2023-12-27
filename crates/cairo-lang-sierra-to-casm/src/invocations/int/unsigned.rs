@@ -67,7 +67,7 @@ fn build_small_uint_overflowing_add(
     ))
 }
 
-/// Handles a small uint conversion from felt252.
+/// Handles a small uint bounded by `BOUND` divmod operation.
 fn build_divmod<const BOUND: u128>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
