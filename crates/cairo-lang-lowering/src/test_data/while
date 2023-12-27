@@ -4,12 +4,11 @@
 test_function_lowering
 
 //! > function
-fn foo() -> felt252 {
+fn foo(y : felt252) {
     let mut x = 5;
-    while x != 0 {
+    while x != y {
         x = x -1;
-    };
-    x
+    }
 }
 
 //! > function_name
@@ -18,11 +17,31 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: While loops are not supported yet.
- --> lib.cairo:3:5
-    while x != 0 {
-    ^************^
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v12: core::RangeCheck, v13: core::gas::GasBuiltin, v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 5u
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v12, v13, v1, v0)
+End:
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk1,
+    PanicResult::Err(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252, v7: ()) <- struct_destructure(v5)
+  (v9: ((),)) <- struct_construct(v7)
+  (v10: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v9)
+End:
+  Return(v14, v15, v10)
+
+blk2:
+Statements:
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v8)
+End:
+  Return(v14, v15, v11)
