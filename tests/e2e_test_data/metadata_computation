@@ -1558,23 +1558,23 @@ fn bar() {
 //! > enforced_costs
 test::bar 2000
 
-//! > gas_solution
+//! > gas_solution_lp
 #11: OrderedHashMap({Const: 1900})
 
 test::foo: OrderedHashMap({Const: 6300})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1900})
 
 test::foo: OrderedHashMap({Const: 6300})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > ap_solution
+//! > ap_solution_lp
 test::bar: 1
 test::foo: 4
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 test::foo: 4
 test::bar: 1
 
