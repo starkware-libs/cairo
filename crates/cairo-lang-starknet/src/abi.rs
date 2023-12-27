@@ -712,23 +712,11 @@ impl<'a> AbiBuilder<'a> {
                 }
                 Ok(())
             }
-<<<<<<< HEAD
-            TypeLongId::Snapshot(ty) => self.add_type(db, ty),
+            TypeLongId::Snapshot(ty) => self.add_type(ty),
             TypeLongId::Coupon(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
-||||||| 3bbfa784f
-            TypeLongId::Snapshot(ty) => self.add_type(db, ty),
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
-                Err(ABIError::UnexpectedType)
-            }
-=======
-            TypeLongId::Snapshot(ty) => self.add_type(ty),
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
-                Err(ABIError::UnexpectedType)
-            }
->>>>>>> origin/sierra-minor-update
         }
     }
 

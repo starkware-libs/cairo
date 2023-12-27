@@ -39,3 +39,33 @@ FunctionCall(
 )
 
 //! > semantic_diagnostics
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::foo,
+        args: [
+            Value(
+                Literal(
+                    ExprLiteral {
+                        value: 7,
+                        ty: core::integer::u8,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: Some(
+            FunctionCall(
+                ExprFunctionCall {
+                    function: test::get_coupon,
+                    args: [],
+                    coupon_arg: None,
+                    ty: test::foo::Coupon,
+                },
+            ),
+        ),
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

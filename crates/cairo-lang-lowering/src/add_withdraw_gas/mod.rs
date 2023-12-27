@@ -44,42 +44,7 @@ fn add_withdraw_gas_to_function(
     let old_root_new_id = lowered.blocks.push(old_root_block);
     let panic_block_id = lowered.blocks.push(panic_block);
     let new_root_block = FlatBlock {
-<<<<<<< HEAD
-        statements: vec![
-            // A statement call to `get_builtin_costs`.
-            Statement::Call(StatementCall {
-                function: get_function_id(
-                    db.upcast(),
-                    gas_module,
-                    "get_builtin_costs".into(),
-                    vec![],
-                )
-                .lowered(db),
-                inputs: vec![],
-                coupon_input: None,
-                outputs: vec![builtin_costs_var],
-                location,
-            }),
-        ],
-||||||| 3bbfa784f
-        statements: vec![
-            // A statement call to `get_builtin_costs`.
-            Statement::Call(StatementCall {
-                function: get_function_id(
-                    db.upcast(),
-                    gas_module,
-                    "get_builtin_costs".into(),
-                    vec![],
-                )
-                .lowered(db),
-                inputs: vec![],
-                outputs: vec![builtin_costs_var],
-                location,
-            }),
-        ],
-=======
         statements: vec![],
->>>>>>> origin/sierra-minor-update
         end: FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 function: get_function_id(

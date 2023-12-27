@@ -144,7 +144,6 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
         }
     }
-<<<<<<< HEAD
     /// Returns the ModuleFileId of the function's definition if possible.
     pub fn module_file_id(&self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
         match self {
@@ -164,8 +163,6 @@ impl GenericFunctionId {
             }
         }
     }
-||||||| 3bbfa784f
-=======
     /// Returns whether the function has the `#[must_use]` attribute.
     pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
         match self {
@@ -176,7 +173,6 @@ impl GenericFunctionId {
             crate::items::functions::GenericFunctionId::Extern(_) => Ok(false),
         }
     }
->>>>>>> origin/sierra-minor-update
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
