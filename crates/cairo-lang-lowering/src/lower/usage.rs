@@ -49,7 +49,7 @@ impl From<&ExprVarMemberPath> for MemberPath {
 }
 
 /// Usages of variables and member paths in semantic code.
-#[derive(Debug, Default, DebugWithDb)]
+#[derive(Clone, Debug, Default, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct Usage {
     /// Member paths that are read.
@@ -60,11 +60,23 @@ pub struct Usage {
     pub introductions: OrderedHashSet<VarId>,
 }
 
+impl Usage {
+    // Adds the usage and changes from 'usage' to self, Ignoring `introductions`.
+    pub fn add_usage_and_changes(&mut self, usage: &Usage) {
+        for (path, expr) in usage.usage.iter() {
+            self.usage.insert(path.clone(), expr.clone());
+        }
+        for (path, expr) in usage.changes.iter() {
+            self.changes.insert(path.clone(), expr.clone());
+        }
+    }
+}
+
 /// Usages of variables and member paths in each semantic block of a function.
 #[derive(Debug, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct BlockUsages {
-    /// Mapping from an [ExprId] for an block expression, to its [Usage].
+    /// Mapping from an [ExprId] for a block expression or loop, to its [Usage].
     pub block_usages: OrderedHashMap<ExprId, Usage>,
 }
 impl BlockUsages {
@@ -154,19 +166,21 @@ impl BlockUsages {
                     }
                 }
 
-                for (path, expr) in usage.usage.iter() {
-                    current.usage.insert(path.clone(), expr.clone());
-                }
-                for (path, expr) in usage.changes.iter() {
-                    current.changes.insert(path.clone(), expr.clone());
-                }
-
+                current.add_usage_and_changes(&usage);
                 self.block_usages.insert(expr_id, usage);
             }
-            Expr::Loop(expr) => self.handle_expr(function_body, expr.body, current),
-            Expr::While(expr) => {
-                self.handle_expr(function_body, expr.condition, current);
+            Expr::Loop(expr) => {
                 self.handle_expr(function_body, expr.body, current);
+                // Copy body usage to loop usage.
+                self.block_usages.insert(expr_id, self.block_usages[expr.body].clone());
+            }
+            Expr::While(expr) => {
+                let mut usage = Default::default();
+                self.handle_expr(function_body, expr.condition, &mut usage);
+                self.handle_expr(function_body, expr.body, &mut usage);
+
+                current.add_usage_and_changes(&usage);
+                self.block_usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
