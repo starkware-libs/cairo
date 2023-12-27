@@ -63,6 +63,15 @@ impl GenericArgumentId {
             GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
     }
+    /// Returns true if all the inner type are concrete.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
+            GenericArgumentId::Literal(_) => true,
+            GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
+            GenericArgumentId::NegImpl => true,
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(

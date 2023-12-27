@@ -110,6 +110,13 @@ impl ConcreteImplId {
             &db.lookup_intern_concrete_impl(*self).generic_args,
         ))
     }
+    /// Returns true if all the inner type are concrete.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        db.lookup_intern_concrete_impl(*self)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
@@ -148,6 +155,14 @@ impl ImplId {
     }
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
         db.impl_concrete_trait(*self)
+    }
+    /// Returns true if all the inner type are concrete.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            ImplId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
+            ImplId::GenericParameter(_) => false,
+            ImplId::ImplVar(_) => false,
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
