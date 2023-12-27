@@ -516,7 +516,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
             }
             BranchCost::BranchAlign => statement_vars_cost(ops, CostTokenType::iter_precost()),
             BranchCost::WithdrawGas(info) => {
-                if info.with_builtin_costs && info.success {
+                if info.success {
                     ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost()))
                 } else {
                     ops.steps(0)
@@ -631,9 +631,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(OrderedHashMap::from_iter(
-                (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
-            )),
+            pre_cost: PreCost(OrderedHashMap::from_iter([(CostTokenType::Bitwise, 4)])),
         }],
     }
 }

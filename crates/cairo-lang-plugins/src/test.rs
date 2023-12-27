@@ -137,9 +137,9 @@ pub fn test_expand_plugin_inner(
 #[derive(Debug)]
 struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         match item_ast {
-            ast::Item::Struct(struct_ast) => {
+            ast::ModuleItem::Struct(struct_ast) => {
                 if struct_ast.has_attr(db, "first") {
                     PluginResult {
                         code: Some(PluginGeneratedFile {

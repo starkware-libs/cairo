@@ -1,14 +1,14 @@
 //! > Test tuple
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 
 //! > expr_code
 (1 + 2, (2, 3))
 
-//! > expected
+//! > expected_semantics
 Tuple(
     ExprTuple {
         items: [
@@ -61,4 +61,4 @@ Tuple(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

@@ -4,14 +4,13 @@ mod test;
 
 use std::cmp::Reverse;
 
-use cairo_lang_semantic::corelib;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::FunctionId;
 use crate::{
     BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
@@ -24,14 +23,9 @@ use crate::{
 /// Removing unnecessary remapping before this optimization will result in better code.
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let semantic_db = db.upcast();
-        let bool_not_func_id = db.intern_lowering_function(FunctionLongId::Semantic(
-            corelib::get_core_function_id(semantic_db, "bool_not_impl".into(), vec![]),
-        ));
-
         let ctx = ReorderStatementsContext {
             lowered: &*lowered,
-            moveable_functions: [bool_not_func_id].into_iter().collect(),
+            moveable_functions: &db.priv_movable_function_ids(),
             statement_to_move: vec![],
         };
         let mut analysis =
@@ -84,7 +78,7 @@ pub struct ReorderStatementsInfo {
 pub struct ReorderStatementsContext<'a> {
     lowered: &'a FlatLowered,
     // A list of function that can be moved.
-    moveable_functions: UnorderedHashSet<FunctionId>,
+    moveable_functions: &'a UnorderedHashSet<FunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
 impl ReorderStatementsContext<'_> {

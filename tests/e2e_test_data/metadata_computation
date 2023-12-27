@@ -36,7 +36,7 @@ fn bar() {
 //! > enforced_costs
 test::bar 10000
 
-//! > gas_solution
+//! > gas_solution_lp
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9780})
 #8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9680})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -48,7 +48,7 @@ test::bar 10000
 test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19460})
@@ -60,14 +60,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #2: 2
 #8: 2
 
 test::bar: 1
 test::foo: 10
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #2: 2
 #8: 2
 
@@ -227,11 +227,11 @@ fn bar() {
 //! > enforced_costs
 test::bar 10000
 
-//! > gas_solution
-#0: OrderedHashMap({Const: 0})
+//! > gas_solution_lp
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9430})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#5: OrderedHashMap({Const: 0})
+#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10160})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 450})
@@ -241,7 +241,7 @@ test::bar 10000
 test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -255,14 +255,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #13: 4
 #19: 2
 
 test::bar: 1
 test::foo: 11
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #13: 4
 #19: 2
 
@@ -420,11 +420,11 @@ fn bar() {
 //! > enforced_costs
 test::bar 2000
 
-//! > gas_solution
+//! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#2: OrderedHashMap({Const: 0})
+#2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#4: OrderedHashMap({Const: 900})
+#4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 900})
 #5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1260})
 #18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1710})
@@ -434,7 +434,7 @@ test::bar 2000
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -448,7 +448,7 @@ test::bar: OrderedHashMap({Const: 2000})
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #12: 4
 #18: 6
 #24: 4
@@ -456,7 +456,7 @@ test::bar: OrderedHashMap({Const: 2000})
 test::bar: 1
 test::foo: 10
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #12: 4
 #18: 6
 #24: 4
@@ -601,7 +601,7 @@ fn bar() {
 test::bar 10000
 test::foo 100000
 
-//! > gas_solution
+//! > gas_solution_lp
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #9: OrderedHashMap({Const: 79300})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -614,7 +614,7 @@ test::foo 100000
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #9: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 79300})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
@@ -627,14 +627,14 @@ test::bar: OrderedHashMap({Const: 10000})
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
 
-//! > ap_solution
+//! > ap_solution_lp
 #13: 2
 #27: 3
 
 test::bar: 1
 test::foo: 8
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #13: 2
 #27: 3
 
@@ -726,6 +726,118 @@ ret;
 
 //! > ==========================================================================
 
+//! > Precost gas mismatch.
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+fn foo() -> u128 {
+    match core::gas::withdraw_gas() {
+        Option::None => 2,
+        Option::Some(_) => 3_u128 & 1,
+    }
+}
+
+//! > gas_solution_lp
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 280})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Bitwise: 1, Const: 990})
+
+//! > gas_solution_linear
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 190})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Const: 1680})
+
+//! > ap_solution_lp
+#14: 2
+
+test::foo: 8
+
+//! > ap_solution_linear
+#14: 1
+
+test::foo: 14
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc u128_const<3> = u128_const<3>;
+libfunc u128_const<1> = u128_const<1>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc jump = jump;
+libfunc u128_const<2> = u128_const<2>;
+
+withdraw_gas([0], [1]) { fallthrough([3], [4]) 14([5], [6]) }; // 0
+branch_align() -> (); // 1
+u128_const<3>() -> ([7]); // 2
+u128_const<1>() -> ([8]); // 3
+store_temp<u128>([7]) -> ([7]); // 4
+store_temp<u128>([8]) -> ([8]); // 5
+bitwise([2], [7], [8]) -> ([9], [10], [11], [12]); // 6
+drop<u128>([11]) -> (); // 7
+drop<u128>([12]) -> (); // 8
+store_temp<RangeCheck>([3]) -> ([13]); // 9
+store_temp<GasBuiltin>([4]) -> ([14]); // 10
+store_temp<Bitwise>([9]) -> ([15]); // 11
+store_temp<u128>([10]) -> ([16]); // 12
+jump() { 20() }; // 13
+branch_align() -> (); // 14
+u128_const<2>() -> ([17]); // 15
+store_temp<RangeCheck>([5]) -> ([13]); // 16
+store_temp<GasBuiltin>([6]) -> ([14]); // 17
+store_temp<Bitwise>([2]) -> ([15]); // 18
+store_temp<u128>([17]) -> ([16]); // 19
+return([13], [14], [15], [16]); // 20
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise) -> (RangeCheck, GasBuiltin, Bitwise, u128);
+
+//! > casm
+call rel 41;
+[ap + 0] = [ap + -1] + 40, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 1], ap++;
+[ap + 0] = [ap + -1] + 190, ap++;
+%{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -4] %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 18;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + -1] = [[fp + -5] + 0];
+[ap + 0] = 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [fp + -3] + 5, ap++;
+[ap + 0] = [[fp + -3] + 2], ap++;
+jmp rel 10;
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 2, ap++;
+ret;
+
+//! > ==========================================================================
+
 //! > Function overuse ap-changes.
 
 //! > test_runner_name
@@ -755,7 +867,7 @@ fn foo(cond: bool) {
     }
 }
 
-//! > gas_solution
+//! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10070})
@@ -764,7 +876,7 @@ fn foo(cond: bool) {
 test::function_with_branch_align: OrderedHashMap({Const: 810})
 test::foo: OrderedHashMap({Const: 13600})
 
-//! > gas_solution_no_solver
+//! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10270})
@@ -773,14 +885,14 @@ test::foo: OrderedHashMap({Const: 13600})
 test::function_with_branch_align: OrderedHashMap({Const: 300})
 test::foo: OrderedHashMap({Const: 13600})
 
-//! > ap_solution
+//! > ap_solution_lp
 #1: 41
 #6: 41
 
 test::function_with_branch_align: 42
 test::foo: 135
 
-//! > ap_solution_no_solver
+//! > ap_solution_linear
 #12: 123
 
 test::function_with_branch_align: 1
@@ -1267,20 +1379,19 @@ test::function_with_branch_align@0([0]: core::bool) -> (felt252);
 test::foo@11([0]: core::bool) -> (Unit);
 
 //! > casm
-jmp rel 8 if [fp + -3] != 0;
-ap += 41;
+jmp rel 6 if [fp + -3] != 0;
 [ap + 0] = 2, ap++;
-jmp rel 6;
-ap += 41;
+jmp rel 4;
 [ap + 0] = 1, ap++;
 ret;
-jmp rel 16 if [fp + -3] != 0;
+jmp rel 18 if [fp + -3] != 0;
+ap += 123;
 [ap + 0] = 0, ap++;
-call rel -17;
+call rel -15;
 [ap + 0] = 0, ap++;
-call rel -21;
+call rel -19;
 [ap + 0] = 0, ap++;
-call rel -25;
+call rel -23;
 jmp rel 272;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;

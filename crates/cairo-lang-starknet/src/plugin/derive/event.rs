@@ -14,12 +14,12 @@ use crate::plugin::events::{EventData, EventFieldKind};
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
 pub fn handle_event_derive(
     db: &dyn SyntaxGroup,
-    item_ast: &ast::Item,
+    item_ast: &ast::ModuleItem,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
     match item_ast {
-        ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast, diagnostics),
-        ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
+        ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast, diagnostics),
+        ast::ModuleItem::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
         _ => None,
     }
 }

@@ -85,8 +85,7 @@ impl SimulationContext<'_> {
             });
         }
         let mut state = HashMap::<VarId, CoreValue>::from_iter(
-            izip!(func.params.iter(), inputs.into_iter())
-                .map(|(param, input)| (param.id.clone(), input)),
+            izip!(func.params.iter(), inputs).map(|(param, input)| (param.id.clone(), input)),
         );
         loop {
             let statement = self
@@ -120,13 +119,10 @@ impl SimulationContext<'_> {
                         current_statement_id,
                     )?;
                     let branch_info = &invocation.branches[chosen_branch];
-                    state = put_results(
-                        remaining,
-                        izip!(branch_info.results.iter(), outputs.into_iter()),
-                    )
-                    .map_err(|error| {
-                        SimulationError::EditStateError(error, current_statement_id)
-                    })?;
+                    state = put_results(remaining, izip!(branch_info.results.iter(), outputs))
+                        .map_err(|error| {
+                            SimulationError::EditStateError(error, current_statement_id)
+                        })?;
                     current_statement_id = current_statement_id.next(&branch_info.target);
                 }
             }

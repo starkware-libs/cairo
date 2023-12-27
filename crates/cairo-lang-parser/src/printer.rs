@@ -297,7 +297,7 @@ fn is_missing_kind(kind: SyntaxKind) -> bool {
         SyntaxKind::ExprMissing
             | SyntaxKind::WrappedArgListMissing
             | SyntaxKind::StatementMissing
-            | SyntaxKind::ItemMissing
+            | SyntaxKind::ModuleItemMissing
             | SyntaxKind::TraitItemMissing
             | SyntaxKind::ImplItemMissing
     )
