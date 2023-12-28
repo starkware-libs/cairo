@@ -16,7 +16,8 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
+    ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId,
+    UseLongId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
@@ -1164,7 +1165,7 @@ fn lookup_item_from_ast(
             res
         }
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            db.intern_type_alias(TypeAliasLongId(
+            db.intern_module_type_alias(ModuleTypeAliasLongId(
                 module_file_id,
                 ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
             )),

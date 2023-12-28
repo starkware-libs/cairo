@@ -13,7 +13,7 @@ pub mod modifiers;
 pub mod module;
 pub mod structure;
 pub mod trt;
-pub mod type_alias;
+pub mod module_type_alias;
 pub mod us;
 pub mod visibility;
 

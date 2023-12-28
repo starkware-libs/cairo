@@ -44,7 +44,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
     #[salsa::interned]
-    fn intern_type_alias(&self, id: TypeAliasLongId) -> TypeAliasId;
+    fn intern_module_type_alias(&self, id: ModuleTypeAliasLongId) -> ModuleTypeAliasId;
     #[salsa::interned]
     fn intern_impl_alias(&self, id: ImplAliasLongId) -> ImplAliasId;
     #[salsa::interned]
@@ -149,11 +149,11 @@ pub trait DefsGroup:
     fn module_type_aliases(
         &self,
         module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>>;
-    fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TypeAliasId>>>;
+    ) -> Maybe<Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>>;
+    fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleTypeAliasId>>>;
     fn module_type_alias_by_id(
         &self,
-        type_alias_id: TypeAliasId,
+        module_type_alias_id: ModuleTypeAliasId,
     ) -> Maybe<Option<ast::ItemTypeAlias>>;
     fn module_impl_aliases(
         &self,
@@ -333,7 +333,7 @@ pub struct ModuleData {
     free_functions: Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>,
     structs: Arc<OrderedHashMap<StructId, ast::ItemStruct>>,
     enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
-    type_aliases: Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>,
+    type_aliases: Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>,
     impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
     traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
@@ -516,7 +516,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
-                    let item_id = db.intern_type_alias(TypeAliasLongId(
+                    let item_id = db.intern_module_type_alias(ModuleTypeAliasLongId(
                         module_file_id,
                         type_alias.stable_ptr(),
                     ));
@@ -797,22 +797,22 @@ pub fn module_enum_by_id(db: &dyn DefsGroup, enum_id: EnumId) -> Maybe<Option<as
 pub fn module_type_aliases(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>> {
+) -> Maybe<Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>> {
     Ok(db.priv_module_data(module_id)?.type_aliases)
 }
 pub fn module_type_aliases_ids(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<Vec<TypeAliasId>>> {
+) -> Maybe<Arc<Vec<ModuleTypeAliasId>>> {
     Ok(Arc::new(db.module_type_aliases(module_id)?.keys().copied().collect()))
 }
 pub fn module_type_alias_by_id(
     db: &dyn DefsGroup,
-    type_alias_id: TypeAliasId,
+    module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<Option<ast::ItemTypeAlias>> {
     let module_type_aliases =
-        db.module_type_aliases(type_alias_id.module_file_id(db.upcast()).0)?;
-    Ok(module_type_aliases.get(&type_alias_id).cloned())
+        db.module_type_aliases(module_type_alias_id.module_file_id(db.upcast()).0)?;
+    Ok(module_type_aliases.get(&module_type_alias_id).cloned())
 }
 
 /// Returns all the impl aliases of the given module.
