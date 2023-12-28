@@ -208,6 +208,7 @@ fn generate_ast_code() -> rust::Tokens {
 
         #[path = "ast_ext.rs"]
         mod ast_ext;
+        #[allow(unused_import)]
         pub use ast_ext::*;
     };
     for Node { name, kind } in spec.into_iter() {

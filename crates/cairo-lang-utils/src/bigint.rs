@@ -62,7 +62,7 @@ fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema:
     #[derive(JsonSchema)]
     pub enum Sign {
         Minus,
-        NoSign,
+        None,
         Plus,
     }
 
