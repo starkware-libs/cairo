@@ -127,7 +127,7 @@ impl SemanticTokenKind {
         while let Some(parent) = node.parent() {
             node = parent;
             let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
-                eprintln!("Hover failed. Failed to find module.");
+                eprintln!("SemanticTokenKind recovery failed. Failed to find module.");
             })?;
             let file_index = FileIndex(0);
             let module_file_id = ModuleFileId(module_id, file_index);
