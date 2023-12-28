@@ -491,12 +491,6 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns asts of the functions of an impl.
-    #[salsa::invoke(items::imp::impl_def_functions_asts)]
-    fn impl_def_functions_asts(
-        &self,
-        impl_def_id: ImplDefId,
-    ) -> Maybe<OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>>;
     /// Returns the generic parameters data of an impl.
     #[salsa::invoke(items::imp::impl_def_generic_params_data)]
     fn impl_def_generic_params_data(&self, impl_def_id: ImplDefId) -> Maybe<GenericParamsData>;
