@@ -70,6 +70,14 @@ fn test_generated_function(
                 lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
             )
             .unwrap();
+
+            let lowering = db.concrete_function_with_body_lowered(generated_id).unwrap();
+            writeln!(
+                &mut writer,
+                "Final lowering:\n{:?}",
+                lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
+            )
+            .unwrap();
         }
     }
 
