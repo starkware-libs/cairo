@@ -161,10 +161,10 @@ pub fn lower_function(
 pub fn lower_loop_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
-    signature: Signature,
+    loop_signature: Signature,
     loop_expr_id: semantic::ExprId,
 ) -> Maybe<FlatLowered> {
-    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature)?;
+    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
     ctx.current_loop_expr_id = Some(loop_expr_id);
 
     let loop_expr = extract_matches!(&ctx.function_body.exprs[loop_expr_id], semantic::Expr::Loop);
@@ -194,8 +194,7 @@ pub fn lower_loop_function(
         let block_expr = (|| {
             lower_expr_block(&mut ctx, &mut builder, &semantic_block)?;
             // Add recursive call.
-            let signature = ctx.signature.clone();
-            call_loop_func(&mut ctx, signature, &mut builder, loop_expr_id)
+            call_loop_func(&mut ctx, loop_signature, &mut builder, loop_expr_id)
         })();
         let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr)?;
 
@@ -328,12 +327,10 @@ pub fn lower_statement(
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
             log::trace!("Lowering a continue statement.");
-            let lowered_expr = call_loop_func(
-                ctx,
-                ctx.signature.clone(),
-                builder,
-                ctx.current_loop_expr_id.unwrap(),
-            )?;
+            // Note that `ctx` here is the context of the loop function.
+            let loop_signature = ctx.signature.clone();
+            let lowered_expr =
+                call_loop_func(ctx, loop_signature, builder, ctx.current_loop_expr_id.unwrap())?;
             let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
@@ -928,7 +925,7 @@ fn lower_expr_loop(
     let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
-    let signature = Signature {
+    let loop_signature = Signature {
         params,
         extra_rets,
         return_type: expr.ty,
@@ -944,20 +941,21 @@ fn lower_expr_loop(
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
-    let lowered = lower_loop_function(encapsulating_ctx, function, signature.clone(), loop_expr_id)
-        .map_err(LoweringFlowError::Failed)?;
+    let lowered =
+        lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_expr_id)
+            .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     ctx.current_loop_expr_id = Some(loop_expr_id);
 
-    call_loop_func(ctx, signature, builder, loop_expr_id)
+    call_loop_func(ctx, loop_signature, builder, loop_expr_id)
 }
 
 /// Adds a call to an inner loop-generated function.
 fn call_loop_func(
     ctx: &mut LoweringContext<'_, '_>,
-    signature: Signature,
+    loop_signature: Signature,
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
 ) -> LoweringResult<LoweredExpr> {
@@ -971,7 +969,7 @@ fn call_loop_func(
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
         element: loop_expr_id,
     }));
-    let inputs = signature
+    let inputs = loop_signature
         .params
         .into_iter()
         .map(|param| {
@@ -980,13 +978,20 @@ fn call_loop_func(
             })
         })
         .collect::<LoweringResult<Vec<_>>>()?;
-    let extra_ret_tys = signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
-    let call_result =
-        generators::Call { function, inputs, extra_ret_tys, ret_tys: vec![expr.ty], location }
-            .add(ctx, &mut builder.statements);
+    let extra_ret_tys = loop_signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
+
+    assert_eq!(expr.ty, loop_signature.return_type);
+    let call_result = generators::Call {
+        function,
+        inputs,
+        extra_ret_tys,
+        ret_tys: vec![loop_signature.return_type],
+        location,
+    }
+    .add(ctx, &mut builder.statements);
 
     // Rebind the ref variables.
-    for (ref_arg, output_var) in zip_eq(&signature.extra_rets, call_result.extra_outputs) {
+    for (ref_arg, output_var) in zip_eq(&loop_signature.extra_rets, call_result.extra_outputs) {
         builder.update_ref(ctx, ref_arg, output_var.var_id);
     }
 
