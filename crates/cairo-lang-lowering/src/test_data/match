@@ -410,6 +410,11 @@ error: Enum variant `Zero` not covered.
   match felt252_is_zero(5) {};
         ^****************^
 
+error: Enum variant `NonZero` not covered.
+ --> lib.cairo:2:9
+  match felt252_is_zero(5) {};
+        ^****************^
+
 //! > lowering_flat
 Parameters:
 
@@ -421,11 +426,11 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo() {
+fn foo() ->felt252{
   match get_a() {
-    A::One(_) => {},
-    _ => {},
-  };
+    A::One(_) => 2,
+    _ => 3,
+  }
 }
 
 //! > function_name
@@ -457,8 +462,9 @@ End:
 
 blk1:
 Statements:
+  (v0: core::felt252) <- 2u
 End:
-  Goto(blk4, {})
+  Goto(blk5, {v0 -> v2})
 
 blk2:
 Statements:
@@ -472,9 +478,14 @@ End:
 
 blk4:
 Statements:
-  (v0: ()) <- struct_construct()
+  (v1: core::felt252) <- 3u
 End:
-  Return(v0)
+  Goto(blk5, {v1 -> v2})
+
+blk5:
+Statements:
+End:
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -501,11 +512,15 @@ foo
 enum A {
   One: (),
   Two: (),
-  Three: (),
-  Four: (),
+  Three: (felt252,felt252),
+  Four: (felt252),
 }
 
 //! > semantic_diagnostics
+error: Missing token TokenComma.
+ --> lib.cairo:5:17
+  Four: (felt252),
+                ^
 
 //! > lowering_diagnostics
 error: Unreachable pattern arm.
@@ -525,39 +540,43 @@ Statements:
 End:
   Match(match_enum(v0) {
     A::One(v1) => blk1,
-    A::Two(v3) => blk2,
-    A::Three(v5) => blk3,
-    A::Four(v7) => blk4,
+    A::Two(v2) => blk2,
+    A::Three(v3) => blk3,
+    A::Four(v4) => blk4,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
+  (v5: core::felt252) <- 1u
 End:
-  Goto(blk5, {v2 -> v9})
+  Goto(blk6, {v5 -> v8})
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v6: core::felt252) <- 2u
 End:
-  Goto(blk5, {v4 -> v9})
+  Goto(blk6, {v6 -> v8})
 
 blk3:
 Statements:
-  (v6: core::felt252) <- 3u
 End:
-  Goto(blk5, {v6 -> v9})
+  Goto(blk5, {})
 
 blk4:
 Statements:
-  (v8: core::felt252) <- 3u
 End:
-  Goto(blk5, {v8 -> v9})
+  Goto(blk5, {})
 
 blk5:
 Statements:
+  (v7: core::felt252) <- 3u
 End:
-  Return(v9)
+  Goto(blk6, {v7 -> v8})
+
+blk6:
+Statements:
+End:
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -651,14 +670,14 @@ Statements:
 End:
   Match(match_enum(v0) {
     A::One(v1) => blk1,
-    A::Two(v3) => blk2,
+    A::Two(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk2:
 Statements:
@@ -807,14 +826,14 @@ Statements:
 End:
   Match(match_enum(v0) {
     bool::False(v1) => blk1,
-    bool::True(v3) => blk2,
+    bool::True(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk2:
 Statements:

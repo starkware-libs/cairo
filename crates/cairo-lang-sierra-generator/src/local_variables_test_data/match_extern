@@ -41,7 +41,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
@@ -51,40 +51,40 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v2)
+  (v4: core::felt252) <- test::revoke_ap()
+  (v14: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v1)
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
+  (v15: core::felt252) <- core::felt252_add(v0, v0)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk4,
     IsZeroResult::NonZero(v8) => blk5,
   })
 
 blk4:
 Statements:
-  (v7: core::felt252) <- 1u
+  (v9: core::felt252) <- 1u
 End:
-  Goto(blk6, {v7 -> v11})
+  Goto(blk6, {v9 -> v13})
 
 blk5:
 Statements:
-  (v9: core::felt252) <- test::revoke_ap()
-  (v14: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v8)
+  (v11: core::felt252) <- test::revoke_ap()
+  (v16: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v8)
 End:
-  Goto(blk6, {v14 -> v11})
+  Goto(blk6, {v16 -> v13})
 
 blk6:
 Statements:
 End:
-  Return(v11)
+  Return(v13)
 
 //! > local_variables
-v13
+v15
 
 //! > ==========================================================================
 
@@ -216,16 +216,16 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
+  (v15: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk5,
+    IsZeroResult::NonZero(v2) => blk5,
   })
 
 blk1:
 Statements:
-  (v14: core::felt252) <- core::felt252_add(v13, v0)
+  (v16: core::felt252) <- core::felt252_add(v15, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
@@ -244,15 +244,15 @@ End:
 
 blk4:
 Statements:
-  (v15: core::felt252) <- core::felt252_add(v14, v0)
+  (v17: core::felt252) <- core::felt252_add(v16, v0)
 End:
-  Return(v15)
+  Return(v17)
 
 blk5:
 Statements:
-  (v4: core::felt252) <- test::revoke_ap()
-  (v5: core::felt252) <- 0u
+  (v5: core::felt252) <- test::revoke_ap()
+  (v6: core::felt252) <- 0u
 End:
-  Return(v5)
+  Return(v6)
 
 //! > local_variables

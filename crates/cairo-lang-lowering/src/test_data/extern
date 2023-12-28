@@ -125,9 +125,9 @@ End:
 
 blk8:
 Statements:
-  (v19: ()) <- struct_construct()
+  (v22: ()) <- struct_construct()
 End:
-  Return(v15, v19)
+  Return(v15, v22)
 
 //! > ==========================================================================
 
@@ -174,22 +174,22 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v6})
+  Goto(blk4, {v2 -> v9})
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v3 -> v6})
+  Goto(blk4, {v3 -> v9})
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v4 -> v6})
+  Goto(blk4, {v4 -> v9})
 
 blk4:
 Statements:
 End:
-  Return(v6)
+  Return(v9)
 
 //! > ==========================================================================
 
@@ -236,22 +236,22 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v10, v3 -> v9})
+  Goto(blk4, {v2 -> v16, v3 -> v15})
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v4 -> v10, v5 -> v9})
+  Goto(blk4, {v4 -> v16, v5 -> v15})
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v6 -> v10, v7 -> v9})
+  Goto(blk4, {v6 -> v16, v7 -> v15})
 
 blk4:
 Statements:
 End:
-  Return(v10, v9)
+  Return(v16, v15)
 
 //! > ==========================================================================
 
@@ -286,35 +286,35 @@ extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v20: core::RangeCheck, v0: core::felt252, v1: core::felt252
+Parameters: v23: core::RangeCheck, v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::f(v20, v0, v1) {
-    MyEnum::A(v21, v2, v3) => blk1,
-    MyEnum::B(v22, v5, v6) => blk2,
-    MyEnum::C(v23, v9, v10, v11) => blk3,
+  Match(match test::f(v23, v0, v1) {
+    MyEnum::A(v24, v2, v3) => blk1,
+    MyEnum::B(v25, v5, v6) => blk2,
+    MyEnum::C(v26, v9, v10, v11) => blk3,
   })
 
 blk1:
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(blk4, {v21 -> v24, v2 -> v15, v4 -> v14})
+  Goto(blk4, {v24 -> v27, v2 -> v15, v4 -> v14})
 
 blk2:
 Statements:
   (v7: (core::felt252,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(blk4, {v22 -> v24, v5 -> v15, v8 -> v14})
+  Goto(blk4, {v25 -> v27, v5 -> v15, v8 -> v14})
 
 blk3:
 Statements:
   (v12: (core::felt252, core::felt252)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(blk4, {v23 -> v24, v9 -> v15, v13 -> v14})
+  Goto(blk4, {v26 -> v27, v9 -> v15, v13 -> v14})
 
 blk4:
 Statements:
@@ -342,9 +342,9 @@ End:
 
 blk8:
 Statements:
-  (v19: ()) <- struct_construct()
+  (v22: ()) <- struct_construct()
 End:
-  Return(v24, v15, v19)
+  Return(v27, v15, v22)
 
 //! > ==========================================================================
 
@@ -378,35 +378,35 @@ extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v11: core::RangeCheck, v0: core::felt252, v1: core::felt252
+Parameters: v17: core::RangeCheck, v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::f(v11, v0, v1) {
-    MyEnum::A(v12, v2, v3) => blk1,
-    MyEnum::B(v13, v4, v5) => blk2,
-    MyEnum::C(v14, v6, v7, v8) => blk3,
+  Match(match test::f(v17, v0, v1) {
+    MyEnum::A(v18, v2, v3) => blk1,
+    MyEnum::B(v19, v4, v5) => blk2,
+    MyEnum::C(v20, v6, v7, v8) => blk3,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk4, {v12 -> v15, v2 -> v10, v3 -> v9})
+  Goto(blk4, {v18 -> v22, v2 -> v16, v3 -> v15})
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v13 -> v15, v4 -> v10, v5 -> v9})
+  Goto(blk4, {v19 -> v22, v4 -> v16, v5 -> v15})
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v14 -> v15, v6 -> v10, v7 -> v9})
+  Goto(blk4, {v20 -> v22, v6 -> v16, v7 -> v15})
 
 blk4:
 Statements:
 End:
-  Return(v15, v10, v9)
+  Return(v22, v16, v15)
 
 //! > ==========================================================================
 

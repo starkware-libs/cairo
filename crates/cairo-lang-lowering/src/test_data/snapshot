@@ -114,26 +114,26 @@ Statements:
 End:
   Match(match_enum(v0) {
     A::A(v1) => blk1,
-    A::B(v3) => blk2,
-    A::C(v5) => blk3,
+    A::B(v2) => blk2,
+    A::C(v3) => blk3,
   })
 
 blk1:
 Statements:
-  (v2: ()) <- test::bar0(v1)
+  (v7: ()) <- test::bar0(v1)
 End:
   Goto(blk4, {})
 
 blk2:
 Statements:
-  (v4: ()) <- test::bar1(v3)
+  (v9: ()) <- test::bar1(v2)
 End:
   Goto(blk4, {})
 
 blk3:
 Statements:
-  (v6: @core::felt252, v7: @core::array::Array::<core::felt252>) <- struct_destructure(v5)
-  (v8: ()) <- test::bar2(v6, v7)
+  (v4: @core::felt252, v5: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
+  (v12: ()) <- test::bar2(v4, v5)
 End:
   Goto(blk4, {})
 

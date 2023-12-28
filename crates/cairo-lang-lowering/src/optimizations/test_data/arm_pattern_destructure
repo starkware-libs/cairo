@@ -114,60 +114,100 @@ Statements:
 End:
   Match(match_enum(v37) {
     MyEnum::a(v39) => blk10,
-    MyEnum::b(v44) => blk11,
-    MyEnum::c(v47) => blk12,
-    MyEnum::d(v48) => blk13,
-    MyEnum::e(v51) => blk14,
-    MyEnum::f(v52) => blk15,
-    MyEnum::g(v54) => blk16,
-    MyEnum::h(v55) => blk17,
+    MyEnum::b(v44) => blk12,
+    MyEnum::c(v47) => blk14,
+    MyEnum::d(v48) => blk16,
+    MyEnum::e(v51) => blk18,
+    MyEnum::f(v52) => blk20,
+    MyEnum::g(v54) => blk22,
+    MyEnum::h(v55) => blk24,
   })
 
 blk10:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk11, {})
 
 blk11:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk12:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk13, {})
 
 blk13:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk14:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk15, {})
 
 blk15:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk16:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk17, {})
 
 blk17:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk18:
 Statements:
-  (v56: ()) <- struct_construct()
 End:
-  Return(v56)
+  Goto(blk19, {})
+
+blk19:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk20:
+Statements:
+End:
+  Goto(blk21, {})
+
+blk21:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk22:
+Statements:
+End:
+  Goto(blk23, {})
+
+blk23:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk24:
+Statements:
+End:
+  Goto(blk25, {})
+
+blk25:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk26:
+Statements:
+  (v68: ()) <- struct_construct()
+End:
+  Return(v68)
 
 //! > after
 Parameters: v0: core::felt252
@@ -195,139 +235,179 @@ blk2:
 Statements:
   (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v7, v8)
 End:
-  Goto(blk11, {})
+  Goto(blk12, {})
 
 blk3:
 Statements:
   (v14: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v12, v13)
 End:
-  Goto(blk12, {})
+  Goto(blk14, {})
 
 blk4:
 Statements:
   (v19: (core::felt252, core::felt252)) <- struct_construct(v17, v18)
 End:
-  Goto(blk13, {})
+  Goto(blk16, {})
 
 blk5:
 Statements:
   (v24: (core::felt252, core::felt252)) <- struct_construct(v22, v23)
 End:
-  Goto(blk14, {})
+  Goto(blk18, {})
 
 blk6:
 Statements:
   (v28: (core::felt252,)) <- struct_construct(v27)
 End:
-  Goto(blk15, {})
+  Goto(blk20, {})
 
 blk7:
 Statements:
   (v32: (core::felt252,)) <- struct_construct(v31)
 End:
-  Goto(blk16, {})
+  Goto(blk22, {})
 
 blk8:
 Statements:
 End:
-  Goto(blk17, {})
+  Goto(blk24, {})
 
 blk9:
 Statements:
 End:
   Match(match_enum(v37) {
-    MyEnum::a(v39) => blk19,
-    MyEnum::b(v44) => blk20,
-    MyEnum::c(v47) => blk21,
-    MyEnum::d(v48) => blk22,
-    MyEnum::e(v51) => blk23,
-    MyEnum::f(v52) => blk24,
-    MyEnum::g(v54) => blk25,
-    MyEnum::h(v55) => blk26,
+    MyEnum::a(v39) => blk27,
+    MyEnum::b(v44) => blk28,
+    MyEnum::c(v47) => blk29,
+    MyEnum::d(v48) => blk30,
+    MyEnum::e(v51) => blk31,
+    MyEnum::f(v52) => blk32,
+    MyEnum::g(v54) => blk33,
+    MyEnum::h(v55) => blk34,
   })
 
 blk10:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk11, {})
 
 blk11:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk12:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk13, {})
 
 blk13:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk14:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk15, {})
 
 blk15:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk16:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk17, {})
 
 blk17:
 Statements:
 End:
-  Goto(blk18, {})
+  Goto(blk26, {})
 
 blk18:
 Statements:
-  (v56: ()) <- struct_construct()
 End:
-  Return(v56)
+  Goto(blk19, {})
 
 blk19:
 Statements:
 End:
-  Goto(blk10, {})
+  Goto(blk26, {})
 
 blk20:
 Statements:
 End:
-  Goto(blk11, {})
+  Goto(blk21, {})
 
 blk21:
 Statements:
 End:
-  Goto(blk12, {})
+  Goto(blk26, {})
 
 blk22:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk23, {})
 
 blk23:
 Statements:
 End:
-  Goto(blk14, {})
+  Goto(blk26, {})
 
 blk24:
 Statements:
 End:
-  Goto(blk15, {})
+  Goto(blk25, {})
 
 blk25:
 Statements:
 End:
-  Goto(blk16, {})
+  Goto(blk26, {})
 
 blk26:
 Statements:
+  (v68: ()) <- struct_construct()
 End:
-  Goto(blk17, {})
+  Return(v68)
+
+blk27:
+Statements:
+End:
+  Goto(blk10, {})
+
+blk28:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk29:
+Statements:
+End:
+  Goto(blk14, {})
+
+blk30:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk31:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk32:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk33:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk34:
+Statements:
+End:
+  Goto(blk24, {})

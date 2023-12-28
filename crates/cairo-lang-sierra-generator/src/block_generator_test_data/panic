@@ -46,32 +46,32 @@ End:
 
 blk1:
 Statements:
-  (v6: (core::felt252,)) <- struct_construct(v2)
-  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
+  (v7: (core::felt252,)) <- struct_construct(v2)
+  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v7)
 End:
-  Return(v7)
+  Return(v8)
 
 blk2:
 Statements:
-  (v8: core::panics::PanicResult::<(core::never,)>) <- test::no_inline_panic()
+  (v9: core::panics::PanicResult::<(core::never,)>) <- test::no_inline_panic()
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk3,
-    PanicResult::Err(v11) => blk4,
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk3,
+    PanicResult::Err(v12) => blk4,
   })
 
 blk3:
 Statements:
-  (v10: core::never) <- struct_destructure(v9)
+  (v11: core::never) <- struct_destructure(v10)
 End:
-  Match(match_enum(v10) {
+  Match(match_enum(v11) {
   })
 
 blk4:
 Statements:
-  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v12)
 End:
-  Return(v12)
+  Return(v13)
 
 //! > sierra_code
 enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }

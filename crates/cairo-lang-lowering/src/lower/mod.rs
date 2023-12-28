@@ -1115,12 +1115,10 @@ fn lower_expr_match(
     )?;
 
     let mut arm_var_ids = vec![];
-    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
+    let mut block_ids = vec![];
+    let varinats_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let mut subscope = create_subscope_with_bound_refs(ctx, builder);
-            let block_id = subscope.block_id;
-
             let arm_index = variant_map
                 .get(concrete_variant)
                 .or(otherwise_variant.as_ref())
@@ -1131,7 +1129,11 @@ fn lower_expr_match(
                     ))
                 })?;
             let arm = &expr.arms[*arm_index];
+
+            let mut subscope = create_subscope(ctx, builder);
             let pattern = &ctx.function_body.patterns[arm.pattern];
+            let block_id = subscope.block_id;
+            block_ids.push(block_id);
 
             let lowering_inner_pattern_result = match pattern {
                 Pattern::EnumVariant(PatternEnumVariant {
@@ -1165,21 +1167,21 @@ fn lower_expr_match(
                      type"
                 ),
             };
-            match lowering_inner_pattern_result {
-                Ok(_) => {
-                    // Lower the arm expression.
-                    lower_tail_expr(ctx, subscope, arm.expression)
-                }
-                Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
-            }
-            .map_err(LoweringFlowError::Failed)
-            .map(|sb| (sb, block_id))
+            Ok((*arm_index, lowering_inner_pattern_result, subscope))
         })
         .collect::<Vec<_>>()
         .into_iter()
-        .collect::<LoweringResult<Vec<_>>>()?
-        .into_iter()
-        .unzip();
+        .collect::<LoweringResult<Vec<_>>>()?;
+
+    let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id,
+        input: match_input,
+        arms: vec![],
+        location,
+    });
+
+    let sealed_blocks =
+        group_match_arms(ctx, empty_match_info, location, &expr.arms, varinats_block_builders)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
@@ -1215,12 +1217,14 @@ fn lower_optimized_extern_match(
         extern_enum.concrete_enum_id,
     )?;
     let mut arm_var_ids = vec![];
+    let mut block_ids = vec![];
 
-    let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
+    let varinats_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
             let mut subscope = create_subscope(ctx, builder);
             let block_id = subscope.block_id;
+            block_ids.push(block_id);
 
             let input_tys =
                 match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &extern_enum);
@@ -1229,6 +1233,11 @@ fn lower_optimized_extern_match(
                 .map(|ty| ctx.new_var(VarRequest { ty, location }))
                 .collect_vec();
             arm_var_ids.push(input_vars.clone());
+
+            // Bind the arm inputs to implicits and semantic variables.
+            match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
+
+            let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
 
             let arm_index = variant_map
                 .get(concrete_variant)
@@ -1239,11 +1248,6 @@ fn lower_optimized_extern_match(
                         MissingMatchArm(format!("{}", concrete_variant.id.name(ctx.db.upcast()))),
                     ))
                 })?;
-
-            // Bind the arm inputs to implicits and semantic variables.
-            match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
-
-            let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
 
             let arm = &match_arms[*arm_index];
             let pattern = &ctx.function_body.patterns[arm.pattern];
@@ -1265,21 +1269,20 @@ fn lower_optimized_extern_match(
                      type"
                 ),
             };
-
-            match lowering_inner_pattern_result {
-                Ok(_) => {
-                    // Lower the arm expression.
-                    lower_tail_expr(ctx, subscope, arm.expression)
-                }
-                Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
-            }
-            .map_err(LoweringFlowError::Failed)
-            .map(|sb| (sb, block_id))
+            Ok((*arm_index, lowering_inner_pattern_result, subscope))
         })
-        .collect::<LoweringResult<Vec<_>>>()?
+        .collect::<Vec<_>>()
         .into_iter()
-        .unzip();
+        .collect::<LoweringResult<Vec<_>>>()?;
 
+    let empty_match_info = MatchInfo::Extern(MatchExternInfo {
+        function: extern_enum.function.lowered(ctx.db),
+        inputs: vec![],
+        arms: vec![],
+        location,
+    });
+    let sealed_blocks =
+        group_match_arms(ctx, empty_match_info, location, match_arms, varinats_block_builders)?;
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
@@ -1289,6 +1292,61 @@ fn lower_optimized_extern_match(
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
+}
+
+/// Groups match arms of different variants to their corresponding arms blocks and lowers the lower
+/// the arms expression.
+fn group_match_arms(
+    ctx: &mut LoweringContext<'_, '_>,
+    empty_match_info: MatchInfo,
+    location: LocationId,
+    arms: &[semantic::MatchArm],
+    varinats_block_builders: Vec<(usize, LoweringResult<()>, BlockBuilder)>,
+) -> LoweringResult<Vec<SealedBlockBuilder>> {
+    varinats_block_builders
+        .into_iter()
+        .group_by(|(arm_index, _, _)| *arm_index)
+        .into_iter()
+        .map(|(arm_index, group)| {
+            let arm = &arms[arm_index];
+            let (lowering_inner_pattern_results, subscopes): (Vec<_>, Vec<_>) = group
+                .map(|(_, lowering_inner_pattern_result, subscope)| {
+                    (lowering_inner_pattern_result, subscope)
+                })
+                .unzip();
+
+            // really a parent block builder
+            let mut outer_subscope = subscopes[0].sibling_block_builder(alloc_empty_block(ctx));
+
+            let sealed_blocks: Vec<_> = lowering_inner_pattern_results
+                .into_iter()
+                .zip(subscopes.into_iter())
+                .map(|(lowering_inner_pattern_result, subscope)| {
+                    let pattern = &ctx.function_body.patterns[arm.pattern];
+                    match lowering_inner_pattern_result {
+                        Ok(_) => lowered_expr_to_block_scope_end(
+                            ctx,
+                            subscope,
+                            Ok(LoweredExpr::Tuple {
+                                exprs: vec![],
+                                location: ctx.get_location(pattern.stable_ptr().untyped()),
+                            }),
+                        ),
+                        Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
+                    }
+                    .map_err(LoweringFlowError::Failed)
+                })
+                .collect::<LoweringResult<Vec<_>>>()?;
+
+            outer_subscope.merge_and_end_with_match(
+                ctx,
+                empty_match_info.clone(),
+                sealed_blocks,
+                location,
+            )?;
+            lower_tail_expr(ctx, outer_subscope, arm.expression).map_err(LoweringFlowError::Failed)
+        })
+        .collect()
 }
 
 /// Lowers the [semantic::MatchArm] of an expression of type [semantic::ExprMatch] where the matched

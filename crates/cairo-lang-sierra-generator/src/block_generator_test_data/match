@@ -192,22 +192,22 @@ Statements:
 End:
   Match(match_enum(v0) {
     Option::Some(v1) => blk1,
-    Option::None(v3) => blk2,
+    Option::None(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- desnap(v1)
+  (v4: core::felt252) <- desnap(v1)
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v4 -> v6})
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v5: core::felt252) <- 0u
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v5 -> v6})
 
 blk3:
 Statements:
 End:
-  Return(v5)
+  Return(v6)

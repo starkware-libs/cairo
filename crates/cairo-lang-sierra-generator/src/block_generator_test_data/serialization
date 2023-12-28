@@ -68,47 +68,47 @@ blk0 (root):
 Statements:
 End:
   Match(match core::array::array_pop_front::<core::felt252>(v1) {
-    Option::Some(v14, v15) => blk1,
-    Option::None(v16) => blk2,
+    Option::Some(v15, v16) => blk1,
+    Option::None(v17) => blk2,
   })
 
 blk1:
 Statements:
-  (v23: core::felt252) <- core::box::unbox::<core::felt252>(v15)
-  (v18: core::option::Option::<core::felt252>) <- Option::Some(v23)
+  (v27: core::felt252) <- core::box::unbox::<core::felt252>(v16)
+  (v22: core::option::Option::<core::felt252>) <- Option::Some(v27)
 End:
-  Goto(blk3, {v14 -> v19, v18 -> v20})
+  Goto(blk3, {v15 -> v23, v22 -> v24})
 
 blk2:
 Statements:
-  (v21: ()) <- struct_construct()
-  (v22: core::option::Option::<core::felt252>) <- Option::None(v21)
+  (v25: ()) <- struct_construct()
+  (v26: core::option::Option::<core::felt252>) <- Option::None(v25)
 End:
-  Goto(blk3, {v16 -> v19, v22 -> v20})
+  Goto(blk3, {v17 -> v23, v26 -> v24})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v20) {
+  Match(match_enum(v24) {
     Option::Some(v4) => blk4,
-    Option::None(v11) => blk5,
+    Option::None(v5) => blk5,
   })
 
 blk4:
 Statements:
-  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
-  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::Felt252Serde::serialize(v6, v0)
-  (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v19)
+  (v7: core::felt252, v8: @core::felt252) <- snapshot(v4)
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- core::Felt252Serde::serialize(v8, v0)
+  (v12: core::array::Array::<core::felt252>, v11: ()) <- test::serialize_array_felt_helper(v10, v23)
 End:
-  Goto(blk6, {v10 -> v12})
+  Goto(blk6, {v12 -> v13})
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {v0 -> v12})
+  Goto(blk6, {v0 -> v13})
 
 blk6:
 Statements:
-  (v13: ()) <- struct_construct()
+  (v14: ()) <- struct_construct()
 End:
-  Return(v12, v13)
+  Return(v13, v14)
