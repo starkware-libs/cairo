@@ -213,9 +213,7 @@ pub fn impl_def_generic_params_data(
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
 
-    let module_impls = db.module_impls(module_file_id.0)?;
-    let syntax_db = db.upcast();
-    let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
@@ -225,7 +223,7 @@ pub fn impl_def_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &impl_ast.generic_params(syntax_db),
+        &impl_ast.generic_params(db.upcast()),
     )?;
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
@@ -291,14 +289,12 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
 
-    let module_impls = db.module_impls(module_file_id.0)?;
-    let syntax_db = db.upcast();
-    let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    let trait_path_syntax = impl_ast.trait_path(syntax_db);
+    let trait_path_syntax = impl_ast.trait_path(db.upcast());
 
     try_extract_matches!(
         resolver.resolve_generic_path_with_args(
@@ -365,9 +361,8 @@ pub fn priv_impl_declaration_data_inner(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_impls = db.module_impls(module_file_id.0)?;
     let syntax_db = db.upcast();
-    let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::Impl(impl_def_id),
     ));
@@ -485,17 +480,15 @@ pub fn priv_impl_definition_data(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
 ) -> Maybe<ImplDefinitionData> {
-    let defs_db = db.upcast();
     let syntax_db = db.upcast();
 
-    let module_file_id = impl_def_id.module_file_id(defs_db);
+    let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
 
     let generic_params = db.impl_def_generic_params(impl_def_id)?;
     let concrete_trait = db.priv_impl_declaration_data(impl_def_id)?.concrete_trait?;
 
-    let module_impls = db.module_impls(module_file_id.0)?;
-    let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let impl_ast = db.module_impl_by_id(impl_def_id)?.to_maybe()?;
 
     let generic_params_ids =
         generic_params.iter().map(|generic_param| generic_param.id()).collect();
@@ -555,11 +548,11 @@ pub fn priv_impl_definition_data(
                         module_file_id,
                         func.stable_ptr(),
                     ));
-                    if !impl_item_names.insert(impl_function_id.name(defs_db)) {
+                    if !impl_item_names.insert(impl_function_id.name(db.upcast())) {
                         diagnostics.report_by_ptr(
                             func.declaration(syntax_db).name(syntax_db).stable_ptr().untyped(),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes {
-                                name: impl_function_id.name(defs_db),
+                                name: impl_function_id.name(db.upcast()),
                             },
                         );
                     }
