@@ -50,15 +50,15 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v5) => blk4,
-    Option::None(v8) => blk5,
+    Option::None(v6) => blk5,
   })
 
 blk4:
 Statements:
-  (v6: core::integer::u16) <- 1u
-  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
+  (v7: core::integer::u16) <- 1u
+  (v8: core::option::Option::<core::integer::u16>) <- Option::Some(v7)
 End:
-  Goto(blk6, {v7 -> v11})
+  Goto(blk6, {v8 -> v11})
 
 blk5:
 Statements:
@@ -98,15 +98,15 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v5) => blk7,
-    Option::None(v8) => blk8,
+    Option::None(v6) => blk8,
   })
 
 blk4:
 Statements:
-  (v6: core::integer::u16) <- 1u
-  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
+  (v7: core::integer::u16) <- 1u
+  (v8: core::option::Option::<core::integer::u16>) <- Option::Some(v7)
 End:
-  Goto(blk6, {v7 -> v11})
+  Goto(blk6, {v8 -> v11})
 
 blk5:
 Statements:
@@ -193,15 +193,15 @@ Statements:
 End:
   Match(match_enum(v5) {
     Option::Some(v6) => blk4,
-    Option::None(v9) => blk5,
+    Option::None(v7) => blk5,
   })
 
 blk4:
 Statements:
-  (v7: core::integer::u16) <- 1u
-  (v8: core::option::Option::<core::integer::u16>) <- Option::Some(v7)
+  (v8: core::integer::u16) <- 1u
+  (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
 End:
-  Goto(blk6, {v8 -> v12})
+  Goto(blk6, {v9 -> v12})
 
 blk5:
 Statements:
@@ -264,15 +264,15 @@ Statements:
 End:
   Match(match_enum(v5) {
     Option::Some(v6) => blk4,
-    Option::None(v9) => blk5,
+    Option::None(v7) => blk5,
   })
 
 blk4:
 Statements:
-  (v7: core::integer::u16) <- 1u
-  (v8: core::option::Option::<core::integer::u16>) <- Option::Some(v7)
+  (v8: core::integer::u16) <- 1u
+  (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
 End:
-  Goto(blk6, {v8 -> v12})
+  Goto(blk6, {v9 -> v12})
 
 blk5:
 Statements:
@@ -360,7 +360,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v5) => blk4,
-    Option::None(v9) => blk6,
+    Option::None(v6) => blk6,
   })
 
 blk4:
@@ -370,11 +370,11 @@ End:
 
 blk5:
 Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
-  (v8: core::option::Option::<core::felt252>) <- Option::Some(v14)
+  (v7: core::felt252) <- 3u
+  (v14: core::felt252) <- core::felt252_add(v5, v7)
+  (v9: core::option::Option::<core::felt252>) <- Option::Some(v14)
 End:
-  Goto(blk7, {v8 -> v12})
+  Goto(blk7, {v9 -> v12})
 
 blk6:
 Statements:
@@ -460,7 +460,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v5) => blk15,
-    Option::None(v9) => blk16,
+    Option::None(v6) => blk16,
   })
 
 blk4:
@@ -470,8 +470,8 @@ End:
 
 blk5:
 Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
+  (v7: core::felt252) <- 3u
+  (v14: core::felt252) <- core::felt252_add(v5, v7)
 End:
   Goto(blk8, {v14 -> v17})
 

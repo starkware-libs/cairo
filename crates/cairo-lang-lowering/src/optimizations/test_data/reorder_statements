@@ -69,7 +69,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v10) => blk4,
-    Option::None(v12) => blk5,
+    Option::None(v11) => blk5,
   })
 
 blk4:
@@ -84,7 +84,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v14) => blk6,
-    Option::None(v16) => blk7,
+    Option::None(v15) => blk7,
   })
 
 blk6:
@@ -137,7 +137,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v10) => blk4,
-    Option::None(v12) => blk5,
+    Option::None(v11) => blk5,
   })
 
 blk4:
@@ -152,7 +152,7 @@ Statements:
 End:
   Match(match_enum(v4) {
     Option::Some(v14) => blk6,
-    Option::None(v16) => blk7,
+    Option::None(v15) => blk7,
   })
 
 blk6:
