@@ -48,8 +48,7 @@ pub fn priv_enum_declaration_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -103,8 +102,7 @@ pub fn enum_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let module_file_id = enum_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
 
     // Generic params.
     let inference_id =
@@ -179,8 +177,7 @@ pub fn priv_enum_definition_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
