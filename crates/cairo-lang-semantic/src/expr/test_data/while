@@ -7,6 +7,8 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() {
     while true {
         1;
+        break 5;
+        break;
     }
 }
 
@@ -16,6 +18,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Can only break with a value inside a `loop`.
+ --> lib.cairo:4:9
+        break 5;
+        ^******^
+
 error: While loops are not supported yet.
  --> lib.cairo:2:5
     while true {
