@@ -12,7 +12,7 @@ description = "Utilities for writing tests in the Cairo compiler project."
 testing = ["dep:cairo-lang-utils", "dep:colored", "dep:log", "dep:pretty_assertions"]
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "2.4.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "2.4.2" }
 colored = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 pretty_assertions = { workspace = true, optional = true }
