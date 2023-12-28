@@ -91,16 +91,16 @@ Statements:
 End:
   Match(match_enum(v20) {
     Option::Some(v4) => blk4,
-    Option::None(v11) => blk5,
+    Option::None(v5) => blk5,
   })
 
 blk4:
 Statements:
-  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
-  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::Felt252Serde::serialize(v6, v0)
-  (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v19)
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v4)
+  (v9: core::array::Array::<core::felt252>, v8: ()) <- core::Felt252Serde::serialize(v7, v0)
+  (v11: core::array::Array::<core::felt252>, v10: ()) <- test::serialize_array_felt_helper(v9, v19)
 End:
-  Goto(blk6, {v10 -> v12})
+  Goto(blk6, {v11 -> v12})
 
 blk5:
 Statements:
