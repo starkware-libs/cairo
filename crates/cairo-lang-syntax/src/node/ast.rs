@@ -19,7 +19,6 @@ use super::{
 };
 #[path = "ast_ext.rs"]
 mod ast_ext;
-pub use ast_ext::*;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Trivia(ElementList<Trivium, 1>);
 impl Deref for Trivia {
