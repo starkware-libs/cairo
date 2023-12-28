@@ -14,6 +14,7 @@ pub mod module;
 pub mod module_type_alias;
 pub mod structure;
 pub mod trt;
+pub mod type_aliases;
 pub mod us;
 pub mod visibility;
 

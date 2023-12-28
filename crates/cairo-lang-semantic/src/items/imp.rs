@@ -35,7 +35,7 @@ use super::functions::{
 use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use super::type_alias::{
+use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
 };
@@ -428,7 +428,6 @@ pub fn priv_impl_declaration_data_inner(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    // TODO(yg-other-pr): arc?
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>>,
 }

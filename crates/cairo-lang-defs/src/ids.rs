@@ -351,7 +351,7 @@ impl UnstableSalsaId for FreeFunctionId {
 // --- Impls ---
 define_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, lookup_intern_impl, name);
 
-// --- Impl types ---
+// --- Impl type items ---
 define_language_element_id_partial!(
     ImplTypeId,
     ImplTypeLongId,

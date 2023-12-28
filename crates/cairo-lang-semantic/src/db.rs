@@ -591,7 +591,6 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_type_id: TraitTypeId,
     ) -> Maybe<Option<ImplTypeId>>;
-    // TODO(yg-other-pr): change to impl_function_ids which returns Maybe<Arc<Vec<ImplFunctionId>>>
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(
@@ -639,7 +638,7 @@ pub trait SemanticGroup:
     fn priv_impl_type_semantic_data(
         &self,
         impl_type_id: ImplTypeId,
-    ) -> Maybe<items::type_alias::TypeAliasData>;
+    ) -> Maybe<items::type_aliases::TypeAliasData>;
     /// Private query to compute data about the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_generic_params_data)]
     fn priv_impl_type_generic_params_data(&self, enum_id: ImplTypeId) -> Maybe<GenericParamsData>;
