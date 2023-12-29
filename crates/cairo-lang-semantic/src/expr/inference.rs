@@ -601,7 +601,7 @@ impl<'db> Inference<'db> {
 
         // Don't try to resolve impls if the first generic param is a variable.
         let generic_args = concrete_trait_id.generic_args(self.db);
-        match generic_args.get(0) {
+        match generic_args.first() {
             Some(GenericArgumentId::Type(ty)) => {
                 if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
                     // Don't try to infer such impls.
