@@ -738,6 +738,7 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-log",
+ "toml",
 ]
 
 [[package]]
