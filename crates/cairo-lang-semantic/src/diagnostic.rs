@@ -654,6 +654,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::CouponArgumentNoModifiers => {
                 "The __coupon__ argument cannot have modifiers.".into()
             }
+            SemanticDiagnosticKind::CouponsDisabled => {
+                "Coupons are disabled in the current crate.\nYou can enable them by enabling the \
+                 coupons experimental feature in the crate config."
+                    .into()
+            }
         }
     }
 
@@ -972,6 +977,8 @@ pub enum SemanticDiagnosticKind {
     },
     CouponForExternFunctionNotAllowed,
     CouponArgumentNoModifiers,
+    /// Coupons are disabled in the current crate.
+    CouponsDisabled,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

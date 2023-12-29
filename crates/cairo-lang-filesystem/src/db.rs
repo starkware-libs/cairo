@@ -90,6 +90,12 @@ impl Edition {
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExperimentalFeaturesConfig {
     pub negative_impls: bool,
+    /// Allows using coupon types and coupon calls.
+    ///
+    /// Each function has a associated `Coupon` type, which represents paying the cost of the
+    /// function before calling it.
+    #[serde(default)]
+    pub coupons: bool,
 }
 
 // Salsa database interface.
@@ -156,7 +162,10 @@ pub fn init_dev_corelib_from_directory(
             root: core_lib_dir,
             settings: CrateSettings {
                 edition: Edition::V2023_11,
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
+                experimental_features: ExperimentalFeaturesConfig {
+                    negative_impls: true,
+                    coupons: false,
+                },
             },
         }),
     );
