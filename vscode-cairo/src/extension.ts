@@ -245,6 +245,9 @@ async function getServerType(
   context: vscode.ExtensionContext
 ) {
   if (!isScarbEnabled) return ServerType.Standalone;
+  if (isScarbEnabled && !!configLanguageServerPath) {
+    return ServerType.Standalone
+  }
   if (!(await isScarbProject()) && !!configLanguageServerPath) {
     // If Scarb manifest is missing, and Cairo-LS path is explicit.
     return ServerType.Standalone;
