@@ -57,7 +57,9 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
-use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
+use crate::types::{
+    are_coupons_enabled, peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId,
+};
 use crate::{
     GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral, PatternStruct,
     Signature,
@@ -1956,11 +1958,12 @@ fn expr_function_call(
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx.db.concrete_function_signature(function_id)?;
 
-    // Check if the last item in named_args, has the argument name "__coupon__" and remove it, if
-    // so.
+    // Check if the last item in `named_args`, has the argument name `__coupon__`, and remove it
+    // if so.
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
-        if name_terminal.text(ctx.db.upcast()) == "__coupon__" {
+        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
+        if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = ctx.db.intern_type(TypeLongId::Coupon(function_id));
             let arg_typ = arg.ty();

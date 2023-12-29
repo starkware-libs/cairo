@@ -1,5 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use cairo_lang_defs::ids::{
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
@@ -447,4 +449,11 @@ pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: us
         ty = db.intern_type(TypeLongId::Snapshot(ty));
     }
     ty
+}
+
+/// Returns `true` if coupons are enabled in the module.
+pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.coupons
 }
