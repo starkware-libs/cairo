@@ -222,3 +222,39 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:7:5
     bar(1); // Cannot infer S.
     ^*^
+
+//! > ==========================================================================
+
+//! > Test coupon disabled.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function
+fn foo(x: foo::Coupon) {
+    foo(x, __coupon__: x);
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Coupons are disabled in the current crate.
+You can enable them by enabling the coupons experimental feature in the crate config.
+ --> lib.cairo:1:16
+fn foo(x: foo::Coupon) {
+               ^****^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:2:5
+    foo(x, __coupon__: x);
+    ^*******************^
+
+//! > crate_settings
+edition = "2023_01"
+
+[experimental_features]
+negative_impls = false
+coupons = false
