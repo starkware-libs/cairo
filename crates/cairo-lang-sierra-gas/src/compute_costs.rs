@@ -14,7 +14,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
-use crate::objects::{BranchCost, ConstCost, PreCost, WithdrawGasBranchInfo};
+use crate::objects::{BranchCost, BranchCostSign, ConstCost, PreCost, WithdrawGasBranchInfo};
 use crate::CostError;
 
 type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
@@ -156,7 +156,7 @@ fn get_branch_requirements_dependencies(
     let mut res: OrderedHashSet<StatementIdx> = Default::default();
     for (branch_info, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
         match branch_cost {
-            BranchCost::FunctionCall { const_cost: _, function } => {
+            BranchCost::FunctionCost { const_cost: _, function, sign: _ } => {
                 res.insert(function.entry_point);
             }
             BranchCost::WithdrawGas(WithdrawGasBranchInfo {
@@ -176,6 +176,9 @@ fn get_branch_requirements_dependencies(
 }
 
 /// Returns the required value for the wallet for each branch.
+///
+/// Rectify (see [CostTypeTrait::rectify]) is needed in case the branch cost is negative
+/// (e.g., in `coupon_refund`).
 fn get_branch_requirements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
@@ -185,10 +188,17 @@ fn get_branch_requirements<
     idx: &StatementIdx,
     invocation: &Invocation,
     libfunc_cost: &[BranchCost],
+    rectify: bool,
 ) -> Vec<WalletInfo<CostType>> {
     zip_eq(&invocation.branches, libfunc_cost)
         .map(|(branch_info, branch_cost)| {
-            specific_context.get_branch_requirement(wallet_at_fn, idx, branch_info, branch_cost)
+            let res = specific_context.get_branch_requirement(
+                wallet_at_fn,
+                idx,
+                branch_info,
+                branch_cost,
+            );
+            if rectify { res.rectify() } else { res }
         })
         .collect()
 }
@@ -218,6 +228,7 @@ fn analyze_gas_statements<
         idx,
         invocation,
         &libfunc_cost,
+        false,
     );
 
     let wallet_value = context.wallet_at(idx).value;
@@ -250,6 +261,14 @@ fn analyze_gas_statements<
                 );
             }
         } else if let BranchCost::RedepositGas = branch_cost {
+            let cost = wallet_value.clone() - branch_requirement.value.clone();
+            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+                assert_eq!(variable_values.insert((*idx, token_type), amount), None);
+            }
+        } else if let BranchCost::FunctionCost { sign: BranchCostSign::Add, .. } = branch_cost {
+            // If the refund can be fully used, the wallet value will be the same as
+            // `branch_requirement`. Otherwise, wallet value will be zero and the difference
+            // should be registered in the refund variables.
             let cost = wallet_value.clone() - branch_requirement.value.clone();
             for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
                 assert_eq!(variable_values.insert((*idx, token_type), amount), None);
@@ -333,6 +352,11 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
         }
 
         WalletInfo { value: max_value }
+    }
+
+    /// See [CostTypeTrait::rectify].
+    fn rectify(&self) -> Self {
+        Self { value: CostType::rectify(&self.value) }
     }
 }
 
@@ -452,6 +476,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                     idx,
                     invocation,
                     &libfunc_cost,
+                    true,
                 );
 
                 // The wallet value at the beginning of the statement is the maximal value
@@ -559,6 +584,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             idx,
             invocation,
             &libfunc_cost,
+            false,
         );
 
         // Pass the excess to the branches.
@@ -599,6 +625,12 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             } else if let BranchCost::RedepositGas = branch_cost {
                 // All the excess can be redeposited.
                 actual_excess = Default::default();
+            } else if let BranchCost::FunctionCost { sign: BranchCostSign::Add, .. } = branch_cost {
+                // The difference between `wallet_value` and `branch_requirement.value` is the
+                // amount of "wasted" refund (refund that could not be used in the first
+                // iteration) - this amount can be added to the excess.
+                let additional_excess = wallet_value.clone() - branch_requirement.value;
+                actual_excess = actual_excess + CostType::rectify(&additional_excess);
             }
 
             // Update the excess for `branch_statement` using the minimum of the existing excess and
@@ -673,8 +705,12 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
         let branch_cost = match branch_cost {
             BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
             BranchCost::BranchAlign => Default::default(),
-            BranchCost::FunctionCall { const_cost: _, function } => {
-                wallet_at_fn(&function.entry_point).value
+            BranchCost::FunctionCost { const_cost: _, function, sign } => {
+                let func_cost = wallet_at_fn(&function.entry_point).value;
+                match sign {
+                    BranchCostSign::Add => PreCost::default() - func_cost,
+                    BranchCostSign::Subtract => func_cost,
+                }
             }
             BranchCost::WithdrawGas(info) => {
                 if info.success {
@@ -743,8 +779,12 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
                     ConstCost { steps: 1, holes: ap_change as i32, range_checks: 0 }.cost()
                 }
             }
-            BranchCost::FunctionCall { const_cost, function } => {
-                wallet_at_fn(&function.entry_point).value + const_cost.cost()
+            BranchCost::FunctionCost { const_cost, function, sign } => {
+                let cost = wallet_at_fn(&function.entry_point).value + const_cost.cost();
+                match sign {
+                    BranchCostSign::Add => -cost,
+                    BranchCostSign::Subtract => cost,
+                }
             }
             BranchCost::WithdrawGas(info) => {
                 let cost = self.compute_withdraw_gas_cost(idx, info);
