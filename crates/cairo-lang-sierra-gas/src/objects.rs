@@ -80,7 +80,9 @@ pub enum BranchCost {
     /// The cost of the statement is independent on other statements.
     Regular { const_cost: ConstCost, pre_cost: PreCost },
     /// A cost of a function call.
-    FunctionCall { const_cost: ConstCost, function: Function },
+    /// If `is_refund` is `true`, the cost (the function cost as well as `const_cost`) is added
+    /// to the wallet, instead of being reduced.
+    FunctionCall { const_cost: ConstCost, function: Function, is_refund: bool },
     /// The cost of the `branch_align` libfunc.
     BranchAlign,
     /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.

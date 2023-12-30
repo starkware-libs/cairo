@@ -129,6 +129,7 @@ pub fn core_libfunc_cost(
             vec![BranchCost::FunctionCall {
                 const_cost: ConstCost::steps(2),
                 function: function.clone(),
+                is_refund: false,
             }]
         }
         CouponCall(_) => vec![ConstCost::steps(2).into()],
@@ -425,6 +426,7 @@ pub fn core_libfunc_cost(
                 vec![BranchCost::FunctionCall {
                     const_cost: ConstCost::default(),
                     function: libfunc.function.clone(),
+                    is_refund: false,
                 }]
             }
         },
@@ -444,9 +446,17 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
     res.into_iter()
         .map(|cost| match cost {
             BranchCost::Regular { const_cost, pre_cost: _ } => ops.const_cost(const_cost),
-            BranchCost::FunctionCall { const_cost, function } => {
+            BranchCost::FunctionCall { const_cost, function, is_refund } => {
                 let func_content_cost = ops.function_token_cost(&function, CostTokenType::Const);
-                ops.add(ops.const_cost(const_cost), func_content_cost)
+                let cost = ops.add(ops.const_cost(const_cost), func_content_cost);
+
+                if is_refund {
+                    // The refund may be at most `cost`. It can be smaller if the refund cannot be
+                    // used later (e.g., if the next statement is `return`).
+                    ops.sub(ops.statement_var_cost(CostTokenType::Const), cost)
+                } else {
+                    cost
+                }
             }
             BranchCost::BranchAlign => {
                 let ap_change = info_provider.ap_change_var_value();
@@ -506,13 +516,23 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                 }
                 res
             }
-            BranchCost::FunctionCall { const_cost: _, function } => {
+            BranchCost::FunctionCall { const_cost: _, function, is_refund } => {
                 let func_content_cost = CostTokenType::iter_precost()
                     .map(|token| ops.function_token_cost(&function, *token))
                     .collect_vec()
                     .into_iter()
                     .reduce(|x, y| ops.add(x, y));
-                func_content_cost.unwrap()
+
+                if is_refund {
+                    // The refund may be at most `cost`. It can be smaller if the refund cannot be
+                    // used later (e.g., if the next statement is `return`).
+                    ops.sub(
+                        statement_vars_cost(ops, CostTokenType::iter_precost()),
+                        func_content_cost.unwrap(),
+                    )
+                } else {
+                    func_content_cost.unwrap()
+                }
             }
             BranchCost::BranchAlign => statement_vars_cost(ops, CostTokenType::iter_precost()),
             BranchCost::WithdrawGas(info) => {
