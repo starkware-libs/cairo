@@ -2,7 +2,7 @@
 #[path = "contract_segmentation_test.rs"]
 mod test;
 
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{Program, StatementIdx, Statement};
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -58,6 +58,24 @@ fn find_segments(program: &Program) -> Result<Vec<usize>, SegmentationError> {
     if function_statement_ids.first() != Some(&0) {
         return Err(SegmentationError::NoFunctionStartAtZero);
     }
+
+    // Sanity check: go over the statements and check that there are no jump outside of functions.
+    let mut current_function = FunctionInfo::new(0);
+    let mut next_function_idx = 1;
+
+    // Iterate over all statements and collect the segments' starts.
+    for (idx, statement) in program.statements.iter().enumerate() {
+        // Check if this is the beginning of a new function.
+        if function_statement_ids.get(next_function_idx) == Some(&idx) {
+            current_function.finalize(idx)?;
+            current_function = FunctionInfo::new(idx);
+            next_function_idx += 1;
+        }
+        current_function.visit_statement(idx, statement)?;
+    }
+
+    current_function.finalize(program.statements.len())?;
+
     Ok(function_statement_ids)
 }
 
@@ -90,11 +108,71 @@ fn get_segment_lengths(segment_starts_offsets: &[usize], bytecode_len: usize) ->
 
     // Handle the last segment.
     let last_offset =
-        segment_starts_offsets.last().expect("Segmentation error: Function has no segments."); // TODO: fix error.
+        segment_starts_offsets.last().expect("Segmentation error: No function found.");
     let segment_size = bytecode_len - last_offset;
     if segment_size > 0 {
         segment_lengths.push(segment_size);
     }
 
     segment_lengths
+}
+
+
+/// Helper struct for [find_segments].
+/// Represents a single function and its segments.
+struct FunctionInfo {
+    entry_point: usize,
+    /// The maximal StatementIdx which we saw a jump to in the function.
+    max_jump_in_function: usize,
+    /// The statement that performed the jump to max_jump_in_function.
+    max_jump_in_function_src: usize,
+}
+impl FunctionInfo {
+    /// Creates a new FunctionInfo, for a function with the given entry point.
+    fn new(entry_point: usize) -> Self {
+        Self {
+            entry_point,
+            max_jump_in_function: entry_point,
+            max_jump_in_function_src: entry_point,
+        }
+    }
+
+    /// Finalizes the current function handling.
+    ///
+    /// `function_end` is the statement index following the last statement in the function.
+    ///
+    /// Returns the segment starts for the function.
+    fn finalize(self, function_end: usize) -> Result<(), SegmentationError> {
+        // Check that we did not see a jump after the function's end.
+        if self.max_jump_in_function >= function_end {
+            return Err(SegmentationError::JumpOutsideFunction(StatementIdx(
+                self.max_jump_in_function_src,
+            )));
+        }
+        Ok(())
+    }
+
+    /// Visits a statement inside the function and update the [FunctionInfo] accordingly.
+    fn visit_statement(
+        &mut self,
+        idx: usize,
+        statement: &Statement,
+    ) -> Result<(), SegmentationError> {
+        match statement {
+            Statement::Invocation(invocation) => {
+                for branch in invocation.branches.iter() {
+                    let next_statement_idx = StatementIdx(idx).next(&branch.target).0;
+                    if next_statement_idx < self.entry_point {
+                        return Err(SegmentationError::JumpOutsideFunction(StatementIdx(idx)));
+                    }
+                    if next_statement_idx > self.max_jump_in_function {
+                        self.max_jump_in_function = next_statement_idx;
+                        self.max_jump_in_function_src = idx;
+                    }
+                }
+            }
+            Statement::Return(_) => {}
+        }
+        Ok(())
+    }
 }
