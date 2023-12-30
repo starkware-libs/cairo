@@ -429,6 +429,13 @@ pub fn core_libfunc_cost(
                     is_refund: false,
                 }]
             }
+            CouponConcreteLibfunc::Refund(libfunc) => {
+                vec![BranchCost::FunctionCall {
+                    const_cost: ConstCost::default(),
+                    function: libfunc.function.clone(),
+                    is_refund: true,
+                }]
+            }
         },
     }
 }
