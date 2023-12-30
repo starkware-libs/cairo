@@ -69,6 +69,7 @@ impl ConcreteType for CouponConcreteType {
 define_libfunc_hierarchy! {
     pub enum CouponLibfunc {
         Buy(CouponBuyLibfunc),
+        Refund(CouponRefundLibfunc),
     }, CouponConcreteLibfunc
 }
 
@@ -95,6 +96,51 @@ impl NamedLibfunc for CouponBuyLibfunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo { ty: coupon_ty, ref_info: OutputVarReferenceInfo::ZeroSized }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn crate::extensions::lib_func::SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let coupon_ty = args_as_single_type(args)?;
+        let long_id = context.get_type_info(coupon_ty.clone())?.long_id;
+        if long_id.generic_id != CouponType::id() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        let function_id = args_as_single_user_func(&long_id.generic_args)?;
+
+        Ok(SignatureAndFunctionConcreteLibfunc {
+            function: context.get_function(&function_id)?,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
+/// Libfunc for getting a refund for an unused coupon. The refund is the cost of the function
+/// and it is added back to the gas wallet.
+#[derive(Default)]
+pub struct CouponRefundLibfunc {}
+impl NamedLibfunc for CouponRefundLibfunc {
+    type Concrete = SignatureAndFunctionConcreteLibfunc;
+    const STR_ID: &'static str = "coupon_refund";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let coupon_ty = args_as_single_type(args)?;
+        if context.get_type_info(coupon_ty.clone())?.long_id.generic_id != CouponType::id() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![coupon_ty],
+            vec![],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
