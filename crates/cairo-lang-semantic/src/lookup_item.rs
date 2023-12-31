@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
-    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId,
-    TraitFunctionId, TraitId, TraitItemId, TraitTypeId, UseId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeId,
+    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
+    StructId, SubmoduleId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -84,15 +84,6 @@ impl HasResolverData for ModuleItemId {
             ModuleItemId::Enum(item) => item.resolver_data(db),
             ModuleItemId::TypeAlias(item) => item.resolver_data(db),
             ModuleItemId::Trait(item) => item.resolver_data(db),
-        }
-    }
-}
-
-impl HasResolverData for ImplItemId {
-    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        match self {
-            ImplItemId::Function(item) => item.resolver_data(db),
-            ImplItemId::Type(item) => item.resolver_data(db),
         }
     }
 }
@@ -186,12 +177,20 @@ impl HasResolverData for TraitFunctionId {
     }
 }
 
+impl HasResolverData for ImplItemId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        match self {
+            ImplItemId::Function(item) => item.resolver_data(db),
+            ImplItemId::Type(item) => item.resolver_data(db),
+        }
+    }
+}
+
 impl HasResolverData for ImplTypeId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_type_resolver_data(*self)
     }
 }
-
 impl HasResolverData for ImplFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_function_resolver_data(*self)

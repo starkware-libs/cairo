@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ModuleId,
-    StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
+    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplTypeId,
+    ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
