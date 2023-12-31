@@ -8,11 +8,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
-use crate::ids::{ConcreteFunctionWithBodyLongId, GeneratedFunction};
+use crate::ids::{ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    inlining,
+    generated,
     "src/lower/test_data",
     {
         loop_ :"loop",
@@ -46,6 +46,19 @@ fn test_generated_function(
         )
         .unwrap();
 
+        let lowering = db
+            .concrete_function_with_body_lowered(ConcreteFunctionWithBodyId::from_semantic(
+                db,
+                test_function.concrete_function_id,
+            ))
+            .unwrap();
+        writeln!(
+            &mut writer,
+            "Final lowering:\n{:?}",
+            lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
+        )
+        .unwrap();
+
         for (expr_id, lowering) in multi_lowering.generated_lowerings.iter() {
             let generated_id = db.intern_lowering_concrete_function_with_body(
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
@@ -67,6 +80,14 @@ fn test_generated_function(
             writeln!(
                 &mut writer,
                 "{:?}",
+                lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
+            )
+            .unwrap();
+
+            let lowering = db.concrete_function_with_body_lowered(generated_id).unwrap();
+            writeln!(
+                &mut writer,
+                "Final lowering:\n{:?}",
                 lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
             )
             .unwrap();
