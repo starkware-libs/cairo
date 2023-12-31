@@ -382,8 +382,8 @@ pub trait SemanticGroup:
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
     /// Returns the generic params data of a trait function.
-    #[salsa::invoke(items::trt::trait_function_generic_params_data)]
-    fn trait_function_generic_params_data(
+    #[salsa::invoke(items::trt::priv_trait_function_generic_params_data)]
+    fn priv_trait_function_generic_params_data(
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<GenericParamsData>;
@@ -566,8 +566,8 @@ pub trait SemanticGroup:
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
     /// Returns the generic params data of an impl function.
-    #[salsa::invoke(items::imp::impl_function_generic_params_data)]
-    fn impl_function_generic_params_data(
+    #[salsa::invoke(items::imp::priv_impl_function_generic_params_data)]
+    fn priv_impl_function_generic_params_data(
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<GenericParamsData>;
