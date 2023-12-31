@@ -363,7 +363,7 @@ impl Backend {
         let corelib_response = self.client.configuration(item).await;
         match corelib_response.map_err(Error::from) {
             Ok(value_vec) => {
-                if let Some(Value::String(value)) = value_vec.get(0) {
+                if let Some(Value::String(value)) = value_vec.first() {
                     if !value.is_empty() {
                         let root_path: PathBuf = value.into();
 
