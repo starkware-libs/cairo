@@ -366,12 +366,19 @@ pub trait SemanticGroup:
         trait_id: TraitId,
         name: SmolStr,
     ) -> Maybe<Option<TraitFunctionId>>;
-    /// Returns the type items of a trait.
+
+    /// Returns the type items in the trait.
     #[salsa::invoke(items::trt::trait_types)]
-    fn trait_types(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>>;
-    /// Returns the type item with the given name of the given trait, if exists.
-    #[salsa::invoke(items::trt::trait_type_by_name)]
-    fn trait_type_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitTypeId>>;
+    fn trait_types(
+        &self,
+        trait_id: TraitId,
+    ) -> Maybe<Arc<OrderedHashMap<TraitTypeId, ast::TraitItemType>>>;
+    /// Returns the ids of the type items in the impl.
+    #[salsa::invoke(items::trt::trait_type_ids)]
+    fn trait_type_ids(&self, trait_id: TraitId) -> Maybe<Arc<Vec<TraitTypeId>>>;
+    /// Returns the AST of the trait type that matches the given id, if exists.
+    #[salsa::invoke(items::trt::trait_type_by_id)]
+    fn trait_type_by_id(&self, trait_type_id: TraitTypeId) -> Maybe<Option<ast::TraitItemType>>;
     /// Private query to compute definition data about a trait.
     #[salsa::invoke(items::trt::priv_trait_semantic_definition_data)]
     fn priv_trait_semantic_definition_data(
@@ -385,9 +392,21 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_type_diagnostics)]
     fn trait_type_diagnostics(&self, trait_type_id: TraitTypeId)
     -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic params of a trait type.
+    #[salsa::invoke(items::trt::trait_type_generic_params)]
+    fn trait_type_generic_params(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of a trait type.
+    #[salsa::invoke(items::trt::priv_trait_type_generic_params_data)]
+    fn priv_trait_type_generic_params_data(
+        &self,
+        trait_type_id: TraitTypeId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait type.
     #[salsa::invoke(items::trt::trait_type_attributes)]
     fn trait_type_attributes(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<Attribute>>;
+    /// Returns the resolution resolved_items of a trait type.
+    #[salsa::invoke(items::trt::trait_type_resolver_data)]
+    fn trait_type_resolver_data(&self, trait_type_id: TraitTypeId) -> Maybe<Arc<ResolverData>>;
     /// Private query to compute data about a trait type.
     #[salsa::invoke(items::trt::priv_trait_type_data)]
     fn priv_trait_type_data(&self, type_id: TraitTypeId) -> Maybe<items::item_type::ItemTypeData>;
@@ -1185,9 +1204,12 @@ fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Ar
                 vec![db.extern_function_declaration_resolver_data(id)]
             }
         },
-        LookupItemId::TraitFunction(id) => {
-            vec![db.trait_function_resolver_data(id)]
-        }
+        LookupItemId::TraitItem(id) => match id {
+            cairo_lang_defs::ids::TraitItemId::Function(id) => {
+                vec![db.trait_function_resolver_data(id)]
+            }
+            cairo_lang_defs::ids::TraitItemId::Type(id) => vec![db.trait_type_resolver_data(id)],
+        },
         LookupItemId::ImplFunction(id) => {
             vec![db.impl_function_resolver_data(id), db.impl_function_body_resolver_data(id)]
         }

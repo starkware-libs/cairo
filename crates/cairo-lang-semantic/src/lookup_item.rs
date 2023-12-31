@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
     FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId,
     ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId,
-    TraitFunctionId, TraitId, UseId,
+    TraitFunctionId, TraitId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -43,7 +43,7 @@ impl LookupItemEx for LookupItemId {
                 let resolver_data = impl_def_id.resolver_data(db.upcast())?;
                 Ok(resolver_data)
             }
-            LookupItemId::TraitFunction(item) => {
+            LookupItemId::TraitItem(item) => {
                 let trait_id = item.trait_id(db.upcast());
                 let resolver_data = trait_id.resolver_data(db.upcast())?;
                 Ok(resolver_data)
@@ -63,7 +63,7 @@ impl HasResolverData for LookupItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
             LookupItemId::ModuleItem(item) => item.resolver_data(db),
-            LookupItemId::TraitFunction(item) => item.resolver_data(db),
+            LookupItemId::TraitItem(item) => item.resolver_data(db),
             LookupItemId::ImplFunction(item) => item.resolver_data(db),
         }
     }
@@ -157,6 +157,20 @@ impl HasResolverData for TraitId {
     }
 }
 
+impl HasResolverData for TraitItemId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        match self {
+            TraitItemId::Function(item) => item.resolver_data(db),
+            TraitItemId::Type(item) => item.resolver_data(db),
+        }
+    }
+}
+
+impl HasResolverData for TraitTypeId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.trait_type_resolver_data(*self)
+    }
+}
 impl HasResolverData for TraitFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_function_resolver_data(*self)
