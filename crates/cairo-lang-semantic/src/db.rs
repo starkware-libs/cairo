@@ -27,7 +27,7 @@ use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
+use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemTypeData};
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
@@ -395,21 +395,21 @@ pub trait SemanticGroup:
     /// Returns the generic params of a trait type.
     #[salsa::invoke(items::trt::trait_type_generic_params)]
     fn trait_type_generic_params(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the generic params data of a trait type.
-    #[salsa::invoke(items::trt::priv_trait_type_generic_params_data)]
-    fn priv_trait_type_generic_params_data(
-        &self,
-        trait_type_id: TraitTypeId,
-    ) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait type.
     #[salsa::invoke(items::trt::trait_type_attributes)]
     fn trait_type_attributes(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of a trait type.
     #[salsa::invoke(items::trt::trait_type_resolver_data)]
     fn trait_type_resolver_data(&self, trait_type_id: TraitTypeId) -> Maybe<Arc<ResolverData>>;
+    /// Private query to compute the generic params data of a trait type.
+    #[salsa::invoke(items::trt::priv_trait_type_generic_params_data)]
+    fn priv_trait_type_generic_params_data(
+        &self,
+        trait_type_id: TraitTypeId,
+    ) -> Maybe<GenericParamsData>;
     /// Private query to compute data about a trait type.
     #[salsa::invoke(items::trt::priv_trait_type_data)]
-    fn priv_trait_type_data(&self, type_id: TraitTypeId) -> Maybe<items::item_type::ItemTypeData>;
+    fn priv_trait_type_data(&self, type_id: TraitTypeId) -> Maybe<TraitItemTypeData>;
 
     // Trait function.
     // ================

@@ -9,7 +9,6 @@ pub mod functions;
 pub mod generics;
 pub mod imp;
 pub mod impl_alias;
-pub mod item_type;
 pub mod modifiers;
 pub mod module;
 pub mod module_type_alias;
