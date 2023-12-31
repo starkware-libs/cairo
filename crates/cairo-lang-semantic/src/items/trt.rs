@@ -277,7 +277,7 @@ pub fn priv_trait_semantic_declaration_data(
 pub struct TraitDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
-    item_type_asts: Arc<OrderedHashMap<TraitTypeId, ast::TraitItemType>>,
+    item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
 }
 
 // --- Selectors ---
@@ -293,7 +293,7 @@ pub fn trait_semantic_definition_diagnostics(
         return Diagnostics::default();
     };
 
-    // TODO(yuval): move this into priv_trait_semantic_definition_data.
+    // TODO(yuval): move these into priv_trait_semantic_definition_data.
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
@@ -334,20 +334,25 @@ pub fn trait_function_by_name(
 pub fn trait_types(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<Arc<OrderedHashMap<TraitTypeId, ast::TraitItemType>>> {
-    Ok(db.priv_trait_semantic_definition_data(trait_id)?.item_type_asts)
+) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>> {
+    Ok(db
+        .priv_trait_semantic_definition_data(trait_id)?
+        .item_type_asts
+        .keys()
+        .map(|type_id| {
+            let type_long_id = db.lookup_intern_trait_type(*type_id);
+            (type_long_id.name(db.upcast()), *type_id)
+        })
+        .collect())
 }
-/// Query implementation of [crate::db::SemanticGroup::trait_type_ids].
-pub fn trait_type_ids(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<Vec<TraitTypeId>>> {
-    Ok(Arc::new(db.trait_types(trait_id)?.keys().copied().collect()))
-}
-/// Query implementation of [crate::db::SemanticGroup::trait_type_by_id].
-pub fn trait_type_by_id(
+
+/// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
+pub fn trait_type_by_name(
     db: &dyn SemanticGroup,
-    trait_type_id: TraitTypeId,
-) -> Maybe<Option<ast::TraitItemType>> {
-    let trait_types = db.trait_types(trait_type_id.trait_id(db.upcast()))?;
-    Ok(trait_types.get(&trait_type_id).cloned())
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitTypeId>> {
+    Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
 
 // --- Computation ---
@@ -412,11 +417,7 @@ pub fn priv_trait_semantic_definition_data(
         }
     }
 
-    Ok(TraitDefinitionData {
-        diagnostics: diagnostics.build(),
-        function_asts,
-        item_type_asts: item_type_asts.into(),
-    })
+    Ok(TraitDefinitionData { diagnostics: diagnostics.build(), function_asts, item_type_asts })
 }
 
 // === Trait item type ===
@@ -472,10 +473,11 @@ pub fn priv_trait_type_generic_params_data(
     trait_type_id: TraitTypeId,
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
-    let trait_id = trait_type_id.trait_id(db.upcast());
     let module_file_id = trait_type_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let trait_type_ast = db.trait_type_by_id(trait_type_id)?.to_maybe()?;
+    let trait_id = trait_type_id.trait_id(db.upcast());
+    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let trait_type_ast = &data.item_type_asts[trait_type_id];
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::TraitItem(TraitItemId::Type(trait_type_id)));
     let parent_resolver_data = db.trait_resolver_data(trait_id)?;

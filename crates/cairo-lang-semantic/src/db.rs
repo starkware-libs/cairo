@@ -366,19 +366,12 @@ pub trait SemanticGroup:
         trait_id: TraitId,
         name: SmolStr,
     ) -> Maybe<Option<TraitFunctionId>>;
-
-    /// Returns the type items in the trait.
+    /// Returns the types of a trait.
     #[salsa::invoke(items::trt::trait_types)]
-    fn trait_types(
-        &self,
-        trait_id: TraitId,
-    ) -> Maybe<Arc<OrderedHashMap<TraitTypeId, ast::TraitItemType>>>;
-    /// Returns the ids of the type items in the impl.
-    #[salsa::invoke(items::trt::trait_type_ids)]
-    fn trait_type_ids(&self, trait_id: TraitId) -> Maybe<Arc<Vec<TraitTypeId>>>;
-    /// Returns the AST of the trait type that matches the given id, if exists.
-    #[salsa::invoke(items::trt::trait_type_by_id)]
-    fn trait_type_by_id(&self, trait_type_id: TraitTypeId) -> Maybe<Option<ast::TraitItemType>>;
+    fn trait_types(&self, trait_id: TraitId) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>>;
+    /// Returns the item type with the given name of the given trait, if exists.
+    #[salsa::invoke(items::trt::trait_type_by_name)]
+    fn trait_type_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitTypeId>>;
     /// Private query to compute definition data about a trait.
     #[salsa::invoke(items::trt::priv_trait_semantic_definition_data)]
     fn priv_trait_semantic_definition_data(
@@ -628,9 +621,15 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::impl_type_generic_params)]
     fn impl_type_generic_params(&self, enum_id: ImplTypeId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the attributes of an impl type.
+    #[salsa::invoke(items::imp::impl_type_attributes)]
+    fn impl_type_attributes(&self, impl_type_id: ImplTypeId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of an impl item type.
     #[salsa::invoke(items::imp::impl_type_resolver_data)]
     fn impl_type_resolver_data(&self, impl_type_id: ImplTypeId) -> Maybe<Arc<ResolverData>>;
+    /// Returns the trait type of an impl type.
+    #[salsa::invoke(items::imp::impl_type_trait_type)]
+    fn impl_type_trait_type(&self, impl_type_id: ImplTypeId) -> Maybe<TraitTypeId>;
 
     /// Private query to compute data about an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_semantic_data)]
@@ -638,7 +637,7 @@ pub trait SemanticGroup:
     fn priv_impl_type_semantic_data(
         &self,
         impl_type_id: ImplTypeId,
-    ) -> Maybe<items::type_aliases::TypeAliasData>;
+    ) -> Maybe<items::imp::ImplItemTypeData>;
     /// Private query to compute data about the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_generic_params_data)]
     fn priv_impl_type_generic_params_data(&self, enum_id: ImplTypeId) -> Maybe<GenericParamsData>;
