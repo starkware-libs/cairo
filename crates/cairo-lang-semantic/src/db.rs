@@ -13,7 +13,7 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast::{self, TraitItemFunction};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
@@ -328,12 +328,6 @@ pub trait SemanticGroup:
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
-    /// Returns the asts of the functions of a trait.
-    #[salsa::invoke(items::trt::trait_function_asts)]
-    fn trait_function_asts(
-        &self,
-        trait_id: TraitId,
-    ) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>>;
     /// Returns the resolution resolved_items of a trait.
     #[salsa::invoke(items::trt::trait_resolver_data)]
     fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
