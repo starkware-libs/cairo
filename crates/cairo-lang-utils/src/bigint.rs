@@ -60,6 +60,7 @@ pub struct BigIntAsHex {
 fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
     #[allow(dead_code)]
     #[derive(JsonSchema)]
+    #[allow(clippy::enum_variant_names)]
     pub enum Sign {
         Minus,
         NoSign,
