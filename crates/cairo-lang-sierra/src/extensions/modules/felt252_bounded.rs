@@ -1,4 +1,4 @@
-use super::range_reduction::Range;
+use super::utils::Range;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{ConcreteType, NamedType, SpecializationError};
