@@ -405,11 +405,11 @@ pub fn trait_function_generic_params(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<Vec<GenericParam>> {
-    Ok(db.trait_function_generic_params_data(trait_function_id)?.generic_params)
+    Ok(db.priv_trait_function_generic_params_data(trait_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params_data].
-pub fn trait_function_generic_params_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
+pub fn priv_trait_function_generic_params_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<GenericParamsData> {
@@ -499,7 +499,8 @@ pub fn priv_trait_function_declaration_data(
     let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let function_generic_params_data = db.trait_function_generic_params_data(trait_function_id)?;
+    let function_generic_params_data =
+        db.priv_trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::TraitFunction(trait_function_id));
