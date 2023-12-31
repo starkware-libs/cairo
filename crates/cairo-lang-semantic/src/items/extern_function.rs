@@ -71,9 +71,8 @@ pub fn extern_function_declaration_generic_params_data(
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
-    let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
-    let declaration = function_syntax.declaration(syntax_db);
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+    let declaration = extern_function_syntax.declaration(syntax_db);
 
     // Generic params.
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -94,7 +93,7 @@ pub fn extern_function_declaration_generic_params_data(
         );
     }
     resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+        inference_err.report(&mut diagnostics, extern_function_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -142,9 +141,9 @@ pub fn priv_extern_function_declaration_data(
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
-    let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
-    let declaration = function_syntax.declaration(syntax_db);
+    let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
+
+    let declaration = extern_function_syntax.declaration(syntax_db);
 
     // Generic params.
     let generic_params_data =
@@ -176,11 +175,11 @@ pub fn priv_extern_function_declaration_data(
             GenericFunctionId::Extern
         );
         if extern_function_id != panic_function {
-            diagnostics.report(function_syntax, PanicableExternFunction);
+            diagnostics.report(&extern_function_syntax, PanicableExternFunction);
         }
     }
 
-    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
+    let attributes = extern_function_syntax.attributes(syntax_db).structurize(syntax_db);
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
     match &inline_config {
@@ -203,8 +202,10 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+        inference_err.report(
+            &mut diagnostics,
+            stable_ptr.unwrap_or(extern_function_syntax.stable_ptr().untyped()),
+        );
     }
     let signature = resolver.inference().rewrite(signature).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();

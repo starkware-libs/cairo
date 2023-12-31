@@ -74,12 +74,12 @@ enum A {
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:7:9
         A::a(_) => 0,
-        ^**^
+        ^*****^
 
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:8:9
         A::b(_) => 1,
-        ^**^
+        ^*****^
 
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:15
@@ -115,3 +115,38 @@ error: Match arms have incompatible types: "core::felt252" and "core::bool"
  --> lib.cairo:8:14
         _ => b,
              ^
+
+//! > ==========================================================================
+
+//! > Match incompatible literal bool patterns
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        true => 2,
+        false => 3,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    a: (),
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+ --> lib.cairo:7:9
+        true => 2,
+        ^**^
+
+error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+ --> lib.cairo:8:9
+        false => 3,
+        ^***^

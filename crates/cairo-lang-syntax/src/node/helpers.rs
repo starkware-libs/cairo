@@ -398,6 +398,7 @@ impl QueryAttrs for StatementExpr {
         self.attributes(db).elements(db)
     }
 }
+
 /// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
 /// should be added here.
 impl QueryAttrs for SyntaxNode {

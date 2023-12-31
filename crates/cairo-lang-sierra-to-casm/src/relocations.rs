@@ -3,10 +3,13 @@ use cairo_lang_casm::instructions::{
     JumpInstruction,
 };
 use cairo_lang_casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_gas::objects::ConstCost;
 
-type CodeOffset = usize;
+use crate::compiler::ConstSegmentInfo;
+
+pub type CodeOffset = usize;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Relocation {
@@ -16,6 +19,9 @@ pub enum Relocation {
     /// Adds the offset between the current statement index and the end of the program code
     /// segment.
     EndOfProgram,
+    /// Adds the offset of the const type in the const segment, assuming the const segment is at
+    /// the end of the program.
+    Const(ConcreteTypeId),
 }
 
 impl Relocation {
@@ -23,13 +29,21 @@ impl Relocation {
         &self,
         instruction_offset: CodeOffset,
         statement_offsets: &[CodeOffset],
+        const_segment_info: &ConstSegmentInfo,
         instruction: &mut Instruction,
     ) {
         let target_pc = match self {
             Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
             Relocation::EndOfProgram => *statement_offsets.last().unwrap(),
+            Relocation::Const(ty) => {
+                *statement_offsets.last().unwrap()
+                    + const_segment_info
+                        .const_allocations
+                        .get(ty)
+                        .expect("Const type not found in the const segment.")
+                        .offset
+            }
         };
-
         match instruction {
             Instruction {
                 body:
@@ -92,6 +106,7 @@ pub struct RelocationEntry {
 pub fn relocate_instructions(
     relocations: &[RelocationEntry],
     statement_offsets: &[usize],
+    const_segment_info: &ConstSegmentInfo,
     instructions: &mut [Instruction],
 ) {
     let mut program_offset = 0;
@@ -102,7 +117,12 @@ pub fn relocate_instructions(
             relocation_entry
         {
             if *relocation_idx == instruction_idx {
-                relocation.apply(program_offset, statement_offsets, instruction);
+                relocation.apply(
+                    program_offset,
+                    statement_offsets,
+                    const_segment_info,
+                    instruction,
+                );
                 relocation_entry = relocations_iter.next();
             } else {
                 assert!(

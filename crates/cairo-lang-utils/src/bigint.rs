@@ -59,6 +59,7 @@ pub struct BigIntAsHex {
 // BigInt doesn't implement JsonSchema, so we need to manually define it.
 fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
     #[allow(dead_code)]
+    #[allow(clippy::enum_variant_names)]
     #[derive(JsonSchema)]
     pub enum Sign {
         Minus,

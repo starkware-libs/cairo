@@ -34,8 +34,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_uses = db.module_uses(module_file_id.0)?;
-    let use_ast = module_uses.get(&use_id).to_maybe()?;
+    let use_ast = db.module_use_by_id(use_id)?.to_maybe()?;
     let mut segments = vec![];
     get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast.clone()), &mut segments)?;
     let resolved_item =
@@ -102,10 +101,9 @@ pub fn priv_use_semantic_data_cycle(
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_uses = db.module_uses(module_file_id.0)?;
-    let use_ast = module_uses.get(use_id).to_maybe()?;
+    let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
     let err = Err(diagnostics.report(
-        use_ast,
+        &use_ast,
         if cycle.len() == 1 {
             // `use bad_name`, finds itself but we don't want to report a cycle in that case.
             PathNotFound(NotFoundItemType::Identifier)

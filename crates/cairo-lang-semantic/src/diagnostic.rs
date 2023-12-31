@@ -337,8 +337,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_title_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::IfConditionNotBool { condition_ty } => {
-                format!(r#"If condition has type "{}", expected bool."#, condition_ty.format(db))
+            SemanticDiagnosticKind::ConditionNotBool { condition_ty } => {
+                format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
@@ -590,6 +590,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
                 "`break` only allowed inside a `loop`.".into()
             }
+            SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
+                "Can only break with a value inside a `loop`.".into()
+            }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
             }
@@ -647,6 +650,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
+            }
+            SemanticDiagnosticKind::WhileNotSupported => {
+                "While loops are not supported yet.".into()
             }
         }
     }
@@ -793,7 +799,7 @@ pub enum SemanticDiagnosticKind {
         function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
-    IfConditionNotBool {
+    ConditionNotBool {
         condition_ty: semantic::TypeId,
     },
     IncompatibleMatchArms {
@@ -931,6 +937,7 @@ pub enum SemanticDiagnosticKind {
     TailExpressionNotAllowedInLoop,
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
+    BreakWithValueOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
@@ -964,6 +971,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedImplItem {
         kind: String,
     },
+    WhileNotSupported,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

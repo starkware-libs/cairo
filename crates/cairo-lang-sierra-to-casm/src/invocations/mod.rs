@@ -21,6 +21,7 @@ use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
+use crate::compiler::ConstSegmentInfoBuilder;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -36,6 +37,7 @@ mod boolean;
 mod boxing;
 mod bytes31;
 mod casts;
+mod const_type;
 mod debug;
 mod ec;
 mod enm;
@@ -322,6 +324,7 @@ pub struct CompiledInvocationBuilder<'a> {
     /// The arguments of the libfunc.
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
+    pub const_segment_info_builder: &'a mut ConstSegmentInfoBuilder,
 }
 impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation.
@@ -583,9 +586,17 @@ pub fn compile_invocation(
     idx: StatementIdx,
     refs: &[ReferenceValue],
     environment: Environment,
+    const_segment_info_builder: &mut ConstSegmentInfoBuilder,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let builder =
-        CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
+    let builder = CompiledInvocationBuilder {
+        program_info,
+        invocation,
+        libfunc,
+        idx,
+        refs,
+        environment,
+        const_segment_info_builder,
+    };
     match libfunc {
         CoreConcreteLibfunc::Felt252(libfunc) => felt252::build(libfunc, builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
@@ -650,6 +661,7 @@ pub fn compile_invocation(
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
         CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
+        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
     }
 }
 
