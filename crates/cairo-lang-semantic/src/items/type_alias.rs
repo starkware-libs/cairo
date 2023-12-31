@@ -139,8 +139,7 @@ pub fn type_alias_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let module_file_id = type_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
-    let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
+    let type_alias_ast = db.module_type_alias_by_id(type_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::TypeAlias(type_alias_id),

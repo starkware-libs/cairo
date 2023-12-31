@@ -75,10 +75,10 @@ impl TypeId {
         db.lookup_intern_type(*self).head(db)
     }
 
-    /// Returns true if all the inner type are concrete.
+    /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(_) => true,
+            TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
             TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
             TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
             TypeLongId::GenericParameter(_) => false,
@@ -207,6 +207,12 @@ impl ConcreteTypeId {
             ConcreteTypeId::Enum(id) => id.has_attr(db, MUST_USE_ATTR),
             ConcreteTypeId::Extern(_) => Ok(false),
         }
+    }
+    // Returns true if the type does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        self.generic_args(db)
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {

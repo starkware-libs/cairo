@@ -8,7 +8,6 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::TraitItemFunction;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
@@ -194,8 +193,7 @@ pub fn trait_generic_params_data(
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_traits = db.module_traits(module_file_id.0)?;
-    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
     // Generic params.
     let inference_id =
@@ -240,8 +238,7 @@ pub fn priv_trait_semantic_declaration_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_traits = db.module_traits(module_file_id.0)?;
-    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
     // Generic params.
     let generic_params_data = db.trait_generic_params_data(trait_id)?;
@@ -327,14 +324,6 @@ pub fn trait_function_by_name(
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_asts].
-pub fn trait_function_asts(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>> {
-    Ok(db.priv_trait_semantic_definition_data(trait_id)?.function_asts)
-}
-
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_definition_data].
@@ -348,8 +337,7 @@ pub fn priv_trait_semantic_definition_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_traits = db.module_traits(module_file_id.0)?;
-    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+    let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
     let mut function_asts = OrderedHashMap::default();
     let mut trait_item_names = OrderedHashSet::default();
