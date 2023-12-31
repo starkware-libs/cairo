@@ -59,14 +59,8 @@ fn build_withdraw_gas(
     if CostTokenType::iter_precost()
         .any(|token| *variable_values.get(&(builder.idx, *token)).unwrap_or(&0) > 0)
     {
-        // Adding fetch builtin cost table code.
-        const COST_TABLE_OFFSET: i32 = 1;
-        let (pre_instructions, ap_change) = get_pointer_after_program_code(COST_TABLE_OFFSET);
-        casm_builder.increase_ap_change(ap_change);
-        let cost_builtin_ptr = casm_builder.add_var(CellExpression::DoubleDeref(
-            CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
-            0,
-        ));
+        let (pre_instructions, cost_builtin_ptr) =
+            add_cost_builtin_ptr_fetch_code(&mut casm_builder);
         casm_build_extend!(casm_builder, tempvar cost_builtin = cost_builtin_ptr;);
         return build_withdraw_gas_given_cost_table(
             builder,
@@ -169,40 +163,8 @@ fn build_withdraw_gas_given_cost_table(
     [range_check, gas_counter, builtin_cost]: [Var; 3],
     pre_instructions: InstructionsWithRelocations,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
-        return Err(InvocationError::UnknownVariableData);
-    }
-    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
-    let mut total_requested_count =
-        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
-    for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[(builder.idx, *token_type)];
-        if requested_count == 0 {
-            continue;
-        }
-        let offset = token_type.offset_in_builtin_costs();
-        // Fetch the cost of a single instance.
-        casm_build_extend! {casm_builder,
-            tempvar single_cost = builtin_cost[offset];
-        };
-
-        // If necessary, multiply by the number of instances.
-        let multi_cost = if requested_count != 1 {
-            casm_build_extend! {casm_builder,
-                const requested_count = requested_count;
-                tempvar multi_cost = single_cost * requested_count;
-            };
-            multi_cost
-        } else {
-            single_cost
-        };
-        // Add to the cumulative sum.
-        casm_build_extend! {casm_builder,
-            tempvar updated_total_requested_count = multi_cost + total_requested_count;
-        };
-        total_requested_count = updated_total_requested_count;
-    }
+    let (requested_count, total_requested_count) =
+        add_get_total_requested_count_code(&builder, &mut casm_builder, builtin_cost)?;
 
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -237,21 +199,80 @@ fn build_withdraw_gas_given_cost_table(
     ))
 }
 
+/// Adds the code for calculating the total requested count of gas to update the counter with.
+/// Returns the requested const cost requested and a variable containing the amount to update the
+/// gas counter with.
+fn add_get_total_requested_count_code(
+    builder: &CompiledInvocationBuilder<'_>,
+    casm_builder: &mut CasmBuilder,
+    builtin_cost: Var,
+) -> Result<(i64, Var), InvocationError> {
+    let variable_values = &builder.program_info.metadata.gas_info.variable_values;
+    if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
+        return Err(InvocationError::UnknownVariableData);
+    }
+    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
+    let mut total_requested_count =
+        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
+    for token_type in CostTokenType::iter_precost() {
+        let requested_count = variable_values[(builder.idx, *token_type)];
+        if requested_count == 0 {
+            continue;
+        }
+        let offset = token_type.offset_in_builtin_costs();
+        // Fetch the cost of a single instance.
+        casm_build_extend! {casm_builder,
+            tempvar single_cost = builtin_cost[offset];
+        };
+
+        // If necessary, multiply by the number of instances.
+        let multi_cost = if requested_count != 1 {
+            casm_build_extend! {casm_builder,
+                const requested_count = requested_count;
+                tempvar multi_cost = single_cost * requested_count;
+            };
+            multi_cost
+        } else {
+            single_cost
+        };
+        // Add to the cumulative sum.
+        casm_build_extend! {casm_builder,
+            tempvar updated_total_requested_count = multi_cost + total_requested_count;
+        };
+        total_requested_count = updated_total_requested_count;
+    }
+    Ok((requested_count, total_requested_count))
+}
+
 /// Handles the get_builtin_costs invocation.
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (pre_instructions, ap_change) = get_pointer_after_program_code(1);
     let mut casm_builder = CasmBuilder::default();
-    casm_builder.increase_ap_change(ap_change);
-    let cost_builtin_ptr = casm_builder.add_var(CellExpression::DoubleDeref(
-        CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
-        0,
-    ));
+    let (pre_instructions, cost_builtin_ptr) = add_cost_builtin_ptr_fetch_code(&mut casm_builder);
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
         [("Fallthrough", &[&[cost_builtin_ptr]], None)],
         Default::default(),
         pre_instructions,
     ))
+}
+
+/// Adds the code for fetching the builtin cost table.
+/// Returns the pre-instructions to be provided to
+/// `CompiledInvocationBuilder::build_from_casm_builder_ex` and the variable representing the
+/// builtin table pointer.
+fn add_cost_builtin_ptr_fetch_code(
+    casm_builder: &mut CasmBuilder,
+) -> (InstructionsWithRelocations, Var) {
+    const COST_TABLE_OFFSET: i32 = 1;
+    let (pre_instructions, ap_change) = get_pointer_after_program_code(COST_TABLE_OFFSET);
+    casm_builder.increase_ap_change(ap_change);
+    (
+        pre_instructions,
+        casm_builder.add_var(CellExpression::DoubleDeref(
+            CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
+            0,
+        )),
+    )
 }
