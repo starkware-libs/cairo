@@ -116,7 +116,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Impl {item_kind} `{}::{}` is not a member of trait `{}`.",
+                    "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
                     impl_def_id.name(defs_db),
                     impl_item_name,
                     trait_id.name(defs_db)

@@ -122,7 +122,7 @@ error: `enum` is not allowed inside impl.
     enum DummyEnum {}
     ^**^
 
-error: Impl function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
+error: Impl item function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
  --> lib.cairo:22:5
     fn my_bar() {
     ^***********^
@@ -748,3 +748,20 @@ error: Impl items are not yet supported in impls.
  --> lib.cairo:11:4
    impl Z = OtherImpl;
    ^**^
+
+//! > ==========================================================================
+
+//! > TODO(yg): add many tests, similar to functions. Remove type from unsupported items in trait test above.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
