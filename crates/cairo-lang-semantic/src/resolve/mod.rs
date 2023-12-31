@@ -636,13 +636,16 @@ impl<'db> Resolver<'db> {
                     generic_args_syntax.unwrap_or_default(),
                 )?)
             }
-            ResolvedGenericItem::GenericTypeAlias(type_alias_id) => {
+            ResolvedGenericItem::GenericTypeAlias(module_type_alias_id) => {
                 // Check for cycles in this type alias definition.
-                // TODO(orizi): Handle this without using `priv_type_alias_semantic_data`.
-                self.db.priv_type_alias_semantic_data(type_alias_id)?.check_no_cycle()?;
+                // TODO(orizi): Handle this without using `priv_module_type_alias_semantic_data`.
+                self.db
+                    .priv_module_type_alias_semantic_data(module_type_alias_id)?
+                    .check_no_cycle()?;
 
-                let ty = self.db.type_alias_resolved_type(type_alias_id)?;
-                let generic_params = self.db.type_alias_generic_params(type_alias_id)?;
+                let ty = self.db.module_type_alias_resolved_type(module_type_alias_id)?;
+                let generic_params =
+                    self.db.module_type_alias_generic_params(module_type_alias_id)?;
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
                     &generic_params,
