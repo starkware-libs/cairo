@@ -827,8 +827,9 @@ impl<'a> Parser<'a> {
     fn expect_trait_item_type(&mut self, attributes: AttributeListGreen) -> TraitItemTypeGreen {
         let type_kw = self.take::<TerminalType>();
         let name = self.parse_identifier();
+        let generic_params = self.parse_optional_generic_params();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemType::new_green(self.db, attributes, type_kw, name, semicolon)
+        TraitItemType::new_green(self.db, attributes, type_kw, name, generic_params, semicolon)
     }
 
     /// Assumes the current token is Const.
