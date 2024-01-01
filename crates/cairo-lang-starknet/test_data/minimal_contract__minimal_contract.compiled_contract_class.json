@@ -97,6 +97,20 @@
     "0x208b7fff7fff7ffe",
     "0x208b7fff7fff7ffe"
   ],
+  "bytecode_segment_lengths": [
+    [
+      10,
+      9,
+      14,
+      17,
+      13,
+      15,
+      15
+    ],
+    [
+      1
+    ]
+  ],
   "hints": [
     [
       0,
