@@ -190,6 +190,6 @@ error: variable is bound inconsistently across alternatives separated by `|` bou
                                   ^
 
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
- --> lib.cairo:16:50
+ --> lib.cairo:16:46
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
-                                                 ^
+                                             ^***^

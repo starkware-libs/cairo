@@ -1121,17 +1121,40 @@ fn extract_concrete_enum(
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
-/// Returns an option containing the index of the underscore pattern, if it exists.
+/// The arm and pattern indices of a pattern in a match arm with an or list.
+struct PatternPath {
+    arm_index: usize,
+    pattern_index: usize,
+}
+
+/// Returns an option containing the PatternIndex of the underscore pattern, if it exists.
 fn get_underscore_pattern_index(
     ctx: &mut LoweringContext<'_, '_>,
     arms: &[semantic::MatchArm],
-) -> Option<usize> {
-    let otherwise_variant = arms.iter().position(|arm| {
-        matches!(ctx.function_body.patterns[arm.pattern], semantic::Pattern::Otherwise(_))
-    })?;
+) -> Option<PatternPath> {
+    let otherwise_variant = arms
+        .iter()
+        .enumerate()
+        .map(|(arm_index, arm)| {
+            arm.patterns
+                .iter()
+                .position(|pattern| {
+                    matches!(ctx.function_body.patterns[*pattern], semantic::Pattern::Otherwise(_))
+                })
+                .map(|pattern_index| PatternPath { arm_index, pattern_index })
+        })
+        .find(|option| option.is_some())??;
 
-    for arm in arms.iter().skip(otherwise_variant + 1) {
-        let pattern = ctx.function_body.patterns[arm.pattern].clone();
+    for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
+        for pattern in arm.patterns.iter() {
+            let pattern = ctx.function_body.patterns[*pattern].clone();
+            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
+        }
+    }
+    for pattern in
+        arms[otherwise_variant.arm_index].patterns.iter().skip(otherwise_variant.pattern_index + 1)
+    {
+        let pattern = ctx.function_body.patterns[*pattern].clone();
         ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
     }
 
@@ -1143,34 +1166,41 @@ fn get_variant_to_arm_map<'a>(
     ctx: &mut LoweringContext<'_, '_>,
     arms: impl Iterator<Item = &'a semantic::MatchArm>,
     concrete_enum_id: semantic::ConcreteEnumId,
-) -> LoweringResult<UnorderedHashMap<semantic::ConcreteVariant, usize>> {
+) -> LoweringResult<UnorderedHashMap<semantic::ConcreteVariant, PatternPath>> {
     let mut map = UnorderedHashMap::default();
     for (arm_index, arm) in arms.enumerate() {
-        let pattern = ctx.function_body.patterns[arm.pattern].clone();
-        let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
-            .ok_or_else(|| {
-                LoweringFlowError::Failed(
+        for (pattern_index, pattern) in arm.patterns.iter().enumerate() {
+            let pattern = ctx.function_body.patterns[*pattern].clone();
+
+            if let semantic::Pattern::Otherwise(_) = pattern {
+                break;
+            }
+
+            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
+                .ok_or_else(|| {
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+                    )
+                })?
+                .clone();
+
+            if enum_pattern.variant.concrete_enum_id != concrete_enum_id {
+                return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
                         .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-                )
-            })?
-            .clone();
+                ));
+            }
 
-        if enum_pattern.variant.concrete_enum_id != concrete_enum_id {
-            return Err(LoweringFlowError::Failed(
-                ctx.diagnostics
-                    .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-            ));
+            match map.entry(enum_pattern.variant.clone()) {
+                std::collections::hash_map::Entry::Occupied(_) => {
+                    ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
+                }
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(PatternPath { arm_index, pattern_index });
+                }
+            };
         }
-
-        match map.entry(enum_pattern.variant.clone()) {
-            std::collections::hash_map::Entry::Occupied(_) => {
-                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
-            }
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(arm_index);
-            }
-        };
     }
     Ok(map)
 }
@@ -1204,7 +1234,12 @@ fn lower_expr_match(
     let otherwise_variant = get_underscore_pattern_index(ctx, &expr.arms);
     let variant_map = get_variant_to_arm_map(
         ctx,
-        expr.arms.iter().take(otherwise_variant.unwrap_or(expr.arms.len())),
+        expr.arms.iter().take(
+            otherwise_variant
+                .as_ref()
+                .map(|PatternPath { arm_index, .. }| *arm_index)
+                .unwrap_or(expr.arms.len()),
+        ),
         concrete_enum_id,
     )?;
 
@@ -1213,7 +1248,7 @@ fn lower_expr_match(
     let varinats_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let arm_index = variant_map
+            let PatternPath { arm_index, pattern_index } = variant_map
                 .get(concrete_variant)
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
@@ -1225,7 +1260,8 @@ fn lower_expr_match(
             let arm = &expr.arms[*arm_index];
 
             let mut subscope = create_subscope(ctx, builder);
-            let pattern = &ctx.function_body.patterns[arm.pattern];
+
+            let pattern = &ctx.function_body.patterns[arm.patterns[*pattern_index]];
             let block_id = subscope.block_id;
             block_ids.push(block_id);
 
@@ -1307,7 +1343,12 @@ fn lower_optimized_extern_match(
 
     let variant_map = get_variant_to_arm_map(
         ctx,
-        match_arms.iter().take(otherwise_variant.unwrap_or(match_arms.len())),
+        match_arms.iter().take(
+            otherwise_variant
+                .as_ref()
+                .map(|PatternPath { arm_index, .. }| *arm_index)
+                .unwrap_or(match_arms.len()),
+        ),
         extern_enum.concrete_enum_id,
     )?;
     let mut arm_var_ids = vec![];
@@ -1333,7 +1374,7 @@ fn lower_optimized_extern_match(
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
 
-            let arm_index = variant_map
+            let PatternPath { arm_index, pattern_index } = variant_map
                 .get(concrete_variant)
                 .or(otherwise_variant.as_ref())
                 .ok_or_else(|| {
@@ -1344,7 +1385,7 @@ fn lower_optimized_extern_match(
                 })?;
 
             let arm = &match_arms[*arm_index];
-            let pattern = &ctx.function_body.patterns[arm.pattern];
+            let pattern = &ctx.function_body.patterns[arm.patterns[*pattern_index]];
 
             let lowering_inner_pattern_result = match pattern {
                 Pattern::EnumVariant(PatternEnumVariant {
@@ -1434,7 +1475,7 @@ fn group_match_arms(
             let sealed_blocks: Vec<_> = lowering_inner_pattern_results_and_subscopes
                 .into_iter()
                 .map(|(lowering_inner_pattern_result, subscope)| {
-                    let pattern = &ctx.function_body.patterns[arm.pattern];
+                    let pattern = &ctx.function_body.patterns[arm.patterns[0]];
                     match lowering_inner_pattern_result {
                         Ok(_) => lowered_expr_to_block_scope_end(
                             ctx,
@@ -1490,7 +1531,8 @@ fn lower_expr_felt252_arm(
     let arm = &expr.arms[index];
     let semantic_db = ctx.db.upcast();
 
-    let pattern = ctx.function_body.patterns[arm.pattern].clone();
+    assert!(arm.patterns.len() == 1, "Only one pattern per arm is supported.");
+    let pattern = ctx.function_body.patterns[arm.patterns[0]].clone();
     let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
@@ -1573,7 +1615,12 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
-    let pattern = ctx.function_body.patterns[expr.arms.last().unwrap().pattern].clone();
+
+    assert!(
+        expr.arms.last().unwrap().patterns.len() == 1,
+        "Only one pattern per arm is supported."
+    );
+    let pattern = ctx.function_body.patterns[expr.arms.last().unwrap().patterns[0]].clone();
     let semantic::Pattern::Otherwise(_) = pattern else {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(pattern.stable_ptr().untyped(), NonExhaustiveMatchFelt252),
