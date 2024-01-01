@@ -181,13 +181,20 @@ pub fn lower_while_loop(
         lower_expr_block(ctx, &mut subscope_main, &main_block)?;
         // Add recursive call.
         let signature = ctx.signature.clone();
-        call_loop_func(
+
+        match call_loop_func(
             ctx,
             signature,
             &mut subscope_main,
             loop_expr_id,
             loop_expr.stable_ptr.untyped(),
-        )
+        ) {
+            Ok(LoweredExpr::AtVariable(ret_val)) => {
+                // Return the result of the call to allow panicable tailcall optimization.
+                Err(LoweringFlowError::Return(ret_val, while_location))
+            }
+            block_expr => block_expr,
+        }
     })();
     let block_main = lowered_expr_to_block_scope_end(ctx, subscope_main, block_expr)
         .map_err(LoweringFlowError::Failed)?;
