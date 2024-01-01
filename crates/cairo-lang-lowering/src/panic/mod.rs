@@ -75,19 +75,33 @@ fn handle_block(
     mut block: FlatBlock,
 ) -> Maybe<PanicLoweringContext<'_>> {
     let mut block_ctx = PanicBlockLoweringContext { ctx, statements: Vec::new() };
+    let block_ends_with_return = matches!(block.end, FlatBlockEnd::Return(..));
+    let n_last_statement = block.statements.len();
+
+    let is_tail_statement =
+        |i: usize| -> bool { block_ends_with_return && i == n_last_statement - 1 };
     for (i, stmt) in block.statements.iter().cloned().enumerate() {
-        if let Some((continuation_block, cur_block_end)) = block_ctx.handle_statement(&stmt)? {
+        if let Some((opt_continuation_block, cur_block_end)) =
+            block_ctx.handle_statement(&stmt, is_tail_statement(i))?
+        {
             // This case means that the lowering should split the block here.
+            if let Some(continuation_block) = opt_continuation_block {
+                // Block ended with a match.
+                ctx = block_ctx.handle_end(cur_block_end);
+                // The rest of the statements in this block have not been handled yet, and should be
+                // handled as a part of the continuation block - the second block in the "split".
+                let block_to_edit =
+                    &mut ctx.block_queue[continuation_block.0 - ctx.flat_blocks.len()];
+                block_to_edit.statements.extend(block.statements.drain(i + 1..));
+                block_to_edit.end = block.end;
+                return Ok(ctx);
+            }
 
-            // Block ended with a match.
-            ctx = block_ctx.handle_end(cur_block_end);
-
-            // The rest of the statements in this block have not been handled yet, and should be
-            // handled as a part of the continuation block - the second block in the "split".
-            let block_to_edit = &mut ctx.block_queue[continuation_block.0 - ctx.flat_blocks.len()];
-            block_to_edit.statements.extend(block.statements.drain(i + 1..));
-            block_to_edit.end = block.end;
-            return Ok(ctx);
+            block_ctx
+                .ctx
+                .flat_blocks
+                .alloc(FlatBlock { statements: block_ctx.statements, end: cur_block_end });
+            return Ok(block_ctx.ctx);
         }
     }
     ctx = block_ctx.handle_end(block.end);
@@ -165,11 +179,15 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// The continuation block happens when a panic match is added, and the block needs to be split.
     /// The continuation block is the second block in the "split". This function already partially
     /// creates this second block, and returns it.
-    fn handle_statement(&mut self, stmt: &Statement) -> Maybe<Option<(BlockId, FlatBlockEnd)>> {
+    fn handle_statement(
+        &mut self,
+        stmt: &Statement,
+        is_tail_statement: bool,
+    ) -> Maybe<Option<(Option<BlockId>, FlatBlockEnd)>> {
         if let Statement::Call(call) = &stmt {
             if let Some(with_body) = call.function.body(self.db())? {
                 if self.db().function_with_body_may_panic(with_body)? {
-                    return Ok(Some(self.handle_call_panic(call)?));
+                    return Ok(Some(self.handle_call_panic(call, is_tail_statement)?));
                 }
             }
         }
@@ -180,7 +198,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// Handles a call statement to a panicking function.
     /// Returns the continuation block ID for the caller to complete it, and the block end to set
     /// for the current block.
-    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, FlatBlockEnd)> {
+    fn handle_call_panic(
+        &mut self,
+        call: &StatementCall,
+        is_tail_statement: bool,
+    ) -> Maybe<(Option<BlockId>, FlatBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
         let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
@@ -209,9 +231,23 @@ impl<'a> PanicBlockLoweringContext<'a> {
         self.statements.push(Statement::Call(StatementCall {
             function: call.function,
             inputs: call.inputs.clone(),
-            outputs: call_outputs,
+            outputs: call_outputs.clone(),
             location,
         }));
+
+        if is_tail_statement && self.ctx.panic_info.ok_ret_tys == callee_info.ok_ret_tys {
+            // If the block ends with a panicable tailcall and the return
+            // types are the same, we can just return the result of the call.
+            return Ok((
+                None,
+                FlatBlockEnd::Return(
+                    call_outputs
+                        .iter()
+                        .map(|var| VarUsage { var_id: *var, location: call.location })
+                        .collect(),
+                ),
+            ));
+        }
 
         // Start constructing a match on the result.
         let block_continuation =
@@ -264,7 +300,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             }),
         };
 
-        Ok((block_continuation, cur_block_end))
+        Ok((Some(block_continuation), cur_block_end))
     }
 
     fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
