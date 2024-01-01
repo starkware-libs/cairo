@@ -282,7 +282,7 @@ pub trait SemanticGroup:
     fn priv_module_type_alias_semantic_data(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
-    ) -> Maybe<items::module_type_alias::TypeAliasData>;
+    ) -> Maybe<items::type_aliases::TypeAliasData>;
 
     // Impl Alias.
     // ====

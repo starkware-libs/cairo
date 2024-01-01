@@ -3,15 +3,13 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, ModuleItemId, ModuleTypeAliasId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::GenericParamsData;
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper, TypeAliasData,
 };
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
-use crate::expr::inference::InferenceId;
-use crate::resolve::{Resolver, ResolverData};
+use crate::resolve::ResolverData;
 use crate::{GenericParam, SemanticDiagnostic, TypeId};
 
 // --- Selectors ---
@@ -52,34 +50,6 @@ pub fn module_type_alias_resolver_data(
 
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_generic_params_data].
-pub fn priv_module_type_alias_generic_params_data(
-    db: &dyn SemanticGroup,
-    module_type_alias_id: ModuleTypeAliasId,
-) -> Maybe<GenericParamsData> {
-    let module_file_id = module_type_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_type_alias_ast = db.module_type_alias_by_id(module_type_alias_id)?.to_maybe()?;
-    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
-        ModuleItemId::TypeAlias(module_type_alias_id),
-    ));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &module_type_alias_ast.generic_params(db.upcast()),
-    )?;
-
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, module_type_alias_ast.stable_ptr().untyped())
-    });
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
-    let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
-}
-
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
 pub fn priv_module_type_alias_semantic_data(
     db: &(dyn SemanticGroup),
@@ -92,7 +62,8 @@ pub fn priv_module_type_alias_semantic_data(
     // TODO(spapini): Add generic args when they are supported on structs.
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
-    let generic_params_data = db.type_alias_generic_params_data(module_type_alias_id)?;
+    let generic_params_data =
+        db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
     type_alias_semantic_data_helper(
@@ -113,7 +84,8 @@ pub fn priv_module_type_alias_semantic_data_cycle(
     let module_file_id = module_type_alias_id.module_file_id(db.upcast());
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(module_type_alias_id).to_maybe()?;
-    let generic_params_data = db.type_alias_generic_params_data(*module_type_alias_id)?;
+    let generic_params_data =
+        db.priv_module_type_alias_generic_params_data(*module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(*module_type_alias_id));
 
     type_alias_semantic_data_cycle_helper(
@@ -125,8 +97,8 @@ pub fn priv_module_type_alias_semantic_data_cycle(
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::module_type_alias_generic_params_data].
-pub fn module_type_alias_generic_params_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_generic_params_data].
+pub fn priv_module_type_alias_generic_params_data(
     db: &dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<GenericParamsData> {
