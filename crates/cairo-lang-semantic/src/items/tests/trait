@@ -729,16 +729,6 @@ error: Generic parameters are not supported in Trait item type.
    type XX<T>;
           ^*^
 
-error: Type items are not yet supported in impls.
- --> lib.cairo:8:4
-   type X = u32;
-   ^**^
-
-error: Type items are not yet supported in impls.
- --> lib.cairo:9:4
-   type XX<T> = Array<T>;
-   ^**^
-
 error: Constant items are not yet supported in impls.
  --> lib.cairo:10:4
    const Y: usize = 3;

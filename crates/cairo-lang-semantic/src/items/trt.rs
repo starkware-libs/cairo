@@ -498,7 +498,6 @@ pub fn priv_trait_type_generic_params_data(
 
     // TODO(yuval): support generics in impls (including validation), then remove this.
     // Generic parameters are not yet supported, make sure there are none.
-
     if !generic_params_node.is_empty(syntax_db) {
         diagnostics.report(
             &generic_params_node,

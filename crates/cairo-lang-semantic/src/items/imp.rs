@@ -24,6 +24,7 @@ use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
+use syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedSyntaxNode};
 
@@ -1257,11 +1258,19 @@ pub fn priv_impl_type_generic_params_data(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = impl_type_id.module_file_id(db.upcast());
+    let defs_db = db.upcast();
+    let module_file_id = impl_type_id.module_file_id(defs_db);
     let impl_type_ast = db.impl_type_by_id(impl_type_id)?.to_maybe()?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_id));
 
-    type_alias_generic_params_data_helper(db, module_file_id, &impl_type_ast, lookup_item_id)
+    let impl_resolver_data = db.impl_def_resolver_data(impl_type_id.impl_def_id(defs_db))?;
+    type_alias_generic_params_data_helper(
+        db,
+        module_file_id,
+        &impl_type_ast,
+        lookup_item_id,
+        Some(impl_resolver_data),
+    )
 }
 
 /// Validates the impl item type, and returns the matching trait type id.
@@ -1272,6 +1281,7 @@ fn validate_impl_item_type(
     impl_type_ast: &ast::ItemTypeAlias,
 ) -> Maybe<TraitTypeId> {
     let defs_db = db.upcast();
+    let syntax_db = db.upcast();
     let impl_def_id = impl_type_id.impl_def_id(defs_db);
     let concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
     let trait_id = concrete_trait_id.trait_id(db);
@@ -1288,8 +1298,15 @@ fn validate_impl_item_type(
         )
     })?;
 
-    // TODO(yuval): add validations for generic parameters.
-    // TODO(yg): fail any generic param.
+    // TODO(yuval): add validations for generic parameters, then remove this.
+    // Generic parameters are not yet supported, make sure there are none.
+    let generic_params_node = impl_type_ast.generic_params(syntax_db);
+    if !generic_params_node.is_empty(syntax_db) {
+        diagnostics.report(
+            &generic_params_node,
+            GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "type".into() },
+        );
+    }
 
     Ok(trait_type_id)
 }
