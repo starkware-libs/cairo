@@ -523,16 +523,8 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(self.1.0) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        GenericItemId::from_ptr(db, self.0, parent)
+        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
+        GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
 impl GenericParamId {
