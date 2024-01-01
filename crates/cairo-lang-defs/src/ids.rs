@@ -627,6 +627,7 @@ define_language_element_id_as_enum! {
         ExternType(ExternTypeId),
         TypeAlias(ModuleTypeAliasId),
         ImplAlias(ImplAliasId),
+        TraitType(TraitTypeId),
     }
 }
 impl GenericItemId {
@@ -714,6 +715,9 @@ impl GenericItemId {
             )),
             SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
                 ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
+            )),
+            SyntaxKind::TraitItemType => GenericItemId::TraitType(db.intern_trait_type(
+                TraitTypeLongId(module_file, ast::TraitItemTypePtr(stable_ptr)),
             )),
             _ => panic!(),
         }
@@ -829,6 +833,7 @@ impl From<GenericItemId> for LookupItemId {
             GenericItemId::ExternType(id) => LookupItemId::ModuleItem(ModuleItemId::ExternType(id)),
             GenericItemId::TypeAlias(id) => LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id)),
             GenericItemId::ImplAlias(id) => LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id)),
+            GenericItemId::TraitType(id) => LookupItemId::TraitItem(TraitItemId::Type(id)),
         }
     }
 }

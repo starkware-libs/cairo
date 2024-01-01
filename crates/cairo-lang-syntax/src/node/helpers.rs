@@ -535,7 +535,7 @@ impl WrappedArgListHelper for WrappedArgList {
     }
 }
 
-trait WrappedGenericParamListHelper {
+pub trait WrappedGenericParamListHelper {
     /// Checks whether there are 0 generic parameters
     fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
 }
@@ -545,7 +545,7 @@ impl WrappedGenericParamListHelper for ast::WrappedGenericParamList {
     }
 }
 
-trait OptionWrappedGenericParamListHelper {
+pub trait OptionWrappedGenericParamListHelper {
     /// Checks whether there are 0 generic parameters. True either when the generic params clause
     /// doesn't exist or when it's empty
     fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;

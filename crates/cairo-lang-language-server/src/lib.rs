@@ -1127,9 +1127,11 @@ fn lookup_item_from_ast(
             ))))]
         }
         SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitFunction(db.intern_trait_function(TraitFunctionLongId(
-                module_file_id,
-                ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            vec![LookupItemId::TraitItem(TraitItemId::Function(db.intern_trait_function(
+                TraitFunctionLongId(
+                    module_file_id,
+                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                ),
             )))]
         }
         SyntaxKind::ItemImpl => {
