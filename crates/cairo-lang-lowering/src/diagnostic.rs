@@ -67,8 +67,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchArmNonSequential=>
-            "Unsupported match arm - numbers must be sequential starting from 0.".into(),
+            LoweringDiagnosticKind::UnsupportedMatchArmNonSequential => {
+                "Unsupported match arm - numbers must be sequential starting from 0.".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmOrNotSupported => {
+                "Unsupported match arm - or pattern is not supported in this context".into()
+            }
             LoweringDiagnosticKind::NonExhaustiveMatchFelt252 => {
                 "Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`)."
                     .into()
@@ -129,6 +133,7 @@ pub enum LoweringDiagnosticKind {
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmNonSequential,
+    UnsupportedMatchArmOrNotSupported,
     NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
