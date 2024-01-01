@@ -9,6 +9,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -379,7 +380,7 @@ pub fn priv_trait_semantic_definition_data(
                     if !trait_item_names.insert(name.clone()) {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.into() },
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
                     function_asts.insert(trait_func_id, func);
@@ -392,7 +393,7 @@ pub fn priv_trait_semantic_definition_data(
                     if !trait_item_names.insert(name.clone()) {
                         diagnostics.report_by_ptr(
                             name_node.stable_ptr().untyped(),
-                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.into() },
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes { name },
                         );
                     }
                     item_type_asts.insert(trait_type_id, ty);
@@ -482,14 +483,25 @@ pub fn priv_trait_type_generic_params_data(
     for trait_generic_param in db.trait_generic_params(trait_id)? {
         resolver.add_generic_param(trait_generic_param.id());
     }
+    let generic_params_node = trait_type_ast.generic_params(syntax_db);
     let type_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &trait_type_ast.generic_params(syntax_db),
+        &generic_params_node,
     )?;
     let type_generic_params = resolver.inference().rewrite(type_generic_params).no_err();
+
+    // TODO(yuval): support generics in impls (including validation), then remove this.
+    // Generic parameters are not yet supported, make sure there are none.
+    if !generic_params_node.is_empty(syntax_db) {
+        diagnostics.report(
+            &generic_params_node,
+            GenericsNotSupportedInItem { scope: "Trait".into(), item_kind: "type".into() },
+        );
+    }
+
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData {
         diagnostics: diagnostics.build(),

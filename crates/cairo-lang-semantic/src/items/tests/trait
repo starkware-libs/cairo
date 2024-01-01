@@ -699,11 +699,13 @@ foo
 //! > module_code
 trait MyTrait {
    type X;
+   type XX<T>;
    const Y: usize;
    impl Z of OtherTrait;
 }
 impl MyImpl of MyTrait {
    type X = u32;
+   type XX<T> = Array<T>;
    const Y: usize = 3;
    impl Z = OtherImpl;
 }
@@ -713,26 +715,36 @@ impl OtherImpl of OtherTrait {}
 
 //! > expected_diagnostics
 error: Constant items are not yet supported in traits.
- --> lib.cairo:3:4
+ --> lib.cairo:4:4
    const Y: usize;
    ^***^
 
 error: Impl items are not yet supported in traits.
- --> lib.cairo:4:4
+ --> lib.cairo:5:4
    impl Z of OtherTrait;
    ^**^
 
+error: Generic parameters are not supported in Trait item type.
+ --> lib.cairo:3:11
+   type XX<T>;
+          ^*^
+
 error: Type items are not yet supported in impls.
- --> lib.cairo:7:4
+ --> lib.cairo:8:4
    type X = u32;
    ^**^
 
+error: Type items are not yet supported in impls.
+ --> lib.cairo:9:4
+   type XX<T> = Array<T>;
+   ^**^
+
 error: Constant items are not yet supported in impls.
- --> lib.cairo:8:4
+ --> lib.cairo:10:4
    const Y: usize = 3;
    ^***^
 
 error: Impl items are not yet supported in impls.
- --> lib.cairo:9:4
+ --> lib.cairo:11:4
    impl Z = OtherImpl;
    ^**^
