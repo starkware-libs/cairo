@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_lang_sierra::extensions::const_type::ConstConcreteType;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
@@ -115,15 +114,9 @@ impl ConstSegmentInfoBuilder {
         let mut const_allocations = OrderedHashMap::default();
         let mut const_segment_size = 0;
         for const_type in self.used_const_types {
-            let core_type_concrete = registry.get_type(&const_type).unwrap();
-            let cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(const_concrete_type) =
-                core_type_concrete
-            else {
-                return Err(CompilationError::UnsupportedConstType);
-            };
             let const_allocation = ConstAllocation {
                 offset: const_segment_size,
-                values: extract_const_value(const_concrete_type).unwrap(),
+                values: extract_const_value(registry, &const_type).unwrap(),
             };
             const_segment_size += const_allocation.values.len() + 1;
             const_allocations.insert(const_type.clone(), const_allocation);
@@ -148,19 +141,55 @@ pub struct ConstSegmentInfo {
     pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
 }
 
-/// Gets a const type, and returns a vector of the values to be stored in the const segment.
+/// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
+/// const segment.
 pub fn extract_const_value(
-    const_type: &ConstConcreteType,
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ty: &ConcreteTypeId,
 ) -> Result<Vec<BigInt>, CompilationError> {
-    // For now, only values are supported.
-    return const_type
-        .inner_data
-        .iter()
-        .map(|arg| match arg {
-            GenericArg::Value(value) => Ok(value.clone()),
-            _ => Err(CompilationError::ConstDataMismatch),
-        })
-        .collect();
+    let mut values = Vec::new();
+    extract_const_value_inner(registry, ty, &mut values)?;
+    Ok(values)
+}
+
+fn extract_const_value_inner(
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ty: &ConcreteTypeId,
+    values: &mut Vec<BigInt>,
+) -> Result<(), CompilationError> {
+    let const_type =
+        if let cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(const_type) =
+            registry.get_type(ty).unwrap()
+        {
+            const_type
+        } else {
+            return Err(CompilationError::UnsupportedConstType);
+        };
+    let inner_type = registry
+        .get_type(&const_type.inner_ty)
+        .map_err(|_| CompilationError::UnsupportedConstType)?;
+    match inner_type {
+        // Recursively extract the values of members.
+        cairo_lang_sierra::extensions::core::CoreTypeConcrete::Struct(_) => {
+            for arg in const_type.inner_data.iter() {
+                match arg {
+                    GenericArg::Type(ty) => extract_const_value_inner(registry, ty, values)?,
+                    _ => return Err(CompilationError::ConstDataMismatch),
+                }
+            }
+        }
+        _ => values.extend(
+            const_type
+                .inner_data
+                .iter()
+                .map(|arg| match arg {
+                    GenericArg::Value(value) => Ok(value.clone()),
+                    _ => Err(CompilationError::ConstDataMismatch),
+                })
+                .collect::<Result<Vec<BigInt>, CompilationError>>()?,
+        ),
+    };
+    Ok(())
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
