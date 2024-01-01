@@ -169,6 +169,16 @@ fn extract_const_value(
                     }
                 }
             }
+            cairo_lang_sierra::extensions::core::CoreTypeConcrete::Enum(_) => {
+                // The first argument is the variant selector, the second is the variant data.
+                match const_type.inner_data.as_slice() {
+                    [GenericArg::Value(selector), GenericArg::Type(ty)] => {
+                        values.push(selector.clone());
+                        stack.push(ty.clone());
+                    }
+                    _ => return Err(CompilationError::ConstDataMismatch),
+                }
+            }
             _ => values.extend(
                 const_type
                     .inner_data
