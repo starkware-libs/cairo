@@ -1,6 +1,8 @@
 use cairo_lang_utils::try_extract_matches;
+use itertools::Itertools;
 
 use super::boxing::BoxType;
+use super::structure::StructType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
@@ -74,15 +76,60 @@ fn validate_const_data(
     inner_data: &[GenericArg],
 ) -> Result<(), SpecializationError> {
     let inner_type_info = context.get_type_info(inner_ty.clone())?;
-    // For now, only simple types, i.e. types with range, are supported.
-    let type_range = extract_bounds(&inner_type_info)?;
-    if let [GenericArg::Value(value)] = inner_data {
-        if value < &type_range.lower || value >= &type_range.upper {
+    if inner_type_info.long_id.generic_id == StructType::ID {
+        validate_const_struct_data(context, &inner_type_info, inner_data)?;
+    } else {
+        let type_range = extract_bounds(&inner_type_info)?;
+        if let [GenericArg::Value(value)] = inner_data {
+            if value < &type_range.lower || value >= &type_range.upper {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        } else {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        };
+    }
+    Ok(())
+}
+
+/// Given a const type representing a struct, validates that the inner data types are compatible
+/// with the struct types.
+fn validate_const_struct_data(
+    context: &dyn TypeSpecializationContext,
+    inner_type_info: &TypeInfo,
+    inner_data: &[GenericArg],
+) -> Result<(), SpecializationError> {
+    let mut struct_args_iter = inner_type_info.long_id.generic_args.iter();
+    // The first arg of a struct is the struct type, so skip it.
+    struct_args_iter.next();
+    if struct_args_iter.len() != inner_data.len() {
+        return Err(SpecializationError::WrongNumberOfGenericArgs);
+    }
+    for (struct_arg, const_arg) in struct_args_iter.zip_eq(inner_data.iter()) {
+        // Both the struct_arg and the const_arg must be types.
+        let (GenericArg::Type(struct_arg_ty), GenericArg::Type(const_arg_ty)) =
+            (struct_arg, const_arg)
+        else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        // Validate that the const_arg_ty is a const representing the same type as struct_arg_ty.
+        let const_arg_type_info = context.get_type_info(const_arg_ty.clone())?;
+        if const_arg_type_info.long_id.generic_id != ConstType::ID {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
-    } else {
-        return Err(SpecializationError::WrongNumberOfGenericArgs);
-    };
+        let (GenericArg::Type(const_arg_inner_ty), const_arg_inner_data) = &const_arg_type_info
+            .long_id
+            .generic_args
+            .split_first()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?
+        else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+        // Validate that the const_arg_inner_ty is the same as the corresponding struct_arg_ty.
+        if struct_arg_ty != const_arg_inner_ty {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+    }
     Ok(())
 }
 
