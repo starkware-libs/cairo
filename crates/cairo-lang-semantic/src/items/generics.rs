@@ -277,18 +277,11 @@ fn generic_param_generic_params_list(
 ) -> Maybe<ast::OptionWrappedGenericParamList> {
     let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
 
-    // Traverse up the tree to the generic params list ptr.
-    let SyntaxStablePtr::Child { parent, .. } =
-        db.lookup_intern_stable_ptr(generic_param_long_id.1.0)
-    else {
-        panic!()
-    };
-    let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-        panic!()
-    };
+    // The generic params list is 2 level up the tree.
+    let syntax_db = db.upcast();
+    let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
-    let generic_param_list = ast::OptionWrappedGenericParamListPtr(parent).lookup(db.upcast());
-    Ok(generic_param_list)
+    Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
