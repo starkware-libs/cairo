@@ -71,7 +71,54 @@ Block 8:7:
   Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b), 
   Changes: ParamId(test::a)::b::c, ParamId(test::b), 
   Introductions: LocalVarId(test::h), 
+Loop 8:2:
+  Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b), 
+  Changes: ParamId(test::a)::b::c, ParamId(test::b), 
+  Introductions: LocalVarId(test::h), 
 Block 6:27:
   Usage: ParamId(test::b), ParamId(test::a)::b, 
   Changes: ParamId(test::a)::b::c, ParamId(test::b), 
   Introductions: LocalVarId(test::c),
+
+//! > ==========================================================================
+
+//! > Test while loop usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(mut a: A, ref b: A) {
+  let c = 5_usize;
+  let only_used_in_condition = 5;
+  while only_used_in_condition != c {
+    a.b.c = c;
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    b: B
+}
+struct B {
+    c: usize,
+}
+
+//! > semantic_diagnostics
+
+//! > usage
+Block 9:36:
+  Usage: LocalVarId(test::c), ParamId(test::a)::b::c, 
+  Changes: ParamId(test::a)::b::c, 
+  Introductions: 
+While 9:2:
+  Usage: LocalVarId(test::only_used_in_condition), LocalVarId(test::c), ParamId(test::a)::b::c, 
+  Changes: ParamId(test::a)::b::c, 
+  Introductions: 
+Block 6:27:
+  Usage: ParamId(test::a)::b::c, 
+  Changes: ParamId(test::a)::b::c, 
+  Introductions: LocalVarId(test::c), LocalVarId(test::only_used_in_condition),

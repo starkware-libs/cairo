@@ -16,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/lower/test_data",
     {
         loop_ :"loop",
+        while_ :"while",
     },
     test_generated_function
 );
