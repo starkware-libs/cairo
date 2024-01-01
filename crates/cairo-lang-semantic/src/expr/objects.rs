@@ -350,7 +350,7 @@ pub struct ExprIf {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct MatchArm {
-    pub pattern: PatternId,
+    pub patterns: Vec<PatternId>,
     pub expression: ExprId,
 }
 
