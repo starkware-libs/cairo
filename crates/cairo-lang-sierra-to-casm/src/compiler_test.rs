@@ -661,6 +661,39 @@ indoc! {"
     dw 17;
 "};
 "Recursive constant structs.")]
+#[test_case(indoc! {"
+        type felt252 = felt252;
+        type MyEnum = Enum<ut@MyEnum, felt252, felt252>;
+        type const<felt252, 5> = const<felt252, 5>;
+        type const<MyEnum, 0, const<felt252, 5> > = const<MyEnum, 0, const<felt252, 5> >;
+        type Box<MyEnum> = Box<MyEnum>;
+
+        libfunc const_as_box<const<MyEnum, 0, const<felt252, 5>>> = const_as_box<const<MyEnum, 0, const<felt252, 5>>>;
+        libfunc unbox<MyEnum> = unbox<MyEnum>;
+        libfunc store_temp<MyEnum> = store_temp<MyEnum>;
+        libfunc drop<MyEnum> = drop<MyEnum>;
+
+        const_as_box<const<MyEnum, 0, const<felt252, 5>>>() -> ([1]);
+        unbox<MyEnum>([1]) -> ([1]);
+        store_temp<MyEnum>([1]) -> ([1]);
+        drop<MyEnum>([1]) -> ();
+        return();
+
+        test_program@0() -> ();
+        
+    "},
+    false,
+    indoc! {"
+        call rel 7;
+        [ap + 0] = [ap + -1] + 6, ap++;
+        [ap + 0] = [[ap + -1] + 0], ap++;
+        [ap + 0] = [[ap + -2] + 1], ap++;
+        ret;
+        ret;
+        dw 0;
+        dw 5;
+    "};
+    "Constant enums.")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
