@@ -842,6 +842,10 @@ fn compute_expr_match_semantic(
                                                 actual_ty: variable.var.ty,
                                             },
                                         );
+                                    } else if entry.get().is_mut != variable.var.is_mut {
+                                        new_ctx
+                                            .diagnostics
+                                            .report(pattern_syntax, InconsistentBinding);
                                     }
                                 }
                                 std::collections::hash_map::Entry::Vacant(entry) => {

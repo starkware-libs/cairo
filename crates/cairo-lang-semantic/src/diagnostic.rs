@@ -260,6 +260,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::InconsistentBinding => "variable is bound inconsistently \
+                                                            across alternatives separated by `|` \
+                                                            bound in different ways"
+                .into(),
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -760,6 +764,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    InconsistentBinding,
     WrongArgumentType {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
