@@ -480,6 +480,147 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
         dw 17;
     "};
     "Simple use of constants.")]
+#[test_case(indoc! {"
+    type felt252 = felt252;
+    type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+    type const<felt252, 5> = const<felt252, 5>;
+    type const<felt252, 17> = const<felt252, 17>;
+    type const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>> = const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>; 
+    type const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>> = const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>>; 
+    type Box<Tuple<felt252, felt252>> = Box<Tuple<felt252, felt252>>;
+    
+    
+    libfunc const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>> = const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>>;
+    libfunc const_as_box<const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>>> = const_as_box<const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>>>;
+    libfunc unbox<Tuple<felt252, felt252>> = unbox<Tuple<felt252, felt252>>;
+    libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
+    libfunc drop<Tuple<felt252, felt252>> = drop<Tuple<felt252, felt252>>;
+    
+    
+    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>>() -> ([1]);
+    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>>>() -> ([2]);
+    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>>() -> ([3]);
+    unbox<Tuple<felt252, felt252>>([1]) -> ([1]);
+    unbox<Tuple<felt252, felt252>>([2]) -> ([2]);
+    unbox<Tuple<felt252, felt252>>([3]) -> ([3]);
+    store_temp<Tuple<felt252, felt252>>([1]) -> ([1]);
+    store_temp<Tuple<felt252, felt252>>([2]) -> ([2]);
+    store_temp<Tuple<felt252, felt252>>([3]) -> ([3]);
+    drop<Tuple<felt252, felt252>>([1]) -> ();
+    drop<Tuple<felt252, felt252>>([2]) -> ();
+    drop<Tuple<felt252, felt252>>([3]) -> ();
+    return();
+
+    test_program@0() -> ();
+    
+"},
+false,
+indoc! {"
+    call rel 19;
+    [ap + 0] = [ap + -1] + 18, ap++;
+    call rel 18;
+    [ap + 0] = [ap + -1] + 17, ap++;
+    call rel 11;
+    [ap + 0] = [ap + -1] + 10, ap++;
+    [ap + 0] = [[ap + -7] + 0], ap++;
+    [ap + 0] = [[ap + -8] + 1], ap++;
+    [ap + 0] = [[ap + -6] + 0], ap++;
+    [ap + 0] = [[ap + -7] + 1], ap++;
+    [ap + 0] = [[ap + -5] + 0], ap++;
+    [ap + 0] = [[ap + -6] + 1], ap++;
+    ret;
+    ret;
+    dw 5;
+    dw 17;
+    ret;
+    dw 17;
+    dw 5;
+"};
+"Constant structs.")]
+#[test_case(indoc! {"
+type felt252 = felt252;
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type Tuple<felt252, Tuple<felt252, felt252>> = Struct<ut@Tuple, felt252, Tuple<felt252, felt252>>;
+type const<felt252, 5> = const<felt252, 5>;
+type const<felt252, 17> = const<felt252, 17>;
+type const<
+        Tuple<felt252, felt252>, 
+        const<felt252, 5>, 
+        const<felt252, 17>
+    > = const<
+        Tuple<felt252, felt252>, 
+        const<felt252, 5>, 
+        const<felt252, 17>
+    >; 
+type const<
+        Tuple<felt252, Tuple<felt252, felt252>>, 
+        const<felt252, 17>, 
+        const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+    > = const<
+        Tuple<felt252, Tuple<felt252, felt252>>, 
+        const<felt252, 17>, 
+        const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+    >;
+type Box<Tuple<felt252, Tuple<felt252, felt252>>> = Box<Tuple<felt252, Tuple<felt252, felt252>>>;
+
+libfunc const_as_box<
+        const<
+            Tuple<felt252, Tuple<felt252, felt252>>, 
+            const<felt252, 17>, 
+            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+        >
+    > = const_as_box<
+        const<
+            Tuple<felt252, Tuple<felt252, felt252>>, 
+            const<felt252, 17>, 
+            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+        >
+    >;
+libfunc unbox<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    > = unbox<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    >;
+libfunc store_temp<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    > = store_temp<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    >;
+libfunc drop<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    > = drop<
+        Tuple<felt252, Tuple<felt252, felt252>>
+    >;
+
+const_as_box<
+        const<
+            Tuple<felt252, Tuple<felt252, felt252>>, 
+            const<felt252, 17>, 
+            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+        >
+    >() -> ([1]);
+unbox<Tuple<felt252, Tuple<felt252, felt252>>>([1]) -> ([1]);
+store_temp<Tuple<felt252, Tuple<felt252, felt252>>>([1]) -> ([1]);
+drop<Tuple<felt252, Tuple<felt252, felt252>>>([1]) -> ();
+
+return();
+
+test_program@0() -> ();
+"},
+false,
+indoc! {"
+    call rel 8;
+    [ap + 0] = [ap + -1] + 7, ap++;
+    [ap + 0] = [[ap + -1] + 0], ap++;
+    [ap + 0] = [[ap + -2] + 1], ap++;
+    [ap + 0] = [[ap + -3] + 2], ap++;
+    ret;
+    ret;
+    dw 17;
+    dw 5;
+    dw 17;
+"};
+"Recursive constant structs.")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
@@ -925,6 +1066,27 @@ of the libfunc or return statement.";
                 foo@0() -> ();
             "}, "Error from program registry: Error during type specialization";
             "Non constable const type.")]
+#[test_case(indoc! {"
+            type felt252 = felt252;
+            type const<felt252, 5> = const<felt252, 5>;
+            type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+            type const<Tuple<felt252, felt252>, const<felt252, 5>> = const<Tuple<felt252, felt252>, const<felt252, 5>>;
+            return ();
+
+            foo@0() -> ();
+        "}, "Error from program registry: Error during type specialization";
+        "Mismatched number of const struct members.")]
+#[test_case(indoc! {"
+        type felt252 = felt252;
+        type u8 = u8;
+        type const<felt252, 5> = const<felt252, 5>;
+        type Tuple<u8, u8> = Struct<ut@Tuple, u8, u8>;
+        type const<Tuple<u8, u8>, const<felt252, 5>, const<felt252, 5>> = const<Tuple<u8, u8>, const<felt252, 5>, const<felt252, 5>>;
+        return ();
+
+        foo@0() -> ();
+    "}, "Error from program registry: Error during type specialization";
+    "Mismatched types of const struct members.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
