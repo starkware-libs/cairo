@@ -814,7 +814,8 @@ fn compute_expr_match_semantic(
         .flat_map(|syntax_arm| {
             let arm_expr_syntax = syntax_arm.expression(syntax_db);
 
-            let mut arm_patterns_variables = UnorderedHashMap::default();
+            let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+                UnorderedHashMap::default();
             let (patterns_and_exprs, patterns_variables_len): (Vec<_>, Vec<_>) = syntax_arm
                 .patterns(syntax_db)
                 .elements(syntax_db)
@@ -831,21 +832,24 @@ fn compute_expr_match_semantic(
                         for variable in variables {
                             match arm_patterns_variables.entry(variable.name.clone()) {
                                 std::collections::hash_map::Entry::Occupied(entry) => {
-                                    if *entry.get() != variable.var.ty {
+                                    let get_location =
+                                        || variable.var.stable_ptr(db.upcast()).lookup(db.upcast());
+                                    let var = entry.get();
+                                    let expected_ty = var.ty;
+
+                                    if expected_ty != variable.var.ty {
                                         new_ctx.diagnostics.report(
-                                            &variable
-                                                .var
-                                                .stable_ptr(db.upcast())
-                                                .lookup(db.upcast()),
-                                            WrongType {
-                                                expected_ty: *entry.get(),
-                                                actual_ty: variable.var.ty,
-                                            },
+                                            &get_location(),
+                                            WrongType { expected_ty, actual_ty: variable.var.ty },
                                         );
+                                    } else if var.is_mut != variable.var.is_mut {
+                                        new_ctx
+                                            .diagnostics
+                                            .report(&get_location(), InconsistentBinding);
                                     }
                                 }
                                 std::collections::hash_map::Entry::Vacant(entry) => {
-                                    entry.insert(variable.var.ty);
+                                    entry.insert(variable.var.clone());
                                 }
                             }
                             let var_def = Variable::Local(variable.var.clone());
