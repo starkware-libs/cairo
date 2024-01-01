@@ -28,6 +28,7 @@ libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_sub = felt252_sub;
+libfunc redeposit_gas = redeposit_gas;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::hash_chain_gas::hash_chain> = function_call<user@examples::hash_chain_gas::hash_chain>;
 libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>> = enum_match<core::panics::PanicResult::<(core::felt252,)>>;
@@ -57,48 +58,51 @@ branch_align() -> (); // 13
 drop<NonZero<felt252>>([5]) -> (); // 14
 get_builtin_costs() -> ([9]); // 15
 store_temp<BuiltinCosts>([9]) -> ([9]); // 16
-withdraw_gas_all([0], [1], [9]) { fallthrough([10], [11]) 46([12], [13]) }; // 17
+withdraw_gas_all([0], [1], [9]) { fallthrough([10], [11]) 49([12], [13]) }; // 17
 branch_align() -> (); // 18
 felt252_const<1>() -> ([14]); // 19
 dup<felt252>([3]) -> ([3], [15]); // 20
 felt252_sub([15], [14]) -> ([16]); // 21
-store_temp<RangeCheck>([10]) -> ([10]); // 22
-store_temp<GasBuiltin>([11]) -> ([11]); // 23
-store_temp<Pedersen>([2]) -> ([2]); // 24
-store_temp<felt252>([16]) -> ([16]); // 25
-function_call<user@examples::hash_chain_gas::hash_chain>([10], [11], [2], [16]) -> ([17], [18], [19], [20]); // 26
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([20]) { fallthrough([21]) 38([22]) }; // 27
-branch_align() -> (); // 28
-struct_deconstruct<Tuple<felt252>>([21]) -> ([23]); // 29
-pedersen([19], [23], [3]) -> ([24], [25]); // 30
-struct_construct<Tuple<felt252>>([25]) -> ([26]); // 31
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([26]) -> ([27]); // 32
-store_temp<RangeCheck>([17]) -> ([17]); // 33
-store_temp<GasBuiltin>([18]) -> ([18]); // 34
-store_temp<Pedersen>([24]) -> ([24]); // 35
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([27]) -> ([27]); // 36
-return([17], [18], [24], [27]); // 37
-branch_align() -> (); // 38
-drop<felt252>([3]) -> (); // 39
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([22]) -> ([28]); // 40
-store_temp<RangeCheck>([17]) -> ([17]); // 41
-store_temp<GasBuiltin>([18]) -> ([18]); // 42
-store_temp<Pedersen>([19]) -> ([19]); // 43
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([28]) -> ([28]); // 44
-return([17], [18], [19], [28]); // 45
-branch_align() -> (); // 46
-drop<felt252>([3]) -> (); // 47
-array_new<felt252>() -> ([29]); // 48
-felt252_const<375233589013918064796019>() -> ([30]); // 49
-store_temp<felt252>([30]) -> ([30]); // 50
-array_append<felt252>([29], [30]) -> ([31]); // 51
-struct_construct<core::panics::Panic>() -> ([32]); // 52
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([32], [31]) -> ([33]); // 53
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([33]) -> ([34]); // 54
-store_temp<RangeCheck>([12]) -> ([12]); // 55
-store_temp<GasBuiltin>([13]) -> ([13]); // 56
-store_temp<Pedersen>([2]) -> ([2]); // 57
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([34]) -> ([34]); // 58
-return([12], [13], [2], [34]); // 59
+redeposit_gas([11]) -> ([11]); // 22
+store_temp<RangeCheck>([10]) -> ([10]); // 23
+store_temp<GasBuiltin>([11]) -> ([11]); // 24
+store_temp<Pedersen>([2]) -> ([2]); // 25
+store_temp<felt252>([16]) -> ([16]); // 26
+function_call<user@examples::hash_chain_gas::hash_chain>([10], [11], [2], [16]) -> ([17], [18], [19], [20]); // 27
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([20]) { fallthrough([21]) 40([22]) }; // 28
+branch_align() -> (); // 29
+struct_deconstruct<Tuple<felt252>>([21]) -> ([23]); // 30
+pedersen([19], [23], [3]) -> ([24], [25]); // 31
+struct_construct<Tuple<felt252>>([25]) -> ([26]); // 32
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([26]) -> ([27]); // 33
+redeposit_gas([18]) -> ([18]); // 34
+store_temp<RangeCheck>([17]) -> ([17]); // 35
+store_temp<GasBuiltin>([18]) -> ([18]); // 36
+store_temp<Pedersen>([24]) -> ([24]); // 37
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([27]) -> ([27]); // 38
+return([17], [18], [24], [27]); // 39
+branch_align() -> (); // 40
+drop<felt252>([3]) -> (); // 41
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([22]) -> ([28]); // 42
+redeposit_gas([18]) -> ([18]); // 43
+store_temp<RangeCheck>([17]) -> ([17]); // 44
+store_temp<GasBuiltin>([18]) -> ([18]); // 45
+store_temp<Pedersen>([19]) -> ([19]); // 46
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([28]) -> ([28]); // 47
+return([17], [18], [19], [28]); // 48
+branch_align() -> (); // 49
+drop<felt252>([3]) -> (); // 50
+array_new<felt252>() -> ([29]); // 51
+felt252_const<375233589013918064796019>() -> ([30]); // 52
+store_temp<felt252>([30]) -> ([30]); // 53
+array_append<felt252>([29], [30]) -> ([31]); // 54
+struct_construct<core::panics::Panic>() -> ([32]); // 55
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([32], [31]) -> ([33]); // 56
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([33]) -> ([34]); // 57
+store_temp<RangeCheck>([12]) -> ([12]); // 58
+store_temp<GasBuiltin>([13]) -> ([13]); // 59
+store_temp<Pedersen>([2]) -> ([2]); // 60
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([34]) -> ([34]); // 61
+return([12], [13], [2], [34]); // 62
 
 examples::hash_chain_gas::hash_chain@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: felt252) -> (RangeCheck, GasBuiltin, Pedersen, core::panics::PanicResult::<(core::felt252,)>);
