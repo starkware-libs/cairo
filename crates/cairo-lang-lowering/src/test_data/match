@@ -543,15 +543,15 @@ End:
 
 blk1:
 Statements:
-  (v5: core::felt252) <- 1u
+  (v6: core::felt252) <- 1u
 End:
-  Goto(blk6, {v5 -> v8})
+  Goto(blk6, {v6 -> v8})
 
 blk2:
 Statements:
-  (v6: core::felt252) <- 2u
+  (v5: core::felt252) <- 2u
 End:
-  Goto(blk6, {v6 -> v8})
+  Goto(blk6, {v5 -> v8})
 
 blk3:
 Statements:
@@ -616,15 +616,15 @@ End:
 
 blk1:
 Statements:
-  (v0: core::felt252) <- 1u
+  (v1: core::felt252) <- 1u
 End:
-  Goto(blk3, {v0 -> v2})
+  Goto(blk3, {v1 -> v2})
 
 blk2:
 Statements:
-  (v1: core::felt252) <- 2u
+  (v0: core::felt252) <- 2u
 End:
-  Goto(blk3, {v1 -> v2})
+  Goto(blk3, {v0 -> v2})
 
 blk3:
 Statements:
@@ -671,15 +671,15 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v4: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v5})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v3: core::felt252) <- 2u
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk3:
 Statements:
@@ -826,17 +826,104 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v4: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v5})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v3: core::felt252) <- 2u
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk3:
 Statements:
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test match with or pattern with arm variables.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: MyEnum) -> felt252 {
+    match a {
+        MyEnum::A(x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: t, .. }) => x + t,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct P {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+    w: felt252,
+}
+enum MyEnum {
+    A: felt252,
+    C: (felt252, felt252, felt252),
+    B: (felt252, felt252),
+    D: P,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v1) => blk1,
+    MyEnum::C(v2) => blk2,
+    MyEnum::B(v6) => blk3,
+    MyEnum::D(v9) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {v1 -> v14})
+
+blk2:
+Statements:
+  (v3: core::felt252, v4: core::felt252, v5: core::felt252) <- struct_destructure(v2)
+End:
+  Goto(blk6, {v3 -> v15, v5 -> v16})
+
+blk3:
+Statements:
+  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
+End:
+  Goto(blk4, {v7 -> v14})
+
+blk4:
+Statements:
+End:
+  Goto(blk7, {v14 -> v18})
+
+blk5:
+Statements:
+  (v10: core::felt252, v11: core::felt252, v12: core::felt252, v13: core::felt252) <- struct_destructure(v9)
+End:
+  Goto(blk6, {v10 -> v15, v12 -> v16})
+
+blk6:
+Statements:
+  (v19: core::felt252) <- core::felt252_add(v15, v16)
+End:
+  Goto(blk7, {v19 -> v18})
+
+blk7:
+Statements:
+End:
+  Return(v18)
