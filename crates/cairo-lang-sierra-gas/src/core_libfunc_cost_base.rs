@@ -431,6 +431,13 @@ pub fn core_libfunc_cost(
                     sign: BranchCostSign::Subtract,
                 }]
             }
+            CouponConcreteLibfunc::Refund(libfunc) => {
+                vec![BranchCost::FunctionCost {
+                    const_cost: ConstCost::default(),
+                    function: libfunc.function.clone(),
+                    sign: BranchCostSign::Add,
+                }]
+            }
         },
     }
 }

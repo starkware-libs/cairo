@@ -1571,10 +1571,12 @@ test::foo: OrderedHashMap({Const: 6300})
 test::bar: OrderedHashMap({Const: 2000})
 
 //! > ap_solution_lp
+
 test::bar: 1
 test::foo: 4
 
 //! > ap_solution_linear
+
 test::foo: 4
 test::bar: 1
 
@@ -1617,4 +1619,143 @@ test::bar@11([0]: GasBuiltin) -> (GasBuiltin, Unit);
 call rel 3;
 ret;
 [ap + 0] = [fp + -3] + 1900, ap++;
+ret;
+
+//! > ==========================================================================
+
+//! > coupon refund
+
+//! > test_runner_name
+SmallE2ETestRunnerMetadataComputation
+
+//! > cairo
+// TODO(lior): Use gas::redeposit_gas once it's there.
+extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+extern fn coupon_refund<T>(c: T) nopanic;
+
+fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {
+    // Refund is fully used.
+    coupon_refund(c0);
+    bar20000();
+    bar20000();
+    redeposit_gas();  // Zero redeposit.
+
+    // Refund more than used - rest is redeposited.
+    coupon_refund(c1);
+    bar1000();
+    redeposit_gas();
+
+    // Refund more than used - rest is wasted.
+    coupon_refund(c2);
+    bar1000();
+}
+
+#[inline(never)]
+fn bar20000() nopanic {
+    redeposit_gas();
+}
+
+#[inline(never)]
+fn bar1000() nopanic {
+    redeposit_gas();
+}
+
+//! > enforced_costs
+test::bar20000 20000
+test::bar1000 1000
+
+//! > gas_solution_lp
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#6: OrderedHashMap({Const: 0})
+#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#11: OrderedHashMap({Const: 0})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#18: OrderedHashMap({Const: 19900})
+#22: OrderedHashMap({Const: 900})
+
+test::foo: OrderedHashMap({Const: 43100})
+test::bar20000: OrderedHashMap({Const: 20000})
+test::bar1000: OrderedHashMap({Const: 1000})
+
+//! > gas_solution_linear
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 18700})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 18700})
+#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19900})
+#22: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 900})
+
+test::foo: OrderedHashMap({Const: 20500})
+test::bar20000: OrderedHashMap({Const: 20000})
+test::bar1000: OrderedHashMap({Const: 1000})
+
+//! > ap_solution_lp
+
+test::bar20000: 1
+test::bar1000: 1
+test::foo: 15
+
+//! > ap_solution_linear
+
+test::foo: 15
+test::bar20000: 1
+test::bar1000: 1
+
+//! > sierra_code
+type Coupon<user@test::bar20000> = Coupon<user@test::bar20000> [storable: true, drop: true, dup: false, zero_sized: true];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc coupon_refund<Coupon<user@test::bar20000>> = coupon_refund<Coupon<user@test::bar20000>>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc function_call<user@test::bar20000> = function_call<user@test::bar20000>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc redeposit_gas = redeposit_gas;
+libfunc function_call<user@test::bar1000> = function_call<user@test::bar1000>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+coupon_refund<Coupon<user@test::bar20000>>([1]) -> (); // 0
+store_temp<GasBuiltin>([0]) -> ([0]); // 1
+function_call<user@test::bar20000>([0]) -> ([4], [5]); // 2
+drop<Unit>([5]) -> (); // 3
+function_call<user@test::bar20000>([4]) -> ([6], [7]); // 4
+drop<Unit>([7]) -> (); // 5
+redeposit_gas([6]) -> ([8]); // 6
+coupon_refund<Coupon<user@test::bar20000>>([2]) -> (); // 7
+store_temp<GasBuiltin>([8]) -> ([8]); // 8
+function_call<user@test::bar1000>([8]) -> ([9], [10]); // 9
+drop<Unit>([10]) -> (); // 10
+redeposit_gas([9]) -> ([11]); // 11
+coupon_refund<Coupon<user@test::bar20000>>([3]) -> (); // 12
+store_temp<GasBuiltin>([11]) -> ([11]); // 13
+function_call<user@test::bar1000>([11]) -> ([12], [13]); // 14
+drop<Unit>([13]) -> (); // 15
+struct_construct<Unit>() -> ([14]); // 16
+return([12], [14]); // 17
+redeposit_gas([0]) -> ([1]); // 18
+struct_construct<Unit>() -> ([2]); // 19
+store_temp<GasBuiltin>([1]) -> ([1]); // 20
+return([1], [2]); // 21
+redeposit_gas([0]) -> ([1]); // 22
+struct_construct<Unit>() -> ([2]); // 23
+store_temp<GasBuiltin>([1]) -> ([1]); // 24
+return([1], [2]); // 25
+
+test::foo@0([0]: GasBuiltin, [1]: Coupon<user@test::bar20000>, [2]: Coupon<user@test::bar20000>, [3]: Coupon<user@test::bar20000>) -> (GasBuiltin, Unit);
+test::bar20000@18([0]: GasBuiltin) -> (GasBuiltin, Unit);
+test::bar1000@22([0]: GasBuiltin) -> (GasBuiltin, Unit);
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+call rel 12;
+call rel 10;
+[ap + 0] = [ap + -1], ap++;
+call rel 10;
+[ap + 0] = [ap + -1] + 18700, ap++;
+call rel 6;
+ret;
+[ap + 0] = [fp + -3] + 19900, ap++;
+ret;
+[ap + 0] = [fp + -3] + 900, ap++;
 ret;

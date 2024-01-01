@@ -4,6 +4,7 @@
 
 use cairo_lang_eq_solver::Expr;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
@@ -105,17 +106,22 @@ pub fn calc_gas_precost_info(
         function_set_costs,
         &registry,
     )?;
-    // Make sure `withdraw_gas` libfuncs return 0 valued variables for all tokens.
+    // Make `withdraw_gas` and `refund` libfuncs return 0 valued variables for all tokens.
     for (i, statement) in program.statements.iter().enumerate() {
-        if let Statement::Invocation(invocation) = statement {
-            if matches!(
-                registry.get_libfunc(&invocation.libfunc_id),
-                Ok(CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)))
-            ) {
-                for token in CostTokenType::iter_precost() {
-                    // Check that the variable was not assigned a value, and set it to zero.
-                    assert_eq!(info.variable_values.insert((StatementIdx(i), *token), 0), None);
-                }
+        let Statement::Invocation(invocation) = statement else {
+            continue;
+        };
+        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+            continue;
+        };
+        let is_withdraw_gas =
+            matches!(libfunc, CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)));
+        let is_refund =
+            matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_)));
+        if is_withdraw_gas || is_refund {
+            for token in CostTokenType::iter_precost() {
+                // Check that the variable was not assigned a value, and set it to zero.
+                assert_eq!(info.variable_values.insert((StatementIdx(i), *token), 0), None);
             }
         }
     }
@@ -150,7 +156,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let type_sizes = get_type_size_map(program, &registry).unwrap();
-    calc_gas_info_inner(
+    let mut info = calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
             let libfunc = registry
@@ -171,7 +177,26 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
         },
         function_set_costs,
         &registry,
-    )
+    )?;
+    // Make `refund` libfuncs return 0 valued variables for all tokens.
+    for (i, statement) in program.statements.iter().enumerate() {
+        let Statement::Invocation(invocation) = statement else {
+            continue;
+        };
+        let Ok(libfunc) = registry.get_libfunc(&invocation.libfunc_id) else {
+            continue;
+        };
+        let is_refund =
+            matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_)));
+        if is_refund {
+            // Check that the variable was not assigned a value, and set it to zero.
+            assert_eq!(
+                info.variable_values.insert((StatementIdx(i), CostTokenType::Const), 0),
+                None
+            );
+        }
+    }
+    Ok(info)
 }
 
 /// Calculates gas information. Used for both precost and postcost.

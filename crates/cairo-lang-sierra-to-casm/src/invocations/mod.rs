@@ -656,6 +656,9 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => Ok(builder
                 .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
+            CouponConcreteLibfunc::Refund(_) => {
+                Ok(builder.build_only_reference_changes([].into_iter()))
+            }
         },
     }
 }

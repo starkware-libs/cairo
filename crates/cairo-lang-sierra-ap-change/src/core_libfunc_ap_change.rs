@@ -347,6 +347,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
+            CouponConcreteLibfunc::Refund(_) => vec![ApChange::Known(0)],
         },
     }
 }
