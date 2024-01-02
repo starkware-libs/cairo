@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -76,6 +77,31 @@ impl Display for CairoProgram {
             }
         }
         Ok(())
+    }
+}
+
+impl CairoProgram {
+    /// Creates an assembled representation of the program.
+    pub fn assemble(&self) -> AssembledCairoProgram {
+        let mut bytecode = vec![];
+        let mut hints = vec![];
+        for instruction in self.instructions.iter() {
+            if !instruction.hints.is_empty() {
+                hints.push((bytecode.len(), instruction.hints.clone()))
+            }
+            bytecode.extend(instruction.assemble().encode().into_iter())
+        }
+        let [ref ret_bytecode] = Instruction::new(InstructionBody::Ret(RetInstruction {}), false)
+            .assemble()
+            .encode()[..]
+        else {
+            panic!("Ret instruction is a single word")
+        };
+        for const_allocation in self.const_segment_info.const_allocations.values() {
+            bytecode.push(ret_bytecode.clone());
+            bytecode.extend(const_allocation.values.clone());
+        }
+        AssembledCairoProgram { bytecode, hints }
     }
 }
 
