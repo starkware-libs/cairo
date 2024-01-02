@@ -17,7 +17,7 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
-use cairo_lang_sierra::program::{Function, GenericArg};
+use cairo_lang_sierra::program::{Function, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -75,6 +75,7 @@ pub struct RunResultStarknet {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
+    pub hotspot_info: HashMap<StatementIdx, usize>,
 }
 
 /// The full result of a run.
@@ -83,6 +84,7 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
+    pub hotspot_info: HashMap<StatementIdx, usize>,
 }
 
 /// The ran function return value.
@@ -205,13 +207,14 @@ impl SierraCasmRunner {
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
-            RunResultStarknet {
-                gas_counter: v.gas_counter,
-                memory: v.memory,
-                value: v.value,
-                starknet_state: hint_processor.starknet_state,
-            }
+        let RunResult { gas_counter, memory, value, hotspot_info } =
+            self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins)?;
+        Ok(RunResultStarknet {
+            gas_counter,
+            memory,
+            value,
+            starknet_state: hint_processor.starknet_state,
+            hotspot_info,
         })
     }
 
@@ -234,7 +237,7 @@ impl SierraCasmRunner {
     {
         let (cells, ap) = casm_run::run_function(
             vm,
-            instructions,
+            instructions.clone(),
             builtins,
             |context| {
                 let vm = context.vm;
@@ -285,7 +288,47 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult { gas_counter, memory: cells, value })
+
+        // Initialize a mapping of all sierra statements indices to 0s.
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
+
+        let mut mapping = HashMap::from_iter((0..sierra_len).map(|idx| (StatementIdx(idx), 0)));
+        for trace_entry in vm.get_relocated_trace().unwrap() {
+            let sierra_statement_idx = self.map_casm_pc_to_sierra_statement(trace_entry.pc);
+            *(mapping.get_mut(&sierra_statement_idx).unwrap()) += 1;
+            // TODO(yg): remove. this is if the mapping is not initialized.
+            // match mapping.entry(sierra_statement_idx) {
+            //     std::collections::hash_map::Entry::Occupied(x) => {
+            //         x.insert(x.get() + 1);
+            //     }
+            //     std::collections::hash_map::Entry::Vacant(x) => {
+            //         x.insert(1);
+            //     }
+            // }
+        }
+
+        Ok(RunResult { gas_counter, memory: cells, value, hotspot_info: mapping })
+    }
+
+    fn map_casm_pc_to_sierra_statement(&self, casm_pc: usize) -> StatementIdx {
+        // TODO(yg): this can be done much faster! sort? binary search?
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
+        for i in 0..(sierra_len - 1) {
+            // TODO(yg): make sure self.casm_program.debug_info.sierra_statement_info[0].code_offset
+            // == 0. Otherwise, smaller offsets can be missed and some preliminary check needs to be
+            // added here.
+            let sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i];
+            let next_sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i + 1];
+            if sierra_statement.code_offset <= casm_pc
+                && casm_pc < next_sierra_statement.code_offset
+            {
+                return StatementIdx(sierra_statement.instruction_idx);
+            }
+        }
+        // TODO(yg): assert that casm_pc < end-of-program (need to get it from somewhere).
+        StatementIdx(
+            self.casm_program.debug_info.sierra_statement_info.last().unwrap().instruction_idx,
+        )
     }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
