@@ -2135,6 +2135,7 @@ where
     runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(vm, true).map_err(CairoRunError::from)?;
+
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
 

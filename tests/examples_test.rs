@@ -195,6 +195,7 @@ fn run_function(
         checked_compile_to_sierra(name, example_dir_data, auto_add_withdraw_gas),
         if available_gas.is_some() { Some(Default::default()) } else { None },
         Default::default(),
+        false,
     )
     .expect("Failed setting up runner.");
     let result = runner
