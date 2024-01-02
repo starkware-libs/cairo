@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -15,12 +15,11 @@ use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{GenericParam, SemanticDiagnostic, TypeId};
+use crate::{GenericParam, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct TypeAliasData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub resolved_type: Maybe<TypeId>,
     pub generic_params: Vec<GenericParam>,
     pub attributes: Vec<Attribute>,
@@ -72,13 +71,12 @@ pub fn type_alias_generic_params_data_helper(
 /// Computes data about a type-alias item.
 pub fn type_alias_semantic_data_helper(
     db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
+    diagnostics: &mut SemanticDiagnostics,
     type_alias_ast: &ast::ItemTypeAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
 ) -> Maybe<TypeAliasData> {
     let syntax_db = db.upcast();
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
@@ -86,36 +84,29 @@ pub fn type_alias_semantic_data_helper(
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
-    let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
+    let ty = resolve_type(db, diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
+            .report(diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
     }
     let generic_params = resolver.inference().rewrite(generic_params_data.generic_params).no_err();
     let ty = resolver.inference().rewrite(ty).no_err();
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
-    Ok(TypeAliasData {
-        diagnostics: diagnostics.build(),
-        resolved_type: Ok(ty),
-        generic_params,
-        attributes,
-        resolver_data,
-    })
+    Ok(TypeAliasData { resolved_type: Ok(ty), generic_params, attributes, resolver_data })
 }
 
 /// Cycle handling for a type-alias item.
 pub fn type_alias_semantic_data_cycle_helper(
     db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
+    diagnostics: &mut SemanticDiagnostics,
     type_alias_ast: &ast::ItemTypeAlias,
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
 ) -> Maybe<TypeAliasData> {
     let syntax_db = db.upcast();
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let err = Err(diagnostics.report(&type_alias_ast.name(syntax_db), TypeAliasCycle));
 
@@ -128,7 +119,6 @@ pub fn type_alias_semantic_data_cycle_helper(
     let attributes = type_alias_ast.attributes(syntax_db).structurize(syntax_db);
 
     Ok(TypeAliasData {
-        diagnostics: diagnostics.build(),
         resolved_type: err,
         generic_params: generic_params_data.generic_params,
         attributes,

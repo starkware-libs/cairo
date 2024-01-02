@@ -15,6 +15,7 @@ use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::chain;
 use smol_str::SmolStr;
 
 use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
@@ -303,6 +304,16 @@ pub fn trait_semantic_definition_diagnostics(
     }
 
     diagnostics.build()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_item_names].
+pub fn trait_item_names(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashSet<SmolStr>> {
+    let trait_functions = db.trait_functions(trait_id)?;
+    let trait_types = db.trait_types(trait_id)?;
+    Ok(chain!(trait_functions.keys(), trait_types.keys()).cloned().collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].
