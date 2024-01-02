@@ -11056,15 +11056,18 @@ impl TraitItemType {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_TYPE_KW: usize = 1;
     pub const INDEX_NAME: usize = 2;
-    pub const INDEX_SEMICOLON: usize = 3;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         type_kw: TerminalTypeGreen,
         name: TerminalIdentifierGreen,
+        generic_params: OptionWrappedGenericParamListGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> TraitItemTypeGreen {
-        let children: Vec<GreenId> = vec![attributes.0, type_kw.0, name.0, semicolon.0];
+        let children: Vec<GreenId> =
+            vec![attributes.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         TraitItemTypeGreen(db.intern_green(Arc::new(GreenNode {
             kind: SyntaxKind::TraitItemType,
@@ -11082,8 +11085,11 @@ impl TraitItemType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+    }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11118,6 +11124,7 @@ impl TypedSyntaxNode for TraitItemType {
                     AttributeList::missing(db).0,
                     TerminalType::missing(db).0,
                     TerminalIdentifier::missing(db).0,
+                    OptionWrappedGenericParamList::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),

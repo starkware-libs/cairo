@@ -22,8 +22,3 @@ error: Can only break with a value inside a `loop`.
  --> lib.cairo:4:9
         break 5;
         ^******^
-
-error: While loops are not supported yet.
- --> lib.cairo:2:5
-    while true {
-    ^**********^

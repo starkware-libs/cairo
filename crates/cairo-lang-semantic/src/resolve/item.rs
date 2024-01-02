@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
     ConstantId, FunctionWithBodyId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId, TypeAliasId, VarId,
+    ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -24,7 +24,7 @@ pub enum ResolvedGenericItem {
     GenericFunction(GenericFunctionId),
     TraitFunction(TraitFunctionId),
     GenericType(GenericTypeId),
-    GenericTypeAlias(TypeAliasId),
+    GenericTypeAlias(ModuleTypeAliasId),
     GenericImplAlias(ImplAliasId),
     Variant(Variant),
     Trait(TraitId),

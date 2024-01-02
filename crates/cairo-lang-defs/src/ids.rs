@@ -305,7 +305,7 @@ define_language_element_id_as_enum! {
         FreeFunction(FreeFunctionId),
         Struct(StructId),
         Enum(EnumId),
-        TypeAlias(TypeAliasId),
+        TypeAlias(ModuleTypeAliasId),
         ImplAlias(ImplAliasId),
         Trait(TraitId),
         Impl(ImplDefId),
@@ -419,10 +419,10 @@ define_language_element_id!(
 define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct, name);
 define_language_element_id!(EnumId, EnumLongId, ast::ItemEnum, lookup_intern_enum, name);
 define_language_element_id!(
-    TypeAliasId,
-    TypeAliasLongId,
+    ModuleTypeAliasId,
+    ModuleTypeAliasLongId,
     ast::ItemTypeAlias,
-    lookup_intern_type_alias,
+    lookup_intern_module_type_alias,
     name
 );
 define_language_element_id!(
@@ -523,16 +523,8 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(self.1.0) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-            panic!()
-        };
-        GenericItemId::from_ptr(db, self.0, parent)
+        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
+        GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
 impl GenericParamId {
@@ -595,7 +587,7 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Enum(EnumId),
         ExternType(ExternTypeId),
-        TypeAlias(TypeAliasId),
+        TypeAlias(ModuleTypeAliasId),
         ImplAlias(ImplAliasId),
     }
 }
@@ -679,8 +671,8 @@ impl GenericItemId {
             SyntaxKind::ItemExternType => GenericItemId::ExternType(db.intern_extern_type(
                 ExternTypeLongId(module_file, ast::ItemExternTypePtr(stable_ptr)),
             )),
-            SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_type_alias(
-                TypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+            SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_module_type_alias(
+                ModuleTypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
             )),
             SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
                 ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),

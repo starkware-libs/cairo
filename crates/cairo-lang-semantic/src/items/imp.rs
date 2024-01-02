@@ -1112,11 +1112,11 @@ pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.impl_function_generic_params_data(impl_function_id)?.generic_params)
+    Ok(db.priv_impl_function_generic_params_data(impl_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params_data].
-pub fn impl_function_generic_params_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_generic_params_data].
+pub fn priv_impl_function_generic_params_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Maybe<GenericParamsData> {
@@ -1226,7 +1226,7 @@ pub fn priv_impl_function_declaration_data(
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
 
-    let generic_params_data = db.impl_function_generic_params_data(impl_function_id)?;
+    let generic_params_data = db.priv_impl_function_generic_params_data(impl_function_id)?;
     let generic_params = generic_params_data.generic_params;
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ImplFunction(impl_function_id));
