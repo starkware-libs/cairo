@@ -523,6 +523,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("attributes" ,"AttributeList")
         .node("type_kw", "TerminalType")
         .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("TraitItemConstant")

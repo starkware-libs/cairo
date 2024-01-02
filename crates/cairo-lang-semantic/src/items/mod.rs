@@ -11,9 +11,9 @@ pub mod imp;
 pub mod impl_alias;
 pub mod modifiers;
 pub mod module;
+pub mod module_type_alias;
 pub mod structure;
 pub mod trt;
-pub mod type_alias;
 pub mod us;
 pub mod visibility;
 

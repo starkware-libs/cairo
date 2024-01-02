@@ -49,7 +49,7 @@ impl From<&ExprVarMemberPath> for MemberPath {
 }
 
 /// Usages of variables and member paths in semantic code.
-#[derive(Debug, Default, DebugWithDb)]
+#[derive(Clone, Debug, Default, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct Usage {
     /// Member paths that are read.
@@ -60,11 +60,61 @@ pub struct Usage {
     pub introductions: OrderedHashSet<VarId>,
 }
 
+impl Usage {
+    /// Adds the usage and changes from 'usage' to self, Ignoring `introductions`.
+    pub fn add_usage_and_changes(&mut self, usage: &Usage) {
+        for (path, expr) in usage.usage.iter() {
+            self.usage.insert(path.clone(), expr.clone());
+        }
+        for (path, expr) in usage.changes.iter() {
+            self.changes.insert(path.clone(), expr.clone());
+        }
+    }
+
+    /// Removes usage that was introduced current block and usage that is already covered
+    /// by containing variables.
+    pub fn finalize_as_scope(&mut self) {
+        for (member_path, _) in self.usage.clone() {
+            // Prune introductions from usages.
+            if self.introductions.contains(&member_path.base_var()) {
+                self.usage.swap_remove(&member_path);
+                continue;
+            }
+
+            // Prune usages that are members of other usages.
+            let mut current_path = member_path.clone();
+            while let MemberPath::Member { parent, .. } = current_path {
+                current_path = *parent.clone();
+                if self.usage.contains_key(&current_path) {
+                    self.usage.swap_remove(&member_path);
+                    break;
+                }
+            }
+        }
+        for (member_path, _) in self.changes.clone() {
+            // Prune introductions from changes.
+            if self.introductions.contains(&member_path.base_var()) {
+                self.changes.swap_remove(&member_path);
+            }
+
+            // Prune changes that are members of other changes.
+            let mut current_path = member_path.clone();
+            while let MemberPath::Member { parent, .. } = current_path {
+                current_path = *parent.clone();
+                if self.changes.contains_key(&current_path) {
+                    self.changes.swap_remove(&member_path);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 /// Usages of variables and member paths in each semantic block of a function.
 #[derive(Debug, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct BlockUsages {
-    /// Mapping from an [ExprId] for an block expression, to its [Usage].
+    /// Mapping from an [ExprId] for a block expression or loop, to its [Usage].
     pub block_usages: OrderedHashMap<ExprId, Usage>,
 }
 impl BlockUsages {
@@ -120,53 +170,23 @@ impl BlockUsages {
                 if let Some(expr_id) = expr.tail {
                     self.handle_expr(function_body, expr_id, &mut usage)
                 }
-                for (member_path, _) in usage.usage.clone() {
-                    // Prune introductions from usages.
-                    if usage.introductions.contains(&member_path.base_var()) {
-                        usage.usage.swap_remove(&member_path);
-                        continue;
-                    }
-
-                    // Prune usages that are members of other usages.
-                    let mut current_path = member_path.clone();
-                    while let MemberPath::Member { parent, .. } = current_path {
-                        current_path = *parent.clone();
-                        if usage.usage.contains_key(&current_path) {
-                            usage.usage.swap_remove(&member_path);
-                            break;
-                        }
-                    }
-                }
-                for (member_path, _) in usage.changes.clone() {
-                    // Prune introductions from changes.
-                    if usage.introductions.contains(&member_path.base_var()) {
-                        usage.changes.swap_remove(&member_path);
-                    }
-
-                    // Prune changes that are members of other changes.
-                    let mut current_path = member_path.clone();
-                    while let MemberPath::Member { parent, .. } = current_path {
-                        current_path = *parent.clone();
-                        if usage.changes.contains_key(&current_path) {
-                            usage.changes.swap_remove(&member_path);
-                            break;
-                        }
-                    }
-                }
-
-                for (path, expr) in usage.usage.iter() {
-                    current.usage.insert(path.clone(), expr.clone());
-                }
-                for (path, expr) in usage.changes.iter() {
-                    current.changes.insert(path.clone(), expr.clone());
-                }
-
+                usage.finalize_as_scope();
+                current.add_usage_and_changes(&usage);
                 self.block_usages.insert(expr_id, usage);
             }
-            Expr::Loop(expr) => self.handle_expr(function_body, expr.body, current),
-            Expr::While(expr) => {
-                self.handle_expr(function_body, expr.condition, current);
+            Expr::Loop(expr) => {
                 self.handle_expr(function_body, expr.body, current);
+                // Copy body usage to loop usage.
+                self.block_usages.insert(expr_id, self.block_usages[expr.body].clone());
+            }
+            Expr::While(expr) => {
+                let mut usage = Default::default();
+                self.handle_expr(function_body, expr.condition, &mut usage);
+                self.handle_expr(function_body, expr.body, &mut usage);
+                usage.finalize_as_scope();
+                current.add_usage_and_changes(&usage);
+
+                self.block_usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {

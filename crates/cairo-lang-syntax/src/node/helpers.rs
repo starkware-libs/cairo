@@ -534,3 +534,29 @@ impl WrappedArgListHelper for WrappedArgList {
         }
     }
 }
+
+trait WrappedGenericParamListHelper {
+    /// Checks whether there are 0 generic parameters
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+}
+impl WrappedGenericParamListHelper for ast::WrappedGenericParamList {
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
+        self.generic_params(db).elements(db).is_empty()
+    }
+}
+
+trait OptionWrappedGenericParamListHelper {
+    /// Checks whether there are 0 generic parameters. True either when the generic params clause
+    /// doesn't exist or when it's empty
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+}
+impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList {
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
+        match self {
+            ast::OptionWrappedGenericParamList::Empty(_) => true,
+            ast::OptionWrappedGenericParamList::WrappedGenericParamList(
+                wrapped_generic_param_list,
+            ) => wrapped_generic_param_list.is_empty(db),
+        }
+    }
+}
