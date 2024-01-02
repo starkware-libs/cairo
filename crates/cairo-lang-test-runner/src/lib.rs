@@ -10,6 +10,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_next_item;
+use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -94,6 +95,7 @@ impl CompiledTestRunner {
             compiled.sierra_program,
             compiled.function_set_costs,
             compiled.contracts_info,
+            self.config.run_profiler,
         )?;
 
         if failed.is_empty() {
@@ -147,6 +149,8 @@ pub struct TestRunConfig {
     pub filter: String,
     pub include_ignored: bool,
     pub ignored: bool,
+    /// Whether to run the profiler.
+    pub run_profiler: bool,
 }
 
 /// The test cases compiler.
@@ -251,6 +255,8 @@ struct TestResult {
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
+    /// The profiling info of the run, if requested.
+    profiling_info: Option<ProfilingInfo>,
 }
 
 /// Summary data of the ran tests.
@@ -267,15 +273,17 @@ pub fn run_tests(
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    run_profiler: bool,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
-        sierra_program,
+        sierra_program.clone(),
         Some(MetadataComputationConfig {
             function_set_costs,
             linear_gas_solver: true,
             linear_ap_change_solver: true,
         }),
         contracts_info,
+        run_profiler,
     )
     .with_context(|| "Failed setting up runner.")?;
     println!("running {} tests", named_tests.len());
@@ -327,6 +335,7 @@ pub fn run_tests(
                         .or_else(|| {
                             runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
                         }),
+                    profiling_info: result.profiling_info,
                 }),
             ))
         })
@@ -343,20 +352,29 @@ pub fn run_tests(
                 }
             };
             let summary = wrapped_summary.as_mut().unwrap();
-            let (res_type, status_str, gas_usage) = match status {
-                Some(TestResult { status: TestStatus::Success, gas_usage }) => {
-                    (&mut summary.passed, "ok".bright_green(), gas_usage)
+            let (res_type, status_str, gas_usage, profiling_info) = match status {
+                Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
+                    (&mut summary.passed, "ok".bright_green(), gas_usage, profiling_info)
                 }
-                Some(TestResult { status: TestStatus::Fail(run_result), gas_usage }) => {
+                Some(TestResult {
+                    status: TestStatus::Fail(run_result),
+                    gas_usage,
+                    profiling_info,
+                }) => {
                     summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red(), gas_usage)
+                    (&mut summary.failed, "fail".bright_red(), gas_usage, profiling_info)
                 }
-                None => (&mut summary.ignored, "ignored".bright_yellow(), None),
+                None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
             };
             if let Some(gas_usage) = gas_usage {
                 println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
             } else {
                 println!("test {name} ... {status_str}");
+            }
+            if let Some(profiling_info) = profiling_info {
+                let profiling_processor = ProfilingInfoProcessor::new(sierra_program.clone());
+                let processed_profiling_info = profiling_processor.process(&profiling_info);
+                println!("Profiling info:\n{processed_profiling_info}");
             }
             res_type.push(name);
         });

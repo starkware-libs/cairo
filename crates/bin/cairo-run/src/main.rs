@@ -7,6 +7,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -33,6 +34,9 @@ struct Args {
     /// Whether to print the memory.
     #[arg(long, default_value_t = false)]
     print_full_memory: bool,
+    /// Whether to run the profiler.
+    #[arg(long, default_value_t = false)]
+    run_profiler: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -63,11 +67,13 @@ fn main() -> anyhow::Result<()> {
     }
 
     let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
+    let sierra_program = replacer.apply(&sierra_program);
 
     let runner = SierraCasmRunner::new(
-        replacer.apply(&sierra_program),
+        sierra_program.clone(),
         if args.available_gas.is_some() { Some(Default::default()) } else { None },
         contracts_info,
+        args.run_profiler,
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner
@@ -78,6 +84,18 @@ fn main() -> anyhow::Result<()> {
             StarknetState::default(),
         )
         .with_context(|| "Failed to run the function.")?;
+
+    if args.run_profiler {
+        let profiling_info_processor = ProfilingInfoProcessor::new(sierra_program);
+        match result.profiling_info {
+            Some(raw_profiling_info) => {
+                let profiling_info = profiling_info_processor.process(&raw_profiling_info);
+                println!("Profiling info:\n{}", profiling_info);
+            }
+            None => println!("Warning: Profiling info not found."),
+        }
+    }
+
     match result.value {
         cairo_lang_runner::RunResultValue::Success(values) => {
             println!("Run completed successfully, returning {values:?}")
