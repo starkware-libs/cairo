@@ -282,7 +282,7 @@ pub trait SemanticGroup:
     fn priv_module_type_alias_semantic_data(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
-    ) -> Maybe<items::type_aliases::TypeAliasData>;
+    ) -> Maybe<items::module_type_alias::ModuleTypeAliasData>;
 
     // Impl Alias.
     // ====
@@ -355,6 +355,9 @@ pub trait SemanticGroup:
         &self,
         trait_id: TraitId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the names of all the items of a trait.
+    #[salsa::invoke(items::trt::trait_item_names)]
+    fn trait_item_names(&self, trait_id: TraitId) -> Maybe<OrderedHashSet<SmolStr>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
