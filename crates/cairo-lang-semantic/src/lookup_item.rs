@@ -69,6 +69,8 @@ impl HasResolverData for LookupItemId {
     }
 }
 
+// === Module Items ===
+
 impl HasResolverData for ModuleItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
@@ -93,6 +95,7 @@ impl HasResolverData for ConstantId {
         db.constant_resolver_data(*self)
     }
 }
+
 impl HasResolverData for SubmoduleId {
     fn resolver_data(&self, _db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         let module_id = ModuleId::Submodule(*self);
@@ -103,21 +106,25 @@ impl HasResolverData for SubmoduleId {
         Ok(Arc::new(ResolverData::new(module_file_id, inference_id)))
     }
 }
+
 impl HasResolverData for UseId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.use_resolver_data(*self)
     }
 }
+
 impl HasResolverData for ImplAliasId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_alias_resolver_data(*self)
     }
 }
+
 impl HasResolverData for ImplDefId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_def_resolver_data(*self)
     }
 }
+
 impl HasResolverData for ExternTypeId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
@@ -126,21 +133,25 @@ impl HasResolverData for ExternTypeId {
         Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()), inference_id)))
     }
 }
+
 impl HasResolverData for ExternFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.extern_function_declaration_resolver_data(*self)
     }
 }
+
 impl HasResolverData for FreeFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.free_function_declaration_resolver_data(*self)
     }
 }
+
 impl HasResolverData for StructId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.struct_declaration_resolver_data(*self)
     }
 }
+
 impl HasResolverData for EnumId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.enum_declaration_resolver_data(*self)
@@ -151,11 +162,14 @@ impl HasResolverData for ModuleTypeAliasId {
         db.module_type_alias_resolver_data(*self)
     }
 }
+
 impl HasResolverData for TraitId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_resolver_data(*self)
     }
 }
+
+// === Trait Items ===
 
 impl HasResolverData for TraitItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
@@ -171,11 +185,14 @@ impl HasResolverData for TraitTypeId {
         db.trait_type_resolver_data(*self)
     }
 }
+
 impl HasResolverData for TraitFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_function_resolver_data(*self)
     }
 }
+
+// === Impl Items ===
 
 impl HasResolverData for ImplItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
@@ -191,6 +208,7 @@ impl HasResolverData for ImplTypeId {
         db.impl_type_resolver_data(*self)
     }
 }
+
 impl HasResolverData for ImplFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_function_resolver_data(*self)
