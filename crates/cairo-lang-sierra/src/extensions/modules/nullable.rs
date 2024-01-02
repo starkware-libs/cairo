@@ -52,6 +52,10 @@ impl ConcreteType for NullableConcreteType {
     }
 }
 
+fn nullable_ty(context: &dyn SignatureSpecializationContext, ty: ConcreteTypeId) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(NullableType::id(), ty)
+}
+
 define_libfunc_hierarchy! {
     pub enum NullableLibfunc {
         Null(NullLibfunc),
@@ -150,13 +154,11 @@ impl SignatureAndTypeGenericLibfunc for NullableForwardSnapshotLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
-            snapshot_ty(
-                context,
-                context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
-            )?,
-            context.get_wrapped_concrete_type(NullableType::id(), snapshot_ty(context, ty)?)?,
+            snapshot_ty(context, nullable_ty(context, ty.clone())?)?,
+            nullable_ty(context, snapshot_ty(context, ty)?)?,
         ))
     }
 }
+
 pub type NullableForwardSnapshotLibfunc =
     WrapSignatureAndTypeGenericLibfunc<NullableForwardSnapshotLibfuncWrapped>;

@@ -34,6 +34,10 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
 }
 pub type BoxType = GenericTypeArgGenericTypeWrapper<BoxTypeWrapped>;
 
+fn box_fn(context: &dyn SignatureSpecializationContext, ty: ConcreteTypeId) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(BoxType::id(), ty)
+}
+
 define_libfunc_hierarchy! {
     pub enum BoxLibfunc {
         Into(IntoBoxLibfunc),
@@ -103,10 +107,11 @@ impl SignatureAndTypeGenericLibfunc for BoxForwardSnapshotLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
-            snapshot_ty(context, context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?)?,
-            context.get_wrapped_concrete_type(BoxType::id(), snapshot_ty(context, ty)?)?,
+            snapshot_ty(context, box_fn(context, ty.clone())?)?,
+            box_fn(context, snapshot_ty(context, ty)?)?,
         ))
     }
 }
+
 pub type BoxForwardSnapshotLibfunc =
     WrapSignatureAndTypeGenericLibfunc<BoxForwardSnapshotLibfuncWrapped>;
