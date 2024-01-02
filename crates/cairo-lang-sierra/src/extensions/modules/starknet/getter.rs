@@ -8,6 +8,7 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::{Uint32Type, Uint64Type};
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
+use crate::extensions::nullable::NullableType;
 use crate::extensions::structure::StructType;
 use crate::extensions::{NamedType, NoGenericArgsGenericType, SpecializationError};
 use crate::ids::{ConcreteTypeId, UserTypeId};
@@ -69,6 +70,14 @@ pub fn boxed_ty(
     ty: ConcreteTypeId,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context.get_wrapped_concrete_type(BoxType::id(), ty)
+}
+
+/// Helper for getting the type `Nullable<T>`.
+pub fn nullable_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(NullableType::id(), ty)
 }
 
 /// Helper for ExecutionInfo type.

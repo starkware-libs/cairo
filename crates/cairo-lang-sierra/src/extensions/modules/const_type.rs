@@ -1,8 +1,8 @@
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 
-use super::boxing::BoxType;
 use super::enm::EnumType;
+use super::starknet::getter::boxed_ty;
 use super::structure::StructType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -226,7 +226,7 @@ impl ConstAsBoxLibfuncWrapped {
         let [GenericArg::Type(inner_ty), ..] = generic_args.as_slice() else {
             return Err(SpecializationError::UnsupportedGenericArg);
         };
-        let boxed_inner_ty = context.get_wrapped_concrete_type(BoxType::id(), inner_ty.clone())?;
+        let boxed_inner_ty = boxed_ty(context, inner_ty.clone())?;
         Ok(ConstAsBoxConcreteLibfunc {
             signature: LibfuncSignature::new_non_branch(
                 vec![],

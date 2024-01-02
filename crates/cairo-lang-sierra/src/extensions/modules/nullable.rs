@@ -1,5 +1,5 @@
-use super::boxing::BoxType;
 use super::snapshot::snapshot_ty;
+use super::starknet::getter::{boxed_ty, nullable_ty};
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -12,7 +12,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+    args_as_single_type, ConcreteType, OutputVarReferenceInfo, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -76,7 +76,7 @@ impl SignatureOnlyGenericLibfunc for NullLibfunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
+                ty: nullable_ty(context, ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -95,10 +95,7 @@ impl SignatureAndTypeGenericLibfunc for NullableFromBoxLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(reinterpret_cast_signature(
-            context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
-            context.get_wrapped_concrete_type(NullableType::id(), ty)?,
-        ))
+        Ok(reinterpret_cast_signature(boxed_ty(context, ty.clone())?, nullable_ty(context, ty)?))
     }
 }
 pub type NullableFromBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<NullableFromBoxLibfuncWrapped>;
@@ -115,9 +112,7 @@ impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(
-                context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
-            )],
+            param_signatures: vec![ParamSignature::new(nullable_ty(context, ty.clone())?)],
             branch_signatures: vec![
                 // `null`.
                 BranchSignature {
@@ -127,7 +122,7 @@ impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
                 // `Box<T>`.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
+                        ty: boxed_ty(context, ty)?,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
@@ -150,13 +145,11 @@ impl SignatureAndTypeGenericLibfunc for NullableForwardSnapshotLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
-            snapshot_ty(
-                context,
-                context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
-            )?,
-            context.get_wrapped_concrete_type(NullableType::id(), snapshot_ty(context, ty)?)?,
+            snapshot_ty(context, nullable_ty(context, ty.clone())?)?,
+            nullable_ty(context, snapshot_ty(context, ty)?)?,
         ))
     }
 }
+
 pub type NullableForwardSnapshotLibfunc =
     WrapSignatureAndTypeGenericLibfunc<NullableForwardSnapshotLibfuncWrapped>;

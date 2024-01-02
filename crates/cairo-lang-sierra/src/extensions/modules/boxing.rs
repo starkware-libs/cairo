@@ -1,4 +1,5 @@
 use super::snapshot::snapshot_ty;
+use super::starknet::getter::boxed_ty;
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -10,7 +11,7 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
-use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type wrapping a value.
@@ -56,7 +57,7 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
         Ok(LibfuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
+                ty: boxed_ty(context, ty)?,
                 ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -77,7 +78,7 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?],
+            vec![boxed_ty(context, ty.clone())?],
             vec![OutputVarInfo {
                 ty: ty.clone(),
                 ref_info: if context.get_type_info(ty)?.zero_sized {
@@ -103,10 +104,11 @@ impl SignatureAndTypeGenericLibfunc for BoxForwardSnapshotLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(reinterpret_cast_signature(
-            snapshot_ty(context, context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?)?,
-            context.get_wrapped_concrete_type(BoxType::id(), snapshot_ty(context, ty)?)?,
+            snapshot_ty(context, boxed_ty(context, ty.clone())?)?,
+            boxed_ty(context, snapshot_ty(context, ty)?)?,
         ))
     }
 }
+
 pub type BoxForwardSnapshotLibfunc =
     WrapSignatureAndTypeGenericLibfunc<BoxForwardSnapshotLibfuncWrapped>;
