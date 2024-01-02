@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -10,10 +11,13 @@ use cairo_lang_sierra::program::{
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
 use num_bigint::BigInt;
+use num_integer::Integer;
+use num_traits::Signed;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -76,6 +80,41 @@ impl Display for CairoProgram {
             }
         }
         Ok(())
+    }
+}
+
+impl CairoProgram {
+    /// Creates an assembled representation of the program.
+    pub fn assemble(&self) -> AssembledCairoProgram {
+        let prime = cairo_felt::Felt252::prime();
+        let mut bytecode = vec![];
+        let mut hints = vec![];
+        for instruction in self.instructions.iter() {
+            if !instruction.hints.is_empty() {
+                hints.push((bytecode.len(), instruction.hints.clone()))
+            }
+            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
+
+                BigUintAsHex {
+                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
+                }
+            }))
+        }
+        let [ref ret_bytecode] = Instruction::new(InstructionBody::Ret(RetInstruction {}), false)
+            .assemble()
+            .encode()[..]
+        else {
+            panic!("Ret instruction is a single word")
+        };
+        let ret_bytecode = BigUintAsHex { value: ret_bytecode.clone().to_biguint().unwrap() };
+        for const_allocation in self.const_segment_info.const_allocations.values() {
+            bytecode.push(ret_bytecode.clone());
+            for value in &const_allocation.values {
+                bytecode.push(BigUintAsHex { value: value.to_biguint().unwrap() })
+            }
+        }
+        AssembledCairoProgram { bytecode, hints }
     }
 }
 

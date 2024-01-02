@@ -849,6 +849,7 @@ dependencies = [
  "indoc",
  "itertools 0.11.0",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.17",
  "pretty_assertions",
  "test-case",

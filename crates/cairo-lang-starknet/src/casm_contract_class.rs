@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_felt::Felt252;
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -30,8 +31,6 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
-use num_integer::Integer;
-use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
@@ -345,20 +344,7 @@ impl CasmContractClass {
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
-        let mut bytecode = vec![];
-        let mut hints = vec![];
-        for instruction in cairo_program.instructions {
-            if !instruction.hints.is_empty() {
-                hints.push((bytecode.len(), instruction.hints.clone()))
-            }
-            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
-                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-
-                BigUintAsHex {
-                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
-                }
-            }))
-        }
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),

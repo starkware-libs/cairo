@@ -1,5 +1,7 @@
+use cairo_lang_utils::bigint::BigUintAsHex;
 use num_bigint::{BigInt, ToBigInt};
 
+use crate::hints::Hint;
 use crate::instructions::{Instruction, InstructionBody};
 use crate::operand::{DerefOrImmediate, Operation, Register, ResOperand};
 
@@ -69,6 +71,14 @@ pub struct InstructionRepr {
     pub ap_update: ApUpdate,
     pub fp_update: FpUpdate,
     pub opcode: Opcode,
+}
+
+/// An assembled representation of a cairo program.
+pub struct AssembledCairoProgram {
+    /// The bytecode of the program.
+    pub bytecode: Vec<BigUintAsHex>,
+    /// The list of hints, and the instruction index they refer to.
+    pub hints: Vec<(usize, Vec<Hint>)>,
 }
 
 impl Instruction {
