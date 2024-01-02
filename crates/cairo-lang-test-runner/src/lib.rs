@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use std::vec::IntoIter;
@@ -13,7 +14,7 @@ use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -251,6 +252,8 @@ struct TestResult {
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
+    // TODO(yg): consider adding a type. It will also impl format which will ease the printing.
+    hotspot_info: HashMap<StatementIdx, usize>,
 }
 
 /// Summary data of the ran tests.
@@ -269,7 +272,7 @@ pub fn run_tests(
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
-        sierra_program,
+        sierra_program.clone(),
         Some(MetadataComputationConfig {
             function_set_costs,
             linear_gas_solver: true,
@@ -327,6 +330,7 @@ pub fn run_tests(
                         .or_else(|| {
                             runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
                         }),
+                    hotspot_info: result.hotspot_info,
                 }),
             ))
         })
@@ -343,20 +347,38 @@ pub fn run_tests(
                 }
             };
             let summary = wrapped_summary.as_mut().unwrap();
-            let (res_type, status_str, gas_usage) = match status {
-                Some(TestResult { status: TestStatus::Success, gas_usage }) => {
-                    (&mut summary.passed, "ok".bright_green(), gas_usage)
+            let (res_type, status_str, gas_usage, hotspot_info) = match status {
+                Some(TestResult { status: TestStatus::Success, gas_usage, hotspot_info }) => {
+                    (&mut summary.passed, "ok".bright_green(), gas_usage, Some(hotspot_info))
                 }
-                Some(TestResult { status: TestStatus::Fail(run_result), gas_usage }) => {
+                Some(TestResult {
+                    status: TestStatus::Fail(run_result),
+                    gas_usage,
+                    hotspot_info,
+                }) => {
                     summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red(), gas_usage)
+                    (&mut summary.failed, "fail".bright_red(), gas_usage, Some(hotspot_info))
                 }
-                None => (&mut summary.ignored, "ignored".bright_yellow(), None),
+                None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
             };
             if let Some(gas_usage) = gas_usage {
                 println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
             } else {
                 println!("test {name} ... {status_str}");
+            }
+            if let Some(hotspot_info) = hotspot_info {
+                // let vector: Vec<_> = hotspot_info.iter().sorted();
+                // vector.sort_by(compare)
+                // hotspot_info.filter(|(k, v)| v > 0);
+                println!("hotspot info:");
+                for (statement_idx, weight) in
+                    hotspot_info.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+                {
+                    if *weight > 0 {
+                        let gen_statement = sierra_program.statements.get(statement_idx.0).unwrap();
+                        println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
+                    }
+                }
             }
             res_type.push(name);
         });
