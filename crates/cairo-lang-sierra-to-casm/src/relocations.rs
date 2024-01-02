@@ -34,7 +34,9 @@ impl Relocation {
     ) {
         let target_pc = match self {
             Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
-            Relocation::EndOfProgram => *statement_offsets.last().unwrap(),
+            Relocation::EndOfProgram => {
+                *statement_offsets.last().unwrap() + const_segment_info.const_segment_size
+            }
             Relocation::Const(ty) => {
                 *statement_offsets.last().unwrap()
                     + const_segment_info

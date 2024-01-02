@@ -147,7 +147,7 @@ impl ConstSegmentInfoBuilder {
             const_segment_size += const_allocation.values.len() + 1;
             const_allocations.insert(const_type.clone(), const_allocation);
         }
-        Ok(ConstSegmentInfo { const_allocations })
+        Ok(ConstSegmentInfo { const_allocations, const_segment_size })
     }
 }
 
@@ -165,6 +165,8 @@ pub struct ConstAllocation {
 pub struct ConstSegmentInfo {
     /// A map between the const type and the data of the const.
     pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
+    /// The size of the constants segment.
+    pub const_segment_size: usize,
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
