@@ -28,7 +28,7 @@ pub fn build(
             build_enum_init(builder, *index, *num_variants)
         }
         EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => {
-            build_enum_from_felt252_bounded(builder, libfunc.num_variants)
+            build_enum_from_felt252_bounded(builder, libfunc.n_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -116,9 +116,9 @@ fn build_enum_init(
 
 fn build_enum_from_felt252_bounded(
     builder: CompiledInvocationBuilder<'_>,
-    num_variants: usize,
+    n_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
-    if num_variants <= 2 {
+    if n_variants <= 2 {
         return misc::build_identity(builder);
     }
 
@@ -129,12 +129,14 @@ fn build_enum_from_felt252_bounded(
     };
 
     // The variant selector for enums with 3 or more variants is the relative jump to the variant
-    // handle which is `2 * (n - k) - 1`.
-    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2*(2*n - 1) / 2 - 2*k = 2*((2*n - 1) / 2 - k)`
-    // Let us define `(2*n - 1) / 2` as m - which can be known in compilation time.
-    // We can find the variant by `2 * (m - k)` or `-2 * (k - m)`
+    // handle which is `2 * (n - k) - 1` (where `n` is the number of variants and `k=0, ..., n-1`).
+    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2*((2*n - 1) / 2 - k)`
+    // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
+    // Hence, the variant selector is `2 * (m - k)` or alternatively `-2 * (k - m)`.
 
-    let m = (Felt252::from(num_variants * 2 - 1) / Felt252::from(2)).to_bigint();
+    // TODO: consider changing m to (1 - n * 2) / 2.
+
+    let m = (Felt252::from(n_variants * 2 - 1) / Felt252::from(2)).to_bigint();
     casm_build_extend! {casm_builder,
         const m = m;
         const negative_two = -2;

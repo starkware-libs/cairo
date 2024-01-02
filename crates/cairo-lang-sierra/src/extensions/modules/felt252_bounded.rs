@@ -12,6 +12,10 @@ pub struct Felt252BoundedType {}
 impl NamedType for Felt252BoundedType {
     type Concrete = Felt252BoundedConcreteType;
 
+    // TODO: rename lower_bound and upper_bound to min and max. Our convention is that "upper bound"
+    //   is exclusive and "max" is inclusive (lower_bound and min are both inclusive).
+    // TODO: Consider changing to bounded int, and then we need to restrict the size of the range
+    //   to be lower than field prime.
     const ID: GenericTypeId = GenericTypeId::new_inline("Felt252Bounded");
     fn specialize(
         &self,
@@ -26,6 +30,7 @@ impl NamedType for Felt252BoundedType {
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
 
+        // TODO: What happens if the difference is >= field prime?
         if lower_bound > upper_bound {
             return Err(SpecializationError::UnsupportedGenericArg);
         }

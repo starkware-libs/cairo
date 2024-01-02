@@ -199,7 +199,7 @@ impl NamedLibfunc for EnumInitLibfunc {
 pub struct EnumFromFelt252BoundedConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
-    pub num_variants: usize,
+    pub n_variants: usize,
 }
 impl SignatureBasedConcreteLibfunc for EnumFromFelt252BoundedConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
@@ -209,37 +209,38 @@ impl SignatureBasedConcreteLibfunc for EnumFromFelt252BoundedConcreteLibfunc {
 #[derive(Default)]
 pub struct EnumFromFelt252BoundedLibfunc {}
 impl EnumFromFelt252BoundedLibfunc {
-    /// Creates the specialization of the enum-from-felt-bounded libfunc with the given template
+    /// Creates the specialization of the `enum_from_felt252_bounded` libfunc with the given template
     /// arguments.
     fn specialize_concrete_lib_func(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<EnumFromFelt252BoundedConcreteLibfunc, SpecializationError> {
-        let enum_type = match args {
-            [GenericArg::Type(enum_type)] => enum_type.clone(),
-            [_] => return Err(SpecializationError::UnsupportedGenericArg),
-            _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
-        };
+        let enum_type = args_as_single_type(args)?;
+        // TODO: check it's really an enum. Add a test trying to instantiate it with a struct.
         let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
+        // TODO: Why do we construct an enum here?
         let variant_types =
             EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .variants;
-        let num_variants = variant_types.len();
+        let n_variants = variant_types.len();
 
         for v in variant_types {
             if !context.get_type_info(v)?.zero_sized {
+                // TODO: This is not sound. We can generate any zero-sized type with it.
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
+        // TODO: If n_variants == 0, need to raise an error (currently fails on overflow).
         let bounded_felt_ty = context.get_concrete_type(
-            Felt252BoundedType::id(),
-            &[GenericArg::Value(0.into()), GenericArg::Value((num_variants - 1).into())],
+            Felt252BoundedType::id(), // TODO: Check type.
+            &[GenericArg::Value(0.into()), GenericArg::Value((n_variants - 1).into())],
         )?;
-        if num_variants <= 2 {
+        if n_variants <= 2 {
+            // TODO: check what happens if n_variants == 1. Is there a selector in this case?
             Ok(EnumFromFelt252BoundedConcreteLibfunc {
                 signature: reinterpret_cast_signature(bounded_felt_ty, enum_type),
-                num_variants,
+                n_variants,
             })
         } else {
             Ok(EnumFromFelt252BoundedConcreteLibfunc {
@@ -251,11 +252,12 @@ impl EnumFromFelt252BoundedLibfunc {
                     }],
                     SierraApChange::Known { new_vars_only: false },
                 ),
-                num_variants,
+                n_variants,
             })
         }
     }
 }
+// TODO: document.
 impl NamedLibfunc for EnumFromFelt252BoundedLibfunc {
     type Concrete = EnumFromFelt252BoundedConcreteLibfunc;
     const STR_ID: &'static str = "enum_from_felt252_bounded";

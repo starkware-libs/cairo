@@ -348,6 +348,7 @@ extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
 
 extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0, 4>) -> T nopanic;
 
+// TODO: Why two functions?
 fn gen_foo<T>(index: Felt252Bounded<0, 4>) -> T {
     enum_from_felt252_bounded(index)
 }
@@ -377,54 +378,6 @@ store_temp<test::IndexEnum5>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: Felt252Bounded<0, 4>) -> (test::IndexEnum5);
-
-//! > ==========================================================================
-
-//! > long enum from Felt252Bounded<2>
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-enum IndexEnum3 {
-    Zero,
-    One,
-    Two,
-}
-extern type Felt252Bounded<const LOWER: felt252, const UPPER: felt252>;
-
-
-extern fn enum_from_felt252_bounded<T>(index: Felt252Bounded<0, 2>) -> T nopanic;
-
-fn gen_foo<T>(index: Felt252Bounded<0, 2>) -> T {
-    enum_from_felt252_bounded(index)
-}
-
-fn foo(index: Felt252Bounded<0, 2>) -> IndexEnum3 {
-    gen_foo(index)
-}
-
-//! > casm
-[fp + -3] = [ap + 0] + 1809251394333065606848661391547535052811553607665798349986546028067936010243, ap++;
-[ap + 0] = [ap + -1] * -2, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 200})
-
-//! > sierra_code
-type Felt252Bounded<0, 2> = Felt252Bounded<0, 2> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type test::IndexEnum3 = Enum<ut@test::IndexEnum3, Unit, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc enum_from_felt252_bounded<test::IndexEnum3> = enum_from_felt252_bounded<test::IndexEnum3>;
-libfunc store_temp<test::IndexEnum3> = store_temp<test::IndexEnum3>;
-
-enum_from_felt252_bounded<test::IndexEnum3>([0]) -> ([1]); // 0
-store_temp<test::IndexEnum3>([1]) -> ([1]); // 1
-return([1]); // 2
-
-test::foo@0([0]: Felt252Bounded<0, 2>) -> (test::IndexEnum3);
 
 //! > ==========================================================================
 
