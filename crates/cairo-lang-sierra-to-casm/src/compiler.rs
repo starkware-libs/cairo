@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -79,6 +80,31 @@ impl Display for CairoProgram {
     }
 }
 
+impl CairoProgram {
+    /// Creates an assembled representation of the program.
+    pub fn assemble(&self) -> AssembledCairoProgram {
+        let mut bytecode = vec![];
+        let mut hints = vec![];
+        for instruction in self.instructions.iter() {
+            if !instruction.hints.is_empty() {
+                hints.push((bytecode.len(), instruction.hints.clone()))
+            }
+            bytecode.extend(instruction.assemble().encode().into_iter())
+        }
+        let [ref ret_bytecode] = Instruction::new(InstructionBody::Ret(RetInstruction {}), false)
+            .assemble()
+            .encode()[..]
+        else {
+            panic!("Ret instruction is a single word")
+        };
+        for const_allocation in self.const_segment_info.const_allocations.values() {
+            bytecode.push(ret_bytecode.clone());
+            bytecode.extend(const_allocation.values.clone());
+        }
+        AssembledCairoProgram { bytecode, hints }
+    }
+}
+
 /// The debug information of a compilation from Sierra to casm.
 #[derive(Debug, Eq, PartialEq)]
 pub struct SierraStatementDebugInfo {
@@ -121,7 +147,7 @@ impl ConstSegmentInfoBuilder {
             const_segment_size += const_allocation.values.len() + 1;
             const_allocations.insert(const_type.clone(), const_allocation);
         }
-        Ok(ConstSegmentInfo { const_allocations })
+        Ok(ConstSegmentInfo { const_allocations, const_segment_size })
     }
 }
 
@@ -139,6 +165,8 @@ pub struct ConstAllocation {
 pub struct ConstSegmentInfo {
     /// A map between the const type and the data of the const.
     pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
+    /// The size of the constants segment.
+    pub const_segment_size: usize,
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the

@@ -697,6 +697,67 @@ indoc! {"
         dw 5;
     "};
     "Constant enums.")]
+#[test_case(indoc! {"
+
+        type BuiltinCosts = BuiltinCosts;
+
+        libfunc get_builtin_costs = get_builtin_costs;
+        libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
+        libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
+
+        get_builtin_costs() -> ([1]);
+        store_temp<BuiltinCosts>([1]) -> ([1]);
+        drop<BuiltinCosts>([1]) -> ();
+        return();
+
+        test_program@0() -> ();
+    "},
+    false,
+    indoc! {"
+        call rel 6;
+        [ap + 0] = [ap + -1] + 5, ap++;
+        [ap + 0] = [[ap + -1] + 0], ap++;
+        ret;
+    "};
+    "Get builtin costs.")]
+#[test_case(indoc! {"
+        type BuiltinCosts = BuiltinCosts;
+        type felt252 = felt252;
+        type const<felt252, 5> = const<felt252, 5>;
+        type Box<felt252> = Box<felt252>;
+
+        libfunc get_builtin_costs = get_builtin_costs;
+        libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
+        libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
+        libfunc const_as_box<const<felt252, 5>> = const_as_box<const<felt252, 5>>;
+        libfunc unbox<felt252> = unbox<felt252>;
+        libfunc store_temp<felt252> = store_temp<felt252>;
+        libfunc drop<felt252> = drop<felt252>;
+
+        get_builtin_costs() -> ([1]);
+        store_temp<BuiltinCosts>([1]) -> ([1]);
+        drop<BuiltinCosts>([1]) -> ();
+        const_as_box<const<felt252, 5>>() -> ([2]);
+        unbox<felt252>([2]) -> ([2]);
+        store_temp<felt252>([2]) -> ([2]);
+        drop<felt252>([2]) -> ();
+        return();
+
+        test_program@0() -> ();
+    "},
+    false,
+    indoc! {"
+        call rel 13;
+        [ap + 0] = [ap + -1] + 12, ap++;
+        [ap + 0] = [[ap + -1] + 0], ap++;
+        call rel 6;
+        [ap + 0] = [ap + -1] + 5, ap++;
+        [ap + 0] = [[ap + -1] + 0], ap++;
+        ret;
+        ret;
+        dw 5;
+    "};
+    "Get builtin costs with a const segment.")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
