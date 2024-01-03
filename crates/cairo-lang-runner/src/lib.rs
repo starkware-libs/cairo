@@ -456,6 +456,7 @@ impl SierraCasmRunner {
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }
 
+    /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes
     fn generic_id_and_size_from_concrete(
         &self,
         types: &[ConcreteTypeId],
@@ -687,6 +688,7 @@ impl SierraCasmRunner {
     }
 }
 
+/// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end of the program
 pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRunError>> {
     let vm = context.vm;
     // Create the builtin cost segment, with dummy values.
