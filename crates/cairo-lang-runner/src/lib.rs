@@ -233,9 +233,9 @@ impl SierraCasmRunner {
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
-    /// available_gas before the execution begins.
+    /// `available_gas` before the execution begins.
     ///
-    /// Allows injecting Cairo VirtualMachine
+    /// Allows injecting Cairo `VirtualMachine`
     pub fn run_function_with_vm<'a, Instructions>(
         &self,
         func: &Function,
@@ -357,7 +357,7 @@ impl SierraCasmRunner {
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
-    /// available_gas before the execution begins.
+    /// `available_gas` before the execution begins.
     pub fn run_function<'a, Instructions>(
         &self,
         func: &Function,
@@ -641,7 +641,7 @@ impl SierraCasmRunner {
     }
 
     /// Returns the initial value for the gas counter.
-    /// If available_gas is None returns 0.
+    /// If `available_gas` is None returns 0.
     pub fn get_initial_available_gas(
         &self,
         func: &Function,
