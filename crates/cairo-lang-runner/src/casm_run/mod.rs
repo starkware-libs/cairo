@@ -9,7 +9,6 @@ use ark_ff::{BigInteger, Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
-use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
@@ -2129,17 +2128,6 @@ pub fn build_cairo_runner(
     CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
 }
 
-pub fn build_program_data<'a, Instructions>(instructions: Instructions) -> Vec<MaybeRelocatable>
-where
-    Instructions: Iterator<Item = &'a Instruction> + Clone,
-{
-    instructions
-        .flat_map(|inst| inst.assemble().encode())
-        .map(Felt252::from)
-        .map(MaybeRelocatable::from)
-        .collect()
-}
-
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a, Instructions>(
@@ -2153,10 +2141,10 @@ pub fn run_function<'a, 'b: 'a, Instructions>(
     hints_dict: HashMap<usize, Vec<HintParams>>,
 ) -> Result<RunFunctionRes, Box<CairoRunError>>
 where
-    Instructions: Iterator<Item = &'a Instruction> + Clone,
+    Instructions: Iterator<Item = &'a BigInt> + Clone,
 {
-    let data = build_program_data(instructions);
-
+    let data: Vec<MaybeRelocatable> =
+        instructions.map(Felt252::from).map(MaybeRelocatable::from).collect();
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 

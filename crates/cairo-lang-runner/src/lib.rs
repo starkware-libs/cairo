@@ -38,6 +38,7 @@ use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use thiserror::Error;
 
@@ -236,10 +237,11 @@ impl SierraCasmRunner {
         Instructions: Iterator<Item = &'a Instruction> + Clone,
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
+        let instructions = assemble_instructions(instructions);
 
         let (cells, ap) = casm_run::run_function(
             vm,
-            instructions,
+            instructions.iter(),
             builtins,
             initialize_vm,
             hint_processor,
@@ -641,6 +643,12 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)
         .map_err(|e| Box::new(e.into()))?;
     Ok(())
+}
+
+pub fn assemble_instructions<'b>(
+    instructions: impl Iterator<Item = &'b Instruction>,
+) -> Vec<BigInt> {
+    instructions.into_iter().flat_map(|is| is.assemble().encode()).collect()
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
