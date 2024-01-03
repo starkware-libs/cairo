@@ -27,12 +27,7 @@ impl NamedType for CouponType {
         _context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let function_id = match args {
-            [GenericArg::UserFunc(function_id)] => Ok(function_id.clone()),
-            [_] => Err(SpecializationError::UnsupportedGenericArg),
-            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
-        }?;
-
+        let function_id = args_as_single_user_func(args)?;
         let long_id = Self::concrete_type_long_id(args);
         Ok(Self::Concrete {
             info: TypeInfo {
