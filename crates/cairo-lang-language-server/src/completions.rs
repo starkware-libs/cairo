@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitFunctionId,
+    FunctionWithBodyId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
@@ -56,7 +56,9 @@ pub fn generic_completions(
         LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
             FunctionWithBodyId::Free(free_function_id)
         }
-        LookupItemId::ImplFunction(impl_function_id) => FunctionWithBodyId::Impl(impl_function_id),
+        LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
+            FunctionWithBodyId::Impl(impl_function_id)
+        }
         _ => {
             return completions;
         }

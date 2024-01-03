@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{
-    FileIndex, FunctionWithBodyId, LookupItemId, ModuleFileId, ModuleItemId,
+    FileIndex, FunctionWithBodyId, ImplItemId, LookupItemId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -186,7 +186,7 @@ impl SemanticTokenKind {
                     LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                         FunctionWithBodyId::Free(free_function_id)
                     }
-                    LookupItemId::ImplFunction(impl_function_id) => {
+                    LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
                         FunctionWithBodyId::Impl(impl_function_id)
                     }
                     _ => {

@@ -641,6 +641,7 @@ impl<'db> Resolver<'db> {
                 // TODO(orizi): Handle this without using `priv_module_type_alias_semantic_data`.
                 self.db
                     .priv_module_type_alias_semantic_data(module_type_alias_id)?
+                    .type_alias_data
                     .check_no_cycle()?;
 
                 let ty = self.db.module_type_alias_resolved_type(module_type_alias_id)?;
