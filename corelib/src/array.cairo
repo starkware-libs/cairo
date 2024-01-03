@@ -106,6 +106,7 @@ impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     }
 }
 
+#[inline]
 fn serialize_array_helper<T, +Serde<T>, +Drop<T>>(mut input: Span<T>, ref output: Array<felt252>) {
     match input.pop_front() {
         Option::Some(value) => {
@@ -116,6 +117,7 @@ fn serialize_array_helper<T, +Serde<T>, +Drop<T>>(mut input: Span<T>, ref output
     }
 }
 
+#[inline]
 fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
     ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
 ) -> Option<Array<T>> {

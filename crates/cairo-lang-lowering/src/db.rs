@@ -249,7 +249,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_scc(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Vec<ids::FunctionWithBodyId>;
+    ) -> Arc<Vec<ids::FunctionWithBodyId>>;
 
     // ### Feedback set ###
 
