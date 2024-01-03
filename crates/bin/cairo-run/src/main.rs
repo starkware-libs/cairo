@@ -13,6 +13,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::get_contracts_info;
 use clap::Parser;
+use itertools::Itertools;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -78,6 +79,16 @@ fn main() -> anyhow::Result<()> {
             StarknetState::default(),
         )
         .with_context(|| "Failed to run the function.")?;
+
+    println!("hotspot info:");
+    for (statement_idx, weight) in result.hotspot_info.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+    {
+        if *weight > 0 {
+            let gen_statement = sierra_program.statements.get(statement_idx.0).unwrap();
+            println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
+        }
+    }
+
     match result.value {
         cairo_lang_runner::RunResultValue::Success(values) => {
             println!("Run completed successfully, returning {values:?}")
