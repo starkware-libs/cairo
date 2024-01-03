@@ -1,6 +1,6 @@
+use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
-use super::starknet::getter::boxed_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -161,7 +161,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: boxed_ty(context, ty)?,
+                            ty: box_ty(context, ty)?,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
@@ -207,7 +207,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: boxed_ty(context, ty)?,
+                            ty: box_ty(context, ty)?,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
@@ -253,7 +253,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                 vars: vec![
                     rc_output_info.clone(),
                     OutputVarInfo {
-                        ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                        ty: box_ty(context, snapshot_ty(context, ty)?)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
@@ -343,7 +343,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ty: box_ty(context, snapshot_ty(context, ty)?)?,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
@@ -389,7 +389,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ty: box_ty(context, snapshot_ty(context, ty)?)?,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
