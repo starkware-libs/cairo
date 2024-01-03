@@ -293,15 +293,6 @@ impl SierraCasmRunner {
         for trace_entry in vm.get_relocated_trace().unwrap() {
             let sierra_statement_idx = self.map_casm_pc_to_sierra_statement(trace_entry.pc);
             *(mapping.get_mut(&sierra_statement_idx).unwrap()) += 1;
-            // TODO(yg): remove. this is if the mapping is not initialized.
-            // match mapping.entry(sierra_statement_idx) {
-            //     std::collections::hash_map::Entry::Occupied(x) => {
-            //         x.insert(x.get() + 1);
-            //     }
-            //     std::collections::hash_map::Entry::Vacant(x) => {
-            //         x.insert(1);
-            //     }
-            // }
         }
 
         Ok(RunResult { gas_counter, memory: cells, value, hotspot_info: mapping })

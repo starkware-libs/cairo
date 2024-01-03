@@ -9,6 +9,7 @@ description = "Runner executable for the Cairo programming language"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+itertools.workspace = true
 
 cairo-lang-runner = { path = "../../cairo-lang-runner", version = "2.4.1" }
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.1" }
