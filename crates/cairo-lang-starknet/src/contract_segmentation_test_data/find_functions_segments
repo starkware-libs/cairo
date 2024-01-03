@@ -1,7 +1,7 @@
 //! > success
 
 //! > test_runner_name
-FindSegmentTest
+FindFunctionsSegmentsTest
 
 //! > sierra
 type felt252 = felt252;
@@ -45,7 +45,7 @@ Ok([0, 15])
 //! > No function start at zero
 
 //! > test_runner_name
-FindSegmentTest
+FindFunctionsSegmentsTest
 
 //! > sierra
 type felt252 = felt252;
@@ -67,7 +67,7 @@ Err(NoFunctionStartAtZero)
 //! > jump outside function (fallthrough)
 
 //! > test_runner_name
-FindSegmentTest
+FindFunctionsSegmentsTest
 
 //! > sierra
 type felt252 = felt252;
@@ -94,7 +94,7 @@ Err(JumpOutsideFunction(StatementIdx(1)))
 //! > jump outside function (after)
 
 //! > test_runner_name
-FindSegmentTest
+FindFunctionsSegmentsTest
 
 //! > sierra
 type felt252 = felt252;
@@ -121,7 +121,7 @@ Err(JumpOutsideFunction(StatementIdx(1)))
 //! > jump outside function (before)
 
 //! > test_runner_name
-FindSegmentTest
+FindFunctionsSegmentsTest
 
 //! > sierra
 type felt252 = felt252;
