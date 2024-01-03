@@ -119,6 +119,201 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 
 //! > ==========================================================================
 
+//! > u8_inc libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u8) -> core::integer::InvertedOption<u8> {
+    integer::u8_inc(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 255, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::u8> = Enum<ut@core::integer::InvertedOption::<core::integer::u8>, Unit, u8> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u8_inc = u8_inc;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::u8>, 0> = enum_init<core::integer::InvertedOption::<core::integer::u8>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::u8>> = store_temp<core::integer::InvertedOption::<core::integer::u8>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::u8>, 1> = enum_init<core::integer::InvertedOption::<core::integer::u8>, 1>;
+
+u8_inc([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::u8>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::u8>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::u8>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::u8>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: u8) -> (core::integer::InvertedOption::<core::integer::u8>);
+
+//! > ==========================================================================
+
+//! > u8_dec libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u8) -> core::integer::InvertedOption<u8> {
+    integer::u8_dec(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 0, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + -1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::u8> = Enum<ut@core::integer::InvertedOption::<core::integer::u8>, Unit, u8> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u8_dec = u8_dec;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::u8>, 0> = enum_init<core::integer::InvertedOption::<core::integer::u8>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::u8>> = store_temp<core::integer::InvertedOption::<core::integer::u8>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::u8>, 1> = enum_init<core::integer::InvertedOption::<core::integer::u8>, 1>;
+
+u8_dec([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::u8>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::u8>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::u8>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::u8>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: u8) -> (core::integer::InvertedOption::<core::integer::u8>);
+
+//! > ==========================================================================
+
+//! > u8_dec u8_add libfunc mix.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::num::traits::Inc;
+use core::num::traits::Dec;
+fn foo(value: u8) -> Option<u8> {
+    value.inc()?.dec()?.dec()?.inc()
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 255, ap++;
+jmp rel 9 if [ap + -1] != 0;
+ap += 3;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = [fp + -3] + 1, ap++;
+jmp rel 9 if [ap + -1] != 0;
+ap += 2;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[fp + -3] = [ap + 0] + 0, ap++;
+jmp rel 9 if [ap + -1] != 0;
+ap += 1;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = [fp + -3] + -256, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3] + 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1100})
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::integer::u8> = Enum<ut@core::option::Option::<core::integer::u8>, u8, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u8_inc = u8_inc;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::u8>, 1> = enum_init<core::option::Option::<core::integer::u8>, 1>;
+libfunc store_temp<core::option::Option::<core::integer::u8>> = store_temp<core::option::Option::<core::integer::u8>>;
+libfunc u8_dec = u8_dec;
+libfunc jump = jump;
+libfunc enum_init<core::option::Option::<core::integer::u8>, 0> = enum_init<core::option::Option::<core::integer::u8>, 0>;
+
+u8_inc([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::option::Option::<core::integer::u8>, 1>([2]) -> ([3]); // 3
+store_temp<core::option::Option::<core::integer::u8>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+u8_dec([1]) { fallthrough() 13([4]) }; // 7
+branch_align() -> (); // 8
+struct_construct<Unit>() -> ([5]); // 9
+enum_init<core::option::Option::<core::integer::u8>, 1>([5]) -> ([6]); // 10
+store_temp<core::option::Option::<core::integer::u8>>([6]) -> ([6]); // 11
+return([6]); // 12
+branch_align() -> (); // 13
+u8_dec([4]) { fallthrough() 20([7]) }; // 14
+branch_align() -> (); // 15
+struct_construct<Unit>() -> ([8]); // 16
+enum_init<core::option::Option::<core::integer::u8>, 1>([8]) -> ([9]); // 17
+store_temp<core::option::Option::<core::integer::u8>>([9]) -> ([9]); // 18
+return([9]); // 19
+branch_align() -> (); // 20
+u8_inc([7]) { fallthrough() 27([10]) }; // 21
+branch_align() -> (); // 22
+struct_construct<Unit>() -> ([11]); // 23
+enum_init<core::option::Option::<core::integer::u8>, 1>([11]) -> ([12]); // 24
+store_temp<core::option::Option::<core::integer::u8>>([12]) -> ([13]); // 25
+jump() { 30() }; // 26
+branch_align() -> (); // 27
+enum_init<core::option::Option::<core::integer::u8>, 0>([10]) -> ([14]); // 28
+store_temp<core::option::Option::<core::integer::u8>>([14]) -> ([13]); // 29
+return([13]); // 30
+
+test::foo@0([0]: u8) -> (core::option::Option::<core::integer::u8>);
+
+//! > ==========================================================================
+
 //! > u8_eq libfunc (a deref, b deref)
 
 //! > test_runner_name

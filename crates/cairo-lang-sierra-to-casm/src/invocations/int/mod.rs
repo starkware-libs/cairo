@@ -133,3 +133,35 @@ fn build_128bit_diff(
         },
     ))
 }
+
+/// Handles the update of a small step to an integer.
+/// `step` is the small step (currently only 1 or -1).
+/// `bound` is the edge value before an overflow of the type.
+fn build_step(
+    builder: CompiledInvocationBuilder<'_>,
+    step: isize,
+    bound: BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(0) value;
+    };
+
+    casm_build_extend! {casm_builder,
+        const step = step;
+        const bound = bound;
+        let result = value + step;
+        tempvar value_minus_bound = value - bound;
+        jump NoOverflow if value_minus_bound != 0;
+    };
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[], None),
+            ("NoOverflow", &[&[result]], Some(failure_handle_statement_id)),
+        ],
+        Default::default(),
+    ))
+}

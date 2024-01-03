@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use super::unsigned128::Uint128Type;
 use super::{
-    IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits,
-    IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits, IntType,
-    IntWideMulLibfunc,
+    IntConstLibfunc, IntDecLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntIncLibfunc,
+    IntMulTraits, IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits,
+    IntType, IntWideMulLibfunc,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bitwise::BitwiseType;
@@ -241,6 +241,8 @@ define_libfunc_hierarchy! {
         Equal(IntEqualLibfunc<TUintTraits>),
         ToFelt252(IntToFelt252Libfunc<TUintTraits>),
         FromFelt252(IntFromFelt252Libfunc<TUintTraits>),
+        Inc(IntIncLibfunc<TUintTraits>),
+        Dec(IntDecLibfunc<TUintTraits>),
         IsZero(IsZeroLibfunc<TUintTraits>),
         Divmod(UintDivmodLibfunc<TUintTraits>),
         WideMul(IntWideMulLibfunc<TUintTraits>),
@@ -259,6 +261,8 @@ impl IntTraits for Uint8Traits {
     const EQUAL: &'static str = "u8_eq";
     const TO_FELT252: &'static str = "u8_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u8_try_from_felt252";
+    const INC: &'static str = "u8_inc";
+    const DEC: &'static str = "u8_dec";
 }
 
 impl UintTraits for Uint8Traits {
@@ -296,6 +300,8 @@ impl IntTraits for Uint16Traits {
     const EQUAL: &'static str = "u16_eq";
     const TO_FELT252: &'static str = "u16_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u16_try_from_felt252";
+    const INC: &'static str = "u16_inc";
+    const DEC: &'static str = "u16_dec";
 }
 
 impl UintTraits for Uint16Traits {
@@ -333,6 +339,8 @@ impl IntTraits for Uint32Traits {
     const EQUAL: &'static str = "u32_eq";
     const TO_FELT252: &'static str = "u32_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u32_try_from_felt252";
+    const INC: &'static str = "u32_inc";
+    const DEC: &'static str = "u32_dec";
 }
 
 impl UintTraits for Uint32Traits {
@@ -370,6 +378,8 @@ impl IntTraits for Uint64Traits {
     const EQUAL: &'static str = "u64_eq";
     const TO_FELT252: &'static str = "u64_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u64_try_from_felt252";
+    const INC: &'static str = "u64_inc";
+    const DEC: &'static str = "u64_dec";
 }
 
 impl UintTraits for Uint64Traits {

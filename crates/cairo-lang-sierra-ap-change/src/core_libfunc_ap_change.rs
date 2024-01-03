@@ -176,6 +176,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     vec![ApChange::Known(2), ApChange::Known(3)]
                 }
             },
+            Uint128Concrete::Inc(_) | Uint128Concrete::Dec(_) => {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
             Uint128Concrete::Divmod(_) => vec![ApChange::Known(7)],
             Uint128Concrete::GuaranteeMul(_) => vec![ApChange::Known(2)],
             Uint128Concrete::MulGuaranteeVerify(_) => vec![ApChange::Known(15)],
@@ -205,6 +208,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Sint128(libfunc) => match libfunc {
             Sint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Sint128Concrete::FromFelt252(_) => vec![ApChange::Known(2), ApChange::Known(7)],
+            Sint128Concrete::Inc(_) | Sint128Concrete::Dec(_) => {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
             Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
                 vec![ApChange::Known(0)]
             }
@@ -356,6 +362,7 @@ fn uint_ap_change<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits>(
         UintConcrete::Divmod(_) => vec![ApChange::Known(5)],
         UintConcrete::WideMul(_) => vec![ApChange::Known(0)],
         UintConcrete::Bitwise(_) => vec![ApChange::Known(0)],
+        UintConcrete::Inc(_) | UintConcrete::Dec(_) => vec![ApChange::Known(1), ApChange::Known(1)],
     }
 }
 
@@ -373,5 +380,6 @@ fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
             vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]
         }
         SintConcrete::Diff(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+        SintConcrete::Inc(_) | SintConcrete::Dec(_) => vec![ApChange::Known(1), ApChange::Known(1)],
     }
 }

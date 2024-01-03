@@ -110,6 +110,108 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > ==========================================================================
 
+//! > i64_inc libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: i64) -> core::integer::InvertedOption<i64> {
+    integer::i64_inc(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 9223372036854775807, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::i64> = Enum<ut@core::integer::InvertedOption::<core::integer::i64>, Unit, i64> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i64_inc = i64_inc;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i64>, 0> = enum_init<core::integer::InvertedOption::<core::integer::i64>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::i64>> = store_temp<core::integer::InvertedOption::<core::integer::i64>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i64>, 1> = enum_init<core::integer::InvertedOption::<core::integer::i64>, 1>;
+
+i64_inc([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::i64>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::i64>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::i64>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::i64>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i64) -> (core::integer::InvertedOption::<core::integer::i64>);
+
+//! > ==========================================================================
+
+//! > i64_dec libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: i64) -> core::integer::InvertedOption<i64> {
+    integer::i64_dec(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + -9223372036854775808, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + -1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::i64> = Enum<ut@core::integer::InvertedOption::<core::integer::i64>, Unit, i64> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i64_dec = i64_dec;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i64>, 0> = enum_init<core::integer::InvertedOption::<core::integer::i64>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::i64>> = store_temp<core::integer::InvertedOption::<core::integer::i64>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i64>, 1> = enum_init<core::integer::InvertedOption::<core::integer::i64>, 1>;
+
+i64_dec([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::i64>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::i64>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::i64>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::i64>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i64) -> (core::integer::InvertedOption::<core::integer::i64>);
+
+//! > ==========================================================================
+
 //! > i64_eq libfunc (a deref, b deref)
 
 //! > test_runner_name

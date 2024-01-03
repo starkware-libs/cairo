@@ -583,6 +583,9 @@ fn uint_libfunc_cost<TUintTraits: UintTraits + IsZeroTraits + IntMulTraits>(
                 pre_cost: PreCost::builtin(CostTokenType::Bitwise),
             }]
         }
+        UintConcrete::Inc(_) | UintConcrete::Dec(_) => {
+            vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
+        }
     }
 }
 
@@ -634,6 +637,9 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
             const_cost: ConstCost::steps(24),
             pre_cost: PreCost(OrderedHashMap::from_iter([(CostTokenType::Bitwise, 4)])),
         }],
+        Uint128Concrete::Inc(_) | Uint128Concrete::Dec(_) => {
+            vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
+        }
     }
 }
 
@@ -687,6 +693,9 @@ fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
             (ConstCost { steps: 3, holes: 0, range_checks: 1 }).into(),
             (ConstCost { steps: 5, holes: 0, range_checks: 1 }).into(),
         ],
+        SintConcrete::Inc(_) | SintConcrete::Dec(_) => {
+            vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
+        }
     }
 }
 
@@ -702,6 +711,9 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
                 ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
                 ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
             ]
+        }
+        Sint128Concrete::Inc(_) | Sint128Concrete::Dec(_) => {
+            vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
         }
         Sint128Concrete::IsZero(_) => {
             vec![steps(1).into(), steps(1).into()]

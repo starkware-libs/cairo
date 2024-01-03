@@ -5,6 +5,7 @@ use core::{
         u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
     }
 };
+use core::num::traits::{Inc, Dec};
 use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
 
 #[test]
@@ -1845,4 +1846,40 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 3).unwrap(), @0, 'i128: 3 - 3 == 0');
     assert_eq(@integer::i128_diff(4, 3).unwrap(), @1, 'i128: 4 - 3 == 1');
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
+}
+
+/// Checks if `T` inc and dec works as expected.
+fn inc_dec_valid<
+    T,
+    +Drop<T>,
+    +Copy<T>,
+    +BoundedInt<T>,
+    +PartialEq<T>,
+    +Add<T>,
+    +Sub<T>,
+    +core::num::traits::One<T>,
+    +core::num::traits::Inc<T>,
+    +core::num::traits::Dec<T>,
+>() -> bool {
+    let min = BoundedInt::<T>::min();
+    let max = BoundedInt::<T>::max();
+    let one = core::num::traits::One::<T>::one();
+    min.inc() == Option::Some(min + one)
+        && max.inc().is_none()
+        && min.dec().is_none()
+        && max.dec() == Option::Some(max - one)
+}
+
+#[test]
+fn test_inc_and_dec() {
+    assert!(inc_dec_valid::<u8>());
+    assert!(inc_dec_valid::<u16>());
+    assert!(inc_dec_valid::<u32>());
+    assert!(inc_dec_valid::<u64>());
+    assert!(inc_dec_valid::<u128>());
+    assert!(inc_dec_valid::<i8>());
+    assert!(inc_dec_valid::<i16>());
+    assert!(inc_dec_valid::<i32>());
+    assert!(inc_dec_valid::<i64>());
+    assert!(inc_dec_valid::<i128>());
 }

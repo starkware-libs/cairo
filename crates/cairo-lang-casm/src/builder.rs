@@ -375,11 +375,28 @@ impl CasmBuilder {
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
-        self.add_var(CellExpression::BinOp {
-            op,
-            a: self.as_cell_ref(lhs, false),
-            b: self.as_deref_or_imm(rhs, false),
-        })
+        let lhs = self.get_value(lhs, false);
+        let rhs = self.get_value(rhs, false);
+        let (op, a, b) = match (&lhs, &rhs) {
+            (
+                CellExpression::BinOp { op: inner_op, a, b: DerefOrImmediate::Immediate(left_imm) },
+                CellExpression::Immediate(right_imm),
+            ) if [inner_op, &op]
+                .into_iter()
+                .all(|op| matches!(op, CellOperator::Add | CellOperator::Sub)) =>
+            {
+                let left_imm = &left_imm.value;
+                let final_imm =
+                    if inner_op == &op { left_imm + right_imm } else { left_imm - right_imm };
+                (inner_op.clone(), *a, DerefOrImmediate::Immediate(final_imm.into()))
+            }
+            _ => (
+                op,
+                lhs.to_deref().expect("lhs must be a cell ref."),
+                rhs.to_deref_or_immediate().expect("rhs must a cell ref or imm."),
+            ),
+        };
+        self.add_var(CellExpression::BinOp { op, a, b })
     }
 
     /// Returns a variable that is `[[var] + offset]`.
@@ -575,17 +592,6 @@ impl CasmBuilder {
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.
     fn as_cell_ref(&self, var: Var, adjust_ap: bool) -> CellRef {
         extract_matches!(self.get_value(var, adjust_ap), CellExpression::Deref)
-    }
-
-    /// Returns `var`s value as a cell reference or immediate, with fixed ap if `adjust_ap` is true.
-    fn as_deref_or_imm(&self, var: Var, adjust_ap: bool) -> DerefOrImmediate {
-        match self.get_value(var, adjust_ap) {
-            CellExpression::Deref(cell) => DerefOrImmediate::Deref(cell),
-            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.into()),
-            CellExpression::DoubleDeref(_, _) | CellExpression::BinOp { .. } => {
-                panic!("wrong usage.")
-            }
-        }
     }
 
     /// Returns `var`s value as a cell reference plus a small const offset, with fixed ap if

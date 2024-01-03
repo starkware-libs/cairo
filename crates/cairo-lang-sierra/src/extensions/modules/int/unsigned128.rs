@@ -2,7 +2,10 @@ use super::unsigned::{
     Uint64Type, UintBitwiseLibfunc, UintDivmodLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
     UintTraits,
 };
-use super::{IntConstLibfunc, IntEqualLibfunc, IntToFelt252Libfunc, IntTraits, IntType};
+use super::{
+    IntConstLibfunc, IntDecLibfunc, IntEqualLibfunc, IntIncLibfunc, IntToFelt252Libfunc, IntTraits,
+    IntType,
+};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
@@ -49,6 +52,8 @@ define_libfunc_hierarchy! {
         IsZero(IsZeroLibfunc<Uint128Traits>),
         Bitwise(UintBitwiseLibfunc<Uint128Traits>),
         ByteReverse(U128ByteReverseLibfunc),
+        Inc(IntIncLibfunc<Uint128Traits>),
+        Dec(IntDecLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
 
@@ -63,6 +68,8 @@ impl IntTraits for Uint128Traits {
     const EQUAL: &'static str = "u128_eq";
     const TO_FELT252: &'static str = "u128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u128_try_from_felt252";
+    const INC: &'static str = "u128_inc";
+    const DEC: &'static str = "u128_dec";
 }
 
 impl UintTraits for Uint128Traits {
