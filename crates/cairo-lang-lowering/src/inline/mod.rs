@@ -13,7 +13,7 @@ use itertools::{izip, Itertools};
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
@@ -82,7 +82,13 @@ fn gather_inlining_info(
         }
         return Ok(InlineInfo { is_inlinable: false, should_inline: false });
     }
-
+    // Generated functions are automatically loop unrolled.
+    if matches!(
+        db.lookup_intern_lowering_function_with_body(function_id),
+        FunctionWithBodyLongId::Generated { .. }
+    ) {
+        return Ok(InlineInfo { is_inlinable: false, should_inline: true });
+    }
     let lowered = db.function_with_body_lowering(function_id)?;
 
     Ok(InlineInfo { is_inlinable: true, should_inline: should_inline(db, &lowered)? })
@@ -132,6 +138,7 @@ pub struct FunctionInlinerRewriter<'db> {
 #[derive(Default)]
 pub struct StatementStack {
     stack: Vec<Statement>,
+    total_size: usize,
 }
 
 impl StatementStack {
@@ -141,6 +148,7 @@ impl StatementStack {
     /// they need to be pushed in reverse order.
     fn push_statements(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
         self.stack.extend(statements.rev());
+        self.total_size += self.stack.len();
     }
 
     // Consumes all the statements in the stack.
@@ -303,7 +311,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                         || matches!(inline_data.config, InlineConfiguration::Always(_)))
                 {
                     if matches!(inline_data.config, InlineConfiguration::Should(_)) {
-                        if !self.is_function_in_call_stack(function_id) {
+                        if self.should_inline_heuristic(function_id)? {
                             return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                         }
                     } else {
@@ -317,18 +325,30 @@ impl<'db> FunctionInlinerRewriter<'db> {
         Ok(())
     }
 
-    fn is_function_in_call_stack(&self, function_id: ConcreteFunctionWithBodyId) -> bool {
-        let mut current_block = &self.current_block_id;
-        if self.block_to_function[current_block] == function_id {
-            return true;
+    /// A heuristic to decide if a function should be inlined.
+    /// If the function is in the call stack, then we should not inline it, unless we are in a loop
+    /// unrolling scenario.
+    fn should_inline_heuristic(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool> {
+        let db = self.variables.db;
+        if !db.in_cycle(function_id.function_with_body_id(db))?
+            || !db.in_cycle(
+                self.block_to_function[&self.current_block_id].function_with_body_id(db),
+            )?
+        {
+            return Ok(true);
         }
-        while let Some(block_id) = self.block_to_parent.get(current_block) {
-            if self.block_to_function[block_id] == function_id {
-                return true;
-            }
-            current_block = block_id;
+        // This means we are in loop unrolling.
+        // We do not unroll loops in the caller function.
+        if db.in_cycle(self.block_to_function[&BlockId(0)].function_with_body_id(db))? {
+            return Ok(false);
         }
-        false
+        let lowered = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
+        let statement_count = lowered.blocks.iter().fold(
+            self.statement_rewrite_stack.total_size + lowered.blocks.len(),
+            |acc, (_, block)| acc + block.statements.len(),
+        );
+        const LOOP_UNROLLING_THRESHOLD: usize = 20;
+        Ok(statement_count <= LOOP_UNROLLING_THRESHOLD)
     }
 
     /// Inlines the given function, with the given input and output variables.
