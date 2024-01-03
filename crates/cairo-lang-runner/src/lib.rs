@@ -447,7 +447,7 @@ impl SierraCasmRunner {
                     [ap + 0] = [[ap - arr_at] + i.into_or_panic()], ap++;
                 }
             }
-            ap_offset += (1 + values.len()).into_or_panic();
+            ap_offset += (1 + values.len()).into_or_panic::<i16>();
         }
         let after_vecs_offset = ap_offset;
         if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
