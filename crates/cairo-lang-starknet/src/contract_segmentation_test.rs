@@ -57,7 +57,7 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
 cairo_lang_test_utils::test_file_test_with_runner!(
     test_bytecode_segment_lengths,
     "src/contract_segmentation_test_data",
-    { find_functions_segments: "bytecode_segment_lengths" },
+    { bytecode_segment_lengths: "bytecode_segment_lengths" },
     BytecodeSegmentLengthTest
 );
 
