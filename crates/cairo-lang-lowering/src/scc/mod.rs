@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
+use salsa::InternKey;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionWithBodyId;
@@ -8,8 +11,13 @@ use crate::ids::FunctionWithBodyId;
 pub fn function_with_body_scc(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
-) -> Vec<FunctionWithBodyId> {
-    compute_scc(&FunctionWithBodyNode { function_with_body_id: function_id, db: db.upcast() })
+) -> Arc<Vec<FunctionWithBodyId>> {
+    let mut scc =
+        compute_scc(&FunctionWithBodyNode { function_with_body_id: function_id, db: db.upcast() });
+    // Sort the SCCs by their lowest function ID, just for comparison purposes. This would not
+    // necessarily be stable between runs.
+    scc.sort_by_key(|id| id.as_intern_id());
+    Arc::new(scc)
 }
 
 /// A node to use in the SCC computation.
