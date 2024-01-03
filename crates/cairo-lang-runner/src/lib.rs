@@ -454,7 +454,7 @@ impl SierraCasmRunner {
                     [ap + 0] = [[ap - arr_at] + i.into_or_panic()], ap++;
                 }
             }
-            ap_offset += (1 + values.len()).into_or_panic();
+            ap_offset += (1 + values.len()).into_or_panic::<i16>();
         }
         let mut array_args_data_iter = array_args_data.iter();
         let after_arrays_data_offset = ap_offset;
