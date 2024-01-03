@@ -207,27 +207,33 @@ impl NoGenericArgsGenericType for BuiltinCostsType {
     const DROPPABLE: bool = true;
     const ZERO_SIZED: bool = false;
 }
-
-/// Libfunc for withdrawing gas to be used by a builtin.
-#[derive(Default)]
-pub struct BuiltinCostWithdrawGasLibfunc;
-impl BuiltinCostWithdrawGasLibfunc {
+impl BuiltinCostsType {
     /// Returns the number of steps required for the computation of the requested cost, given the
-    /// number of requested token usages. The number of steps is also the change in `ap` (every
-    /// step includes `ap++`).
+    /// number of requested token usages. The number of steps is also the change in `ap`.
+    /// If `table_available` is false, the number of steps includes the cost of fetching the builtin
+    /// cost table.
     pub fn cost_computation_steps<TokenUsages: Fn(CostTokenType) -> usize>(
+        table_available: bool,
         token_usages: TokenUsages,
     ) -> usize {
-        CostTokenType::iter_precost()
+        let calculation_steps = CostTokenType::iter_precost()
             .map(|token_type| match token_usages(*token_type) {
                 0 => 0,
                 1 => 2,
                 _ => 3,
             })
-            .sum()
+            .sum();
+        if calculation_steps > 0 && !table_available {
+            calculation_steps + 4
+        } else {
+            calculation_steps
+        }
     }
 }
 
+/// Libfunc for withdrawing gas to be used by a builtin.
+#[derive(Default)]
+pub struct BuiltinCostWithdrawGasLibfunc;
 impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
     const STR_ID: &'static str = "withdraw_gas_all";
 
