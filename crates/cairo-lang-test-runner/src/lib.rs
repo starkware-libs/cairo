@@ -367,9 +367,6 @@ pub fn run_tests(
                 println!("test {name} ... {status_str}");
             }
             if let Some(hotspot_info) = hotspot_info {
-                // let vector: Vec<_> = hotspot_info.iter().sorted();
-                // vector.sort_by(compare)
-                // hotspot_info.filter(|(k, v)| v > 0);
                 println!("hotspot info:");
                 for (statement_idx, weight) in
                     hotspot_info.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
