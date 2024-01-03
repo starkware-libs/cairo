@@ -589,7 +589,8 @@ impl SierraCasmRunner {
     }
 }
 
-/// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end of the program
+/// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end
+/// of the program
 pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRunError>> {
     let vm = context.vm;
     // Create the builtin cost segment, with dummy values.
