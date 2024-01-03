@@ -13,7 +13,7 @@ use super::format_for_debug;
 use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::run_function;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
+use crate::{assemble_instructions, build_hints_dict, CairoHintProcessor, StarknetState};
 
 #[test_case(
     casm! {
@@ -119,7 +119,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
 
     let (cells, ap) = run_function(
         &mut VirtualMachine::new(true),
-        function.instructions.iter(),
+        assemble_instructions(function.instructions.iter()).iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
@@ -152,7 +152,7 @@ fn test_allocate_segment() {
 
     let (memory, ap) = run_function(
         &mut VirtualMachine::new(true),
-        casm.instructions.iter(),
+        assemble_instructions(casm.instructions.iter()).iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
