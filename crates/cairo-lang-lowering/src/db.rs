@@ -273,7 +273,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ids::FunctionWithBodyId,
         dependency_type: DependencyType,
-    ) -> Vec<ids::FunctionWithBodyId>;
+    ) -> Arc<Vec<ids::FunctionWithBodyId>>;
 
     // ### Feedback set ###
 
