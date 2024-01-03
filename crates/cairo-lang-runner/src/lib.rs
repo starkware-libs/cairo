@@ -440,13 +440,13 @@ impl SierraCasmRunner {
                 ap += 1;
             }
             for (i, v) in values.iter().enumerate() {
-                let arr_at = i16::try_from(i + 1).unwrap();
+                let arr_at: i16 = (i + 1).into_or_panic();
                 casm_extend! {ctx,
                     [ap + 0] = (v.to_bigint());
-                    [ap + 0] = [[ap - arr_at] + i16::try_from(i).unwrap()], ap++;
+                    [ap + 0] = [[ap - arr_at] + i.into_or_panic()], ap++;
                 }
             }
-            ap_offset += i16::try_from(1 + values.len()).unwrap();
+            ap_offset += (1 + values.len()).into_or_panic();
         }
         let after_vecs_offset = ap_offset;
         if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
