@@ -104,16 +104,16 @@ fn test_valdiate_gas_cost() {
 
     let available_gas1 = core::testing::get_available_gas();
     let gas_usage = 500000 - available_gas1;
-    assert!(gas_usage == 149200, "Unexpected call building cost `{gas_usage}`.");
+    assert!(gas_usage == 162470, "Unexpected call building cost `{gas_usage}`.");
 
     let serialized_args = serialized(calls);
     let available_gas2 = core::testing::get_available_gas();
 
     let gas_usage = available_gas1 - available_gas2;
-    assert!(gas_usage == 72400, "Unexpected serialization cost `{gas_usage}`.");
+    assert!(gas_usage == 55820, "Unexpected serialization cost `{gas_usage}`.");
 
     test_contract::__wrapper____validate__(serialized_args);
     let available_gas3 = core::testing::get_available_gas();
     let gas_usage = available_gas2 - available_gas3;
-    assert!(gas_usage == 78250, "Unexpected entry point cost `{gas_usage}`.");
+    assert!(gas_usage == 74440, "Unexpected entry point cost `{gas_usage}`.");
 }
