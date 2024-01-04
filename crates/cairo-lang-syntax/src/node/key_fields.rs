@@ -80,6 +80,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprLoop => {
             vec![]
         }
+        SyntaxKind::ExprWhile => {
+            vec![]
+        }
         SyntaxKind::ElseClause => {
             vec![]
         }
@@ -398,6 +401,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenIf => vec![],
         SyntaxKind::TerminalIf => {
+            vec![]
+        }
+        SyntaxKind::TokenWhile => vec![],
+        SyntaxKind::TerminalWhile => {
             vec![]
         }
         SyntaxKind::TokenLoop => vec![],

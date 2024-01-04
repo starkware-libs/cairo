@@ -236,7 +236,7 @@ libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::acc
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>;
 libfunc array_new<core::array::Span::<core::felt252>> = array_new<core::array::Span::<core::felt252>>;
 libfunc store_temp<Array<core::array::Span::<core::felt252>>> = store_temp<Array<core::array::Span::<core::felt252>>>;
-libfunc function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]> = function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>;
+libfunc function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr35]> = function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr35]>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>> = enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>;
 libfunc struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>> = struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>;
 libfunc struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Array<core::array::Span::<core::felt252>>>> = struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Array<core::array::Span::<core::felt252>>>>;
@@ -1448,7 +1448,7 @@ store_temp<GasBuiltin>([22]) -> ([22]); // 1031
 store_temp<System>([23]) -> ([23]); // 1032
 store_temp<Array<core::starknet::account::Call>>([4]) -> ([4]); // 1033
 store_temp<Array<core::array::Span::<core::felt252>>>([63]) -> ([63]); // 1034
-function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>([0], [22], [23], [4], [63]) -> ([64], [65], [66], [67]); // 1035
+function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr35]>([0], [22], [23], [4], [63]) -> ([64], [65], [66], [67]); // 1035
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>([67]) { fallthrough([68]) 1048([69]) }; // 1036
 branch_align() -> (); // 1037
 struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>([68]) -> ([70], [71], [72]); // 1038
@@ -1971,7 +1971,7 @@ store_temp<GasBuiltin>([33]) -> ([33]); // 1554
 store_temp<System>([34]) -> ([34]); // 1555
 store_temp<Array<core::starknet::account::Call>>([14]) -> ([14]); // 1556
 store_temp<Array<core::array::Span::<core::felt252>>>([41]) -> ([41]); // 1557
-function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]>([5], [33], [34], [14], [41]) -> ([42], [43], [44], [45]); // 1558
+function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr35]>([5], [33], [34], [14], [41]) -> ([42], [43], [44], [45]); // 1558
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>([45]) { fallthrough([46]) 1569([47]) }; // 1559
 branch_align() -> (); // 1560
 struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>([46]) -> ([48], [49], [50]); // 1561
@@ -2631,7 +2631,7 @@ core::array::array_at::<core::felt252>@1203([0]: RangeCheck, [1]: Snapshot<Array
 core::ecdsa::check_ecdsa_signature@1221([0]: RangeCheck, [1]: EcOp, [2]: felt252, [3]: felt252, [4]: felt252, [5]: felt252) -> (RangeCheck, EcOp, core::bool);
 core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>@1405([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<core::starknet::account::Call>, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>);
 core::starknet::info::get_caller_address@1488([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr34]@1512([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
+cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr35]@1512([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
 core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>@1612([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::array::Span::<core::felt252>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 cairo_level_tests::contracts::account::account::__member_module_public_key::InternalContractMemberStateImpl::write@1701([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::__member_module_public_key::ContractMemberState, ())>);
 core::starknet::info::get_execution_info@1738([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);

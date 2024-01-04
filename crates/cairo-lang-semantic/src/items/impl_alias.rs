@@ -48,8 +48,7 @@ pub fn priv_impl_alias_semantic_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
-    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
     let generic_params = generic_params_data.generic_params.clone();
@@ -99,8 +98,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
 ) -> Maybe<ImplAliasData> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
-    let impl_alias_ast = module_impl_aliases.get(impl_alias_id).to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(*impl_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
     let generic_params_data = db.impl_alias_generic_params_data(*impl_alias_id)?;
@@ -151,8 +149,7 @@ pub fn impl_alias_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
-    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::ImplAlias(impl_alias_id),
@@ -193,15 +190,12 @@ pub fn impl_alias_attributes(
 pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-
-    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
-    let syntax_db = db.upcast();
-    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    let impl_path_syntax = impl_alias_ast.impl_path(syntax_db);
+    let impl_path_syntax = impl_alias_ast.impl_path(db.upcast());
 
     match resolver.resolve_generic_path_with_args(
         &mut diagnostics,

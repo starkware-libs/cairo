@@ -2,7 +2,7 @@ use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -102,26 +102,18 @@ pub fn compute_costs<
 
     context.prepare_wallet(specific_cost_context)?;
 
-    if SpecificCostContext::should_handle_excess() {
-        // Compute the excess cost and the corresponding target value for each statement.
-        context.target_values = context.compute_target_values(specific_cost_context)?;
+    // Compute the excess cost and the corresponding target value for each statement.
+    context.target_values = context.compute_target_values(specific_cost_context)?;
 
-        // Recompute the wallet values for each statement, after setting the target values.
-        context.costs = Default::default();
-        context.prepare_wallet(specific_cost_context)?;
+    // Recompute the wallet values for each statement, after setting the target values.
+    context.costs = Default::default();
+    context.prepare_wallet(specific_cost_context)?;
 
-        // Check that enforcing the wallet values succeeded.
-        for (idx, value) in enforced_wallet_values.iter() {
-            if context.wallet_at_ex(idx, false).value != *value {
-                return Err(CostError::EnforceWalletValueFailed(*idx));
-            }
+    // Check that enforcing the wallet values succeeded.
+    for (idx, value) in enforced_wallet_values.iter() {
+        if context.wallet_at_ex(idx, false).value != *value {
+            return Err(CostError::EnforceWalletValueFailed(*idx));
         }
-    } else {
-        // Check that enforced_wallet_values is empty.
-        assert!(
-            enforced_wallet_values.is_empty(),
-            "enforced_wallet_values cannot be used when should_handle_excess is false."
-        );
     }
 
     let mut variable_values = VariableValues::default();
@@ -287,9 +279,6 @@ fn analyze_gas_statements<
 }
 
 pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
-    /// Returns `true` if excess cost should be computed and handled.
-    fn should_handle_excess() -> bool;
-
     /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
     fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64>;
 
@@ -670,10 +659,6 @@ fn compute_topological_order(
 pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
-    fn should_handle_excess() -> bool {
-        false
-    }
-
     fn to_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
         let res = cost.0;
         res.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
@@ -704,7 +689,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     ) -> WalletInfo<PreCost> {
         let branch_cost = match branch_cost {
             BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
-            BranchCost::BranchAlign => Default::default(),
+            BranchCost::BranchAlign | BranchCost::RedepositGas => Default::default(),
             BranchCost::FunctionCost { const_cost: _, function, sign } => {
                 let func_cost = wallet_at_fn(&function.entry_point).value;
                 match sign {
@@ -721,7 +706,6 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
                     Default::default()
                 }
             }
-            BranchCost::RedepositGas => Default::default(),
         };
         let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
         WalletInfo::from(branch_cost) + future_wallet_value
@@ -734,10 +718,6 @@ pub struct PostcostContext<'a> {
 }
 
 impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
-    fn should_handle_excess() -> bool {
-        true
-    }
-
     fn to_cost_map(cost: i32) -> OrderedHashMap<CostTokenType, i64> {
         if cost == 0 { Default::default() } else { Self::to_full_cost_map(cost) }
     }
@@ -796,7 +776,7 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
                 }
                 cost
             }
-            BranchCost::RedepositGas => 0,
+            BranchCost::RedepositGas => self.compute_redeposit_gas_cost(idx),
         };
         let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
         WalletInfo { value: branch_cost_val } + future_wallet_value
@@ -809,6 +789,17 @@ impl<'a> PostcostContext<'a> {
         info.const_cost(|token_type| {
             self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
         })
+        .cost()
+    }
+
+    /// Computes the cost of the redeposit_gas libfunc.
+    fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> i32 {
+        ConstCost::steps(
+            BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+            })
+            .into_or_panic(),
+        )
         .cost()
     }
 }
