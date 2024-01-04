@@ -287,7 +287,7 @@ impl<StatementId> GenStatement<StatementId> {
     pub fn generic_name(&self) -> Option<String> {
         // There must be a better way - e.g. get the long ID with a db from the short ID, and from
         // there the generic name.
-        Some(self.concrete_name()?.split("<").next().unwrap().into())
+        Some(self.concrete_name()?.split('<').next().unwrap().into())
     }
 }
 
