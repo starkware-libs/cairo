@@ -11,7 +11,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_next_item;
-use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::{print_hotspot_stats, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -367,15 +367,7 @@ pub fn run_tests(
                 println!("test {name} ... {status_str}");
             }
             if let Some(hotspot_info) = hotspot_info {
-                println!("hotspot info:");
-                for (statement_idx, weight) in
-                    hotspot_info.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
-                {
-                    if *weight > 0 {
-                        let gen_statement = sierra_program.statements.get(statement_idx.0).unwrap();
-                        println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
-                    }
-                }
+                print_hotspot_stats(&hotspot_info, &sierra_program, true);
             }
             res_type.push(name);
         });

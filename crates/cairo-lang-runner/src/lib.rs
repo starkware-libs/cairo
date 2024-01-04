@@ -1,9 +1,12 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
+use std::fmt::Display;
+use std::time::Instant;
 
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_casm::instructions::Instruction;
+use cairo_lang_casm::instructions::{CallInstruction, Instruction, InstructionBody};
+use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -16,7 +19,7 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
-use cairo_lang_sierra::program::{Function, GenericArg, StatementIdx};
+use cairo_lang_sierra::program::{Function, GenericArg, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -32,10 +35,11 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use thiserror::Error;
 
@@ -72,7 +76,7 @@ pub struct RunResultStarknet {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
-    pub hotspot_info: HashMap<StatementIdx, usize>,
+    pub profiling_info: ProfilingInfo,
 }
 
 /// The full result of a run.
@@ -81,7 +85,7 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
-    pub hotspot_info: HashMap<StatementIdx, usize>,
+    pub profiling_info: ProfilingInfo,
 }
 
 /// The ran function return value.
@@ -204,14 +208,14 @@ impl SierraCasmRunner {
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        let RunResult { gas_counter, memory, value, hotspot_info } =
+        let RunResult { gas_counter, memory, value, profiling_info } =
             self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins)?;
         Ok(RunResultStarknet {
             gas_counter,
             memory,
             value,
             starknet_state: hint_processor.starknet_state,
-            hotspot_info,
+            profiling_info,
         })
     }
 
@@ -286,38 +290,149 @@ impl SierraCasmRunner {
             self.handle_main_return_value(ty, values, &cells)?
         };
 
-        // Initialize a mapping of all sierra statements indices to 0s.
-        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
+        let now = Instant::now();
+        let profiling_info = self.collect_profiling_info2(vm.get_relocated_trace().unwrap());
+        let elapsed = now.elapsed();
+        println!("Elapsed: {:.2?}", elapsed);
 
-        let mut mapping = HashMap::from_iter((0..sierra_len).map(|idx| (StatementIdx(idx), 0)));
-        for trace_entry in vm.get_relocated_trace().unwrap() {
-            let sierra_statement_idx = self.map_casm_pc_to_sierra_statement(trace_entry.pc);
-            *(mapping.get_mut(&sierra_statement_idx).unwrap()) += 1;
-        }
-
-        Ok(RunResult { gas_counter, memory: cells, value, hotspot_info: mapping })
+        Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
 
-    fn map_casm_pc_to_sierra_statement(&self, casm_pc: usize) -> StatementIdx {
-        // TODO(yg): this can be done much faster! sort? binary search?
-        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
-        for i in 0..(sierra_len - 1) {
-            // TODO(yg): make sure self.casm_program.debug_info.sierra_statement_info[0].code_offset
-            // == 0. Otherwise, smaller offsets can be missed and some preliminary check needs to be
-            // added here.
-            let sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i];
-            let next_sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i + 1];
-            if sierra_statement.code_offset <= casm_pc
-                && casm_pc < next_sierra_statement.code_offset
-            {
-                return StatementIdx(sierra_statement.instruction_idx);
-            }
+    fn collect_profiling_info2(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
+        let bytecode_size =
+            self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let base_offset = trace.last().unwrap().pc;
+
+        println!("yg bytecode_size: {bytecode_size}");
+        println!("yg base_offset: {base_offset}");
+        println!("yg sierra_len: {sierra_len}");
+
+        // Initialize a mapping of all sierra statements indices to 0s. Note there is also space for
+        // the header and footer.
+        let mut pc_counts: Vec<usize> =
+            itertools::repeat_n(0, bytecode_size + base_offset + 1).collect();
+
+        for trace_entry in trace {
+            // TODO(yg): why are the trace's PCs off by 1?
+            let original_pc = trace_entry.pc - 1;
+
+            // println!("yg original PC: {}", original_pc);
+            pc_counts[original_pc] += 1;
         }
-        // TODO(yg): assert that casm_pc < end-of-program (need to get it from somewhere).
-        StatementIdx(
-            self.casm_program.debug_info.sierra_statement_info.last().unwrap().instruction_idx,
-        )
+
+        let mut sierra_weights = Vec::new();
+        sierra_weights.reserve(sierra_len);
+        for i in 0..sierra_len {
+            let sierra_statement_offset =
+                self.casm_program.debug_info.sierra_statement_info[i].code_offset + base_offset;
+            let next_sierra_statement_offset =
+                self.casm_program.debug_info.sierra_statement_info[i + 1].code_offset + base_offset;
+            let weight = (sierra_statement_offset..next_sierra_statement_offset)
+                .map(|pc| pc_counts[pc])
+                .sum();
+            sierra_weights.push(weight);
+        }
+
+        let concrete_sierra_statements_weights: HashMap<StatementIdx, usize> =
+            sierra_weights.into_iter().enumerate().map(|(x, y)| (StatementIdx(x), y)).collect();
+        ProfilingInfo { concrete_sierra_statements_weights }
     }
+
+    // TODO(yg): remove.
+    // fn debug_print_instructions<'a, Instructions>(instructions: Instructions)
+    // where
+    //     Instructions: Iterator<Item = &'a Instruction> + Clone,
+    // {
+    //     for inst in instructions.clone() {
+    //         println!("yg casm inst: {inst}, op_size: {}", inst.body.op_size());
+    //     }
+    // }
+
+    // TODO(yg): remove, this is less efficient. See ~/all/mess/profiler_profiling.
+    // fn collect_profiling_info(&self, trace: &Vec<TraceEntry>) -> HashMap<StatementIdx, usize> {
+    //     let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+
+    //     // while let Some(inst) = instructions_mut.next() {
+    //     //     println!("yg tmp base_offset: {base_offset}");
+    //     //     println!("yg instruction: {}", inst);
+    //     //     base_offset += inst.body.op_size();
+    //     //     if matches!(inst.body, InstructionBody::Ret(_)) {
+    //     //         // TODO(yg): verify this is reached...
+    //     //         break;
+    //     //     }
+    //     // }
+
+    //     // TODO(yg): choose the best way. this way assumes the call rel is
+    //     // the first which is not true. To make it work you may need to iterate until the first
+    // call     // which is less efficient. Another way with the same wrong assumption: take the
+    // pc of the     // second trace entry.
+    //     // let base_offset: usize =
+    //     // match &instructions.clone().next().unwrap().body {
+    //     //     InstructionBody::Call(CallInstruction {
+    //     //         target: DerefOrImmediate::Immediate(x),
+    //     //         relative: true,
+    //     //     }) => x.value.clone(),
+    //     //     _ => {
+    //     //         unreachable!("First instruction must be a relative call with an immediate
+    //     // target.")     }
+    //     // }
+    //     // .try_into()
+    //     // .unwrap();
+
+    //     let base_offset = trace.last().unwrap().pc;
+    //     println!("yg base_offset: {base_offset}");
+    //     println!("yg sierra_len: {sierra_len}");
+
+    //     let bytecode_size =
+    //         self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
+    //     println!("yg bytecode_size: {bytecode_size}");
+
+    //     // TODO(yg): create a mapper that gets the sierra_len, bytecode_size (and maybe the
+    //     // base_offset?) in the constructor.
+    //     // TODO(yg): remove assert?
+    //     assert!(
+    //         self.casm_program.debug_info.sierra_statement_info.first().unwrap().code_offset == 0
+    //     );
+    //     // Initialize a mapping of all sierra statements indices to 0s.
+    //     let mut mapping = HashMap::from_iter((0..sierra_len).map(|idx| (StatementIdx(idx), 0)));
+    //     for (i, trace_entry) in trace.iter().enumerate() {
+    //         // TODO(yg): why are the trace's PCs off by 1?
+    //         let original_pc = trace_entry.pc - 1;
+    //         // TODO(yg): is there an easier way to skip those?
+    //         // Skip header and footer instructions.
+    //         if original_pc < base_offset || original_pc == bytecode_size + base_offset {
+    //             // println!("yg skipping trace entry #{i} with pc: {}", original_pc);
+    //             continue;
+    //         }
+    //         // println!("yg original PC: {}", original_pc);
+    //         let sierra_statement_idx =
+    //             self.map_casm_pc_to_sierra_statement(original_pc - base_offset);
+    //         *(mapping.get_mut(&sierra_statement_idx).unwrap()) += 1;
+    //     }
+    //     mapping
+    // }
+
+    // // Returns Sierra statement index for the given CASM pc.
+    // fn map_casm_pc_to_sierra_statement(&self, casm_pc: usize) -> StatementIdx {
+    //     // TODO(yg): this can be done much faster! sort? binary search? cache? use the fact that
+    // pcs     // are mostly sequenced.
+    //     // println!("yg casm_pc: {casm_pc}");
+    //     let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+    //     for i in 0..sierra_len {
+    //         let sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i];
+    //         let next_sierra_statement = &self.casm_program.debug_info.sierra_statement_info[i +
+    // 1];         if sierra_statement.code_offset <= casm_pc
+    //             && casm_pc < next_sierra_statement.code_offset
+    //         {
+    //             return StatementIdx(i);
+    //         }
+    //     }
+    //     unreachable!(
+    //         "The CASM pc must match one of the real sierra statements (the last one is a dummy \
+    //          one)."
+    //     );
+    // }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
@@ -604,4 +719,42 @@ fn create_metadata(
         MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
         MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
     })
+}
+
+// TODO(yg): move to profiling.rs
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct ProfilingInfo {
+    /// The number of steps in the trace that "belongs" to each sierra statement.
+    concrete_sierra_statements_weights: HashMap<StatementIdx, usize>,
+}
+pub struct ProfilingInfoPrinter {
+    sierra_program: Program,
+
+    // Flags
+    print_zeros: bool,
+}
+impl ProfilingInfoPrinter {
+    pub fn new(sierra_program: Program) -> Self {
+        Self { sierra_program, print_zeros: false }
+    }
+
+    // TODO(yg): consider uniting the flags to a flags struct.
+    pub fn print(&self, profiling_info: &ProfilingInfo) {
+        println!("hotspot info:");
+        println!("yg sierra len when printing: {}", self.sierra_program.statements.len());
+        for (statement_idx, weight) in profiling_info
+            .concrete_sierra_statements_weights
+            .iter()
+            .sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+        {
+            if *weight > 0 || self.print_zeros {
+                let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0)
+                else {
+                    println!("Failed fetching statement index {}", statement_idx.0);
+                    return;
+                };
+                println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
+            }
+        }
+    }
 }
