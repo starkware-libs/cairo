@@ -1,7 +1,7 @@
-//! > success
+//! > Two functions, no consts.
 
 //! > test_runner_name
-FindSegmentTest
+BytecodeSegmentLengthTest
 
 //! > sierra
 type felt252 = felt252;
@@ -37,15 +37,21 @@ return();  // 16
 function1@15() -> ();
 function0@0() -> ();
 
-//! > segments
+//! > cairo_program
+Casm compilation failed.
+
+//! > function_segments
 Ok([0, 15])
+
+//! > bytecode_lengths
+Casm compilation failed.
 
 //! > ==========================================================================
 
 //! > No function start at zero
 
 //! > test_runner_name
-FindSegmentTest
+BytecodeSegmentLengthTest
 
 //! > sierra
 type felt252 = felt252;
@@ -59,15 +65,21 @@ return();  // 1
 
 function1@1() -> ();
 
-//! > segments
+//! > cairo_program
+Casm compilation failed.
+
+//! > function_segments
 Err(NoFunctionStartAtZero)
+
+//! > bytecode_lengths
+Casm compilation failed.
 
 //! > ==========================================================================
 
 //! > jump outside function (fallthrough)
 
 //! > test_runner_name
-FindSegmentTest
+BytecodeSegmentLengthTest
 
 //! > sierra
 type felt252 = felt252;
@@ -86,15 +98,21 @@ return();  // 4
 function0@0() -> ();
 function1@2() -> ();
 
-//! > segments
+//! > cairo_program
+Casm compilation failed.
+
+//! > function_segments
 Err(JumpOutsideFunction(StatementIdx(1)))
+
+//! > bytecode_lengths
+Casm compilation failed.
 
 //! > ==========================================================================
 
 //! > jump outside function (after)
 
 //! > test_runner_name
-FindSegmentTest
+BytecodeSegmentLengthTest
 
 //! > sierra
 type felt252 = felt252;
@@ -113,15 +131,21 @@ return();  // 4
 function0@0() -> ();
 function1@3() -> ();
 
-//! > segments
+//! > cairo_program
+Casm compilation failed.
+
+//! > function_segments
 Err(JumpOutsideFunction(StatementIdx(1)))
+
+//! > bytecode_lengths
+Casm compilation failed.
 
 //! > ==========================================================================
 
 //! > jump outside function (before)
 
 //! > test_runner_name
-FindSegmentTest
+BytecodeSegmentLengthTest
 
 //! > sierra
 type felt252 = felt252;
@@ -140,5 +164,11 @@ return();  // 4
 function0@0() -> ();
 function1@2() -> ();
 
-//! > segments
+//! > cairo_program
+Casm compilation failed.
+
+//! > function_segments
 Err(JumpOutsideFunction(StatementIdx(3)))
+
+//! > bytecode_lengths
+Casm compilation failed.

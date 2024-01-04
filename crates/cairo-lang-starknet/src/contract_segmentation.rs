@@ -34,15 +34,18 @@ pub enum SegmentationError {
 pub fn compute_bytecode_segment_lengths(
     program: &Program,
     cairo_program: &CairoProgram,
-    bytecode_size: usize,
+    bytecode_len: usize,
 ) -> Result<NestedIntList, SegmentationError> {
-    if bytecode_size == 0 {
+    if bytecode_len == 0 {
         return Ok(NestedIntList::Leaf(0));
     }
-    let segment_start_statements = find_segments(program)?;
-    let segment_start_offsets = statement_ids_to_offsets(cairo_program, &segment_start_statements);
+    let functions_segment_start_statements = find_functions_segments(program)?;
+    let mut segment_start_offsets =
+        functions_statement_ids_to_offsets(cairo_program, &functions_segment_start_statements);
+    segment_start_offsets.extend(consts_segments_offsets(cairo_program, bytecode_len));
+
     Ok(NestedIntList::Node(
-        get_segment_lengths(&segment_start_offsets, bytecode_size)
+        get_segment_lengths(&segment_start_offsets, bytecode_len)
             .iter()
             .map(|length| NestedIntList::Leaf(*length))
             .collect(),
@@ -50,7 +53,7 @@ pub fn compute_bytecode_segment_lengths(
 }
 
 /// Returns a vector that contains the starts (as statement indices) of the functions.
-fn find_segments(program: &Program) -> Result<Vec<usize>, SegmentationError> {
+fn find_functions_segments(program: &Program) -> Result<Vec<usize>, SegmentationError> {
     // Get the set of function entry points.
     let mut function_statement_ids: Vec<usize> =
         program.funcs.iter().map(|func| func.entry_point.0).collect();
@@ -79,8 +82,8 @@ fn find_segments(program: &Program) -> Result<Vec<usize>, SegmentationError> {
     Ok(function_statement_ids)
 }
 
-/// Converts the result of [find_segments] from statement ids to bytecode offsets.
-fn statement_ids_to_offsets(
+/// Converts the result of [find_functions_segments] from statement ids to bytecode offsets.
+fn functions_statement_ids_to_offsets(
     cairo_program: &CairoProgram,
     segment_starts_statements: &[usize],
 ) -> Vec<usize> {
@@ -117,7 +120,7 @@ fn get_segment_lengths(segment_starts_offsets: &[usize], bytecode_len: usize) ->
     segment_lengths
 }
 
-/// Helper struct for [find_segments].
+/// Helper struct for [find_functions_segments].
 /// Represents a single function and its segments.
 struct FunctionInfo {
     entry_point: usize,
@@ -174,4 +177,15 @@ impl FunctionInfo {
         }
         Ok(())
     }
+}
+
+/// Returns the offsets of the consts segments.
+fn consts_segments_offsets(cairo_program: &CairoProgram, bytecode_len: usize) -> Vec<usize> {
+    let const_segment_offset = bytecode_len - cairo_program.const_segment_info.const_segment_size;
+    cairo_program
+        .const_segment_info
+        .const_allocations
+        .values()
+        .map(|allocation| allocation.offset + const_segment_offset)
+        .collect()
 }
