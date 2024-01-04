@@ -68,7 +68,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Unsupported match arm - not a variant.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchArmNonSequential => {
-                "Unsupported match arm - numbers must be sequential starting from 0.".into()
+                "Unsupported match - numbers must be sequential starting from 0.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchArmOrNotSupported => {
                 "Unsupported match arm - or pattern is not supported in this context".into()
