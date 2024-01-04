@@ -10,6 +10,7 @@ use crate::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
 };
 use crate::extensions::NamedLibfunc;
+use crate::extensions::types::TypeInfo;
 use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
@@ -156,6 +157,18 @@ pub struct DeclaredTypeInfo {
     pub duplicatable: bool,
     /// The size of an element of this type.
     pub zero_sized: bool,
+}
+
+/// Converts [TypeInfo] to [DeclaredTypeInfo].
+impl From<&TypeInfo> for DeclaredTypeInfo {
+    fn from(type_info: &TypeInfo) -> Self {
+        DeclaredTypeInfo {
+            storable: type_info.storable,
+            droppable: type_info.droppable,
+            duplicatable: type_info.duplicatable,
+            zero_sized: type_info.zero_sized,
+        }
+    }
 }
 
 /// A concrete type (the generic parent type and the generic arguments).

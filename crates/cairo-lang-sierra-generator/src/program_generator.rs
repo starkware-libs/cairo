@@ -119,12 +119,7 @@ fn generate_type_declarations_helper(
     declarations.push(program::TypeDeclaration {
         id: ty.clone(),
         long_id: long_id.as_ref().clone(),
-        declared_type_info: Some(DeclaredTypeInfo {
-            storable: type_info.storable,
-            droppable: type_info.droppable,
-            duplicatable: type_info.duplicatable,
-            zero_sized: type_info.zero_sized,
-        }),
+        declared_type_info: Some(type_info.as_ref().into()),
     });
 }
 
