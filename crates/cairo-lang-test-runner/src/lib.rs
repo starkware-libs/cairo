@@ -11,7 +11,8 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_next_item;
-use cairo_lang_runner::{print_hotspot_stats, RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::profiling::{self, ProfilingInfo, ProfilingInfoPrinter};
+use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -252,8 +253,7 @@ struct TestResult {
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
-    // TODO(yg): consider adding a type. It will also impl format which will ease the printing.
-    hotspot_info: HashMap<StatementIdx, usize>,
+    profiling_info: ProfilingInfo,
 }
 
 /// Summary data of the ran tests.
@@ -330,7 +330,7 @@ pub fn run_tests(
                         .or_else(|| {
                             runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
                         }),
-                    hotspot_info: result.hotspot_info,
+                    profiling_info: result.profiling_info,
                 }),
             ))
         })
@@ -347,17 +347,17 @@ pub fn run_tests(
                 }
             };
             let summary = wrapped_summary.as_mut().unwrap();
-            let (res_type, status_str, gas_usage, hotspot_info) = match status {
-                Some(TestResult { status: TestStatus::Success, gas_usage, hotspot_info }) => {
-                    (&mut summary.passed, "ok".bright_green(), gas_usage, Some(hotspot_info))
+            let (res_type, status_str, gas_usage, profiling_info) = match status {
+                Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
+                    (&mut summary.passed, "ok".bright_green(), gas_usage, Some(profiling_info))
                 }
                 Some(TestResult {
                     status: TestStatus::Fail(run_result),
                     gas_usage,
-                    hotspot_info,
+                    profiling_info,
                 }) => {
                     summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red(), gas_usage, Some(hotspot_info))
+                    (&mut summary.failed, "fail".bright_red(), gas_usage, Some(profiling_info))
                 }
                 None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
             };
@@ -366,8 +366,9 @@ pub fn run_tests(
             } else {
                 println!("test {name} ... {status_str}");
             }
-            if let Some(hotspot_info) = hotspot_info {
-                print_hotspot_stats(&hotspot_info, &sierra_program, true);
+            if let Some(profiling_info) = profiling_info {
+                let profiling_printer = ProfilingInfoPrinter::new(sierra_program.clone());
+                profiling_printer.print(&profiling_info);
             }
             res_type.push(name);
         });
