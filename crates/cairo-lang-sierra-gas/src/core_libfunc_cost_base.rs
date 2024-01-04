@@ -15,15 +15,7 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
-<<<<<<< HEAD
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
-||||||| 740069555
-use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
-=======
-use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
->>>>>>> origin/sierra-minor-update
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
@@ -432,7 +424,7 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
-<<<<<<< HEAD
+        Const(_) => vec![ConstCost::default().into()],
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(libfunc) => {
                 vec![BranchCost::FunctionCost {
@@ -449,10 +441,6 @@ pub fn core_libfunc_cost(
                 }]
             }
         },
-||||||| 740069555
-=======
-        Const(_) => vec![ConstCost::default().into()],
->>>>>>> origin/sierra-minor-update
     }
 }
 

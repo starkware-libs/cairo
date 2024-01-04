@@ -348,15 +348,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
         },
-<<<<<<< HEAD
+        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
             CouponConcreteLibfunc::Refund(_) => vec![ApChange::Known(0)],
         },
-||||||| 740069555
-=======
-        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
->>>>>>> origin/sierra-minor-update
     }
 }
 

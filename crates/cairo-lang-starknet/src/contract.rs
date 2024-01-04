@@ -369,12 +369,6 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
 ) -> (Felt252, FunctionId) {
     let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
     let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
-<<<<<<< HEAD
     let selector: Felt252 = starknet_keccak(function_with_body.alias.as_bytes()).into();
-||||||| 740069555
-    let selector = Felt252::try_from(starknet_keccak(function_with_body.alias.as_bytes())).unwrap();
-=======
-    let selector = starknet_keccak(function_with_body.alias.as_bytes()).into();
->>>>>>> origin/sierra-minor-update
     (selector, sierra_id)
 }
