@@ -39,7 +39,8 @@ use crate::ids::{
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -1504,58 +1505,50 @@ fn group_match_arms(
 }
 
 /// Lowers the [semantic::MatchArm] of an expression of type [semantic::ExprMatch] where the matched
-/// expression is a felt252 and returns a sealed block builder of the arm block.
-fn lower_felt252_arm_block(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprMatch,
-    match_input: VarUsage,
-    mut builder: BlockBuilder,
-    index: usize,
-) -> Maybe<SealedBlockBuilder> {
-    let arm = &expr.arms[index];
-    if index == expr.arms.len() - 1 {
-        return lower_tail_expr(ctx, builder, arm.expression);
-    }
-    let lowered = lower_expr_felt252_arm(ctx, expr, match_input, &mut builder, index);
-    lowered_expr_to_block_scope_end(ctx, builder, lowered)
-}
-/// Lowers the [semantic::MatchArm] of an expression of type [semantic::ExprMatch] where the matched
 /// expression is a felt252.
 fn lower_expr_felt252_arm(
     ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprMatch,
     match_input: VarUsage,
     builder: &mut BlockBuilder,
-    index: usize,
-) -> LoweringResult<LoweredExpr> {
+    arm_index: usize,
+    patten_index: usize,
+    branches_block_builders: &mut Vec<(usize, LoweringResult<()>, BlockBuilder)>,
+) -> LoweringResult<MatchInfo> {
+    if patten_index == expr.arms[arm_index].patterns.len() {
+        return lower_expr_felt252_arm(
+            ctx,
+            expr,
+            match_input,
+            builder,
+            arm_index + 1,
+            0,
+            branches_block_builders,
+        );
+    }
+
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let arm = &expr.arms[index];
+    let arm = &expr.arms[arm_index];
     let semantic_db = ctx.db.upcast();
 
-    if arm.patterns.len() != 1 {
-        let location = ctx.function_body.patterns[arm.patterns[0]].stable_ptr().untyped();
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(location, UnsupportedMatchArmOrNotSupported),
-        ));
-    }
-    let pattern = ctx.function_body.patterns[arm.patterns[0]].clone();
+    let main_block = create_subscope_with_bound_refs(ctx, builder);
+    let main_block_id = main_block.block_id;
+
+    let mut else_block = create_subscope_with_bound_refs(ctx, builder);
+    let block_else_id = else_block.block_id;
+
+    let pattern = &ctx.function_body.patterns[arm.patterns[patten_index]];
     let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
         ));
     };
 
-    if literal.value != index.into() {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(literal.stable_ptr.untyped(), UnsupportedMatchArmNonSequential),
-        ));
-    }
-
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
         let lowered_arm_val =
-            lower_expr_literal(ctx, &literal, builder)?.as_var_usage(ctx, builder)?;
+            lower_expr_literal(ctx, &literal.clone(), builder)?.as_var_usage(ctx, builder)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
@@ -1572,24 +1565,13 @@ fn lower_expr_felt252_arm(
         corelib::core_nonzero_ty(semantic_db, corelib::core_felt252_ty(semantic_db));
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: non_zero_type, location });
 
-    let block_id: BlockId = alloc_empty_block(ctx);
-    let match_arm_content_block =
-        lower_tail_expr(ctx, builder.child_block_builder(block_id), arm.expression)
-            .map_err(LoweringFlowError::Failed)?;
-
-    let else_block = create_subscope_with_bound_refs(ctx, builder);
-    let block_else_id = else_block.block_id;
-
-    let block_else = lower_felt252_arm_block(ctx, expr, match_input, else_block, index + 1)
-        .map_err(LoweringFlowError::Failed)?;
-
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
         inputs: vec![if_input],
         arms: vec![
             MatchArm {
                 variant_id: corelib::jump_nz_zero_variant(semantic_db),
-                block_id,
+                block_id: main_block_id,
                 var_ids: vec![],
             },
             MatchArm {
@@ -1600,12 +1582,25 @@ fn lower_expr_felt252_arm(
         ],
         location,
     });
-    builder.merge_and_end_with_match(
-        ctx,
-        match_info,
-        vec![match_arm_content_block, block_else],
-        location,
-    )
+    branches_block_builders.push((arm_index, Ok(()), main_block));
+    if patten_index + 1 == expr.arms[arm_index].patterns.len() && arm_index == expr.arms.len() - 2 {
+        branches_block_builders.push((arm_index + 1, Ok(()), else_block));
+    } else {
+        let match_info = lower_expr_felt252_arm(
+            ctx,
+            expr,
+            match_input,
+            &mut else_block,
+            arm_index,
+            patten_index + 1,
+            branches_block_builders,
+        )?;
+
+        // we can use finalize here because the else block is an inner block of the match expression
+        // and does not have sibling block it goes to.
+        else_block.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+    }
+    Ok(match_info)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
@@ -1621,22 +1616,57 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
+    let mut index = 0.into();
+    let mut otherwise_exist = false;
+    for arm in expr.arms.iter() {
+        for pattern in arm.patterns.iter() {
+            let pattern = &ctx.function_body.patterns[*pattern];
+            if otherwise_exist {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm),
+                ));
+            }
+            match pattern {
+                semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) => {
+                    if literal.value == index {
+                        index += 1;
+                    } else {
+                        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                            pattern.stable_ptr().untyped(),
+                            UnsupportedMatchArmNonSequential,
+                        )));
+                    }
+                }
+                semantic::Pattern::Otherwise(_) => otherwise_exist = true,
+                _ => {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+                    ));
+                }
+            }
+        }
+    }
 
-    if expr.arms.last().unwrap().patterns.len() != 1 {
-        let location = ctx.function_body.patterns[expr.arms.last().unwrap().patterns[0]]
-            .stable_ptr()
-            .untyped();
+    if !otherwise_exist {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(location, UnsupportedMatchArmOrNotSupported),
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
-    let pattern = ctx.function_body.patterns[expr.arms.last().unwrap().patterns[0]].clone();
-    let semantic::Pattern::Otherwise(_) = pattern else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(pattern.stable_ptr().untyped(), NonExhaustiveMatchFelt252),
-        ));
-    };
-    lower_expr_felt252_arm(ctx, expr, match_input, builder, 0)
+
+    let mut arms_vec = vec![];
+    let match_info = lower_expr_felt252_arm(ctx, expr, match_input, builder, 0, 0, &mut arms_vec)?;
+
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let empty_match_info = MatchInfo::Extern(MatchExternInfo {
+        function: corelib::core_felt252_is_zero(ctx.db.upcast()).lowered(ctx.db),
+        inputs: vec![match_input],
+        arms: vec![],
+        location,
+    });
+    let sealed_blocks = group_match_arms(ctx, empty_match_info, location, &expr.arms, arms_vec)?;
+
+    builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
 /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,
