@@ -38,7 +38,7 @@ use cairo_vm::vm::runners::cairo_runner::RunResources;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::{chain, Itertools};
+use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use thiserror::Error;
