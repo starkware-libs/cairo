@@ -26,6 +26,7 @@ use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
+use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
@@ -371,6 +372,7 @@ fn concrete_function_with_body_postpanic_lowered(
 
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
+    return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
     Ok(Arc::new(lowered))
 }
