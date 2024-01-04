@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use ark_std::iterable::Iterable;
 use cairo_felt::Felt252;
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
@@ -37,7 +38,7 @@ use cairo_vm::vm::runners::cairo_runner::RunResources;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -145,6 +146,19 @@ pub fn build_hints_dict<'b>(
     (hints_dict, string_to_hint)
 }
 
+pub fn hints_from_assembled_program(
+    casm_program: &AssembledCairoProgram,
+    hints_dict: &mut HashMap<usize, Vec<HintParams>>,
+    string_to_hint: &mut HashMap<String, Hint>,
+) {
+    for (offset, hints) in &casm_program.hints {
+        hints_dict.insert(*offset, hints.iter().map(hint_to_hint_params).collect());
+        for hint in hints {
+            string_to_hint.insert(hint.representing_string(), hint.clone());
+        }
+    }
+}
+
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
     /// The sierra program.
@@ -203,19 +217,27 @@ impl SierraCasmRunner {
         let instructions =
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
+        let assembled_program =
+            assemble_program(instructions.cloned().collect(), self.casm_program.clone());
+
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
             starknet_state,
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
-            RunResultStarknet {
-                gas_counter: v.gas_counter,
-                memory: v.memory,
-                value: v.value,
-                starknet_state: hint_processor.starknet_state,
-            }
+        self.run_function(
+            func,
+            &mut hint_processor,
+            hints_dict,
+            assembled_program.bytecode.iter(),
+            builtins,
+        )
+        .map(|v| RunResultStarknet {
+            gas_counter: v.gas_counter,
+            memory: v.memory,
+            value: v.value,
+            starknet_state: hint_processor.starknet_state,
         })
     }
 
@@ -234,14 +256,13 @@ impl SierraCasmRunner {
         builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
-        Instructions: Iterator<Item = &'a Instruction> + Clone,
+        Instructions: Iterator<Item = &'a BigInt> + Clone,
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
-        let instructions = assemble_instructions(instructions);
 
         let (cells, ap) = casm_run::run_function(
             vm,
-            instructions.iter(),
+            instructions,
             builtins,
             initialize_vm,
             hint_processor,
@@ -304,7 +325,7 @@ impl SierraCasmRunner {
         builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
-        Instructions: Iterator<Item = &'a Instruction> + Clone,
+        Instructions: Iterator<Item = &'a BigInt> + Clone,
     {
         let mut vm = VirtualMachine::new(true);
         self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, instructions, builtins)
@@ -645,10 +666,12 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     Ok(())
 }
 
-pub fn assemble_instructions<'b>(
-    instructions: impl Iterator<Item = &'b Instruction>,
-) -> Vec<BigInt> {
-    instructions.into_iter().flat_map(|is| is.assemble().encode()).collect()
+pub fn assemble_program(
+    instructions: Vec<Instruction>,
+    mut new_program: CairoProgram,
+) -> AssembledCairoProgram {
+    new_program.instructions = instructions;
+    new_program.assemble()
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
