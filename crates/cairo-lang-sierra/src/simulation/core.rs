@@ -354,12 +354,8 @@ pub fn simulate<
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
         CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
-<<<<<<< HEAD
-        CoreConcreteLibfunc::Coupon(_) => unimplemented!(),
-||||||| 740069555
-=======
         CoreConcreteLibfunc::Const(_) => unimplemented!(),
->>>>>>> origin/sierra-minor-update
+        CoreConcreteLibfunc::Coupon(_) => unimplemented!(),
     }
 }
 

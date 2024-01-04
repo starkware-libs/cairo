@@ -689,23 +689,13 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     ) -> WalletInfo<PreCost> {
         let branch_cost = match branch_cost {
             BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
-<<<<<<< HEAD
-            BranchCost::BranchAlign => Default::default(),
+            BranchCost::BranchAlign | BranchCost::RedepositGas => Default::default(),
             BranchCost::FunctionCost { const_cost: _, function, sign } => {
                 let func_cost = wallet_at_fn(&function.entry_point).value;
                 match sign {
                     BranchCostSign::Add => PreCost::default() - func_cost,
                     BranchCostSign::Subtract => func_cost,
                 }
-||||||| 740069555
-            BranchCost::BranchAlign => Default::default(),
-            BranchCost::FunctionCall { const_cost: _, function } => {
-                wallet_at_fn(&function.entry_point).value
-=======
-            BranchCost::BranchAlign | BranchCost::RedepositGas => Default::default(),
-            BranchCost::FunctionCall { const_cost: _, function } => {
-                wallet_at_fn(&function.entry_point).value
->>>>>>> origin/sierra-minor-update
             }
             BranchCost::WithdrawGas(info) => {
                 if info.success {

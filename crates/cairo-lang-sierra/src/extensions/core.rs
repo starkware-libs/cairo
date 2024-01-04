@@ -5,12 +5,8 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
-<<<<<<< HEAD
-use super::coupon::{CouponLibfunc, CouponType};
-||||||| 740069555
-=======
 use super::const_type::{ConstLibfunc, ConstType};
->>>>>>> origin/sierra-minor-update
+use super::coupon::{CouponLibfunc, CouponType};
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;

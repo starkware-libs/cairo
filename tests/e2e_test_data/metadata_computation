@@ -1699,7 +1699,7 @@ fn bar() {
 test::bar 2000
 
 //! > gas_solution_lp
-#11: OrderedHashMap({Const: 1900})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1900})
 
 test::foo: OrderedHashMap({Const: 6300})
 test::bar: OrderedHashMap({Const: 2000})
@@ -1806,12 +1806,12 @@ test::bar1000 1000
 
 //! > gas_solution_lp
 #0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#6: OrderedHashMap({Const: 0})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #7: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#11: OrderedHashMap({Const: 0})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#18: OrderedHashMap({Const: 19900})
-#22: OrderedHashMap({Const: 900})
+#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19900})
+#22: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 900})
 
 test::foo: OrderedHashMap({Const: 43100})
 test::bar20000: OrderedHashMap({Const: 20000})
