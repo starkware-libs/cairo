@@ -1,11 +1,13 @@
 use cairo_felt::{felt_str, Felt252};
 use cairo_lang_casm::inline::CasmContext;
+use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, deref};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use indoc::indoc;
 use itertools::Itertools;
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use test_case::test_case;
 
@@ -13,7 +15,13 @@ use super::format_for_debug;
 use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::run_function;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{assemble_instructions, build_hints_dict, CairoHintProcessor, StarknetState};
+use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
+
+pub fn assemble_instructions<'b>(
+    instructions: impl Iterator<Item = &'b Instruction>,
+) -> Vec<BigInt> {
+    instructions.into_iter().flat_map(|is| is.assemble().encode()).collect()
+}
 
 #[test_case(
     casm! {
