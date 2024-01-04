@@ -6,6 +6,7 @@ use core::test::test_utils::assert_eq;
 use super::utils::serialized;
 use core::integer::BoundedInt;
 use core::zeroable::Zeroable;
+use core::byte_array::ByteArrayTrait;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
@@ -64,14 +65,22 @@ struct AbcEtc {
     efg2: Efg,
 }
 
+#[derive(Drop, Serde, PartialEq, Clone, starknet::Store)]
+struct ByteArrays {
+    empty: ByteArray,
+    single_word: ByteArray,
+    multi_word: ByteArray,
+    multi_chunk: ByteArray,
+}
 
 #[starknet::contract]
 mod test_contract {
-    use super::AbcEtc;
+    use super::{AbcEtc, ByteArrays};
 
     #[storage]
     struct Storage {
         data: AbcEtc,
+        byte_arrays: ByteArrays,
     }
 
     #[external(v0)]
@@ -82,6 +91,16 @@ mod test_contract {
     #[external(v0)]
     pub fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
+    }
+
+    #[external(v0)]
+    pub fn set_byte_arrays(ref self: ContractState, value: ByteArrays) {
+        self.byte_arrays.write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_byte_arrays(self: @ContractState) -> ByteArrays {
+        self.byte_arrays.read()
     }
 }
 
@@ -105,6 +124,57 @@ fn write_read_struct() {
         efg2: Efg::G(123_u256)
     };
 
-    assert!(test_contract::__external::set_data(serialized(*@x)).is_empty());
+    assert!(test_contract::__external::set_data(serialized(x)).is_empty());
     assert_eq(@test_contract::__external::get_data(serialized(())), @serialized(x), 'Wrong result');
+}
+
+#[test]
+fn write_read_byte_arrays() {
+    let mut multi_chunk: ByteArray =
+        "0123456789abcdef0123456789abcdef"; // 32 bytes, 2 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 64 bytes, 3 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 128 bytes, 5 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 256 bytes, 9 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 512 bytes, 17 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 1024 bytes, 34 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 2048 bytes, 67 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 4096 bytes, 133 felt252s, 1 chunk.
+    multi_chunk.append(@multi_chunk); // 8192 bytes, 265 felt252s, 2 chunks.
+    multi_chunk.append(@multi_chunk); // 16384 bytes, 529 felt252s, 3 chunks.
+    let x = ByteArrays {
+        empty: "",
+        single_word: "shorter than 31",
+        multi_word: "a byte array with more than 31 bytes",
+        multi_chunk,
+    };
+
+    assert!(test_contract::__external::set_byte_arrays(serialized(x.clone())).is_empty());
+    assert_eq(
+        @test_contract::__external::get_byte_arrays(serialized(())), @serialized(x), 'Wrong result'
+    );
+    // Make sure the lengths were saved correctly.
+    let base_address = starknet::storage_base_address_from_felt252(selector!("byte_arrays"));
+    assert!(starknet::Store::read_at_offset(0, base_address, 0).unwrap() == 0_usize);
+    assert!(starknet::Store::read_at_offset(0, base_address, 1).unwrap() == 15_usize);
+    assert!(starknet::Store::read_at_offset(0, base_address, 2).unwrap() == 36_usize);
+    assert!(starknet::Store::read_at_offset(0, base_address, 3).unwrap() == 16384_usize);
+    // Make sure the internal data was saved correctly.
+    let (r, _, _) = core::poseidon::hades_permutation(
+        starknet::storage_address_from_base_and_offset(base_address, 3).into(),
+        2,
+        'ByteArray'_felt252
+    );
+    let internal_data_address = starknet::storage_base_address_from_felt252(r);
+    assert_eq!(
+        starknet::Store::read_at_offset(0, internal_data_address, 0).unwrap(),
+        '0123456789abcdef0123456789abcde'_felt252
+    );
+    assert_eq!(
+        starknet::Store::read_at_offset(0, internal_data_address, 1).unwrap(),
+        'f0123456789abcdef0123456789abcd'_felt252
+    );
+    assert_eq!(
+        starknet::Store::read_at_offset(0, internal_data_address, 2).unwrap(),
+        'ef0123456789abcdef0123456789abc'_felt252
+    );
 }

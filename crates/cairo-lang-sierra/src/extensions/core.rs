@@ -5,7 +5,12 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
+<<<<<<< HEAD
 use super::coupon::{CouponLibfunc, CouponType};
+||||||| 740069555
+=======
+use super::const_type::{ConstLibfunc, ConstType};
+>>>>>>> origin/sierra-minor-update
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -56,6 +61,7 @@ define_type_hierarchy! {
         Coupon(CouponType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        Const(ConstType),
         EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
@@ -108,6 +114,7 @@ define_libfunc_hierarchy! {
         Ec(EcLibfunc),
         Range(RangeLibfunc),
         Felt252(Felt252Libfunc),
+        Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         Uint8(Uint8Libfunc),

@@ -1,0 +1,24 @@
+//! > While loop.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    while true {
+        1;
+        break 5;
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Can only break with a value inside a `loop`.
+ --> lib.cairo:4:9
+        break 5;
+        ^******^

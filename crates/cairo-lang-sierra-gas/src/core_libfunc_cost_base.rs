@@ -15,11 +15,19 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
+<<<<<<< HEAD
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
+||||||| 740069555
+use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
+=======
+use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+>>>>>>> origin/sierra-minor-update
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -38,6 +46,7 @@ use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
 use num_traits::Zero;
@@ -423,6 +432,7 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
+<<<<<<< HEAD
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(libfunc) => {
                 vec![BranchCost::FunctionCost {
@@ -439,6 +449,10 @@ pub fn core_libfunc_cost(
                 }]
             }
         },
+||||||| 740069555
+=======
+        Const(_) => vec![ConstCost::default().into()],
+>>>>>>> origin/sierra-minor-update
     }
 }
 
@@ -494,7 +508,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     total_cost
                 }
             }
-            BranchCost::RedepositGas => ops.statement_var_cost(CostTokenType::Const),
+            BranchCost::RedepositGas => ops.add(
+                ops.const_cost(ConstCost::steps(
+                    BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                        info_provider.token_usages(token_type)
+                    })
+                    .into_or_panic(),
+                )),
+                ops.statement_var_cost(CostTokenType::Const),
+            ),
         })
         .collect()
 }
@@ -546,7 +568,9 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                     BranchCostSign::Subtract => func_content_cost.unwrap(),
                 }
             }
-            BranchCost::BranchAlign => statement_vars_cost(ops, CostTokenType::iter_precost()),
+            BranchCost::BranchAlign | BranchCost::RedepositGas => {
+                statement_vars_cost(ops, CostTokenType::iter_precost())
+            }
             BranchCost::WithdrawGas(info) => {
                 if info.success {
                     ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost()))
@@ -554,7 +578,6 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                     ops.steps(0)
                 }
             }
-            BranchCost::RedepositGas => ops.steps(0),
         })
         .collect()
 }
