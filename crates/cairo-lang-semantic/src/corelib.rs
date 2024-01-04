@@ -102,11 +102,12 @@ pub fn try_get_ty_by_name(
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
-        ModuleItemId::TypeAlias(type_alias_id) => {
-            let ty =
-                db.type_alias_resolved_type(type_alias_id).expect("Could not find type alias.");
+        ModuleItemId::TypeAlias(module_type_alias_id) => {
+            let ty = db
+                .module_type_alias_resolved_type(module_type_alias_id)
+                .expect("Could not find type alias.");
             assert!(
-                db.type_alias_generic_params(type_alias_id).unwrap().is_empty(),
+                db.module_type_alias_generic_params(module_type_alias_id).unwrap().is_empty(),
                 "Cannot get type aliases with params from corelib."
             );
             return Ok(ty);

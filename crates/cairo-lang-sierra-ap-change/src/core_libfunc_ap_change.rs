@@ -13,9 +13,7 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
-use cairo_lang_sierra::extensions::gas::{
-    BuiltinCostWithdrawGasLibfunc, CostTokenType, GasConcreteLibfunc,
-};
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -151,12 +149,30 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
-            GasConcreteLibfunc::WithdrawGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
-            GasConcreteLibfunc::RedepositGas(_) => vec![ApChange::Known(0)],
+            GasConcreteLibfunc::WithdrawGas(_) => {
+                let cost_computation_ap_change: usize =
+                    BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                        info_provider.token_usages(token_type)
+                    });
+                if cost_computation_ap_change == 0 {
+                    vec![ApChange::Known(2), ApChange::Known(2)]
+                } else {
+                    vec![
+                        ApChange::Known(cost_computation_ap_change + 2),
+                        ApChange::Known(cost_computation_ap_change + 3),
+                    ]
+                }
+            }
+            GasConcreteLibfunc::RedepositGas(_) => {
+                vec![ApChange::Known(BuiltinCostsType::cost_computation_steps(
+                    false,
+                    |token_type| info_provider.token_usages(token_type),
+                ))]
+            }
             GasConcreteLibfunc::GetAvailableGas(_) => vec![ApChange::Known(0)],
             GasConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation_ap_change: usize =
-                    BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostsType::cost_computation_steps(true, |token_type| {
                         info_provider.token_usages(token_type)
                     });
                 vec![
@@ -331,6 +347,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
         },
+        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
     }
 }
 

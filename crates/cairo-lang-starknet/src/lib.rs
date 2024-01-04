@@ -15,10 +15,13 @@ pub mod casm_contract_class;
 pub mod compiler_version;
 pub mod contract;
 pub mod contract_class;
+mod contract_segmentation;
 mod felt252_serde;
 mod felt252_vec_compression;
 pub mod inline_macros;
 pub mod plugin;
+
+pub use contract_segmentation::NestedIntList;
 
 /// Get the suite of plugins for compilation with StarkNet.
 pub fn starknet_plugin_suite() -> PluginSuite {

@@ -3,8 +3,8 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
     FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitFunctionId, TraitId,
-    TypeAliasId, UseId,
+    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId,
+    TraitFunctionId, TraitId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -146,9 +146,9 @@ impl HasResolverData for EnumId {
         db.enum_declaration_resolver_data(*self)
     }
 }
-impl HasResolverData for TypeAliasId {
+impl HasResolverData for ModuleTypeAliasId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        db.type_alias_resolver_data(*self)
+        db.module_type_alias_resolver_data(*self)
     }
 }
 impl HasResolverData for TraitId {

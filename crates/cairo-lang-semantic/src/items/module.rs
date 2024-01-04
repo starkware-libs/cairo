@@ -5,7 +5,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId, ImplDefId,
-    LanguageElementId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
+    LanguageElementId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitId,
+    UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -127,7 +128,7 @@ impl<'a> VisibilityExtractor<'a> {
     fn extern_type(&self, item_id: ExternTypeId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_extern_types(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn type_alias(&self, item_id: TypeAliasId) -> Maybe<ast::Visibility> {
+    fn type_alias(&self, item_id: ModuleTypeAliasId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_type_aliases(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
     fn impl_alias(&self, item_id: ImplAliasId) -> Maybe<ast::Visibility> {

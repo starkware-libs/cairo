@@ -30,6 +30,7 @@ pub enum SyntaxKind {
     MatchArm,
     ExprIf,
     ExprLoop,
+    ExprWhile,
     ElseClause,
     OptionElseClauseEmpty,
     ExprErrorPropagate,
@@ -156,6 +157,8 @@ pub enum SyntaxKind {
     TerminalFunction,
     TokenIf,
     TerminalIf,
+    TokenWhile,
+    TerminalWhile,
     TokenLoop,
     TerminalLoop,
     TokenImpl,
@@ -305,6 +308,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenWhile
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -390,6 +394,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalWhile
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
@@ -466,6 +471,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenWhile
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -498,6 +504,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalWhile
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits

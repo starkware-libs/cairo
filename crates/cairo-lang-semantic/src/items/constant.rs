@@ -45,8 +45,7 @@ pub fn priv_constant_semantic_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_constants = db.module_constants(module_file_id.0)?;
-    let const_ast = module_constants.get(&const_id).to_maybe()?;
+    let const_ast = db.module_constant_by_id(const_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(

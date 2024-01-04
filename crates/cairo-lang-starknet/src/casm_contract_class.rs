@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_felt::Felt252;
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -38,9 +39,15 @@ use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
+use crate::compiler_version::{
+    current_compiler_version_id, current_sierra_version_id, VersionId,
+    CONTRACT_SEGMENTATION_MINOR_VERSION,
+};
 use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
+use crate::contract_segmentation::{
+    compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
+};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 
 /// The expected gas cost of an entrypoint.
@@ -59,6 +66,8 @@ pub enum StarknetSierraCompilationError {
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
+    #[error(transparent)]
+    SegmentationError(#[from] SegmentationError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("Missing arguments in the entry point.")]
@@ -93,6 +102,8 @@ pub struct CasmContractClass {
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub bytecode_segment_lengths: Option<NestedIntList>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
     // Optional pythonic hints in a format that can be executed by the python vm.
@@ -338,6 +349,7 @@ impl CasmContractClass {
                 .collect(),
             linear_gas_solver: no_eq_solver,
             linear_ap_change_solver: no_eq_solver,
+            skip_non_linear_solver_comparisons: false,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
@@ -345,20 +357,23 @@ impl CasmContractClass {
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
-        let mut bytecode = vec![];
-        let mut hints = vec![];
-        for instruction in cairo_program.instructions {
-            if !instruction.hints.is_empty() {
-                hints.push((bytecode.len(), instruction.hints.clone()))
-            }
-            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+        let bytecode = bytecode
+            .iter()
+            .map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-
                 BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
-            }))
-        }
+            })
+            .collect_vec();
+
+        let bytecode_segment_lengths =
+            if sierra_version.minor >= CONTRACT_SEGMENTATION_MINOR_VERSION {
+                Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
+            } else {
+                None
+            };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -470,6 +485,7 @@ impl CasmContractClass {
             prime,
             compiler_version,
             bytecode,
+            bytecode_segment_lengths,
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
