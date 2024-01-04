@@ -8,12 +8,11 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_runner::short_string::as_cairo_short_string;
-use cairo_lang_runner::{SierraCasmRunner, StarknetState};
+use cairo_lang_runner::{ProfilingInfoPrinter, SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::get_contracts_info;
 use clap::Parser;
-use itertools::Itertools;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -64,9 +63,10 @@ fn main() -> anyhow::Result<()> {
     }
 
     let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
+    let sierra_program = replacer.apply(&sierra_program);
 
     let runner = SierraCasmRunner::new(
-        replacer.apply(&sierra_program),
+        sierra_program.clone(),
         if args.available_gas.is_some() { Some(Default::default()) } else { None },
         contracts_info,
     )
@@ -80,14 +80,8 @@ fn main() -> anyhow::Result<()> {
         )
         .with_context(|| "Failed to run the function.")?;
 
-    println!("hotspot info:");
-    for (statement_idx, weight) in result.hotspot_info.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
-    {
-        if *weight > 0 {
-            let gen_statement = sierra_program.statements.get(statement_idx.0).unwrap();
-            println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
-        }
-    }
+    let profiling_printer = ProfilingInfoPrinter::new(sierra_program);
+    profiling_printer.print(&result.profiling_info);
 
     match result.value {
         cairo_lang_runner::RunResultValue::Success(values) => {
