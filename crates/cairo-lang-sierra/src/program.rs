@@ -278,6 +278,17 @@ impl<StatementId> GenStatement<StatementId> {
             GenStatement::Return(results) => GenStatement::Return(results.clone()),
         }
     }
+    pub fn concrete_name(&self) -> Option<String> {
+        match self {
+            GenStatement::Invocation(invocation) => Some(format!("{}", invocation.libfunc_id)),
+            GenStatement::Return(_) => None,
+        }
+    }
+    pub fn generic_name(&self) -> Option<String> {
+        // There must be a better way - e.g. get the long ID with a db from the short ID, and from
+        // there the generic name.
+        Some(self.concrete_name()?.split("<").next().unwrap().into())
+    }
 }
 
 /// An invocation statement.
