@@ -142,7 +142,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test optimization with remappings (not working yet).
+//! > Test optimization with remappings.
 
 //! > test_runner_name
 test_return_optimizer
@@ -216,3 +216,77 @@ blk3:
 Statements:
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > Test with Destruct/Construct (Typical in the panic case)
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
+   match v {
+      Option::Some(tuple) =>  {
+        let (x,) = tuple;
+        return Option::Some((x,));
+      },
+      Option::None => {return Option::None;},
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<(core::integer::u16,)>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::integer::u16) <- struct_destructure(v1)
+  (v4: (core::integer::u16,)) <- struct_construct(v3)
+  (v5: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<(core::integer::u16,)>) <- Option::None(v6)
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::option::Option::<(core::integer::u16,)>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+blk1:
+Statements:
+  (v3: core::integer::u16) <- struct_destructure(v1)
+  (v4: (core::integer::u16,)) <- struct_construct(v3)
+  (v5: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<(core::integer::u16,)>) <- Option::None(v6)
+End:
+  Return(v7)
