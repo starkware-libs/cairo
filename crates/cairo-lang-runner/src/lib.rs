@@ -1,12 +1,10 @@
 //! Basic runner for running a Sierra program on the vm.
-use std::collections::{HashMap, HashSet};
-use std::fmt::Display;
+use std::collections::HashMap;
 use std::time::Instant;
 
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_casm::instructions::{CallInstruction, Instruction, InstructionBody};
-use cairo_lang_casm::operand::DerefOrImmediate;
+use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -19,7 +17,7 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
-use cairo_lang_sierra::program::{self, Function, GenericArg, Program, StatementIdx};
+use cairo_lang_sierra::program::{Function, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -322,8 +320,7 @@ impl SierraCasmRunner {
             pc_counts[original_pc] += 1;
         }
 
-        let mut sierra_weights = Vec::new();
-        sierra_weights.reserve(sierra_len);
+        let mut sierra_weights = Vec::with_capacity(sierra_len);
         for i in 0..sierra_len {
             let sierra_statement_offset =
                 self.casm_program.debug_info.sierra_statement_info[i].code_offset + base_offset;
