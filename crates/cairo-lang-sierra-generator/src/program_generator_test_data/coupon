@@ -26,10 +26,9 @@ fn bar<T>() -> felt252 {
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Box<Coupon<user@test::bar::<core::integer::u8>>> = Box<Coupon<user@test::bar::<core::integer::u8>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type test::MyStruct = Struct<ut@test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>, Box<Coupon<user@test::bar::<core::integer::u8>>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>> = Struct<ut@Tuple, test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Box<Coupon<user@test::bar::<core::integer::u8>>> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::MyStruct = Struct<ut@test::MyStruct, Unit, Box<Coupon<user@test::bar::<core::integer::u8>>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>> = Struct<ut@Tuple, test::MyStruct, Unit> [storable: true, drop: true, dup: false, zero_sized: false];
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc struct_deconstruct<test::MyStruct> = struct_deconstruct<test::MyStruct>;

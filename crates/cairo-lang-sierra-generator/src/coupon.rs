@@ -1,6 +1,6 @@
 use cairo_lang_sierra::extensions::coupon::{CouponBuyLibfunc, CouponRefundLibfunc, CouponType};
 use cairo_lang_sierra::extensions::function_call::CouponCallLibfunc;
-use cairo_lang_sierra::extensions::{get_unit_type, NamedLibfunc, NamedType};
+use cairo_lang_sierra::extensions::{get_unit_type, NamedLibfunc, NamedType, GenericTypeEx, ConcreteType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{self, ConcreteTypeLongId, GenStatement, GenericArg};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -9,6 +9,8 @@ use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra;
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::utils::{drop_libfunc_id, struct_construct_libfunc_id};
+
+// TODO: Fix user function signatures.
 
 /// Replaces unused coupons (coupons that are not used in `coupon_call`) with the unit type (`()`).
 pub struct CouponProgramFixer {
@@ -50,6 +52,7 @@ impl CouponProgramFixer {
         for statement in statements {
             if let pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) = statement {
                 let libfunc = db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                // TODO: is this the right thing to do?
                 if libfunc.generic_id == CouponBuyLibfunc::STR_ID.into()
                     && self.is_unused_coupon_in_libfunc(db, &libfunc)
                 {
@@ -90,6 +93,70 @@ impl CouponProgramFixer {
         }
         changed
     }
+
+    pub fn fix_type_declarations(
+        &self,
+        db: &dyn SierraGenGroup,
+        type_declarations: &mut Vec<program::TypeDeclaration>,
+    ) {
+        let unit_ty = get_unit_type(&SierraSignatureSpecializationContext(db))
+            .expect("Failed to construct unit type.");
+        type_declarations
+            .retain(|type_declaration| !self.is_unused_coupon(&type_declaration.long_id));
+
+        for type_declaration in type_declarations {
+            // Iterate over the generic args and replace `Coupon<...>` with the unit type `()` and
+            // recompute type info if necessary.
+            if self.modify_generic_args(db, &mut type_declaration.long_id.generic_args, &unit_ty) {
+                let long_id = &type_declaration.long_id;
+                let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
+                    &SierraSignatureSpecializationContext(db),
+                    &long_id.generic_id,
+                    &long_id.generic_args,
+                )
+                .expect("Got failure while replacing unused Coupon with the unit type.");
+                type_declaration.declared_type_info = Some(concrete_ty.info().into());
+            }
+        }
+    }
+
+    // fn fix_signatures(
+    //     &self,
+    //     db: &dyn SierraGenGroup,
+    //     signatures: &mut Vec<program::Signature>,
+    // ) {
+    //     let unit_ty = get_unit_type(&SierraSignatureSpecializationContext(db))
+    //         .expect("Failed to construct unit type.");
+    //     signatures
+    //         .retain(|signature| !self.is_unused_coupon(db, &signature.long_id));
+
+    //     for signature in signatures {
+    //         // Iterate over the generic args and replace `Coupon<...>` with the unit type `()`.
+    //         let mut changed = false;
+    //         for generic_arg in &mut signature.long_id.generic_args {
+    //             let program::GenericArg::Type(concrete_type_id) = generic_arg else {
+    //                 continue;
+    //             };
+
+    //             if self.is_unused_coupon_concrete_type_id(db, concrete_type_id) {
+    //                 *generic_arg = program::GenericArg::Type(unit_ty.clone());
+    //                 changed = true;
+    //             }
+    //         }
+
+    //         // Recompute type info if necessary.
+    //         if changed {
+    //             let long_id = &signature.long_id;
+    //             let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
+    //                 &SierraSignatureSpecializationContext(db),
+    //                 &long_id.generic_id,
+    //                 &long_id.generic_args,
+    //             )
+    //             .expect("Got failure while replacing unused Coupon with the unit type.");
+    //             signature.declared_type_info = Some(concrete_ty.info().into());
+    //         }
+    //     }
+    // }
 
     /// Returns `true` if the given type is an unused `Coupon`.
     fn is_unused_coupon(&self, long_id: &ConcreteTypeLongId) -> bool {

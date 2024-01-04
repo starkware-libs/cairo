@@ -188,6 +188,8 @@ fn run_e2e_test(
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 
+    // TestRunnerResult::success(OrderedHashMap::from([("sierra_code".into(), sierra_program_str)]))
+
     // Handle the `enforced_costs` argument.
     let enforced_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
         if let Some(enforced_costs_str) = inputs.get("enforced_costs") {

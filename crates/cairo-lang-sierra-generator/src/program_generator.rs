@@ -171,9 +171,6 @@ pub fn get_sierra_program_for_functions(
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
-    // TODO(lior): Coupons that are declared but never used, should be replaced with an empty
-    //   coupon. Otherwise, the coupon's function may be omitted from the program, resulting in an
-    //   invalid Sierra program.
     while let Some(function_id) = function_id_queue.pop_front() {
         if !processed_function_ids.insert(function_id) {
             continue;
@@ -194,8 +191,11 @@ pub fn get_sierra_program_for_functions(
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations =
+    let mut type_declarations =
         generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
+
+    coupon_program_fixer.fix_type_declarations(db, &mut type_declarations);
+
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
