@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use std::vec::IntoIter;
@@ -11,11 +10,11 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_next_item;
-use cairo_lang_runner::profiling::{self, ProfilingInfo, ProfilingInfoPrinter};
+use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoPrinter};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
