@@ -1104,33 +1104,16 @@ fn call_loop_func(
             })
         })
         .collect::<LoweringResult<Vec<_>>>()?;
-<<<<<<< HEAD
-    let extra_ret_tys = signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
+    let extra_ret_tys = loop_signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
     let call_result = generators::Call {
         function,
         inputs,
         coupon_input: None,
         extra_ret_tys,
-        ret_tys: vec![expr.ty],
-        location,
-    }
-    .add(ctx, &mut builder.statements);
-||||||| 740069555
-    let extra_ret_tys = signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
-    let call_result =
-        generators::Call { function, inputs, extra_ret_tys, ret_tys: vec![expr.ty], location }
-            .add(ctx, &mut builder.statements);
-=======
-    let extra_ret_tys = loop_signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
-    let call_result = generators::Call {
-        function,
-        inputs,
-        extra_ret_tys,
         ret_tys: vec![loop_signature.return_type],
         location,
     }
     .add(ctx, &mut builder.statements);
->>>>>>> origin/sierra-minor-update
 
     // Rebind the ref variables.
     for (ref_arg, output_var) in zip_eq(&loop_signature.extra_rets, call_result.extra_outputs) {

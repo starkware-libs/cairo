@@ -664,7 +664,7 @@ pub fn compile_invocation(
         }
         CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
         CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
-<<<<<<< HEAD
+        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
         CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => Ok(builder
                 .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
@@ -672,10 +672,6 @@ pub fn compile_invocation(
                 Ok(builder.build_only_reference_changes([].into_iter()))
             }
         },
-||||||| 740069555
-=======
-        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
->>>>>>> origin/sierra-minor-update
     }
 }
 
