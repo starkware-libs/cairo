@@ -707,6 +707,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits 0.2.17",
+ "smol_str",
  "starknet-crypto",
  "test-case",
  "thiserror",
