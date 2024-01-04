@@ -25,8 +25,9 @@ keccak.workspace = true
 num-bigint = { workspace = true, default-features = true }
 num-integer.workspace = true
 num-traits = { workspace = true, default-features = true }
-thiserror.workspace = true
+smol_str.workspace = true
 starknet-crypto.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 indoc.workspace = true
