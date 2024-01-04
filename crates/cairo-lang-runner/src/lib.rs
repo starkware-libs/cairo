@@ -1,5 +1,5 @@
 //! Basic runner for running a Sierra program on the vm.
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::time::Instant;
 
@@ -19,7 +19,7 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
-use cairo_lang_sierra::program::{Function, GenericArg, Program, StatementIdx};
+use cairo_lang_sierra::program::{self, Function, GenericArg, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -41,6 +41,7 @@ use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
+use smol_str::SmolStr;
 use thiserror::Error;
 
 pub mod casm_run;
@@ -291,14 +292,14 @@ impl SierraCasmRunner {
         };
 
         let now = Instant::now();
-        let profiling_info = self.collect_profiling_info2(vm.get_relocated_trace().unwrap());
+        let profiling_info = self.collect_profiling_info(vm.get_relocated_trace().unwrap());
         let elapsed = now.elapsed();
         println!("Elapsed: {:.2?}", elapsed);
 
         Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
 
-    fn collect_profiling_info2(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
+    fn collect_profiling_info(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
         let bytecode_size =
             self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
@@ -336,6 +337,7 @@ impl SierraCasmRunner {
 
         let concrete_sierra_statements_weights: HashMap<StatementIdx, usize> =
             sierra_weights.into_iter().enumerate().map(|(x, y)| (StatementIdx(x), y)).collect();
+
         ProfilingInfo { concrete_sierra_statements_weights }
     }
 
@@ -350,7 +352,7 @@ impl SierraCasmRunner {
     // }
 
     // TODO(yg): remove, this is less efficient. See ~/all/mess/profiler_profiling.
-    // fn collect_profiling_info(&self, trace: &Vec<TraceEntry>) -> HashMap<StatementIdx, usize> {
+    // fn collect_profiling_info2(&self, trace: &Vec<TraceEntry>) -> HashMap<StatementIdx, usize> {
     //     let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
 
     //     // while let Some(inst) = instructions_mut.next() {
@@ -721,40 +723,117 @@ fn create_metadata(
     })
 }
 
-// TODO(yg): move to profiling.rs
+// TODO(yg): move all to profiling.rs
+/// Profiling into of a single run.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
     /// The number of steps in the trace that "belongs" to each sierra statement.
     concrete_sierra_statements_weights: HashMap<StatementIdx, usize>,
 }
+
+/// Flags controlling how the profiling info is printed by the `ProfilingInfoPrinter`.
+pub struct ProfilingInfoPrinterFlags {
+    print_zeros: bool,
+    print_by_concrete_libfunc: bool,
+    print_by_generic_libfunc: bool,
+}
+/// A printer for profiling info.
 pub struct ProfilingInfoPrinter {
     sierra_program: Program,
-
-    // Flags
-    print_zeros: bool,
+    flags: ProfilingInfoPrinterFlags,
 }
 impl ProfilingInfoPrinter {
     pub fn new(sierra_program: Program) -> Self {
-        Self { sierra_program, print_zeros: false }
+        Self {
+            sierra_program,
+            flags: ProfilingInfoPrinterFlags {
+                print_zeros: false,
+                print_by_concrete_libfunc: true,
+                print_by_generic_libfunc: true,
+            },
+        }
     }
 
-    // TODO(yg): consider uniting the flags to a flags struct.
+    /// Prints the profiling info according to the flags set in the printer.
     pub fn print(&self, profiling_info: &ProfilingInfo) {
-        println!("hotspot info:");
-        println!("yg sierra len when printing: {}", self.sierra_program.statements.len());
+        self.print_ex(profiling_info, &self.flags);
+    }
+
+    /// Prints the profiling info according to the given flags (can be used to override the printer
+    /// flags).
+    pub fn print_ex(&self, profiling_info: &ProfilingInfo, flags: &ProfilingInfoPrinterFlags) {
+        let mut concrete_libfuncs = if flags.print_by_concrete_libfunc {
+            self.sierra_program
+                .libfunc_declarations
+                .iter()
+                .map(|concrete_libfunc| (concrete_libfunc.long_id.to_string().into(), 0))
+                .collect::<HashMap<SmolStr, usize>>()
+        } else {
+            HashMap::new()
+        };
+
+        let mut generic_libfuncs = if flags.print_by_generic_libfunc {
+            self.sierra_program
+                .libfunc_declarations
+                .iter()
+                .map(|concrete_libfunc| (concrete_libfunc.long_id.generic_id.0.clone(), 0))
+                .collect::<HashMap<SmolStr, usize>>()
+        } else {
+            HashMap::new()
+        };
+
+        println!("Profiling info:");
+        println!("Weight by sierra statement:");
+        let mut return_weight = 0;
         for (statement_idx, weight) in profiling_info
             .concrete_sierra_statements_weights
             .iter()
             .sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
         {
-            if *weight > 0 || self.print_zeros {
-                let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0)
-                else {
-                    println!("Failed fetching statement index {}", statement_idx.0);
-                    return;
-                };
+            let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
+                println!("Failed fetching statement index {}", statement_idx.0);
+                return;
+            };
+            if let Some(concrete_name) = gen_statement.concrete_name() {
+                if flags.print_by_concrete_libfunc {
+                    let concrete_name: SmolStr = concrete_name.into();
+                    *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
+                }
+
+                if flags.print_by_generic_libfunc {
+                    let generic_name: SmolStr = gen_statement.generic_name().unwrap().into();
+                    *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
+                }
+            } else {
+                return_weight += weight;
+            }
+            if *weight > 0 || flags.print_zeros {
                 println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
             }
+        }
+
+        if flags.print_by_concrete_libfunc {
+            println!("Weight by concrete libfunc:");
+            for (concrete_name, weight) in
+                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+            {
+                if *weight > 0 || flags.print_zeros {
+                    println!("  libfunc {}: {}", concrete_name, *weight);
+                }
+            }
+            println!("  return: {return_weight}");
+        }
+
+        if flags.print_by_generic_libfunc {
+            println!("Weight by generic libfunc:");
+            for (generic_name, weight) in
+                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+            {
+                if *weight > 0 || flags.print_zeros {
+                    println!("  libfunc {}: {}", generic_name, *weight);
+                }
+            }
+            println!("  return: {return_weight}");
         }
     }
 }
