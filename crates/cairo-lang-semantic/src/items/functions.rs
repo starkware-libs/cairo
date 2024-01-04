@@ -173,6 +173,16 @@ impl GenericFunctionId {
             crate::items::functions::GenericFunctionId::Extern(_) => Ok(false),
         }
     }
+
+    // Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
+            GenericFunctionId::Impl(impl_generic_function) => {
+                impl_generic_function.impl_id.is_fully_concrete(db)
+            }
+        }
+    }
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
@@ -240,6 +250,16 @@ impl FunctionId {
             )
             .into()
         }
+    }
+
+    // Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        let func = self.get_concrete(db);
+        func.generic_function.is_fully_concrete(db)
+            && func
+                .generic_args
+                .iter()
+                .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
 }
 

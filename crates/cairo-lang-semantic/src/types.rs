@@ -87,10 +87,7 @@ impl TypeId {
             TypeLongId::GenericParameter(_) => false,
             TypeLongId::Var(_) => false,
             TypeLongId::Missing(_) => false,
-            TypeLongId::Coupon(_function_id) => {
-                // TODO(lior): Change to `function_id.is_fully_concrete(db)`.
-                true
-            }
+            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         }
     }
 }
