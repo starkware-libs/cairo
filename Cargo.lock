@@ -1042,9 +1042,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "0.8.7"
+version = "0.8.4-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00d9bf139b0fe845627cf09d11af43eec9575dba702033bf6b08050c776b8553"
+checksum = "7daeda31632d19260fe4307c6f07e02ff1c658287b3cf70faf7042ef8fe1651b"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1067,6 +1067,7 @@ dependencies = [
  "sha2",
  "sha3",
  "starknet-crypto 0.5.2",
+ "starknet-curve 0.4.0",
  "thiserror-no-std",
 ]
 
