@@ -395,10 +395,10 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::builtin(CostTokenType::Poseidon),
             }],
         },
-        CoreConcreteLibfunc::StarkNet(libfunc) => {
+        StarkNet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
-        CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
+        Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_)
             | NullableConcreteLibfunc::NullableFromBox(_)
             | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ConstCost::default().into()],
@@ -406,15 +406,15 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
         },
-        CoreConcreteLibfunc::Debug(_) => vec![ConstCost::steps(1).into()],
-        CoreConcreteLibfunc::SnapshotTake(_) => vec![ConstCost::default().into()],
-        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
+        Debug(_) => vec![ConstCost::steps(1).into()],
+        SnapshotTake(_) => vec![ConstCost::default().into()],
+        Felt252DictEntry(libfunc) => match libfunc {
             Felt252DictEntryConcreteLibfunc::Get(_) => {
                 vec![(ConstCost::steps(1) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
             }
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ConstCost::steps(1).into()],
         },
-        CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
+        Bytes31(libfunc) => match libfunc {
             Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
                 vec![ConstCost::default().into()]
             }
