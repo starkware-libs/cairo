@@ -41,6 +41,12 @@ impl DisplayBool of Display<bool> {
     }
 }
 
+impl DisplaySnapshot<T, +Display<T>> of Display<@T> {
+    fn fmt(self: @@T, ref f: Formatter) -> Result<(), Error> {
+        Display::fmt(*self, ref f)
+    }
+}
+
 /// A trait for debug formatting, using the empty format ("{:?}").
 pub trait Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
