@@ -893,18 +893,6 @@ note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>
 
-error: Variable not dropped.
- --> lib.cairo:7:12
-fn foo(mut x: MyStruct) -> MyStruct {
-           ^
-note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo[array_inline_macro]:2:54
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-                                                     ^****************************^
-note: Trait has no implementation in context: core::traits::Drop::<test::MyStruct>
-note: Trait has no implementation in context: core::traits::Destruct::<test::MyStruct>
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::MyStruct>
-
 //! > lowering
 Parameters: v0: test::MyStruct
 blk0 (root):
