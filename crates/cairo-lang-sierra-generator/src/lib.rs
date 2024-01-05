@@ -5,6 +5,7 @@ mod ap_change;
 mod ap_tracking;
 mod block_generator;
 pub mod canonical_id_replacer;
+mod coupon;
 pub mod db;
 mod expr_generator_context;
 mod extra_sierra_info;
