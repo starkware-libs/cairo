@@ -61,10 +61,34 @@ impl CouponProgramFixer {
                     // Replace `coupon_refund` with `drop<Unit>`.
                     invocation.libfunc_id = drop_libfunc_id(db, unit_ty.clone());
                 } else {
-                    // TODO(lior): Replace unused coupons in the libfunc generic arguments.
+                    // Replace unused coupons in the libfunc generic arguments.
+                    let mut libfunc =
+                        db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                    if self.modify_generic_args(db, &mut libfunc.generic_args, &unit_ty) {
+                        invocation.libfunc_id = db.intern_concrete_lib_func(libfunc);
+                    }
                 }
             }
         }
+    }
+
+    /// Replaces unused coupons in the generic arguments with the unit type.
+    fn modify_generic_args(
+        &self,
+        db: &dyn SierraGenGroup,
+        generic_args: &mut Vec<GenericArg>,
+        unit_ty: &ConcreteTypeId,
+    ) -> bool {
+        let mut changed = false;
+        for generic_arg in generic_args {
+            if let GenericArg::Type(coupon_ty) = generic_arg {
+                if self.is_unused_coupon_concrete_type_id(db, coupon_ty) {
+                    *coupon_ty = unit_ty.clone();
+                    changed = true;
+                }
+            }
+        }
+        changed
     }
 
     /// Returns `true` if the given type is an unused `Coupon`.
