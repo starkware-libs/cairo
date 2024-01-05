@@ -18,6 +18,7 @@ cairo_lang_test_utils::test_file_test!(
     program_generator,
     "src/program_generator_test_data",
     {
+        coupon: "coupon",
         function_call: "function_call",
         type_dependency: "type_dependency",
     },
