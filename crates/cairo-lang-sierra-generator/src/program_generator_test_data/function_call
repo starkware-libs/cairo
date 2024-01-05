@@ -13,6 +13,7 @@ fn bar(a: felt252) -> felt252 {
 }
 
 //! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc drop<felt252> = drop<felt252>;

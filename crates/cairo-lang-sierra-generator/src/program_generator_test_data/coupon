@@ -25,29 +25,30 @@ fn bar<T>() -> felt252 {
 }
 
 //! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
 type Box<Coupon<user@test::bar::<core::integer::u8>>> = Box<Coupon<user@test::bar::<core::integer::u8>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type test::MyStruct = Struct<ut@test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>, Box<Coupon<user@test::bar::<core::integer::u8>>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>> = Struct<ut@Tuple, test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc struct_deconstruct<test::MyStruct> = struct_deconstruct<test::MyStruct>;
-libfunc coupon_refund<Coupon<user@test::bar::<core::integer::u8>>> = coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc unbox<Coupon<user@test::bar::<core::integer::u8>>> = unbox<Coupon<user@test::bar::<core::integer::u8>>>;
 libfunc drop<Coupon<user@test::bar::<core::integer::u8>>> = drop<Coupon<user@test::bar::<core::integer::u8>>>;
-libfunc coupon_buy<Coupon<user@test::bar::<core::integer::u8>>> = coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc into_box<Coupon<user@test::bar::<core::integer::u8>>> = into_box<Coupon<user@test::bar::<core::integer::u8>>>;
 libfunc struct_construct<test::MyStruct> = struct_construct<test::MyStruct>;
 libfunc struct_construct<Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>>> = struct_construct<Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>>>;
 
 struct_deconstruct<test::MyStruct>([0]) -> ([2], [3]); // 0
-coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>([2]) -> (); // 1
+drop<Unit>([2]) -> (); // 1
 unbox<Coupon<user@test::bar::<core::integer::u8>>>([3]) -> ([4]); // 2
-coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>([4]) -> (); // 3
+drop<Unit>([4]) -> (); // 3
 drop<Coupon<user@test::bar::<core::integer::u8>>>([1]) -> (); // 4
-coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([5]); // 5
-coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([6]); // 6
+struct_construct<Unit>() -> ([5]); // 5
+struct_construct<Unit>() -> ([6]); // 6
 into_box<Coupon<user@test::bar::<core::integer::u8>>>([6]) -> ([7]); // 7
-coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([8]); // 8
+struct_construct<Unit>() -> ([8]); // 8
 struct_construct<test::MyStruct>([5], [7]) -> ([9]); // 9
 struct_construct<Tuple<test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>>>([9], [8]) -> ([10]); // 10
 return([10]); // 11

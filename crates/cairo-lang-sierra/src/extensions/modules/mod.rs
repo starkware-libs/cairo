@@ -48,7 +48,7 @@ pub mod uninitialized;
 pub mod utils;
 
 /// Helper for Unit type def.
-fn get_unit_type(
+pub fn get_unit_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context.get_concrete_type(

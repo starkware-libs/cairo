@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::extensions::GenericLibfuncEx;
+use cairo_lang_sierra::extensions::{get_unit_type, GenericLibfuncEx};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -13,6 +13,7 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 
+use crate::coupon::CouponProgramFixer;
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra::{self};
@@ -156,7 +157,9 @@ fn collect_used_types(
         chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
     });
 
-    chain!(types_in_libfuncs, types_in_user_functions).collect()
+    let unit_ty = get_unit_type(&SierraSignatureSpecializationContext(db))
+        .expect("Failed to construct unit type.");
+    chain!([unit_ty], types_in_libfuncs, types_in_user_functions).collect()
 }
 
 pub fn get_sierra_program_for_functions(
@@ -185,6 +188,9 @@ pub fn get_sierra_program_for_functions(
             }
         }
     }
+
+    let coupon_program_fixer = CouponProgramFixer::new(db, &statements);
+    coupon_program_fixer.fix_statements(db, &mut statements);
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
