@@ -13,6 +13,7 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 
+use crate::coupon::CouponProgramFixer;
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra::{self};
@@ -190,6 +191,9 @@ pub fn get_sierra_program_for_functions(
             }
         }
     }
+
+    let coupon_program_fixer = CouponProgramFixer::new(db, &statements);
+    coupon_program_fixer.fix_statements(&mut statements);
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
