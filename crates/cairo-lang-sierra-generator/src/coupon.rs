@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_sierra::extensions::coupon::{CouponBuyLibfunc, CouponRefundLibfunc, CouponType};
 use cairo_lang_sierra::extensions::function_call::CouponCallLibfunc;
 use cairo_lang_sierra::extensions::{get_unit_type, NamedLibfunc, NamedType};
@@ -63,9 +65,51 @@ impl<'a> CouponProgramFixer<'a> {
                     // Replace `coupon_refund` with `drop<Unit>`.
                     invocation.libfunc_id = drop_libfunc_id(self.db, self.unit_ty.clone());
                 } else {
-                    // TODO(lior): Replace unused coupons in the libfunc generic arguments.
+                    // Replace unused coupons in the libfunc generic arguments.
+                    let mut libfunc =
+                        self.db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                    if self.modify_generic_args(&mut libfunc.generic_args) {
+                        invocation.libfunc_id = self.db.intern_concrete_lib_func(libfunc);
+                    }
                 }
             }
+        }
+    }
+
+    /// Replaces unused coupons in the generic arguments with the unit type.
+    fn modify_generic_args(&self, generic_args: &mut Vec<GenericArg>) -> bool {
+        let mut changed = false;
+        for generic_arg in generic_args {
+            if let GenericArg::Type(coupon_ty) = generic_arg {
+                let res = self.fix_concrete_type(&coupon_ty);
+                if &res != coupon_ty {
+                    *coupon_ty = res;
+                    changed = true;
+                }
+            }
+        }
+        changed
+    }
+
+    /// Replaces unused coupons in the type (including its generic arguments) with the unit type.
+    fn fix_concrete_type(&self, ty: &ConcreteTypeId) -> ConcreteTypeId {
+        let SierraGeneratorTypeLongId::Regular(long_id) =
+            self.db.lookup_intern_concrete_type(ty.clone())
+        else {
+            return ty.clone();
+        };
+
+        if self.is_unused_coupon(&long_id) {
+            return self.unit_ty.clone();
+        }
+
+        let mut generic_args = long_id.generic_args.clone();
+        if self.modify_generic_args(&mut generic_args) {
+            return self.db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(Arc::new(
+                ConcreteTypeLongId { generic_id: long_id.generic_id.clone(), generic_args },
+            )));
+        } else {
+            return ty.clone();
         }
     }
 
