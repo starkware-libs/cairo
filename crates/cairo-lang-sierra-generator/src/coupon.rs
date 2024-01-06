@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::function_call::CouponCallLibfunc;
 use cairo_lang_sierra::extensions::{get_unit_type, NamedLibfunc, NamedType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{self, ConcreteTypeLongId, GenStatement, GenericArg};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
@@ -18,6 +19,7 @@ pub struct CouponProgramFixer<'a> {
     /// The set of coupon functions that are used in a `coupon_call` libfunc in the program.
     used_coupon_funcs: UnorderedHashSet<FunctionId>,
     unit_ty: ConcreteTypeId,
+    cache: UnorderedHashMap<ConcreteTypeId, ConcreteTypeId>,
 }
 impl<'a> CouponProgramFixer<'a> {
     /// Constructs a new [CouponProgramFixer].
@@ -44,11 +46,11 @@ impl<'a> CouponProgramFixer<'a> {
         let unit_ty = get_unit_type(&SierraSignatureSpecializationContext(db))
             .expect("Failed to construct unit type.");
 
-        Self { db, used_coupon_funcs, unit_ty }
+        Self { db, used_coupon_funcs, unit_ty, cache: Default::default() }
     }
 
     /// Replaces unused coupons in the statements with the unit type.
-    pub fn fix_statements(&self, statements: &mut Vec<pre_sierra::Statement>) {
+    pub fn fix_statements(&mut self, statements: &mut Vec<pre_sierra::Statement>) {
         for statement in statements {
             if let pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) = statement {
                 let libfunc =
@@ -77,26 +79,23 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Replaces unused coupons with the unit type.
-    pub fn fix_parameters(
-        &self,
-        parameters: &[program::Param],
-    ) -> Vec<program::Param> {
+    pub fn fix_parameters(&mut self, parameters: &[program::Param]) -> Vec<program::Param> {
         parameters
             .iter()
-            .map(|param| program::Param { id: param.id.clone(), ty: self.fix_concrete_type(&param.ty) })
+            .map(|param| program::Param {
+                id: param.id.clone(),
+                ty: self.fix_concrete_type(&param.ty),
+            })
             .collect()
     }
 
     /// Replaces unused coupons with the unit type.
-    pub fn fix_types(
-        &self,
-        types: &[ConcreteTypeId],
-    ) -> Vec<ConcreteTypeId> {
+    pub fn fix_types(&mut self, types: &[ConcreteTypeId]) -> Vec<ConcreteTypeId> {
         types.iter().map(|ty| self.fix_concrete_type(ty)).collect()
     }
 
     /// Replaces unused coupons in the generic arguments with the unit type.
-    fn modify_generic_args(&self, generic_args: &mut Vec<GenericArg>) -> bool {
+    fn modify_generic_args(&mut self, generic_args: &mut Vec<GenericArg>) -> bool {
         let mut changed = false;
         for generic_arg in generic_args {
             if let GenericArg::Type(coupon_ty) = generic_arg {
@@ -111,7 +110,19 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Replaces unused coupons in the type (including its generic arguments) with the unit type.
-    pub fn fix_concrete_type(&self, ty: &ConcreteTypeId) -> ConcreteTypeId {
+    pub fn fix_concrete_type(&mut self, ty: &ConcreteTypeId) -> ConcreteTypeId {
+        if let Some(cached_value) = self.cache.get(ty) {
+            return cached_value.clone();
+        }
+
+        let fixed_ty = self.fix_concrete_type_inner(ty);
+        self.cache.insert(ty.clone(), fixed_ty.clone());
+
+        fixed_ty
+    }
+
+    /// Helper function for [fix_concrete_type].
+    fn fix_concrete_type_inner(&mut self, ty: &ConcreteTypeId) -> ConcreteTypeId {
         let SierraGeneratorTypeLongId::Regular(long_id) =
             self.db.lookup_intern_concrete_type(ty.clone())
         else {
@@ -133,7 +144,7 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Returns `true` if the given type is an unused `Coupon`.
-    fn is_unused_coupon(&self, long_id: &ConcreteTypeLongId) -> bool {
+    fn is_unused_coupon(&mut self, long_id: &ConcreteTypeLongId) -> bool {
         if long_id.generic_id != CouponType::id() {
             return false;
         }
@@ -144,7 +155,7 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Returns `true` if the given type is an unused `Coupon`.
-    fn is_unused_coupon_concrete_type_id(&self, concrete_type_id: &ConcreteTypeId) -> bool {
+    fn is_unused_coupon_concrete_type_id(&mut self, concrete_type_id: &ConcreteTypeId) -> bool {
         let SierraGeneratorTypeLongId::Regular(long_id) =
             self.db.lookup_intern_concrete_type(concrete_type_id.clone())
         else {
@@ -155,7 +166,7 @@ impl<'a> CouponProgramFixer<'a> {
 
     /// Returns `true` if the generic argument of the libfunc is an unused `Coupon`.
     /// Assumes the libfunc is `coupon_buy` or `coupon_refund`.
-    fn is_unused_coupon_in_libfunc(&self, libfunc: &program::ConcreteLibfuncLongId) -> bool {
+    fn is_unused_coupon_in_libfunc(&mut self, libfunc: &program::ConcreteLibfuncLongId) -> bool {
         let [GenericArg::Type(coupon_ty)] = &libfunc.generic_args[..] else {
             panic!("Invalid generic args for coupon libfunc.");
         };
