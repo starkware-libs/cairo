@@ -135,7 +135,7 @@ fn collect_used_types(
     db: &dyn SierraGenGroup,
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[Arc<pre_sierra::Function>],
-    coupon_program_fixer: &CouponProgramFixer,
+    coupon_program_fixer: &mut CouponProgramFixer,
 ) -> OrderedHashSet<ConcreteTypeId> {
     // Collect types that appear in libfuncs.
     let types_in_libfuncs = libfunc_declarations.iter().flat_map(|libfunc| {
@@ -159,9 +159,15 @@ fn collect_used_types(
     // This is only relevant for types that are arguments to entry points and are not used in
     // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
     // have no libfuncs, but we still need to declare the struct.
-    let types_in_user_functions = functions.iter().flat_map(|func| {
-        chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
-    }).map(|ty| coupon_program_fixer.fix_concrete_type(&ty));
+    let types_in_user_functions = functions
+        .iter()
+        .flat_map(|func| {
+            chain!(
+                func.parameters.iter().map(|param| param.ty.clone()),
+                func.ret_types.iter().cloned()
+            )
+        })
+        .map(|ty| coupon_program_fixer.fix_concrete_type(&ty));
 
     chain!(types_in_libfuncs, types_in_user_functions).collect()
 }
@@ -190,13 +196,15 @@ pub fn get_sierra_program_for_functions(
         }
     }
 
-    let coupon_program_fixer = CouponProgramFixer::new(db, &statements);
+    let mut coupon_program_fixer = CouponProgramFixer::new(db, &statements);
     coupon_program_fixer.fix_statements(&mut statements);
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions, &coupon_program_fixer));
+    let type_declarations = generate_type_declarations(
+        db,
+        collect_used_types(db, &libfunc_declarations, &functions, &mut coupon_program_fixer),
+    );
 
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
