@@ -32,9 +32,6 @@ fn bar<T>() -> felt252 {
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type test::MyStruct = Struct<ut@test::MyStruct, Unit, Box<Unit>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Box<Coupon<user@test::bar::<core::integer::u8>>> = Box<Coupon<user@test::bar::<core::integer::u8>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type test::MyStruct = Struct<ut@test::MyStruct, Coupon<user@test::bar::<core::integer::u8>>, Box<Coupon<user@test::bar::<core::integer::u8>>>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc struct_deconstruct<test::MyStruct> = struct_deconstruct<test::MyStruct>;
 libfunc drop<Unit> = drop<Unit>;
@@ -56,5 +53,5 @@ return([8]); // 9
 struct_construct<Unit>() -> ([0]); // 10
 return([0]); // 11
 
-test::foo@0([0]: test::MyStruct, [1]: Coupon<user@test::bar::<core::integer::u8>>) -> (test::MyStruct);
-test::return_coupon@10() -> (Coupon<user@test::bar::<core::integer::u8>>);
+test::foo@0([0]: test::MyStruct, [1]: Unit) -> (test::MyStruct);
+test::return_coupon@10() -> (Unit);

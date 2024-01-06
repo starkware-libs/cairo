@@ -135,6 +135,7 @@ fn collect_used_types(
     db: &dyn SierraGenGroup,
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[Arc<pre_sierra::Function>],
+    coupon_program_fixer: &CouponProgramFixer,
 ) -> OrderedHashSet<ConcreteTypeId> {
     // Collect types that appear in libfuncs.
     let types_in_libfuncs = libfunc_declarations.iter().flat_map(|libfunc| {
@@ -160,7 +161,7 @@ fn collect_used_types(
     // have no libfuncs, but we still need to declare the struct.
     let types_in_user_functions = functions.iter().flat_map(|func| {
         chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
-    });
+    }).map(|ty| coupon_program_fixer.fix_concrete_type(&ty));
 
     chain!(types_in_libfuncs, types_in_user_functions).collect()
 }
@@ -174,9 +175,6 @@ pub fn get_sierra_program_for_functions(
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
-    // TODO(lior): Coupons that are declared but never used, should be replaced with an empty
-    //   coupon. Otherwise, the coupon's function may be omitted from the program, resulting in an
-    //   invalid Sierra program.
     while let Some(function_id) = function_id_queue.pop_front() {
         if !processed_function_ids.insert(function_id) {
             continue;
@@ -198,7 +196,8 @@ pub fn get_sierra_program_for_functions(
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions, &coupon_program_fixer));
+
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
@@ -213,8 +212,8 @@ pub fn get_sierra_program_for_functions(
                 let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
                 program::Function::new(
                     function.id.clone(),
-                    function.parameters.clone(),
-                    sierra_signature.ret_types.clone(),
+                    coupon_program_fixer.fix_parameters(&function.parameters),
+                    coupon_program_fixer.fix_types(&sierra_signature.ret_types),
                     label_replacer.handle_label_id(function.entry_point),
                 )
             })

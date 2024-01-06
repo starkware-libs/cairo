@@ -76,6 +76,25 @@ impl<'a> CouponProgramFixer<'a> {
         }
     }
 
+    /// Replaces unused coupons with the unit type.
+    pub fn fix_parameters(
+        &self,
+        parameters: &[program::Param],
+    ) -> Vec<program::Param> {
+        parameters
+            .iter()
+            .map(|param| program::Param { id: param.id.clone(), ty: self.fix_concrete_type(&param.ty) })
+            .collect()
+    }
+
+    /// Replaces unused coupons with the unit type.
+    pub fn fix_types(
+        &self,
+        types: &[ConcreteTypeId],
+    ) -> Vec<ConcreteTypeId> {
+        types.iter().map(|ty| self.fix_concrete_type(ty)).collect()
+    }
+
     /// Replaces unused coupons in the generic arguments with the unit type.
     fn modify_generic_args(&self, generic_args: &mut Vec<GenericArg>) -> bool {
         let mut changed = false;
@@ -92,7 +111,7 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Replaces unused coupons in the type (including its generic arguments) with the unit type.
-    fn fix_concrete_type(&self, ty: &ConcreteTypeId) -> ConcreteTypeId {
+    pub fn fix_concrete_type(&self, ty: &ConcreteTypeId) -> ConcreteTypeId {
         let SierraGeneratorTypeLongId::Regular(long_id) =
             self.db.lookup_intern_concrete_type(ty.clone())
         else {
