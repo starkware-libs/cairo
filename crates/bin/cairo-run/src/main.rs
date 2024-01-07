@@ -7,7 +7,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_runner::profiling::ProfilingInfoPrinter;
+use cairo_lang_runner::profiling::{ProfilingInfoPrinter, ProfilingInfoPrinterParams};
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
