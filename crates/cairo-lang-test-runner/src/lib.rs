@@ -283,6 +283,7 @@ pub fn run_tests(
             linear_ap_change_solver: true,
         }),
         contracts_info,
+        run_profiler,
     )
     .with_context(|| "Failed setting up runner.")?;
     println!("running {} tests", named_tests.len());
@@ -305,7 +306,6 @@ pub fn run_tests(
                     &[],
                     test.available_gas,
                     Default::default(),
-                    run_profiler,
                 )
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
