@@ -7,7 +7,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_runner::profiling::{ProfilingInfoPrinter, ProfilingInfoPrinterParams};
+use cairo_lang_runner::profiling::ProfilingInfoPrinter;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -34,6 +34,9 @@ struct Args {
     /// Whether to print the memory.
     #[arg(long, default_value_t = false)]
     print_full_memory: bool,
+    /// Whether to run the profiler.
+    #[arg(long, default_value_t = false)]
+    run_profiler: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -78,11 +81,19 @@ fn main() -> anyhow::Result<()> {
             &[],
             args.available_gas,
             StarknetState::default(),
+            args.run_profiler,
         )
         .with_context(|| "Failed to run the function.")?;
 
-    let profiling_printer = ProfilingInfoPrinter::new(sierra_program);
-    profiling_printer.print(&result.profiling_info);
+    if args.run_profiler {
+        let profiling_printer = ProfilingInfoPrinter::new(sierra_program);
+        match result.profiling_info {
+            Some(profiling_info) => {
+                profiling_printer.print(&profiling_info);
+            }
+            None => println!("Warning: Profiling info not found."),
+        }
+    }
 
     match result.value {
         cairo_lang_runner::RunResultValue::Success(values) => {
