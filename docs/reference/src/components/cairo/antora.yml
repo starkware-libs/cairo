@@ -1,5 +1,5 @@
+name: documentation
 title: Cairo docs
-name: ROOT
 version: ~
 nav:
   - modules/ROOT/nav.adoc
