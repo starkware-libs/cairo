@@ -204,6 +204,7 @@ fn run_function(
             &params.iter().cloned().map(Arg::Value).collect_vec(),
             available_gas,
             Default::default(),
+            false,
         )
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {

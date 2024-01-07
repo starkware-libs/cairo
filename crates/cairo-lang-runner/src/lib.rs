@@ -75,7 +75,8 @@ pub struct RunResultStarknet {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
-    pub profiling_info: ProfilingInfo,
+    /// The profiling info of the run, if requested.
+    pub profiling_info: Option<ProfilingInfo>,
 }
 
 /// The full result of a run.
@@ -84,7 +85,8 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
-    pub profiling_info: ProfilingInfo,
+    /// The profiling info of the run, if requested.
+    pub profiling_info: Option<ProfilingInfo>,
 }
 
 /// The ran function return value.
@@ -194,6 +196,7 @@ impl SierraCasmRunner {
         args: &[Arg],
         available_gas: Option<usize>,
         starknet_state: StarknetState,
+        run_profiler: bool,
     ) -> Result<RunResultStarknet, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
@@ -207,8 +210,14 @@ impl SierraCasmRunner {
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        let RunResult { gas_counter, memory, value, profiling_info } =
-            self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins)?;
+        let RunResult { gas_counter, memory, value, profiling_info } = self.run_function(
+            func,
+            &mut hint_processor,
+            hints_dict,
+            instructions,
+            builtins,
+            run_profiler,
+        )?;
         Ok(RunResultStarknet {
             gas_counter,
             memory,
@@ -231,6 +240,7 @@ impl SierraCasmRunner {
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
         builtins: Vec<BuiltinName>,
+        run_profiler: bool,
     ) -> Result<RunResult, RunnerError>
     where
         Instructions: Iterator<Item = &'a Instruction> + Clone,
@@ -289,7 +299,11 @@ impl SierraCasmRunner {
             self.handle_main_return_value(ty, values, &cells)?
         };
 
-        let profiling_info = self.collect_profiling_info(vm.get_relocated_trace().unwrap());
+        let profiling_info = if run_profiler {
+            Some(self.collect_profiling_info(vm.get_relocated_trace().unwrap()))
+        } else {
+            None
+        };
 
         Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
@@ -340,12 +354,21 @@ impl SierraCasmRunner {
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
         builtins: Vec<BuiltinName>,
+        run_profiler: bool,
     ) -> Result<RunResult, RunnerError>
     where
         Instructions: Iterator<Item = &'a Instruction> + Clone,
     {
         let mut vm = VirtualMachine::new(true);
-        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, instructions, builtins)
+        self.run_function_with_vm(
+            func,
+            &mut vm,
+            hint_processor,
+            hints_dict,
+            instructions,
+            builtins,
+            run_profiler,
+        )
     }
 
     /// Handling the main return value to create a `RunResultValue`.

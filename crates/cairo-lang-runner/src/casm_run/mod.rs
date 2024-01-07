@@ -1116,6 +1116,7 @@ impl<'a> CairoHintProcessor<'a> {
                 &[Arg::Array(calldata)],
                 Some(*gas_counter),
                 self.starknet_state.clone(),
+                false,
             )
             .expect("Internal runner error.");
 
