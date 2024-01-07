@@ -8,7 +8,8 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VarUsage, VariableId,
+    StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
+    VarUsage, VariableId,
 };
 
 /// Optimizes EnumConstruct statements where all the arms reconstruct the enum and return it.
@@ -60,7 +61,15 @@ pub enum Pattern<'a> {
         /// The returned variables of the return statement.
         returned_vars: &'a [VarUsage],
     },
-
+    /// There is a StructConstruct followed by a EnumConstruct followed by a return.
+    StructConstruct {
+        /// The input to the StructConstruct statement.
+        input_vars: Vec<VarUsage>,
+        /// The constructed variant.
+        variant: &'a semantic::ConcreteVariant,
+        /// The returned variables of the return that follows the EnumConstruct.
+        returned_vars: &'a [VarUsage],
+    },
     /// Found an EnumConstruct whose output is returned by the function.
     EnumConstruct {
         /// The input to the EnumConstruct is either a unit type or `opt_input_var.unwrap()`.
@@ -82,9 +91,41 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         stmt: &'a Statement,
     ) {
         match stmt {
-            // Allow `StructConstruct` statements between the EnumMatch and the return statement.
-            // This is ok since we check that that returned var is the result of the EnumConstruct.
-            Statement::StructConstruct(_) => {}
+            Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
+                if let Pattern::EnumConstruct { opt_input_var, variant, returned_vars } = info {
+                    if Some(*output) == *opt_input_var {
+                        *info = Pattern::StructConstruct {
+                            input_vars: inputs.to_vec(),
+                            variant,
+                            returned_vars,
+                        };
+                    }
+                }
+
+                // Keep the pattern across StructConstruct statements, this is ok, since
+                // we check the inputs to the return statement at the end.
+                // We need to allow this to handle the case where the StructConstruct is used
+                // to construct a unit type.
+                return;
+            }
+
+            Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
+                if let Pattern::StructConstruct { input_vars, variant, returned_vars } = info {
+                    if itertools::equal(
+                        outputs.iter(),
+                        input_vars.iter().map(|input| &input.var_id),
+                    ) {
+                        // We have StructConstruct and StructDestructure that cancel out.
+                        // So the resulting pattern is equivalent EnumConstruct with `input`.`
+                        *info = Pattern::EnumConstruct {
+                            opt_input_var: Some(input.var_id),
+                            variant,
+                            returned_vars,
+                        };
+                        return;
+                    }
+                }
+            }
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
                 if let Pattern::Return { user_return, returned_vars } = info {
                     if &user_return.var_id != output {
@@ -106,10 +147,12 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                         variant,
                         returned_vars,
                     };
+                    return;
                 }
             }
-            _ => *info = Pattern::None,
+            _ => {}
         }
+        *info = Pattern::None;
     }
 
     fn visit_goto(
@@ -119,16 +162,24 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        let Pattern::Return { user_return, returned_vars } = info else {
-            if !remapping.is_empty() {
-                *info = Pattern::None;
-            }
+        if remapping.is_empty() {
             return;
-        };
+        }
 
-        if let Some(remapped_return) = remapping.get(&user_return.var_id) {
-            *info = Pattern::Return { user_return: *remapped_return, returned_vars };
-        } else if !remapping.is_empty() {
+        if let Pattern::Return { user_return, returned_vars } = info {
+            if let Some(remapped_return) = remapping.get(&user_return.var_id) {
+                *info = Pattern::Return { user_return: *remapped_return, returned_vars };
+            }
+        } else if let Pattern::StructConstruct { input_vars, variant, returned_vars } = info {
+            *info = Pattern::StructConstruct {
+                input_vars: input_vars
+                    .iter()
+                    .map(|var_usage| *remapping.get(&var_usage.var_id).unwrap_or(var_usage))
+                    .collect(),
+                variant,
+                returned_vars,
+            };
+        } else {
             *info = Pattern::None;
         };
     }
