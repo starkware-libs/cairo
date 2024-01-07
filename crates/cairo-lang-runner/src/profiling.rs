@@ -98,7 +98,7 @@ impl ProfilingInfoPrinter {
         if params.print_by_concrete_libfunc {
             println!("Weight by concrete libfunc:");
             for (concrete_name, weight) in
-                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
             {
                 if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", concrete_name, *weight);
@@ -110,7 +110,7 @@ impl ProfilingInfoPrinter {
         if params.print_by_generic_libfunc {
             println!("Weight by generic libfunc:");
             for (generic_name, weight) in
-                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
             {
                 if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", generic_name, *weight);
