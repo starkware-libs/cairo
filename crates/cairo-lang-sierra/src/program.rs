@@ -278,12 +278,6 @@ impl<StatementId> GenStatement<StatementId> {
             GenStatement::Return(results) => GenStatement::Return(results.clone()),
         }
     }
-    pub fn concrete_name(&self) -> Option<String> {
-        match self {
-            GenStatement::Invocation(invocation) => Some(format!("{}", invocation.libfunc_id)),
-            GenStatement::Return(_) => None,
-        }
-    }
 }
 
 /// An invocation statement.

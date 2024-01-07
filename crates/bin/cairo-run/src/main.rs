@@ -73,6 +73,7 @@ fn main() -> anyhow::Result<()> {
         sierra_program.clone(),
         if args.available_gas.is_some() { Some(Default::default()) } else { None },
         contracts_info,
+        args.run_profiler,
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner
@@ -81,7 +82,6 @@ fn main() -> anyhow::Result<()> {
             &[],
             args.available_gas,
             StarknetState::default(),
-            args.run_profiler,
         )
         .with_context(|| "Failed to run the function.")?;
 
