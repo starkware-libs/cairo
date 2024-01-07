@@ -2136,14 +2136,6 @@ where
     runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(vm, true).map_err(CairoRunError::from)?;
 
-    // let mut base_offset = 0;
-    // for inst in instructions {
-    //     base_offset += inst.body.op_size();
-    //     if matches!(inst.body, InstructionBody::Call(_)) {
-    //         break;
-    //     }
-    // }
-
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
 
