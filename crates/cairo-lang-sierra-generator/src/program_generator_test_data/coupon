@@ -55,3 +55,63 @@ return([0]); // 11
 
 test::foo@0([0]: test::MyStruct, [1]: Unit) -> (test::MyStruct);
 test::return_coupon@10() -> (Unit);
+
+//! > ==========================================================================
+
+//! > Unused coupons with recursive types
+
+//! > test_runner_name
+test_program_generator
+
+//! > cairo
+use nullable::null;
+extern fn coupon_buy<T>() -> T nopanic;
+
+impl DropCoupon of Drop<bar::Coupon>;
+
+#[derive(Drop)]
+struct MyStruct {
+    c: bar::Coupon,
+    my_struct: Nullable::<MyStruct>,
+}
+
+fn foo(my_struct: MyStruct, coupon: bar::Coupon) -> MyStruct {
+    MyStruct{
+        c: coupon_buy(),
+        my_struct: null(),
+    }
+}
+
+fn bar() -> felt252 {
+    10
+}
+
+//! > sierra_code
+type Coupon<user@test::bar> = Coupon<user@test::bar> [storable: true, drop: true, dup: false, zero_sized: true];
+type Nullable<test::MyStruct> = Nullable<test::MyStruct> [storable: true, drop: true, dup: false, zero_sized: false];
+type test::MyStruct = Struct<ut@test::MyStruct, Coupon<user@test::bar>, Nullable<test::MyStruct>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+
+libfunc drop<test::MyStruct> = drop<test::MyStruct>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc null<test::MyStruct> = null<test::MyStruct>;
+libfunc struct_construct<test::MyStruct> = struct_construct<test::MyStruct>;
+libfunc store_temp<test::MyStruct> = store_temp<test::MyStruct>;
+libfunc felt252_const<10> = felt252_const<10>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+drop<test::MyStruct>([0]) -> (); // 0
+drop<Unit>([1]) -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+null<test::MyStruct>() -> ([3]); // 3
+struct_construct<test::MyStruct>([2], [3]) -> ([4]); // 4
+store_temp<test::MyStruct>([4]) -> ([4]); // 5
+return([4]); // 6
+felt252_const<10>() -> ([0]); // 7
+store_temp<felt252>([0]) -> ([0]); // 8
+return([0]); // 9
+
+test::foo@0([0]: test::MyStruct, [1]: Unit) -> (test::MyStruct);
+test::bar@7() -> (felt252);

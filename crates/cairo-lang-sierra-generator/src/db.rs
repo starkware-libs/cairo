@@ -7,6 +7,7 @@ use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_sierra::program::ConcreteTypeLongId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use semantic::items::imp::ImplLookupContext;
@@ -189,13 +190,20 @@ fn get_type_info(
             }));
         }
     };
+
+    Ok(Arc::new(get_type_info_from_long_id(db, long_id.as_ref())))
+}
+
+pub(crate) fn get_type_info_from_long_id(
+    db: &dyn SierraGenGroup,
+    long_id: &ConcreteTypeLongId) -> cairo_lang_sierra::extensions::types::TypeInfo {
     let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,
         &long_id.generic_args,
     )
     .expect("Got failure while specializing type.");
-    Ok(Arc::new(concrete_ty.info().clone()))
+    concrete_ty.info().clone()
 }
 
 /// Returns the concrete Sierra long type id given the concrete id.

@@ -14,7 +14,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 
 use crate::coupon::CouponProgramFixer;
-use crate::db::{sierra_concrete_long_id, SierraGenGroup};
+use crate::db::{sierra_concrete_long_id, SierraGenGroup, get_type_info_from_long_id};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra::{self};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -64,6 +64,7 @@ fn collect_used_libfuncs(
 fn generate_type_declarations(
     db: &dyn SierraGenGroup,
     mut remaining_types: OrderedHashSet<ConcreteTypeId>,
+    coupon_program_fixer: &mut CouponProgramFixer,
 ) -> Vec<program::TypeDeclaration> {
     let mut declarations = vec![];
     let mut already_declared = UnorderedHashSet::default();
@@ -72,6 +73,7 @@ fn generate_type_declarations(
         generate_type_declarations_helper(
             db,
             &ty,
+            coupon_program_fixer,
             &mut declarations,
             &mut remaining_types,
             &mut already_declared,
@@ -87,15 +89,20 @@ fn generate_type_declarations(
 fn generate_type_declarations_helper(
     db: &dyn SierraGenGroup,
     ty: &ConcreteTypeId,
+    coupon_program_fixer: &mut CouponProgramFixer,
     declarations: &mut Vec<program::TypeDeclaration>,
     remaining_types: &mut OrderedHashSet<ConcreteTypeId>,
     already_declared: &mut UnorderedHashSet<ConcreteTypeId>,
 ) {
-    if already_declared.contains(ty) {
+    // let ty = coupon_program_fixer.fix_concrete_type(ty);
+    if already_declared.contains(&ty) {
         return;
     }
-    let long_id = sierra_concrete_long_id(db, ty.clone()).unwrap();
     already_declared.insert(ty.clone());
+
+    let mut long_id = sierra_concrete_long_id(db, ty.clone()).unwrap().as_ref().clone();
+    // coupon_program_fixer.modify_generic_args(&mut long_id.generic_args);
+
     let inner_tys = long_id
         .generic_args
         .iter()
@@ -109,6 +116,7 @@ fn generate_type_declarations_helper(
             generate_type_declarations_helper(
                 db,
                 inner_ty,
+                coupon_program_fixer,
                 declarations,
                 remaining_types,
                 already_declared,
@@ -116,10 +124,10 @@ fn generate_type_declarations_helper(
         }
     }
 
-    let type_info = db.get_type_info(ty.clone()).unwrap();
+    let type_info = get_type_info_from_long_id(db, &long_id);
     declarations.push(program::TypeDeclaration {
         id: ty.clone(),
-        long_id: long_id.as_ref().clone(),
+        long_id,
         declared_type_info: Some(DeclaredTypeInfo {
             storable: type_info.storable,
             droppable: type_info.droppable,
@@ -201,10 +209,8 @@ pub fn get_sierra_program_for_functions(
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations = generate_type_declarations(
-        db,
-        collect_used_types(db, &libfunc_declarations, &functions, &mut coupon_program_fixer),
-    );
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions, &mut coupon_program_fixer), &mut coupon_program_fixer);
 
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);

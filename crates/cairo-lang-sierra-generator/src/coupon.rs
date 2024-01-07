@@ -8,7 +8,7 @@ use cairo_lang_sierra::program::{self, ConcreteTypeLongId, GenStatement, Generic
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
-use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
 use crate::pre_sierra;
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::utils::{drop_libfunc_id, struct_construct_libfunc_id};
@@ -95,7 +95,7 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Replaces unused coupons in the generic arguments with the unit type.
-    fn modify_generic_args(&mut self, generic_args: &mut Vec<GenericArg>) -> bool {
+    pub fn modify_generic_args(&mut self, generic_args: &mut Vec<GenericArg>) -> bool {
         let mut changed = false;
         for generic_arg in generic_args {
             if let GenericArg::Type(coupon_ty) = generic_arg {
@@ -110,10 +110,21 @@ impl<'a> CouponProgramFixer<'a> {
     }
 
     /// Replaces unused coupons in the type (including its generic arguments) with the unit type.
+    ///
+    /// [SierraGeneratorTypeLongId::CycleBreaker] is not handled by this function.
     pub fn fix_concrete_type(&mut self, ty: &ConcreteTypeId) -> ConcreteTypeId {
         if let Some(cached_value) = self.cache.get(ty) {
             return cached_value.clone();
         }
+
+        // if matches!(
+        //     self.db.lookup_intern_concrete_type(ty.clone()),
+        //     SierraGeneratorTypeLongId::CycleBreaker(_)
+        // ) {
+        //     // Insert an identity entry for ty so that we can handle recursive types.
+        //     // This entry will be overridden once the recursive ends.
+        //     self.cache.insert(ty.clone(), ty.clone());
+        // }
 
         let fixed_ty = self.fix_concrete_type_inner(ty);
         self.cache.insert(ty.clone(), fixed_ty.clone());
@@ -123,6 +134,7 @@ impl<'a> CouponProgramFixer<'a> {
 
     /// Helper function for [fix_concrete_type].
     fn fix_concrete_type_inner(&mut self, ty: &ConcreteTypeId) -> ConcreteTypeId {
+        // let long_id = sierra_concrete_long_id(self.db, ty.clone()).unwrap();
         let SierraGeneratorTypeLongId::Regular(long_id) =
             self.db.lookup_intern_concrete_type(ty.clone())
         else {
