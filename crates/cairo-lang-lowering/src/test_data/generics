@@ -159,3 +159,33 @@ Statements:
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Path in generic literal consts.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+  felt252_const::<one>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+const one: felt252 = 1;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- core::felt252_const::<LiteralLongId { value: 1 }>()
+End:
+  Return(v0)
