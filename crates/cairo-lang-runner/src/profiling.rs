@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -74,21 +74,23 @@ impl ProfilingInfoPrinter {
             let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
                 panic!("Failed fetching statement index {}", statement_idx.0);
             };
-            if let Some(concrete_name) = gen_statement.concrete_name() {
-                let concrete_name: SmolStr = concrete_name.into();
-                if params.print_by_concrete_libfunc {
-                    *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
-                }
+            match gen_statement {
+                GenStatement::Invocation(invocation) => {
+                    let concrete_name: SmolStr = format!("{}", invocation.libfunc_id).into();
+                    if params.print_by_concrete_libfunc {
+                        *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
+                    }
 
-                if params.print_by_generic_libfunc {
-                    // TODO(yg): there must be a better way - e.g. get the long ID with a db from
-                    // the short ID, and from there the generic name.
-
-                    let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
-                    *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
+                    if params.print_by_generic_libfunc {
+                        // TODO(yg): there must be a better way - e.g. get the long ID with a db
+                        // from the short ID, and from there get the generic name.
+                        let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
+                        *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
+                    }
                 }
-            } else {
-                return_weight += weight;
+                GenStatement::Return(_) => {
+                    return_weight += weight;
+                }
             }
             if *weight >= params.min_weight {
                 println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
@@ -98,7 +100,7 @@ impl ProfilingInfoPrinter {
         if params.print_by_concrete_libfunc {
             println!("Weight by concrete libfunc:");
             for (concrete_name, weight) in
-                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
             {
                 if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", concrete_name, *weight);
@@ -110,7 +112,7 @@ impl ProfilingInfoPrinter {
         if params.print_by_generic_libfunc {
             println!("Weight by generic libfunc:");
             for (generic_name, weight) in
-                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
             {
                 if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", generic_name, *weight);
