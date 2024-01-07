@@ -7,8 +7,8 @@ use smol_str::SmolStr;
 /// Profiling into of a single run.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
-    /// The number of steps in the trace that "belongs" to each sierra statement.
-    pub concrete_sierra_statements_weights: HashMap<StatementIdx, usize>,
+    /// The number of steps in the trace that originated from each sierra statement.
+    pub sierra_statements_weights: HashMap<StatementIdx, usize>,
 }
 
 /// Parameters controlling how the profiling info is printed by the `ProfilingInfoPrinter`.
@@ -16,9 +16,14 @@ pub struct ProfilingInfoPrinterParams {
     /// The minimal weight to print. Used for all printed stats. That is - the sum of the weights
     /// per statement may smaller than the sum of the weights per concrete libfunc, that may be
     /// smaller than the sum of the weights ber generic libfunc.
-    min_weight: usize,
-    print_by_concrete_libfunc: bool,
-    print_by_generic_libfunc: bool,
+    pub min_weight: usize,
+    pub print_by_concrete_libfunc: bool,
+    pub print_by_generic_libfunc: bool,
+}
+impl Default for ProfilingInfoPrinterParams {
+    fn default() -> Self {
+        Self { min_weight: 1, print_by_concrete_libfunc: true, print_by_generic_libfunc: true }
+    }
 }
 /// A printer for profiling info.
 pub struct ProfilingInfoPrinter {
@@ -27,14 +32,7 @@ pub struct ProfilingInfoPrinter {
 }
 impl ProfilingInfoPrinter {
     pub fn new(sierra_program: Program) -> Self {
-        Self {
-            sierra_program,
-            params: ProfilingInfoPrinterParams {
-                min_weight: 1,
-                print_by_concrete_libfunc: true,
-                print_by_generic_libfunc: true,
-            },
-        }
+        Self { sierra_program, params: ProfilingInfoPrinterParams::default() }
     }
 
     /// Prints the profiling info according to the params set in the printer.
@@ -69,28 +67,30 @@ impl ProfilingInfoPrinter {
         println!("Weight by sierra statement:");
         let mut return_weight = 0;
         for (statement_idx, weight) in profiling_info
-            .concrete_sierra_statements_weights
+            .sierra_statements_weights
             .iter()
-            .sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
+            .sorted_by(|x, y| Ord::cmp(&(x.1, x.0.0), &(y.1, y.0.0)))
         {
             let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
-                println!("Failed fetching statement index {}", statement_idx.0);
-                return;
+                panic!("Failed fetching statement index {}", statement_idx.0);
             };
             if let Some(concrete_name) = gen_statement.concrete_name() {
+                let concrete_name: SmolStr = concrete_name.into();
                 if params.print_by_concrete_libfunc {
-                    let concrete_name: SmolStr = concrete_name.into();
                     *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
                 }
 
                 if params.print_by_generic_libfunc {
-                    let generic_name: SmolStr = gen_statement.generic_name().unwrap().into();
+                    // TODO(yg): there must be a better way - e.g. get the long ID with a db from
+                    // the short ID, and from there the generic name.
+
+                    let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
                     *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
                 }
             } else {
                 return_weight += weight;
             }
-            if *weight > params.min_weight {
+            if *weight >= params.min_weight {
                 println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
             }
         }
@@ -100,7 +100,7 @@ impl ProfilingInfoPrinter {
             for (concrete_name, weight) in
                 concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
             {
-                if *weight > params.min_weight {
+                if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", concrete_name, *weight);
                 }
             }
@@ -112,7 +112,7 @@ impl ProfilingInfoPrinter {
             for (generic_name, weight) in
                 generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&x.1, &y.1))
             {
-                if *weight > params.min_weight {
+                if *weight >= params.min_weight {
                     println!("  libfunc {}: {}", generic_name, *weight);
                 }
             }

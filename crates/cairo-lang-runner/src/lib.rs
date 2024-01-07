@@ -290,10 +290,26 @@ impl SierraCasmRunner {
             self.handle_main_return_value(ty, values, &cells)?
         };
 
+        // TODO(yg): remove time measurements, run only one method.
         let now = Instant::now();
         let profiling_info = self.collect_profiling_info(vm.get_relocated_trace().unwrap());
         let elapsed = now.elapsed();
-        println!("Elapsed: {:.2?}", elapsed);
+        println!("collect_profiling_info: {:.2?}", elapsed);
+        let now = Instant::now();
+        let profiling_info =
+            self.collect_profiling_info_binary_search(vm.get_relocated_trace().unwrap());
+        let elapsed = now.elapsed();
+        println!("collect_profiling_info_binary_search: {:.2?}", elapsed);
+        let now = Instant::now();
+        let profiling_info =
+            self.collect_profiling_info_map_and_binary_search(vm.get_relocated_trace().unwrap());
+        let elapsed = now.elapsed();
+        println!("collect_profiling_info_map_and_binary_search: {:.2?}", elapsed);
+        let now = Instant::now();
+        let profiling_info =
+            self.collect_profiling_info_with_map(vm.get_relocated_trace().unwrap());
+        let elapsed = now.elapsed();
+        println!("collect_profiling_info_with_map: {:.2?}", elapsed);
 
         Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
@@ -304,15 +320,10 @@ impl SierraCasmRunner {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
         let base_offset = trace.last().unwrap().pc;
 
-        println!("yg bytecode_size: {bytecode_size}");
-        println!("yg base_offset: {base_offset}");
-        println!("yg sierra_len: {sierra_len}");
-
         // Initialize a mapping of all sierra statements indices to 0s. Note there is also space for
         // the header and footer.
         let mut pc_counts: Vec<usize> =
             itertools::repeat_n(0, bytecode_size + base_offset + 1).collect();
-
         for trace_entry in trace {
             // TODO(yg): why are the trace's PCs off by 1?
             let original_pc = trace_entry.pc - 1;
@@ -332,10 +343,148 @@ impl SierraCasmRunner {
             sierra_weights.push(weight);
         }
 
-        let concrete_sierra_statements_weights: HashMap<StatementIdx, usize> =
+        let sierra_statements_weights: HashMap<StatementIdx, usize> =
             sierra_weights.into_iter().enumerate().map(|(x, y)| (StatementIdx(x), y)).collect();
 
-        ProfilingInfo { concrete_sierra_statements_weights }
+        ProfilingInfo { sierra_statements_weights }
+    }
+
+    fn collect_profiling_info_binary_search(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
+        let bytecode_size =
+            self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let base_offset = trace.last().unwrap().pc;
+
+        // Initialize a mapping of all sierra statements indices to 0s. Note there is also space for
+        // the header and footer.
+        let mut pc_counts: Vec<usize> =
+            itertools::repeat_n(0, bytecode_size + base_offset + 1).collect();
+        for trace_entry in trace {
+            // TODO(yg): why are the trace's PCs off by 1?
+            let original_pc = trace_entry.pc - 1;
+
+            pc_counts[original_pc] += 1;
+        }
+
+        let mut sierra_statements_weights = pc_counts
+            .into_iter()
+            .enumerate()
+            .skip(base_offset)
+            .fold(HashMap::default(), |mut acc, (pc, count)| {
+                if count == 0 {
+                    return acc;
+                }
+                let idx = match self
+                    .casm_program
+                    .debug_info
+                    .sierra_statement_info
+                    .binary_search_by_key(&(pc - base_offset), |x| x.code_offset)
+                {
+                    Ok(mut idx) => {
+                        // TODO(yg): explain better. Can also be done in logarithmic time with
+                        // some "tricks", but as "n" here is not expected to be more than ~5, it's
+                        // not worth it.
+                        // idx is any relevant index if there are multiple matches. We need the last
+                        // relevant one.
+                        while let Some(value) =
+                            self.casm_program.debug_info.sierra_statement_info.get(idx + 1)
+                        {
+                            if value.code_offset != pc - base_offset {
+                                break;
+                            }
+                            idx += 1;
+                        }
+                        idx
+                    }
+                    Err(idx) => idx - 1,
+                };
+
+                *acc.entry(StatementIdx(idx)).or_insert(0) += count;
+                acc
+            });
+        sierra_statements_weights.remove(&StatementIdx(sierra_len));
+
+        ProfilingInfo { sierra_statements_weights }
+    }
+
+    // TODO(yg): remove all methods but 1, or allow all, configurable.
+    fn collect_profiling_info_with_map(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let base_offset = trace.last().unwrap().pc;
+
+        let pc_counts = trace.iter().fold(OrderedHashMap::default(), |mut acc, step| {
+            *acc.entry(step.pc - 1).or_insert(0) += 1;
+            acc
+        });
+
+        let mut sierra_weights = Vec::with_capacity(sierra_len);
+        for i in 0..sierra_len {
+            let sierra_statement_offset =
+                self.casm_program.debug_info.sierra_statement_info[i].code_offset + base_offset;
+            let next_sierra_statement_offset =
+                self.casm_program.debug_info.sierra_statement_info[i + 1].code_offset + base_offset;
+            let weight = (sierra_statement_offset..next_sierra_statement_offset)
+                .map(|pc| *pc_counts.get(&pc).unwrap_or(&0))
+                .sum();
+            sierra_weights.push(weight);
+        }
+
+        let sierra_statements_weights: HashMap<StatementIdx, usize> =
+            sierra_weights.into_iter().enumerate().map(|(x, y)| (StatementIdx(x), y)).collect();
+
+        ProfilingInfo { sierra_statements_weights }
+    }
+
+    fn collect_profiling_info_map_and_binary_search(
+        &self,
+        trace: &Vec<TraceEntry>,
+    ) -> ProfilingInfo {
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let base_offset = trace.last().unwrap().pc;
+
+        // Initialize a mapping of all sierra statements indices to 0s. Note there is also space for
+        // the header and footer.
+        let pc_counts = trace.iter().fold(OrderedHashMap::default(), |mut acc, step| {
+            *acc.entry(step.pc - 1).or_insert(0) += 1;
+            acc
+        });
+
+        let mut sierra_statements_weights =
+            pc_counts.into_iter().fold(HashMap::default(), |mut acc, (pc, count)| {
+                if count == 0 || pc < base_offset {
+                    return acc;
+                }
+                let idx = match self
+                    .casm_program
+                    .debug_info
+                    .sierra_statement_info
+                    .binary_search_by_key(&(pc - base_offset), |x| x.code_offset)
+                {
+                    Ok(mut idx) => {
+                        // TODO(yg): explain better. Can also be done in logarithmic time with
+                        // some "tricks", but as "n" here is not expected to be more than ~5, it's
+                        // not worth it.
+                        // idx is any relevant index if there are multiple matches. We need the last
+                        // relevant one.
+                        while let Some(value) =
+                            self.casm_program.debug_info.sierra_statement_info.get(idx + 1)
+                        {
+                            if value.code_offset != pc - base_offset {
+                                break;
+                            }
+                            idx += 1;
+                        }
+                        idx
+                    }
+                    Err(idx) => idx - 1,
+                };
+
+                *acc.entry(StatementIdx(idx)).or_insert(0) += count;
+                acc
+            });
+        sierra_statements_weights.remove(&StatementIdx(sierra_len));
+
+        ProfilingInfo { sierra_statements_weights }
     }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have

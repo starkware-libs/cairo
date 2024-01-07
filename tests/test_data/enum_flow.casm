@@ -1,32 +1,32 @@
-[ap + 0] = 0, ap++;             // 0
-[ap + 0] = 10, ap++;            // 2
-call rel 29;                    // 4
-[ap + 0] = 1, ap++;             // 6
-[ap + 0] = 11, ap++;            // 8
-call rel 23;                    // 10
-[ap + 0] = 5, ap++;             // 12
-[ap + 0] = 20, ap++;            // 14
-call rel 24;                    // 16
-[ap + 0] = 3, ap++;             // 18
-[ap + 0] = 21, ap++;            // 20
-call rel 18;                    // 22
-[ap + 0] = 1, ap++;             // 24
-[ap + 0] = 22, ap++;            // 26
-call rel 12;                    // 28
-[ap + 0] = 300, ap++;           // 30
-ret;                            // 32
-jmp rel 5 if [fp + -4] != 0;    // 33
-[ap + 0] = [fp + -3], ap++;     // 35
-jmp rel 3;                      // 36
-[ap + 0] = [fp + -3], ap++;     // 38
-ret;                            // 39
-jmp rel [fp + -4];              // 40
-jmp rel 10;                     // 41
-jmp rel 5;                      // 43
-[ap + 0] = [fp + -3], ap++;     // 45
-jmp rel 6;                      // 46
-[ap + 0] = [fp + -3], ap++;     // 48
-jmp rel 3;                      // 49
-[ap + 0] = [fp + -3], ap++;     // 51
-ret;                            // 52
-                                // 53
+[ap + 0] = 0, ap++;
+[ap + 0] = 10, ap++;
+call rel 29;
+[ap + 0] = 1, ap++;
+[ap + 0] = 11, ap++;
+call rel 23;
+[ap + 0] = 5, ap++;
+[ap + 0] = 20, ap++;
+call rel 24;
+[ap + 0] = 3, ap++;
+[ap + 0] = 21, ap++;
+call rel 18;
+[ap + 0] = 1, ap++;
+[ap + 0] = 22, ap++;
+call rel 12;
+[ap + 0] = 300, ap++;
+ret;
+jmp rel 5 if [fp + -4] != 0;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+jmp rel [fp + -4];
+jmp rel 10;
+jmp rel 5;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 6;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+                                
