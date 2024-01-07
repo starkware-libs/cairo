@@ -158,14 +158,17 @@ pub struct SierraCasmRunner {
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
     #[allow(dead_code)]
-    // Mapping from class_hash to contract info.
+    /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    /// Whether to run the profiler when running using this runner.
+    run_profiler: bool,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
         starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+        run_profiler: bool,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -186,6 +189,7 @@ impl SierraCasmRunner {
             type_sizes,
             casm_program,
             starknet_contracts_info,
+            run_profiler,
         })
     }
 
@@ -196,7 +200,6 @@ impl SierraCasmRunner {
         args: &[Arg],
         available_gas: Option<usize>,
         starknet_state: StarknetState,
-        run_profiler: bool,
     ) -> Result<RunResultStarknet, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
@@ -210,14 +213,8 @@ impl SierraCasmRunner {
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        let RunResult { gas_counter, memory, value, profiling_info } = self.run_function(
-            func,
-            &mut hint_processor,
-            hints_dict,
-            instructions,
-            builtins,
-            run_profiler,
-        )?;
+        let RunResult { gas_counter, memory, value, profiling_info } =
+            self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins)?;
         Ok(RunResultStarknet {
             gas_counter,
             memory,
@@ -240,7 +237,6 @@ impl SierraCasmRunner {
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
         builtins: Vec<BuiltinName>,
-        run_profiler: bool,
     ) -> Result<RunResult, RunnerError>
     where
         Instructions: Iterator<Item = &'a Instruction> + Clone,
@@ -299,7 +295,7 @@ impl SierraCasmRunner {
             self.handle_main_return_value(ty, values, &cells)?
         };
 
-        let profiling_info = if run_profiler {
+        let profiling_info = if self.run_profiler {
             Some(self.collect_profiling_info(vm.get_relocated_trace().unwrap()))
         } else {
             None
@@ -308,38 +304,66 @@ impl SierraCasmRunner {
         Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
 
-    fn collect_profiling_info(&self, trace: &Vec<TraceEntry>) -> ProfilingInfo {
-        let bytecode_size =
-            self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
+    /// Collects profiling info of the current run using the trace.
+    fn collect_profiling_info(&self, trace: &[TraceEntry]) -> ProfilingInfo {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
-        let base_offset = trace.last().unwrap().pc;
+        // The CASM program starts with a header of instructions to wrap the real program.
+        // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
+        // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
+        // subtracted by `real_pc_0` to get the real PC they point to in the original CASM
+        // program.
+        // This is the same as the PC of the last trace entry as the header is built to have a `ret`
+        // last instruction, which must be the last in the trace of any execution.
+        let real_pc_0 = trace.last().unwrap().pc + 1;
 
         // Count the number of times each PC was executed. Note the header and footer (CASM
-        // instructions added for running the program by the runner) are also counted (but are later
-        // ignored).
-        let mut pc_counts: Vec<usize> =
-            itertools::repeat_n(0, bytecode_size + base_offset + 1).collect();
-        for trace_entry in trace {
-            // TODO(yg): why are the trace's PCs off by 1?
-            let original_pc = trace_entry.pc - 1;
+        // instructions added for running the program by the runner) are also counted (but are
+        // later ignored).
+        let pc_counts = trace.iter().fold(OrderedHashMap::default(), |mut acc, step| {
+            *acc.entry(step.pc).or_insert(0) += 1;
+            acc
+        });
 
-            pc_counts[original_pc] += 1;
-        }
+        // For each pc, find the corresponding Sierra statement, and accumulate the weight to find
+        // the total weight of each Sierra statement.
+        let mut sierra_statements_weights = pc_counts
+            .into_iter()
+            .filter(|(pc, count)| *count != 0 && *pc >= real_pc_0)
+            .fold(HashMap::default(), |mut acc, (pc, count)| {
+                let real_pc = pc - real_pc_0;
+                let idx = match self
+                    .casm_program
+                    .debug_info
+                    .sierra_statement_info
+                    .binary_search_by_key(&real_pc, |x| x.code_offset)
+                {
+                    Ok(mut idx) => {
+                        // In `binary_search_by_key`, "if there are multiple matches, then any one
+                        // of the matches could be returned". There may be multiple consecutive
+                        // matches as Sierra statements may be translated to zero CASM instructions.
+                        // In such cases, we need the last one.
+                        // Finding it linearly is simple and efficient as we usually expect much
+                        // less than 10 consecutive 0-sized Sierra statements (that is, less than 5
+                        // steps in average to find the last).
+                        while let Some(value) =
+                            self.casm_program.debug_info.sierra_statement_info.get(idx + 1)
+                        {
+                            if value.code_offset != real_pc {
+                                break;
+                            }
+                            idx += 1;
+                        }
+                        idx
+                    }
+                    // This may panic if `idx` is 0, but this should never happen as we skip PCs
+                    // that are < `real_pc_0`.
+                    Err(idx) => idx - 1,
+                };
 
-        // Go through all the original Sierra statements, and sum the weights of all their relevant
-        // PCs. Note the adjustments for the header and footer and the fact they are not represented
-        // in the output as we only go through the original Sierra statements.
-        let mut sierra_statements_weights = HashMap::new();
-        for i in 0..sierra_len {
-            let sierra_statement_offset =
-                self.casm_program.debug_info.sierra_statement_info[i].code_offset + base_offset;
-            let next_sierra_statement_offset =
-                self.casm_program.debug_info.sierra_statement_info[i + 1].code_offset + base_offset;
-            let weight = (sierra_statement_offset..next_sierra_statement_offset)
-                .map(|pc| pc_counts[pc])
-                .sum();
-            sierra_statements_weights.insert(StatementIdx(i), weight);
-        }
+                *acc.entry(StatementIdx(idx)).or_insert(0) += count;
+                acc
+            });
+        sierra_statements_weights.remove(&StatementIdx(sierra_len));
 
         ProfilingInfo { sierra_statements_weights }
     }
@@ -354,21 +378,12 @@ impl SierraCasmRunner {
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
         builtins: Vec<BuiltinName>,
-        run_profiler: bool,
     ) -> Result<RunResult, RunnerError>
     where
         Instructions: Iterator<Item = &'a Instruction> + Clone,
     {
         let mut vm = VirtualMachine::new(true);
-        self.run_function_with_vm(
-            func,
-            &mut vm,
-            hint_processor,
-            hints_dict,
-            instructions,
-            builtins,
-            run_profiler,
-        )
+        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, instructions, builtins)
     }
 
     /// Handling the main return value to create a `RunResultValue`.
