@@ -53,7 +53,13 @@ pub enum Pattern<'a> {
     /// No relevant pattern was found
     None,
     /// Found a return statement with the given returned
-    Return(&'a [VarUsage]),
+    Return {
+        /// The return value of the user, this is the same as the last item in `returned_vars' up
+        /// to remappings.
+        user_return: VarUsage,
+        /// The returned variables of the return statement.
+        returned_vars: &'a [VarUsage],
+    },
 
     /// Found an EnumConstruct whose output is returned by the function.
     EnumConstruct {
@@ -80,9 +86,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             // This is ok since we check that that returned var is the result of the EnumConstruct.
             Statement::StructConstruct(_) => {}
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                if let Pattern::Return(returned_vars) = info {
-                    let input_var = returned_vars.last().unwrap().var_id;
-                    if &input_var != output {
+                if let Pattern::Return { user_return, returned_vars } = info {
+                    if &user_return.var_id != output {
                         *info = Pattern::None;
                         return;
                     }
@@ -114,9 +119,18 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        if !remapping.is_empty() {
+        let Pattern::Return { user_return, returned_vars } = info else {
+            if !remapping.is_empty() {
+                *info = Pattern::None;
+            }
+            return;
+        };
+
+        if let Some(remapped_return) = remapping.get(&user_return.var_id) {
+            *info = Pattern::Return { user_return: *remapped_return, returned_vars };
+        } else if !remapping.is_empty() {
             *info = Pattern::None;
-        }
+        };
     }
 
     fn merge_match(
@@ -171,7 +185,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
-        Pattern::Return(vars)
+        Pattern::Return { user_return: *vars.last().unwrap(), returned_vars: vars }
     }
 
     fn info_from_panic(
