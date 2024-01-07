@@ -95,6 +95,7 @@ impl CompiledTestRunner {
             compiled.sierra_program,
             compiled.function_set_costs,
             compiled.contracts_info,
+            self.config.run_profiler,
         )?;
 
         if failed.is_empty() {
@@ -148,6 +149,8 @@ pub struct TestRunConfig {
     pub filter: String,
     pub include_ignored: bool,
     pub ignored: bool,
+    /// Whether to run the profiler.
+    pub run_profiler: bool,
 }
 
 /// The test cases compiler.
@@ -252,7 +255,8 @@ struct TestResult {
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
-    profiling_info: ProfilingInfo,
+    /// The profiling info of the run, if requested.
+    profiling_info: Option<ProfilingInfo>,
 }
 
 /// Summary data of the ran tests.
@@ -269,6 +273,7 @@ pub fn run_tests(
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    run_profiler: bool,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
@@ -300,6 +305,7 @@ pub fn run_tests(
                     &[],
                     test.available_gas,
                     Default::default(),
+                    run_profiler,
                 )
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
@@ -348,7 +354,7 @@ pub fn run_tests(
             let summary = wrapped_summary.as_mut().unwrap();
             let (res_type, status_str, gas_usage, profiling_info) = match status {
                 Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
-                    (&mut summary.passed, "ok".bright_green(), gas_usage, Some(profiling_info))
+                    (&mut summary.passed, "ok".bright_green(), gas_usage, profiling_info)
                 }
                 Some(TestResult {
                     status: TestStatus::Fail(run_result),
@@ -356,7 +362,7 @@ pub fn run_tests(
                     profiling_info,
                 }) => {
                     summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red(), gas_usage, Some(profiling_info))
+                    (&mut summary.failed, "fail".bright_red(), gas_usage, profiling_info)
                 }
                 None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
             };
