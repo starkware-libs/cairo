@@ -197,10 +197,7 @@ Parameters: v0: core::option::Option::<core::integer::u16>
 blk0 (root):
 Statements:
 End:
-  Match(match_enum(v0) {
-    Option::Some(v1) => blk1,
-    Option::None(v2) => blk2,
-  })
+  Return(v0)
 
 blk1:
 Statements:
