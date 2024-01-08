@@ -1006,11 +1006,27 @@ impl<'db> Resolver<'db> {
 
                 let value = match generic_arg_syntax {
                     Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
-
                     Expr::ShortString(literal) => {
                         literal.numeric_value(self.db.upcast()).unwrap_or_default()
                     }
+                    Expr::Path(path) => {
+                        let ResolvedConcreteItem::Constant(constant_id) = self
+                            .resolve_concrete_path(
+                                diagnostics,
+                                path,
+                                NotFoundItemType::Identifier,
+                            )?
+                        else {
+                            return Err(diagnostics.report(path, UnknownLiteral));
+                        };
 
+                        let crate::Expr::Literal(const_expr_literal) =
+                            self.db.constant_semantic_data(constant_id)?.value
+                        else {
+                            return Err(diagnostics.report(path, UnknownLiteral));
+                        };
+                        const_expr_literal.value
+                    }
                     // TODO(yuval): support string const generic arguments?
                     Expr::Unary(unary) => {
                         if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
