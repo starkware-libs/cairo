@@ -373,7 +373,7 @@ pub fn run_tests(
             }
             if let Some(profiling_info) = profiling_info {
                 let profiling_printer = ProfilingInfoPrinter::new(sierra_program.clone());
-                profiling_printer.print(&profiling_info);
+                println!("Profiling info:\n{}", profiling_printer.print(&profiling_info));
             }
             res_type.push(name);
         });

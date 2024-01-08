@@ -89,7 +89,7 @@ fn main() -> anyhow::Result<()> {
         let profiling_printer = ProfilingInfoPrinter::new(sierra_program);
         match result.profiling_info {
             Some(profiling_info) => {
-                profiling_printer.print(&profiling_info);
+                println!("Profiling info:\n{}", profiling_printer.print(&profiling_info));
             }
             None => println!("Warning: Profiling info not found."),
         }
