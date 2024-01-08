@@ -64,6 +64,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
                                                                 Currently, only matches on enums \
                                                                 and felt252s are supported."
                 .into(),
+            LoweringDiagnosticKind::UnsupportedMatchedValueTuple => "Unsupported matched value. \
+                Currently, match on tuples only supports enums as tuple members."
+                .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
             }
@@ -72,6 +75,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::UnsupportedMatchArmOrNotSupported => {
                 "Unsupported match arm - or pattern is not supported in this context".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmNotATuple => {
+                "Unsupported match arm - not a tuple.".into()
             }
             LoweringDiagnosticKind::NonExhaustiveMatchFelt252 => {
                 "Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`)."
@@ -96,7 +102,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
             }
-            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Enum variant `{}` not covered.", variant),
+            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm: `{}` not covered.", variant),
             LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
         }
     }
@@ -131,10 +137,12 @@ pub enum LoweringDiagnosticKind {
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
+    UnsupportedMatchedValueTuple,
     MissingMatchArm(String),
     UnreachableMatchArm,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
+    UnsupportedMatchArmNotATuple,
     UnsupportedMatchArmNonSequential,
     UnsupportedMatchArmOrNotSupported,
     NonExhaustiveMatchFelt252,
