@@ -30,8 +30,11 @@ starknet-crypto.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+env_logger.workspace = true
 indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 
 [package.metadata.cargo-machete]
 ignored = ["ark-secp256k1", "ark-secp256r1"]
