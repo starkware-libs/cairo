@@ -1,3 +1,5 @@
+use std::vec;
+
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
@@ -19,7 +21,7 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath,
-    GenericArgumentId, Pattern, PatternEnumVariant, TypeLongId,
+    GenericArgumentId, Pattern, PatternEnumVariant, PatternId, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -1105,9 +1107,8 @@ struct ExtractedEnumDetails {
 /// enum.
 fn extract_concrete_enum(
     ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprMatch,
+    matched_expr: &semantic::Expr,
 ) -> Result<ExtractedEnumDetails, LoweringFlowError> {
-    let matched_expr = &ctx.function_body.exprs[expr.matched_expr];
     let ty = matched_expr.ty();
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
 
@@ -1123,7 +1124,33 @@ fn extract_concrete_enum(
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
+/// Extracts concrete enums and variants from a match expression on a tuple of enums.
+fn extract_concrete_enum_tuple(
+    ctx: &mut LoweringContext<'_, '_>,
+    matched_expr: &semantic::Expr,
+    types: &[semantic::TypeId],
+) -> Result<Vec<ExtractedEnumDetails>, LoweringFlowError> {
+    types
+        .iter()
+        .map(|ty| {
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), *ty);
+            let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValueTuple),
+                ));
+            };
+            let concrete_variants = ctx
+                .db
+                .concrete_enum_variants(concrete_enum_id)
+                .map_err(LoweringFlowError::Failed)?;
+            Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
+        })
+        .collect()
+}
+
 /// The arm and pattern indices of a pattern in a match arm with an or list.
+#[derive(Debug, Clone)]
 struct PatternPath {
     arm_index: usize,
     pattern_index: usize,
@@ -1207,6 +1234,363 @@ fn get_variant_to_arm_map<'a>(
     Ok(map)
 }
 
+/// Represents a path in a match tree.
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+struct MatchingPath {
+    variants: Vec<semantic::ConcreteVariant>,
+}
+
+/// an helper function for [get_variants_to_arm_map_tuple] Inserts the pattern path to the map for
+/// each variants list it can match.
+fn insert_tuple_path_patterns(
+    ctx: &mut LoweringContext<'_, '_>,
+    patterns: &[PatternId],
+    pattern_path: &PatternPath,
+    extracted_enums_details: &[ExtractedEnumDetails],
+    mut path: MatchingPath,
+    map: &mut UnorderedHashMap<MatchingPath, PatternPath>,
+) -> LoweringResult<()> {
+    let index = path.variants.len();
+
+    // if the path is the same length as the tuple's patterns, we have reached the end of the path
+    if index == patterns.len() {
+        match map.entry(path) {
+            std::collections::hash_map::Entry::Occupied(_) => {}
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(pattern_path.clone());
+            }
+        };
+        return Ok(());
+    }
+
+    let pattern = ctx.function_body.patterns[patterns[index]].clone();
+
+    match pattern {
+        Pattern::EnumVariant(enum_pattern) => {
+            if enum_pattern.variant.concrete_enum_id
+                != extracted_enums_details[index].concrete_enum_id
+            {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(enum_pattern.stable_ptr.untyped(), UnsupportedMatchArmNotAVariant),
+                ));
+            }
+            path.variants.push(enum_pattern.variant);
+            insert_tuple_path_patterns(
+                ctx,
+                patterns,
+                pattern_path,
+                extracted_enums_details,
+                path,
+                map,
+            )
+        }
+        Pattern::Otherwise(_) => {
+            extracted_enums_details[index].concrete_variants.iter().try_for_each(|variant| {
+                // TODO(TomerStarkware): remove the split in the tree if the variant choice will not
+                // change the arm (if no variant was in the path before).
+                let mut path = path.clone();
+                path.variants.push(variant.clone());
+                insert_tuple_path_patterns(
+                    ctx,
+                    patterns,
+                    pattern_path,
+                    extracted_enums_details,
+                    path,
+                    map,
+                )
+            })
+        }
+        _ => Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+        )),
+    }
+}
+
+/// Returns a map from a matching paths to their corresponding pattern path in a match statement.
+fn get_variants_to_arm_map_tuple<'a>(
+    ctx: &mut LoweringContext<'_, '_>,
+    arms: impl Iterator<Item = &'a semantic::MatchArm>,
+    extracted_enums_details: &[ExtractedEnumDetails],
+) -> LoweringResult<UnorderedHashMap<MatchingPath, PatternPath>> {
+    let mut map = UnorderedHashMap::default();
+    for (arm_index, arm) in arms.enumerate() {
+        for (pattern_index, pattern) in arm.patterns.iter().enumerate() {
+            let pattern = ctx.function_body.patterns[*pattern].clone();
+            if let semantic::Pattern::Otherwise(_) = pattern {
+                break;
+            }
+            let patterns =
+                try_extract_matches!(&pattern, semantic::Pattern::Tuple).ok_or_else(|| {
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+                    )
+                })?;
+
+            let map_size = map.len();
+            insert_tuple_path_patterns(
+                ctx,
+                &patterns.field_patterns,
+                &PatternPath { arm_index, pattern_index },
+                extracted_enums_details,
+                MatchingPath::default(),
+                &mut map,
+            )?;
+            if map.len() == map_size {
+                ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
+            }
+        }
+    }
+    Ok(map)
+}
+
+/// Information needed to lower a match on tuple expression.
+struct LoweringMatchTupleContext {
+    /// The location of the match expression.
+    match_location: LocationId,
+    /// The index of the underscore pattern, if it exists.
+    otherwise_variant: Option<PatternPath>,
+    /// A map from variants vector to their corresponding pattern path.
+    variants_map: UnorderedHashMap<MatchingPath, PatternPath>,
+    /// The tuple's destructured inputs.
+    match_inputs: Vec<VarUsage>,
+    /// The number of snapshots of the tuple.
+    n_snapshots_outer: usize,
+    /// The current variants path.
+    current_path: MatchingPath,
+    /// The current variants' variable ids.
+    current_var_ids: Vec<VariableId>,
+}
+
+/// Lowers the arm of a match on a tuple expression.
+fn lower_tuple_match_arm(
+    ctx: &mut LoweringContext<'_, '_>,
+    mut builder: BlockBuilder,
+    arms: &[semantic::MatchArm],
+    match_tuple_ctx: &mut LoweringMatchTupleContext,
+    leaves_builders: &mut Vec<MatchLeafBuilder>,
+) -> LoweringResult<()> {
+    let pattern_path = match_tuple_ctx
+        .variants_map
+        .get(&match_tuple_ctx.current_path)
+        .or(match_tuple_ctx.otherwise_variant.as_ref())
+        .ok_or_else(|| {
+            LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
+                match_tuple_ctx.match_location.get(ctx.db),
+                MissingMatchArm(format!(
+                    "({})",
+                    match_tuple_ctx.current_path.variants
+                        .iter()
+                        .map(|variant| variant.id.name(ctx.db.upcast()))
+                        .join(", ")
+                )),
+            ))
+        })?;
+    let pattern = &arms[pattern_path.arm_index].patterns[pattern_path.pattern_index];
+    let pattern = ctx.function_body.patterns[*pattern].clone();
+    let patterns = try_extract_matches!(&pattern, semantic::Pattern::Tuple).ok_or_else(|| {
+        LoweringFlowError::Failed(
+            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotATuple),
+        )
+    })?;
+    let lowering_inner_pattern_result = patterns
+        .field_patterns
+        .iter()
+        .enumerate()
+        .map(|(index, pattern)| {
+            let pattern = &ctx.function_body.patterns[*pattern];
+            match pattern {
+                Pattern::EnumVariant(PatternEnumVariant {
+                    inner_pattern: Some(inner_pattern),
+                    ..
+                }) => {
+                    let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
+                    let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
+
+                    let variant_expr = LoweredExpr::AtVariable(VarUsage {
+                        var_id: match_tuple_ctx.current_var_ids[index],
+                        location: pattern_location,
+                    });
+
+                    lower_single_pattern(ctx, &mut builder, inner_pattern, variant_expr)
+                }
+                Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
+                | Pattern::Otherwise(_) => Ok(()),
+                _ => unreachable!(
+                    "function `get_variant_to_arm_map` should have reported every other pattern \
+                     type"
+                ),
+            }
+        })
+        .collect::<LoweringResult<Vec<_>>>()
+        .map(|_| ());
+    leaves_builders.push(MatchLeafBuilder {
+        builder,
+        arm_index: pattern_path.arm_index,
+        lowerin_result: lowering_inner_pattern_result,
+    });
+    Ok(())
+}
+
+/// Lowers a full decision tree for a match on a tuple expression.
+fn lower_full_match_tree(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    arms: &[semantic::MatchArm],
+    match_tuple_ctx: &mut LoweringMatchTupleContext,
+    extracted_enums_details: &[ExtractedEnumDetails],
+    leaves_builders: &mut Vec<MatchLeafBuilder>,
+) -> LoweringResult<MatchInfo> {
+    let index = match_tuple_ctx.current_path.variants.len();
+    let mut arm_var_ids = vec![];
+    let block_ids = extracted_enums_details[index]
+        .concrete_variants
+        .iter()
+        .map(|concrete_variant| {
+            let mut subscope = create_subscope_with_bound_refs(ctx, builder);
+            let block_id = subscope.block_id;
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(
+                    ctx.db.upcast(),
+                    concrete_variant.ty,
+                    extracted_enums_details[index].n_snapshots + match_tuple_ctx.n_snapshots_outer,
+                ),
+                location: match_tuple_ctx.match_location,
+            });
+            arm_var_ids.push(vec![var_id]);
+
+            match_tuple_ctx.current_path.variants.push(concrete_variant.clone());
+            match_tuple_ctx.current_var_ids.push(var_id);
+            let result = if index + 1 == extracted_enums_details.len() {
+                lower_tuple_match_arm(ctx, subscope, arms, match_tuple_ctx, leaves_builders)
+            } else {
+                lower_full_match_tree(
+                    ctx,
+                    &mut subscope,
+                    arms,
+                    match_tuple_ctx,
+                    extracted_enums_details,
+                    leaves_builders,
+                )
+                .map(|match_info| {
+                    subscope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+                })
+            }
+            .map(|_| block_id);
+            match_tuple_ctx.current_path.variants.pop();
+            match_tuple_ctx.current_var_ids.pop();
+            result
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<LoweringResult<Vec<_>>>()?;
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: extracted_enums_details[index].concrete_enum_id,
+        input: match_tuple_ctx.match_inputs[index],
+        arms: zip_eq(
+            zip_eq(&extracted_enums_details[index].concrete_variants, block_ids),
+            arm_var_ids,
+        )
+        .map(|((variant_id, block_id), var_ids)| MatchArm {
+            variant_id: variant_id.clone(),
+            block_id,
+            var_ids,
+        })
+        .collect(),
+        location: match_tuple_ctx.match_location,
+    });
+    Ok(match_info)
+}
+
+/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a tuple of
+/// enums.
+fn lower_expr_match_tuple(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: LoweredExpr,
+    matched_expr: &semantic::Expr,
+    n_snapshots_outer: usize,
+    types: &[semantic::TypeId],
+    arms: &[semantic::MatchArm],
+) -> LoweringResult<LoweredExpr> {
+    let location = expr.location();
+    let match_inputs_exprs = if let LoweredExpr::Tuple { exprs, .. } = expr {
+        exprs
+    } else {
+        let reqs = types
+            .iter()
+            .map(|ty| VarRequest {
+                ty: wrap_in_snapshots(ctx.db.upcast(), *ty, n_snapshots_outer),
+                location,
+            })
+            .collect();
+        generators::StructDestructure {
+            input: expr.as_var_usage(ctx, builder)?.var_id,
+            var_reqs: reqs,
+        }
+        .add(ctx, &mut builder.statements)
+        .into_iter()
+        .map(|var_id| {
+            LoweredExpr::AtVariable(VarUsage {
+                var_id,
+                // The variable is used immediately after the destructure, so the usage
+                // location is the same as the definition location.
+                location: ctx.variables[var_id].location,
+            })
+        })
+        .collect()
+    };
+
+    let match_inputs = match_inputs_exprs
+        .into_iter()
+        .map(|expr| expr.as_var_usage(ctx, builder))
+        .collect::<LoweringResult<Vec<_>>>()?;
+    let extracted_enums_details = extract_concrete_enum_tuple(ctx, matched_expr, types)?;
+
+    let otherwise_variant = get_underscore_pattern_path(ctx, arms);
+
+    let variants_map = get_variants_to_arm_map_tuple(
+        ctx,
+        arms.iter().take(
+            otherwise_variant
+                .as_ref()
+                .map(|PatternPath { arm_index, .. }| *arm_index)
+                .unwrap_or(arms.len()),
+        ),
+        extracted_enums_details.as_slice(),
+    )?;
+
+    let mut arms_vec = vec![];
+    let mut match_tuple_ctx = LoweringMatchTupleContext {
+        match_location: location,
+        otherwise_variant,
+        variants_map,
+        match_inputs,
+        n_snapshots_outer,
+        current_path: MatchingPath::default(),
+        current_var_ids: vec![],
+    };
+    let match_info = lower_full_match_tree(
+        ctx,
+        builder,
+        arms,
+        &mut match_tuple_ctx,
+        &extracted_enums_details,
+        &mut arms_vec,
+    )?;
+    let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: extracted_enums_details[0].concrete_enum_id,
+        input: match_tuple_ctx.match_inputs[0],
+        arms: vec![],
+        location,
+    });
+    let sealed_blocks = group_match_arms(ctx, empty_match_info, location, arms, arms_vec)?;
+
+    builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
+}
+
 /// Lowers an expression of type [semantic::ExprMatch].
 fn lower_expr_match(
     ctx: &mut LoweringContext<'_, '_>,
@@ -1217,7 +1601,23 @@ fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, expr.matched_expr)?;
 
-    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt252_ty() {
+    let matched_expr = ctx.function_body.exprs[expr.matched_expr].clone();
+    let ty = matched_expr.ty();
+    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+
+    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
+        return lower_expr_match_tuple(
+            ctx,
+            builder,
+            lowered_expr,
+            &matched_expr,
+            n_snapshots,
+            &types,
+            &expr.arms,
+        );
+    }
+
+    if ty == ctx.db.core_felt252_ty() {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder);
     }
@@ -1229,7 +1629,7 @@ fn lower_expr_match(
     }
 
     let ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots } =
-        extract_concrete_enum(ctx, expr)?;
+        extract_concrete_enum(ctx, &matched_expr)?;
     let match_input = lowered_expr.as_var_usage(ctx, builder)?;
 
     // Merge arm blocks.
