@@ -4,6 +4,10 @@ use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
+#[cfg(test)]
+#[path = "profiling_test.rs"]
+mod test;
+
 /// Profiling into of a single run.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
@@ -36,13 +40,17 @@ impl ProfilingInfoPrinter {
     }
 
     /// Prints the profiling info according to the params set in the printer.
-    pub fn print(&self, profiling_info: &ProfilingInfo) {
-        self.print_ex(profiling_info, &self.params);
+    pub fn print(&self, profiling_info: &ProfilingInfo) -> String {
+        self.print_ex(profiling_info, &self.params)
     }
 
     /// Prints the profiling info according to the given params (can be used to override the printer
     /// params).
-    pub fn print_ex(&self, profiling_info: &ProfilingInfo, params: &ProfilingInfoPrinterParams) {
+    pub fn print_ex(
+        &self,
+        profiling_info: &ProfilingInfo,
+        params: &ProfilingInfoPrinterParams,
+    ) -> String {
         let mut concrete_libfuncs = if params.print_by_concrete_libfunc {
             self.sierra_program
                 .libfunc_declarations
@@ -63,13 +71,13 @@ impl ProfilingInfoPrinter {
             HashMap::new()
         };
 
-        println!("Profiling info:");
-        println!("Weight by sierra statement:");
+        let mut result = "Weight by sierra statement:\n".to_string();
+
         let mut return_weight = 0;
         for (statement_idx, weight) in profiling_info
             .sierra_statements_weights
             .iter()
-            .sorted_by(|x, y| Ord::cmp(&(x.1, x.0.0), &(y.1, y.0.0)))
+            .sorted_by(|x, y| Ord::cmp(&(y.1, x.0.0), &(x.1, y.0.0)))
         {
             let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
                 panic!("Failed fetching statement index {}", statement_idx.0);
@@ -93,32 +101,37 @@ impl ProfilingInfoPrinter {
                 }
             }
             if *weight >= params.min_weight {
-                println!("  statement {}: {} ({})", *statement_idx, *weight, gen_statement);
+                result.push_str(&format!(
+                    "  statement {}: {} ({})\n",
+                    *statement_idx, *weight, gen_statement
+                ));
             }
         }
 
         if params.print_by_concrete_libfunc {
-            println!("Weight by concrete libfunc:");
+            result.push_str("Weight by concrete libfunc:\n");
             for (concrete_name, weight) in
-                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
+                concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(y.1, x.0), &(x.1, y.0)))
             {
                 if *weight >= params.min_weight {
-                    println!("  libfunc {}: {}", concrete_name, *weight);
+                    result.push_str(&format!("  libfunc {}: {}\n", concrete_name, *weight));
                 }
             }
-            println!("  return: {return_weight}");
+            result.push_str(&format!("  return: {return_weight}\n"));
         }
 
         if params.print_by_generic_libfunc {
-            println!("Weight by generic libfunc:");
+            result.push_str("Weight by generic libfunc:\n");
             for (generic_name, weight) in
-                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(x.1, x.0), &(y.1, y.0)))
+                generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(y.1, x.0), &(x.1, y.0)))
             {
                 if *weight >= params.min_weight {
-                    println!("  libfunc {}: {}", generic_name, *weight);
+                    result.push_str(&format!("  libfunc {}: {}\n", generic_name, *weight));
                 }
             }
-            println!("  return: {return_weight}");
+            result.push_str(&format!("  return: {return_weight}\n"));
         }
+
+        result
     }
 }
