@@ -331,34 +331,15 @@ impl SierraCasmRunner {
             .filter(|(pc, count)| *count != 0 && *pc >= real_pc_0)
             .fold(HashMap::default(), |mut acc, (pc, count)| {
                 let real_pc = pc - real_pc_0;
-                let idx = match self
+                // the `-1` here can't cause an underflow as the first statement is always at offset
+                // 0, so it is always on the left side of the partition, and thus the partition
+                // index is >0.
+                let idx = self
                     .casm_program
                     .debug_info
                     .sierra_statement_info
-                    .binary_search_by_key(&real_pc, |x| x.code_offset)
-                {
-                    Ok(mut idx) => {
-                        // In `binary_search_by_key`, "if there are multiple matches, then any one
-                        // of the matches could be returned". There may be multiple consecutive
-                        // matches as Sierra statements may be translated to zero CASM instructions.
-                        // In such cases, we need the last one.
-                        // Finding it linearly is simple and efficient as we usually expect much
-                        // less than 10 consecutive 0-sized Sierra statements (that is, less than 5
-                        // steps in average to find the last).
-                        while let Some(value) =
-                            self.casm_program.debug_info.sierra_statement_info.get(idx + 1)
-                        {
-                            if value.code_offset != real_pc {
-                                break;
-                            }
-                            idx += 1;
-                        }
-                        idx
-                    }
-                    // This may panic if `idx` is 0, but this should never happen as we skip PCs
-                    // that are < `real_pc_0`.
-                    Err(idx) => idx - 1,
-                };
+                    .partition_point(|x| x.code_offset <= real_pc)
+                    - 1;
 
                 *acc.entry(StatementIdx(idx)).or_insert(0) += count;
                 acc
