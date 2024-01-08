@@ -24,11 +24,16 @@ pub struct ProcessedProfilingInfo {
     /// relevant GenStatement.
     pub sierra_statements_weights:
         OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
-    // Weight (in steps in the relevant run) of each concrete libfunc.
+    /// Weight (in steps in the relevant run) of each concrete libfunc.
     pub concrete_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    // Weight (in steps in the relevant run) of each generic libfunc.
+    /// Weight (in steps in the relevant run) of each generic libfunc.
     pub generic_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    // Weight (in steps in the relevant run) of return statements.
+    /// Weight (in steps in the relevant run) of each user function (including generated
+    /// functions).
+    pub user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each original user function.
+    pub original_user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of return statements.
     pub return_weight: usize,
 }
 impl Display for ProcessedProfilingInfo {
@@ -51,6 +56,18 @@ impl Display for ProcessedProfilingInfo {
             }
             writeln!(f, "  return: {}", self.return_weight)?;
         }
+        if let Some(user_functions_weights) = &self.user_functions_weights {
+            writeln!(f, "Weight by user function (inc. generated):")?;
+            for (name, weight) in user_functions_weights.iter() {
+                writeln!(f, "  function {name}: {weight}")?;
+            }
+        }
+        if let Some(original_user_functions_weights) = &self.original_user_functions_weights {
+            writeln!(f, "Weight by original user function:")?;
+            for (name, weight) in original_user_functions_weights.iter() {
+                writeln!(f, "  function {name}: {weight}")?;
+            }
+        }
 
         Ok(())
     }
@@ -63,12 +80,24 @@ pub struct ProfilingInfoProcessorParams {
     /// sum of the weights per statement may be smaller than the sum of the weights per concrete
     /// libfunc, that may be smaller than the sum of the weights per generic libfunc.
     pub min_weight: usize,
+    /// Whether to process the profiling info by concrete libfunc.
     pub process_by_concrete_libfunc: bool,
+    /// Whether to process the profiling info by generic libfunc.
     pub process_by_generic_libfunc: bool,
+    /// Whether to process the profiling info by user function, including generated functions.
+    pub process_by_user_function: bool,
+    /// Whether to process the profiling info by original user function only.
+    pub process_by_original_user_function: bool,
 }
 impl Default for ProfilingInfoProcessorParams {
     fn default() -> Self {
-        Self { min_weight: 1, process_by_concrete_libfunc: true, process_by_generic_libfunc: true }
+        Self {
+            min_weight: 1,
+            process_by_concrete_libfunc: true,
+            process_by_generic_libfunc: true,
+            process_by_user_function: true,          // TODO(yg): false
+            process_by_original_user_function: true, // TODO(yg): false
+        }
     }
 }
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
@@ -114,6 +143,19 @@ impl ProfilingInfoProcessor {
             UnorderedHashMap::new()
         };
 
+        let mut user_functions = if params.process_by_user_function {
+            self.sierra_program
+                .funcs
+                .iter()
+                .enumerate()
+                .map(|(idx, _)| (idx, 0))
+                .collect::<UnorderedHashMap<usize, usize>>()
+        } else {
+            UnorderedHashMap::new()
+        };
+
+        let mut result = "Weight by sierra statement:\n".to_string();
+
         let mut return_weight = 0;
         let mut statements_weights = OrderedHashMap::default();
 
@@ -144,6 +186,19 @@ impl ProfilingInfoProcessor {
                     return_weight += weight;
                 }
             }
+
+            if params.process_by_user_function {
+                // The `-1` here can't cause an underflow as the first function's entry point is
+                // always 0, so it is always on the left side of the partition, and thus the
+                // partition index is >0.
+                let function_idx = self
+                    .sierra_program
+                    .funcs
+                    .partition_point(|x| x.entry_point.0 <= statement_idx.0)
+                    - 1;
+                *(user_functions.get_mut(&function_idx).unwrap()) += weight;
+            }
+
             if *weight >= params.min_weight {
                 statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
             }
@@ -175,13 +230,48 @@ impl ProfilingInfoProcessor {
             }
         }
 
+        let mut user_functions_weights = OrderedHashMap::default();
+        if params.process_by_user_function {
+            for (idx, weight) in user_functions.iter_sorted_by_key(|(idx, weight)| {
+                (usize::MAX - **weight, self.sierra_program.funcs[**idx].id.to_string())
+            }) {
+                if *weight >= params.min_weight {
+                    let func = &self.sierra_program.funcs[*idx];
+                    user_functions_weights.insert(func.id.to_string().into(), *weight);
+                    result.push_str(&format!("  function {}: {}\n", func.id, *weight));
+                }
+            }
+        }
+
+        let mut original_user_functions_weights = OrderedHashMap::default();
+        if params.process_by_original_user_function {
+            for (orig_name, weight) in user_functions
+                .aggregate_by(
+                    |idx| -> SmolStr {
+                        let full_name = self.sierra_program.funcs[*idx].id.to_string();
+                        full_name.split('[').next().unwrap().into()
+                    },
+                    |x, y| x + y,
+                    &0,
+                )
+                .iter_sorted_by_key(|(orig_name, weight)| {
+                    (usize::MAX - **weight, (*orig_name).clone())
+                })
+            {
+                if *weight >= params.min_weight {
+                    original_user_functions_weights.insert(orig_name.clone(), *weight);
+                    result.push_str(&format!("  function {}: {}\n", orig_name, *weight));
+                }
+            }
+        }
+
         ProcessedProfilingInfo {
             sierra_statements_weights: statements_weights,
             generic_libfuncs_weights: Some(generic_libfuncs_weights),
             concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
+            user_functions_weights: Some(user_functions_weights),
+            original_user_functions_weights: Some(original_user_functions_weights),
             return_weight,
         }
-
-        // result
     }
 }

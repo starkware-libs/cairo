@@ -49,6 +49,14 @@ Weight by generic libfunc:
   libfunc enum_match: 7
   libfunc function_call: 5
   return: 6
+Weight by user function (inc. generated):
+  function examples::enum_flow::main: 17
+  function examples::enum_flow::match_long: 11
+  function examples::enum_flow::match_short: 6
+Weight by original user function:
+  function examples::enum_flow::main: 17
+  function examples::enum_flow::match_long: 11
+  function examples::enum_flow::match_short: 6
 
 //! > ==========================================================================
 
@@ -149,6 +157,16 @@ Weight by generic libfunc:
   libfunc jump: 6
   libfunc branch_align: 4
   return: 9
+Weight by user function (inc. generated):
+  function examples::match_or::foo: 57
+  function examples::match_or::main: 33
+  function core::integer::U8Add::add: 30
+  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+Weight by original user function:
+  function examples::match_or::foo: 57
+  function examples::match_or::main: 33
+  function core::integer::U8Add::add: 30
+  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 
 //! > ==========================================================================
 
@@ -186,3 +204,55 @@ Weight by generic libfunc:
   libfunc store_temp: 8
   libfunc pedersen: 6
   return: 1
+Weight by user function (inc. generated):
+  function examples::pedersen_test::test_pedersen: 15
+Weight by original user function:
+  function examples::pedersen_test::test_pedersen: 15
+
+//! > ==========================================================================
+
+//! > Test profiling info of fib_loop.sierra
+
+//! > test_runner_name
+test_profiling
+
+//! > sierra_code
+>>> file: ../../tests/test_data/fib_loop.sierra
+
+//! > entry_point_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 23: 8 (felt252_is_zero([3]) { fallthrough() 31([4]) })
+  statement 37: 7 (store_temp<felt252>([7]) -> ([7]))
+  statement 38: 7 (store_temp<felt252>([2]) -> ([2]))
+  statement 39: 7 (store_temp<felt252>([9]) -> ([9]))
+  statement 40: 7 (function_call<user@examples::fib_loop::fib[expr23]>([7], [2], [9]) -> ([10], [11], [12], [13]))
+  statement 41: 7 (return([10], [11], [12], [13]))
+  statement 4: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 5: 1 (store_temp<felt252>([0]) -> ([0]))
+  statement 6: 1 (store_temp<felt252>([1]) -> ([1]))
+  statement 7: 1 (function_call<user@examples::fib_loop::fib[expr23]>([2], [0], [1]) -> ([3], [4], [5], [6]))
+  statement 11: 1 (return([6]))
+  statement 25: 1 (store_temp<felt252>([0]) -> ([0]))
+  statement 26: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 28: 1 (store_temp<felt252>([5]) -> ([5]))
+  statement 29: 1 (store_temp<felt252>([1]) -> ([1]))
+  statement 30: 1 (return([0], [2], [5], [1]))
+Weight by concrete libfunc:
+  libfunc store_temp<felt252>: 28
+  libfunc felt252_is_zero: 8
+  libfunc function_call<user@examples::fib_loop::fib[expr23]>: 8
+  return: 9
+Weight by generic libfunc:
+  libfunc store_temp: 28
+  libfunc felt252_is_zero: 8
+  libfunc function_call: 8
+  return: 9
+Weight by user function (inc. generated):
+  function examples::fib_loop::fib[expr23]: 48
+  function examples::fib_loop::main: 5
+Weight by original user function:
+  function examples::fib_loop::fib: 48
+  function examples::fib_loop::main: 5

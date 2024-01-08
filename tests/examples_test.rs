@@ -224,7 +224,7 @@ fn run_function(
 )]
 #[case::fib(
     "fib_loop",
-    &[1, 1, 7].map(Felt252::from), None, None,
+    &[], None, None,
     RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::fib_counter(

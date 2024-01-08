@@ -1,3 +1,8 @@
+
+fn main() -> felt252 {
+    fib(1, 1, 7)
+}
+
 // Calculates fib...
 fn fib(mut a: felt252, mut b: felt252, mut n: felt252) -> felt252 {
     loop {
