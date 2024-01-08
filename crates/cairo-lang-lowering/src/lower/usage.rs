@@ -177,7 +177,7 @@ impl BlockUsages {
             Expr::Loop(expr) => {
                 self.handle_expr(function_body, expr.body, current);
                 // Copy body usage to loop usage.
-                self.block_usages.insert(expr_id, self.block_usages[expr.body].clone());
+                self.block_usages.insert(expr_id, self.block_usages[&expr.body].clone());
             }
             Expr::While(expr) => {
                 let mut usage = Default::default();

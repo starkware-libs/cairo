@@ -1330,7 +1330,7 @@ fn maybe_compute_pattern_semantic(
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            let mut used_members = UnorderedHashSet::default();
+            let mut used_members = UnorderedHashSet::new();
             let mut get_member = |ctx: &mut ComputationContext<'_>,
                                   member_name: SmolStr,
                                   stable_ptr: SyntaxStablePtrId| {

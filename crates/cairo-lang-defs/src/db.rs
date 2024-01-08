@@ -194,7 +194,7 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId)
-    -> Maybe<Arc<Vec<ExternFunctionId>>>;
+        -> Maybe<Arc<Vec<ExternFunctionId>>>;
     fn module_extern_function_by_id(
         &self,
         extern_function_id: ExternFunctionId,
@@ -237,7 +237,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let item_module_ast = &db.priv_module_data(parent)?.submodules[submodule_id];
+            let item_module_ast = &db.priv_module_data(parent)?.submodules[&submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
                     // This is an inline module, we return the file where the inline module was
@@ -259,7 +259,7 @@ fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<FileId
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
-    Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
+    Ok(db.module_files(module_file_id.0)?[module_file_id.1 .0])
 }
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
@@ -361,7 +361,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         ModuleId::CrateRoot(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
             let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
-            let item_module_ast = &parent_module_data.submodules[submodule_id];
+            let item_module_ast = &parent_module_data.submodules[&submodule_id];
 
             match item_module_ast.body(syntax_db) {
                 MaybeModuleBody::Some(body) => {
@@ -956,7 +956,7 @@ fn module_item_name_stable_ptr(
 ) -> Maybe<SyntaxStablePtrId> {
     let data = db.priv_module_data(module_id)?;
     let db = db.upcast();
-    Ok(match item_id {
+    Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {

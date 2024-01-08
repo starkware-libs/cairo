@@ -1,6 +1,9 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
-use core::hash::Hash;
+use core::hash::{BuildHasher, Hash};
+
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 use super::graph_node::GraphNode;
 use crate::unordered_hash_map::UnorderedHashMap;
@@ -33,21 +36,22 @@ struct SccAlgoNode<Node: GraphNode> {
 }
 
 /// The context of the SCC algorithm.
-struct SccAlgoContext<Node: GraphNode> {
+struct SccAlgoContext<Node: GraphNode, BH> {
     /// The next index to allocate to a first-seen node.
     next_index: u32,
     /// The stack of the nodes in the DFS.
     stack: Vec<Node::NodeId>,
     /// All visited nodes. If a graph node is not in the map, it wasn't yet visited.
-    known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>>,
+    known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>, BH>,
     /// The ID of the node we want to find the SCC of.
     target_node_id: Node::NodeId,
     /// The SCC of the `target_node_id`. Populated only at the end of the algorithm.
     result: Vec<Node::NodeId>,
 }
-impl<Node: GraphNode> SccAlgoContext<Node> {
+
+impl<Node: GraphNode, BH: BuildHasher + Default> SccAlgoContext<Node, BH> {
     fn new(target_node_id: Node::NodeId) -> Self {
-        SccAlgoContext::<Node> {
+        SccAlgoContext::<Node, BH> {
             next_index: 0,
             stack: Vec::new(),
             known_nodes: UnorderedHashMap::default(),
@@ -58,14 +62,17 @@ impl<Node: GraphNode> SccAlgoContext<Node> {
 }
 
 /// Computes the SCC (Strongly Connected Component) of the given node in its graph.
-pub fn compute_scc<Node: GraphNode>(root: &Node) -> Vec<Node::NodeId> {
-    let mut ctx = SccAlgoContext::new(root.get_id());
+pub fn compute_scc<Node: GraphNode, BH: BuildHasher + Default>(root: &Node) -> Vec<Node::NodeId> {
+    let mut ctx = SccAlgoContext::<_, BH>::new(root.get_id());
     compute_scc_recursive(&mut ctx, root);
     ctx.result
 }
 
 /// The recursive call to compute the SCC of a given node.
-fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, current_node: &Node) {
+fn compute_scc_recursive<Node: GraphNode, BH: BuildHasher>(
+    ctx: &mut SccAlgoContext<Node, BH>,
+    current_node: &Node,
+) {
     let mut current_wrapper_node = SccAlgoNode {
         node: current_node.clone(),
         index: ctx.next_index,
@@ -84,7 +91,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 // neighbor was not visited yet. Visit it and maybe apply its lowlink to root.
                 compute_scc_recursive(ctx, &neighbor);
                 // Now neighbor should be in known_nodes.
-                current_wrapper_node.lowlink = std::cmp::min(
+                current_wrapper_node.lowlink = core::cmp::min(
                     current_wrapper_node.lowlink,
                     ctx.known_nodes[&neighbor_id].lowlink,
                 );
@@ -93,7 +100,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 if ctx.known_nodes[&neighbor_id].on_stack {
                     // This is a back edge, meaning neighbor is in current_node's SCC.
                     current_wrapper_node.lowlink =
-                        std::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
+                        core::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
                 } else {
                     // If neighbor is known but not on stack, it's in a concluded dropped SCC.
                     // Ignore it.

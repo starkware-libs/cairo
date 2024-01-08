@@ -564,9 +564,9 @@ pub fn priv_impl_definition_data(
 
     // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
 
-    let mut function_asts = OrderedHashMap::default();
-    let mut item_type_asts = OrderedHashMap::default();
-    let mut impl_item_names = OrderedHashSet::default();
+    let mut function_asts = OrderedHashMap::new();
+    let mut item_type_asts = OrderedHashMap::new();
+    let mut impl_item_names = OrderedHashSet::new();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -1362,7 +1362,7 @@ pub fn priv_impl_function_generic_params_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_def_id)?;
-    let function_syntax = &data.function_asts[impl_function_id];
+    let function_syntax = &data.function_asts[&impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
@@ -1461,7 +1461,7 @@ pub fn priv_impl_function_declaration_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_def_id)?;
-    let function_syntax = &data.function_asts[impl_function_id];
+    let function_syntax = &data.function_asts[&impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
 
@@ -1724,7 +1724,7 @@ pub fn priv_impl_function_body_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let impl_def_id = impl_function_id.impl_def_id(defs_db);
     let data = db.priv_impl_definition_data(impl_def_id)?;
-    let function_syntax = &data.function_asts[impl_function_id];
+    let function_syntax = &data.function_asts[&impl_function_id];
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
     let parent_resolver_data = declaration.function_declaration_data.resolver_data;

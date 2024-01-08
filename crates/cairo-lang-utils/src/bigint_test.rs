@@ -1,5 +1,5 @@
-use std::ops::Neg;
-use std::str::FromStr;
+use core::ops::Neg;
+use core::str::FromStr;
 
 use num_bigint::BigInt;
 use num_traits::Num;

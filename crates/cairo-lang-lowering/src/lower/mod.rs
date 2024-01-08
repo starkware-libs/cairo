@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
@@ -481,7 +483,7 @@ fn lower_single_pattern(
                 .db
                 .concrete_struct_members(structure.concrete_struct_id)
                 .map_err(LoweringFlowError::Failed)?;
-            let mut required_members = UnorderedHashMap::from_iter(
+            let mut required_members = UnorderedHashMap::<_, _, RandomState>::from_iter(
                 structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
             let generator = generators::StructDestructure {
@@ -1016,7 +1018,7 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop or while."),
     };
 
-    let usage = &ctx.block_usages.block_usages[loop_expr_id];
+    let usage = &ctx.block_usages.block_usages[&loop_expr_id];
 
     // Determine signature.
     let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
@@ -1682,7 +1684,8 @@ fn lower_expr_struct_ctor(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
+    let member_expr =
+        UnorderedHashMap::<_, _, RandomState>::from_iter(expr.members.iter().cloned());
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members

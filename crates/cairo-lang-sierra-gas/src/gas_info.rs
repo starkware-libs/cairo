@@ -108,7 +108,7 @@ impl Display for GasInfo {
         }
 
         for statement_idx in var_values.keys().sorted_by(|a, b| a.0.cmp(&b.0)) {
-            writeln!(f, "#{statement_idx}: {:?}", var_values[*statement_idx])?;
+            writeln!(f, "#{statement_idx}: {:?}", var_values[statement_idx])?;
         }
         writeln!(f)?;
         for (function_id, costs) in self.function_costs.iter() {

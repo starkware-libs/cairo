@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 
@@ -26,7 +28,10 @@ pub fn concrete_function_with_body_scc(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-    compute_scc(&ConcreteFunctionWithBodyPostInlineNode { function_id, db: db.upcast() })
+    compute_scc::<_, RandomState>(&ConcreteFunctionWithBodyPostInlineNode {
+        function_id,
+        db: db.upcast(),
+    })
 }
 
 /// Query implementation of
@@ -48,5 +53,8 @@ pub fn concrete_function_with_body_postpanic_scc(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-    compute_scc(&ConcreteFunctionWithBodyPostPanicNode { function_id, db: db.upcast() })
+    compute_scc::<_, RandomState>(&ConcreteFunctionWithBodyPostPanicNode {
+        function_id,
+        db: db.upcast(),
+    })
 }

@@ -1,0 +1,9 @@
+[package]
+name = "ensure-no_std"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false, features = ["serde"] }
+
+esp-alloc = "0.3.0"

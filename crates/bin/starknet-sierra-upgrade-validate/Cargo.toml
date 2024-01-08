@@ -9,7 +9,7 @@ description = "Compiler executable for validating a Sierra upgrade is valid"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-serde.workspace = true
+serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 rayon.workspace = true
 indicatif = "0.17.7"

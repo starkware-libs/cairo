@@ -127,8 +127,8 @@ impl BlockBuilder {
             MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [member_id.name(ctx.db.upcast())]
-                .ty
+                    [&member_id.name(ctx.db.upcast())]
+                    .ty
             }
         }
     }
@@ -329,14 +329,9 @@ impl SealedBlockBuilder {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
-                assert!(
-                    remapping
-                        .insert(
-                            *remapped_var,
-                            builder.get_ref_raw(ctx, semantic, location).unwrap()
-                        )
-                        .is_none()
-                );
+                assert!(remapping
+                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
+                    .is_none());
             }
             if let Some(remapped_var) = semantic_remapping.expr {
                 let var_usage = expr.unwrap_or_else(|| {

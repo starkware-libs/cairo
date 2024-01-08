@@ -320,7 +320,7 @@ fn priv_function_with_body_lowering(
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let lowered = match db.lookup_intern_lowering_function_with_body(function_id) {
+    let lowered = match &db.lookup_intern_lowering_function_with_body(function_id) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { element, .. } => {
             multi_lowering.generated_lowerings[element].clone()

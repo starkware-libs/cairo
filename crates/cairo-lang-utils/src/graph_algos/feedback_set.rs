@@ -7,6 +7,8 @@
 //! so here we implement some straight-forward algorithm that guarantees to cover all the cycles in
 //! the graph, but doesn't necessarily produce the minimum size of such a set.
 
+use core::hash::BuildHasher;
+
 use super::graph_node::GraphNode;
 use super::scc_graph_node::SccGraphNode;
 use super::strongly_connected_components::ComputeScc;
@@ -18,15 +20,15 @@ use crate::unordered_hash_set::UnorderedHashSet;
 mod feedback_set_test;
 
 /// Context for the feedback-set algorithm.
-struct FeedbackSetAlgoContext<Node: GraphNode> {
+struct FeedbackSetAlgoContext<Node: GraphNode, BH: BuildHasher> {
     /// The accumulated feedback set so far in the process of the algorithm. In the end of the
     /// algorithm, this is also the result.
-    pub feedback_set: OrderedHashSet<Node::NodeId>,
+    pub feedback_set: OrderedHashSet<Node::NodeId, BH>,
     /// Nodes that are currently during the recursion call on them. That is - if one of these is
     /// reached, it indicates it's in some cycle that was not "resolved" yet.
-    pub in_flight: UnorderedHashSet<Node::NodeId>,
+    pub in_flight: UnorderedHashSet<Node::NodeId, BH>,
 }
-impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
+impl<Node: GraphNode, BH: BuildHasher + Default> FeedbackSetAlgoContext<Node, BH> {
     fn new() -> Self {
         FeedbackSetAlgoContext {
             feedback_set: OrderedHashSet::default(),
@@ -36,17 +38,17 @@ impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
 }
 
 /// Calculates the feedback set of an SCC.
-pub fn calc_feedback_set<Node: GraphNode + ComputeScc>(
+pub fn calc_feedback_set<Node: GraphNode + ComputeScc, BH: BuildHasher + Default>(
     node: &SccGraphNode<Node>,
-) -> OrderedHashSet<Node::NodeId> {
-    let mut ctx = FeedbackSetAlgoContext::<Node>::new();
+) -> OrderedHashSet<Node::NodeId, BH> {
+    let mut ctx = FeedbackSetAlgoContext::<Node, BH>::new();
     calc_feedback_set_recursive(node, &mut ctx);
     ctx.feedback_set
 }
 
-fn calc_feedback_set_recursive<Node: GraphNode + ComputeScc>(
+fn calc_feedback_set_recursive<Node: GraphNode + ComputeScc, S: BuildHasher>(
     node: &SccGraphNode<Node>,
-    ctx: &mut FeedbackSetAlgoContext<Node>,
+    ctx: &mut FeedbackSetAlgoContext<Node, S>,
 ) {
     let cur_node_id = node.get_id();
     ctx.in_flight.insert(cur_node_id.clone());
