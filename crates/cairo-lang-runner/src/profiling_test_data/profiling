@@ -49,6 +49,14 @@ Weight by generic libfunc:
   libfunc enum_match: 7
   libfunc function_call: 5
   return: 6
+Weight by user function (inc. generated):
+  function examples::enum_flow::main: 17
+  function examples::enum_flow::match_long: 11
+  function examples::enum_flow::match_short: 6
+Weight by original user function:
+  function examples::enum_flow::main: 17
+  function examples::enum_flow::match_long: 11
+  function examples::enum_flow::match_short: 6
 
 //! > ==========================================================================
 
@@ -149,6 +157,16 @@ Weight by generic libfunc:
   libfunc jump: 6
   libfunc branch_align: 4
   return: 9
+Weight by user function (inc. generated):
+  function examples::match_or::foo: 57
+  function examples::match_or::main: 33
+  function core::integer::U8Add::add: 30
+  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+Weight by original user function:
+  function examples::match_or::foo: 57
+  function examples::match_or::main: 33
+  function core::integer::U8Add::add: 30
+  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 
 //! > ==========================================================================
 
@@ -186,3 +204,67 @@ Weight by generic libfunc:
   libfunc store_temp: 8
   libfunc pedersen: 6
   return: 1
+Weight by user function (inc. generated):
+  function examples::pedersen_test::test_pedersen: 15
+Weight by original user function:
+  function examples::pedersen_test::test_pedersen: 15
+
+//! > ==========================================================================
+
+//! > Test profiling info of a program with a simple loop
+
+//! > TODO(yuval): change to Cairo code once the tests get Cairo:
+fn main() {
+    let n = 5;
+    loop {
+        if n == 0 {
+            break;
+        }
+    }
+}
+
+//! > test_runner_name
+test_profiling
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc felt252_const<5> = felt252_const<5>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@test::main[expr9]> = function_call<user@test::main[expr9]>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc drop<felt252> = drop<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+
+disable_ap_tracking() -> (); // 0
+felt252_const<5>() -> ([0]); // 1
+store_temp<felt252>([0]) -> ([0]); // 2
+function_call<user@test::main[expr9]>([0]) -> ([1]); // 3
+return([1]); // 4
+disable_ap_tracking() -> (); // 5
+dup<felt252>([0]) -> ([0], [1]); // 6
+felt252_is_zero([1]) { fallthrough() 12([2]) }; // 7
+branch_align() -> (); // 8
+drop<felt252>([0]) -> (); // 9
+struct_construct<Unit>() -> ([3]); // 10
+return([3]); // 11
+branch_align() -> (); // 12
+drop<NonZero<felt252>>([2]) -> (); // 13
+store_temp<felt252>([0]) -> ([0]); // 14
+function_call<user@test::main[expr9]>([0]) -> ([4]); // 15
+return([4]); // 16
+
+test::main@0() -> (Unit);
+test::main[expr9]@5([0]: felt252) -> (Unit);
+
+//! > entry_point_name
+main
+
+//! > expected_profiling_info
+
