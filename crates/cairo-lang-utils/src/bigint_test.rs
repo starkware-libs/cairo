@@ -1,3 +1,5 @@
+#[cfg(not(feature = "std"))]
+use alloc::format;
 use core::ops::Neg;
 use core::str::FromStr;
 

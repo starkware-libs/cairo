@@ -53,6 +53,7 @@ jobs:
           - test -p cairo-lang-test-runner
           - test -p cairo-lang-test-utils
           - test -p cairo-lang-utils
+          - test -p cairo-lang-utils --no-default-features --features=serde 
           - test -p tests
     steps:
       - uses: actions/checkout@v3
