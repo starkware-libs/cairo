@@ -194,7 +194,7 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId)
-        -> Maybe<Arc<Vec<ExternFunctionId>>>;
+    -> Maybe<Arc<Vec<ExternFunctionId>>>;
     fn module_extern_function_by_id(
         &self,
         extern_function_id: ExternFunctionId,
@@ -259,7 +259,7 @@ fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<FileId
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
-    Ok(db.module_files(module_file_id.0)?[module_file_id.1 .0])
+    Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
 }
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {

@@ -1,14 +1,13 @@
-use core::hash::Hash;
+use core::borrow::Borrow;
+use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
-use core::{borrow::Borrow, hash::BuildHasher};
-
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
+#[cfg(feature = "std")]
+use std::collections::HashMap;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
-#[cfg(feature = "std")]
-use std::collections::HashMap;
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.

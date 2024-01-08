@@ -1,12 +1,12 @@
+#[cfg(feature = "std")]
+use std::collections::hash_map::RandomState as HashBuilderType;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::hash_map::DefaultHashBuilder as HashBuilderType;
 use test_log::test;
 
 use crate::collection_arithmetics::{add_maps, sub_maps};
 use crate::ordered_hash_map::OrderedHashMap;
-
-#[cfg(not(feature = "std"))]
-use hashbrown::hash_map::DefaultHashBuilder as HashBuilderType;
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState as HashBuilderType;
 
 #[test]
 fn test_add_map_and_sub_map() {

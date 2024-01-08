@@ -7,7 +7,6 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 use alloc::boxed::Box;
-
 use core::fmt;
 
 #[cfg(feature = "serde")]

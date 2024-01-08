@@ -1,11 +1,10 @@
 use core::hash::{BuildHasher, Hash};
 use core::ops::{Index, IndexMut};
+#[cfg(feature = "std")]
+use std::collections::hash_map::RandomState;
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
-
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 
 #[cfg(feature = "std")]
 #[derive(Clone, Debug)]
@@ -219,11 +218,11 @@ impl<Key: Hash + Eq, Value, BH: BuildHasher + Default, const N: usize> From<[(Ke
 
 #[cfg(feature = "serde")]
 mod impl_serde {
-    use itertools::Itertools;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
     #[cfg(not(feature = "std"))]
     use alloc::vec::Vec;
+
+    use itertools::Itertools;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     use super::*;
 

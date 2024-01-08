@@ -329,9 +329,14 @@ impl SealedBlockBuilder {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
-                assert!(remapping
-                    .insert(*remapped_var, builder.get_ref_raw(ctx, semantic, location).unwrap())
-                    .is_none());
+                assert!(
+                    remapping
+                        .insert(
+                            *remapped_var,
+                            builder.get_ref_raw(ctx, semantic, location).unwrap()
+                        )
+                        .is_none()
+                );
             }
             if let Some(remapped_var) = semantic_remapping.expr {
                 let var_usage = expr.unwrap_or_else(|| {

@@ -1,13 +1,12 @@
 #[cfg(not(feature = "std"))]
 use alloc::{vec, vec::Vec};
-#[cfg(not(feature = "std"))]
-use hashbrown::{hash_map::DefaultHashBuilder as HashBuilderType, HashSet};
-
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState as HashBuilderType;
 #[cfg(feature = "std")]
 use std::collections::HashSet;
 
+#[cfg(not(feature = "std"))]
+use hashbrown::{hash_map::DefaultHashBuilder as HashBuilderType, HashSet};
 use itertools::chain;
 use test_case::test_case;
 use test_log::test;

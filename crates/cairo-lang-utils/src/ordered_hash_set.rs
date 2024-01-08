@@ -1,6 +1,5 @@
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
-
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 

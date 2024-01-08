@@ -1,9 +1,8 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
-use core::hash::{BuildHasher, Hash};
-
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
+use core::hash::{BuildHasher, Hash};
 
 use super::graph_node::GraphNode;
 use crate::unordered_hash_map::UnorderedHashMap;

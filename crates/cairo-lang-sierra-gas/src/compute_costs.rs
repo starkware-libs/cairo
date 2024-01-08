@@ -707,11 +707,7 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
     }
 
     fn to_cost_map(cost: i32) -> OrderedHashMap<CostTokenType, i64> {
-        if cost == 0 {
-            Default::default()
-        } else {
-            Self::to_full_cost_map(cost)
-        }
+        if cost == 0 { Default::default() } else { Self::to_full_cost_map(cost) }
     }
 
     fn to_full_cost_map(cost: i32) -> OrderedHashMap<CostTokenType, i64> {

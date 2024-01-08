@@ -4,7 +4,6 @@ mod test;
 
 #[cfg(not(feature = "std"))]
 use alloc::{format, string::String, vec};
-
 use core::ops::Neg;
 
 use num_bigint::{BigInt, BigUint, ToBigInt};
