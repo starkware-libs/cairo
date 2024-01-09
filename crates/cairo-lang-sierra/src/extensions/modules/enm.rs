@@ -19,7 +19,7 @@ use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 
-use super::felt252_bounded::Felt252BoundedType;
+use super::bounded_int::BoundedIntType;
 use super::snapshot::snapshot_ty;
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
@@ -110,7 +110,7 @@ impl ConcreteType for EnumConcreteType {
 define_libfunc_hierarchy! {
     pub enum EnumLibfunc {
         Init(EnumInitLibfunc),
-        FromFelt252Bounded(EnumFromFelt252BoundedLibfunc),
+        FromBoundedInt(EnumFromBoundedIntLibfunc),
         Match(EnumMatchLibfunc),
         SnapshotMatch(EnumSnapshotMatchLibfunc),
     }, EnumConcreteLibfunc
@@ -196,26 +196,26 @@ impl NamedLibfunc for EnumInitLibfunc {
     }
 }
 
-pub struct EnumFromFelt252BoundedConcreteLibfunc {
+pub struct EnumFromBoundedIntConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
     pub num_variants: usize,
 }
-impl SignatureBasedConcreteLibfunc for EnumFromFelt252BoundedConcreteLibfunc {
+impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }
 #[derive(Default)]
-pub struct EnumFromFelt252BoundedLibfunc {}
-impl EnumFromFelt252BoundedLibfunc {
-    /// Creates the specialization of the enum-from-felt-bounded libfunc with the given template
+pub struct EnumFromBoundedIntLibfunc {}
+impl EnumFromBoundedIntLibfunc {
+    /// Creates the specialization of the enum-from-bounded-int libfunc with the given template
     /// arguments.
     fn specialize_concrete_lib_func(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<EnumFromFelt252BoundedConcreteLibfunc, SpecializationError> {
+    ) -> Result<EnumFromBoundedIntConcreteLibfunc, SpecializationError> {
         let enum_type = match args {
             [GenericArg::Type(enum_type)] => enum_type.clone(),
             [_] => return Err(SpecializationError::UnsupportedGenericArg),
@@ -233,16 +233,16 @@ impl EnumFromFelt252BoundedLibfunc {
             }
         }
         let bounded_felt_ty = context.get_concrete_type(
-            Felt252BoundedType::id(),
+            BoundedIntType::id(),
             &[GenericArg::Value(0.into()), GenericArg::Value((num_variants - 1).into())],
         )?;
         if num_variants <= 2 {
-            Ok(EnumFromFelt252BoundedConcreteLibfunc {
+            Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: reinterpret_cast_signature(bounded_felt_ty, enum_type),
                 num_variants,
             })
         } else {
-            Ok(EnumFromFelt252BoundedConcreteLibfunc {
+            Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: LibfuncSignature::new_non_branch_ex(
                     vec![ParamSignature::new(bounded_felt_ty)],
                     vec![OutputVarInfo {
@@ -256,9 +256,9 @@ impl EnumFromFelt252BoundedLibfunc {
         }
     }
 }
-impl NamedLibfunc for EnumFromFelt252BoundedLibfunc {
-    type Concrete = EnumFromFelt252BoundedConcreteLibfunc;
-    const STR_ID: &'static str = "enum_from_felt252_bounded";
+impl NamedLibfunc for EnumFromBoundedIntLibfunc {
+    type Concrete = EnumFromBoundedIntConcreteLibfunc;
+    const STR_ID: &'static str = "enum_from_bounded_int";
 
     fn specialize_signature(
         &self,

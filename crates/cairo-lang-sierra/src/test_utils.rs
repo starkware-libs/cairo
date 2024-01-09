@@ -25,27 +25,24 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
     elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
     elements.insert(
-        "Felt252Bounded0_3".into(),
-        as_type_long_id_value_args("Felt252Bounded", &[BigInt::from(0), BigInt::from(3)]),
+        "BoundedInt0_3".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(3)]),
     );
     elements.insert(
-        "Felt252Bounded0_-1".into(),
-        as_type_long_id_value_args(
-            "Felt252Bounded",
-            &[BigInt::from(0), Felt252::from(-1).to_bigint()],
-        ),
+        "BoundedInt0_-1".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), Felt252::from(-1).to_bigint()]),
     );
     elements.insert(
-        "Felt252Bounded0_10".into(),
-        as_type_long_id_value_args("Felt252Bounded", &[BigInt::from(0), BigInt::from(10)]),
+        "BoundedInt0_10".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(10)]),
     );
     elements.insert(
-        "Felt252Bounded0_0".into(),
-        as_type_long_id_value_args("Felt252Bounded", &[BigInt::from(0), BigInt::from(0)]),
+        "BoundedInt0_0".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(0)]),
     );
     elements.insert(
-        "Felt252Bounded2_3".into(),
-        as_type_long_id_value_args("Felt252Bounded", &[BigInt::from(2), BigInt::from(3)]),
+        "BoundedInt2_3".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(2), BigInt::from(3)]),
     );
     elements.insert("ArrayU128".into(), as_type_long_id("Array", &["u128"]));
     elements.insert("BoxU128".into(), as_type_long_id("Box", &["u128"]));

@@ -47,7 +47,7 @@
         "emit_event_syscall",
         "enable_ap_tracking",
         "enum_init",
-        "enum_from_felt252_bounded",
+        "enum_from_bounded_int",
         "enum_match",
         "enum_snapshot_match",
         "felt252_add",
