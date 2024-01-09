@@ -21,6 +21,7 @@ use num_traits::Signed;
 
 use super::bounded_int::BoundedIntType;
 use super::snapshot::snapshot_ty;
+use super::structure::StructType;
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -216,6 +217,10 @@ impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
         &self.signature
     }
 }
+
+/// Libfunc for creating an enum from a `BoundedInt` type.
+/// Will only work where there are the same number of variants as in the range of the `BoundedInt`
+/// type, and the range starts from 0.
 #[derive(Default)]
 pub struct EnumFromBoundedIntLibfunc {}
 impl EnumFromBoundedIntLibfunc {
@@ -229,25 +234,30 @@ impl EnumFromBoundedIntLibfunc {
         let enum_type = args_as_single_type(args)?;
         let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let num_variants = variant_types.len();
+        if num_variants == 0 {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
 
         for v in variant_types {
-            if !context.get_type_info(v)?.zero_sized {
+            let long_id = context.get_type_info(v)?.long_id;
+            // Only trivial empty structs are allowed as variant types.
+            if long_id.generic_id != StructType::ID || long_id.generic_args.len() != 1 {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
-        let bounded_felt_ty = context.get_concrete_type(
+        let bounded_int_ty = context.get_concrete_type(
             BoundedIntType::id(),
             &[GenericArg::Value(0.into()), GenericArg::Value((num_variants - 1).into())],
         )?;
         if num_variants <= 2 {
             Ok(EnumFromBoundedIntConcreteLibfunc {
-                signature: reinterpret_cast_signature(bounded_felt_ty, enum_type),
+                signature: reinterpret_cast_signature(bounded_int_ty, enum_type),
                 num_variants,
             })
         } else {
             Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: LibfuncSignature::new_non_branch_ex(
-                    vec![ParamSignature::new(bounded_felt_ty)],
+                    vec![ParamSignature::new(bounded_int_ty)],
                     vec![OutputVarInfo {
                         ty: enum_type,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
