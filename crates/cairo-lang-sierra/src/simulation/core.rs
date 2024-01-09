@@ -279,7 +279,7 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Enum(EnumConcreteLibfunc::FromFelt252Bounded(_)) => todo!(),
+        Enum(EnumConcreteLibfunc::FromBoundedInt(_)) => todo!(),
         Range(RangeConcreteLibfunc::ConstrainRange(_)) => todo!(),
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
         Struct(
