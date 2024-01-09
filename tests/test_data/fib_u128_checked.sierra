@@ -44,72 +44,62 @@ store_temp<u128>([1]) -> ([1]); // 14
 dup<u128>([2]) -> ([2], [8]); // 15
 store_temp<u128>([8]) -> ([8]); // 16
 function_call<user@core::integer::u128_checked_add>([0], [1], [8]) -> ([9], [10]); // 17
-enum_match<core::option::Option::<core::integer::u128>>([10]) { fallthrough([11]) 50([12]) }; // 18
+enum_match<core::option::Option::<core::integer::u128>>([10]) { fallthrough([11]) 40([12]) }; // 18
 branch_align() -> (); // 19
 u128_const<1>() -> ([13]); // 20
 store_temp<RangeCheck>([9]) -> ([9]); // 21
 store_temp<u128>([3]) -> ([3]); // 22
 store_temp<u128>([13]) -> ([13]); // 23
 function_call<user@core::integer::u128_checked_sub>([9], [3], [13]) -> ([14], [15]); // 24
-enum_match<core::option::Option::<core::integer::u128>>([15]) { fallthrough([16]) 43([17]) }; // 25
+enum_match<core::option::Option::<core::integer::u128>>([15]) { fallthrough([16]) 33([17]) }; // 25
 branch_align() -> (); // 26
 store_temp<RangeCheck>([14]) -> ([14]); // 27
 store_temp<u128>([2]) -> ([2]); // 28
 store_temp<u128>([11]) -> ([11]); // 29
 store_temp<u128>([16]) -> ([16]); // 30
 function_call<user@examples::fib_u128_checked::fib>([14], [2], [11], [16]) -> ([18], [19]); // 31
-enum_match<core::option::Option::<core::integer::u128>>([19]) { fallthrough([20]) 38([21]) }; // 32
+return([18], [19]); // 32
 branch_align() -> (); // 33
-enum_init<core::option::Option::<core::integer::u128>, 0>([20]) -> ([22]); // 34
-store_temp<RangeCheck>([18]) -> ([18]); // 35
-store_temp<core::option::Option::<core::integer::u128>>([22]) -> ([22]); // 36
-return([18], [22]); // 37
-branch_align() -> (); // 38
-enum_init<core::option::Option::<core::integer::u128>, 1>([21]) -> ([23]); // 39
-store_temp<RangeCheck>([18]) -> ([18]); // 40
-store_temp<core::option::Option::<core::integer::u128>>([23]) -> ([23]); // 41
-return([18], [23]); // 42
-branch_align() -> (); // 43
-drop<u128>([11]) -> (); // 44
-drop<u128>([2]) -> (); // 45
-enum_init<core::option::Option::<core::integer::u128>, 1>([17]) -> ([24]); // 46
-store_temp<RangeCheck>([14]) -> ([14]); // 47
-store_temp<core::option::Option::<core::integer::u128>>([24]) -> ([24]); // 48
-return([14], [24]); // 49
-branch_align() -> (); // 50
-drop<u128>([2]) -> (); // 51
-drop<u128>([3]) -> (); // 52
-enum_init<core::option::Option::<core::integer::u128>, 1>([12]) -> ([25]); // 53
-store_temp<RangeCheck>([9]) -> ([9]); // 54
-store_temp<core::option::Option::<core::integer::u128>>([25]) -> ([25]); // 55
-return([9], [25]); // 56
-u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 63([5], [6]) }; // 57
-branch_align() -> (); // 58
-enum_init<core::option::Option::<core::integer::u128>, 0>([4]) -> ([7]); // 59
-store_temp<RangeCheck>([3]) -> ([3]); // 60
-store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 61
-return([3], [7]); // 62
-branch_align() -> (); // 63
-drop<u128>([6]) -> (); // 64
-struct_construct<Unit>() -> ([8]); // 65
-enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 66
-store_temp<RangeCheck>([5]) -> ([5]); // 67
-store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 68
-return([5], [9]); // 69
-u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 76([5], [6]) }; // 70
-branch_align() -> (); // 71
-enum_init<core::option::Option::<core::integer::u128>, 0>([4]) -> ([7]); // 72
-store_temp<RangeCheck>([3]) -> ([3]); // 73
-store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 74
-return([3], [7]); // 75
-branch_align() -> (); // 76
-drop<u128>([6]) -> (); // 77
-struct_construct<Unit>() -> ([8]); // 78
-enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 79
-store_temp<RangeCheck>([5]) -> ([5]); // 80
-store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 81
-return([5], [9]); // 82
+drop<u128>([11]) -> (); // 34
+drop<u128>([2]) -> (); // 35
+enum_init<core::option::Option::<core::integer::u128>, 1>([17]) -> ([20]); // 36
+store_temp<RangeCheck>([14]) -> ([14]); // 37
+store_temp<core::option::Option::<core::integer::u128>>([20]) -> ([20]); // 38
+return([14], [20]); // 39
+branch_align() -> (); // 40
+drop<u128>([2]) -> (); // 41
+drop<u128>([3]) -> (); // 42
+enum_init<core::option::Option::<core::integer::u128>, 1>([12]) -> ([21]); // 43
+store_temp<RangeCheck>([9]) -> ([9]); // 44
+store_temp<core::option::Option::<core::integer::u128>>([21]) -> ([21]); // 45
+return([9], [21]); // 46
+u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 53([5], [6]) }; // 47
+branch_align() -> (); // 48
+enum_init<core::option::Option::<core::integer::u128>, 0>([4]) -> ([7]); // 49
+store_temp<RangeCheck>([3]) -> ([3]); // 50
+store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 51
+return([3], [7]); // 52
+branch_align() -> (); // 53
+drop<u128>([6]) -> (); // 54
+struct_construct<Unit>() -> ([8]); // 55
+enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 56
+store_temp<RangeCheck>([5]) -> ([5]); // 57
+store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 58
+return([5], [9]); // 59
+u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 66([5], [6]) }; // 60
+branch_align() -> (); // 61
+enum_init<core::option::Option::<core::integer::u128>, 0>([4]) -> ([7]); // 62
+store_temp<RangeCheck>([3]) -> ([3]); // 63
+store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 64
+return([3], [7]); // 65
+branch_align() -> (); // 66
+drop<u128>([6]) -> (); // 67
+struct_construct<Unit>() -> ([8]); // 68
+enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 69
+store_temp<RangeCheck>([5]) -> ([5]); // 70
+store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 71
+return([5], [9]); // 72
 
 examples::fib_u128_checked::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
-core::integer::u128_checked_add@57([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
-core::integer::u128_checked_sub@70([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
+core::integer::u128_checked_add@47([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
+core::integer::u128_checked_sub@60([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);

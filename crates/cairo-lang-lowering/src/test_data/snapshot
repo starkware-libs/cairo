@@ -122,23 +122,18 @@ blk1:
 Statements:
   (v6: ()) <- test::bar0(v1)
 End:
-  Goto(blk4, {})
+  Return(v0)
 
 blk2:
 Statements:
   (v7: ()) <- test::bar1(v2)
 End:
-  Goto(blk4, {})
+  Return(v0)
 
 blk3:
 Statements:
   (v4: @core::felt252, v5: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v8: ()) <- test::bar2(v4, v5)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
 End:
   Return(v0)
 
