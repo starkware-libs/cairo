@@ -271,6 +271,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprWhile, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprStringLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);

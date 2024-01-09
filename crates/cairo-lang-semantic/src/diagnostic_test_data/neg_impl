@@ -32,6 +32,11 @@ pub impl ImplBad2<T> of Bad<T, T>{
 //! > function_body
 
 //! > expected_diagnostics
+error: Negative impls supported only on impls.
+ --> lib.cairo:4:18
+pub trait Bad<T, -NegImpl> {
+                 ^******^
+
 error: Only `_` is a valid for negative impls.
  --> lib.cairo:14:32
 pub impl ImplBad2<T> of Bad<T, T>{

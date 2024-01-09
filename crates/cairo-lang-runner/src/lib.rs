@@ -406,12 +406,12 @@ impl SierraCasmRunner {
             (EcOpType::ID, 4),
             (PoseidonType::ID, 3),
         ]);
-        // Load all vecs to memory.
-        let mut vecs = vec![];
+        // Load all array args content to memory.
+        let mut array_args_data = vec![];
         let mut ap_offset: i16 = 0;
         for arg in args {
             let Arg::Array(values) = arg else { continue };
-            vecs.push(ap_offset);
+            array_args_data.push(ap_offset);
             casm_extend! {ctx,
                 %{ memory[ap + 0] = segments.add() %}
                 ap += 1;
@@ -425,7 +425,8 @@ impl SierraCasmRunner {
             }
             ap_offset += (1 + values.len()) as i16;
         }
-        let after_vecs_offset = ap_offset;
+        let mut array_args_data_iter = array_args_data.iter();
+        let after_arrays_data_offset = ap_offset;
         if func
             .signature
             .param_types
@@ -464,13 +465,13 @@ impl SierraCasmRunner {
                     [ap + 0] = initial_gas, ap++;
                 }
             } else if generic_ty == &SegmentArenaType::ID {
-                let offset = -ap_offset + after_vecs_offset;
+                let offset = -ap_offset + after_arrays_data_offset;
                 casm_extend! {ctx,
                     [ap + 0] = [ap + offset] + 3, ap++;
                 }
             } else if let Some(Arg::Array(_)) = arg_iter.peek() {
                 let values = extract_matches!(arg_iter.next().unwrap(), Arg::Array);
-                let offset = -ap_offset + vecs.pop().unwrap();
+                let offset = -ap_offset + array_args_data_iter.next().unwrap();
                 expected_arguments_size += 1;
                 casm_extend! {ctx,
                     [ap + 0] = [ap + (offset)], ap++;

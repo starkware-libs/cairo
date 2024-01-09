@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
@@ -14,14 +15,18 @@ use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
-use crate::diagnostic::LoweringDiagnostic;
+use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
+use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
+use crate::optimizations::config::OptimizationConfig;
+use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
+use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
@@ -268,6 +273,28 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function: ConcreteSCCRepresentative,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
+
+    /// Internal query for reorder_statements to cache the function ids that can be moved.
+    #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
+    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
+
+    /// Returns the configuration struct that controls the behavior of the optimization passes.
+    #[salsa::input]
+    fn optimization_config(&self) -> Arc<OptimizationConfig>;
+}
+
+pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
+    let mut moveable_functions: Vec<String> =
+        ["bool_not_impl", "felt252_add", "felt252_sub", "felt252_mul", "felt252_div"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+
+    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "u128"] {
+        moveable_functions.push(format!("integer::{}_wide_mul", ty));
+    }
+
+    db.set_optimization_config(Arc::new(OptimizationConfig { moveable_functions }));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -345,6 +372,7 @@ fn concrete_function_with_body_postpanic_lowered(
 
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
+    return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
     Ok(Arc::new(lowered))
 }
@@ -366,12 +394,13 @@ fn concrete_function_with_body_lowered(
     reorder_statements(db, &mut lowered);
     branch_inversion(db, &mut lowered);
     reorder_statements(db, &mut lowered);
+    const_folding(db, &mut lowered);
     optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     reorder_statements(db, &mut lowered);
     reorganize_blocks(&mut lowered);
-    // Removed blocks may have caused some remappings to be redundent, so they need to be removed,
+    // Removed blocks may have caused some remappings to be redundant, so they need to be removed,
     // as SierraGen drop additions assumes all remappings are of used variables.
     optimize_remappings(&mut lowered);
     Ok(Arc::new(lowered))
@@ -451,7 +480,19 @@ fn function_with_body_lowering_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
-        diagnostics.extend(lowered.diagnostics.clone())
+        diagnostics.extend(lowered.diagnostics.clone());
+        if flag_add_withdraw_gas(db) && !lowered.signature.panicable && db.in_cycle(function_id)? {
+            let location = Location {
+                stable_location: function_id
+                    .base_semantic_function(db)
+                    .stable_location(db.upcast()),
+                notes: vec![],
+            };
+            diagnostics.add(LoweringDiagnostic {
+                location,
+                kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
+            });
+        }
     }
 
     diagnostics.extend(

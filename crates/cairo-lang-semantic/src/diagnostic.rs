@@ -11,10 +11,11 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
@@ -107,18 +108,22 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
             SemanticDiagnosticKind::NotAnImpl => "Not an impl.".into(),
-            SemanticDiagnosticKind::FunctionNotMemberOfTrait {
+            SemanticDiagnosticKind::ImplItemNotInTrait {
                 impl_def_id,
-                impl_function_id,
+                impl_item_name,
                 trait_id,
+                item_kind,
             } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Impl function `{}::{}` is not a member of trait `{}`.",
+                    "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
                     impl_def_id.name(defs_db),
-                    impl_function_id.name(defs_db),
+                    impl_item_name,
                     trait_id.name(defs_db)
                 )
+            }
+            SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
+                format!("Generic parameters are not supported in {scope} item {item_kind}.")
             }
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
@@ -259,6 +264,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::InconsistentBinding => "variable is bound inconsistently \
+                                                            across alternatives separated by `|` \
+                                                            bound in different ways"
+                .into(),
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -315,6 +324,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
             }
+            SemanticDiagnosticKind::MissingVariableInPattern => {
+                "Missing variable in pattern.".into()
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{member_name}" on struct "{}"."#,
@@ -333,8 +345,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_title_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::IfConditionNotBool { condition_ty } => {
-                format!(r#"If condition has type "{}", expected bool."#, condition_ty.format(db))
+            SemanticDiagnosticKind::ConditionNotBool { condition_ty } => {
+                format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
@@ -586,6 +598,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
                 "`break` only allowed inside a `loop`.".into()
             }
+            SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
+                "Can only break with a value inside a `loop`.".into()
+            }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
             }
@@ -597,6 +612,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NegativeImplsNotEnabled => {
                 "Negative impls are not enabled in the current crate.".into()
+            }
+            SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
+                "Negative impls supported only on impls.".into()
             }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
@@ -634,6 +652,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is a valid for negative impls.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedTraitItem { kind } => {
+                format!("{kind} items are not yet supported in traits.")
+            }
+            SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
+                format!("{kind} items are not yet supported in impls.")
             }
         }
     }
@@ -679,10 +703,15 @@ pub enum SemanticDiagnosticKind {
     NotAType,
     NotATrait,
     NotAnImpl,
-    FunctionNotMemberOfTrait {
+    ImplItemNotInTrait {
         impl_def_id: ImplDefId,
-        impl_function_id: ImplFunctionId,
+        impl_item_name: SmolStr,
         trait_id: TraitId,
+        item_kind: String,
+    },
+    GenericsNotSupportedInItem {
+        scope: String,
+        item_kind: String,
     },
     UnexpectedGenericArgs,
     UnknownMember,
@@ -741,6 +770,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    InconsistentBinding,
     WrongArgumentType {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
@@ -767,6 +797,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound {
         name: SmolStr,
     },
+    MissingVariableInPattern,
     StructMemberRedefinition {
         struct_id: StructId,
         member_name: SmolStr,
@@ -779,7 +810,7 @@ pub enum SemanticDiagnosticKind {
         function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
-    IfConditionNotBool {
+    ConditionNotBool {
         condition_ty: semantic::TypeId,
     },
     IncompatibleMatchArms {
@@ -828,6 +859,7 @@ pub enum SemanticDiagnosticKind {
     UnusedVariable,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
+    NegativeImplsOnlyOnImpls,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -916,6 +948,7 @@ pub enum SemanticDiagnosticKind {
     TailExpressionNotAllowedInLoop,
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
+    BreakWithValueOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
@@ -942,6 +975,12 @@ pub enum SemanticDiagnosticKind {
     },
     GenericArgOutOfOrder {
         name: SmolStr,
+    },
+    UnsupportedTraitItem {
+        kind: String,
+    },
+    UnsupportedImplItem {
+        kind: String,
     },
 }
 
@@ -1027,4 +1066,28 @@ impl TraitInferenceErrors {
             })
             .join("\n")
     }
+}
+
+/// A helper function to report diagnostics of yet-unsupported trait items.
+pub fn report_unsupported_trait_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedTraitItem { kind: item_kind.into() },
+    );
+}
+
+/// A helper function to report diagnostics of yet-unsupported impl items.
+pub fn report_unsupported_impl_item<Terminal: syntax::node::Terminal>(
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+    item_kind: &str,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        SemanticDiagnosticKind::UnsupportedImplItem { kind: item_kind.into() },
+    );
 }

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use super::interoperability::ContractAddressType;
 use super::syscalls::SyscallGenericLibfunc;
 use super::{felt252_span_ty, span_ty};
-use crate::extensions::boxing::BoxType;
+use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::{Uint32Type, Uint64Type};
 use crate::extensions::int::unsigned128::Uint128Type;
@@ -61,16 +61,6 @@ impl<TGetterTraitsEx: GetterTraitsEx> SyscallGenericLibfunc for GetterLibfunc<TG
     }
 }
 
-/// Helper for getting a boxed type.
-
-/// Helper for getting a boxed type for a given type `T`.
-pub fn boxed_ty(
-    context: &dyn SignatureSpecializationContext,
-    ty: ConcreteTypeId,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    context.get_wrapped_concrete_type(BoxType::id(), ty)
-}
-
 /// Helper for ExecutionInfo type.
 fn get_execution_info_type(
     context: &dyn SignatureSpecializationContext,
@@ -82,9 +72,9 @@ fn get_execution_info_type(
         &[
             GenericArg::UserType(UserTypeId::from_string("core::starknet::info::ExecutionInfo")),
             // block_info
-            GenericArg::Type(boxed_ty(context, get_block_info_type(context)?)?),
+            GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
             // tx_info
-            GenericArg::Type(boxed_ty(context, get_tx_info_type(context)?)?),
+            GenericArg::Type(box_ty(context, get_tx_info_type(context)?)?),
             // caller_address
             GenericArg::Type(contract_address_ty.clone()),
             // contract_address
@@ -108,9 +98,9 @@ fn get_execution_info_v2_type(
                 "core::starknet::info::v2::ExecutionInfo",
             )),
             // block_info
-            GenericArg::Type(boxed_ty(context, get_block_info_type(context)?)?),
+            GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
             // tx_info
-            GenericArg::Type(boxed_ty(context, get_tx_info_v2_type(context)?)?),
+            GenericArg::Type(box_ty(context, get_tx_info_v2_type(context)?)?),
             // caller_address
             GenericArg::Type(contract_address_ty.clone()),
             // contract_address
@@ -234,9 +224,9 @@ fn get_tx_info_v2_type(
             GenericArg::Type(u128_ty),
             // paymaster_data
             GenericArg::Type(felt252_span_ty.clone()),
-            // nonce_data_availabilty_mode
+            // nonce_data_availability_mode
             GenericArg::Type(u32_ty.clone()),
-            // fee_data_availabilty_mode
+            // fee_data_availability_mode
             GenericArg::Type(u32_ty),
             // account_deployment_data
             GenericArg::Type(felt252_span_ty),
@@ -252,7 +242,7 @@ impl GetterTraitsEx for GetExecutionInfoTrait {
     fn info_type_id(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        boxed_ty(context, get_execution_info_type(context)?)
+        box_ty(context, get_execution_info_type(context)?)
     }
 }
 
@@ -264,6 +254,6 @@ impl GetterTraitsEx for GetExecutionInfoV2Trait {
     fn info_type_id(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        boxed_ty(context, get_execution_info_v2_type(context)?)
+        box_ty(context, get_execution_info_v2_type(context)?)
     }
 }

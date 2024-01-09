@@ -146,7 +146,7 @@ pub struct LoweringContext<'a, 'db> {
     /// This it the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current loop expression needed for recursive calls in `continue`
-    pub current_loop_expr: Option<semantic::ExprLoop>,
+    pub current_loop_expr_id: Option<semantic::ExprId>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -171,7 +171,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr: Option::None,
+            current_loop_expr_id: Option::None,
             diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
             blocks: Default::default(),
         })
@@ -285,6 +285,15 @@ impl LoweredExpr {
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
+        }
+    }
+    pub fn location(&self) -> LocationId {
+        match &self {
+            LoweredExpr::AtVariable(VarUsage { location, .. })
+            | LoweredExpr::Tuple { location, .. }
+            | LoweredExpr::ExternEnum(LoweredExprExternEnum { location, .. })
+            | LoweredExpr::Member(_, location)
+            | LoweredExpr::Snapshot { location, .. } => *location,
         }
     }
 }

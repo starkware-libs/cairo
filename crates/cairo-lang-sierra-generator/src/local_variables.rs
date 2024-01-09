@@ -13,7 +13,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::{zip_eq, Itertools};
+use itertools::{chain, zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
@@ -49,7 +49,15 @@ pub fn analyze_ap_changes(
         lowered_function,
         used_after_revoke: Default::default(),
         block_callers: Default::default(),
-        non_ap_based: UnorderedHashSet::from_iter(lowered_function.parameters.iter().cloned()),
+        non_ap_based: UnorderedHashSet::from_iter(chain!(
+            // Parameters are not ap based.
+            lowered_function.parameters.iter().cloned(),
+            // All empty variables are not ap based.
+            lowered_function.variables.iter().filter_map(|(id, var)| {
+                let info = db.get_type_info(db.get_concrete_type_id(var.ty).ok()?).ok()?;
+                if info.zero_sized { Some(id) } else { None }
+            })
+        )),
         aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
@@ -284,7 +292,8 @@ impl<'a> FindLocalsContext<'a> {
                     self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const)
-                | OutputVarReferenceInfo::NewLocalVar => {
+                | OutputVarReferenceInfo::NewLocalVar
+                | OutputVarReferenceInfo::ZeroSized => {
                     self.non_ap_based.insert(*var);
                 }
                 OutputVarReferenceInfo::NewTempVar { .. }

@@ -179,16 +179,18 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
         let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         match args {
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, Felt252BinaryOperator::Div) && c.is_zero() {
-                    return Err(SpecializationError::UnsupportedGenericArg);
-                }
+                let output_ref_info = if matches!(self.operator, Felt252BinaryOperator::Div) {
+                    if c.is_zero() {
+                        return Err(SpecializationError::UnsupportedGenericArg);
+                    }
+                    OutputVarReferenceInfo::NewTempVar { idx: 0 }
+                } else {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                };
 
                 Ok(LibfuncSignature::new_non_branch(
                     vec![ty.clone()],
-                    vec![OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
+                    vec![OutputVarInfo { ty, ref_info: output_ref_info }],
                     SierraApChange::Known { new_vars_only: true },
                 ))
             }

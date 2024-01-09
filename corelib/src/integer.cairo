@@ -310,7 +310,9 @@ impl U8PartialOrd of PartialOrd<u8> {
     }
 }
 
-extern fn u8_overflowing_add(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+pub(crate) extern fn u8_overflowing_add(
+    lhs: u8, rhs: u8
+) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 extern fn u8_overflowing_sub(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 
 pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
@@ -1363,7 +1365,9 @@ extern fn u512_safe_divmod_by_u256(
 
 /// Bounded
 pub trait BoundedInt<T> {
+    #[must_use]
     fn min() -> T nopanic;
+    #[must_use]
     fn max() -> T nopanic;
 }
 
@@ -1614,7 +1618,7 @@ pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
+pub(crate) extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
@@ -1623,32 +1627,50 @@ extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(Ra
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
 trait Upcastable<FromType, ToType>;
-impl UpcastableU8U16 of Upcastable<u8, u16> {}
-impl UpcastableU8U32 of Upcastable<u8, u32> {}
-impl UpcastableU8U64 of Upcastable<u8, u64> {}
-impl UpcastableU8U128 of Upcastable<u8, u128> {}
-impl UpcastableU16U32 of Upcastable<u16, u32> {}
-impl UpcastableU16U64 of Upcastable<u16, u64> {}
-impl UpcastableU16U128 of Upcastable<u16, u128> {}
-impl UpcastableU32U64 of Upcastable<u32, u64> {}
-impl UpcastableU32U128 of Upcastable<u32, u128> {}
-impl UpcastableU64U128 of Upcastable<u64, u128> {}
-// Marks `FromType` as downcastable to `ToType`.
+impl UpcastableU8U16 of Upcastable<u8, u16>;
+impl UpcastableU8I16 of Upcastable<u8, i16>;
+impl UpcastableU8U32 of Upcastable<u8, u32>;
+impl UpcastableU8I32 of Upcastable<u8, i32>;
+impl UpcastableU8U64 of Upcastable<u8, u64>;
+impl UpcastableU8I64 of Upcastable<u8, i64>;
+impl UpcastableU8U128 of Upcastable<u8, u128>;
+impl UpcastableU8I128 of Upcastable<u8, i128>;
+impl UpcastableI8I16 of Upcastable<i8, i16>;
+impl UpcastableI8I32 of Upcastable<i8, i32>;
+impl UpcastableI8I64 of Upcastable<i8, i64>;
+impl UpcastableI8I128 of Upcastable<i8, i128>;
+impl UpcastableU16U32 of Upcastable<u16, u32>;
+impl UpcastableU16I32 of Upcastable<u16, i32>;
+impl UpcastableU16U64 of Upcastable<u16, u64>;
+impl UpcastableU16I64 of Upcastable<u16, i64>;
+impl UpcastableU16U128 of Upcastable<u16, u128>;
+impl UpcastableU16I128 of Upcastable<u16, i128>;
+impl UpcastableI16I32 of Upcastable<i16, i32>;
+impl UpcastableI16I64 of Upcastable<i16, i64>;
+impl UpcastableI16I128 of Upcastable<i16, i128>;
+impl UpcastableU32U64 of Upcastable<u32, u64>;
+impl UpcastableU32I64 of Upcastable<u32, i64>;
+impl UpcastableU32U128 of Upcastable<u32, u128>;
+impl UpcastableU32I128 of Upcastable<u32, i128>;
+impl UpcastableI32I64 of Upcastable<i32, i64>;
+impl UpcastableI32I128 of Upcastable<i32, i128>;
+impl UpcastableU64U128 of Upcastable<u64, u128>;
+impl UpcastableU64I128 of Upcastable<u64, i128>;
+impl UpcastableI64I128 of Upcastable<i64, i128>;
+// Marks a type as an int that is downcastable to other downcastable ints.
 // Do not add user code implementing this trait.
-trait Downcastable<FromType, ToType>;
-impl DowncastableU128U64 of Downcastable<u128, u64> {}
-impl DowncastableU128U32 of Downcastable<u128, u32> {}
-impl DowncastableU128U16 of Downcastable<u128, u16> {}
-impl DowncastableU128U8 of Downcastable<u128, u8> {}
+trait DowncastableInt<T>;
+impl DowncastableU8 of DowncastableInt<u8>;
+impl DowncastableI8 of DowncastableInt<i8>;
+impl DowncastableU16 of DowncastableInt<u16>;
+impl DowncastableI16 of DowncastableInt<i16>;
+impl DowncastableU32 of DowncastableInt<u32>;
+impl DowncastableI32 of DowncastableInt<i32>;
+impl DowncastableU64 of DowncastableInt<u64>;
+impl DowncastableI64 of DowncastableInt<i64>;
+impl DowncastableU128 of DowncastableInt<u128>;
+impl DowncastableI128 of DowncastableInt<i128>;
 
-impl DowncastableU64U32 of Downcastable<u64, u32> {}
-impl DowncastableU64U16 of Downcastable<u64, u16> {}
-impl DowncastableU64U8 of Downcastable<u64, u8> {}
-
-impl DowncastableU32U16 of Downcastable<u32, u16> {}
-impl DowncastableU32U8 of Downcastable<u32, u8> {}
-
-impl DowncastableU16U8 of Downcastable<u16, u8> {}
 
 /// Default values
 impl U8Default of Default<u8> {
@@ -1736,7 +1758,9 @@ impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     }
 }
 
-impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
+impl DowncastableIntTryInto<
+    From, To, +DowncastableInt<From>, +DowncastableInt<To>, -Into<From, To>
+> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
@@ -1908,7 +1932,7 @@ impl I8Neg of Neg<i8> {
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
-        i8_try_from_felt252(i16_to_felt252(i8_wide_mul(lhs, rhs))).expect('i8_mul Overflow')
+        i8_wide_mul(lhs, rhs).try_into().expect('i8_mul Overflow')
     }
 }
 impl I8MulEq of MulEq<i8> {
@@ -2014,7 +2038,7 @@ impl I16Neg of Neg<i16> {
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 impl I16Mul of Mul<i16> {
     fn mul(lhs: i16, rhs: i16) -> i16 {
-        i16_try_from_felt252(i32_to_felt252(i16_wide_mul(lhs, rhs))).expect('i16_mul Overflow')
+        i16_wide_mul(lhs, rhs).try_into().expect('i16_mul Overflow')
     }
 }
 impl I16MulEq of MulEq<i16> {
@@ -2120,7 +2144,7 @@ impl I32Neg of Neg<i32> {
 pub extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
-        i32_try_from_felt252(i64_to_felt252(i32_wide_mul(lhs, rhs))).expect('i32_mul Overflow')
+        i32_wide_mul(lhs, rhs).try_into().expect('i32_mul Overflow')
     }
 }
 impl I32MulEq of MulEq<i32> {
@@ -2226,7 +2250,7 @@ impl I64Neg of Neg<i64> {
 pub extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
 impl I64Mul of Mul<i64> {
     fn mul(lhs: i64, rhs: i64) -> i64 {
-        i64_try_from_felt252(i128_to_felt252(i64_wide_mul(lhs, rhs))).expect('i64_mul Overflow')
+        i64_wide_mul(lhs, rhs).try_into().expect('i64_mul Overflow')
     }
 }
 impl I64MulEq of MulEq<i64> {

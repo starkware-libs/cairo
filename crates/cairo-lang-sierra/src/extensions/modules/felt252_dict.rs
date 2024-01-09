@@ -1,3 +1,4 @@
+use super::enm::EnumType;
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -12,6 +13,7 @@ use crate::extensions::lib_func::{
     SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
     WrapSignatureAndTypeGenericLibfunc,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
@@ -22,6 +24,9 @@ use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a dictionary from a felt252 to types of size one.
+/// This is currently only bounded for all numeric types, Nullable, and Enum types with 2 or less
+/// variants, as this are the types that has proper default as 0, and therefore can be properly used
+/// as a value in the dictionary.
 #[derive(Default)]
 pub struct Felt252DictTypeWrapped {}
 impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
@@ -29,40 +34,69 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
 
     fn calc_info(
         &self,
+        context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo {
-            long_id: ConcreteTypeLongId { generic_id, generic_args },
-            storable,
-            droppable,
-            duplicatable,
-            zero_sized: _,
-        }: TypeInfo,
+        wrapped_type_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // Checking for specific types allowed as dictionary values.
-        // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
-        // have a 'where' equivalent).
-        // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
-        let allowed = match generic_id {
-            id if id == Felt252Type::id() => generic_args.is_empty(),
-            id if id == Uint8Type::id() => generic_args.is_empty(),
-            id if id == Uint16Type::id() => generic_args.is_empty(),
-            id if id == Uint32Type::id() => generic_args.is_empty(),
-            id if id == Uint64Type::id() => generic_args.is_empty(),
-            id if id == Uint128Type::id() => generic_args.is_empty(),
-            id if id == NullableType::id() => generic_args.len() == 1,
-            _ => false,
-        };
-        if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: false,
-                storable: true,
-                zero_sized: false,
-            })
-        } else {
-            Err(SpecializationError::UnsupportedGenericArg)
+        specialize_with_dict_value_param(context, long_id, wrapped_type_info)
+    }
+}
+
+/// Specializes a generic type matching a dictionary value parameter.
+/// Called for both `Felt252Dict` and `Felt252DictEntry`.
+fn specialize_with_dict_value_param(
+    context: &dyn TypeSpecializationContext,
+    long_id: ConcreteTypeLongId,
+    TypeInfo {
+        long_id: ConcreteTypeLongId { generic_id, generic_args },
+        storable,
+        droppable,
+        duplicatable: _,
+        zero_sized: _,
+    }: TypeInfo,
+) -> Result<TypeInfo, SpecializationError> {
+    // Checking for specific types allowed as dictionary values.
+    // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
+    // have a 'where' equivalent).
+    // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
+    let allowed = match generic_id {
+        id if id == Felt252Type::id() => generic_args.is_empty(),
+        id if id == Uint8Type::id() => generic_args.is_empty(),
+        id if id == Uint16Type::id() => generic_args.is_empty(),
+        id if id == Uint32Type::id() => generic_args.is_empty(),
+        id if id == Uint64Type::id() => generic_args.is_empty(),
+        id if id == Uint128Type::id() => generic_args.is_empty(),
+        id if id == NullableType::id() => generic_args.len() == 1,
+        id if id == EnumType::id() => {
+            // Checking the enum type is valid.
+            !generic_args.is_empty()
+            // Zero is not a valid value for enums with 3 or more variants, so they cannot be
+            // used in a dict (whose default value is zero).
+            // (the additional argument is the user type).
+            && generic_args.len() <= 3
+                // All contained types must be 0-sized, so the total size will be exactly 1.
+                && generic_args.into_iter().skip(1).all(|arg| {
+                    let GenericArg::Type(ty) = arg else {
+                        return false;
+                    };
+                    let Ok(info) = context.get_type_info(ty) else {
+                        return false;
+                    };
+                    info.zero_sized
+                })
         }
+        _ => false,
+    };
+    if allowed && storable && droppable {
+        Ok(TypeInfo {
+            long_id,
+            duplicatable: false,
+            droppable: false,
+            storable: true,
+            zero_sized: false,
+        })
+    } else {
+        Err(SpecializationError::UnsupportedGenericArg)
     }
 }
 pub type Felt252DictType = GenericTypeArgGenericTypeWrapper<Felt252DictTypeWrapped>;
@@ -158,40 +192,11 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
 
     fn calc_info(
         &self,
+        context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo {
-            long_id: ConcreteTypeLongId { generic_id, generic_args },
-            storable,
-            droppable,
-            duplicatable,
-            zero_sized: _,
-        }: TypeInfo,
+        wrapped_type_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // Checking for specific types allowed as dictionary values.
-        // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
-        // have a 'where' equivalent).
-        // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
-        let allowed = match generic_id {
-            id if id == Felt252Type::id() => generic_args.is_empty(),
-            id if id == Uint8Type::id() => generic_args.is_empty(),
-            id if id == Uint16Type::id() => generic_args.is_empty(),
-            id if id == Uint32Type::id() => generic_args.is_empty(),
-            id if id == Uint64Type::id() => generic_args.is_empty(),
-            id if id == Uint128Type::id() => generic_args.is_empty(),
-            id if id == NullableType::id() => generic_args.len() == 1,
-            _ => false,
-        };
-        if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: false,
-                storable: true,
-                zero_sized: false,
-            })
-        } else {
-            Err(SpecializationError::UnsupportedGenericArg)
-        }
+        specialize_with_dict_value_param(context, long_id, wrapped_type_info)
     }
 }
 pub type Felt252DictEntryType = GenericTypeArgGenericTypeWrapper<Felt252DictEntryTypeWrapped>;
@@ -272,5 +277,6 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryFinalizeLibfuncWrapped {
         ))
     }
 }
+
 pub type Felt252DictEntryFinalizeLibfunc =
     WrapSignatureAndTypeGenericLibfunc<Felt252DictEntryFinalizeLibfuncWrapped>;

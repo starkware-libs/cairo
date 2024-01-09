@@ -51,11 +51,10 @@ libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([1]) { fallthrough() 12([2]) }; // 0
+felt252_is_zero([1]) { fallthrough() 11([2]) }; // 0
 branch_align() -> (); // 1
 function_call<user@test::bar>() -> ([3]); // 2
 drop<Unit>([3]) -> (); // 3
@@ -65,21 +64,18 @@ function_call<user@test::bar>() -> ([5]); // 6
 drop<Unit>([5]) -> (); // 7
 struct_construct<Unit>() -> ([6]); // 8
 store_temp<GasBuiltin>([0]) -> ([0]); // 9
-store_temp<Unit>([6]) -> ([6]); // 10
-return([0], [6]); // 11
-branch_align() -> (); // 12
-drop<NonZero<felt252>>([2]) -> (); // 13
-redeposit_gas([0]) -> ([7]); // 14
-struct_construct<Unit>() -> ([8]); // 15
-store_temp<GasBuiltin>([7]) -> ([7]); // 16
-store_temp<Unit>([8]) -> ([8]); // 17
-return([7], [8]); // 18
-struct_construct<Unit>() -> ([0]); // 19
-store_temp<Unit>([0]) -> ([0]); // 20
-return([0]); // 21
+return([0], [6]); // 10
+branch_align() -> (); // 11
+drop<NonZero<felt252>>([2]) -> (); // 12
+redeposit_gas([0]) -> ([7]); // 13
+struct_construct<Unit>() -> ([8]); // 14
+store_temp<GasBuiltin>([7]) -> ([7]); // 15
+return([7], [8]); // 16
+struct_construct<Unit>() -> ([0]); // 17
+return([0]); // 18
 
 test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
-test::bar@19() -> (Unit);
+test::bar@17() -> (Unit);
 
 //! > ==========================================================================
 

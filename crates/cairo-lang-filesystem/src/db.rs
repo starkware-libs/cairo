@@ -8,8 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
-use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId};
-use crate::span::{FileSummary, TextOffset, TextWidth};
+use crate::ids::{
+    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+};
+use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
 #[cfg(test)]
 #[path = "db_test.rs"]
@@ -20,7 +22,7 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateConfiguration {
-    /// The root directry of the crate.
+    /// The root directory of the crate.
     pub root: Directory,
     pub settings: CrateSettings,
 }
@@ -38,7 +40,7 @@ pub struct CrateSettings {
     pub edition: Edition,
 
     #[serde(default)]
-    pub experimental_features: ExperementalFeaturesConfig,
+    pub experimental_features: ExperimentalFeaturesConfig,
 }
 
 /// The Cairo edition of a crate.
@@ -86,7 +88,7 @@ impl Edition {
 
 /// Configuration per crate.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExperementalFeaturesConfig {
+pub struct ExperimentalFeaturesConfig {
     pub negative_impls: bool,
 }
 
@@ -153,8 +155,8 @@ pub fn init_dev_corelib_from_directory(
         Some(CrateConfiguration {
             root: core_lib_dir,
             settings: CrateSettings {
-                edition: Edition::default(),
-                experimental_features: ExperementalFeaturesConfig { negative_impls: true },
+                edition: Edition::V2023_11,
+                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
             },
         }),
     );
@@ -249,4 +251,23 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
 }
 fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+/// Returns the location of the originating user code.
+pub fn get_originating_location(
+    db: &dyn FilesGroup,
+    mut file_id: FileId,
+    mut span: TextSpan,
+) -> (FileId, TextSpan) {
+    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
+        db.lookup_intern_file(file_id)
+    {
+        if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
+            span = origin;
+            file_id = parent;
+        } else {
+            break;
+        }
+    }
+    (file_id, span)
 }

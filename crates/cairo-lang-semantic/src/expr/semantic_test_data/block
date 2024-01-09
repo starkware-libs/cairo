@@ -1,12 +1,12 @@
 //! > Test block
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 {6;8;}
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -36,19 +36,19 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test block with tail expr
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 {6;8;9}
 
-//! > expected
+//! > expected_semantics
 Block(
     ExprBlock {
         statements: [
@@ -85,4 +85,4 @@ Block(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

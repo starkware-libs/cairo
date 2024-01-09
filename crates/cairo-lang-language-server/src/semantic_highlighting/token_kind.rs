@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{
-    FileIndex, FunctionWithBodyId, LookupItemId, ModuleFileId, ModuleItemId,
+    FileIndex, FunctionWithBodyId, ImplItemId, LookupItemId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -100,7 +100,7 @@ impl SemanticTokenKind {
         match parent_kind {
             SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
             SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
-            _ if ast::Item::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
+            _ if ast::ModuleItem::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
             SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
             SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
             SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
@@ -127,7 +127,7 @@ impl SemanticTokenKind {
         while let Some(parent) = node.parent() {
             node = parent;
             let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
-                eprintln!("Hover failed. Failed to find module.");
+                eprintln!("SemanticTokenKind recovery failed. Failed to find module.");
             })?;
             let file_index = FileIndex(0);
             let module_file_id = ModuleFileId(module_id, file_index);
@@ -186,7 +186,7 @@ impl SemanticTokenKind {
                     LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                         FunctionWithBodyId::Free(free_function_id)
                     }
-                    LookupItemId::ImplFunction(impl_function_id) => {
+                    LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
                         FunctionWithBodyId::Impl(impl_function_id)
                     }
                     _ => {

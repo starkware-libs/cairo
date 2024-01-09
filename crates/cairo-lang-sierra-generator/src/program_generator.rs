@@ -225,7 +225,7 @@ fn try_get_function_with_body_id(
     }
     db.lookup_intern_sierra_function(
         try_extract_matches!(
-            libfunc.generic_args.get(0)?,
+            libfunc.generic_args.first()?,
             cairo_lang_sierra::program::GenericArg::UserFunc
         )?
         .clone(),

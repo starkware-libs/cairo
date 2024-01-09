@@ -30,6 +30,7 @@ pub enum SyntaxKind {
     MatchArm,
     ExprIf,
     ExprLoop,
+    ExprWhile,
     ElseClause,
     OptionElseClauseEmpty,
     ExprErrorPropagate,
@@ -48,6 +49,7 @@ pub enum SyntaxKind {
     PatternStructParamList,
     PatternTuple,
     PatternList,
+    PatternListOr,
     PatternStructParamWithExpr,
     PatternEnum,
     PatternEnumInnerPattern,
@@ -78,8 +80,8 @@ pub enum SyntaxKind {
     MemberList,
     Variant,
     VariantList,
-    ItemList,
-    ItemMissing,
+    ModuleItemList,
+    ModuleItemMissing,
     Attribute,
     AttributeList,
     VisibilityDefault,
@@ -98,6 +100,9 @@ pub enum SyntaxKind {
     TraitItemList,
     TraitItemMissing,
     TraitItemFunction,
+    TraitItemType,
+    TraitItemConstant,
+    TraitItemImpl,
     ItemImpl,
     ItemInlineMacro,
     ImplBody,
@@ -152,6 +157,8 @@ pub enum SyntaxKind {
     TerminalFunction,
     TokenIf,
     TerminalIf,
+    TokenWhile,
+    TerminalWhile,
     TokenLoop,
     TerminalLoop,
     TokenImpl,
@@ -301,6 +308,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenWhile
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -386,6 +394,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalWhile
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
@@ -462,6 +471,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenWhile
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -494,6 +504,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalWhile
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits

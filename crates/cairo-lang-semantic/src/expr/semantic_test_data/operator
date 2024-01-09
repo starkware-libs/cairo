@@ -1,14 +1,14 @@
 //! > Test operators.
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 
 //! > expr_code
 !(-5 + 9 * 3 == 0)
 
-//! > expected
+//! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
         function: core::BoolNot::not,
@@ -100,4 +100,4 @@ FunctionCall(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

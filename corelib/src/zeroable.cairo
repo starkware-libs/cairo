@@ -2,10 +2,13 @@
 
 pub(crate) trait Zeroable<T> {
     /// Returns the additive identity element of Self, 0.
+    #[must_use]
     fn zero() -> T;
     /// Returns whether self is equal to 0, the additive identity element.
+    #[must_use]
     fn is_zero(self: T) -> bool;
     /// Returns whether self is not equal to 0, the additive identity element.
+    #[must_use]
     fn is_non_zero(self: T) -> bool;
 }
 

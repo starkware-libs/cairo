@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
-use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
+use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -139,11 +139,35 @@ pub fn core_libfunc_cost(
             BoolConcreteLibfunc::ToFelt252(_) => vec![ConstCost::steps(0).into()],
         },
         Cast(libfunc) => match libfunc {
-            CastConcreteLibfunc::Downcast(_) => {
-                vec![
-                    (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
-                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
-                ]
+            CastConcreteLibfunc::Downcast(libfunc) => {
+                match libfunc.from_info.cast_type(&libfunc.to_info) {
+                    CastType { overflow_above: false, overflow_below: false } => {
+                        vec![ConstCost::steps(0).into(), ConstCost::steps(0).into()]
+                    }
+                    CastType { overflow_above: true, overflow_below: false } => vec![
+                        (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                        (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    ],
+                    CastType { overflow_above: false, overflow_below: true } => {
+                        // If the target type is signed the cost below is wrong.
+                        assert!(
+                            !libfunc.to_info.signed,
+                            "If an overflow below is possible, and above is not, the target type \
+                             must be unsigned."
+                        );
+                        vec![
+                            (ConstCost::steps(2) + ConstCost::range_checks(1)).into(),
+                            (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                        ]
+                    }
+                    CastType { overflow_above: true, overflow_below: true } => vec![
+                        // Overflow below test is more expensive for casting into signed types.
+                        (ConstCost::steps(4 + i32::from(libfunc.to_info.signed))
+                            + ConstCost::range_checks(2))
+                        .into(),
+                        (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                    ],
+                }
             }
             CastConcreteLibfunc::Upcast(_) => vec![ConstCost::default().into()],
         },
@@ -296,6 +320,10 @@ pub fn core_libfunc_cost(
         }
         Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ConstCost::default().into()],
+            EnumConcreteLibfunc::FromBoundedInt(libfunc) => match libfunc.n_variants {
+                1 | 2 => vec![ConstCost::default().into()],
+                _ => vec![ConstCost::steps(1).into()],
+            },
             EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig) => {
                 let n = sig.signature.branch_signatures.len();
                 match n {
@@ -367,10 +395,10 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::builtin(CostTokenType::Poseidon),
             }],
         },
-        CoreConcreteLibfunc::StarkNet(libfunc) => {
+        StarkNet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
-        CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
+        Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_)
             | NullableConcreteLibfunc::NullableFromBox(_)
             | NullableConcreteLibfunc::ForwardSnapshot(_) => vec![ConstCost::default().into()],
@@ -378,15 +406,15 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
         },
-        CoreConcreteLibfunc::Debug(_) => vec![ConstCost::steps(1).into()],
-        CoreConcreteLibfunc::SnapshotTake(_) => vec![ConstCost::default().into()],
-        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
+        Debug(_) => vec![ConstCost::steps(1).into()],
+        SnapshotTake(_) => vec![ConstCost::default().into()],
+        Felt252DictEntry(libfunc) => match libfunc {
             Felt252DictEntryConcreteLibfunc::Get(_) => {
                 vec![(ConstCost::steps(1) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
             }
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ConstCost::steps(1).into()],
         },
-        CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
+        Bytes31(libfunc) => match libfunc {
             Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
                 vec![ConstCost::default().into()]
             }
@@ -395,6 +423,7 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
+        Const(_) => vec![ConstCost::default().into()],
     }
 }
 
@@ -603,9 +632,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(OrderedHashMap::from_iter(
-                (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
-            )),
+            pre_cost: PreCost(OrderedHashMap::from_iter([(CostTokenType::Bitwise, 4)])),
         }],
     }
 }
@@ -621,7 +648,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 30, holes: 0, range_checks: 7 }],
         Uint256Concrete::InvModN(_) => vec![
             ConstCost { steps: 40, holes: 0, range_checks: 9 },
-            ConstCost { steps: 23, holes: 0, range_checks: 7 },
+            ConstCost { steps: 25, holes: 0, range_checks: 7 },
         ],
     }
 }

@@ -366,7 +366,7 @@ pub fn run_test_file(
         if is_fix_mode {
             let mut new_test = test.clone();
             for (key, value) in result.outputs.iter() {
-                new_test.attributes.insert(key.to_string(), value.trim().to_string());
+                new_test.attributes.insert(key.to_string(), value.trim_end().to_string());
             }
             new_tests.insert(test_name.to_string(), new_test);
         }

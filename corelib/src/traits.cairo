@@ -93,6 +93,7 @@ pub trait PartialOrd<T> {
 
 /// Trait for conversion between types.
 pub trait Into<T, S> {
+    #[must_use]
     fn into(self: T) -> S;
 }
 
@@ -107,9 +108,9 @@ pub trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
 }
 
-impl TTryIntoT<T> of TryInto<T, T> {
-    fn try_into(self: T) -> Option<T> {
-        Option::Some(self)
+impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
+    fn try_into(self: From) -> Option<To> {
+        Option::Some(self.into())
     }
 }
 
@@ -152,6 +153,7 @@ impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
 }
 
 pub trait Default<T> {
+    #[must_use]
     fn default() -> T;
 }
 
@@ -166,6 +168,7 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
 pub trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a Felt252Dict.
     /// Should be logically equivalent to 0.
+    #[must_use]
     fn zero_default() -> T nopanic;
 }
 

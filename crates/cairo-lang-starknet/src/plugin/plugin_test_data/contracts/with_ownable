@@ -47,19 +47,19 @@ mod ownable_balance {
 
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: balance::ContractMemberState,
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: balance::ContractMemberState {},
+            balance: __member_module_balance::ContractMemberState {},
         }
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    mod balance {
+    use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
@@ -68,14 +68,14 @@ mod ownable_balance {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
@@ -305,19 +305,19 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
 
     pub struct ContractState {
         pub ownable: ownable_comp::ComponentState<ContractState>,
-        pub balance: balance::ContractMemberState,
+        pub balance: __member_module_balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
-            balance: balance::ContractMemberState {},
+            balance: __member_module_balance::ContractMemberState {},
         }
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
-    mod balance {
+    use __member_module_balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    mod __member_module_balance {
         use super::ownable_comp;
         use super::TransferTrait;
         use super::ContractAddress;
@@ -326,14 +326,14 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.

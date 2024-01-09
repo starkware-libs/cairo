@@ -130,13 +130,13 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub value: value::ContractMemberState,
+        pub value: __member_module_value::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            value: value::ContractMemberState {},
+            value: __member_module_value::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -145,19 +145,19 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
-    mod value {
+    use __member_module_value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
+    mod __member_module_value {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
             }
             fn read(self: @ContractMemberState) -> felt252 {
                 // Only address_domain 0 is currently supported.
@@ -246,10 +246,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
@@ -533,14 +533,19 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
 
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:23:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:28:5
+    #[abi(embed_v0)]
+    ^**************^
+
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:31:5
+    #[abi(embed_v0)]
+    ^**************^
 
 //! > ==========================================================================
 
-//! > Test embeddable impl with exisiting drop impl..
+//! > Test embeddable impl with existing drop impl.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: true)
@@ -725,7 +730,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:12:1
-#[starknet::contract]
-^*******************^
+warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
+ --> lib.cairo:17:5
+    #[abi(embed_v0)]
+    ^**************^

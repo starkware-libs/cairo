@@ -94,7 +94,7 @@ impl OuterTypeHash<
 starknet_derive:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
         let x = starknet::Store::<u32>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
             OuterType {
@@ -102,11 +102,11 @@ impl StoreOuterType of starknet::Store::<OuterType> {
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: OuterType) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OuterType) -> starknet::SyscallResult<()> {
         starknet::Store::<u32>::write(address_domain, base, value.x)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
         let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
             OuterType {
@@ -115,7 +115,7 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: OuterType) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OuterType) -> starknet::SyscallResult<()> {
         starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
         starknet::SyscallResult::Ok(())
     }
@@ -134,39 +134,39 @@ pub enum Event {}
 
 
     pub struct ContractState {
-        pub var_felt252: var_felt252::ContractMemberState,
-        pub var_u8: var_u8::ContractMemberState,
-        pub var_u16: var_u16::ContractMemberState,
-        pub var_u32: var_u32::ContractMemberState,
-        pub var_u64: var_u64::ContractMemberState,
-        pub var_u128: var_u128::ContractMemberState,
-        pub var_bool: var_bool::ContractMemberState,
-        pub felt252_to_u128: felt252_to_u128::ContractMemberState,
-        pub u128_to_bool: u128_to_bool::ContractMemberState,
-        pub bool_to_felt252: bool_to_felt252::ContractMemberState,
-        pub outer_type_var: outer_type_var::ContractMemberState,
-        pub outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
-        pub inner_type_var: inner_type_var::ContractMemberState,
-        pub inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
+        pub var_felt252: __member_module_var_felt252::ContractMemberState,
+        pub var_u8: __member_module_var_u8::ContractMemberState,
+        pub var_u16: __member_module_var_u16::ContractMemberState,
+        pub var_u32: __member_module_var_u32::ContractMemberState,
+        pub var_u64: __member_module_var_u64::ContractMemberState,
+        pub var_u128: __member_module_var_u128::ContractMemberState,
+        pub var_bool: __member_module_var_bool::ContractMemberState,
+        pub felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState,
+        pub u128_to_bool: __member_module_u128_to_bool::ContractMemberState,
+        pub bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState,
+        pub outer_type_var: __member_module_outer_type_var::ContractMemberState,
+        pub outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState,
+        pub inner_type_var: __member_module_inner_type_var::ContractMemberState,
+        pub inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var_felt252: var_felt252::ContractMemberState {},
-            var_u8: var_u8::ContractMemberState {},
-            var_u16: var_u16::ContractMemberState {},
-            var_u32: var_u32::ContractMemberState {},
-            var_u64: var_u64::ContractMemberState {},
-            var_u128: var_u128::ContractMemberState {},
-            var_bool: var_bool::ContractMemberState {},
-            felt252_to_u128: felt252_to_u128::ContractMemberState {},
-            u128_to_bool: u128_to_bool::ContractMemberState {},
-            bool_to_felt252: bool_to_felt252::ContractMemberState {},
-            outer_type_var: outer_type_var::ContractMemberState {},
-            outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState {},
-            inner_type_var: inner_type_var::ContractMemberState {},
-            inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState {},
+            var_felt252: __member_module_var_felt252::ContractMemberState {},
+            var_u8: __member_module_var_u8::ContractMemberState {},
+            var_u16: __member_module_var_u16::ContractMemberState {},
+            var_u32: __member_module_var_u32::ContractMemberState {},
+            var_u64: __member_module_var_u64::ContractMemberState {},
+            var_u128: __member_module_var_u128::ContractMemberState {},
+            var_bool: __member_module_var_bool::ContractMemberState {},
+            felt252_to_u128: __member_module_felt252_to_u128::ContractMemberState {},
+            u128_to_bool: __member_module_u128_to_bool::ContractMemberState {},
+            bool_to_felt252: __member_module_bool_to_felt252::ContractMemberState {},
+            outer_type_var: __member_module_outer_type_var::ContractMemberState {},
+            outer_type_to_outer_type: __member_module_outer_type_to_outer_type::ContractMemberState {},
+            inner_type_var: __member_module_inner_type_var::ContractMemberState {},
+            inner_type_to_inner_type: __member_module_inner_type_to_inner_type::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -175,20 +175,20 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
-    mod var_felt252 {
+    use __member_module_var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
+    mod __member_module_var_felt252 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
             }
             fn read(self: @ContractMemberState) -> felt252 {
                 // Only address_domain 0 is currently supported.
@@ -213,20 +213,20 @@ pub enum Event {}
             }
         }
     }
-    use var_u8::InternalContractMemberStateTrait as var_u8ContractMemberStateTrait;
-    mod var_u8 {
+    use __member_module_var_u8::InternalContractMemberStateTrait as var_u8ContractMemberStateTrait;
+    mod __member_module_var_u8 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u8;
             fn write(ref self: ContractMemberState, value: u8);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23>()
             }
             fn read(self: @ContractMemberState) -> u8 {
                 // Only address_domain 0 is currently supported.
@@ -251,20 +251,20 @@ pub enum Event {}
             }
         }
     }
-    use var_u16::InternalContractMemberStateTrait as var_u16ContractMemberStateTrait;
-    mod var_u16 {
+    use __member_module_var_u16::InternalContractMemberStateTrait as var_u16ContractMemberStateTrait;
+    mod __member_module_var_u16 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u16;
             fn write(ref self: ContractMemberState, value: u16);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45>()
             }
             fn read(self: @ContractMemberState) -> u16 {
                 // Only address_domain 0 is currently supported.
@@ -289,20 +289,20 @@ pub enum Event {}
             }
         }
     }
-    use var_u32::InternalContractMemberStateTrait as var_u32ContractMemberStateTrait;
-    mod var_u32 {
+    use __member_module_var_u32::InternalContractMemberStateTrait as var_u32ContractMemberStateTrait;
+    mod __member_module_var_u32 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u32;
             fn write(ref self: ContractMemberState, value: u32);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d>()
             }
             fn read(self: @ContractMemberState) -> u32 {
                 // Only address_domain 0 is currently supported.
@@ -327,20 +327,20 @@ pub enum Event {}
             }
         }
     }
-    use var_u64::InternalContractMemberStateTrait as var_u64ContractMemberStateTrait;
-    mod var_u64 {
+    use __member_module_var_u64::InternalContractMemberStateTrait as var_u64ContractMemberStateTrait;
+    mod __member_module_var_u64 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u64;
             fn write(ref self: ContractMemberState, value: u64);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194>()
             }
             fn read(self: @ContractMemberState) -> u64 {
                 // Only address_domain 0 is currently supported.
@@ -365,20 +365,20 @@ pub enum Event {}
             }
         }
     }
-    use var_u128::InternalContractMemberStateTrait as var_u128ContractMemberStateTrait;
-    mod var_u128 {
+    use __member_module_var_u128::InternalContractMemberStateTrait as var_u128ContractMemberStateTrait;
+    mod __member_module_var_u128 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> u128;
             fn write(ref self: ContractMemberState, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
             }
             fn read(self: @ContractMemberState) -> u128 {
                 // Only address_domain 0 is currently supported.
@@ -403,20 +403,20 @@ pub enum Event {}
             }
         }
     }
-    use var_bool::InternalContractMemberStateTrait as var_boolContractMemberStateTrait;
-    mod var_bool {
+    use __member_module_var_bool::InternalContractMemberStateTrait as var_boolContractMemberStateTrait;
+    mod __member_module_var_bool {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> bool;
             fn write(ref self: ContractMemberState, value: bool);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
             }
             fn read(self: @ContractMemberState) -> bool {
                 // Only address_domain 0 is currently supported.
@@ -441,20 +441,20 @@ pub enum Event {}
             }
         }
     }
-    use felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
-    pub mod felt252_to_u128 {
+    use __member_module_felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
+    pub mod __member_module_felt252_to_u128 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: felt252) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: felt252) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: felt252) -> u128;
             fn write(ref self: ContractMemberState, key: felt252, value: u128);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: felt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: felt252) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
             }
             fn read(self: @ContractMemberState, key: felt252) -> u128 {
@@ -480,20 +480,20 @@ pub enum Event {}
             }
         }
     }
-    use u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
-    pub mod u128_to_bool {
+    use __member_module_u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
+    pub mod __member_module_u128_to_bool {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: u128) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: u128) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: u128) -> bool;
             fn write(ref self: ContractMemberState, key: u128, value: bool);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: u128) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: u128) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
             }
             fn read(self: @ContractMemberState, key: u128) -> bool {
@@ -519,20 +519,20 @@ pub enum Event {}
             }
         }
     }
-    use bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
-    pub mod bool_to_felt252 {
+    use __member_module_bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
+    pub mod __member_module_bool_to_felt252 {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: bool) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: bool) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: bool) -> felt252;
             fn write(ref self: ContractMemberState, key: bool, value: felt252);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: bool) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: bool) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
             }
             fn read(self: @ContractMemberState, key: bool) -> felt252 {
@@ -558,20 +558,20 @@ pub enum Event {}
             }
         }
     }
-    use outer_type_var::InternalContractMemberStateTrait as outer_type_varContractMemberStateTrait;
-    mod outer_type_var {
+    use __member_module_outer_type_var::InternalContractMemberStateTrait as outer_type_varContractMemberStateTrait;
+    mod __member_module_outer_type_var {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> super::super::OuterType;
             fn write(ref self: ContractMemberState, value: super::super::OuterType);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e>()
             }
             fn read(self: @ContractMemberState) -> super::super::OuterType {
                 // Only address_domain 0 is currently supported.
@@ -596,20 +596,20 @@ pub enum Event {}
             }
         }
     }
-    use outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
-    pub mod outer_type_to_outer_type {
+    use __member_module_outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
+    pub mod __member_module_outer_type_to_outer_type {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType;
             fn write(ref self: ContractMemberState, key: super::super::OuterType, value: super::super::OuterType);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<super::super::OuterType>::hash(0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54, key))
             }
             fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType {
@@ -635,20 +635,20 @@ pub enum Event {}
             }
         }
     }
-    use inner_type_var::InternalContractMemberStateTrait as inner_type_varContractMemberStateTrait;
-    mod inner_type_var {
+    use __member_module_inner_type_var::InternalContractMemberStateTrait as inner_type_varContractMemberStateTrait;
+    mod __member_module_inner_type_var {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> inner::InnerType;
             fn write(ref self: ContractMemberState, value: inner::InnerType);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e>()
+            fn address(self: @ContractMemberState) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_const::<0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e>()
             }
             fn read(self: @ContractMemberState) -> inner::InnerType {
                 // Only address_domain 0 is currently supported.
@@ -673,20 +673,20 @@ pub enum Event {}
             }
         }
     }
-    use inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
-    pub mod inner_type_to_inner_type {
+    use __member_module_inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
+    pub mod __member_module_inner_type_to_inner_type {
         use super::inner;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress;
+            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::storage_access::StorageBaseAddress;
             fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType;
             fn write(ref self: ContractMemberState, key: inner::InnerType, value: inner::InnerType);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
+            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::storage_access::StorageBaseAddress {
+                starknet::storage_access::storage_base_address_from_felt252(
                     core::hash::LegacyHash::<inner::InnerType>::hash(0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b, key))
             }
             fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType {

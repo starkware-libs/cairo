@@ -1,4 +1,5 @@
 pub trait Clone<T> {
+    #[must_use]
     fn clone(self: @T) -> T;
 }
 

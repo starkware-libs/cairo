@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_felt::Felt252;
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -34,6 +35,7 @@ use num_integer::Integer;
 use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -98,6 +100,54 @@ pub struct CasmContractClass {
     #[serde(skip_serializing_if = "skip_if_none")]
     pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
+}
+impl CasmContractClass {
+    /// Returns the hash value for the compiled contract class.
+    pub fn compiled_class_hash(&self) -> Felt252 {
+        // Compute hashes on each component separately.
+        let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
+        let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
+        let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
+        let bytecode_hash = poseidon_hash_many(
+            &self
+                .bytecode
+                .iter()
+                .map(|big_uint| {
+                    FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
+                })
+                .collect_vec(),
+        );
+
+        // Compute total hash by hashing each component on top of the previous one.
+        Felt252::from_bytes_be(
+            &poseidon_hash_many(&[
+                FieldElement::from_byte_slice_be(b"COMPILED_CLASS_V1").unwrap(),
+                external_funcs_hash,
+                l1_handlers_hash,
+                constructors_hash,
+                bytecode_hash,
+            ])
+            .to_bytes_be(),
+        )
+    }
+    /// Returns the hash for a set of entry points.
+    fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> FieldElement {
+        let mut entry_point_hash_elements = vec![];
+        for entry_point in entry_points {
+            entry_point_hash_elements.push(
+                FieldElement::from_byte_slice_be(&entry_point.selector.to_bytes_be()).unwrap(),
+            );
+            entry_point_hash_elements.push(FieldElement::from(entry_point.offset));
+            entry_point_hash_elements.push(poseidon_hash_many(
+                &entry_point
+                    .builtins
+                    .iter()
+                    .map(|builtin| FieldElement::from_byte_slice_be(builtin.as_bytes()).unwrap())
+                    .collect_vec(),
+            ));
+        }
+        poseidon_hash_many(&entry_point_hash_elements)
+    }
 }
 
 /// Context for resolving types.
@@ -279,12 +329,16 @@ impl CasmContractClass {
             &contract_class.entry_points_by_type.l1_handler,
         )
         .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
+        // TODO(lior): Remove this assert and condition once the equation solver is removed in major
+        //   version 2.
+        assert_eq!(sierra_version.major, 1);
+        let no_eq_solver = sierra_version.minor >= 4;
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
                 .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
-            linear_gas_solver: false,
-            linear_ap_change_solver: false,
+            linear_gas_solver: no_eq_solver,
+            linear_ap_change_solver: no_eq_solver,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
@@ -292,20 +346,16 @@ impl CasmContractClass {
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
-        let mut bytecode = vec![];
-        let mut hints = vec![];
-        for instruction in cairo_program.instructions {
-            if !instruction.hints.is_empty() {
-                hints.push((bytecode.len(), instruction.hints.clone()))
-            }
-            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+        let bytecode = bytecode
+            .iter()
+            .map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-
                 BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
-            }))
-        }
+            })
+            .collect();
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
