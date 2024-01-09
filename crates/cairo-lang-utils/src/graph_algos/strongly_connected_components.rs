@@ -59,7 +59,7 @@ impl<Node: GraphNode> SccAlgoContext<Node> {
 
 /// Computes the SCC (Strongly Connected Component) of the given node in its graph.
 pub fn compute_scc<Node: GraphNode>(root: &Node) -> Vec<Node::NodeId> {
-    let mut ctx = SccAlgoContext::<_>::new(root.get_id());
+    let mut ctx = SccAlgoContext::new(root.get_id());
     compute_scc_recursive(&mut ctx, root);
     ctx.result
 }

@@ -31,7 +31,7 @@ impl GraphNode for IntegerNode {
 }
 impl ComputeScc for IntegerNode {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
-        compute_scc::<_>(self)
+        compute_scc(self)
     }
 }
 
