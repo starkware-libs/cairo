@@ -1,8 +1,6 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
-use core::hash::{BuildHasher, Hash};
+use core::hash::Hash;
 
 use super::graph_node::GraphNode;
 use crate::unordered_hash_map::UnorderedHashMap;
@@ -35,22 +33,22 @@ struct SccAlgoNode<Node: GraphNode> {
 }
 
 /// The context of the SCC algorithm.
-struct SccAlgoContext<Node: GraphNode, BH> {
+struct SccAlgoContext<Node: GraphNode> {
     /// The next index to allocate to a first-seen node.
     next_index: u32,
     /// The stack of the nodes in the DFS.
     stack: Vec<Node::NodeId>,
     /// All visited nodes. If a graph node is not in the map, it wasn't yet visited.
-    known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>, BH>,
+    known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>>,
     /// The ID of the node we want to find the SCC of.
     target_node_id: Node::NodeId,
     /// The SCC of the `target_node_id`. Populated only at the end of the algorithm.
     result: Vec<Node::NodeId>,
 }
 
-impl<Node: GraphNode, BH: BuildHasher + Default> SccAlgoContext<Node, BH> {
+impl<Node: GraphNode> SccAlgoContext<Node> {
     fn new(target_node_id: Node::NodeId) -> Self {
-        SccAlgoContext::<Node, BH> {
+        SccAlgoContext::<Node> {
             next_index: 0,
             stack: Vec::new(),
             known_nodes: UnorderedHashMap::default(),
@@ -61,17 +59,14 @@ impl<Node: GraphNode, BH: BuildHasher + Default> SccAlgoContext<Node, BH> {
 }
 
 /// Computes the SCC (Strongly Connected Component) of the given node in its graph.
-pub fn compute_scc<Node: GraphNode, BH: BuildHasher + Default>(root: &Node) -> Vec<Node::NodeId> {
-    let mut ctx = SccAlgoContext::<_, BH>::new(root.get_id());
+pub fn compute_scc<Node: GraphNode>(root: &Node) -> Vec<Node::NodeId> {
+    let mut ctx = SccAlgoContext::<_>::new(root.get_id());
     compute_scc_recursive(&mut ctx, root);
     ctx.result
 }
 
 /// The recursive call to compute the SCC of a given node.
-fn compute_scc_recursive<Node: GraphNode, BH: BuildHasher>(
-    ctx: &mut SccAlgoContext<Node, BH>,
-    current_node: &Node,
-) {
+fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, current_node: &Node) {
     let mut current_wrapper_node = SccAlgoNode {
         node: current_node.clone(),
         index: ctx.next_index,

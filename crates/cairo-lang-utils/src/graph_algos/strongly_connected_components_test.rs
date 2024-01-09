@@ -1,10 +1,5 @@
-#[cfg(not(feature = "std"))]
-use alloc::{vec, vec::Vec};
-#[cfg(feature = "std")]
-use std::collections::{hash_map::RandomState as HashBuilderType, HashSet};
+use std::collections::HashSet;
 
-#[cfg(not(feature = "std"))]
-use hashbrown::{hash_map::DefaultHashBuilder as HashBuilderType, HashSet};
 use itertools::chain;
 use test_case::test_case;
 use test_log::test;
@@ -37,10 +32,7 @@ impl GraphNode for IntegerNode {
 fn test_short_list() {
     let graph = vec![/* 0: */ vec![1], /* 1: */ vec![]];
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from([0]));
 }
 
@@ -50,10 +42,7 @@ fn test_list() {
     let mut graph: Vec<Vec<usize>> = (0..10).map(|id| vec![id + 1]).collect();
     graph.push(vec![]);
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from([0]));
 }
 
@@ -62,10 +51,7 @@ fn test_cycle() {
     // Each node has only one neighbor. i -> i + 1 for i = 0...8, and 9 -> 0.
     let graph: Vec<Vec<usize>> = (0..10).map(|id| vec![(id + 1) % 10]).collect();
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from_iter(0..10));
 }
 
@@ -74,10 +60,7 @@ fn test_mesh() {
     // Each node has edges to all other nodes.
     let graph = (0..5).map(|i| (0..5).filter(|j| *j != i).collect::<Vec<usize>>()).collect();
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from_iter(0..5));
 }
 
@@ -94,10 +77,7 @@ fn test_list_with_back_edges() {
         vec![1],
     ];
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from_iter(0..4));
 }
 
@@ -109,10 +89,7 @@ fn test_root_points_to_cycle() {
     graph.push(/* 10: */ vec![0]);
 
     // Note 10 is used as a root.
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 10,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 10, graph }));
     assert_eq!(scc, HashSet::from([10]));
 }
 
@@ -132,10 +109,7 @@ fn test_connected_cycles(root_in_first_cycle: bool) {
         graph[5].push(4);
     }
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from_iter(0..5));
 }
 
@@ -152,9 +126,6 @@ fn test_tangent_cycles() {
     )
     .collect();
 
-    let scc = HashSet::<usize>::from_iter(compute_scc::<_, HashBuilderType>(&IntegerNode {
-        id: 0,
-        graph,
-    }));
+    let scc = HashSet::<usize>::from_iter(compute_scc::<_>(&IntegerNode { id: 0, graph }));
     assert_eq!(scc, HashSet::from_iter(0..7));
 }

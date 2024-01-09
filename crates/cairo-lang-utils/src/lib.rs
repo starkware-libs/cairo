@@ -15,6 +15,7 @@ pub mod byte_array;
 pub mod casts;
 pub mod collection_arithmetics;
 pub mod extract_matches;
+#[cfg(feature = "std")]
 pub mod graph_algos;
 pub mod iterators;
 #[cfg(feature = "env_logger")]
