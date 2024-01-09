@@ -231,22 +231,17 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v10, v3 -> v9})
+  Return(v2, v3)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v4 -> v10, v5 -> v9})
+  Return(v4, v5)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v6 -> v10, v7 -> v9})
-
-blk4:
-Statements:
-End:
-  Return(v10, v9)
+  Return(v6, v7)
 
 //! > ==========================================================================
 
@@ -386,22 +381,17 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v12 -> v15, v2 -> v10, v3 -> v9})
+  Return(v12, v2, v3)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v13 -> v15, v4 -> v10, v5 -> v9})
+  Return(v13, v4, v5)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v14 -> v15, v6 -> v10, v7 -> v9})
-
-blk4:
-Statements:
-End:
-  Return(v15, v10, v9)
+  Return(v14, v6, v7)
 
 //! > ==========================================================================
 
