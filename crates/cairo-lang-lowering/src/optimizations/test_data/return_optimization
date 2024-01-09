@@ -293,7 +293,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test that the optimization is skipped when ref argument is overridden.
+//! > Test optimization with modified ref argument.
 
 //! > test_runner_name
 test_return_optimizer
@@ -365,14 +365,14 @@ Statements:
   (v4: test::MyStruct) <- struct_construct()
   (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
 End:
-  Goto(blk3, {v4 -> v9, v5 -> v8})
+  Return(v4, v5)
 
 blk2:
 Statements:
   (v6: ()) <- struct_construct()
   (v7: core::option::Option::<core::integer::u16>) <- Option::None(v6)
 End:
-  Goto(blk3, {v0 -> v9, v7 -> v8})
+  Return(v0, v7)
 
 blk3:
 Statements:

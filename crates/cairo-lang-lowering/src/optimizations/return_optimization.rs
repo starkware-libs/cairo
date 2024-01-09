@@ -3,19 +3,17 @@
 mod test;
 
 use cairo_lang_semantic as semantic;
+use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
 
-/// Moves return earlier when applicable.
-/// Currently there are two cases:
-/// 1. EnumConstruct statements where all the arms reconstruct the enum and return it.
-/// 2. Goto that remaps the last variable and then returns it.
+/// adds early returns when applicable.
 pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = ReturnOptimizerContext {
@@ -30,11 +28,23 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
         for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
             let block = &mut lowered.blocks[block_id];
-            block.end = FlatBlockEnd::Return(return_vars)
+            block.end = FlatBlockEnd::Return(
+                return_vars
+                    .iter()
+                    .map(|var_info| match var_info {
+                        ValueInfo::Var(var_usage) => *var_usage,
+                        ValueInfo::Unit
+                        | ValueInfo::StructConstruct { .. }
+                        | ValueInfo::EnumConstruct { .. } => {
+                            panic!("Value info is not final.")
+                        }
+                    })
+                    .collect_vec(),
+            )
         }
     }
 }
-#[allow(dead_code)]
+
 pub struct ReturnOptimizerContext<'a> {
     lowered: &'a FlatLowered,
     unit_ty: semantic::TypeId,
@@ -42,50 +52,234 @@ pub struct ReturnOptimizerContext<'a> {
     /// The list of fixes that should be applied.
     fixes: Vec<FixInfo>,
 }
+impl ReturnOptimizerContext<'_> {
+    /// Given a VarUsage, returns the ValueInfo that corresponds to it.
+    fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
+        if self.lowered.variables[var_usage.var_id].ty == self.unit_ty {
+            ValueInfo::Unit
+        } else {
+            ValueInfo::Var(*var_usage)
+        }
+    }
+}
 
 /// Information about a fix that should be applied to the lowering.
 pub struct FixInfo {
     /// a block id of a block that can be fixed to return `return_vars`.
     block_id: BlockId,
     /// The variables that should be returned by the block.
-    return_vars: Vec<VarUsage>,
+    return_vars: Vec<ValueInfo>,
 }
 
-/// The pattern that was detected in the backwards analysis.
+/// Information about the value that should be returned from the function.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Pattern<'a> {
-    /// No relevant pattern was found
-    None,
-    /// Found a return statement with the given returned
-    Return {
-        /// The return value of the user, this is the same as the last item in `returned_vars' up
-        /// to remappings.
-        user_return: VarUsage,
-        /// The returned variables of the return statement (excluding the last one).
-        returned_vars: &'a [VarUsage],
-    },
-    /// There is a StructConstruct followed by a EnumConstruct followed by a return.
+pub enum ValueInfo {
+    /// The value is available through the given var usage.
+    Var(VarUsage),
+    /// The value is a unit.
+    Unit,
+    /// The value is the result of a StructConstruct statement.
     StructConstruct {
-        /// The input to the StructConstruct statement.
-        input_vars: Vec<VarUsage>,
-        /// The constructed variant.
-        variant: &'a semantic::ConcreteVariant,
-        /// The returned variables of the return that follows the EnumConstruct.
-        returned_vars: &'a [VarUsage],
+        /// The inputs to the StructConstruct statement.
+        var_infos: Vec<ValueInfo>,
     },
-    /// Found an EnumConstruct whose output is returned by the function.
+    /// The value is the result of an EnumConstruct statement.
     EnumConstruct {
-        /// The input to the EnumConstruct is either a unit type or `opt_input_var.unwrap()`.
-        opt_input_var: Option<VariableId>,
+        /// The input to the EnumConstruct.
+        var_info: Box<ValueInfo>,
         /// The constructed variant.
-        variant: &'a semantic::ConcreteVariant,
-        /// The returned variables of the return that follows the EnumConstruct.
-        returned_vars: &'a [VarUsage],
+        variant: semantic::ConcreteVariant,
     },
+}
+
+impl ValueInfo {
+    /// Applies the given function to the value info.
+    fn apply<F>(&mut self, f: &F)
+    where
+        F: Fn(&VarUsage) -> ValueInfo,
+    {
+        match self {
+            ValueInfo::Var(var_usage) => *self = f(var_usage),
+            ValueInfo::StructConstruct { ref mut var_infos } => {
+                for var_info in var_infos.iter_mut() {
+                    var_info.apply(f);
+                }
+            }
+            ValueInfo::EnumConstruct { ref mut var_info, .. } => {
+                var_info.apply(f);
+            }
+            ValueInfo::Unit => {}
+        }
+    }
+
+    /// Updates the value to the state before the StructDeconstruct statement.
+    /// Returns an error if the value info is invalid before the statement.
+    fn apply_deconstruct(
+        &mut self,
+        ctx: &ReturnOptimizerContext,
+        stmt: &StatementStructDestructure,
+    ) -> Result<(), ()> {
+        match self {
+            ValueInfo::Var(var_usage) => {
+                if stmt.outputs.contains(&var_usage.var_id) {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+            ValueInfo::StructConstruct { var_infos } => {
+                let mut cancels_out = var_infos.len() == stmt.outputs.len();
+
+                let mut has_errors = false;
+                for (var_info, output) in var_infos.iter_mut().zip(stmt.outputs.iter()) {
+                    has_errors |= var_info.apply_deconstruct(ctx, stmt).is_err();
+
+                    match var_info {
+                        ValueInfo::Var(var_usage) if &var_usage.var_id == output => {}
+                        ValueInfo::Unit if ctx.lowered.variables[*output].ty == ctx.unit_ty => {}
+                        _ => cancels_out = false,
+                    }
+                }
+
+                if cancels_out {
+                    // If the StructDeconstruct cancels out the StructConstruct, then its ok
+                    // for StructConstruct inputs to be invalidated, otherwise we should return an
+                    // error.
+                    *self = ValueInfo::Var(stmt.input);
+                } else if has_errors {
+                    return Err(());
+                }
+
+                Ok(())
+            }
+            ValueInfo::EnumConstruct { ref mut var_info, .. } => {
+                var_info.apply_deconstruct(ctx, stmt)
+            }
+            ValueInfo::Unit => Ok(()),
+        }
+    }
+
+    /// Updates the value to the expected value before the match arm.
+    /// Returns an error if the value info is invalid before the statement.
+    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) -> Result<(), ()> {
+        match self {
+            ValueInfo::Var(var_usage) => {
+                if arm.var_ids == [var_usage.var_id] {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+            ValueInfo::StructConstruct { ref mut var_infos } => {
+                for var_info in var_infos.iter_mut() {
+                    var_info.apply_match_arm(input, arm)?;
+                }
+
+                Ok(())
+            }
+            ValueInfo::EnumConstruct { ref mut var_info, variant } => {
+                if *variant == arm.variant_id {
+                    let cancels_out = match **var_info {
+                        ValueInfo::Unit => true,
+                        ValueInfo::Var(var_usage) if arm.var_ids == [var_usage.var_id] => true,
+                        _ => false,
+                    };
+
+                    if cancels_out {
+                        // If the arm recreates the relevant enum variant, then the arm
+                        // assuming the other arms also cancel out.
+                        *self = input.clone();
+                        return Ok(());
+                    }
+                }
+
+                var_info.apply_match_arm(input, arm)
+            }
+            ValueInfo::Unit => Ok(()),
+        }
+    }
+}
+
+/// Information about the current state of the analyzer.
+/// Used to track the value that should be returned from the function at the current
+/// analysis point or None if it is unknown.
+/// If early_return_possible() returns true, the function can return early as the return value is
+/// already known.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AnalyzerInfo {
+    opt_returned_vars: Option<Vec<ValueInfo>>,
+}
+
+impl AnalyzerInfo {
+    /// Applies the given function to the returned_vars
+    fn apply<F>(&mut self, f: &F)
+    where
+        F: Fn(&VarUsage) -> ValueInfo,
+    {
+        let Some(ref mut returned_vars) = self.opt_returned_vars else {
+            return;
+        };
+
+        for var_info in returned_vars.iter_mut() {
+            var_info.apply(f)
+        }
+    }
+
+    /// Replaces occurrences of `var_id` with `var_info`.
+    fn replace(&mut self, var_id: VariableId, var_info: ValueInfo) {
+        self.apply(&|var_usage| {
+            if var_usage.var_id == var_id { var_info.clone() } else { ValueInfo::Var(*var_usage) }
+        });
+    }
+
+    /// Invalidates the state of the analyzer, identifing early return is no longer possible.
+    fn invalidate(&mut self) {
+        self.opt_returned_vars = None;
+    }
+
+    /// Updates the info to the state before the StructDeconstruct statement.
+    fn apply_deconstruct(
+        &mut self,
+        ctx: &ReturnOptimizerContext,
+        stmt: &StatementStructDestructure,
+    ) {
+        let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
+
+        for var_info in returned_vars.iter_mut() {
+            if var_info.apply_deconstruct(ctx, stmt).is_err() {
+                self.invalidate();
+                return;
+            }
+        }
+    }
+
+    /// Updates the info to the state before match arm.
+    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) {
+        let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
+
+        for var_info in returned_vars.iter_mut() {
+            if var_info.apply_match_arm(input, arm).is_err() {
+                self.invalidate();
+                return;
+            }
+        }
+    }
+
+    /// Returns true if the an early return is possible according to 'self'.
+    fn early_return_possible(&self) -> bool {
+        let Some(ref returned_vars) = self.opt_returned_vars else { return false };
+
+        returned_vars.iter().all(|var_info| match var_info {
+            ValueInfo::Var(_) => true,
+            ValueInfo::StructConstruct { .. } => false,
+            ValueInfo::EnumConstruct { .. } => false,
+            ValueInfo::Unit => false,
+        })
+    }
 }
 
 impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
-    type Info = Pattern<'a>;
+    type Info = AnalyzerInfo;
 
     fn visit_stmt(
         &mut self,
@@ -95,76 +289,26 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     ) {
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
-                match info {
-                    Pattern::EnumConstruct { opt_input_var, variant, returned_vars } => {
-                        if Some(*output) == *opt_input_var {
-                            *info = Pattern::StructConstruct {
-                                input_vars: inputs.to_vec(),
-                                variant,
-                                returned_vars,
-                            };
-                        }
-                    }
-                    Pattern::Return { user_return, returned_vars } => {
-                        if user_return.var_id == *output
-                            || returned_vars.iter().any(|var_usage| &var_usage.var_id == output)
-                        {
-                            // If the output of the StructConstruct is returned we can't apply the
-                            // optimization.
-                            *info = Pattern::None;
-                        }
-                    }
-                    _ => {}
-                }
-
-                // Keep the pattern across StructConstruct statement, except for the cases above.
-                return;
+                info.replace(
+                    *output,
+                    ValueInfo::StructConstruct {
+                        var_infos: inputs.iter().map(|input| ValueInfo::Var(*input)).collect(),
+                    },
+                );
             }
 
-            Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                if let Pattern::StructConstruct { input_vars, variant, returned_vars } = info {
-                    if itertools::equal(
-                        outputs.iter(),
-                        input_vars.iter().map(|input| &input.var_id),
-                    ) {
-                        // We have StructConstruct and StructDestructure that cancel out.
-                        // So the resulting pattern is equivalent EnumConstruct with `input`.`
-                        *info = Pattern::EnumConstruct {
-                            opt_input_var: Some(input.var_id),
-                            variant,
-                            returned_vars,
-                        };
-                        return;
-                    }
-                }
-            }
+            Statement::StructDestructure(stmt) => info.apply_deconstruct(self, stmt),
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                if let Pattern::Return { user_return, returned_vars } = info {
-                    if &user_return.var_id != output {
-                        *info = Pattern::None;
-                        return;
-                    }
-
-                    // If the input is a unit type accept any variable in its place,
-                    // otherwise save the expected input variable.
-                    let input_requirement =
-                        if self.lowered.variables[input.var_id].ty == self.unit_ty {
-                            None
-                        } else {
-                            Some(input.var_id)
-                        };
-
-                    *info = Pattern::EnumConstruct {
-                        opt_input_var: input_requirement,
-                        variant,
-                        returned_vars,
-                    };
-                    return;
-                }
+                info.replace(
+                    *output,
+                    ValueInfo::EnumConstruct {
+                        var_info: Box::new(self.get_var_info(input)),
+                        variant: variant.clone(),
+                    },
+                );
             }
-            _ => {}
+            _ => info.invalidate(),
         }
-        *info = Pattern::None;
     }
 
     fn visit_goto(
@@ -174,39 +318,18 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        if remapping.is_empty() {
-            return;
+        info.apply(&|var_usage| {
+            if let Some(usage) = remapping.get(&var_usage.var_id) {
+                ValueInfo::Var(*usage)
+            } else {
+                ValueInfo::Var(*var_usage)
+            }
+        });
+
+        if info.early_return_possible() {
+            self.fixes
+                .push(FixInfo { block_id, return_vars: info.opt_returned_vars.clone().unwrap() });
         }
-
-        if let Pattern::Return { user_return, returned_vars } = info {
-            if returned_vars.iter().any(|var_usage| remapping.contains_key(&var_usage.var_id)) {
-                // If any of the returned variables is remapped we can't apply the optimization.
-                *info = Pattern::None;
-                return;
-            }
-
-            if let Some(remapped_return) = remapping.get(&user_return.var_id) {
-                // In case user_return is remapped we can move the return earlier and avoid the
-                // remapping.
-                let mut return_vars = returned_vars.to_vec();
-                return_vars.pop();
-                return_vars.push(*remapped_return);
-                self.fixes.push(FixInfo { block_id, return_vars });
-
-                *info = Pattern::Return { user_return: *remapped_return, returned_vars };
-            }
-        } else if let Pattern::StructConstruct { input_vars, variant, returned_vars } = info {
-            *info = Pattern::StructConstruct {
-                input_vars: input_vars
-                    .iter()
-                    .map(|var_usage| *remapping.get(&var_usage.var_id).unwrap_or(var_usage))
-                    .collect(),
-                variant,
-                returned_vars,
-            };
-        } else {
-            *info = Pattern::None;
-        };
     }
 
     fn merge_match(
@@ -216,42 +339,37 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         infos: &[Self::Info],
     ) -> Self::Info {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
-            return Pattern::None;
+            return AnalyzerInfo { opt_returned_vars: None };
         };
+        if arms.is_empty() {
+            return AnalyzerInfo { opt_returned_vars: None };
+        }
 
-        let [Pattern::EnumConstruct { returned_vars, .. }, ..] = infos else {
-            return Pattern::None;
-        };
-        let mut return_vars = returned_vars.to_vec();
+        let input = self.get_var_info(input);
+        let mut opt_prev_info = None;
         for (arm, info) in arms.iter().zip(infos) {
-            let Pattern::EnumConstruct { opt_input_var, variant, returned_vars } = info else {
-                return Pattern::None;
-            };
+            let mut curr_info = info.clone();
+            curr_info.apply_match_arm(&input, arm);
 
-            if &&(arm.variant_id) != variant {
-                return Pattern::None;
+            if !curr_info.early_return_possible() {
+                return AnalyzerInfo { opt_returned_vars: None };
             }
 
-            if let Some(var_id) = opt_input_var {
-                if [*var_id] != arm.var_ids.as_slice() {
-                    return Pattern::None;
+            if let Some(prev_info) = &opt_prev_info {
+                if prev_info != &curr_info {
+                    return AnalyzerInfo { opt_returned_vars: None };
                 }
-            }
-
-            // If any of the returned vars is different we can't apply the optimization.
-            if return_vars.len() != returned_vars.len()
-                || return_vars
-                    .iter()
-                    .zip(returned_vars.iter())
-                    .any(|(usage_a, uasge_b)| usage_a.var_id != uasge_b.var_id)
-            {
-                return Pattern::None;
+            } else {
+                opt_prev_info = Some(curr_info);
             }
         }
-        return_vars.push(*input);
 
-        self.fixes.push(FixInfo { block_id, return_vars });
-        Pattern::None
+        self.fixes.push(FixInfo {
+            block_id,
+            return_vars: opt_prev_info.unwrap().opt_returned_vars.unwrap(),
+        });
+
+        AnalyzerInfo { opt_returned_vars: None }
     }
 
     fn info_from_return(
@@ -259,8 +377,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
-        let (user_return, returned_vars) = vars.split_last().unwrap();
-        Pattern::Return { user_return: *user_return, returned_vars }
+        AnalyzerInfo {
+            opt_returned_vars: Some(
+                vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
+            ),
+        }
     }
 
     fn info_from_panic(
@@ -268,6 +389,6 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         _data: &VarUsage,
     ) -> Self::Info {
-        Pattern::None
+        AnalyzerInfo { opt_returned_vars: None }
     }
 }
