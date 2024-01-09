@@ -57,6 +57,10 @@ pub trait IntTraits: Default {
     const TO_FELT252: &'static str;
     /// The generic libfunc id for conversion from felt252.
     const TRY_FROM_FELT252: &'static str;
+    /// The generic libfunc id for addition by 1.
+    const INC: &'static str;
+    /// The generic libfunc id for subtraction by 1.
+    const DEC: &'static str;
 }
 
 /// Trait for implementing multiplication for integers.
@@ -210,4 +214,63 @@ impl<TIntMulTraits: IntMulTraits> NoGenericArgsGenericLibfunc for IntWideMulLibf
             SierraApChange::Known { new_vars_only: true },
         ))
     }
+}
+
+/// Libfunc for incrementing an integer by 1.
+#[derive(Default)]
+pub struct IntIncLibfunc<TIntTraits: IntTraits> {
+    _phantom: PhantomData<TIntTraits>,
+}
+impl<TIntTraits: IntTraits> NoGenericArgsGenericLibfunc for IntIncLibfunc<TIntTraits> {
+    const STR_ID: &'static str = TIntTraits::INC;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        step_signature(context, TIntTraits::GENERIC_TYPE_ID)
+    }
+}
+
+/// Libfunc for decrementing an integer by 1.
+#[derive(Default)]
+pub struct IntDecLibfunc<TIntTraits: IntTraits> {
+    _phantom: PhantomData<TIntTraits>,
+}
+impl<TIntTraits: IntTraits> NoGenericArgsGenericLibfunc for IntDecLibfunc<TIntTraits> {
+    const STR_ID: &'static str = TIntTraits::DEC;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        step_signature(context, TIntTraits::GENERIC_TYPE_ID)
+    }
+}
+
+/// Returns the signature for a step libfunc.
+fn step_signature(
+    context: &dyn SignatureSpecializationContext,
+    generic_type_id: GenericTypeId,
+) -> Result<LibfuncSignature, SpecializationError> {
+    let ty = context.get_concrete_type(generic_type_id, &[])?;
+    Ok(LibfuncSignature {
+        param_signatures: vec![ParamSignature::new(ty.clone()).with_allow_add_const()],
+        branch_signatures: vec![
+            BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+            BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+        ],
+        fallthrough: Some(0),
+    })
 }

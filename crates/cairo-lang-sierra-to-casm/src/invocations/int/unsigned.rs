@@ -9,7 +9,7 @@ use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::{BigInt, ToBigInt};
 
-use super::{build_const, build_small_diff, build_small_wide_mul};
+use super::{build_const, build_small_diff, build_small_wide_mul, build_step};
 use crate::invocations::range_reduction::build_try_range_reduction;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
@@ -200,5 +200,7 @@ pub fn build_uint<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits, const L
         UintConcrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         UintConcrete::Bitwise(_) => bitwise::build(builder),
         UintConcrete::WideMul(_) => build_small_wide_mul(builder),
+        UintConcrete::Inc(_) => build_step(builder, 1, (LIMIT - 1).into()),
+        UintConcrete::Dec(_) => build_step(builder, -1, 0.into()),
     }
 }

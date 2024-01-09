@@ -9,6 +9,21 @@ use core::array::SpanTrait;
 pub trait NumericLiteral<T>;
 impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 
+/// Same as `Option` but inverted for libfuncs with possibly more efficient branch ordering.
+enum InvertedOption<T> {
+    None,
+    Some: T,
+}
+
+/// Inverts `InvertedOption` into an `Option` for high level wrappers.
+#[inline(always)]
+fn invert<T>(x: InvertedOption<T>) -> Option<T> {
+    match x {
+        InvertedOption::None => Option::None,
+        InvertedOption::Some(x) => Option::Some(x),
+    }
+}
+
 #[derive(Copy, Drop)]
 pub extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
@@ -49,6 +64,20 @@ pub fn u128_wrapping_sub(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic
     match u128_overflowing_sub(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
+    }
+}
+
+extern fn u128_inc(value: u128) -> InvertedOption<u128> nopanic;
+impl U128Inc of core::num::traits::Inc<u128> {
+    fn inc(self: u128) -> Option<u128> {
+        invert(u128_inc(self))
+    }
+}
+
+extern fn u128_dec(value: u128) -> InvertedOption<u128> nopanic;
+impl U128Dec of core::num::traits::Dec<u128> {
+    fn dec(self: u128) -> Option<u128> {
+        invert(u128_dec(self))
     }
 }
 
@@ -367,6 +396,22 @@ impl U8SubEq of SubEq<u8> {
     }
 }
 
+extern fn u8_inc(value: u8) -> InvertedOption<u8> nopanic;
+impl U8Inc of core::num::traits::Inc<u8> {
+    #[inline(always)]
+    fn inc(self: u8) -> Option<u8> {
+        invert(u8_inc(self))
+    }
+}
+
+extern fn u8_dec(value: u8) -> InvertedOption<u8> nopanic;
+impl U8Dec of core::num::traits::Dec<u8> {
+    #[inline(always)]
+    fn dec(self: u8) -> Option<u8> {
+        invert(u8_dec(self))
+    }
+}
+
 pub extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
 pub extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
@@ -559,6 +604,22 @@ impl U16SubEq of SubEq<u16> {
     #[inline(always)]
     fn sub_eq(ref self: u16, other: u16) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn u16_inc(value: u16) -> InvertedOption<u16> nopanic;
+impl U16Inc of core::num::traits::Inc<u16> {
+    #[inline(always)]
+    fn inc(self: u16) -> Option<u16> {
+        invert(u16_inc(self))
+    }
+}
+
+extern fn u16_dec(value: u16) -> InvertedOption<u16> nopanic;
+impl U16Dec of core::num::traits::Dec<u16> {
+    #[inline(always)]
+    fn dec(self: u16) -> Option<u16> {
+        invert(u16_dec(self))
     }
 }
 
@@ -759,6 +820,22 @@ impl U32SubEq of SubEq<u32> {
     }
 }
 
+extern fn u32_inc(value: u32) -> InvertedOption<u32> nopanic;
+impl U32Inc of core::num::traits::Inc<u32> {
+    #[inline(always)]
+    fn inc(self: u32) -> Option<u32> {
+        invert(u32_inc(self))
+    }
+}
+
+extern fn u32_dec(value: u32) -> InvertedOption<u32> nopanic;
+impl U32Dec of core::num::traits::Dec<u32> {
+    #[inline(always)]
+    fn dec(self: u32) -> Option<u32> {
+        invert(u32_dec(self))
+    }
+}
+
 pub extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
 pub extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
@@ -953,6 +1030,22 @@ impl U64SubEq of SubEq<u64> {
     #[inline(always)]
     fn sub_eq(ref self: u64, other: u64) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn u64_inc(value: u64) -> InvertedOption<u64> nopanic;
+impl U64Inc of core::num::traits::Inc<u64> {
+    #[inline(always)]
+    fn inc(self: u64) -> Option<u64> {
+        invert(u64_inc(self))
+    }
+}
+
+extern fn u64_dec(value: u64) -> InvertedOption<u64> nopanic;
+impl U64Dec of core::num::traits::Dec<u64> {
+    #[inline(always)]
+    fn dec(self: u64) -> Option<u64> {
+        invert(u64_dec(self))
     }
 }
 
@@ -1921,6 +2014,20 @@ impl I8SubEq of SubEq<i8> {
         self = Sub::sub(self, other);
     }
 }
+extern fn i8_inc(value: i8) -> InvertedOption<i8> nopanic;
+impl I8Inc of core::num::traits::Inc<i8> {
+    #[inline(always)]
+    fn inc(self: i8) -> Option<i8> {
+        invert(i8_inc(self))
+    }
+}
+extern fn i8_dec(value: i8) -> InvertedOption<i8> nopanic;
+impl I8Dec of core::num::traits::Dec<i8> {
+    #[inline(always)]
+    fn dec(self: i8) -> Option<i8> {
+        invert(i8_dec(self))
+    }
+}
 
 impl I8Neg of Neg<i8> {
     #[inline(always)]
@@ -2025,6 +2132,22 @@ impl I16SubEq of SubEq<i16> {
     #[inline(always)]
     fn sub_eq(ref self: i16, other: i16) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn i16_inc(value: i16) -> InvertedOption<i16> nopanic;
+impl I16Inc of core::num::traits::Inc<i16> {
+    #[inline(always)]
+    fn inc(self: i16) -> Option<i16> {
+        invert(i16_inc(self))
+    }
+}
+
+extern fn i16_dec(value: i16) -> InvertedOption<i16> nopanic;
+impl I16Dec of core::num::traits::Dec<i16> {
+    #[inline(always)]
+    fn dec(self: i16) -> Option<i16> {
+        invert(i16_dec(self))
     }
 }
 
@@ -2134,6 +2257,22 @@ impl I32SubEq of SubEq<i32> {
     }
 }
 
+extern fn i32_inc(value: i32) -> InvertedOption<i32> nopanic;
+impl I32Inc of core::num::traits::Inc<i32> {
+    #[inline(always)]
+    fn inc(self: i32) -> Option<i32> {
+        invert(i32_inc(self))
+    }
+}
+
+extern fn i32_dec(value: i32) -> InvertedOption<i32> nopanic;
+impl I32Dec of core::num::traits::Dec<i32> {
+    #[inline(always)]
+    fn dec(self: i32) -> Option<i32> {
+        invert(i32_dec(self))
+    }
+}
+
 impl I32Neg of Neg<i32> {
     #[inline(always)]
     fn neg(a: i32) -> i32 {
@@ -2240,6 +2379,22 @@ impl I64SubEq of SubEq<i64> {
     }
 }
 
+extern fn i64_inc(value: i64) -> InvertedOption<i64> nopanic;
+impl I64Inc of core::num::traits::Inc<i64> {
+    #[inline(always)]
+    fn inc(self: i64) -> Option<i64> {
+        invert(i64_inc(self))
+    }
+}
+
+extern fn i64_dec(value: i64) -> InvertedOption<i64> nopanic;
+impl I64Dec of core::num::traits::Dec<i64> {
+    #[inline(always)]
+    fn dec(self: i64) -> Option<i64> {
+        invert(i64_dec(self))
+    }
+}
+
 impl I64Neg of Neg<i64> {
     #[inline(always)]
     fn neg(a: i64) -> i64 {
@@ -2343,6 +2498,22 @@ impl I128SubEq of SubEq<i128> {
     #[inline(always)]
     fn sub_eq(ref self: i128, other: i128) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn i128_inc(value: i128) -> InvertedOption<i128> nopanic;
+impl I128Inc of core::num::traits::Inc<i128> {
+    #[inline(always)]
+    fn inc(self: i128) -> Option<i128> {
+        invert(i128_inc(self))
+    }
+}
+
+extern fn i128_dec(value: i128) -> InvertedOption<i128> nopanic;
+impl I128Dec of core::num::traits::Dec<i128> {
+    #[inline(always)]
+    fn dec(self: i128) -> Option<i128> {
+        invert(i128_dec(self))
     }
 }
 

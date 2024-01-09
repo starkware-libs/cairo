@@ -3,9 +3,9 @@ use std::marker::PhantomData;
 use super::signed128::Sint128Type;
 use super::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::{
-    IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits,
-    IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits, IntType,
-    IntWideMulLibfunc,
+    IntConstLibfunc, IntDecLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntIncLibfunc,
+    IntMulTraits, IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits,
+    IntType, IntWideMulLibfunc,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
@@ -41,6 +41,8 @@ define_libfunc_hierarchy! {
         ToFelt252(IntToFelt252Libfunc<TSintTraits>),
         FromFelt252(IntFromFelt252Libfunc<TSintTraits>),
         Operation(SintOperationLibfunc<TSintTraits>),
+        Inc(IntIncLibfunc<TSintTraits>),
+        Dec(IntDecLibfunc<TSintTraits>),
         Diff(SintDiffLibfunc<TSintTraits>),
         IsZero(IsZeroLibfunc<TSintTraits>),
         WideMul(IntWideMulLibfunc<TSintTraits>),
@@ -209,6 +211,8 @@ impl IntTraits for Sint8Traits {
     const EQUAL: &'static str = "i8_eq";
     const TO_FELT252: &'static str = "i8_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i8_try_from_felt252";
+    const INC: &'static str = "i8_inc";
+    const DEC: &'static str = "i8_dec";
 }
 
 impl IntMulTraits for Sint8Traits {
@@ -244,6 +248,8 @@ impl IntTraits for Sint16Traits {
     const EQUAL: &'static str = "i16_eq";
     const TO_FELT252: &'static str = "i16_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i16_try_from_felt252";
+    const INC: &'static str = "i16_inc";
+    const DEC: &'static str = "i16_dec";
 }
 
 impl IntMulTraits for Sint16Traits {
@@ -279,6 +285,8 @@ impl IntTraits for Sint32Traits {
     const EQUAL: &'static str = "i32_eq";
     const TO_FELT252: &'static str = "i32_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i32_try_from_felt252";
+    const INC: &'static str = "i32_inc";
+    const DEC: &'static str = "i32_dec";
 }
 
 impl IntMulTraits for Sint32Traits {
@@ -314,6 +322,8 @@ impl IntTraits for Sint64Traits {
     const EQUAL: &'static str = "i64_eq";
     const TO_FELT252: &'static str = "i64_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i64_try_from_felt252";
+    const INC: &'static str = "i64_inc";
+    const DEC: &'static str = "i64_dec";
 }
 
 impl IntMulTraits for Sint64Traits {

@@ -1,8 +1,8 @@
 use super::signed::{SintDiffLibfunc, SintOperationLibfunc, SintTraits};
 use super::unsigned128::Uint128Type;
 use super::{
-    IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntToFelt252Libfunc, IntTraits,
-    IntType,
+    IntConstLibfunc, IntDecLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntIncLibfunc,
+    IntToFelt252Libfunc, IntTraits, IntType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
@@ -18,6 +18,8 @@ define_libfunc_hierarchy! {
         Const(IntConstLibfunc<Sint128Traits>),
         ToFelt252(IntToFelt252Libfunc<Sint128Traits>),
         FromFelt252(IntFromFelt252Libfunc<Sint128Traits>),
+        Inc(IntIncLibfunc<Sint128Traits>),
+        Dec(IntDecLibfunc<Sint128Traits>),
         Operation(SintOperationLibfunc<Sint128Traits>),
         Diff(SintDiffLibfunc<Sint128Traits>),
         IsZero(IsZeroLibfunc<Sint128Traits>),
@@ -42,6 +44,8 @@ impl IntTraits for Sint128Traits {
     const EQUAL: &'static str = "i128_eq";
     const TO_FELT252: &'static str = "i128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i128_try_from_felt252";
+    const INC: &'static str = "i128_inc";
+    const DEC: &'static str = "i128_dec";
 }
 
 impl IsZeroTraits for Sint128Traits {

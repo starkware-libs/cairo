@@ -108,6 +108,108 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > ==========================================================================
 
+//! > i128_inc libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: i128) -> core::integer::InvertedOption<i128> {
+    integer::i128_inc(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 170141183460469231731687303715884105727, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::i128> = Enum<ut@core::integer::InvertedOption::<core::integer::i128>, Unit, i128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_inc = i128_inc;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i128>, 0> = enum_init<core::integer::InvertedOption::<core::integer::i128>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::i128>> = store_temp<core::integer::InvertedOption::<core::integer::i128>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i128>, 1> = enum_init<core::integer::InvertedOption::<core::integer::i128>, 1>;
+
+i128_inc([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::i128>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::i128>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::i128>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::i128>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i128) -> (core::integer::InvertedOption::<core::integer::i128>);
+
+//! > ==========================================================================
+
+//! > i128_dec libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: i128) -> core::integer::InvertedOption<i128> {
+    integer::i128_dec(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + -170141183460469231731687303715884105728, ap++;
+jmp rel 8 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 6;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3] + -1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::integer::InvertedOption::<core::integer::i128> = Enum<ut@core::integer::InvertedOption::<core::integer::i128>, Unit, i128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_dec = i128_dec;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i128>, 0> = enum_init<core::integer::InvertedOption::<core::integer::i128>, 0>;
+libfunc store_temp<core::integer::InvertedOption::<core::integer::i128>> = store_temp<core::integer::InvertedOption::<core::integer::i128>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::InvertedOption::<core::integer::i128>, 1> = enum_init<core::integer::InvertedOption::<core::integer::i128>, 1>;
+
+i128_dec([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::integer::InvertedOption::<core::integer::i128>, 0>([2]) -> ([3]); // 3
+store_temp<core::integer::InvertedOption::<core::integer::i128>>([3]) -> ([4]); // 4
+jump() { 9() }; // 5
+branch_align() -> (); // 6
+enum_init<core::integer::InvertedOption::<core::integer::i128>, 1>([1]) -> ([5]); // 7
+store_temp<core::integer::InvertedOption::<core::integer::i128>>([5]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i128) -> (core::integer::InvertedOption::<core::integer::i128>);
+
+//! > ==========================================================================
+
 //! > i128_eq libfunc (a deref, b deref)
 
 //! > test_runner_name

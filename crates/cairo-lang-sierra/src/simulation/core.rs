@@ -537,6 +537,22 @@ fn simulate_u128_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::Inc(_) => match inputs {
+            [CoreValue::Uint128(value)] => Ok(match value.overflowing_add(1) {
+                (value, false) => (vec![CoreValue::Uint128(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::Dec(_) => match inputs {
+            [CoreValue::Uint128(value)] => Ok(match value.overflowing_sub(1) {
+                (value, false) => (vec![CoreValue::Uint128(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -604,6 +620,22 @@ fn simulate_u8_libfunc(
                 Ok((vec![CoreValue::Uint16(u16::from(*lhs) * u16::from(*rhs))], 0))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::Inc(_) => match inputs {
+            [CoreValue::Uint8(value)] => Ok(match value.overflowing_add(1) {
+                (value, false) => (vec![CoreValue::Uint8(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::Dec(_) => match inputs {
+            [CoreValue::Uint8(value)] => Ok(match value.overflowing_sub(1) {
+                (value, false) => (vec![CoreValue::Uint8(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
     }
@@ -675,6 +707,22 @@ fn simulate_u16_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint16Concrete::Inc(_) => match inputs {
+            [CoreValue::Uint16(value)] => Ok(match value.overflowing_add(1) {
+                (value, false) => (vec![CoreValue::Uint16(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint16Concrete::Dec(_) => match inputs {
+            [CoreValue::Uint16(value)] => Ok(match value.overflowing_sub(1) {
+                (value, false) => (vec![CoreValue::Uint16(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -732,6 +780,22 @@ fn simulate_u32_libfunc(
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint32Concrete::Inc(_) => match inputs {
+            [CoreValue::Uint32(value)] => Ok(match value.overflowing_add(1) {
+                (value, false) => (vec![CoreValue::Uint32(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint32Concrete::Dec(_) => match inputs {
+            [CoreValue::Uint32(value)] => Ok(match value.overflowing_sub(1) {
+                (value, false) => (vec![CoreValue::Uint32(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint32Concrete::IsZero(_) => unimplemented!(),
@@ -811,6 +875,22 @@ fn simulate_u64_libfunc(
                 Ok((vec![CoreValue::Uint128(u128::from(*lhs) * u128::from(*rhs))], 0))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::Inc(_) => match inputs {
+            [CoreValue::Uint64(value)] => Ok(match value.overflowing_add(1) {
+                (value, false) => (vec![CoreValue::Uint64(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::Dec(_) => match inputs {
+            [CoreValue::Uint64(value)] => Ok(match value.overflowing_sub(1) {
+                (value, false) => (vec![CoreValue::Uint64(value)], 0),
+                (_, true) => (vec![], 1),
+            }),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
     }

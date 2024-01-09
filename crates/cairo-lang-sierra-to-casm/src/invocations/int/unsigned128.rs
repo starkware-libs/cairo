@@ -5,7 +5,7 @@ use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
 use num_traits::{Num, One};
 
-use super::{build_128bit_diff, build_const};
+use super::{build_128bit_diff, build_const, build_step};
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -32,6 +32,8 @@ pub fn build(
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
         Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
         Uint128Concrete::Bitwise(_) => bitwise::build(builder),
+        Uint128Concrete::Inc(_) => build_step(builder, 1, u128::MAX.into()),
+        Uint128Concrete::Dec(_) => build_step(builder, -1, u128::MIN.into()),
     }
 }
 
