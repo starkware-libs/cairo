@@ -27,8 +27,8 @@ pub fn build(
         EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
         }
-        EnumConcreteLibfunc::FromFelt252Bounded(libfunc) => {
-            build_enum_from_felt252_bounded(builder, libfunc.num_variants)
+        EnumConcreteLibfunc::FromBoundedInt(libfunc) => {
+            build_enum_from_bounded_int(builder, libfunc.num_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -114,7 +114,7 @@ fn build_enum_init(
     Ok(builder.build_only_reference_changes(output_expressions))
 }
 
-fn build_enum_from_felt252_bounded(
+fn build_enum_from_bounded_int(
     builder: CompiledInvocationBuilder<'_>,
     num_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
