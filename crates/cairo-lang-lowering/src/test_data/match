@@ -304,13 +304,34 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported matched value. Currently, only matches on enums and felt252s are supported.
- --> lib.cairo:2:11
-    match 5_u32 {
-          ^***^
 
 //! > lowering_flat
 Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 5u
+  (v1: core::felt252) <- core::integer::u32_to_felt252(v0)
+End:
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
 
 //! > ==========================================================================
 
