@@ -12,7 +12,10 @@ use crate::{
     VarUsage, VariableId,
 };
 
-/// Optimizes EnumConstruct statements where all the arms reconstruct the enum and return it.
+/// Moves return earlier when applicable.
+/// Currently there are two cases:
+/// 1. EnumConstruct statements where all the arms reconstruct the enum and return it.
+/// 2. Goto that remaps the last variable and then returns it.
 pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = ReturnOptimizerContext {
@@ -92,20 +95,27 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     ) {
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
-                if let Pattern::EnumConstruct { opt_input_var, variant, returned_vars } = info {
-                    if Some(*output) == *opt_input_var {
-                        *info = Pattern::StructConstruct {
-                            input_vars: inputs.to_vec(),
-                            variant,
-                            returned_vars,
-                        };
+                match info {
+                    Pattern::EnumConstruct { opt_input_var, variant, returned_vars } => {
+                        if Some(*output) == *opt_input_var {
+                            *info = Pattern::StructConstruct {
+                                input_vars: inputs.to_vec(),
+                                variant,
+                                returned_vars,
+                            };
+                        }
                     }
+                    Pattern::Return { user_return, returned_vars } => {
+                        if user_return.var_id == *output
+                            && returned_vars.iter().all(|var_usage| &var_usage.var_id == output)
+                        {
+                            *info = Pattern::None;
+                        }
+                    }
+                    _ => {}
                 }
 
-                // Keep the pattern across StructConstruct statements, this is ok, since
-                // we check the inputs to the return statement at the end.
-                // We need to allow this to handle the case where the StructConstruct is used
-                // to construct a unit type.
+                // Keep the pattern across StructConstruct statement, except for the cases above.
                 return;
             }
 
@@ -158,7 +168,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        _statement_location: StatementLocation,
+        (block_id, _statement_idx): StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
@@ -174,6 +184,13 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             }
 
             if let Some(remapped_return) = remapping.get(&user_return.var_id) {
+                // In case user_return is remapped we can move the return earlier and avoid the
+                // remapping.
+                let mut return_vars = returned_vars.to_vec();
+                return_vars.pop();
+                return_vars.push(*remapped_return);
+                self.fixes.push(FixInfo { block_id, return_vars });
+
                 *info = Pattern::Return { user_return: *remapped_return, returned_vars };
             }
         } else if let Pattern::StructConstruct { input_vars, variant, returned_vars } = info {

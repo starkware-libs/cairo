@@ -69,7 +69,7 @@ blk1:
 Statements:
   (v2: core::felt252) <- 1u
 End:
-  Goto(blk9, {v2 -> v14})
+  Return(v2)
 
 blk2:
 Statements:
@@ -85,7 +85,7 @@ blk3:
 Statements:
   (v6: core::felt252) <- 2u
 End:
-  Goto(blk8, {v6 -> v13})
+  Return(v6)
 
 blk4:
 Statements:
@@ -101,28 +101,13 @@ blk5:
 Statements:
   (v10: core::felt252) <- 3u
 End:
-  Goto(blk7, {v10 -> v12})
+  Return(v10)
 
 blk6:
 Statements:
   (v11: core::felt252) <- 4u
 End:
-  Goto(blk7, {v11 -> v12})
-
-blk7:
-Statements:
-End:
-  Goto(blk8, {v12 -> v13})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {v13 -> v14})
-
-blk9:
-Statements:
-End:
-  Return(v14)
+  Return(v11)
 
 //! > ==========================================================================
 
@@ -165,17 +150,12 @@ Statements:
   (v3: core::felt252) <- 1u
   (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {v6 -> v5})
+  Return(v6)
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -213,19 +193,14 @@ blk1:
 Statements:
   (v3: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v2)
 End:
-  Goto(blk3, {v8 -> v10, v3 -> v6})
+  Return(v8, v3)
 
 blk2:
 Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v4)
 End:
-  Goto(blk3, {v9 -> v10, v5 -> v6})
-
-blk3:
-Statements:
-End:
-  Return(v10, v6)
+  Return(v9, v5)
 
 //! > ==========================================================================
 
@@ -464,7 +439,7 @@ blk1:
 Statements:
   (v0: core::felt252) <- 2u
 End:
-  Goto(blk5, {v0 -> v2})
+  Return(v0)
 
 blk2:
 Statements:
@@ -480,12 +455,7 @@ blk4:
 Statements:
   (v1: core::felt252) <- 3u
 End:
-  Goto(blk5, {v1 -> v2})
-
-blk5:
-Statements:
-End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -545,13 +515,13 @@ blk1:
 Statements:
   (v5: core::felt252) <- 1u
 End:
-  Goto(blk6, {v5 -> v8})
+  Return(v5)
 
 blk2:
 Statements:
   (v6: core::felt252) <- 2u
 End:
-  Goto(blk6, {v6 -> v8})
+  Return(v6)
 
 blk3:
 Statements:
@@ -567,12 +537,7 @@ blk5:
 Statements:
   (v7: core::felt252) <- 3u
 End:
-  Goto(blk6, {v7 -> v8})
-
-blk6:
-Statements:
-End:
-  Return(v8)
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -618,18 +583,13 @@ blk1:
 Statements:
   (v0: core::felt252) <- 1u
 End:
-  Goto(blk3, {v0 -> v2})
+  Return(v0)
 
 blk2:
 Statements:
   (v1: core::felt252) <- 2u
 End:
-  Goto(blk3, {v1 -> v2})
-
-blk3:
-Statements:
-End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -673,18 +633,13 @@ blk1:
 Statements:
   (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v5})
+  Return(v3)
 
 blk2:
 Statements:
   (v4: core::felt252) <- 2u
 End:
-  Goto(blk3, {v4 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -828,15 +783,10 @@ blk1:
 Statements:
   (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v5})
+  Return(v3)
 
 blk2:
 Statements:
   (v4: core::felt252) <- 2u
 End:
-  Goto(blk3, {v4 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v4)
