@@ -1621,6 +1621,27 @@ fn lower_expr_match(
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder);
     }
+    if let Some(convert_function) =
+        corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty)
+    {
+        let match_input = lowered_expr.as_var_usage(ctx, builder)?;
+        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        let call_result = generators::Call {
+            function: convert_function.lowered(ctx.db),
+            inputs: vec![match_input],
+            extra_ret_tys: vec![],
+            ret_tys: vec![ret_ty],
+            location,
+        }
+        .add(ctx, &mut builder.statements);
+
+        return lower_expr_match_felt252(
+            ctx,
+            expr,
+            call_result.returns.into_iter().next().unwrap(),
+            builder,
+        );
+    }
 
     // TODO(spapini): Use diagnostics.
     // TODO(spapini): Handle more than just enums.
@@ -1961,9 +1982,20 @@ fn lower_expr_felt252_arm(
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
-        let lowered_arm_val =
-            lower_expr_literal(ctx, &literal.clone(), builder)?.as_var_usage(ctx, builder)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
+        // felt252.
+        let lowered_arm_val = lower_expr_literal(
+            ctx,
+            &semantic::ExprLiteral {
+                stable_ptr: literal.stable_ptr,
+                value: literal.value.clone(),
+                ty: ret_ty,
+            },
+            builder,
+        )?
+        .as_var_usage(ctx, builder)?;
+
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_arm_val, match_input],
@@ -2039,6 +2071,7 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
+
     let mut max = 0.into();
     let mut literals_set = UnorderedHashSet::new();
     let mut otherwise_exist = false;

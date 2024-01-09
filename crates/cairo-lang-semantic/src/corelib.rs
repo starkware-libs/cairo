@@ -628,6 +628,36 @@ pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> Str
     }
 }
 
+/// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
+pub fn get_convert_to_felt252_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<FunctionId> {
+    if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u8_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u16_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u32_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u64_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u128_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i8_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i16_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i32_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i64_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i128_to_felt252".into(), vec![]))
+    } else {
+        None
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LiteralError {
     InvalidTypeForLiteral(TypeId),
