@@ -133,7 +133,7 @@ define_libfunc_hierarchy! {
 pub struct EnumInitConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
-    pub num_variants: usize,
+    pub n_variants: usize,
     /// The index of the relevant variant from the enum.
     pub index: usize,
 }
@@ -161,9 +161,9 @@ impl EnumInitLibfunc {
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
         let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
-        let num_variants = variant_types.len();
-        if index.is_negative() || index >= num_variants.to_bigint().unwrap() {
-            return Err(SpecializationError::IndexOutOfRange { index, range_size: num_variants });
+        let n_variants = variant_types.len();
+        if index.is_negative() || index >= n_variants.to_bigint().unwrap() {
+            return Err(SpecializationError::IndexOutOfRange { index, range_size: n_variants });
         }
         let index: usize = index.try_into().unwrap();
         let variant_type = variant_types[index].clone();
@@ -181,7 +181,7 @@ impl EnumInitLibfunc {
                 }],
                 SierraApChange::Known { new_vars_only: true },
             ),
-            num_variants,
+            n_variants,
             index,
         })
     }
@@ -210,7 +210,7 @@ impl NamedLibfunc for EnumInitLibfunc {
 pub struct EnumFromBoundedIntConcreteLibfunc {
     pub signature: LibfuncSignature,
     /// The number of variants of the enum.
-    pub num_variants: usize,
+    pub n_variants: usize,
 }
 impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
@@ -233,8 +233,8 @@ impl EnumFromBoundedIntLibfunc {
     ) -> Result<EnumFromBoundedIntConcreteLibfunc, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
         let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
-        let num_variants = variant_types.len();
-        if num_variants == 0 {
+        let n_variants = variant_types.len();
+        if n_variants == 0 {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
@@ -247,12 +247,12 @@ impl EnumFromBoundedIntLibfunc {
         }
         let bounded_int_ty = context.get_concrete_type(
             BoundedIntType::id(),
-            &[GenericArg::Value(0.into()), GenericArg::Value((num_variants - 1).into())],
+            &[GenericArg::Value(0.into()), GenericArg::Value((n_variants - 1).into())],
         )?;
-        if num_variants <= 2 {
+        if n_variants <= 2 {
             Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: reinterpret_cast_signature(bounded_int_ty, enum_type),
-                num_variants,
+                n_variants,
             })
         } else {
             Ok(EnumFromBoundedIntConcreteLibfunc {
@@ -264,7 +264,7 @@ impl EnumFromBoundedIntLibfunc {
                     }],
                     SierraApChange::Known { new_vars_only: false },
                 ),
-                num_variants,
+                n_variants,
             })
         }
     }

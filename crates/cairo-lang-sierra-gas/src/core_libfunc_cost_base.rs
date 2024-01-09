@@ -320,7 +320,7 @@ pub fn core_libfunc_cost(
         }
         Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ConstCost::default().into()],
-            EnumConcreteLibfunc::FromBoundedInt(libfunc) => match libfunc.num_variants {
+            EnumConcreteLibfunc::FromBoundedInt(libfunc) => match libfunc.n_variants {
                 1 | 2 => vec![ConstCost::default().into()],
                 _ => vec![ConstCost::steps(1).into()],
             },

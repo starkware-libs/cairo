@@ -24,11 +24,11 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
-            build_enum_init(builder, *index, *num_variants)
+        EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, n_variants, .. }) => {
+            build_enum_init(builder, *index, *n_variants)
         }
         EnumConcreteLibfunc::FromBoundedInt(libfunc) => {
-            build_enum_from_bounded_int(builder, libfunc.num_variants)
+            build_enum_from_bounded_int(builder, libfunc.n_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -57,11 +57,11 @@ pub fn build(
 fn build_enum_init(
     builder: CompiledInvocationBuilder<'_>,
     index: usize,
-    num_variants: usize,
+    n_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expression] = builder.try_get_refs()?;
     let init_arg_cells = &expression.cells;
-    let variant_selector = if num_variants <= 2 {
+    let variant_selector = if n_variants <= 2 {
         // For num_branches <= 2, we use the index as the variant_selector as the `match`
         // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
         // 1.
@@ -78,7 +78,7 @@ fn build_enum_init(
         // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
         //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
         //   which makes them of size 2.
-        match (num_variants - index).checked_mul(2) {
+        match (n_variants - index).checked_mul(2) {
             Some(double) => double - 1,
             None => {
                 return Err(InvocationError::IntegerOverflow);
@@ -116,9 +116,9 @@ fn build_enum_init(
 
 fn build_enum_from_bounded_int(
     builder: CompiledInvocationBuilder<'_>,
-    num_variants: usize,
+    n_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
-    if num_variants <= 2 {
+    if n_variants <= 2 {
         return misc::build_identity(builder);
     }
 
@@ -135,7 +135,7 @@ fn build_enum_from_bounded_int(
     // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
     // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
 
-    let m = (Felt252::from(num_variants * 2 - 1) / Felt252::from(2)).to_bigint();
+    let m = (Felt252::from(n_variants * 2 - 1) / Felt252::from(2)).to_bigint();
     casm_build_extend! {casm_builder,
         const m = m;
         const negative_two = -2;
