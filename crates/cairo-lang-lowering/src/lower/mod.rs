@@ -1217,9 +1217,33 @@ fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, expr.matched_expr)?;
 
-    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt252_ty() {
+    let matched_expr = ctx.function_body.exprs[expr.matched_expr].clone();
+    let ty = matched_expr.ty();
+
+    if ty == ctx.db.core_felt252_ty() {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder);
+    }
+    if let Some(convert_function) =
+        corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty)
+    {
+        let match_input = lowered_expr.as_var_usage(ctx, builder)?;
+        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        let call_result = generators::Call {
+            function: convert_function.lowered(ctx.db),
+            inputs: vec![match_input],
+            extra_ret_tys: vec![],
+            ret_tys: vec![ret_ty],
+            location,
+        }
+        .add(ctx, &mut builder.statements);
+
+        return lower_expr_match_felt252(
+            ctx,
+            expr,
+            call_result.returns.into_iter().next().unwrap(),
+            builder,
+        );
     }
 
     // TODO(spapini): Use diagnostics.
@@ -1561,9 +1585,18 @@ fn lower_expr_felt252_arm(
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
-        let lowered_arm_val =
-            lower_expr_literal(ctx, &literal.clone(), builder)?.as_var_usage(ctx, builder)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        let lowered_arm_val = lower_expr_literal(
+            ctx,
+            &semantic::ExprLiteral {
+                stable_ptr: literal.stable_ptr,
+                value: literal.value.clone(),
+                ty: ret_ty,
+            },
+            builder,
+        )?
+        .as_var_usage(ctx, builder)?;
+
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_arm_val, match_input],
@@ -1639,6 +1672,7 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
+
     let mut max = 0.into();
     let mut literals_set = UnorderedHashSet::default();
     let mut otherwise_exist = false;

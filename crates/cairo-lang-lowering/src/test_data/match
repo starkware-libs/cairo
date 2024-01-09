@@ -283,16 +283,19 @@ Parameters:
 
 //! > ==========================================================================
 
-//! > Test unsupported match non felt252 value.
+//! > Test supported match non felt252 value.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
-fn foo() {
-    match 5_u32 {
-        0 => 7,
-        _ => 8,
+fn foo(){
+    match 5 {
+        0_u8 => 7,
+        1_u8 | 2_u8 => 8,
+
+        
+        _ => 9,
     };
 }
 
@@ -304,13 +307,102 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported matched value. Currently, only matches on enums and felt252s are supported.
- --> lib.cairo:2:11
-    match 5_u32 {
-          ^***^
 
 //! > lowering_flat
 Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 5u
+  (v1: core::felt252) <- core::integer::u8_to_felt252(v0)
+End:
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 1u
+  (v14: core::felt252) <- core::felt252_sub(v3, v1)
+End:
+  Match(match core::felt252_is_zero(v14) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v5) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+  (v6: core::felt252) <- 2u
+  (v15: core::felt252) <- core::felt252_sub(v6, v1)
+End:
+  Match(match core::felt252_is_zero(v15) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v8) => blk7,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+  (v13: ()) <- struct_construct()
+End:
+  Return(v13)
+
+//! > ==========================================================================
+
+//! > Test unsupported match non felt252 value.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(){
+    match 5 {
+        0_u8 => 7,
+        1_felt252 | 2_u8 => 8,
+
+        
+        _ => 9,
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u8`
+ --> lib.cairo:4:9
+        1_felt252 | 2_u8 => 8,
+        ^*******^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
 
 //! > ==========================================================================
 
