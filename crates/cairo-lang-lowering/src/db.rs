@@ -373,6 +373,9 @@ fn concrete_function_with_body_postpanic_lowered(
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     return_optimization(db, &mut lowered);
+
+    // optimize_remappings(&mut lowered);
+    // reorganize_blocks(&mut lowered);
     add_destructs(db, function, &mut lowered);
     Ok(Arc::new(lowered))
 }

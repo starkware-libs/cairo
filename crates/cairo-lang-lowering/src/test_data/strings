@@ -204,4 +204,21 @@ Statements:
   (v11: core::byte_array::ByteArray, v12: @core::byte_array::ByteArray) <- snapshot(v7)
   (v25: core::RangeCheck, v26: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- core::byte_array::ByteArrayImpl::concat(v21, v22, v10, v12)
 End:
-  Return(v25, v26, v16)
+  Match(match_enum(v16) {
+    PanicResult::Ok(v17) => blk1,
+    PanicResult::Err(v19) => blk2,
+  })
+
+blk1:
+Statements:
+  (v18: core::byte_array::ByteArray) <- struct_destructure(v17)
+  (v14: (core::byte_array::ByteArray,)) <- struct_construct(v18)
+  (v15: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v25, v26, v15)
+
+blk2:
+Statements:
+  (v20: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v19)
+End:
+  Return(v25, v26, v20)

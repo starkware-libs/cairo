@@ -368,15 +368,15 @@ return([6], [7], [2], [57]); // 219
 u32_try_from_felt252([0], [1]) { fallthrough([2], [3]) 226([4]) }; // 220
 branch_align() -> (); // 221
 enum_init<core::option::Option::<core::integer::u32>, 0>([3]) -> ([5]); // 222
-store_temp<RangeCheck>([2]) -> ([6]); // 223
-store_temp<core::option::Option::<core::integer::u32>>([5]) -> ([7]); // 224
-jump() { 231() }; // 225
+store_temp<RangeCheck>([2]) -> ([2]); // 223
+store_temp<core::option::Option::<core::integer::u32>>([5]) -> ([5]); // 224
+return([2], [5]); // 225
 branch_align() -> (); // 226
-struct_construct<Unit>() -> ([8]); // 227
-enum_init<core::option::Option::<core::integer::u32>, 1>([8]) -> ([9]); // 228
-store_temp<RangeCheck>([4]) -> ([6]); // 229
-store_temp<core::option::Option::<core::integer::u32>>([9]) -> ([7]); // 230
-return([6], [7]); // 231
+struct_construct<Unit>() -> ([6]); // 227
+enum_init<core::option::Option::<core::integer::u32>, 1>([6]) -> ([7]); // 228
+store_temp<RangeCheck>([4]) -> ([4]); // 229
+store_temp<core::option::Option::<core::integer::u32>>([7]) -> ([7]); // 230
+return([4], [7]); // 231
 struct_deconstruct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([3]) -> ([5]); // 232
 snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([5]) -> ([6], [7]); // 233
 store_temp<RangeCheck>([0]) -> ([0]); // 234
