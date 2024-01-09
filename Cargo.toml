@@ -5,6 +5,23 @@ overflow-checks = true     # Enable integer overflow checks.
 inherits = "release"
 debug = true
 
+# The profile used for CI in pull requests.
+# External dependencies are built with optimization enabled, while crates in this workspace are built
+# with `dev` profile and full debug info. This is a trade-off between build time and e2e test time.
+[profile.ci-dev]
+inherits = "dev"
+incremental = false
+[profile.ci-dev.package."*"] # external dependencies
+opt-level = 1
+[profile.ci-dev.package."tokio"]
+opt-level = 3
+[profile.ci-dev.package."bimap"]
+opt-level = 3
+[profile.ci-dev.package."cairo-felt"]
+opt-level = 3
+[profile.ci-dev.package."salsa"]
+opt-level = 3
+
 [workspace]
 resolver = "2"
 members = [
