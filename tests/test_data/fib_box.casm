@@ -1,7 +1,7 @@
 [ap + 0] = [[fp + -3] + 0], ap++;
-jmp rel 5 if [ap + -1] != 0;
+jmp rel 4 if [ap + -1] != 0;
 [ap + 0] = [fp + -5], ap++;
-jmp rel 14;
+ret;
 [ap + 0] = [[fp + -5] + 0], ap++;
 [ap + 0] = [[fp + -4] + 0], ap++;
 [ap + 0] = [ap + -2] + [ap + -1], ap++;
@@ -23,5 +23,5 @@ __boxed_segment += 1
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -3], ap++;
-call rel -16;
+call rel -15;
 ret;

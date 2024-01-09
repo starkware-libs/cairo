@@ -203,14 +203,14 @@ blk1:
 Statements:
   (v3: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v3 -> v6})
+  Return(v3)
 
 blk2:
 Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<core::integer::u16>) <- Option::None(v4)
 End:
-  Goto(blk3, {v5 -> v6})
+  Return(v5)
 
 blk3:
 Statements:
