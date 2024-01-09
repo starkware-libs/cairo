@@ -45,7 +45,6 @@ struct SccAlgoContext<Node: GraphNode> {
     /// The SCC of the `target_node_id`. Populated only at the end of the algorithm.
     result: Vec<Node::NodeId>,
 }
-
 impl<Node: GraphNode> SccAlgoContext<Node> {
     fn new(target_node_id: Node::NodeId) -> Self {
         SccAlgoContext::<Node> {

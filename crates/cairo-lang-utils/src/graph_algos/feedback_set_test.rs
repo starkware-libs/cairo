@@ -41,8 +41,7 @@ fn test_list() {
     let mut graph: Vec<Vec<usize>> = (0..10).map(|id| vec![id + 1]).collect();
     graph.push(vec![]);
 
-    let fset =
-        HashSet::<usize>::from_iter(calc_feedback_set::<_>(&IntegerNode { id: 0, graph }.into()));
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: 0, graph }.into()));
     assert!(fset.is_empty());
 }
 
@@ -51,8 +50,7 @@ fn test_cycle() {
     // Each node has only one neighbor. i -> i + 1 for i = 0...8, and 9 -> 0.
     let graph: Vec<Vec<usize>> = (0..10).map(|id| vec![(id + 1) % 10]).collect();
 
-    let fset =
-        HashSet::<usize>::from_iter(calc_feedback_set::<_>(&IntegerNode { id: 0, graph }.into()));
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: 0, graph }.into()));
     assert_eq!(fset, HashSet::from([0]));
 }
 
@@ -64,8 +62,7 @@ fn test_root_points_to_cycle() {
     graph.push(/* 10: */ vec![0]);
 
     // Note 10 is used as a root.
-    let fset =
-        HashSet::<usize>::from_iter(calc_feedback_set::<_>(&IntegerNode { id: 0, graph }.into()));
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: 0, graph }.into()));
     assert_eq!(fset, HashSet::from([0]));
 }
 
@@ -80,8 +77,7 @@ fn test_connected_cycles() {
     graph[4].push(5);
 
     // Make sure the cycle that's not in the SCC of the root is not covered.
-    let fset =
-        HashSet::<usize>::from_iter(calc_feedback_set::<_>(&IntegerNode { id: 0, graph }.into()));
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: 0, graph }.into()));
     assert_eq!(fset, HashSet::from([0]));
 }
 
@@ -90,8 +86,7 @@ fn test_mesh() {
     // Each node has edges to all other nodes.
     let graph = (0..5).map(|i| (0..5).filter(|j| *j != i).collect::<Vec<usize>>()).collect();
 
-    let fset =
-        HashSet::<usize>::from_iter(calc_feedback_set::<_>(&IntegerNode { id: 0, graph }.into()));
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: 0, graph }.into()));
     assert_eq!(fset, HashSet::from_iter(0..4));
 }
 
@@ -110,9 +105,8 @@ fn test_tangent_cycles(root: usize, expected_fset: HashSet<usize>) {
     )
     .collect();
 
-    let fset = HashSet::<usize>::from_iter(calc_feedback_set::<_>(
-        &IntegerNode { id: root, graph }.into(),
-    ));
+    let fset =
+        HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: root, graph }.into()));
     assert_eq!(fset, expected_fset);
 }
 
@@ -134,8 +128,7 @@ fn test_multiple_cycles(root: usize, expected_fset: HashSet<usize>) {
     )
     .collect();
 
-    let fset = HashSet::<usize>::from_iter(calc_feedback_set::<_>(
-        &IntegerNode { id: root, graph }.into(),
-    ));
+    let fset =
+        HashSet::<usize>::from_iter(calc_feedback_set(&IntegerNode { id: root, graph }.into()));
     assert_eq!(fset, expected_fset);
 }
