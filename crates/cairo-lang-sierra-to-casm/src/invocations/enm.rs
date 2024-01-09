@@ -128,11 +128,12 @@ fn build_enum_from_bounded_int(
         deref value;
     };
 
+    // Given `n` as the number of variants, and `k` the index of the variant (`0 <= k < n`):
     // The variant selector for enums with 3 or more variants is the relative jump to the variant
     // handle which is `2 * (n - k) - 1`.
-    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2*(2*n - 1) / 2 - 2*k = 2*((2*n - 1) / 2 - k)`
-    // Let us define `(2*n - 1) / 2` as m - which can be known in compilation time.
-    // We can find the variant by `2 * (m - k)` or `-2 * (k - m)`
+    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2*((2*n - 1) / 2 - k)`
+    // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
+    // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
 
     let m = (Felt252::from(num_variants * 2 - 1) / Felt252::from(2)).to_bigint();
     casm_build_extend! {casm_builder,
