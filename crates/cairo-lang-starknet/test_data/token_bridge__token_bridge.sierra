@@ -337,8 +337,6 @@ libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc snapshot_take<u128> = snapshot_take<u128>;
 libfunc rename<u128> = rename<u128>;
 libfunc u128_eq = u128_eq;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 libfunc get_execution_info_v2_syscall = get_execution_info_v2_syscall;
 libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>;
@@ -2023,22 +2021,22 @@ u128_const<4294967296>() -> ([6]); // 1645
 struct_construct<core::integer::u256>([5], [6]) -> ([7]); // 1646
 store_temp<core::integer::u256>([7]) -> ([7]); // 1647
 function_call<user@core::integer::U256PartialOrd::lt>([3], [4], [7]) -> ([8], [9]); // 1648
-enum_match<core::bool>([9]) { fallthrough([10]) 1657([11]) }; // 1649
+enum_match<core::bool>([9]) { fallthrough([10]) 1658([11]) }; // 1649
 branch_align() -> (); // 1650
 drop<Unit>([10]) -> (); // 1651
 drop<felt252>([1]) -> (); // 1652
 struct_construct<Unit>() -> ([12]); // 1653
 enum_init<core::option::Option::<core::starknet::eth_address::EthAddress>, 1>([12]) -> ([13]); // 1654
-store_temp<core::option::Option::<core::starknet::eth_address::EthAddress>>([13]) -> ([14]); // 1655
-jump() { 1662() }; // 1656
-branch_align() -> (); // 1657
-drop<Unit>([11]) -> (); // 1658
-struct_construct<core::starknet::eth_address::EthAddress>([1]) -> ([15]); // 1659
-enum_init<core::option::Option::<core::starknet::eth_address::EthAddress>, 0>([15]) -> ([16]); // 1660
-store_temp<core::option::Option::<core::starknet::eth_address::EthAddress>>([16]) -> ([14]); // 1661
+store_temp<RangeCheck>([8]) -> ([8]); // 1655
+store_temp<core::option::Option::<core::starknet::eth_address::EthAddress>>([13]) -> ([13]); // 1656
+return([8], [13]); // 1657
+branch_align() -> (); // 1658
+drop<Unit>([11]) -> (); // 1659
+struct_construct<core::starknet::eth_address::EthAddress>([1]) -> ([14]); // 1660
+enum_init<core::option::Option::<core::starknet::eth_address::EthAddress>, 0>([14]) -> ([15]); // 1661
 store_temp<RangeCheck>([8]) -> ([8]); // 1662
-store_temp<core::option::Option::<core::starknet::eth_address::EthAddress>>([14]) -> ([14]); // 1663
-return([8], [14]); // 1664
+store_temp<core::option::Option::<core::starknet::eth_address::EthAddress>>([15]) -> ([15]); // 1663
+return([8], [15]); // 1664
 store_temp<GasBuiltin>([0]) -> ([0]); // 1665
 store_temp<System>([1]) -> ([1]); // 1666
 function_call<user@core::starknet::info::get_execution_info>([0], [1]) -> ([2], [3], [4]); // 1667
@@ -2359,17 +2357,17 @@ return([25], [26], [35]); // 1981
 u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 1988([4], [5], [6]) }; // 1982
 branch_align() -> (); // 1983
 enum_init<core::option::Option::<core::integer::u128>, 0>([3]) -> ([7]); // 1984
-store_temp<RangeCheck>([2]) -> ([8]); // 1985
-store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([9]); // 1986
-jump() { 1995() }; // 1987
+store_temp<RangeCheck>([2]) -> ([2]); // 1985
+store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 1986
+return([2], [7]); // 1987
 branch_align() -> (); // 1988
 drop<u128>([5]) -> (); // 1989
 drop<u128>([6]) -> (); // 1990
-struct_construct<Unit>() -> ([10]); // 1991
-enum_init<core::option::Option::<core::integer::u128>, 1>([10]) -> ([11]); // 1992
-store_temp<RangeCheck>([4]) -> ([8]); // 1993
-store_temp<core::option::Option::<core::integer::u128>>([11]) -> ([9]); // 1994
-return([8], [9]); // 1995
+struct_construct<Unit>() -> ([8]); // 1991
+enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 1992
+store_temp<RangeCheck>([4]) -> ([4]); // 1993
+store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 1994
+return([4], [9]); // 1995
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([3]) -> ([4], [5], [6]); // 1996
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([4]) -> (); // 1997
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([5]) -> (); // 1998
@@ -2740,19 +2738,19 @@ u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 2369([4], [5], [6]) }; // 2
 branch_align() -> (); // 2363
 u128_const<0>() -> ([7]); // 2364
 struct_construct<core::integer::u256>([3], [7]) -> ([8]); // 2365
-store_temp<RangeCheck>([2]) -> ([9]); // 2366
-store_temp<core::integer::u256>([8]) -> ([10]); // 2367
-jump() { 2373() }; // 2368
+store_temp<RangeCheck>([2]) -> ([2]); // 2366
+store_temp<core::integer::u256>([8]) -> ([8]); // 2367
+return([2], [8]); // 2368
 branch_align() -> (); // 2369
-struct_construct<core::integer::u256>([6], [5]) -> ([11]); // 2370
-store_temp<RangeCheck>([4]) -> ([9]); // 2371
-store_temp<core::integer::u256>([11]) -> ([10]); // 2372
-return([9], [10]); // 2373
+struct_construct<core::integer::u256>([6], [5]) -> ([9]); // 2370
+store_temp<RangeCheck>([4]) -> ([4]); // 2371
+store_temp<core::integer::u256>([9]) -> ([9]); // 2372
+return([4], [9]); // 2373
 struct_deconstruct<core::integer::u256>([1]) -> ([3], [4]); // 2374
 struct_deconstruct<core::integer::u256>([2]) -> ([5], [6]); // 2375
 dup<u128>([4]) -> ([4], [7]); // 2376
 dup<u128>([6]) -> ([6], [8]); // 2377
-u128_overflowing_sub([0], [7], [8]) { fallthrough([9], [10]) 2417([11], [12]) }; // 2378
+u128_overflowing_sub([0], [7], [8]) { fallthrough([9], [10]) 2413([11], [12]) }; // 2378
 branch_align() -> (); // 2379
 drop<u128>([10]) -> (); // 2380
 snapshot_take<u128>([4]) -> ([13], [14]); // 2381
@@ -2768,271 +2766,267 @@ drop<u128>([5]) -> (); // 2390
 drop<u128>([3]) -> (); // 2391
 struct_construct<Unit>() -> ([19]); // 2392
 enum_init<core::bool, 0>([19]) -> ([20]); // 2393
-store_temp<RangeCheck>([9]) -> ([21]); // 2394
-store_temp<core::bool>([20]) -> ([22]); // 2395
-jump() { 2414() }; // 2396
+store_temp<RangeCheck>([9]) -> ([9]); // 2394
+store_temp<core::bool>([20]) -> ([20]); // 2395
+return([9], [20]); // 2396
 branch_align() -> (); // 2397
-u128_overflowing_sub([9], [3], [5]) { fallthrough([23], [24]) 2406([25], [26]) }; // 2398
+u128_overflowing_sub([9], [3], [5]) { fallthrough([21], [22]) 2406([23], [24]) }; // 2398
 branch_align() -> (); // 2399
-drop<u128>([24]) -> (); // 2400
-struct_construct<Unit>() -> ([27]); // 2401
-enum_init<core::bool, 0>([27]) -> ([28]); // 2402
-store_temp<RangeCheck>([23]) -> ([29]); // 2403
-store_temp<core::bool>([28]) -> ([30]); // 2404
-jump() { 2412() }; // 2405
+drop<u128>([22]) -> (); // 2400
+struct_construct<Unit>() -> ([25]); // 2401
+enum_init<core::bool, 0>([25]) -> ([26]); // 2402
+store_temp<RangeCheck>([21]) -> ([21]); // 2403
+store_temp<core::bool>([26]) -> ([26]); // 2404
+return([21], [26]); // 2405
 branch_align() -> (); // 2406
-drop<u128>([26]) -> (); // 2407
-struct_construct<Unit>() -> ([31]); // 2408
-enum_init<core::bool, 1>([31]) -> ([32]); // 2409
-store_temp<RangeCheck>([25]) -> ([29]); // 2410
-store_temp<core::bool>([32]) -> ([30]); // 2411
-rename<RangeCheck>([29]) -> ([21]); // 2412
-rename<core::bool>([30]) -> ([22]); // 2413
-rename<RangeCheck>([21]) -> ([33]); // 2414
-rename<core::bool>([22]) -> ([34]); // 2415
-jump() { 2427() }; // 2416
-branch_align() -> (); // 2417
-drop<u128>([12]) -> (); // 2418
-drop<u128>([4]) -> (); // 2419
-drop<u128>([5]) -> (); // 2420
-drop<u128>([3]) -> (); // 2421
-drop<u128>([6]) -> (); // 2422
-struct_construct<Unit>() -> ([35]); // 2423
-enum_init<core::bool, 1>([35]) -> ([36]); // 2424
-store_temp<RangeCheck>([11]) -> ([33]); // 2425
-store_temp<core::bool>([36]) -> ([34]); // 2426
-return([33], [34]); // 2427
-get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 2435([5], [6], [7]) }; // 2428
-branch_align() -> (); // 2429
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 2430
-store_temp<GasBuiltin>([2]) -> ([9]); // 2431
-store_temp<System>([3]) -> ([10]); // 2432
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 2433
-jump() { 2440() }; // 2434
-branch_align() -> (); // 2435
-enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 2436
-store_temp<GasBuiltin>([5]) -> ([9]); // 2437
-store_temp<System>([6]) -> ([10]); // 2438
-store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 2439
-function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 2440
-store_temp<GasBuiltin>([9]) -> ([9]); // 2441
-store_temp<System>([10]) -> ([10]); // 2442
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([13]) -> ([13]); // 2443
-return([9], [10], [13]); // 2444
-contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 2451([4]) }; // 2445
-branch_align() -> (); // 2446
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 2447
-store_temp<RangeCheck>([2]) -> ([6]); // 2448
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([7]); // 2449
-jump() { 2456() }; // 2450
-branch_align() -> (); // 2451
-struct_construct<Unit>() -> ([8]); // 2452
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([8]) -> ([9]); // 2453
-store_temp<RangeCheck>([4]) -> ([6]); // 2454
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([7]); // 2455
-return([6], [7]); // 2456
-enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2463([2]) }; // 2457
-branch_align() -> (); // 2458
-struct_construct<Tuple<ContractAddress>>([1]) -> ([3]); // 2459
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([3]) -> ([4]); // 2460
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([4]) -> ([4]); // 2461
-return([4]); // 2462
-branch_align() -> (); // 2463
-struct_construct<core::panics::Panic>() -> ([5]); // 2464
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2465
-enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([7]); // 2466
-store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) -> ([7]); // 2467
-return([7]); // 2468
-enum_match<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2475([2]) }; // 2469
-branch_align() -> (); // 2470
-struct_construct<Tuple<felt252>>([1]) -> ([3]); // 2471
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4]); // 2472
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([4]) -> ([4]); // 2473
-return([4]); // 2474
-branch_align() -> (); // 2475
-struct_construct<core::panics::Panic>() -> ([5]); // 2476
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2477
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([6]) -> ([7]); // 2478
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([7]) -> ([7]); // 2479
-return([7]); // 2480
-enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 0>([0]) -> ([1]); // 2481
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2482
-return([1]); // 2483
-enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([0]) { fallthrough([3]) 2497([4]) 2509([5]) 2521([6]) }; // 2484
-branch_align() -> (); // 2485
-felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975>() -> ([7]); // 2486
-store_temp<felt252>([7]) -> ([7]); // 2487
-array_append<felt252>([1], [7]) -> ([8]); // 2488
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([3]) -> ([3]); // 2489
-store_temp<Array<felt252>>([8]) -> ([8]); // 2490
-store_temp<Array<felt252>>([2]) -> ([2]); // 2491
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>([3], [8], [2]) -> ([9], [10], [11]); // 2492
-drop<Unit>([11]) -> (); // 2493
-rename<Array<felt252>>([9]) -> ([12]); // 2494
-rename<Array<felt252>>([10]) -> ([13]); // 2495
-jump() { 2532() }; // 2496
-branch_align() -> (); // 2497
-felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>() -> ([14]); // 2498
-store_temp<felt252>([14]) -> ([14]); // 2499
-array_append<felt252>([1], [14]) -> ([15]); // 2500
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([4]) -> ([4]); // 2501
-store_temp<Array<felt252>>([15]) -> ([15]); // 2502
-store_temp<Array<felt252>>([2]) -> ([2]); // 2503
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data>([4], [15], [2]) -> ([16], [17], [18]); // 2504
-drop<Unit>([18]) -> (); // 2505
-rename<Array<felt252>>([16]) -> ([12]); // 2506
-rename<Array<felt252>>([17]) -> ([13]); // 2507
-jump() { 2532() }; // 2508
-branch_align() -> (); // 2509
-felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>() -> ([19]); // 2510
-store_temp<felt252>([19]) -> ([19]); // 2511
-array_append<felt252>([1], [19]) -> ([20]); // 2512
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([5]) -> ([5]); // 2513
-store_temp<Array<felt252>>([20]) -> ([20]); // 2514
-store_temp<Array<felt252>>([2]) -> ([2]); // 2515
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>([5], [20], [2]) -> ([21], [22], [23]); // 2516
-drop<Unit>([23]) -> (); // 2517
-rename<Array<felt252>>([21]) -> ([12]); // 2518
-rename<Array<felt252>>([22]) -> ([13]); // 2519
-jump() { 2532() }; // 2520
-branch_align() -> (); // 2521
-felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>() -> ([24]); // 2522
-store_temp<felt252>([24]) -> ([24]); // 2523
-array_append<felt252>([1], [24]) -> ([25]); // 2524
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([6]) -> ([6]); // 2525
-store_temp<Array<felt252>>([25]) -> ([25]); // 2526
-store_temp<Array<felt252>>([2]) -> ([2]); // 2527
-function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data>([6], [25], [2]) -> ([26], [27], [28]); // 2528
-drop<Unit>([28]) -> (); // 2529
-rename<Array<felt252>>([26]) -> ([12]); // 2530
-rename<Array<felt252>>([27]) -> ([13]); // 2531
-struct_construct<Unit>() -> ([29]); // 2532
-return([12], [13], [29]); // 2533
-enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 1>([0]) -> ([1]); // 2534
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2535
-return([1]); // 2536
-rename<ContractAddress>([0]) -> ([2]); // 2537
-contract_address_to_felt252([2]) -> ([3]); // 2538
-snapshot_take<felt252>([3]) -> ([4], [5]); // 2539
-drop<felt252>([4]) -> (); // 2540
-store_temp<felt252>([5]) -> ([5]); // 2541
-store_temp<Array<felt252>>([1]) -> ([1]); // 2542
-function_call<user@core::Felt252Serde::serialize>([5], [1]) -> ([6], [7]); // 2543
-drop<Unit>([7]) -> (); // 2544
-struct_construct<Unit>() -> ([8]); // 2545
-return([6], [8]); // 2546
-dup<core::integer::u256>([0]) -> ([0], [2]); // 2547
-struct_deconstruct<core::integer::u256>([2]) -> ([3], [4]); // 2548
-drop<u128>([4]) -> (); // 2549
-rename<u128>([3]) -> ([5]); // 2550
-u128_to_felt252([5]) -> ([6]); // 2551
-array_append<felt252>([1], [6]) -> ([7]); // 2552
-struct_deconstruct<core::integer::u256>([0]) -> ([8], [9]); // 2553
-drop<u128>([8]) -> (); // 2554
-rename<u128>([9]) -> ([10]); // 2555
-u128_to_felt252([10]) -> ([11]); // 2556
-array_append<felt252>([7], [11]) -> ([12]); // 2557
-struct_construct<Unit>() -> ([13]); // 2558
-store_temp<Array<felt252>>([12]) -> ([12]); // 2559
-return([12], [13]); // 2560
-enum_match<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2567([2]) }; // 2561
-branch_align() -> (); // 2562
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([1]) -> ([3]); // 2563
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([3]) -> ([4]); // 2564
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([4]) -> ([4]); // 2565
-return([4]); // 2566
-branch_align() -> (); // 2567
-struct_construct<core::panics::Panic>() -> ([5]); // 2568
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2569
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([6]) -> ([7]); // 2570
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([7]) -> ([7]); // 2571
-return([7]); // 2572
-enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 2>([0]) -> ([1]); // 2573
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2574
-return([1]); // 2575
-store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([0]) -> ([0]); // 2576
-return([0]); // 2577
-enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2584([2]) }; // 2578
-branch_align() -> (); // 2579
-struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([1]) -> ([3]); // 2580
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 2581
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) -> ([4]); // 2582
-return([4]); // 2583
-branch_align() -> (); // 2584
-struct_construct<core::panics::Panic>() -> ([5]); // 2585
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2586
-enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 2587
-store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([7]) -> ([7]); // 2588
-return([7]); // 2589
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([0]) -> ([3]); // 2590
-store_temp<core::starknet::eth_address::EthAddress>([3]) -> ([3]); // 2591
-store_temp<Array<felt252>>([2]) -> ([2]); // 2592
-function_call<user@core::starknet::eth_address::EthAddressSerde::serialize>([3], [2]) -> ([4], [5]); // 2593
-drop<Unit>([5]) -> (); // 2594
-struct_construct<Unit>() -> ([6]); // 2595
-store_temp<Array<felt252>>([1]) -> ([1]); // 2596
-store_temp<Array<felt252>>([4]) -> ([4]); // 2597
-return([1], [4], [6]); // 2598
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([0]) -> ([3]); // 2599
-store_temp<ContractAddress>([3]) -> ([3]); // 2600
-store_temp<Array<felt252>>([2]) -> ([2]); // 2601
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([3], [2]) -> ([4], [5]); // 2602
-drop<Unit>([5]) -> (); // 2603
-struct_construct<Unit>() -> ([6]); // 2604
-store_temp<Array<felt252>>([1]) -> ([1]); // 2605
-store_temp<Array<felt252>>([4]) -> ([4]); // 2606
-return([1], [4], [6]); // 2607
-dup<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([0], [3]); // 2608
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([3]) -> ([4], [5], [6]); // 2609
-drop<core::integer::u256>([5]) -> (); // 2610
-drop<ContractAddress>([6]) -> (); // 2611
-store_temp<core::starknet::eth_address::EthAddress>([4]) -> ([4]); // 2612
-store_temp<Array<felt252>>([2]) -> ([2]); // 2613
-function_call<user@core::starknet::eth_address::EthAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 2614
-drop<Unit>([8]) -> (); // 2615
-dup<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([0], [9]); // 2616
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([9]) -> ([10], [11], [12]); // 2617
-drop<core::starknet::eth_address::EthAddress>([10]) -> (); // 2618
-drop<ContractAddress>([12]) -> (); // 2619
-store_temp<core::integer::u256>([11]) -> ([11]); // 2620
-store_temp<Array<felt252>>([7]) -> ([7]); // 2621
-function_call<user@core::integer::u256Serde::serialize>([11], [7]) -> ([13], [14]); // 2622
-drop<Unit>([14]) -> (); // 2623
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([15], [16], [17]); // 2624
-drop<core::starknet::eth_address::EthAddress>([15]) -> (); // 2625
-drop<core::integer::u256>([16]) -> (); // 2626
-store_temp<ContractAddress>([17]) -> ([17]); // 2627
-store_temp<Array<felt252>>([13]) -> ([13]); // 2628
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([17], [13]) -> ([18], [19]); // 2629
-drop<Unit>([19]) -> (); // 2630
-struct_construct<Unit>() -> ([20]); // 2631
-store_temp<Array<felt252>>([1]) -> ([1]); // 2632
-store_temp<Array<felt252>>([18]) -> ([18]); // 2633
-return([1], [18], [20]); // 2634
-dup<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([0]) -> ([0], [3]); // 2635
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([3]) -> ([4], [5]); // 2636
-drop<core::integer::u256>([5]) -> (); // 2637
-store_temp<ContractAddress>([4]) -> ([4]); // 2638
-store_temp<Array<felt252>>([2]) -> ([2]); // 2639
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([6], [7]); // 2640
-drop<Unit>([7]) -> (); // 2641
-struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([0]) -> ([8], [9]); // 2642
-drop<ContractAddress>([8]) -> (); // 2643
-store_temp<core::integer::u256>([9]) -> ([9]); // 2644
-store_temp<Array<felt252>>([6]) -> ([6]); // 2645
-function_call<user@core::integer::u256Serde::serialize>([9], [6]) -> ([10], [11]); // 2646
-drop<Unit>([11]) -> (); // 2647
-struct_construct<Unit>() -> ([12]); // 2648
-store_temp<Array<felt252>>([1]) -> ([1]); // 2649
-store_temp<Array<felt252>>([10]) -> ([10]); // 2650
-return([1], [10], [12]); // 2651
-struct_deconstruct<core::starknet::eth_address::EthAddress>([0]) -> ([2]); // 2652
-store_temp<felt252>([2]) -> ([2]); // 2653
-store_temp<Array<felt252>>([1]) -> ([1]); // 2654
-function_call<user@core::Felt252Serde::serialize>([2], [1]) -> ([3], [4]); // 2655
-drop<Unit>([4]) -> (); // 2656
-struct_construct<Unit>() -> ([5]); // 2657
-return([3], [5]); // 2658
+drop<u128>([24]) -> (); // 2407
+struct_construct<Unit>() -> ([27]); // 2408
+enum_init<core::bool, 1>([27]) -> ([28]); // 2409
+store_temp<RangeCheck>([23]) -> ([23]); // 2410
+store_temp<core::bool>([28]) -> ([28]); // 2411
+return([23], [28]); // 2412
+branch_align() -> (); // 2413
+drop<u128>([12]) -> (); // 2414
+drop<u128>([4]) -> (); // 2415
+drop<u128>([5]) -> (); // 2416
+drop<u128>([3]) -> (); // 2417
+drop<u128>([6]) -> (); // 2418
+struct_construct<Unit>() -> ([29]); // 2419
+enum_init<core::bool, 1>([29]) -> ([30]); // 2420
+store_temp<RangeCheck>([11]) -> ([11]); // 2421
+store_temp<core::bool>([30]) -> ([30]); // 2422
+return([11], [30]); // 2423
+get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 2431([5], [6], [7]) }; // 2424
+branch_align() -> (); // 2425
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>([4]) -> ([8]); // 2426
+store_temp<GasBuiltin>([2]) -> ([9]); // 2427
+store_temp<System>([3]) -> ([10]); // 2428
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([8]) -> ([11]); // 2429
+jump() { 2436() }; // 2430
+branch_align() -> (); // 2431
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>([7]) -> ([12]); // 2432
+store_temp<GasBuiltin>([5]) -> ([9]); // 2433
+store_temp<System>([6]) -> ([10]); // 2434
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([12]) -> ([11]); // 2435
+function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall>([11]) -> ([13]); // 2436
+store_temp<GasBuiltin>([9]) -> ([9]); // 2437
+store_temp<System>([10]) -> ([10]); // 2438
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([13]) -> ([13]); // 2439
+return([9], [10], [13]); // 2440
+contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 2447([4]) }; // 2441
+branch_align() -> (); // 2442
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 2443
+store_temp<RangeCheck>([2]) -> ([2]); // 2444
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([5]); // 2445
+return([2], [5]); // 2446
+branch_align() -> (); // 2447
+struct_construct<Unit>() -> ([6]); // 2448
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([6]) -> ([7]); // 2449
+store_temp<RangeCheck>([4]) -> ([4]); // 2450
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([7]); // 2451
+return([4], [7]); // 2452
+enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2459([2]) }; // 2453
+branch_align() -> (); // 2454
+struct_construct<Tuple<ContractAddress>>([1]) -> ([3]); // 2455
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>([3]) -> ([4]); // 2456
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([4]) -> ([4]); // 2457
+return([4]); // 2458
+branch_align() -> (); // 2459
+struct_construct<core::panics::Panic>() -> ([5]); // 2460
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2461
+enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>([6]) -> ([7]); // 2462
+store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>([7]) -> ([7]); // 2463
+return([7]); // 2464
+enum_match<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2471([2]) }; // 2465
+branch_align() -> (); // 2466
+struct_construct<Tuple<felt252>>([1]) -> ([3]); // 2467
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4]); // 2468
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([4]) -> ([4]); // 2469
+return([4]); // 2470
+branch_align() -> (); // 2471
+struct_construct<core::panics::Panic>() -> ([5]); // 2472
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2473
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([6]) -> ([7]); // 2474
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([7]) -> ([7]); // 2475
+return([7]); // 2476
+enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 0>([0]) -> ([1]); // 2477
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2478
+return([1]); // 2479
+enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([0]) { fallthrough([3]) 2493([4]) 2505([5]) 2517([6]) }; // 2480
+branch_align() -> (); // 2481
+felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975>() -> ([7]); // 2482
+store_temp<felt252>([7]) -> ([7]); // 2483
+array_append<felt252>([1], [7]) -> ([8]); // 2484
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([3]) -> ([3]); // 2485
+store_temp<Array<felt252>>([8]) -> ([8]); // 2486
+store_temp<Array<felt252>>([2]) -> ([2]); // 2487
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>([3], [8], [2]) -> ([9], [10], [11]); // 2488
+drop<Unit>([11]) -> (); // 2489
+rename<Array<felt252>>([9]) -> ([12]); // 2490
+rename<Array<felt252>>([10]) -> ([13]); // 2491
+jump() { 2528() }; // 2492
+branch_align() -> (); // 2493
+felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>() -> ([14]); // 2494
+store_temp<felt252>([14]) -> ([14]); // 2495
+array_append<felt252>([1], [14]) -> ([15]); // 2496
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([4]) -> ([4]); // 2497
+store_temp<Array<felt252>>([15]) -> ([15]); // 2498
+store_temp<Array<felt252>>([2]) -> ([2]); // 2499
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data>([4], [15], [2]) -> ([16], [17], [18]); // 2500
+drop<Unit>([18]) -> (); // 2501
+rename<Array<felt252>>([16]) -> ([12]); // 2502
+rename<Array<felt252>>([17]) -> ([13]); // 2503
+jump() { 2528() }; // 2504
+branch_align() -> (); // 2505
+felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>() -> ([19]); // 2506
+store_temp<felt252>([19]) -> ([19]); // 2507
+array_append<felt252>([1], [19]) -> ([20]); // 2508
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([5]) -> ([5]); // 2509
+store_temp<Array<felt252>>([20]) -> ([20]); // 2510
+store_temp<Array<felt252>>([2]) -> ([2]); // 2511
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>([5], [20], [2]) -> ([21], [22], [23]); // 2512
+drop<Unit>([23]) -> (); // 2513
+rename<Array<felt252>>([21]) -> ([12]); // 2514
+rename<Array<felt252>>([22]) -> ([13]); // 2515
+jump() { 2528() }; // 2516
+branch_align() -> (); // 2517
+felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>() -> ([24]); // 2518
+store_temp<felt252>([24]) -> ([24]); // 2519
+array_append<felt252>([1], [24]) -> ([25]); // 2520
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([6]) -> ([6]); // 2521
+store_temp<Array<felt252>>([25]) -> ([25]); // 2522
+store_temp<Array<felt252>>([2]) -> ([2]); // 2523
+function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data>([6], [25], [2]) -> ([26], [27], [28]); // 2524
+drop<Unit>([28]) -> (); // 2525
+rename<Array<felt252>>([26]) -> ([12]); // 2526
+rename<Array<felt252>>([27]) -> ([13]); // 2527
+struct_construct<Unit>() -> ([29]); // 2528
+return([12], [13], [29]); // 2529
+enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 1>([0]) -> ([1]); // 2530
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2531
+return([1]); // 2532
+rename<ContractAddress>([0]) -> ([2]); // 2533
+contract_address_to_felt252([2]) -> ([3]); // 2534
+snapshot_take<felt252>([3]) -> ([4], [5]); // 2535
+drop<felt252>([4]) -> (); // 2536
+store_temp<felt252>([5]) -> ([5]); // 2537
+store_temp<Array<felt252>>([1]) -> ([1]); // 2538
+function_call<user@core::Felt252Serde::serialize>([5], [1]) -> ([6], [7]); // 2539
+drop<Unit>([7]) -> (); // 2540
+struct_construct<Unit>() -> ([8]); // 2541
+return([6], [8]); // 2542
+dup<core::integer::u256>([0]) -> ([0], [2]); // 2543
+struct_deconstruct<core::integer::u256>([2]) -> ([3], [4]); // 2544
+drop<u128>([4]) -> (); // 2545
+rename<u128>([3]) -> ([5]); // 2546
+u128_to_felt252([5]) -> ([6]); // 2547
+array_append<felt252>([1], [6]) -> ([7]); // 2548
+struct_deconstruct<core::integer::u256>([0]) -> ([8], [9]); // 2549
+drop<u128>([8]) -> (); // 2550
+rename<u128>([9]) -> ([10]); // 2551
+u128_to_felt252([10]) -> ([11]); // 2552
+array_append<felt252>([7], [11]) -> ([12]); // 2553
+struct_construct<Unit>() -> ([13]); // 2554
+store_temp<Array<felt252>>([12]) -> ([12]); // 2555
+return([12], [13]); // 2556
+enum_match<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2563([2]) }; // 2557
+branch_align() -> (); // 2558
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([1]) -> ([3]); // 2559
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([3]) -> ([4]); // 2560
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([4]) -> ([4]); // 2561
+return([4]); // 2562
+branch_align() -> (); // 2563
+struct_construct<core::panics::Panic>() -> ([5]); // 2564
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2565
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([6]) -> ([7]); // 2566
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([7]) -> ([7]); // 2567
+return([7]); // 2568
+enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 2>([0]) -> ([1]); // 2569
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1]) -> ([1]); // 2570
+return([1]); // 2571
+store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([0]) -> ([0]); // 2572
+return([0]); // 2573
+enum_match<core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 2580([2]) }; // 2574
+branch_align() -> (); // 2575
+struct_construct<Tuple<Box<core::starknet::info::v2::ExecutionInfo>>>([1]) -> ([3]); // 2576
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 0>([3]) -> ([4]); // 2577
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([4]) -> ([4]); // 2578
+return([4]); // 2579
+branch_align() -> (); // 2580
+struct_construct<core::panics::Panic>() -> ([5]); // 2581
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([5], [2]) -> ([6]); // 2582
+enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>, 1>([6]) -> ([7]); // 2583
+store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>>([7]) -> ([7]); // 2584
+return([7]); // 2585
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([0]) -> ([3]); // 2586
+store_temp<core::starknet::eth_address::EthAddress>([3]) -> ([3]); // 2587
+store_temp<Array<felt252>>([2]) -> ([2]); // 2588
+function_call<user@core::starknet::eth_address::EthAddressSerde::serialize>([3], [2]) -> ([4], [5]); // 2589
+drop<Unit>([5]) -> (); // 2590
+struct_construct<Unit>() -> ([6]); // 2591
+store_temp<Array<felt252>>([1]) -> ([1]); // 2592
+store_temp<Array<felt252>>([4]) -> ([4]); // 2593
+return([1], [4], [6]); // 2594
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([0]) -> ([3]); // 2595
+store_temp<ContractAddress>([3]) -> ([3]); // 2596
+store_temp<Array<felt252>>([2]) -> ([2]); // 2597
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([3], [2]) -> ([4], [5]); // 2598
+drop<Unit>([5]) -> (); // 2599
+struct_construct<Unit>() -> ([6]); // 2600
+store_temp<Array<felt252>>([1]) -> ([1]); // 2601
+store_temp<Array<felt252>>([4]) -> ([4]); // 2602
+return([1], [4], [6]); // 2603
+dup<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([0], [3]); // 2604
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([3]) -> ([4], [5], [6]); // 2605
+drop<core::integer::u256>([5]) -> (); // 2606
+drop<ContractAddress>([6]) -> (); // 2607
+store_temp<core::starknet::eth_address::EthAddress>([4]) -> ([4]); // 2608
+store_temp<Array<felt252>>([2]) -> ([2]); // 2609
+function_call<user@core::starknet::eth_address::EthAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 2610
+drop<Unit>([8]) -> (); // 2611
+dup<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([0], [9]); // 2612
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([9]) -> ([10], [11], [12]); // 2613
+drop<core::starknet::eth_address::EthAddress>([10]) -> (); // 2614
+drop<ContractAddress>([12]) -> (); // 2615
+store_temp<core::integer::u256>([11]) -> ([11]); // 2616
+store_temp<Array<felt252>>([7]) -> ([7]); // 2617
+function_call<user@core::integer::u256Serde::serialize>([11], [7]) -> ([13], [14]); // 2618
+drop<Unit>([14]) -> (); // 2619
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([0]) -> ([15], [16], [17]); // 2620
+drop<core::starknet::eth_address::EthAddress>([15]) -> (); // 2621
+drop<core::integer::u256>([16]) -> (); // 2622
+store_temp<ContractAddress>([17]) -> ([17]); // 2623
+store_temp<Array<felt252>>([13]) -> ([13]); // 2624
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([17], [13]) -> ([18], [19]); // 2625
+drop<Unit>([19]) -> (); // 2626
+struct_construct<Unit>() -> ([20]); // 2627
+store_temp<Array<felt252>>([1]) -> ([1]); // 2628
+store_temp<Array<felt252>>([18]) -> ([18]); // 2629
+return([1], [18], [20]); // 2630
+dup<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([0]) -> ([0], [3]); // 2631
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([3]) -> ([4], [5]); // 2632
+drop<core::integer::u256>([5]) -> (); // 2633
+store_temp<ContractAddress>([4]) -> ([4]); // 2634
+store_temp<Array<felt252>>([2]) -> ([2]); // 2635
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([6], [7]); // 2636
+drop<Unit>([7]) -> (); // 2637
+struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([0]) -> ([8], [9]); // 2638
+drop<ContractAddress>([8]) -> (); // 2639
+store_temp<core::integer::u256>([9]) -> ([9]); // 2640
+store_temp<Array<felt252>>([6]) -> ([6]); // 2641
+function_call<user@core::integer::u256Serde::serialize>([9], [6]) -> ([10], [11]); // 2642
+drop<Unit>([11]) -> (); // 2643
+struct_construct<Unit>() -> ([12]); // 2644
+store_temp<Array<felt252>>([1]) -> ([1]); // 2645
+store_temp<Array<felt252>>([10]) -> ([10]); // 2646
+return([1], [10], [12]); // 2647
+struct_deconstruct<core::starknet::eth_address::EthAddress>([0]) -> ([2]); // 2648
+store_temp<felt252>([2]) -> ([2]); // 2649
+store_temp<Array<felt252>>([1]) -> ([1]); // 2650
+function_call<user@core::Felt252Serde::serialize>([2], [1]) -> ([3], [4]); // 2651
+drop<Unit>([4]) -> (); // 2652
+struct_construct<Unit>() -> ([5]); // 2653
+return([3], [5]); // 2654
 
 cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__get_version@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__get_identity@72([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -3072,21 +3066,21 @@ cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmit
 cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write@2324([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, [3]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>);
 core::integer::u256_from_felt252@2362([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::u256);
 core::integer::U256PartialOrd::lt@2374([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::bool);
-core::starknet::info::get_execution_info@2428([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
-core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@2445([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
-core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@2457([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
-core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@2469([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::felt252,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into@2481([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
-cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data@2484([0]: cairo_level_tests::contracts::token_bridge::token_bridge::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into@2534([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
-core::starknet::contract_address::ContractAddressSerde::serialize@2537([0]: ContractAddress, [1]: Array<felt252>) -> (Array<felt252>, Unit);
-core::integer::u256Serde::serialize@2547([0]: core::integer::u256, [1]: Array<felt252>) -> (Array<felt252>, Unit);
-core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@2561([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into@2573([0]: cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
-core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into@2576([0]: cairo_level_tests::contracts::token_bridge::token_bridge::Event) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
-core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@2578([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
-cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data@2590([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data@2599([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data@2608([0]: cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data@2635([0]: cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-core::starknet::eth_address::EthAddressSerde::serialize@2652([0]: core::starknet::eth_address::EthAddress, [1]: Array<felt252>) -> (Array<felt252>, Unit);
+core::starknet::info::get_execution_info@2424([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
+core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@2441([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall@2453([0]: core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
+core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@2465([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::felt252,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into@2477([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
+cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data@2480([0]: cairo_level_tests::contracts::token_bridge::token_bridge::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into@2530([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
+core::starknet::contract_address::ContractAddressSerde::serialize@2533([0]: ContractAddress, [1]: Array<felt252>) -> (Array<felt252>, Unit);
+core::integer::u256Serde::serialize@2543([0]: core::integer::u256, [1]: Array<felt252>) -> (Array<felt252>, Unit);
+core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@2557([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into@2569([0]: cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
+core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into@2572([0]: cairo_level_tests::contracts::token_bridge::token_bridge::Event) -> (cairo_level_tests::contracts::token_bridge::token_bridge::Event);
+core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@2574([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
+cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data@2586([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data@2595([0]: cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data@2604([0]: cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data@2631([0]: cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+core::starknet::eth_address::EthAddressSerde::serialize@2648([0]: core::starknet::eth_address::EthAddress, [1]: Array<felt252>) -> (Array<felt252>, Unit);

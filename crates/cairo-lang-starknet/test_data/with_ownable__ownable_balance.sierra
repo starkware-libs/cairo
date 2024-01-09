@@ -844,17 +844,17 @@ return([6], [7], [8], [9]); // 585
 u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 592([4], [5], [6]) }; // 586
 branch_align() -> (); // 587
 enum_init<core::option::Option::<core::integer::u128>, 0>([3]) -> ([7]); // 588
-store_temp<RangeCheck>([2]) -> ([8]); // 589
-store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([9]); // 590
-jump() { 599() }; // 591
+store_temp<RangeCheck>([2]) -> ([2]); // 589
+store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 590
+return([2], [7]); // 591
 branch_align() -> (); // 592
 drop<u128>([5]) -> (); // 593
 drop<u128>([6]) -> (); // 594
-struct_construct<Unit>() -> ([10]); // 595
-enum_init<core::option::Option::<core::integer::u128>, 1>([10]) -> ([11]); // 596
-store_temp<RangeCheck>([4]) -> ([8]); // 597
-store_temp<core::option::Option::<core::integer::u128>>([11]) -> ([9]); // 598
-return([8], [9]); // 599
+struct_construct<Unit>() -> ([8]); // 595
+enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 596
+store_temp<RangeCheck>([4]) -> ([4]); // 597
+store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 598
+return([4], [9]); // 599
 struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([3]) -> ([5], [6]); // 600
 snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([5]) -> ([7], [8]); // 601
 store_temp<RangeCheck>([0]) -> ([0]); // 602
@@ -1403,15 +1403,15 @@ return([17], [18], [27]); // 1144
 contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1151([4]) }; // 1145
 branch_align() -> (); // 1146
 enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 1147
-store_temp<RangeCheck>([2]) -> ([6]); // 1148
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([7]); // 1149
-jump() { 1156() }; // 1150
+store_temp<RangeCheck>([2]) -> ([2]); // 1148
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([5]); // 1149
+return([2], [5]); // 1150
 branch_align() -> (); // 1151
-struct_construct<Unit>() -> ([8]); // 1152
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([8]) -> ([9]); // 1153
-store_temp<RangeCheck>([4]) -> ([6]); // 1154
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([7]); // 1155
-return([6], [7]); // 1156
+struct_construct<Unit>() -> ([6]); // 1152
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([6]) -> ([7]); // 1153
+store_temp<RangeCheck>([4]) -> ([4]); // 1154
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([7]); // 1155
+return([4], [7]); // 1156
 enum_match<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>([0]) { fallthrough([1]) 1163([2]) }; // 1157
 branch_align() -> (); // 1158
 struct_construct<Tuple<ContractAddress>>([1]) -> ([3]); // 1159
