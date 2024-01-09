@@ -173,9 +173,6 @@ pub fn get_sierra_program_for_functions(
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
-    // TODO(lior): Coupons that are declared but never used, should be replaced with an empty
-    //   coupon. Otherwise, the coupon's function may be omitted from the program, resulting in an
-    //   invalid Sierra program.
     while let Some(function_id) = function_id_queue.pop_front() {
         if !processed_function_ids.insert(function_id) {
             continue;
@@ -228,16 +225,26 @@ fn try_get_function_with_body_id(
         program::GenStatement::Invocation
     )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
-    if !(libfunc.generic_id == "function_call".into() || libfunc.generic_id == "coupon_call".into())
+    let inner_function = if libfunc.generic_id == "function_call".into()
+        || libfunc.generic_id == "coupon_call".into()
     {
-        return None;
-    }
-    db.lookup_intern_sierra_function(
-        try_extract_matches!(
+        libfunc.generic_args.first()?.clone()
+    } else if libfunc.generic_id == "coupon_buy".into()
+        || libfunc.generic_id == "coupon_refund".into()
+    {
+        let coupon_ty = try_extract_matches!(
             libfunc.generic_args.first()?,
-            cairo_lang_sierra::program::GenericArg::UserFunc
-        )?
-        .clone(),
+            cairo_lang_sierra::program::GenericArg::Type
+        )?;
+        let coupon_long_id = sierra_concrete_long_id(db, coupon_ty.clone()).unwrap();
+        coupon_long_id.generic_args.first()?.clone()
+    } else {
+        return None;
+    };
+
+    db.lookup_intern_sierra_function(
+        try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
+            .clone(),
     )
     .body(db.upcast())
     .expect("No diagnostics at this stage.")
