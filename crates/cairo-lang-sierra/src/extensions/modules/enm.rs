@@ -100,7 +100,20 @@ impl EnumConcreteType {
             variants,
         })
     }
+
+    /// Returns the EnumConcreteType of the given type, or a specialization error if not possible.
+    fn try_from_concrete_type(
+        context: &dyn SignatureSpecializationContext,
+        ty: &ConcreteTypeId,
+    ) -> Result<Self, SpecializationError> {
+        let long_id = context.get_type_info(ty.clone())?.long_id;
+        if long_id.generic_id != EnumType::ID {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        Self::new(context.as_type_specialization_context(), &long_id.generic_args)
+    }
 }
+
 impl ConcreteType for EnumConcreteType {
     fn info(&self) -> &TypeInfo {
         &self.info
@@ -146,10 +159,7 @@ impl EnumInitLibfunc {
             [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
-        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
-        let variant_types =
-            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let num_variants = variant_types.len();
         if index.is_negative() || index >= num_variants.to_bigint().unwrap() {
             return Err(SpecializationError::IndexOutOfRange { index, range_size: num_variants });
@@ -216,15 +226,8 @@ impl EnumFromBoundedIntLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<EnumFromBoundedIntConcreteLibfunc, SpecializationError> {
-        let enum_type = match args {
-            [GenericArg::Type(enum_type)] => enum_type.clone(),
-            [_] => return Err(SpecializationError::UnsupportedGenericArg),
-            _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
-        };
-        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
-        let variant_types =
-            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .variants;
+        let enum_type = args_as_single_type(args)?;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let num_variants = variant_types.len();
 
         for v in variant_types {
@@ -289,10 +292,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
-        let variant_types =
-            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let is_empty = variant_types.is_empty();
         let branch_signatures = variant_types
             .into_iter()
@@ -331,10 +331,7 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
-        let variant_types =
-            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let branch_signatures = variant_types
             .into_iter()
             .map(|ty| {
