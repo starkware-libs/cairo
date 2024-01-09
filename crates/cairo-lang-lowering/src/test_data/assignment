@@ -33,15 +33,10 @@ blk1:
 Statements:
   (v1: core::felt252) <- 2u
 End:
-  Goto(blk3, {v1 -> v7})
+  Return(v1)
 
 blk2:
 Statements:
   (v3: core::felt252) <- 3u
 End:
-  Goto(blk3, {v3 -> v7})
-
-blk3:
-Statements:
-End:
-  Return(v7)
+  Return(v3)

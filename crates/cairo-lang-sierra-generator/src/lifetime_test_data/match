@@ -26,21 +26,15 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v1 -> v4})
+  Return(v1)
 
 blk2:
 Statements:
   (v3: core::felt252) <- 0u
 End:
-  Goto(blk3, {v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v4)
+  Return(v3)
 
 //! > last_use
-v4: ((BlockId(3), 0), 0)
 v3: ((BlockId(2), 1), 0)
 v1: ((BlockId(1), 0), 0)
 v0: ((BlockId(0), 0), 0)

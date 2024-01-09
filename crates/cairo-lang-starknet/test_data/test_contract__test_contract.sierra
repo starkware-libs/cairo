@@ -1324,17 +1324,17 @@ return([0], [2], [12]); // 1067
 u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 1074([4], [5], [6]) }; // 1068
 branch_align() -> (); // 1069
 enum_init<core::option::Option::<core::integer::u128>, 0>([3]) -> ([7]); // 1070
-store_temp<RangeCheck>([2]) -> ([8]); // 1071
-store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([9]); // 1072
-jump() { 1081() }; // 1073
+store_temp<RangeCheck>([2]) -> ([2]); // 1071
+store_temp<core::option::Option::<core::integer::u128>>([7]) -> ([7]); // 1072
+return([2], [7]); // 1073
 branch_align() -> (); // 1074
 drop<u128>([5]) -> (); // 1075
 drop<u128>([6]) -> (); // 1076
-struct_construct<Unit>() -> ([10]); // 1077
-enum_init<core::option::Option::<core::integer::u128>, 1>([10]) -> ([11]); // 1078
-store_temp<RangeCheck>([4]) -> ([8]); // 1079
-store_temp<core::option::Option::<core::integer::u128>>([11]) -> ([9]); // 1080
-return([8], [9]); // 1081
+struct_construct<Unit>() -> ([8]); // 1077
+enum_init<core::option::Option::<core::integer::u128>, 1>([8]) -> ([9]); // 1078
+store_temp<RangeCheck>([4]) -> ([4]); // 1079
+store_temp<core::option::Option::<core::integer::u128>>([9]) -> ([9]); // 1080
+return([4], [9]); // 1081
 struct_construct<cairo_level_tests::contracts::test_contract::IAnotherContractDispatcher>([4]) -> ([6]); // 1082
 store_temp<RangeCheck>([0]) -> ([0]); // 1083
 store_temp<GasBuiltin>([1]) -> ([1]); // 1084

@@ -2109,26 +2109,26 @@ dup<EcPoint>([1]) -> ([1], [3]); // 1691
 ec_point_is_zero([3]) { fallthrough() 1698([4]) }; // 1692
 branch_align() -> (); // 1693
 drop<felt252>([2]) -> (); // 1694
-store_temp<EcOp>([0]) -> ([5]); // 1695
-store_temp<EcPoint>([1]) -> ([6]); // 1696
-jump() { 1714() }; // 1697
+store_temp<EcOp>([0]) -> ([0]); // 1695
+store_temp<EcPoint>([1]) -> ([1]); // 1696
+return([0], [1]); // 1697
 branch_align() -> (); // 1698
 drop<EcPoint>([1]) -> (); // 1699
-ec_state_init() -> ([7]); // 1700
-ec_state_add_mul([0], [7], [2], [4]) -> ([8], [9]); // 1701
-store_temp<EcState>([9]) -> ([9]); // 1702
-store_temp<EcOp>([8]) -> ([8]); // 1703
-ec_state_try_finalize_nz([9]) { fallthrough([10]) 1709() }; // 1704
+ec_state_init() -> ([5]); // 1700
+ec_state_add_mul([0], [5], [2], [4]) -> ([6], [7]); // 1701
+store_temp<EcState>([7]) -> ([7]); // 1702
+store_temp<EcOp>([6]) -> ([6]); // 1703
+ec_state_try_finalize_nz([7]) { fallthrough([8]) 1710() }; // 1704
 branch_align() -> (); // 1705
-unwrap_non_zero<EcPoint>([10]) -> ([11]); // 1706
-store_temp<EcPoint>([11]) -> ([12]); // 1707
-jump() { 1712() }; // 1708
-branch_align() -> (); // 1709
-ec_point_zero() -> ([13]); // 1710
-store_temp<EcPoint>([13]) -> ([12]); // 1711
-store_temp<EcOp>([8]) -> ([5]); // 1712
-store_temp<EcPoint>([12]) -> ([6]); // 1713
-return([5], [6]); // 1714
+unwrap_non_zero<EcPoint>([8]) -> ([9]); // 1706
+store_temp<EcOp>([6]) -> ([6]); // 1707
+store_temp<EcPoint>([9]) -> ([9]); // 1708
+return([6], [9]); // 1709
+branch_align() -> (); // 1710
+ec_point_zero() -> ([10]); // 1711
+store_temp<EcOp>([6]) -> ([6]); // 1712
+store_temp<EcPoint>([10]) -> ([10]); // 1713
+return([6], [10]); // 1714
 dup<EcPoint>([0]) -> ([0], [2]); // 1715
 ec_point_is_zero([2]) { fallthrough() 1721([3]) }; // 1716
 branch_align() -> (); // 1717
@@ -2151,11 +2151,11 @@ store_temp<EcState>([7]) -> ([7]); // 1733
 ec_state_try_finalize_nz([7]) { fallthrough([8]) 1739() }; // 1734
 branch_align() -> (); // 1735
 unwrap_non_zero<EcPoint>([8]) -> ([9]); // 1736
-store_temp<EcPoint>([9]) -> ([10]); // 1737
-jump() { 1742() }; // 1738
+store_temp<EcPoint>([9]) -> ([9]); // 1737
+return([9]); // 1738
 branch_align() -> (); // 1739
-ec_point_zero() -> ([11]); // 1740
-store_temp<EcPoint>([11]) -> ([10]); // 1741
+ec_point_zero() -> ([10]); // 1740
+store_temp<EcPoint>([10]) -> ([10]); // 1741
 return([10]); // 1742
 dup<EcPoint>([1]) -> ([1], [2]); // 1743
 ec_point_is_zero([2]) { fallthrough() 1749([3]) }; // 1744

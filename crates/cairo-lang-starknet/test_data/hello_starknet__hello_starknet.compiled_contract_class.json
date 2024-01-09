@@ -63,9 +63,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x1f5",
-    "0x482480017fff8000",
     "0x1f4",
+    "0x482480017fff8000",
+    "0x1f3",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -85,7 +85,7 @@
     "0x480a7ffb7fff8000",
     "0x48127ff37fff8000",
     "0x1104800180018000",
-    "0xd8",
+    "0xd7",
     "0x20680017fff7ffd",
     "0xc",
     "0x40780017fff7fff",
@@ -188,9 +188,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x178",
-    "0x482480017fff8000",
     "0x177",
+    "0x482480017fff8000",
+    "0x176",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -209,7 +209,7 @@
     "0x48127ffe7fff8000",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x97",
+    "0x96",
     "0x20680017fff7ffd",
     "0xe",
     "0x40780017fff7fff",
@@ -277,7 +277,7 @@
     "0x402480017fff7ffb",
     "0xffffffffffffffffffffffffffffffff",
     "0x20680017fff7fff",
-    "0x11",
+    "0x10",
     "0x402780017fff7fff",
     "0x1",
     "0x400380007ffc7ffd",
@@ -291,8 +291,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x480a7ffd7fff8000",
-    "0x10780017fff7fff",
-    "0x8",
+    "0x208b7fff7fff7ffe",
     "0x482680017ffc8000",
     "0x3",
     "0x480680017fff8000",
@@ -381,7 +380,7 @@
     "0x480a7ffb7fff8000",
     "0x480280067ffd8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff8b",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff8c",
     "0x480280047ffd8000",
     "0x482680017ffd8000",
     "0x7",
@@ -822,7 +821,7 @@
       ]
     ],
     [
-      373,
+      372,
       [
         {
           "SystemCall": {
@@ -837,7 +836,7 @@
       ]
     ],
     [
-      397,
+      396,
       [
         {
           "AllocSegment": {
@@ -850,7 +849,7 @@
       ]
     ],
     [
-      430,
+      429,
       [
         {
           "TestLessThan": {
@@ -881,7 +880,7 @@
       ]
     ],
     [
-      474,
+      473,
       [
         {
           "SystemCall": {
@@ -896,7 +895,7 @@
       ]
     ],
     [
-      538,
+      537,
       [
         {
           "AllocSegment": {
@@ -1001,31 +1000,31 @@
       ]
     ],
     [
-      373,
+      372,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
-      397,
+      396,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      430,
+      429,
       [
         "memory[ap + 0] = (memory[fp + -4] + memory[fp + -3]) % PRIME < 4294967296"
       ]
     ],
     [
-      474,
+      473,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
-      538,
+      537,
       [
         "memory[ap + 0] = segments.add()"
       ]

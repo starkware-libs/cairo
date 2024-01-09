@@ -104,7 +104,7 @@ fn test_valdiate_gas_cost() {
 
     let available_gas1 = core::testing::get_available_gas();
     let gas_usage = 500000 - available_gas1;
-    assert!(gas_usage == 150300, "Unexpected call building cost `{gas_usage}`.");
+    assert!(gas_usage == 149980, "Unexpected call building cost `{gas_usage}`.");
 
     let serialized_args = serialized(calls);
     let available_gas2 = core::testing::get_available_gas();
