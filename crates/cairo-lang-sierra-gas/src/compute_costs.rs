@@ -780,7 +780,7 @@ impl<'a> PostcostContext<'a> {
 
         if with_builtin_costs {
             let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
-                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
             })
             .into_or_panic::<i32>();
             amount += ConstCost { steps, ..Default::default() }.cost();

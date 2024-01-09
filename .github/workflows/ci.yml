@@ -8,6 +8,18 @@ on:
     types: [checks_requested]
 
 jobs:
+  ensure-no_std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2023-07-05
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          cd ensure-no_std && cargo build
+  
   parallel-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -41,6 +53,7 @@ jobs:
           - test -p cairo-lang-test-runner
           - test -p cairo-lang-test-utils
           - test -p cairo-lang-utils
+          - test -p cairo-lang-utils --no-default-features --features=serde
           - test -p tests
     steps:
       - uses: actions/checkout@v3

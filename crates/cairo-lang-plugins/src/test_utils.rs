@@ -14,7 +14,7 @@ pub fn expand_module_text(
 ) -> String {
     let mut output = String::new();
     // A collection of all the use statements in the module.
-    let mut uses_list = UnorderedHashSet::default();
+    let mut uses_list = UnorderedHashSet::new();
     let syntax_db = db.upcast();
     // Collect the module diagnostics.
     for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {

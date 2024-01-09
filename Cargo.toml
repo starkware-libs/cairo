@@ -49,6 +49,7 @@ members = [
     "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
+exclude = ["ensure-no_std"]
 
 [workspace.package]
 version = "2.4.1"
@@ -77,21 +78,22 @@ diffy = "0.3.0"
 env_logger = "0.10.0"
 genco = "0.17.8"
 good_lp = { version = "1.7.0", features = ["minilp"], default-features = false }
+hashbrown = "0.14.3" 
 id-arena = "2.2.1"
 ignore = "0.4.20"
 indent = "0.1.1"
-indexmap = { version = "2.1.0", features = ["serde"] }
+indexmap = { version = "2.1.0", default-features = false }
 indoc = "2.0.4"
-itertools = "0.11.0"
+itertools = { version = "0.11.0", default-features = false }
 keccak = "0.1.4"
 lalrpop-util = { version = "0.20.0", features = ["lexer"] }
 log = "0.4"
 lsp = { version = "0.94", package = "lsp-types" }
-num-bigint = { version = "0.4", features = ["serde"] }
+num-bigint = { version = "0.4", default-features = false }
 num-integer = "0.1"
-num-traits = "0.2"
+num-traits = { version = "0.2", default-features = false }
 once_cell = "1.18.0"
-parity-scale-codec = "3.6.5"
+parity-scale-codec = { version = "3.6.5", default-features = false }
 parity-scale-codec-derive = "3.6.5"
 path-clean = "1.0.1"
 pretty_assertions = "1.4.0"
@@ -102,7 +104,7 @@ rstest = "0.18.2"
 salsa = "0.16.1"
 scarb-metadata = "1"
 schemars = { version = "0.8.15", features = ["preserve_order"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }

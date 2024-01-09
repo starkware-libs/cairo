@@ -535,7 +535,7 @@ impl SierraCasmRunner {
             return None;
         }
         Some(
-            self.metadata.gas_info.function_costs[func.id.clone()]
+            self.metadata.gas_info.function_costs[&func.id]
                 .iter()
                 .map(|(token_type, val)| val.into_or_panic::<usize>() * token_gas_cost(*token_type))
                 .sum(),

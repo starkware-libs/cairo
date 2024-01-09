@@ -144,11 +144,11 @@ fn build_builtin_withdraw_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
+    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
     for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[(builder.idx, *token_type)];
+        let requested_count = variable_values[&(builder.idx, *token_type)];
         if requested_count == 0 {
             continue;
         }

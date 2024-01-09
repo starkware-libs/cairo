@@ -127,8 +127,8 @@ impl BlockBuilder {
             MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [member_id.name(ctx.db.upcast())]
-                .ty
+                    [&member_id.name(ctx.db.upcast())]
+                    .ty
             }
         }
     }
