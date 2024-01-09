@@ -58,7 +58,7 @@ pub enum Pattern<'a> {
         /// The return value of the user, this is the same as the last item in `returned_vars' up
         /// to remappings.
         user_return: VarUsage,
-        /// The returned variables of the return statement.
+        /// The returned variables of the return statement (excluding the last one).
         returned_vars: &'a [VarUsage],
     },
     /// There is a StructConstruct followed by a EnumConstruct followed by a return.
@@ -167,6 +167,12 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         }
 
         if let Pattern::Return { user_return, returned_vars } = info {
+            if returned_vars.iter().any(|var_usage| remapping.contains_key(&var_usage.var_id)) {
+                // If any of the returned variables is remapped we can't apply the optimization.
+                *info = Pattern::None;
+                return;
+            }
+
             if let Some(remapped_return) = remapping.get(&user_return.var_id) {
                 *info = Pattern::Return { user_return: *remapped_return, returned_vars };
             }
@@ -198,8 +204,6 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             return Pattern::None;
         };
         let mut return_vars = returned_vars.to_vec();
-        return_vars.pop();
-
         for (arm, info) in arms.iter().zip(infos) {
             let Pattern::EnumConstruct { opt_input_var, variant, returned_vars } = info else {
                 return Pattern::None;
@@ -216,7 +220,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             }
 
             // If any of the returned vars is different we can't apply the optimization.
-            if return_vars.len() + 1 != returned_vars.len()
+            if return_vars.len() != returned_vars.len()
                 || return_vars
                     .iter()
                     .zip(returned_vars.iter())
@@ -236,7 +240,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
-        Pattern::Return { user_return: *vars.last().unwrap(), returned_vars: vars }
+        let (user_return, returned_vars) = vars.split_last().unwrap();
+        Pattern::Return { user_return: *user_return, returned_vars }
     }
 
     fn info_from_panic(
