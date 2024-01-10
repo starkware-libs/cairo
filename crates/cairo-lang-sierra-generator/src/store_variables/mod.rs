@@ -6,6 +6,9 @@ mod state;
 #[cfg(test)]
 mod test;
 
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_semantic::corelib;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
@@ -14,8 +17,11 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use sierra::extensions::function_call::FunctionCallLibfunc;
+use sierra::extensions::gas::RedepositGasLibfunc;
 use sierra::extensions::structure::StructDeconstructLibfunc;
 use sierra::extensions::{NamedLibfunc, OutputVarReferenceInfo};
+use sierra::ids::GenericLibfuncId;
+use sierra::program::ConcreteLibfuncLongId;
 use state::{
     merge_optional_states, DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState,
 };
@@ -88,6 +94,8 @@ struct AddStoreVariableStatements<'a> {
     /// state is added to the map. When the label is visited, it is merged with the known variables
     /// state, and removed from the map.
     future_states: OrderedHashMap<pre_sierra::LabelId, VariablesState>,
+    /// The type of `GasBuiltin`.
+    gb_ty: sierra::ids::ConcreteTypeId,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
@@ -97,6 +105,13 @@ impl<'a> AddStoreVariableStatements<'a> {
             local_variables,
             result: Vec::new(),
             future_states: OrderedHashMap::default(),
+            gb_ty: db
+                .get_concrete_type_id(corelib::get_core_ty_by_name(
+                    db.upcast(),
+                    "GasBuiltin".into(),
+                    vec![],
+                ))
+                .unwrap(),
         }
     }
 
@@ -388,7 +403,12 @@ impl<'a> AddStoreVariableStatements<'a> {
 
         // Optimization: check if there is a prefix of `push_values` that is already on the stack.
         let prefix_size = state.known_stack.compute_on_stack_prefix_size(push_values);
-
+        if prefix_size == 0 {
+            // Calling piggyback libfuncs only if not possibly breaking stack.
+            for pv in push_values {
+                self.extra_store_temp_piggyback(state, &pv.ty, &pv.var);
+            }
+        }
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
@@ -610,5 +630,48 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.future_states.insert(*label_id, extract_matches!(new_state, Some));
             }
         }
+    }
+
+    /// Adds lightweight calls to libfuncs when performing a store_temp on a variable already stored
+    /// as temp. This is currently used only for adding the `redeposit_gas` libfunc.
+    fn extra_store_temp_piggyback(
+        &mut self,
+        state: &mut VariablesState,
+        ty: &sierra::ids::ConcreteTypeId,
+        var: &sierra::ids::VarId,
+    ) {
+        if *ty == self.gb_ty {
+            self.extra_store_temp_gas_builtin_piggyback(state, var);
+        }
+    }
+
+    /// Adds a call to the re-deposit gas libfunc for the given variable if relevant.
+    fn extra_store_temp_gas_builtin_piggyback(
+        &mut self,
+        state: &mut VariablesState,
+        var: &sierra::ids::VarId,
+    ) {
+        if !matches!(
+            self.db.get_flag(FlagId::new(self.db.upcast(), "add_redeposit_gas")),
+            Some(flag) if matches!(*flag, Flag::AddRedepositGas(true))
+        ) {
+            return;
+        }
+        let new_var_state = match state.pop_var_state(var) {
+            VarState::TempVar { ty } => {
+                let redeposit_gas = self.db.intern_concrete_lib_func(ConcreteLibfuncLongId {
+                    generic_id: GenericLibfuncId::new_inline(RedepositGasLibfunc::STR_ID),
+                    generic_args: vec![],
+                });
+                let vars = [var.clone()];
+                self.result.push(simple_statement(redeposit_gas, &vars, &vars));
+                VarState::Deferred {
+                    info: DeferredVariableInfo { ty, kind: DeferredVariableKind::Generic },
+                }
+            }
+            other => other,
+        };
+
+        state.variables.insert(var.clone(), new_var_state);
     }
 }
