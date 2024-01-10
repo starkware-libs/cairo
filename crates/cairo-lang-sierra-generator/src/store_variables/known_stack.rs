@@ -29,6 +29,26 @@ impl KnownStack {
         self.variables_on_stack.clear();
     }
 
+    /// Handles the case where there is a possible in the stack at point `idx` - caused by the
+    /// removal of a variable.
+    pub fn handle_possible_hole(&mut self, idx: usize) {
+        // Check if there is still some variable in this point.
+        if self.variables_on_stack.values().any(|&i| i == idx) {
+            return;
+        }
+        // Rebuild a map with fixed indices - not contain anything below the hole.
+        self.variables_on_stack = std::mem::take(&mut self.variables_on_stack)
+            .into_iter()
+            .filter_map(|(var, i)| {
+                if i > idx {
+                    return Some((var, i - idx));
+                }
+                None
+            })
+            .collect();
+        self.offset -= idx;
+    }
+
     /// Marks that the given variable appears on slot `idx` of the stack (note that `0` here means
     /// that the address is `ap`, and other indices will have larger addresses).
     pub fn insert(&mut self, var: cairo_lang_sierra::ids::VarId, idx: usize) {
@@ -76,8 +96,9 @@ impl KnownStack {
     }
 
     /// Removes the information known about the given variable.
-    pub fn remove_variable(&mut self, var: &cairo_lang_sierra::ids::VarId) {
-        self.variables_on_stack.swap_remove(var);
+    /// Returns the previous index of the removed variable if exists.
+    pub fn remove_variable(&mut self, var: &cairo_lang_sierra::ids::VarId) -> Option<usize> {
+        self.variables_on_stack.swap_remove(var)
     }
 
     // Checks if there exists a prefix of `push_values`, that is already on the top of the stack.

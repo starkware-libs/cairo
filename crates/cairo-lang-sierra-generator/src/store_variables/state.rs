@@ -145,9 +145,11 @@ impl VariablesState {
         };
         self.variables.insert(res.clone(), var_state);
 
-        self.known_stack.remove_variable(&res);
+        let removed = self.known_stack.remove_variable(&res);
         if let Some(idx) = add_to_known_stack {
             self.known_stack.insert_signed(res, idx);
+        } else if let Some(idx) = removed {
+            self.known_stack.handle_possible_hole(idx);
         }
     }
 
