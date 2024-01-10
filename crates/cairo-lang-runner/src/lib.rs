@@ -1,6 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
+use ark_std::iterable::Iterable;
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
@@ -54,6 +55,8 @@ pub enum RunnerError {
     FailedGasCalculation,
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
+    #[error("Function param {param_index} only partially contains argument {arg_index}.")]
+    ArgumentUnaligned { param_index: usize, arg_index: usize },
     #[error("Function expects arguments of size {expected} and received {actual} instead.")]
     ArgumentsSizeMismatch { expected: usize, actual: usize },
     #[error(transparent)]
@@ -387,8 +390,6 @@ impl SierraCasmRunner {
         args: &[Arg],
         initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let mut arg_iter = args.iter().peekable();
-        let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
         // The builtins in the formatting expected by the runner.
         let builtins = vec![
@@ -447,6 +448,9 @@ impl SierraCasmRunner {
             }
             ap_offset += 3;
         }
+        let mut expected_arguments_size = 0;
+        let mut param_index = 0;
+        let mut arg_iter = args.iter().enumerate();
         for ty in func.signature.param_types.iter() {
             let info = self.get_info(ty);
             let ty_size = self.type_sizes[ty];
@@ -469,32 +473,51 @@ impl SierraCasmRunner {
                 casm_extend! {ctx,
                     [ap + 0] = [ap + offset] + 3, ap++;
                 }
-            } else if let Some(Arg::Array(_)) = arg_iter.peek() {
-                let values = extract_matches!(arg_iter.next().unwrap(), Arg::Array);
-                let offset = -ap_offset + array_args_data_iter.next().unwrap();
-                expected_arguments_size += 1;
-                casm_extend! {ctx,
-                    [ap + 0] = [ap + (offset)], ap++;
-                    [ap + 0] = [ap - 1] + (values.len()), ap++;
-                }
             } else {
-                let arg_size = ty_size;
-                expected_arguments_size += arg_size as usize;
-                for _ in 0..arg_size {
-                    if let Some(value) = arg_iter.next() {
-                        let value = extract_matches!(value, Arg::Value);
-                        casm_extend! {ctx,
-                            [ap + 0] = (value.to_bigint()), ap++;
+                let mut remaining_arg_size: usize = ty_size.into_or_panic();
+                expected_arguments_size += remaining_arg_size;
+                while remaining_arg_size > 0 {
+                    let Some((arg_index, arg)) = arg_iter.next() else {
+                        break;
+                    };
+                    match arg {
+                        Arg::Value(value) => {
+                            casm_extend! {ctx,
+                                [ap + 0] = (value.to_bigint()), ap++;
+                            }
+                            remaining_arg_size -= 1;
+                        }
+                        Arg::Array(values) => {
+                            let offset = -ap_offset + array_args_data_iter.next().unwrap();
+                            casm_extend! {ctx,
+                                [ap + 0] = [ap + (offset)], ap++;
+                                [ap + 0] = [ap - 1] + (values.len()), ap++;
+                            }
+                            if remaining_arg_size == 1 {
+                                return Err(RunnerError::ArgumentUnaligned {
+                                    param_index,
+                                    arg_index,
+                                });
+                            }
+                            remaining_arg_size -= 2;
                         }
                     }
                 }
+                param_index += 1;
             };
             ap_offset += ty_size;
         }
-        if expected_arguments_size != args.len() {
+        let actual_args_size = args
+            .iter()
+            .map(|arg| match arg {
+                Arg::Value(_) => 1,
+                Arg::Array(_) => 2,
+            })
+            .sum::<usize>();
+        if expected_arguments_size != actual_args_size {
             return Err(RunnerError::ArgumentsSizeMismatch {
                 expected: expected_arguments_size,
-                actual: args.len(),
+                actual: actual_args_size,
             });
         }
         let before_final_call = ctx.current_code_offset;
