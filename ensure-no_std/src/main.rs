@@ -19,4 +19,6 @@ pub extern "C" fn _start() -> ! {
 static ALLOC: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
 #[allow(unused_imports)]
+use cairo_lang_casm;
+#[allow(unused_imports)]
 use cairo_lang_utils;

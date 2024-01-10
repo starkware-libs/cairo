@@ -11,7 +11,6 @@ indexmap = { workspace = true }
 itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint.workspace = true
 num-traits.workspace = true
-parity-scale-codec.workspace = true
 hashbrown = { workspace = true, features = ["serde"] }
 
 # Optional
@@ -20,6 +19,7 @@ schemars = { workspace = true, features = ["preserve_order"], optional = true }
 env_logger = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
@@ -37,5 +37,6 @@ std = [
 ]
 serde = ["dep:serde", "num-bigint/serde", "indexmap/serde"]
 schemars = ["std", "serde", "dep:schemars"]
+parity-scale-codec = ["dep:parity-scale-codec"]
 testing = []
 env_logger = ["std", "dep:env_logger", "dep:time", "dep:log"]

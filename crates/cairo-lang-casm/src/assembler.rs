@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 use num_bigint::{BigInt, ToBigInt};
 
 use crate::hints::Hint;

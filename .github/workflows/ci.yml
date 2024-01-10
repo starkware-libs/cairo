@@ -25,7 +25,8 @@ jobs:
     strategy:
       matrix:
         cmd:
-          - test --profile=ci-dev -p cairo-lang-casm
+          - test --profile=ci-dev -p cairo-lang-casm --features=serde,parity-scale-codec,schemars
+          - test --profile=ci-dev -p cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
           - test --profile=ci-dev -p cairo-lang-compiler
           - test --profile=ci-dev -p cairo-lang-debug
           - test --profile=ci-dev -p cairo-lang-defs
@@ -52,8 +53,8 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-syntax-codegen
           - test --profile=ci-dev -p cairo-lang-test-runner
           - test --profile=ci-dev -p cairo-lang-test-utils
-          - test --profile=ci-dev -p cairo-lang-utils
-          - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde
+          - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
+          - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
           - test --profile=ci-dev -p tests
     steps:
       - uses: actions/checkout@v3

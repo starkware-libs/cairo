@@ -9,7 +9,7 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.1" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.1", features = ["serde"] }
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.1" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.1" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.1" }
