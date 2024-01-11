@@ -779,3 +779,58 @@ foo@0([0]: BadType) -> ();
 
 //! > error
 Error from program registry: Could not find the requested type
+
+//! > ==========================================================================
+
+//! > Recursively buy coupon
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Coupon = Coupon<user@test::recursive_buy>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc coupon_buy = coupon_buy<Coupon>;
+libfunc drop_coupon = drop<Coupon>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+coupon_buy() -> ([0]);
+drop_coupon([0]) -> ();
+struct_construct<Unit>() -> ([1]);
+return([1]);
+
+test::recursive_buy@0() -> (Unit);
+
+//! > metadata
+gas
+
+//! > error
+found an unexpected cycle during cost computation
+
+//! > ==========================================================================
+
+//! > Recursively refund coupon
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Coupon = Coupon<user@test::recursive_refund>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc coupon_refund = coupon_refund<Coupon>;
+libfunc drop_coupon = drop<Coupon>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+
+coupon_refund([0]) -> ();
+struct_construct<Unit>() -> ([1]);
+return([1]);
+
+test::recursive_refund@0([0]: Coupon) -> (Unit);
+
+//! > metadata
+gas
+
+//! > error
+found an unexpected cycle during cost computation
