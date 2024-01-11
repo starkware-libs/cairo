@@ -361,14 +361,13 @@ function_call<user@test::revoke_ap>() -> ([6])
 drop<felt252>([6]) -> ()
 felt252_const<1>() -> ([7])
 felt252_add([2], [7]) -> ([8])
-store_temp<felt252>([8]) -> ([9])
-jump() { label_test::foo::3() }
+store_temp<felt252>([8]) -> ([8])
+return([8])
 label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<2>() -> ([10])
-felt252_add([2], [10]) -> ([11])
-store_temp<felt252>([11]) -> ([9])
-label_test::foo::3:
-return([9])
+felt252_const<2>() -> ([9])
+felt252_add([2], [9]) -> ([10])
+store_temp<felt252>([10]) -> ([10])
+return([10])
 label_test::foo::2:

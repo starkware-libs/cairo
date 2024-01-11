@@ -111,7 +111,7 @@ fn generate(
                 .map(|x| CostExprMap::from_iter([(CostTokenType::Const, x.clone())]))
                 .collect()
         },
-    )?[CostTokenType::Const]
+    )?[&CostTokenType::Const]
         .clone())
 }
 

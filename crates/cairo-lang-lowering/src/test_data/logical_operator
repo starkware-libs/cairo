@@ -53,16 +53,11 @@ blk4:
 Statements:
   (v14: core::bool) <- test::get_bool()
 End:
-  Goto(blk6, {v14 -> v17})
+  Return(v14)
 
 blk5:
 Statements:
   (v12: ()) <- struct_construct()
   (v13: core::bool) <- bool::True(v12)
 End:
-  Goto(blk6, {v13 -> v17})
-
-blk6:
-Statements:
-End:
-  Return(v17)
+  Return(v13)

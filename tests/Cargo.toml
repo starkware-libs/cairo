@@ -27,9 +27,9 @@ cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
 env_logger.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, default-features = true }
 log.workspace = true
-num-bigint.workspace = true
+num-bigint = { workspace = true, default-features = true }
 once_cell.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true

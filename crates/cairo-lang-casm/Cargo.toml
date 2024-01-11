@@ -7,19 +7,27 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1", default-features = false }
 indoc.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
-parity-scale-codec.workspace = true
-parity-scale-codec-derive.workspace = true
-schemars = { workspace = true, features = ["preserve_order"] }
-serde.workspace = true
-thiserror.workspace = true
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+hashbrown = { workspace = true }
+
+# Optional
+serde = { workspace = true, optional = true }
+schemars = { workspace = true, features = ["preserve_order"], optional = true }
+parity-scale-codec = { workspace = true, optional = true }
 
 [dev-dependencies]
 env_logger.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+
+[features]
+default = ["std"]
+std = ["cairo-lang-utils/std", "num-bigint/std", "num-traits/std", "serde?/std", "parity-scale-codec?/std"]
+serde = ["dep:serde", "cairo-lang-utils/serde" ]
+schemars = [ "std", "dep:schemars", "cairo-lang-utils/schemars"]
+parity-scale-codec = ["dep:parity-scale-codec", "cairo-lang-utils/parity-scale-codec"]

@@ -4,9 +4,9 @@ use cairo_felt::Felt252;
 use num_bigint::BigInt;
 use num_traits::One;
 
+use super::bounded_int::BoundedIntType;
 use super::bytes31::Bytes31Type;
 use super::felt252::Felt252Type;
-use super::felt252_bounded::Felt252BoundedType;
 use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -69,10 +69,8 @@ pub fn extract_bounds(ty_info: &TypeInfo) -> Result<Range, SpecializationError> 
         (id, []) if *id == Sint64Type::id() => Range::closed(i64::MIN.into(), i64::MAX.into()),
         (id, []) if *id == Sint128Type::id() => Range::closed(i128::MIN.into(), i128::MAX.into()),
         (id, []) if *id == Bytes31Type::id() => Range::half_open(0.into(), BigInt::one().shl(248)),
-        (id, [GenericArg::Value(lower), GenericArg::Value(upper)])
-            if *id == Felt252BoundedType::id() =>
-        {
-            Range::closed(lower.clone(), upper.clone())
+        (id, [GenericArg::Value(min), GenericArg::Value(max)]) if *id == BoundedIntType::id() => {
+            Range::closed(min.clone(), max.clone())
         }
         _ => return Err(SpecializationError::UnsupportedGenericArg),
     })

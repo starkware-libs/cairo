@@ -1,15 +1,63 @@
-use std::borrow::Borrow;
-use std::collections::{hash_map, HashMap};
-use std::hash::Hash;
-use std::ops::Index;
+use core::borrow::Borrow;
+use core::hash::{BuildHasher, Hash};
+use core::ops::Index;
+#[cfg(feature = "std")]
+use std::collections::hash_map::RandomState;
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
+#[cfg(feature = "std")]
+#[derive(Clone, Debug)]
+pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH>);
+#[cfg(not(feature = "std"))]
+#[derive(Clone, Debug)]
+pub struct UnorderedHashMap<Key, Value, BH>(HashMap<Key, Value, BH>);
 
-impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
+#[cfg(feature = "std")]
+impl<Key, Value> UnorderedHashMap<Key, Value> {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+}
+
+impl<Key, Value, BH> PartialEq for UnorderedHashMap<Key, Value, BH>
+where
+    Key: Eq + Hash,
+    Value: PartialEq,
+    BH: BuildHasher,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
+impl<Key, Value, BH> Eq for UnorderedHashMap<Key, Value, BH>
+where
+    Key: Eq + Hash,
+    Value: Eq,
+    BH: BuildHasher,
+{
+}
+
+impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
+    /// Returns the number of elements in the map.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the map contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     /// Returns a reference to the value corresponding to the key.
     ///
     /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
@@ -58,8 +106,15 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
         self.0.remove(key)
     }
 
+    #[cfg(feature = "std")]
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
+    pub fn entry(&mut self, key: Key) -> std::collections::hash_map::Entry<'_, Key, Value> {
+        self.0.entry(key)
+    }
+
+    #[cfg(not(feature = "std"))]
+    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    pub fn entry(&mut self, key: Key) -> hashbrown::hash_map::Entry<'_, Key, Value, BH> {
         self.0.entry(key)
     }
 
@@ -72,19 +127,9 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     {
         self.0.contains_key(key)
     }
-
-    /// Returns the number of elements in the map.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns true if the map contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
 }
 
-impl<Key, Q: ?Sized, Value> Index<&Q> for UnorderedHashMap<Key, Value>
+impl<Key, Q: ?Sized, Value, BH: BuildHasher> Index<&Q> for UnorderedHashMap<Key, Value, BH>
 where
     Key: Eq + Hash + Borrow<Q>,
     Q: Eq + Hash,
@@ -96,22 +141,24 @@ where
     }
 }
 
-impl<Key: Hash + Eq, Value> Default for UnorderedHashMap<Key, Value> {
+impl<Key, Value, BH: Default> Default for UnorderedHashMap<Key, Value, BH> {
     fn default() -> Self {
         Self(Default::default())
     }
 }
 
-impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for UnorderedHashMap<Key, Value> {
+impl<Key: Hash + Eq, Value, BH: BuildHasher + Default> FromIterator<(Key, Value)>
+    for UnorderedHashMap<Key, Value, BH>
+{
     fn from_iter<T: IntoIterator<Item = (Key, Value)>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
     }
 }
 
-impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]>
-    for UnorderedHashMap<Key, Value>
+impl<Key: Hash + Eq, Value, const N: usize, BH: BuildHasher + Default> From<[(Key, Value); N]>
+    for UnorderedHashMap<Key, Value, BH>
 {
     fn from(items: [(Key, Value); N]) -> Self {
-        Self(HashMap::from(items))
+        Self(HashMap::from_iter(items))
     }
 }

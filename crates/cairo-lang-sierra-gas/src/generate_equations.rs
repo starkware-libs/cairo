@@ -78,7 +78,7 @@ impl EquationGenerator {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
             for (token_type, val) in sub_maps(other.clone(), cost) {
-                self.equations[token_type].push(val);
+                self.equations[&token_type].push(val);
             }
         } else {
             *entry = Some(cost);

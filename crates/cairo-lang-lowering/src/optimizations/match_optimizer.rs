@@ -25,7 +25,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 
-        let mut target_blocks = UnorderedHashSet::default();
+        let mut target_blocks = UnorderedHashSet::new();
         for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
             let block = &mut lowered.blocks[statement_location.0];
 

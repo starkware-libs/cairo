@@ -177,7 +177,7 @@ impl BlockUsages {
             Expr::Loop(expr) => {
                 self.handle_expr(function_body, expr.body, current);
                 // Copy body usage to loop usage.
-                self.block_usages.insert(expr_id, self.block_usages[expr.body].clone());
+                self.block_usages.insert(expr_id, self.block_usages[&expr.body].clone());
             }
             Expr::While(expr) => {
                 let mut usage = Default::default();
@@ -204,7 +204,9 @@ impl BlockUsages {
             Expr::Match(expr) => {
                 self.handle_expr(function_body, expr.matched_expr, current);
                 for arm in &expr.arms {
-                    Self::handle_pattern(&function_body.patterns, arm.pattern, current);
+                    for pattern in &arm.patterns {
+                        Self::handle_pattern(&function_body.patterns, *pattern, current);
+                    }
                     self.handle_expr(function_body, arm.expression, current);
                 }
             }

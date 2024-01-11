@@ -11,9 +11,9 @@ cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.4.1" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.1" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.4.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1" }
-itertools.workspace = true
+itertools = { workspace = true, default-features = true }
 thiserror.workspace = true
-num-traits.workspace = true
+num-traits = { workspace = true, default-features = true }
 
 [dev-dependencies]
 env_logger.workspace = true

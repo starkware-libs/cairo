@@ -51,11 +51,11 @@ fn test_expr_lookup() {
              })], tail: Some(Match(ExprMatch { matched_expr: FunctionCall(ExprFunctionCall { \
              function: core::Felt252Mul::mul, args: [Value(Literal(ExprLiteral { value: 1, ty: \
              core::felt252 })), Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], ty: \
-             core::felt252 }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: \
-             ExprLiteral { value: 0, ty: core::felt252 } }), expression: Block(ExprBlock { \
+             core::felt252 }), arms: [MatchArm { patterns: [Literal(PatternLiteral { literal: \
+             ExprLiteral { value: 0, ty: core::felt252 } })], expression: Block(ExprBlock { \
              statements: [], tail: Some(Literal(ExprLiteral { value: 5, ty: core::felt252 })), \
-             ty: core::felt252 }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-             core::felt252 }), expression: Block(ExprBlock { statements: [], tail: \
+             ty: core::felt252 }) }, MatchArm { patterns: [Otherwise(PatternOtherwise { ty: \
+             core::felt252 })], expression: Block(ExprBlock { statements: [], tail: \
              Some(Literal(ExprLiteral { value: 6, ty: core::felt252 })), ty: core::felt252 }) }], \
              ty: core::felt252 })), ty: core::felt252 })",
             "Block(ExprBlock { statements: [], tail: Some(Literal(ExprLiteral { value: 5, ty: \
@@ -77,11 +77,11 @@ fn test_expr_lookup() {
             "Match(ExprMatch { matched_expr: FunctionCall(ExprFunctionCall { function: \
              core::Felt252Mul::mul, args: [Value(Literal(ExprLiteral { value: 1, ty: \
              core::felt252 })), Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], ty: \
-             core::felt252 }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: \
-             ExprLiteral { value: 0, ty: core::felt252 } }), expression: Block(ExprBlock { \
+             core::felt252 }), arms: [MatchArm { patterns: [Literal(PatternLiteral { literal: \
+             ExprLiteral { value: 0, ty: core::felt252 } })], expression: Block(ExprBlock { \
              statements: [], tail: Some(Literal(ExprLiteral { value: 5, ty: core::felt252 })), \
-             ty: core::felt252 }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-             core::felt252 }), expression: Block(ExprBlock { statements: [], tail: \
+             ty: core::felt252 }) }, MatchArm { patterns: [Otherwise(PatternOtherwise { ty: \
+             core::felt252 })], expression: Block(ExprBlock { statements: [], tail: \
              Some(Literal(ExprLiteral { value: 6, ty: core::felt252 })), ty: core::felt252 }) }], \
              ty: core::felt252 })",
         ]

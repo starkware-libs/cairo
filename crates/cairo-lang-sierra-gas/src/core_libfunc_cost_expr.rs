@@ -31,7 +31,7 @@ impl CostOperations for Ops<'_> {
     ) -> Self::CostType {
         Self::CostType::from_iter([(
             token_type,
-            self.statement_future_cost.get_future_cost(&function.entry_point)[token_type].clone(),
+            self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone(),
         )])
     }
 
