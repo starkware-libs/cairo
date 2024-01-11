@@ -1,8 +1,9 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::casts::{
-    CastConcreteLibfunc, CastType, DowncastConcreteLibfunc, IntTypeInfo,
+    CastConcreteLibfunc, CastType, DowncastConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::Zero;
 
@@ -38,31 +39,30 @@ pub fn build_downcast(
 
     // The casm code below assumes both types are at most 128 bits.
     assert!(
-        libfunc.from_info.nbits <= 128 && libfunc.to_info.nbits <= 128,
-        "Downcasting from types of size > 128 bit is not supported."
+        libfunc.from_range.is_rc() && libfunc.to_range.is_rc(),
+        "Downcasting is not supported for types of size > 128 bit."
     );
 
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
 
-    let to_values = TypeValues::new(&libfunc.to_info);
-    match libfunc.from_info.cast_type(&libfunc.to_info) {
+    match libfunc.cast_type() {
         CastType { overflow_above: false, overflow_below: false } => {
             return handle_downcast_no_overflow(builder);
         }
-        CastType { overflow_above: true, overflow_below: false } => {
-            // Signed to signed would go the `both` or `no_overflow` cases.
-            // Signed to unsigned would go the `both` or `overflow_below` case.
-            assert!(
-                !libfunc.from_info.signed,
-                "`from` type must be unsigned for the overflow above case."
-            );
-            add_downcast_overflow_above(&mut casm_builder, value, range_check, &(to_values.max + 1))
-        }
-        CastType { overflow_above: false, overflow_below: true } => {
-            add_downcast_overflow_below(&mut casm_builder, value, range_check, &to_values.min)
-        }
+        CastType { overflow_above: true, overflow_below: false } => add_downcast_overflow_above(
+            &mut casm_builder,
+            value,
+            range_check,
+            &libfunc.to_range.upper,
+        ),
+        CastType { overflow_above: false, overflow_below: true } => add_downcast_overflow_below(
+            &mut casm_builder,
+            value,
+            range_check,
+            &libfunc.to_range.lower,
+        ),
         CastType { overflow_above: true, overflow_below: true } => {
-            add_downcast_overflow_both(&mut casm_builder, value, range_check, &to_values)
+            add_downcast_overflow_both(&mut casm_builder, value, range_check, &libfunc.to_range)
         }
     }
 
@@ -78,25 +78,6 @@ pub fn build_downcast(
             extra_costs: None,
         },
     ))
-}
-
-#[derive(Debug)]
-struct TypeValues {
-    /// The minimum value of the type.
-    min: BigInt,
-    /// The maximum value of the type.
-    max: BigInt,
-    /// The size of the type.
-    size: BigInt,
-}
-impl TypeValues {
-    fn new(info: &IntTypeInfo) -> Self {
-        Self {
-            min: if info.signed { -(BigInt::from(1) << (info.nbits - 1)) } else { BigInt::from(0) },
-            max: (BigInt::from(1) << (if info.signed { info.nbits - 1 } else { info.nbits })) - 1,
-            size: BigInt::from(1) << info.nbits,
-        }
-    }
 }
 
 /// Builds Casm instructions for [CastConcreteLibfunc::Downcast] for a trivial case where no
@@ -172,15 +153,15 @@ fn add_downcast_overflow_both(
     casm_builder: &mut CasmBuilder,
     value: Var,
     range_check: Var,
-    to_values: &TypeValues,
+    to_range: &Range,
 ) {
     casm_build_extend! {casm_builder,
-        const minus_to_min_value = -to_values.min.clone();
+        const minus_to_min_value = -to_range.lower.clone();
         let canonical_value = value + minus_to_min_value;
         // Use a hint to guess whether the result is in range (is_valid=1) or overflows
         // (is_valid=0).
         tempvar is_valid;
-        const to_range_size = to_values.size.clone();
+        const to_range_size = to_range.size();
         hint TestLessThan {lhs: canonical_value, rhs: to_range_size} into {dst: is_valid};
         jump Success if is_valid != 0;
         // Failure.
@@ -192,16 +173,17 @@ fn add_downcast_overflow_both(
         jump OverflowAbove if is_overflow_above != 0;
     }
     // Overflow below.
-    validate_lt(casm_builder, range_check, value, &to_values.min);
+    validate_lt(casm_builder, range_check, value, &to_range.lower);
     casm_build_extend!(casm_builder, jump Failure;);
 
     casm_build_extend!(casm_builder, OverflowAbove:);
-    validate_ge(casm_builder, range_check, value, &(&to_values.max + 1));
+    // Using `validate_ge_no_opt` so it would have the same ap-change as `validate_lt`.
+    validate_ge_no_opt(casm_builder, range_check, value, &to_range.upper);
     casm_build_extend!(casm_builder, jump Failure;);
 
     casm_build_extend!(casm_builder, Success:);
-    validate_ge(casm_builder, range_check, value, &to_values.min);
-    validate_lt(casm_builder, range_check, value, &(&to_values.max + 1));
+    validate_ge(casm_builder, range_check, value, &to_range.lower);
+    validate_lt(casm_builder, range_check, value, &to_range.upper);
 }
 
 /// Validates that `value` is smaller than `bound`.
@@ -215,15 +197,28 @@ fn validate_lt(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bou
 }
 
 /// Validates that `value` is greater or equal to `bound`.
+/// If `bound` is zero, only range checks without an additional calculation.
 fn validate_ge(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bound: &BigInt) {
     if bound.is_zero() {
         casm_build_extend! {casm_builder, assert value = *(range_check++);};
     } else {
-        casm_build_extend! {casm_builder,
-            // value >= bound  <=>  value - bound >= 0.
-            const bound = bound.clone();
-            tempvar shifted_value = value - bound;
-            assert shifted_value = *(range_check++);
-        };
+        validate_ge_no_opt(casm_builder, range_check, value, bound);
     }
+}
+
+/// Validates that `value` is greater or equal to `bound`.
+/// A non-optimized version of `validate_ge`, required for cases where we need to consistently have
+/// the same ap-change as `validate_lt`.
+fn validate_ge_no_opt(
+    casm_builder: &mut CasmBuilder,
+    range_check: Var,
+    value: Var,
+    bound: &BigInt,
+) {
+    casm_build_extend! {casm_builder,
+        // value >= bound  <=>  value - bound >= 0.
+        const bound = bound.clone();
+        tempvar shifted_value = value - bound;
+        assert shifted_value = *(range_check++);
+    };
 }
