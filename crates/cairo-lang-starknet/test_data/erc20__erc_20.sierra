@@ -4251,25 +4251,25 @@ storage_write_syscall([11], [12], [2], [18], [16]) { fallthrough([19], [20]) 380
 branch_align() -> (); // 3795
 struct_construct<Unit>() -> ([24]); // 3796
 enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([24]) -> ([25]); // 3797
-store_temp<GasBuiltin>([19]) -> ([19]); // 3798
-store_temp<System>([20]) -> ([20]); // 3799
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([25]) -> ([25]); // 3800
-return([19], [20], [25]); // 3801
+store_temp<GasBuiltin>([19]) -> ([26]); // 3798
+store_temp<System>([20]) -> ([27]); // 3799
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([25]) -> ([28]); // 3800
+jump() { 3807() }; // 3801
 branch_align() -> (); // 3802
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([23]) -> ([26]); // 3803
-store_temp<GasBuiltin>([21]) -> ([21]); // 3804
-store_temp<System>([22]) -> ([22]); // 3805
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([26]) -> ([26]); // 3806
-return([21], [22], [26]); // 3807
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([23]) -> ([29]); // 3803
+store_temp<GasBuiltin>([21]) -> ([26]); // 3804
+store_temp<System>([22]) -> ([27]); // 3805
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([29]) -> ([28]); // 3806
+return([26], [27], [28]); // 3807
 branch_align() -> (); // 3808
 drop<StorageBaseAddress>([3]) -> (); // 3809
 drop<u128>([6]) -> (); // 3810
 drop<u32>([2]) -> (); // 3811
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([15]) -> ([27]); // 3812
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([15]) -> ([30]); // 3812
 store_temp<GasBuiltin>([13]) -> ([13]); // 3813
 store_temp<System>([14]) -> ([14]); // 3814
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([27]) -> ([27]); // 3815
-return([13], [14], [27]); // 3816
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([30]) -> ([30]); // 3815
+return([13], [14], [30]); // 3816
 store_temp<cairo_level_tests::contracts::erc20::erc_20::Event>([0]) -> ([0]); // 3817
 return([0]); // 3818
 enum_match<cairo_level_tests::contracts::erc20::erc_20::Event>([0]) { fallthrough([3]) 3832([4]) }; // 3819
