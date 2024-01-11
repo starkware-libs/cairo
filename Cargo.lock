@@ -845,6 +845,7 @@ dependencies = [
  "cairo-lang-sierra-ap-change",
  "cairo-lang-sierra-gas",
  "cairo-lang-sierra-type-size",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
  "indoc",
