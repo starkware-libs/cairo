@@ -435,18 +435,17 @@ version = "2.4.1"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
+ "hashbrown 0.14.3",
  "indoc",
  "itertools 0.11.0",
  "num-bigint",
  "num-traits 0.2.17",
  "parity-scale-codec",
- "parity-scale-codec-derive",
  "pretty_assertions",
  "schemars",
  "serde",
  "test-case",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
@@ -2205,8 +2204,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dec8a8073036902368c2cdc0387e85ff9a37054d7e7c98e592145e0c92cd4fb"
 dependencies = [
  "arrayvec",
+ "bitvec",
  "byte-slice-cast",
  "impl-trait-for-tuples",
+ "parity-scale-codec-derive",
+ "serde",
 ]
 
 [[package]]

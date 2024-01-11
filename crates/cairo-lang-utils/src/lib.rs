@@ -9,7 +9,6 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::fmt;
 
-#[cfg(feature = "serde")]
 pub mod bigint;
 pub mod byte_array;
 pub mod casts;
