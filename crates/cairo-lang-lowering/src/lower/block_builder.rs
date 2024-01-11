@@ -180,7 +180,7 @@ impl BlockBuilder {
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
-    fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: FlatBlockEnd) {
+    pub fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: FlatBlockEnd) {
         let block = FlatBlock { statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
