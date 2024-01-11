@@ -792,9 +792,23 @@ fn compiler_errors(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let program = ProgramParser::new().parse(inputs["sierra_code"].as_str()).unwrap();
-    let error_str =
-        compile(&program, &calc_metadata_ap_change_only(&program).unwrap_or_default(), false)
+
+    let metadata = match inputs.get("metadata").map(|x| x.as_str()) {
+        Some("gas") => calc_metadata(&program, Default::default()),
+        Some("none") | None => {
+            // In this case, metadata errors are ignored.
+            Ok(calc_metadata_ap_change_only(&program).unwrap_or_default())
+        }
+        Some(metadata) => {
+            panic!("Invalid value for metadata argument: '{metadata}'.");
+        }
+    };
+
+    let error_str = match metadata {
+        Ok(metadata) => compile(&program, &metadata, false)
             .expect_err("Compilation is expected to fail.")
-            .to_string();
+            .to_string(),
+        Err(err) => err.to_string(),
+    };
     TestRunnerResult::success(OrderedHashMap::from([("error".into(), error_str)]))
 }
