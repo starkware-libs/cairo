@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::{self as semantic, TypeId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
@@ -16,7 +16,6 @@ use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::ids::FunctionId;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
@@ -289,7 +288,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
-    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<FunctionId>>;
+    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
@@ -437,9 +436,6 @@ fn get_direct_callees(
                     direct_callees.push(statement_call.function);
                 }
             }
-            // TODO(lior): Add a dependency for `coupon_buy` where
-            //   dependency_type == DependencyType::Cost since the cost of `coupon_buy` depends on
-            //   the cost of the coupon function.
         }
         if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
             direct_callees.push(s.function);
@@ -467,18 +463,74 @@ fn concrete_function_with_body_postpanic_direct_callees(
 }
 
 /// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
-/// ConcreteFunctionWithBodyIds
+/// [ids::ConcreteFunctionWithBodyId]s.
+///
+/// If `dependency_type` is `DependencyType::Cost`, returns the coupon functions when
+/// `coupon_buy` and `coupon_refund` are encountered.
+/// For example, for `coupon_buy::<foo::Coupon>()`, `foo` will be added to the list.
 fn functions_with_body_from_function_ids(
     db: &dyn LoweringGroup,
     function_ids: Vec<ids::FunctionId>,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     Ok(function_ids
         .into_iter()
-        .map(|concrete| concrete.body(db.upcast()))
+        .map(|concrete| {
+            if dependency_type == DependencyType::Cost {
+                if let Some(function_with_body) = extract_coupon_function(db, concrete)? {
+                    return Ok(Some(function_with_body));
+                }
+            }
+            concrete.body(db.upcast())
+        })
         .collect::<Maybe<Vec<_>>>()?
         .into_iter()
         .flatten()
         .collect_vec())
+}
+
+/// Given a [ids::FunctionId] that represents `coupon_buy` or `coupon_refund`, returns the coupon's
+/// function.
+///
+/// For example, `coupon_buy::<foo::Coupon>` will return `foo`.
+fn extract_coupon_function(
+    db: &dyn LoweringGroup,
+    concrete: ids::FunctionId,
+) -> Maybe<Option<ids::ConcreteFunctionWithBodyId>> {
+    // Check that the function is a semantic function.
+    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup(db) else {
+        return Ok(None);
+    };
+
+    // Check that it's an extern function named "coupon_buy" or "coupon_refund".
+    let concrete_function = function_id.get_concrete(db.upcast());
+    let generic_function = concrete_function.generic_function;
+    let semantic::items::functions::GenericFunctionId::Extern(extern_function_id) =
+        generic_function
+    else {
+        return Ok(None);
+    };
+    let name = db.lookup_intern_extern_function(extern_function_id).name(db.upcast());
+    if !(name == "coupon_buy" || name == "coupon_refund") {
+        return Ok(None);
+    }
+
+    // Extract the coupon function from the generic argument.
+    let [semantic::GenericArgumentId::Type(type_id)] = concrete_function.generic_args[..] else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+    let semantic::TypeLongId::Coupon(coupon_function) = db.lookup_intern_type(type_id) else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+
+    // Convert [semantic::FunctionId] to [ids::ConcreteFunctionWithBodyId].
+    let Some(coupon_function_with_body_id) =
+        coupon_function.get_concrete(db.upcast()).body(db.upcast())?
+    else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+
+    Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
 fn concrete_function_with_body_postinline_direct_callees_with_body(
@@ -489,6 +541,7 @@ fn concrete_function_with_body_postinline_direct_callees_with_body(
     functions_with_body_from_function_ids(
         db,
         db.concrete_function_with_body_postinline_direct_callees(function_id, dependency_type)?,
+        dependency_type,
     )
 }
 
@@ -500,6 +553,7 @@ fn concrete_function_with_body_postpanic_direct_callees_with_body(
     functions_with_body_from_function_ids(
         db,
         db.concrete_function_with_body_postpanic_direct_callees(function_id, dependency_type)?,
+        dependency_type,
     )
 }
 
