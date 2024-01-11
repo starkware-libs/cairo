@@ -111,58 +111,24 @@ fn test_validate_gas_cost() {
             ]
         },
     ];
-<<<<<<< HEAD
-
-    let available_gas1 = core::testing::get_available_gas();
-    let gas_usage = 500000 - available_gas1;
-    assert!(gas_usage == 149200, "Unexpected call building cost `{gas_usage}`.");
-||||||| 3205b8a81
-
-    let available_gas1 = core::testing::get_available_gas();
-    let gas_usage = 500000 - available_gas1;
-    assert!(gas_usage == 152000, "Unexpected call building cost `{gas_usage}`.");
-=======
     let post_call_building_gas = withdraw_and_get_available_gas();
->>>>>>> origin/main
 
     let serialized_args = serialized(calls);
-<<<<<<< HEAD
-    let available_gas2 = core::testing::get_available_gas();
-
-    let gas_usage = available_gas1 - available_gas2;
-    assert!(gas_usage == 72400, "Unexpected serialization cost `{gas_usage}`.");
-||||||| 3205b8a81
-    let available_gas2 = core::testing::get_available_gas();
-
-    let gas_usage = available_gas1 - available_gas2;
-    assert!(gas_usage == 96700, "Unexpected serialization cost `{gas_usage}`.");
-=======
     let post_serialization_gas = withdraw_and_get_available_gas();
->>>>>>> origin/main
 
     test_contract::__wrapper____validate__(serialized_args);
-<<<<<<< HEAD
-    let available_gas3 = core::testing::get_available_gas();
-    let gas_usage = available_gas2 - available_gas3;
-    assert!(gas_usage == 78250, "Unexpected entry point cost `{gas_usage}`.");
-||||||| 3205b8a81
-    let available_gas3 = core::testing::get_available_gas();
-    let gas_usage = available_gas2 - available_gas3;
-    assert!(gas_usage == 117930, "Unexpected entry point cost `{gas_usage}`.");
-=======
     let post_call_gas = withdraw_and_get_available_gas();
 
     let call_building_gas_usage = base_gas - post_call_building_gas;
     let serialization_gas_usage = post_call_building_gas - post_serialization_gas;
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
-        call_building_gas_usage == 6650
-            && serialization_gas_usage == 106250
-            && entry_point_gas_usage == 400030,
+        call_building_gas_usage == 6150
+            && serialization_gas_usage == 82550
+            && entry_point_gas_usage == 357850,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.
      entry_point: `{entry_point_gas_usage}`."
     );
->>>>>>> origin/main
 }

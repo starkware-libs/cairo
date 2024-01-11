@@ -158,7 +158,6 @@ fn build_builtin_withdraw_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-<<<<<<< HEAD
     build_withdraw_gas_given_cost_table(
         builder,
         casm_builder,
@@ -166,35 +165,6 @@ fn build_builtin_withdraw_gas(
         Default::default(),
     )
 }
-||||||| 3205b8a81
-    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
-    let mut total_requested_count =
-        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
-    for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[(builder.idx, *token_type)];
-        if requested_count == 0 {
-            continue;
-        }
-        let offset = token_type.offset_in_builtin_costs();
-        // Fetch the cost of a single instance.
-        casm_build_extend! {casm_builder,
-            tempvar single_cost = builtin_cost[offset];
-        };
-=======
-    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
-    let mut total_requested_count =
-        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
-    for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[&(builder.idx, *token_type)];
-        if requested_count == 0 {
-            continue;
-        }
-        let offset = token_type.offset_in_builtin_costs();
-        // Fetch the cost of a single instance.
-        casm_build_extend! {casm_builder,
-            tempvar single_cost = builtin_cost[offset];
-        };
->>>>>>> origin/main
 
 /// Builds the instructions for the `withdraw_gas` libfunc given the builtin cost table.
 fn build_withdraw_gas_given_cost_table(
@@ -251,11 +221,11 @@ fn add_get_total_requested_count_code(
     if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
         return Err(InvocationError::UnknownVariableData);
     }
-    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
+    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
     for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[(builder.idx, *token_type)];
+        let requested_count = variable_values[&(builder.idx, *token_type)];
         if requested_count == 0 {
             continue;
         }
