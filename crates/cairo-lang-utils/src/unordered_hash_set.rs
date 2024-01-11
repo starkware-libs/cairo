@@ -93,50 +93,6 @@ impl<Key: Hash + Eq, BH: BuildHasher> UnorderedHashSet<Key, BH> {
     {
         self.0.contains(value)
     }
-<<<<<<< HEAD
-
-    /// Returns the number of elements in the set.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns true if the set contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    /// Clears the set, removing all values.
-    pub fn clear(&mut self) {
-        self.0.clear()
-    }
-
-    /// Return a sorted vector of the values.
-    pub fn sorted(self) -> Vec<Key>
-    where
-        Key: Ord,
-    {
-        let mut vec: Vec<Key> = self.0.into_iter().collect();
-        vec.sort();
-        vec
-    }
-||||||| 3205b8a81
-
-    /// Returns the number of elements in the set.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns true if the set contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    /// Clears the set, removing all values.
-    pub fn clear(&mut self) {
-        self.0.clear()
-    }
-=======
->>>>>>> origin/main
 }
 
 impl<Key, BH: Default> Default for UnorderedHashSet<Key, BH> {

@@ -148,8 +148,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         FunctionCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
-<<<<<<< HEAD
-        CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
+        Gas(libfunc) => match libfunc {
             GasConcreteLibfunc::WithdrawGas(_) => {
                 let cost_computation_ap_change: usize =
                     BuiltinCostsType::cost_computation_steps(false, |token_type| {
@@ -170,15 +169,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     |token_type| info_provider.token_usages(token_type),
                 ))]
             }
-||||||| 3205b8a81
-        CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
-            GasConcreteLibfunc::WithdrawGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
-            GasConcreteLibfunc::RedepositGas(_) => vec![ApChange::Known(0)],
-=======
-        Gas(libfunc) => match libfunc {
-            GasConcreteLibfunc::WithdrawGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
-            GasConcreteLibfunc::RedepositGas(_) => vec![ApChange::Known(0)],
->>>>>>> origin/main
             GasConcreteLibfunc::GetAvailableGas(_) => vec![ApChange::Known(0)],
             GasConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation_ap_change: usize =

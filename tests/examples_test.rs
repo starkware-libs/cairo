@@ -303,7 +303,7 @@ fn run_function_test(
 )]
 #[case::fib_fail(
     "fib",
-    &[1, 1, 10].map(Felt252::from), Some(20000), None,
+    &[1, 1, 10].map(Felt252::from), Some(10000), None,
     RunResultValue::Panic(vec![Felt252::from_bytes_be(b"Out of gas")])
 )]
 fn run_function_auto_gas_test(
