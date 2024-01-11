@@ -1,5 +1,7 @@
-use std::ops::Neg;
-use std::str::FromStr;
+#[cfg(not(feature = "std"))]
+use alloc::format;
+use core::ops::Neg;
+use core::str::FromStr;
 
 use num_bigint::BigInt;
 use num_traits::Num;

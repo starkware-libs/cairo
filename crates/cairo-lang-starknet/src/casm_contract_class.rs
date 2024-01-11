@@ -448,7 +448,7 @@ impl CasmContractClass {
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
                 .code_offset;
             assert_eq!(
-                metadata.gas_info.function_costs[function.id.clone()],
+                metadata.gas_info.function_costs[&function.id],
                 OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
                 "Unexpected entry point cost."
             );

@@ -34,18 +34,13 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v1 -> v5})
+  Return(v1)
 
 blk2:
 Statements:
   (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -86,17 +81,12 @@ blk1:
 Statements:
   (v1: core::felt252) <- 1u
 End:
-  Goto(blk3, {v1 -> v3})
+  Return(v1)
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
-
-blk3:
-Statements:
-End:
-  Return(v3)
+  Return(v0)
 
 //! > ==========================================================================
 
@@ -186,15 +176,10 @@ blk1:
 Statements:
   (v7: core::felt252) <- 0u
 End:
-  Goto(blk3, {v7 -> v10})
+  Return(v7)
 
 blk2:
 Statements:
   (v9: core::felt252) <- 1u
 End:
-  Goto(blk3, {v9 -> v10})
-
-blk3:
-Statements:
-End:
-  Return(v10)
+  Return(v9)

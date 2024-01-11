@@ -4,7 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
@@ -598,70 +598,60 @@ pub fn compile_invocation(
         const_segment_info_builder,
     };
     match libfunc {
-        CoreConcreteLibfunc::Felt252(libfunc) => felt252::build(libfunc, builder),
-        CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
-        CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
-        CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint8(libfunc) => {
-            int::unsigned::build_uint::<_, 0x100>(libfunc, builder)
-        }
-        CoreConcreteLibfunc::Uint16(libfunc) => {
-            int::unsigned::build_uint::<_, 0x10000>(libfunc, builder)
-        }
-        CoreConcreteLibfunc::Uint32(libfunc) => {
-            int::unsigned::build_uint::<_, 0x100000000>(libfunc, builder)
-        }
-        CoreConcreteLibfunc::Uint64(libfunc) => {
-            int::unsigned::build_uint::<_, 0x10000000000000000>(libfunc, builder)
-        }
-        CoreConcreteLibfunc::Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
-        CoreConcreteLibfunc::Sint8(libfunc) => {
+        Felt252(libfunc) => felt252::build(libfunc, builder),
+        Bool(libfunc) => boolean::build(libfunc, builder),
+        Cast(libfunc) => casts::build(libfunc, builder),
+        Ec(libfunc) => ec::build(libfunc, builder),
+        Uint8(libfunc) => int::unsigned::build_uint::<_, 0x100>(libfunc, builder),
+        Uint16(libfunc) => int::unsigned::build_uint::<_, 0x10000>(libfunc, builder),
+        Uint32(libfunc) => int::unsigned::build_uint::<_, 0x100000000>(libfunc, builder),
+        Uint64(libfunc) => int::unsigned::build_uint::<_, 0x10000000000000000>(libfunc, builder),
+        Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
+        Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
+        Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
+        Sint8(libfunc) => {
             int::signed::build_sint::<_, { i8::MIN as i128 }, { i8::MAX as i128 }>(libfunc, builder)
         }
-        CoreConcreteLibfunc::Sint16(libfunc) => {
+        Sint16(libfunc) => {
             int::signed::build_sint::<_, { i16::MIN as i128 }, { i16::MAX as i128 }>(
                 libfunc, builder,
             )
         }
-        CoreConcreteLibfunc::Sint32(libfunc) => {
+        Sint32(libfunc) => {
             int::signed::build_sint::<_, { i32::MIN as i128 }, { i32::MAX as i128 }>(
                 libfunc, builder,
             )
         }
-        CoreConcreteLibfunc::Sint64(libfunc) => {
+        Sint64(libfunc) => {
             int::signed::build_sint::<_, { i64::MIN as i128 }, { i64::MAX as i128 }>(
                 libfunc, builder,
             )
         }
-        CoreConcreteLibfunc::Sint128(libfunc) => int::signed128::build(libfunc, builder),
-        CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
-        CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
-        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
-        CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
-        CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
-        CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
-        CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
-        CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
-        CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
-        CoreConcreteLibfunc::ApTracking(_) => misc::build_update_ap_tracking(builder),
-        CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
-        CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
-        CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
-        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
-        CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
-        CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
-        CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
-        CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
-        CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
-        CoreConcreteLibfunc::SnapshotTake(_) => misc::build_dup(builder),
-        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
-            felt252_dict::build_entry(libfunc, builder)
-        }
-        CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
-        CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
-        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
+        Sint128(libfunc) => int::signed128::build(libfunc, builder),
+        Gas(libfunc) => gas::build(libfunc, builder),
+        BranchAlign(_) => misc::build_branch_align(builder),
+        Array(libfunc) => array::build(libfunc, builder),
+        Drop(_) => misc::build_drop(builder),
+        Dup(_) => misc::build_dup(builder),
+        Mem(libfunc) => mem::build(libfunc, builder),
+        UnwrapNonZero(_) => misc::build_identity(builder),
+        FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        UnconditionalJump(_) => misc::build_jump(builder),
+        ApTracking(_) => misc::build_update_ap_tracking(builder),
+        Box(libfunc) => boxing::build(libfunc, builder),
+        Enum(libfunc) => enm::build(libfunc, builder),
+        Struct(libfunc) => structure::build(libfunc, builder),
+        Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
+        Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        Poseidon(libfunc) => poseidon::build(libfunc, builder),
+        StarkNet(libfunc) => starknet::build(libfunc, builder),
+        Nullable(libfunc) => nullable::build(libfunc, builder),
+        Debug(libfunc) => debug::build(libfunc, builder),
+        SnapshotTake(_) => misc::build_dup(builder),
+        Felt252DictEntry(libfunc) => felt252_dict::build_entry(libfunc, builder),
+        Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        Range(libfunc) => range_reduction::build(libfunc, builder),
+        Const(libfunc) => const_type::build(libfunc, builder),
     }
 }
 

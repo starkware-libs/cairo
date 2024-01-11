@@ -765,10 +765,48 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
 
 impl<'a> PostcostContext<'a> {
     /// Computes the cost of the withdraw_gas libfunc.
+<<<<<<< HEAD
     fn compute_withdraw_gas_cost(&self, idx: &StatementIdx, info: &WithdrawGasBranchInfo) -> i32 {
         info.const_cost(|token_type| {
             self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
         })
         .cost()
+||||||| 3205b8a81
+    fn compute_withdraw_gas_cost(
+        &self,
+        idx: &StatementIdx,
+        const_cost: &ConstCost,
+        with_builtin_costs: bool,
+    ) -> i32 {
+        let mut amount = const_cost.cost();
+
+        if with_builtin_costs {
+            let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
+                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+            })
+            .into_or_panic::<i32>();
+            amount += ConstCost { steps, ..Default::default() }.cost();
+        }
+
+        amount
+=======
+    fn compute_withdraw_gas_cost(
+        &self,
+        idx: &StatementIdx,
+        const_cost: &ConstCost,
+        with_builtin_costs: bool,
+    ) -> i32 {
+        let mut amount = const_cost.cost();
+
+        if with_builtin_costs {
+            let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
+                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+            })
+            .into_or_panic::<i32>();
+            amount += ConstCost { steps, ..Default::default() }.cost();
+        }
+
+        amount
+>>>>>>> origin/main
     }
 }

@@ -12,14 +12,12 @@ libfunc drop<felt252> = drop<felt252>;
 libfunc drop<Uninitialized<felt252>> = drop<Uninitialized<felt252>>;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_sub = felt252_sub;
 libfunc function_call<user@examples::fib_local::fib> = function_call<user@examples::fib_local::fib>;
 libfunc felt252_const<2> = felt252_const<2>;
 libfunc store_local<felt252> = store_local<felt252>;
 libfunc felt252_add = felt252_add;
-libfunc rename<felt252> = rename<felt252>;
 
 alloc_local<felt252>() -> ([2]); // 0
 finalize_locals() -> (); // 1
@@ -30,36 +28,35 @@ branch_align() -> (); // 5
 drop<felt252>([0]) -> (); // 6
 drop<Uninitialized<felt252>>([2]) -> (); // 7
 felt252_const<1>() -> ([5]); // 8
-store_temp<felt252>([5]) -> ([6]); // 9
-jump() { 39() }; // 10
+store_temp<felt252>([5]) -> ([5]); // 9
+return([5]); // 10
 branch_align() -> (); // 11
 drop<NonZero<felt252>>([4]) -> (); // 12
-felt252_const<1>() -> ([7]); // 13
-dup<felt252>([0]) -> ([0], [8]); // 14
-felt252_sub([8], [7]) -> ([9]); // 15
-store_temp<felt252>([9]) -> ([9]); // 16
-felt252_is_zero([9]) { fallthrough() 24([10]) }; // 17
+felt252_const<1>() -> ([6]); // 13
+dup<felt252>([0]) -> ([0], [7]); // 14
+felt252_sub([7], [6]) -> ([8]); // 15
+store_temp<felt252>([8]) -> ([8]); // 16
+felt252_is_zero([8]) { fallthrough() 24([9]) }; // 17
 branch_align() -> (); // 18
 drop<felt252>([0]) -> (); // 19
 drop<Uninitialized<felt252>>([2]) -> (); // 20
-felt252_const<1>() -> ([11]); // 21
-store_temp<felt252>([11]) -> ([12]); // 22
-jump() { 38() }; // 23
+felt252_const<1>() -> ([10]); // 21
+store_temp<felt252>([10]) -> ([10]); // 22
+return([10]); // 23
 branch_align() -> (); // 24
-drop<NonZero<felt252>>([10]) -> (); // 25
-felt252_const<1>() -> ([13]); // 26
-dup<felt252>([0]) -> ([0], [14]); // 27
-felt252_sub([14], [13]) -> ([15]); // 28
-store_temp<felt252>([15]) -> ([15]); // 29
-function_call<user@examples::fib_local::fib>([15]) -> ([1]); // 30
-felt252_const<2>() -> ([16]); // 31
-felt252_sub([0], [16]) -> ([17]); // 32
-store_temp<felt252>([17]) -> ([17]); // 33
+drop<NonZero<felt252>>([9]) -> (); // 25
+felt252_const<1>() -> ([11]); // 26
+dup<felt252>([0]) -> ([0], [12]); // 27
+felt252_sub([12], [11]) -> ([13]); // 28
+store_temp<felt252>([13]) -> ([13]); // 29
+function_call<user@examples::fib_local::fib>([13]) -> ([1]); // 30
+felt252_const<2>() -> ([14]); // 31
+felt252_sub([0], [14]) -> ([15]); // 32
+store_temp<felt252>([15]) -> ([15]); // 33
 store_local<felt252>([2], [1]) -> ([1]); // 34
-function_call<user@examples::fib_local::fib>([17]) -> ([18]); // 35
-felt252_add([1], [18]) -> ([19]); // 36
-store_temp<felt252>([19]) -> ([12]); // 37
-rename<felt252>([12]) -> ([6]); // 38
-return([6]); // 39
+function_call<user@examples::fib_local::fib>([15]) -> ([16]); // 35
+felt252_add([1], [16]) -> ([17]); // 36
+store_temp<felt252>([17]) -> ([17]); // 37
+return([17]); // 38
 
 examples::fib_local::fib@0([0]: felt252) -> (felt252);

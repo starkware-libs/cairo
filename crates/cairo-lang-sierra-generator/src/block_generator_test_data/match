@@ -31,14 +31,12 @@ felt252_const<10>() -> ([0])
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
 felt252_const<3>() -> ([2])
-PushValues([2]: felt252) -> ([3])
-jump() { label_test::foo::2() }
+PushValues([2]: felt252) -> ([2])
+return([2])
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([1]) -> ()
-felt252_const<4>() -> ([4])
-PushValues([4]: felt252) -> ([3])
-label_test::foo::2:
+felt252_const<4>() -> ([3])
 PushValues([3]: felt252) -> ([3])
 return([3])
 label_test::foo::1:
@@ -58,18 +56,13 @@ blk1:
 Statements:
   (v2: core::felt252) <- 3u
 End:
-  Goto(blk3, {v2 -> v4})
+  Return(v2)
 
 blk2:
 Statements:
   (v3: core::felt252) <- 4u
 End:
-  Goto(blk3, {v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v4)
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -103,15 +96,13 @@ felt252_const<7>() -> ([0])
 dup<felt252>([0]) -> ([0], [1])
 felt252_is_zero([1]) { fallthrough() label_test::foo::0([2]) }
 branch_align() -> ()
-PushValues([0]: felt252) -> ([3])
-jump() { label_test::foo::2() }
+PushValues([0]: felt252) -> ([0])
+return([0])
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
 drop<felt252>([0]) -> ()
-felt252_const<7>() -> ([4])
-PushValues([4]: felt252) -> ([3])
-label_test::foo::2:
+felt252_const<7>() -> ([3])
 PushValues([3]: felt252) -> ([3])
 return([3])
 label_test::foo::1:
@@ -130,18 +121,13 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
+  Return(v0)
 
 blk2:
 Statements:
   (v2: core::felt252) <- 7u
 End:
-  Goto(blk3, {v2 -> v3})
-
-blk3:
-Statements:
-End:
-  Return(v3)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -173,14 +159,12 @@ foo
 enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
 rename<felt252>([1]) -> ([3])
-PushValues([3]: felt252) -> ([4])
-jump() { label_test::foo::2() }
+PushValues([3]: felt252) -> ([3])
+return([3])
 label_test::foo::0:
 branch_align() -> ()
 drop<Unit>([2]) -> ()
-felt252_const<0>() -> ([5])
-PushValues([5]: felt252) -> ([4])
-label_test::foo::2:
+felt252_const<0>() -> ([4])
 PushValues([4]: felt252) -> ([4])
 return([4])
 label_test::foo::1:
@@ -199,15 +183,10 @@ blk1:
 Statements:
   (v3: core::felt252) <- desnap(v1)
 End:
-  Goto(blk3, {v3 -> v5})
+  Return(v3)
 
 blk2:
 Statements:
   (v4: core::felt252) <- 0u
 End:
-  Goto(blk3, {v4 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v4)

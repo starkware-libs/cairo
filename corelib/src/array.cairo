@@ -72,7 +72,11 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     #[must_use]
     fn is_empty(self: @Array<T>) -> bool {
-        self.len() == 0_usize
+        let mut snapshot = self;
+        match array_snapshot_pop_front(ref snapshot) {
+            Option::Some(_) => false,
+            Option::None => true,
+        }
     }
     #[inline(always)]
     #[must_use]
@@ -203,7 +207,11 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     #[must_use]
     fn is_empty(self: Span<T>) -> bool {
-        self.len() == 0_usize
+        let mut snapshot = self.snapshot;
+        match array_snapshot_pop_front(ref snapshot) {
+            Option::Some(_) => false,
+            Option::None => true,
+        }
     }
 }
 

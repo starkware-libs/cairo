@@ -50,18 +50,13 @@ Statements:
   (v5: ()) <- struct_construct()
   (v6: core::option::Option::<test::A>) <- Option::None(v5)
 End:
-  Goto(blk3, {v10 -> v11, v6 -> v7})
+  Return(v10, v6)
 
 blk2:
 Statements:
   (v3: core::option::Option::<test::A>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v9 -> v11, v3 -> v7})
-
-blk3:
-Statements:
-End:
-  Return(v11, v7)
+  Return(v9, v3)
 
 //! > ==========================================================================
 
