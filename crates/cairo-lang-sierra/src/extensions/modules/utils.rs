@@ -12,7 +12,7 @@ use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
@@ -36,7 +36,8 @@ pub fn reinterpret_cast_signature(
     )
 }
 
-/// An half-close half-open range.
+/// A range of integers (`[lower, upper)`).
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Range {
     /// The lower bound (Inclusive).
     pub lower: BigInt,
@@ -46,32 +47,56 @@ pub struct Range {
 impl Range {
     /// Creates a closed range i.e. `[lower, upper]`.
     pub fn closed(lower: BigInt, upper: BigInt) -> Self {
-        Self { lower, upper: upper + 1 }
+        Self::half_open(lower, upper + 1)
     }
     /// Creates a half-closed range i.e. `[lower, upper)`.
     pub fn half_open(lower: BigInt, upper: BigInt) -> Self {
         Self { lower, upper }
     }
-}
-
-/// Returns the Range bounds from the given type info.
-pub fn extract_bounds(ty_info: &TypeInfo) -> Result<Range, SpecializationError> {
-    Ok(match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
-        (id, []) if *id == Felt252Type::id() => Range::half_open(0.into(), Felt252::prime().into()),
-        (id, []) if *id == Uint8Type::id() => Range::closed(u8::MIN.into(), u8::MAX.into()),
-        (id, []) if *id == Uint16Type::id() => Range::closed(u16::MIN.into(), u16::MAX.into()),
-        (id, []) if *id == Uint32Type::id() => Range::closed(u32::MIN.into(), u32::MAX.into()),
-        (id, []) if *id == Uint64Type::id() => Range::closed(u64::MIN.into(), u64::MAX.into()),
-        (id, []) if *id == Uint128Type::id() => Range::closed(u128::MIN.into(), u128::MAX.into()),
-        (id, []) if *id == Sint8Type::id() => Range::closed(i8::MIN.into(), i8::MAX.into()),
-        (id, []) if *id == Sint16Type::id() => Range::closed(i16::MIN.into(), i16::MAX.into()),
-        (id, []) if *id == Sint32Type::id() => Range::closed(i32::MIN.into(), i32::MAX.into()),
-        (id, []) if *id == Sint64Type::id() => Range::closed(i64::MIN.into(), i64::MAX.into()),
-        (id, []) if *id == Sint128Type::id() => Range::closed(i128::MIN.into(), i128::MAX.into()),
-        (id, []) if *id == Bytes31Type::id() => Range::half_open(0.into(), BigInt::one().shl(248)),
-        (id, [GenericArg::Value(min), GenericArg::Value(max)]) if *id == BoundedIntType::id() => {
-            Range::closed(min.clone(), max.clone())
-        }
-        _ => return Err(SpecializationError::UnsupportedGenericArg),
-    })
+    /// Returns the [Range] bounds from the given type info.
+    pub fn from_type_info(ty_info: &TypeInfo) -> Result<Self, SpecializationError> {
+        Ok(match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
+            (id, []) if *id == Felt252Type::id() => {
+                Self::half_open(0.into(), Felt252::prime().into())
+            }
+            (id, []) if *id == Uint8Type::id() => Self::closed(u8::MIN.into(), u8::MAX.into()),
+            (id, []) if *id == Uint16Type::id() => Self::closed(u16::MIN.into(), u16::MAX.into()),
+            (id, []) if *id == Uint32Type::id() => Self::closed(u32::MIN.into(), u32::MAX.into()),
+            (id, []) if *id == Uint64Type::id() => Self::closed(u64::MIN.into(), u64::MAX.into()),
+            (id, []) if *id == Uint128Type::id() => {
+                Self::closed(u128::MIN.into(), u128::MAX.into())
+            }
+            (id, []) if *id == Sint8Type::id() => Self::closed(i8::MIN.into(), i8::MAX.into()),
+            (id, []) if *id == Sint16Type::id() => Self::closed(i16::MIN.into(), i16::MAX.into()),
+            (id, []) if *id == Sint32Type::id() => Self::closed(i32::MIN.into(), i32::MAX.into()),
+            (id, []) if *id == Sint64Type::id() => Self::closed(i64::MIN.into(), i64::MAX.into()),
+            (id, []) if *id == Sint128Type::id() => {
+                Self::closed(i128::MIN.into(), i128::MAX.into())
+            }
+            (id, []) if *id == Bytes31Type::id() => {
+                Self::half_open(0.into(), BigInt::one().shl(248))
+            }
+            (id, [GenericArg::Value(min), GenericArg::Value(max)])
+                if *id == BoundedIntType::id() =>
+            {
+                Self::closed(min.clone(), max.clone())
+            }
+            _ => return Err(SpecializationError::UnsupportedGenericArg),
+        })
+    }
+    /// Returns the Range bounds from the given type.
+    pub fn from_type(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<Self, SpecializationError> {
+        Self::from_type_info(&context.get_type_info(ty)?)
+    }
+    /// Returns true if this range is smaller than the RangeCheck range.
+    pub fn is_rc(&self) -> bool {
+        self.size() <= BigInt::one().shl(128)
+    }
+    /// Returns the size of the range.
+    pub fn size(&self) -> BigInt {
+        &self.upper - &self.lower
+    }
 }
