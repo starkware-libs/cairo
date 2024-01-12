@@ -49,6 +49,8 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-sierra-to-casm
           - test --profile=ci-dev -p cairo-lang-sierra-type-size
           - test --profile=ci-dev -p cairo-lang-starknet
+          - test --profile=ci-dev -p cairo-lang-starknet-casm-contract-class --features=serde
+          - test --profile=ci-dev -p cairo-lang-starknet-casm-contract-class --no-default-features --features=serde
           - test --profile=ci-dev -p cairo-lang-syntax
           - test --profile=ci-dev -p cairo-lang-syntax-codegen
           - test --profile=ci-dev -p cairo-lang-test-runner

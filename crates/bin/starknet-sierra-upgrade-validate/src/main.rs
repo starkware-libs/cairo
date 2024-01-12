@@ -6,9 +6,9 @@ use anyhow::Context;
 use cairo_lang_starknet::allowed_libfuncs::{
     validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
 };
-use cairo_lang_starknet::casm_contract_class::{CasmContractClass, StarknetSierraCompilationError};
 use cairo_lang_starknet::compiler_version::VersionId;
 use cairo_lang_starknet::contract_class::{ContractClass, ContractEntryPoints};
+use cairo_lang_starknet::into_casm_contract_class::StarknetSierraCompilationError;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
@@ -206,13 +206,12 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
     {
         return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
     };
-    let compiled_contract_class =
-        match CasmContractClass::from_contract_class(contract_class, false) {
-            Ok(compiled_contract_class) => compiled_contract_class,
-            Err(err) => {
-                return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
-            }
-        };
+    let compiled_contract_class = match contract_class.into_casm_contract_class(false) {
+        Ok(compiled_contract_class) => compiled_contract_class,
+        Err(err) => {
+            return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
+        }
+    };
     let old = sierra_class.compiled_class_hash;
     let new = BigUintAsHex { value: compiled_contract_class.compiled_class_hash().to_biguint() };
     if old != new {

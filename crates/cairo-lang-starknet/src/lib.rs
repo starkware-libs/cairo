@@ -11,13 +11,13 @@ pub mod abi;
 mod aliased;
 pub mod allowed_libfuncs;
 mod analyzer;
-pub mod casm_contract_class;
 pub mod compiler_version;
 pub mod contract;
 pub mod contract_class;
 mod felt252_serde;
 mod felt252_vec_compression;
 pub mod inline_macros;
+pub mod into_casm_contract_class;
 pub mod plugin;
 
 /// Get the suite of plugins for compilation with StarkNet.

@@ -12,11 +12,18 @@ starknet-crypto = { workspace = true }
 cairo-lang-casm = { path = "../cairo-lang-casm", default-features = false }
 cairo-lang-utils = { path = "../cairo-lang-utils", default-features = false }
 cairo-felt = { workspace = true }
+itertools = { workspace = true, features = ["use_alloc"] }
 
 # Optional
-serde = { workspace = true, optional = true }
+serde = { workspace = true, features = ["alloc"], optional = true }
 
 [features]
 default = ["std"]
-std = [ "num-bigint/std", "cairo-lang-utils/std", "cairo-lang-casm/std", "cairo-felt", "serde?/std"]
-serde = ["dep:serde"]
+std = [
+  "num-bigint/std",
+  "cairo-lang-utils/std",
+  "cairo-lang-casm/std",
+  "cairo-felt/std",
+  "serde?/std"
+]
+serde = ["dep:serde", "cairo-lang-casm/serde"]

@@ -1,11 +1,23 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec, vec::Vec};
+
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
-
 use cairo_lang_utils::bigint::BigUintAsHex;
 #[cfg(feature = "serde")]
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint};
+use itertools::Itertools;
 use num_bigint::BigUint;
 use starknet_crypto::{poseidon_hash_many, FieldElement};
+
+#[cfg(feature = "serde")]
+fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
+    opt_field.is_none()
+}
 
 /// Represents a contract in the Starknet network.
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
