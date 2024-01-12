@@ -453,30 +453,34 @@ impl SierraCasmRunner {
         let mut arg_iter = args.iter().enumerate();
         for ty in func.signature.param_types.iter() {
             let info = self.get_info(ty);
-            let ty_size = self.type_sizes[ty];
             let generic_ty = &info.long_id.generic_id;
             if let Some(offset) = builtin_offset.get(generic_ty) {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
                 }
+                ap_offset += 1;
             } else if generic_ty == &SystemType::ID {
                 casm_extend! {ctx,
                     %{ memory[ap + 0] = segments.add() %}
                     ap += 1;
                 }
+                ap_offset += 1;
             } else if generic_ty == &GasBuiltinType::ID {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
                 }
+                ap_offset += 1;
             } else if generic_ty == &SegmentArenaType::ID {
                 let offset = -ap_offset + after_arrays_data_offset;
                 casm_extend! {ctx,
                     [ap + 0] = [ap + offset] + 3, ap++;
                 }
+                ap_offset += 1;
             } else {
-                let mut remaining_arg_size: usize = ty_size.into_or_panic();
-                expected_arguments_size += remaining_arg_size;
-                while remaining_arg_size > 0 {
+                let ty_size = self.type_sizes[ty];
+                let param_ap_offset_end = ap_offset + ty_size;
+                expected_arguments_size += ty_size.into_or_panic::<usize>();
+                while ap_offset < param_ap_offset_end {
                     let Some((arg_index, arg)) = arg_iter.next() else {
                         break;
                     };
@@ -485,7 +489,7 @@ impl SierraCasmRunner {
                             casm_extend! {ctx,
                                 [ap + 0] = (value.to_bigint()), ap++;
                             }
-                            remaining_arg_size -= 1;
+                            ap_offset += 1;
                         }
                         Arg::Array(values) => {
                             let offset = -ap_offset + array_args_data_iter.next().unwrap();
@@ -493,19 +497,18 @@ impl SierraCasmRunner {
                                 [ap + 0] = [ap + (offset)], ap++;
                                 [ap + 0] = [ap - 1] + (values.len()), ap++;
                             }
-                            if remaining_arg_size == 1 {
+                            ap_offset += 2;
+                            if ap_offset > param_ap_offset_end {
                                 return Err(RunnerError::ArgumentUnaligned {
                                     param_index,
                                     arg_index,
                                 });
                             }
-                            remaining_arg_size -= 2;
                         }
                     }
                 }
                 param_index += 1;
             };
-            ap_offset += ty_size;
         }
         let actual_args_size = args
             .iter()
