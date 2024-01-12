@@ -48,6 +48,7 @@ members = [
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
     "crates/cairo-lang-starknet",
+    "crates/cairo-lang-starknet-casm-contract-class",
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-syntax-codegen",
     "crates/cairo-lang-test-plugin",
@@ -83,7 +84,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-felt = "0.9.1"
+cairo-felt = { version = "0.9.1", default-features = false }
 cairo-vm = "0.9.1"
 clap = { version = "4.4", features = ["derive"] }
 colored = "2"
@@ -124,7 +125,7 @@ serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
-starknet-crypto = "0.6.1"
+starknet-crypto = { version = "0.6.1", default-features = false }
 syn = { version = "2.0.39", features = ["full", "extra-traits"] }
 test-case = "3.2.1"
 test-case-macros = "3.2.1"

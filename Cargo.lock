@@ -905,6 +905,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-starknet-casm-contract-class"
+version = "2.4.1"
+dependencies = [
+ "cairo-felt",
+ "cairo-lang-casm",
+ "cairo-lang-utils",
+ "num-bigint",
+ "serde",
+ "starknet-crypto",
+]
+
+[[package]]
 name = "cairo-lang-syntax"
 version = "2.4.1"
 dependencies = [
