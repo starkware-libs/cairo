@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -8,50 +11,92 @@ use smol_str::SmolStr;
 #[path = "profiling_test.rs"]
 mod test;
 
-/// Profiling into of a single run.
+/// Profiling into of a single run. This is the raw info - went through minimum processing, as this
+/// is done during the run. To enrich it before viewing/printing, use the `ProfilingInfoProcessor`.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
     /// The number of steps in the trace that originated from each sierra statement.
-    pub sierra_statements_weights: HashMap<StatementIdx, usize>,
+    pub sierra_statements_weights: UnorderedHashMap<StatementIdx, usize>,
 }
 
-/// Parameters controlling how the profiling info is printed by the `ProfilingInfoPrinter`.
-pub struct ProfilingInfoPrinterParams {
-    /// The minimal weight to print. Used for all printed stats. That is - the sum of the weights
-    /// per statement may smaller than the sum of the weights per concrete libfunc, that may be
-    /// smaller than the sum of the weights ber generic libfunc.
+// Full profiling info of a single run. This is the processed info which went through additional
+// processing after collecting the raw data during the run itself.
+pub struct ProcessedProfilingInfo {
+    /// For each sierra statement: the number of steps in the trace that originated for it, and the
+    /// relevant GenStatement.
+    pub sierra_statements_weights:
+        OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
+    // Weight (in steps in the relevant run) of each concrete libfunc.
+    pub concrete_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    // Weight (in steps in the relevant run) of each generic libfunc.
+    pub generic_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    // Weight (in steps in the relevant run) of return statements.
+    pub return_weight: usize,
+}
+impl Display for ProcessedProfilingInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Weight by sierra statement:")?;
+        for (statement_idx, (weight, gen_statement)) in self.sierra_statements_weights.iter() {
+            writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
+        }
+        if let Some(concrete_libfuncs_weights) = &self.concrete_libfuncs_weights {
+            writeln!(f, "Weight by concrete libfunc:")?;
+            for (concrete_name, weight) in concrete_libfuncs_weights.iter() {
+                writeln!(f, "  libfunc {concrete_name}: {weight}")?;
+            }
+            writeln!(f, "  return: {}", self.return_weight)?;
+        }
+        if let Some(generic_libfuncs_weights) = &self.generic_libfuncs_weights {
+            writeln!(f, "Weight by generic libfunc:")?;
+            for (generic_name, weight) in generic_libfuncs_weights.iter() {
+                writeln!(f, "  libfunc {generic_name}: {weight}")?;
+            }
+            writeln!(f, "  return: {}", self.return_weight)?;
+        }
+
+        Ok(())
+    }
+}
+
+/// Parameters controlling what profiling info is processed and how, by the
+/// `ProfilingInfoProcessor`.
+pub struct ProfilingInfoProcessorParams {
+    /// The minimal weight to include in the output. Used for all collected stats. That is - the
+    /// sum of the weights per statement may be smaller than the sum of the weights per concrete
+    /// libfunc, that may be smaller than the sum of the weights per generic libfunc.
     pub min_weight: usize,
-    pub print_by_concrete_libfunc: bool,
-    pub print_by_generic_libfunc: bool,
+    pub process_by_concrete_libfunc: bool,
+    pub process_by_generic_libfunc: bool,
 }
-impl Default for ProfilingInfoPrinterParams {
+impl Default for ProfilingInfoProcessorParams {
     fn default() -> Self {
-        Self { min_weight: 1, print_by_concrete_libfunc: true, print_by_generic_libfunc: true }
+        Self { min_weight: 1, process_by_concrete_libfunc: true, process_by_generic_libfunc: true }
     }
 }
-/// A printer for profiling info.
-pub struct ProfilingInfoPrinter {
+/// A processor for profiling info. Used to process the raw profiling info (basic info collected
+/// during the run) into a more detailed profiling info that can also be formatted.
+pub struct ProfilingInfoProcessor {
     sierra_program: Program,
-    params: ProfilingInfoPrinterParams,
+    params: ProfilingInfoProcessorParams,
 }
-impl ProfilingInfoPrinter {
+impl ProfilingInfoProcessor {
     pub fn new(sierra_program: Program) -> Self {
-        Self { sierra_program, params: ProfilingInfoPrinterParams::default() }
+        Self { sierra_program, params: ProfilingInfoProcessorParams::default() }
     }
 
-    /// Prints the profiling info according to the params set in the printer.
-    pub fn print(&self, profiling_info: &ProfilingInfo) -> String {
-        self.print_ex(profiling_info, &self.params)
+    /// Processes the raw profiling info according to the params set in the processor.
+    pub fn process(&self, raw_profiling_info: &ProfilingInfo) -> ProcessedProfilingInfo {
+        self.process_ex(raw_profiling_info, &self.params)
     }
 
-    /// Prints the profiling info according to the given params (can be used to override the printer
-    /// params).
-    pub fn print_ex(
+    /// Processes the raw profiling info according to the given params (can be used to override the
+    /// processor params).
+    pub fn process_ex(
         &self,
-        profiling_info: &ProfilingInfo,
-        params: &ProfilingInfoPrinterParams,
-    ) -> String {
-        let mut concrete_libfuncs = if params.print_by_concrete_libfunc {
+        raw_profiling_info: &ProfilingInfo,
+        params: &ProfilingInfoProcessorParams,
+    ) -> ProcessedProfilingInfo {
+        let mut concrete_libfuncs = if params.process_by_concrete_libfunc {
             self.sierra_program
                 .libfunc_declarations
                 .iter()
@@ -61,7 +106,7 @@ impl ProfilingInfoPrinter {
             HashMap::new()
         };
 
-        let mut generic_libfuncs = if params.print_by_generic_libfunc {
+        let mut generic_libfuncs = if params.process_by_generic_libfunc {
             self.sierra_program
                 .libfunc_declarations
                 .iter()
@@ -71,10 +116,9 @@ impl ProfilingInfoPrinter {
             HashMap::new()
         };
 
-        let mut result = "Weight by sierra statement:\n".to_string();
-
         let mut return_weight = 0;
-        for (statement_idx, weight) in profiling_info
+        let mut statements_weights = OrderedHashMap::default();
+        for (statement_idx, weight) in raw_profiling_info
             .sierra_statements_weights
             .iter()
             .sorted_by(|x, y| Ord::cmp(&(y.1, x.0.0), &(x.1, y.0.0)))
@@ -85,13 +129,14 @@ impl ProfilingInfoPrinter {
             match gen_statement {
                 GenStatement::Invocation(invocation) => {
                     let concrete_name: SmolStr = format!("{}", invocation.libfunc_id).into();
-                    if params.print_by_concrete_libfunc {
+                    if params.process_by_concrete_libfunc {
                         *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
                     }
 
-                    if params.print_by_generic_libfunc {
-                        // TODO(yg): there must be a better way - e.g. get the long ID with a db
-                        // from the short ID, and from there get the generic name.
+                    if params.process_by_generic_libfunc {
+                        // TODO(yg): This depends on the format of a concrete libfunc name. Fix to
+                        // be more resilient by getting the long ID from the short ID using a db,
+                        // and from there get the generic name.
                         let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
                         *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
                     }
@@ -101,37 +146,39 @@ impl ProfilingInfoPrinter {
                 }
             }
             if *weight >= params.min_weight {
-                result.push_str(&format!(
-                    "  statement {}: {} ({})\n",
-                    *statement_idx, *weight, gen_statement
-                ));
+                statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
             }
         }
 
-        if params.print_by_concrete_libfunc {
-            result.push_str("Weight by concrete libfunc:\n");
+        let mut concrete_libfuncs_weights = OrderedHashMap::default();
+        if params.process_by_concrete_libfunc {
             for (concrete_name, weight) in
                 concrete_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(y.1, x.0), &(x.1, y.0)))
             {
                 if *weight >= params.min_weight {
-                    result.push_str(&format!("  libfunc {}: {}\n", concrete_name, *weight));
+                    concrete_libfuncs_weights.insert(concrete_name.clone(), *weight);
                 }
             }
-            result.push_str(&format!("  return: {return_weight}\n"));
         }
 
-        if params.print_by_generic_libfunc {
-            result.push_str("Weight by generic libfunc:\n");
+        let mut generic_libfuncs_weights = OrderedHashMap::default();
+        if params.process_by_generic_libfunc {
             for (generic_name, weight) in
                 generic_libfuncs.iter().sorted_by(|x, y| Ord::cmp(&(y.1, x.0), &(x.1, y.0)))
             {
                 if *weight >= params.min_weight {
-                    result.push_str(&format!("  libfunc {}: {}\n", generic_name, *weight));
+                    generic_libfuncs_weights.insert(generic_name.clone(), *weight);
                 }
             }
-            result.push_str(&format!("  return: {return_weight}\n"));
         }
 
-        result
+        ProcessedProfilingInfo {
+            sierra_statements_weights: statements_weights,
+            generic_libfuncs_weights: Some(generic_libfuncs_weights),
+            concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
+            return_weight,
+        }
+
+        // result
     }
 }
