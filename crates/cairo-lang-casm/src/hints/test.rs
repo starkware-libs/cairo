@@ -1,11 +1,7 @@
-use std::str::FromStr;
-
-use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::indoc;
-use parity_scale_codec::{Decode, Encode};
 use test_log::test;
 
-use crate::hints::{CoreHint, CoreHintBase, Hint, PythonicHint, StarknetHint};
+use crate::hints::{CoreHint, PythonicHint, StarknetHint};
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 use crate::res;
 
@@ -117,7 +113,15 @@ fn test_debug_hint_format() {
 }
 
 #[test]
+#[cfg(feature = "parity-scale-codec")]
 fn encode_hint() {
+    use core::str::FromStr;
+
+    use cairo_lang_utils::bigint::BigIntAsHex;
+    use parity_scale_codec::{Decode, Encode};
+
+    use crate::hints::{CoreHintBase, Hint};
+
     let hint = Hint::Core(CoreHintBase::Core(CoreHint::TestLessThan {
         lhs: ResOperand::Deref(CellRef { register: Register::FP, offset: -3 }),
         rhs: ResOperand::Immediate(BigIntAsHex {

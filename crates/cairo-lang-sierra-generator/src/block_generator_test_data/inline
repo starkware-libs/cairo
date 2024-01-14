@@ -39,7 +39,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v6) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk5,
+    IsZeroResult::NonZero(v4) => blk4,
   })
 
 blk1:
@@ -54,28 +54,18 @@ blk2:
 Statements:
   (v8: core::felt252) <- 1u
 End:
-  Goto(blk4, {v8 -> v3})
+  Return(v8)
 
 blk3:
 Statements:
   (v9: core::felt252) <- 0u
 End:
-  Goto(blk4, {v9 -> v3})
+  Return(v9)
 
 blk4:
 Statements:
 End:
-  Goto(blk6, {v3 -> v5})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {v0 -> v5})
-
-blk6:
-Statements:
-End:
-  Return(v5)
+  Return(v0)
 
 //! > sierra_code
 felt252_const<2>() -> ([0])
@@ -86,22 +76,18 @@ branch_align() -> ()
 felt252_is_zero([1]) { fallthrough() label_test::foo::2([5]) }
 branch_align() -> ()
 felt252_const<1>() -> ([6])
-PushValues([6]: felt252) -> ([7])
-jump() { label_test::foo::4() }
+PushValues([6]: felt252) -> ([6])
+return([6])
 label_test::foo::2:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<0>() -> ([8])
-PushValues([8]: felt252) -> ([7])
-label_test::foo::4:
-PushValues([7]: felt252) -> ([9])
-jump() { label_test::foo::5() }
+felt252_const<0>() -> ([7])
+PushValues([7]: felt252) -> ([7])
+return([7])
 label_test::foo::3:
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
-PushValues([1]: felt252) -> ([9])
-label_test::foo::5:
-PushValues([9]: felt252) -> ([9])
-return([9])
+PushValues([1]: felt252) -> ([1])
+return([1])
 label_test::foo::1:

@@ -808,29 +808,31 @@ fn compute_expr_match_semantic(
     // diagnostics as possible.
     let patterns_and_exprs: Vec<_> = syntax_arms
         .iter()
-        .flat_map(|syntax_arm| {
+        .map(|syntax_arm| {
             let arm_expr_syntax = syntax_arm.expression(syntax_db);
+            ctx.run_in_subscope(|new_ctx| {
+                // Typecheck the arms's patterns, and introduce the new variables to the subscope.
+                // Note that if the arm expr is a block, there will be *another* subscope
+                // for it.
 
-            let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
-                UnorderedHashMap::default();
-            let (patterns_and_exprs, patterns_variables_len): (Vec<_>, Vec<_>) = syntax_arm
-                .patterns(syntax_db)
-                .elements(syntax_db)
-                .iter()
-                .map(|pattern_syntax| {
-                    // Typecheck pattern, and introduce the new variables to the subscope.
-                    // Note that if the arm expr is a block, there will be *another* subscope
-                    // for it.
-                    ctx.run_in_subscope(|new_ctx| {
-                        let pattern: PatternAndId =
-                            compute_pattern_semantic(new_ctx, pattern_syntax, expr.ty());
+                let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+                    UnorderedHashMap::default();
+                let patterns: Vec<_> = syntax_arm
+                    .patterns(syntax_db)
+                    .elements(syntax_db)
+                    .iter()
+                    .map(|pattern_syntax| {
+                        let pattern: PatternAndId = compute_pattern_semantic(
+                            new_ctx,
+                            pattern_syntax,
+                            expr.ty(),
+                            &mut arm_patterns_variables,
+                        );
                         let variables = pattern.variables(&new_ctx.patterns);
-                        let variables_len = variables.len();
                         for variable in variables {
                             match arm_patterns_variables.entry(variable.name.clone()) {
                                 std::collections::hash_map::Entry::Occupied(entry) => {
-                                    let get_location =
-                                        || variable.var.stable_ptr(db.upcast()).lookup(db.upcast());
+                                    let get_location = || variable.stable_ptr.lookup(db.upcast());
                                     let var = entry.get();
                                     let expected_ty = var.ty;
 
@@ -849,30 +851,31 @@ fn compute_expr_match_semantic(
                                     entry.insert(variable.var.clone());
                                 }
                             }
-                            let var_def = Variable::Local(variable.var.clone());
-                            // TODO(spapini): Wrap this in a function to couple with semantic_defs
-                            // insertion.
-                            new_ctx.environment.variables.insert(variable.name, var_def.clone());
-                            new_ctx.semantic_defs.insert(var_def.id(), var_def);
                         }
-                        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                        ((pattern, arm_expr), variables_len)
+                        pattern
                     })
-                })
-                .unzip();
+                    .collect();
 
-            for (pattern_syntax, variables_len) in syntax_arm
-                .patterns(syntax_db)
-                .elements(syntax_db)
-                .iter()
-                .zip(patterns_variables_len.iter())
-            {
-                if *variables_len != arm_patterns_variables.len() {
-                    ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
+                for (pattern_syntax, pattern) in
+                    syntax_arm.patterns(syntax_db).elements(syntax_db).iter().zip(patterns.iter())
+                {
+                    let variables = pattern.variables(&new_ctx.patterns);
+
+                    if variables.len() != arm_patterns_variables.len() {
+                        new_ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
+                    }
+
+                    for v in variables {
+                        let var_def = Variable::Local(v.var.clone());
+                        // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                        // insertion.
+                        new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                        new_ctx.semantic_defs.insert(var_def.id(), var_def);
+                    }
                 }
-            }
-
-            patterns_and_exprs
+                let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
+                (patterns, arm_expr)
+            })
         })
         .collect();
     // Unify arm types.
@@ -890,7 +893,10 @@ fn compute_expr_match_semantic(
     // Compute semantic representation of the match arms.
     let semantic_arms = patterns_and_exprs
         .into_iter()
-        .map(|(pattern, arm_expr)| MatchArm { pattern: pattern.id, expression: arm_expr.id })
+        .map(|(patterns, arm_expr)| MatchArm {
+            patterns: patterns.iter().map(|pattern| pattern.id).collect(),
+            expression: arm_expr.id,
+        })
         .collect();
     Ok(Expr::Match(ExprMatch {
         matched_expr: expr.id,
@@ -899,7 +905,6 @@ fn compute_expr_match_semantic(
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
-
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
@@ -1193,8 +1198,9 @@ pub fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Pattern,
     ty: TypeId,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
 ) -> PatternAndId {
-    let pat = maybe_compute_pattern_semantic(ctx, syntax, ty);
+    let pat = maybe_compute_pattern_semantic(ctx, syntax, ty, or_pattern_variables_map);
     let pat = pat.unwrap_or_else(|diag_added| {
         Pattern::Missing(PatternMissing {
             ty: TypeId::missing(ctx.db, diag_added),
@@ -1211,6 +1217,7 @@ fn maybe_compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     pattern_syntax: &ast::Pattern,
     ty: TypeId,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
 ) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
@@ -1270,7 +1277,12 @@ fn maybe_compute_pattern_semantic(
             let inner_pattern = match enum_pattern.pattern(syntax_db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
                 ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
-                    let pattern = compute_pattern_semantic(ctx, &p.pattern(syntax_db), inner_ty);
+                    let pattern = compute_pattern_semantic(
+                        ctx,
+                        &p.pattern(syntax_db),
+                        inner_ty,
+                        or_pattern_variables_map,
+                    );
                     Some(pattern.id)
                 }
             };
@@ -1290,7 +1302,14 @@ fn maybe_compute_pattern_semantic(
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
-            create_variable_pattern(ctx, identifier, &[], ty, path.stable_ptr().into())
+            create_variable_pattern(
+                ctx,
+                identifier,
+                &[],
+                ty,
+                path.stable_ptr().into(),
+                or_pattern_variables_map,
+            )
         }
         ast::Pattern::Identifier(identifier) => create_variable_pattern(
             ctx,
@@ -1298,6 +1317,7 @@ fn maybe_compute_pattern_semantic(
             &identifier.modifiers(syntax_db).elements(syntax_db),
             ty,
             identifier.stable_ptr().into(),
+            or_pattern_variables_map,
         ),
         ast::Pattern::Struct(pattern_struct) => {
             let pattern_ty = try_extract_matches!(
@@ -1330,7 +1350,7 @@ fn maybe_compute_pattern_semantic(
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            let mut used_members = UnorderedHashSet::default();
+            let mut used_members = UnorderedHashSet::new();
             let mut get_member = |ctx: &mut ComputationContext<'_>,
                                   member_name: SmolStr,
                                   stable_ptr: SyntaxStablePtrId| {
@@ -1366,6 +1386,7 @@ fn maybe_compute_pattern_semantic(
                             &single.modifiers(syntax_db).elements(syntax_db),
                             ty,
                             single.stable_ptr().into(),
+                            or_pattern_variables_map,
                         );
                         field_patterns.push((member, ctx.patterns.alloc(pattern)));
                     }
@@ -1377,8 +1398,12 @@ fn maybe_compute_pattern_semantic(
                             continue;
                         };
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
-                        let pattern =
-                            compute_pattern_semantic(ctx, &with_expr.pattern(syntax_db), ty);
+                        let pattern = compute_pattern_semantic(
+                            ctx,
+                            &with_expr.pattern(syntax_db),
+                            ty,
+                            or_pattern_variables_map,
+                        );
                         field_patterns.push((member, pattern.id));
                     }
                     PatternStructParam::Tail(_) => {
@@ -1417,7 +1442,8 @@ fn maybe_compute_pattern_semantic(
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast, tys).map(|(pattern_ast, ty)| {
                 let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
-                let pattern = compute_pattern_semantic(ctx, &pattern_ast, ty);
+                let pattern =
+                    compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map);
                 Ok(pattern.id)
             });
             // If all are Some, collect into a Vec.
@@ -1513,12 +1539,16 @@ fn create_variable_pattern(
     modifier_list: &[ast::Modifier],
     ty: TypeId,
     stable_ptr: ast::PatternPtr,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
 ) -> Pattern {
     let syntax_db = ctx.db.upcast();
-    let var_id = ctx
-        .db
-        .intern_local_var(LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr()));
 
+    let var_id = match or_pattern_variables_map.get(&identifier.text(syntax_db)) {
+        Some(var) => var.id,
+        None => ctx
+            .db
+            .intern_local_var(LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr())),
+    };
     let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
         Mutability::Immutable => false,
         Mutability::Mutable => true,
@@ -2187,7 +2217,12 @@ pub fn compute_statement_semantic(
                 }
             };
 
-            let pattern = compute_pattern_semantic(ctx, &let_syntax.pattern(syntax_db), ty);
+            let pattern = compute_pattern_semantic(
+                ctx,
+                &let_syntax.pattern(syntax_db),
+                ty,
+                &mut UnorderedHashMap::default(),
+            );
             let variables = pattern.variables(&ctx.patterns);
             // TODO(yuval): allow unnamed variables. Add them here to
             // ctx.environment.unnamed_variables

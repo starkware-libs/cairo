@@ -29,8 +29,8 @@ struct FeedbackSetAlgoContext<Node: GraphNode> {
 impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
     fn new() -> Self {
         FeedbackSetAlgoContext {
-            feedback_set: OrderedHashSet::default(),
-            in_flight: UnorderedHashSet::default(),
+            feedback_set: OrderedHashSet::new(),
+            in_flight: UnorderedHashSet::new(),
         }
     }
 }

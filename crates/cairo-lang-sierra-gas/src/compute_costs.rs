@@ -752,11 +752,21 @@ impl<'a> PostcostContext<'a> {
         .cost()
     }
 
+<<<<<<< HEAD
     /// Computes the cost of the redeposit_gas libfunc.
     fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> i32 {
         ConstCost::steps(
             BuiltinCostsType::cost_computation_steps(false, |token_type| {
                 self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+||||||| 3205b8a81
+        if with_builtin_costs {
+            let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
+                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+=======
+        if with_builtin_costs {
+            let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
+                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+>>>>>>> origin/main
             })
             .into_or_panic(),
         )

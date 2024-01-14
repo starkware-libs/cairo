@@ -1009,20 +1009,20 @@ fn foo(cond: bool) {
 
 //! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10070})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10370})
 #30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
-test::function_with_branch_align: OrderedHashMap({Const: 810})
+test::function_with_branch_align: OrderedHashMap({Const: 710})
 test::foo: OrderedHashMap({Const: 13600})
 
 //! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10270})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10570})
 #30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
-test::function_with_branch_align: OrderedHashMap({Const: 300})
+test::function_with_branch_align: OrderedHashMap({Const: 200})
 test::foo: OrderedHashMap({Const: 13600})
 
 //! > ap_solution_lp
@@ -1048,25 +1048,25 @@ libfunc branch_align = branch_align;
 libfunc drop<Unit> = drop<Unit>;
 libfunc felt252_const<2> = felt252_const<2>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc function_call<user@test::function_with_branch_align> = function_call<user@test::function_with_branch_align>;
 libfunc drop<felt252> = drop<felt252>;
+libfunc jump = jump;
 libfunc felt252_add = felt252_add;
 
 enum_match<core::bool>([0]) { fallthrough([1]) 6([2]) }; // 0
 branch_align() -> (); // 1
 drop<Unit>([1]) -> (); // 2
 felt252_const<2>() -> ([3]); // 3
-store_temp<felt252>([3]) -> ([4]); // 4
-jump() { 10() }; // 5
+store_temp<felt252>([3]) -> ([3]); // 4
+return([3]); // 5
 branch_align() -> (); // 6
 drop<Unit>([2]) -> (); // 7
-felt252_const<1>() -> ([5]); // 8
-store_temp<felt252>([5]) -> ([4]); // 9
+felt252_const<1>() -> ([4]); // 8
+store_temp<felt252>([4]) -> ([4]); // 9
 return([4]); // 10
 enum_match<core::bool>([0]) { fallthrough([1]) 30([2]) }; // 11
 branch_align() -> (); // 12
@@ -1519,19 +1519,19 @@ test::function_with_branch_align@0([0]: core::bool) -> (felt252);
 test::foo@11([0]: core::bool) -> (Unit);
 
 //! > casm
-jmp rel 6 if [fp + -3] != 0;
+jmp rel 5 if [fp + -3] != 0;
 [ap + 0] = 2, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 1, ap++;
 ret;
 jmp rel 18 if [fp + -3] != 0;
 ap += 123;
 [ap + 0] = 0, ap++;
-call rel -15;
+call rel -14;
 [ap + 0] = 0, ap++;
-call rel -19;
+call rel -18;
 [ap + 0] = 0, ap++;
-call rel -23;
+call rel -22;
 jmp rel 272;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;

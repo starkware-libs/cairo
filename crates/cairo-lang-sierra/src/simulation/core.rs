@@ -10,9 +10,10 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Range, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64,
-    Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Debug, Drop, Dup, Ec, Enum,
+    Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable, Pedersen, Poseidon,
+    Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
+    Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -278,7 +279,7 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Enum(EnumConcreteLibfunc::FromFelt252Bounded(_)) => todo!(),
+        Enum(EnumConcreteLibfunc::FromBoundedInt(_)) => todo!(),
         Range(RangeConcreteLibfunc::ConstrainRange(_)) => todo!(),
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
         Struct(
@@ -291,14 +292,14 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Dict(HashMap::new())], 0))
             } else {
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
                     let mut iter = inputs.into_iter();
@@ -311,19 +312,19 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        CoreConcreteLibfunc::Pedersen(_) => {
+        Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
-        CoreConcreteLibfunc::Poseidon(_) => {
+        Poseidon(_) => {
             unimplemented!("Simulation of the Poseidon hash function is not implemented yet.");
         }
-        CoreConcreteLibfunc::StarkNet(_) => {
+        StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
         }
-        CoreConcreteLibfunc::Nullable(_) => {
+        Nullable(_) => {
             unimplemented!("Simulation of nullable is not implemented yet.")
         }
-        CoreConcreteLibfunc::Debug(_) => {
+        Debug(_) => {
             if inputs.len() == 1 {
                 let arr = extract_matches!(&inputs[0], CoreValue::Array);
                 let mut bytes = Vec::new();
@@ -344,16 +345,16 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibfunc::SnapshotTake(_) => match &inputs[..] {
+        SnapshotTake(_) => match &inputs[..] {
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
-        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
-        CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
-        CoreConcreteLibfunc::Const(_) => unimplemented!(),
+        Cast(_) => unimplemented!(),
+        Felt252DictEntry(_) => unimplemented!(),
+        Uint256(_) => unimplemented!(),
+        Uint512(_) => unimplemented!(),
+        Bytes31(_) => unimplemented!(),
+        Const(_) => unimplemented!(),
     }
 }
 

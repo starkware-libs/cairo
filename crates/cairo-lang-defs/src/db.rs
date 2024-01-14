@@ -38,6 +38,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
+    fn intern_impl_type(&self, id: ImplTypeLongId) -> ImplTypeId;
+    #[salsa::interned]
     fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
     #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
@@ -53,6 +55,8 @@ pub trait DefsGroup:
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
     #[salsa::interned]
     fn intern_trait(&self, id: TraitLongId) -> TraitId;
+    #[salsa::interned]
+    fn intern_trait_type(&self, id: TraitTypeLongId) -> TraitTypeId;
     #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
@@ -233,7 +237,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let item_module_ast = &db.priv_module_data(parent)?.submodules[submodule_id];
+            let item_module_ast = &db.priv_module_data(parent)?.submodules[&submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
                     // This is an inline module, we return the file where the inline module was
@@ -357,7 +361,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         ModuleId::CrateRoot(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
             let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
-            let item_module_ast = &parent_module_data.submodules[submodule_id];
+            let item_module_ast = &parent_module_data.submodules[&submodule_id];
 
             match item_module_ast.body(syntax_db) {
                 MaybeModuleBody::Some(body) => {
@@ -952,7 +956,7 @@ fn module_item_name_stable_ptr(
 ) -> Maybe<SyntaxStablePtrId> {
     let data = db.priv_module_data(module_id)?;
     let db = db.upcast();
-    Ok(match item_id {
+    Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {
