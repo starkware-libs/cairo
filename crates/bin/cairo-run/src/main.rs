@@ -7,7 +7,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_runner::profiling::ProfilingInfoPrinter;
+use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -86,10 +86,11 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Failed to run the function.")?;
 
     if args.run_profiler {
-        let profiling_printer = ProfilingInfoPrinter::new(sierra_program);
+        let profiling_info_processor = ProfilingInfoProcessor::new(sierra_program);
         match result.profiling_info {
-            Some(profiling_info) => {
-                println!("Profiling info:\n{}", profiling_printer.print(&profiling_info));
+            Some(raw_profiling_info) => {
+                let profiling_info = profiling_info_processor.process(&raw_profiling_info);
+                println!("Profiling info:\n{}", profiling_info);
             }
             None => println!("Warning: Profiling info not found."),
         }
