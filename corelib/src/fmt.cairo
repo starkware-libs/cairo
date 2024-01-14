@@ -55,11 +55,7 @@ impl DebugByteArray of Debug<ByteArray> {
 }
 
 impl DebugInteger<
-    T,
-    +to_byte_array::AppendFormattedToByteArray<T>,
-    +Into<u8, T>,
-    +TryInto<T, NonZero<T>>,
-    +Copy<T>
+    T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
@@ -144,13 +140,13 @@ impl DebugTuple4<
     }
 }
 
-impl ArrayTDebug<T, +Debug<T>, +Copy<T>> of Debug<Array<T>> {
+impl ArrayTDebug<T, +Debug<T>> of Debug<Array<T>> {
     fn fmt(self: @Array<T>, ref f: Formatter) -> Result<(), Error> {
         Debug::fmt(@self.span(), ref f)
     }
 }
 
-impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
+impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
     fn fmt(self: @Span<T>, ref f: Formatter) -> Result<(), Error> {
         let mut self = *self;
         write!(f, "[")?;

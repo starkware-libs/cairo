@@ -747,7 +747,7 @@ impl<'a> PostcostContext<'a> {
     /// Computes the cost of the withdraw_gas libfunc.
     fn compute_withdraw_gas_cost(&self, idx: &StatementIdx, info: &WithdrawGasBranchInfo) -> i32 {
         info.const_cost(|token_type| {
-            self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+            self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
         })
         .cost()
     }
@@ -756,7 +756,7 @@ impl<'a> PostcostContext<'a> {
     fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> i32 {
         ConstCost::steps(
             BuiltinCostsType::cost_computation_steps(false, |token_type| {
-                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
             })
             .into_or_panic(),
         )

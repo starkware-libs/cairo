@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 pub struct Call {
     pub to: ContractAddress,
     pub selector: felt252,
-    pub calldata: Array<felt252>
+    pub calldata: Span<felt252>
 }
 
 #[starknet::interface]

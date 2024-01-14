@@ -8,40 +8,54 @@ on:
     types: [checks_requested]
 
 jobs:
+  ensure-no_std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2023-07-05
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          cd ensure-no_std && cargo build
+  
   parallel-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         cmd:
-          - test -p cairo-lang-casm
-          - test -p cairo-lang-compiler
-          - test -p cairo-lang-debug
-          - test -p cairo-lang-defs
-          - test -p cairo-lang-diagnostics
-          - test -p cairo-lang-eq-solver
-          - test -p cairo-lang-filesystem
-          - test -p cairo-lang-formatter
-          - test -p cairo-lang-language-server
-          - test -p cairo-lang-lowering
-          - test -p cairo-lang-parser
-          - test -p cairo-lang-plugins
-          - test -p cairo-lang-proc-macros
-          - test -p cairo-lang-project
-          - test -p cairo-lang-runner
-          - test -p cairo-lang-semantic
-          - test -p cairo-lang-sierra
-          - test -p cairo-lang-sierra-ap-change
-          - test -p cairo-lang-sierra-gas
-          - test -p cairo-lang-sierra-generator
-          - test -p cairo-lang-sierra-to-casm
-          - test -p cairo-lang-sierra-type-size
-          - test -p cairo-lang-starknet
-          - test -p cairo-lang-syntax
-          - test -p cairo-lang-syntax-codegen
-          - test -p cairo-lang-test-runner
-          - test -p cairo-lang-test-utils
-          - test -p cairo-lang-utils
-          - test -p tests
+          - test --profile=ci-dev -p cairo-lang-casm --features=serde,parity-scale-codec,schemars
+          - test --profile=ci-dev -p cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
+          - test --profile=ci-dev -p cairo-lang-compiler
+          - test --profile=ci-dev -p cairo-lang-debug
+          - test --profile=ci-dev -p cairo-lang-defs
+          - test --profile=ci-dev -p cairo-lang-diagnostics
+          - test --profile=ci-dev -p cairo-lang-eq-solver
+          - test --profile=ci-dev -p cairo-lang-filesystem
+          - test --profile=ci-dev -p cairo-lang-formatter
+          - test --profile=ci-dev -p cairo-lang-language-server
+          - test --profile=ci-dev -p cairo-lang-lowering
+          - test --profile=ci-dev -p cairo-lang-parser
+          - test --profile=ci-dev -p cairo-lang-plugins
+          - test --profile=ci-dev -p cairo-lang-proc-macros
+          - test --profile=ci-dev -p cairo-lang-project
+          - test --profile=ci-dev -p cairo-lang-runner
+          - test --profile=ci-dev -p cairo-lang-semantic
+          - test --profile=ci-dev -p cairo-lang-sierra
+          - test --profile=ci-dev -p cairo-lang-sierra-ap-change
+          - test --profile=ci-dev -p cairo-lang-sierra-gas
+          - test --profile=ci-dev -p cairo-lang-sierra-generator
+          - test --profile=ci-dev -p cairo-lang-sierra-to-casm
+          - test --profile=ci-dev -p cairo-lang-sierra-type-size
+          - test --profile=ci-dev -p cairo-lang-starknet
+          - test --profile=ci-dev -p cairo-lang-syntax
+          - test --profile=ci-dev -p cairo-lang-syntax-codegen
+          - test --profile=ci-dev -p cairo-lang-test-runner
+          - test --profile=ci-dev -p cairo-lang-test-utils
+          - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
+          - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
+          - test --profile=ci-dev -p tests
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master

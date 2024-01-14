@@ -108,7 +108,7 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v28, v29) {
     Option::Some(v30, v31) => blk1,
-    Option::None(v32, v33) => blk6,
+    Option::None(v32, v33) => blk4,
   })
 
 blk1:
@@ -136,26 +136,9 @@ blk3:
 Statements:
   (v44: core::RangeCheck, v45: core::gas::GasBuiltin, v19: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v30, v31, v10)
 End:
-  Match(match_enum(v19) {
-    PanicResult::Ok(v20) => blk4,
-    PanicResult::Err(v23) => blk5,
-  })
+  Return(v44, v45, v19)
 
 blk4:
-Statements:
-  (v21: core::felt252, v22: core::bool) <- struct_destructure(v20)
-  (v25: (core::felt252, core::bool)) <- struct_construct(v21, v22)
-  (v26: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v25)
-End:
-  Return(v44, v45, v26)
-
-blk5:
-Statements:
-  (v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v23)
-End:
-  Return(v44, v45, v27)
-
-blk6:
 Statements:
   (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v13: core::felt252) <- 375233589013918064796019u
@@ -277,7 +260,7 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v28, v29) {
     Option::Some(v30, v31) => blk1,
-    Option::None(v32, v33) => blk6,
+    Option::None(v32, v33) => blk4,
   })
 
 blk1:
@@ -305,26 +288,9 @@ blk3:
 Statements:
   (v44: core::RangeCheck, v45: core::gas::GasBuiltin, v19: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v30, v31, v10)
 End:
-  Match(match_enum(v19) {
-    PanicResult::Ok(v20) => blk4,
-    PanicResult::Err(v23) => blk5,
-  })
+  Return(v44, v45, v19)
 
 blk4:
-Statements:
-  (v21: core::felt252, v22: core::bool) <- struct_destructure(v20)
-  (v25: (core::felt252, core::bool)) <- struct_construct(v21, v22)
-  (v26: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v25)
-End:
-  Return(v44, v45, v26)
-
-blk5:
-Statements:
-  (v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v23)
-End:
-  Return(v44, v45, v27)
-
-blk6:
 Statements:
   (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v13: core::felt252) <- 375233589013918064796019u
@@ -634,7 +600,7 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v42, v43) {
     Option::Some(v44, v45) => blk1,
-    Option::None(v46, v47) => blk10,
+    Option::None(v46, v47) => blk6,
   })
 
 blk1:
@@ -646,43 +612,26 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v17) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk5,
+    IsZeroResult::NonZero(v7) => blk3,
   })
 
 blk2:
 Statements:
   (v56: core::RangeCheck, v57: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v44, v45, v15)
 End:
-  Match(match_enum(v23) {
-    PanicResult::Ok(v24) => blk3,
-    PanicResult::Err(v27) => blk4,
-  })
+  Return(v56, v57, v23)
 
 blk3:
-Statements:
-  (v25: core::felt252, v26: core::bool) <- struct_destructure(v24)
-  (v36: (core::felt252, core::bool)) <- struct_construct(v25, v26)
-  (v37: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v36)
-End:
-  Return(v56, v57, v37)
-
-blk4:
-Statements:
-  (v38: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v27)
-End:
-  Return(v56, v57, v38)
-
-blk5:
 Statements:
   (v8: core::felt252) <- 10u
   (v16: core::felt252) <- core::felt252_sub(v15, v8)
 End:
   Match(match core::felt252_is_zero(v16) {
-    IsZeroResult::Zero => blk6,
-    IsZeroResult::NonZero(v12) => blk7,
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero(v12) => blk5,
   })
 
-blk6:
+blk4:
 Statements:
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::True(v10)
@@ -691,30 +640,13 @@ Statements:
 End:
   Return(v44, v45, v29)
 
-blk7:
+blk5:
 Statements:
-  (v68: core::RangeCheck, v69: core::gas::GasBuiltin, v30: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v44, v45, v15)
+  (v66: core::RangeCheck, v67: core::gas::GasBuiltin, v30: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v44, v45, v15)
 End:
-  Match(match_enum(v30) {
-    PanicResult::Ok(v31) => blk8,
-    PanicResult::Err(v34) => blk9,
-  })
+  Return(v66, v67, v30)
 
-blk8:
-Statements:
-  (v32: core::felt252, v33: core::bool) <- struct_destructure(v31)
-  (v39: (core::felt252, core::bool)) <- struct_construct(v32, v33)
-  (v40: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v39)
-End:
-  Return(v68, v69, v40)
-
-blk9:
-Statements:
-  (v41: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v34)
-End:
-  Return(v68, v69, v41)
-
-blk10:
+blk6:
 Statements:
   (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v19: core::felt252) <- 375233589013918064796019u
@@ -939,7 +871,7 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v42, v43) {
     Option::Some(v44, v45) => blk1,
-    Option::None(v46, v47) => blk6,
+    Option::None(v46, v47) => blk4,
   })
 
 blk1:
@@ -953,33 +885,16 @@ Statements:
 End:
   Match(match core::integer::u8_eq(v19, v20) {
     bool::False => blk2,
-    bool::True => blk5,
+    bool::True => blk3,
   })
 
 blk2:
 Statements:
   (v58: core::RangeCheck, v59: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v44, v45, v8)
 End:
-  Match(match_enum(v33) {
-    PanicResult::Ok(v34) => blk3,
-    PanicResult::Err(v37) => blk4,
-  })
+  Return(v58, v59, v33)
 
 blk3:
-Statements:
-  (v35: core::integer::u8, v36: ()) <- struct_destructure(v34)
-  (v39: (core::integer::u8, ())) <- struct_construct(v35, v36)
-  (v40: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v39)
-End:
-  Return(v58, v59, v40)
-
-blk4:
-Statements:
-  (v41: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v37)
-End:
-  Return(v58, v59, v41)
-
-blk5:
 Statements:
   (v15: ()) <- struct_construct()
   (v31: (core::integer::u8, ())) <- struct_construct(v8, v15)
@@ -987,7 +902,7 @@ Statements:
 End:
   Return(v44, v45, v32)
 
-blk6:
+blk4:
 Statements:
   (v26: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v27: core::felt252) <- 375233589013918064796019u

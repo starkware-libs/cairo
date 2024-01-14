@@ -44,19 +44,14 @@ Statements:
   (v3: core::felt252) <- 1u
   (v8: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {v8 -> v1})
+  Return(v8)
 
 blk2:
 Statements:
   (v9: core::felt252) <- core::felt252_add(v0, v0)
   (v6: ()) <- test::revoke_ap()
 End:
-  Goto(blk3, {v9 -> v1})
-
-blk3:
-Statements:
-End:
-  Return(v1)
+  Return(v9)
 
 //! > local_variables
 v9

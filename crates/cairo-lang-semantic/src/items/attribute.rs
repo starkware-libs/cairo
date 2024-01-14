@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ModuleId,
-    StructId, SubmoduleId, TraitFunctionId, TraitId,
+    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ImplTypeId,
+    ModuleId, StructId, SubmoduleId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -103,16 +103,6 @@ impl SemanticQueryAttrs for TraitId {
         db.trait_attributes(*self)
     }
 }
-impl SemanticQueryAttrs for TraitFunctionId {
-    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
-        db.trait_function_attributes(*self)
-    }
-}
-impl SemanticQueryAttrs for ImplFunctionId {
-    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
-        db.impl_function_attributes(*self)
-    }
-}
 impl SemanticQueryAttrs for FunctionWithBodyId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         db.function_with_body_attributes(*self)
@@ -146,5 +136,27 @@ impl SemanticQueryAttrs for SubmoduleId {
 impl SemanticQueryAttrs for FreeFunctionId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         FunctionWithBodyId::Free(*self).attributes_elements(db)
+    }
+}
+
+impl SemanticQueryAttrs for TraitTypeId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.trait_type_attributes(*self)
+    }
+}
+impl SemanticQueryAttrs for TraitFunctionId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.trait_function_attributes(*self)
+    }
+}
+
+impl SemanticQueryAttrs for ImplTypeId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.impl_type_attributes(*self)
+    }
+}
+impl SemanticQueryAttrs for ImplFunctionId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.impl_function_attributes(*self)
     }
 }

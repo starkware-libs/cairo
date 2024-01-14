@@ -21,7 +21,7 @@ pub trait Analyzer<'a> {
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &'a Statement,
     ) {
     }
     fn visit_goto(
@@ -41,7 +41,7 @@ pub trait Analyzer<'a> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VarUsage],
+        vars: &'a [VarUsage],
     ) -> Self::Info;
     fn info_from_panic(
         &mut self,

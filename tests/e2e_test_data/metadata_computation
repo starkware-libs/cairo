@@ -740,14 +740,14 @@ fn foo() -> u128 {
 }
 
 //! > gas_solution_lp
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 280})
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 180})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 0})
 
 test::foo: OrderedHashMap({Bitwise: 1, Const: 990})
 
 //! > gas_solution_linear
-#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 190})
+#0: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, Const: 90})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #14: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
@@ -779,7 +779,6 @@ libfunc drop<u128> = drop<u128>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
-libfunc jump = jump;
 libfunc u128_const<2> = u128_const<2>;
 
 withdraw_gas([0], [1]) { fallthrough([3], [4]) 14([5], [6]) }; // 0
@@ -791,33 +790,33 @@ store_temp<u128>([8]) -> ([8]); // 5
 bitwise([2], [7], [8]) -> ([9], [10], [11], [12]); // 6
 drop<u128>([11]) -> (); // 7
 drop<u128>([12]) -> (); // 8
-store_temp<RangeCheck>([3]) -> ([13]); // 9
-store_temp<GasBuiltin>([4]) -> ([14]); // 10
-store_temp<Bitwise>([9]) -> ([15]); // 11
-store_temp<u128>([10]) -> ([16]); // 12
-jump() { 20() }; // 13
+store_temp<RangeCheck>([3]) -> ([3]); // 9
+store_temp<GasBuiltin>([4]) -> ([4]); // 10
+store_temp<Bitwise>([9]) -> ([9]); // 11
+store_temp<u128>([10]) -> ([10]); // 12
+return([3], [4], [9], [10]); // 13
 branch_align() -> (); // 14
-u128_const<2>() -> ([17]); // 15
-store_temp<RangeCheck>([5]) -> ([13]); // 16
-store_temp<GasBuiltin>([6]) -> ([14]); // 17
-store_temp<Bitwise>([2]) -> ([15]); // 18
-store_temp<u128>([17]) -> ([16]); // 19
-return([13], [14], [15], [16]); // 20
+u128_const<2>() -> ([13]); // 15
+store_temp<RangeCheck>([5]) -> ([5]); // 16
+store_temp<GasBuiltin>([6]) -> ([6]); // 17
+store_temp<Bitwise>([2]) -> ([2]); // 18
+store_temp<u128>([13]) -> ([13]); // 19
+return([5], [6], [2], [13]); // 20
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise) -> (RangeCheck, GasBuiltin, Bitwise, u128);
 
 //! > casm
-call rel 41;
-[ap + 0] = [ap + -1] + 40, ap++;
+call rel 40;
+[ap + 0] = [ap + -1] + 39, ap++;
 [ap + 0] = [[ap + -1] + 0], ap++;
 [ap + 0] = [[ap + -1] + 1], ap++;
-[ap + 0] = [ap + -1] + 190, ap++;
+[ap + 0] = [ap + -1] + 90, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -4] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -4] = [ap + 0] + [ap + -2], ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
-jmp rel 18;
+jmp rel 17;
 [fp + -4] = [ap + 0] + [ap + -2], ap++;
 [ap + -1] = [[fp + -5] + 0];
 [ap + 0] = 3, ap++;
@@ -828,7 +827,7 @@ jmp rel 18;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [fp + -3] + 5, ap++;
 [ap + 0] = [[fp + -3] + 2], ap++;
-jmp rel 10;
+ret;
 ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [fp + -4], ap++;
@@ -1009,20 +1008,20 @@ fn foo(cond: bool) {
 
 //! > gas_solution_lp
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10070})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10370})
 #30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
-test::function_with_branch_align: OrderedHashMap({Const: 810})
+test::function_with_branch_align: OrderedHashMap({Const: 710})
 test::foo: OrderedHashMap({Const: 13600})
 
 //! > gas_solution_linear
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10270})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10570})
 #30: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
-test::function_with_branch_align: OrderedHashMap({Const: 300})
+test::function_with_branch_align: OrderedHashMap({Const: 200})
 test::foo: OrderedHashMap({Const: 13600})
 
 //! > ap_solution_lp
@@ -1048,25 +1047,25 @@ libfunc branch_align = branch_align;
 libfunc drop<Unit> = drop<Unit>;
 libfunc felt252_const<2> = felt252_const<2>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc function_call<user@test::function_with_branch_align> = function_call<user@test::function_with_branch_align>;
 libfunc drop<felt252> = drop<felt252>;
+libfunc jump = jump;
 libfunc felt252_add = felt252_add;
 
 enum_match<core::bool>([0]) { fallthrough([1]) 6([2]) }; // 0
 branch_align() -> (); // 1
 drop<Unit>([1]) -> (); // 2
 felt252_const<2>() -> ([3]); // 3
-store_temp<felt252>([3]) -> ([4]); // 4
-jump() { 10() }; // 5
+store_temp<felt252>([3]) -> ([3]); // 4
+return([3]); // 5
 branch_align() -> (); // 6
 drop<Unit>([2]) -> (); // 7
-felt252_const<1>() -> ([5]); // 8
-store_temp<felt252>([5]) -> ([4]); // 9
+felt252_const<1>() -> ([4]); // 8
+store_temp<felt252>([4]) -> ([4]); // 9
 return([4]); // 10
 enum_match<core::bool>([0]) { fallthrough([1]) 30([2]) }; // 11
 branch_align() -> (); // 12
@@ -1519,19 +1518,19 @@ test::function_with_branch_align@0([0]: core::bool) -> (felt252);
 test::foo@11([0]: core::bool) -> (Unit);
 
 //! > casm
-jmp rel 6 if [fp + -3] != 0;
+jmp rel 5 if [fp + -3] != 0;
 [ap + 0] = 2, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 1, ap++;
 ret;
 jmp rel 18 if [fp + -3] != 0;
 ap += 123;
 [ap + 0] = 0, ap++;
-call rel -15;
+call rel -14;
 [ap + 0] = 0, ap++;
-call rel -19;
+call rel -18;
 [ap + 0] = 0, ap++;
-call rel -23;
+call rel -22;
 jmp rel 272;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -1] + 1, ap++;

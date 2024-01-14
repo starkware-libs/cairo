@@ -20,14 +20,16 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: Literal(
-                    PatternLiteral {
-                        literal: ExprLiteral {
-                            value: 0,
-                            ty: core::felt252,
+                patterns: [
+                    Literal(
+                        PatternLiteral {
+                            literal: ExprLiteral {
+                                value: 0,
+                                ty: core::felt252,
+                            },
                         },
-                    },
-                ),
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 0,
@@ -36,11 +38,13 @@ Match(
                 ),
             },
             MatchArm {
-                pattern: Otherwise(
-                    PatternOtherwise {
-                        ty: core::felt252,
-                    },
-                ),
+                patterns: [
+                    Otherwise(
+                        PatternOtherwise {
+                            ty: core::felt252,
+                        },
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 1,
@@ -79,18 +83,20 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: core::bool,
-                            id: VariantId(core::True),
-                            ty: (),
-                            idx: 1,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: core::bool,
+                                id: VariantId(core::True),
+                                ty: (),
+                                idx: 1,
+                            },
+                            inner_pattern: None,
+                            ty: core::bool,
                         },
-                        inner_pattern: None,
-                        ty: core::bool,
-                    },
-                ),
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 0,
@@ -99,18 +105,20 @@ Match(
                 ),
             },
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: core::bool,
-                            id: VariantId(core::False),
-                            ty: (),
-                            idx: 0,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: core::bool,
+                                id: VariantId(core::False),
+                                ty: (),
+                                idx: 0,
+                            },
+                            inner_pattern: None,
+                            ty: core::bool,
                         },
-                        inner_pattern: None,
-                        ty: core::bool,
-                    },
-                ),
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 1,
@@ -156,18 +164,32 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::A,
-                            id: VariantId(test::A),
-                            ty: (),
-                            idx: 0,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::A,
+                                id: VariantId(test::A),
+                                ty: (),
+                                idx: 0,
+                            },
+                            inner_pattern: None,
+                            ty: test::A,
                         },
-                        inner_pattern: None,
-                        ty: test::A,
-                    },
-                ),
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::A,
+                                id: VariantId(test::B),
+                                ty: (),
+                                idx: 1,
+                            },
+                            inner_pattern: None,
+                            ty: test::A,
+                        },
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 0,
@@ -176,38 +198,20 @@ Match(
                 ),
             },
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::A,
-                            id: VariantId(test::B),
-                            ty: (),
-                            idx: 1,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::A,
+                                id: VariantId(test::C),
+                                ty: (),
+                                idx: 2,
+                            },
+                            inner_pattern: None,
+                            ty: test::A,
                         },
-                        inner_pattern: None,
-                        ty: test::A,
-                    },
-                ),
-                expression: Literal(
-                    ExprLiteral {
-                        value: 0,
-                        ty: core::felt252,
-                    },
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::A,
-                            id: VariantId(test::C),
-                            ty: (),
-                            idx: 2,
-                        },
-                        inner_pattern: None,
-                        ty: test::A,
-                    },
-                ),
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 1,
@@ -259,165 +263,144 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::A),
-                            ty: core::integer::u8,
-                            idx: 0,
-                        },
-                        inner_pattern: Some(
-                            Variable(
-                                x,
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
-                expression: Var(
-                    LocalVarId(test::x),
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::B),
-                            ty: (core::integer::u8, core::felt252),
-                            idx: 1,
-                        },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::felt252,
-                                            },
-                                        ),
-                                    ],
-                                    ty: (core::integer::u8, core::felt252),
-                                },
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
-                expression: Var(
-                    LocalVarId(test::x),
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::C),
-                            ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                            idx: 2,
-                        },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                        Variable(
-                                            t,
-                                        ),
-                                    ],
-                                    ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                },
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
-                expression: FunctionCall(
-                    ExprFunctionCall {
-                        function: core::integer::U8Add::add,
-                        args: [
-                            Value(
-                                Var(
-                                    LocalVarId(test::x),
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::A),
+                                ty: core::integer::u8,
+                                idx: 0,
+                            },
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
                                 ),
                             ),
-                            Value(
-                                Var(
-                                    LocalVarId(test::t),
-                                ),
-                            ),
-                        ],
-                        ty: core::integer::u8,
-                    },
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::D),
-                            ty: test::P,
-                            idx: 3,
+                            ty: test::MyEnum::<core::integer::u8>,
                         },
-                        inner_pattern: Some(
-                            Struct(
-                                PatternStruct {
-                                    concrete_struct_id: test::P,
-                                    field_patterns: [
-                                        (
-                                            Member {
-                                                id: MemberId(test::x),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::B),
+                                ty: (core::integer::u8, core::felt252),
+                                idx: 1,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
                                             Variable(
                                                 x,
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::y),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::felt252,
+                                                },
+                                            ),
+                                        ],
+                                        ty: (core::integer::u8, core::felt252),
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                ],
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::C),
+                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                idx: 2,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                x,
+                                            ),
                                             Otherwise(
                                                 PatternOtherwise {
                                                     ty: core::integer::u8,
                                                 },
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::z),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
                                             Variable(
                                                 t,
                                             ),
-                                        ),
-                                    ],
-                                    ty: test::P,
-                                    n_snapshots: 0,
-                                },
+                                        ],
+                                        ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                    },
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::D),
+                                ty: test::P,
+                                idx: 3,
+                            },
+                            inner_pattern: Some(
+                                Struct(
+                                    PatternStruct {
+                                        concrete_struct_id: test::P,
+                                        field_patterns: [
+                                            (
+                                                Member {
+                                                    id: MemberId(test::x),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Variable(
+                                                    x,
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::y),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Otherwise(
+                                                    PatternOtherwise {
+                                                        ty: core::integer::u8,
+                                                    },
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::z),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Variable(
+                                                    t,
+                                                ),
+                                            ),
+                                        ],
+                                        ty: test::P,
+                                        n_snapshots: 0,
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                ],
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: core::integer::U8Add::add,
@@ -481,98 +464,55 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::A),
-                            ty: core::felt252,
-                            idx: 0,
-                        },
-                        inner_pattern: Some(
-                            Variable(
-                                x,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::A),
+                                ty: core::felt252,
+                                idx: 0,
+                            },
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
-                expression: Missing(
-                    ExprMissing {
-                        ty: <missing>,
-                    },
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::B),
-                            ty: (core::felt252, core::felt252),
-                            idx: 1,
+                            ty: test::MyEnum::<core::integer::u8>,
                         },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            t,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::felt252,
-                                            },
-                                        ),
-                                    ],
-                                    ty: (core::felt252, core::felt252),
-                                },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::B),
+                                ty: (core::felt252, core::felt252),
+                                idx: 1,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                t,
+                                            ),
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::felt252,
+                                                },
+                                            ),
+                                        ],
+                                        ty: (core::felt252, core::felt252),
+                                    },
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
-                expression: Missing(
-                    ExprMissing {
-                        ty: <missing>,
-                    },
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::C),
-                            ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                            idx: 2,
+                            ty: test::MyEnum::<core::integer::u8>,
                         },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                        Variable(
-                                            t,
-                                        ),
-                                    ],
-                                    ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                },
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
+                    ),
+                ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::integer::U8Add::add,
+                        function: core::Felt252Add::add,
                         args: [
                             Value(
                                 Var(
@@ -585,65 +525,98 @@ Match(
                                 ),
                             ),
                         ],
-                        ty: core::integer::u8,
+                        ty: core::felt252,
                     },
                 ),
             },
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                            id: VariantId(test::D),
-                            ty: test::P,
-                            idx: 3,
-                        },
-                        inner_pattern: Some(
-                            Struct(
-                                PatternStruct {
-                                    concrete_struct_id: test::P,
-                                    field_patterns: [
-                                        (
-                                            Member {
-                                                id: MemberId(test::x),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::C),
+                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                idx: 2,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
                                             Variable(
                                                 x,
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::y),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
                                             Otherwise(
                                                 PatternOtherwise {
                                                     ty: core::integer::u8,
                                                 },
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::z),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
                                             Variable(
                                                 t,
                                             ),
-                                        ),
-                                    ],
-                                    ty: test::P,
-                                    n_snapshots: 0,
-                                },
+                                        ],
+                                        ty: (core::integer::u8, core::integer::u8, core::integer::u8),
+                                    },
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u8>,
-                    },
-                ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                                id: VariantId(test::D),
+                                ty: test::P,
+                                idx: 3,
+                            },
+                            inner_pattern: Some(
+                                Struct(
+                                    PatternStruct {
+                                        concrete_struct_id: test::P,
+                                        field_patterns: [
+                                            (
+                                                Member {
+                                                    id: MemberId(test::x),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Variable(
+                                                    x,
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::y),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Otherwise(
+                                                    PatternOtherwise {
+                                                        ty: core::integer::u8,
+                                                    },
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::z),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Variable(
+                                                    t,
+                                                ),
+                                            ),
+                                        ],
+                                        ty: test::P,
+                                        n_snapshots: 0,
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                ],
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: core::integer::U8Add::add,
@@ -664,21 +637,11 @@ Match(
                 ),
             },
         ],
-        ty: core::integer::u8,
+        ty: core::felt252,
     },
 )
 
 //! > expected_diagnostics
-error: Identifier not found.
- --> lib.cairo:14:45
-    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-                                            ^
-
-error: Identifier not found.
- --> lib.cairo:14:41
-    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-                                        ^
-
 error: Missing variable in pattern.
  --> lib.cairo:14:5
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
@@ -688,6 +651,11 @@ error: Missing variable in pattern.
  --> lib.cairo:14:20
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                    ^***************^
+
+error: Match arms have incompatible types: "?2" and "?3"
+ --> lib.cairo:15:60
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+                                                           ^***^
 
 //! > ==========================================================================
 
@@ -726,154 +694,148 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                            id: VariantId(test::A),
-                            ty: core::integer::u8,
-                            idx: 0,
-                        },
-                        inner_pattern: Some(
-                            Variable(
-                                x,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                                id: VariantId(test::A),
+                                ty: core::integer::u8,
+                                idx: 0,
+                            },
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u32>,
-                    },
-                ),
-                expression: Var(
-                    LocalVarId(test::x),
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                            id: VariantId(test::B),
-                            ty: (core::integer::u8, core::integer::u8),
-                            idx: 1,
+                            ty: test::MyEnum::<core::integer::u32>,
                         },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                    ],
-                                    ty: (core::integer::u8, core::integer::u8),
-                                },
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u32>,
-                    },
-                ),
-                expression: Var(
-                    LocalVarId(test::x),
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                            id: VariantId(test::C),
-                            ty: (core::integer::u32, core::integer::u8, core::integer::u8),
-                            idx: 2,
-                        },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                    ],
-                                    ty: (core::integer::u32, core::integer::u8, core::integer::u8),
-                                },
-                            ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u32>,
-                    },
-                ),
-                expression: Var(
-                    LocalVarId(test::x),
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                            id: VariantId(test::D),
-                            ty: test::P,
-                            idx: 3,
-                        },
-                        inner_pattern: Some(
-                            Struct(
-                                PatternStruct {
-                                    concrete_struct_id: test::P,
-                                    field_patterns: [
-                                        (
-                                            Member {
-                                                id: MemberId(test::x),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                                id: VariantId(test::B),
+                                ty: (core::integer::u8, core::integer::u8),
+                                idx: 1,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
                                             Variable(
                                                 x,
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::y),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
                                             Otherwise(
                                                 PatternOtherwise {
                                                     ty: core::integer::u8,
                                                 },
                                             ),
-                                        ),
-                                        (
-                                            Member {
-                                                id: MemberId(test::z),
-                                                ty: core::integer::u8,
-                                                visibility: Private,
-                                            },
-                                            Otherwise(
-                                                PatternOtherwise {
-                                                    ty: core::integer::u8,
-                                                },
-                                            ),
-                                        ),
-                                    ],
-                                    ty: test::P,
-                                    n_snapshots: 0,
-                                },
+                                        ],
+                                        ty: (core::integer::u8, core::integer::u8),
+                                    },
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum::<core::integer::u32>,
-                    },
+                            ty: test::MyEnum::<core::integer::u32>,
+                        },
+                    ),
+                ],
+                expression: Var(
+                    LocalVarId(test::x),
                 ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                                id: VariantId(test::C),
+                                ty: (core::integer::u32, core::integer::u8, core::integer::u8),
+                                idx: 2,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                x,
+                                            ),
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                        ],
+                                        ty: (core::integer::u32, core::integer::u8, core::integer::u8),
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u32>,
+                        },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
+                                id: VariantId(test::D),
+                                ty: test::P,
+                                idx: 3,
+                            },
+                            inner_pattern: Some(
+                                Struct(
+                                    PatternStruct {
+                                        concrete_struct_id: test::P,
+                                        field_patterns: [
+                                            (
+                                                Member {
+                                                    id: MemberId(test::x),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Variable(
+                                                    x,
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::y),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Otherwise(
+                                                    PatternOtherwise {
+                                                        ty: core::integer::u8,
+                                                    },
+                                                ),
+                                            ),
+                                            (
+                                                Member {
+                                                    id: MemberId(test::z),
+                                                    ty: core::integer::u8,
+                                                    visibility: Private,
+                                                },
+                                                Otherwise(
+                                                    PatternOtherwise {
+                                                        ty: core::integer::u8,
+                                                    },
+                                                ),
+                                            ),
+                                        ],
+                                        ty: test::P,
+                                        n_snapshots: 0,
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u32>,
+                        },
+                    ),
+                ],
                 expression: Var(
                     LocalVarId(test::x),
                 ),
@@ -888,11 +850,6 @@ error: Expected type "core::integer::u32", found: "core::integer::u8".
  --> lib.cairo:15:40
     MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
                                        ^
-
-error: Match arms have incompatible types: "core::integer::u8" and "core::integer::u32"
- --> lib.cairo:15:60
-    MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
-                                                           ^
 
 //! > ==========================================================================
 
@@ -923,58 +880,52 @@ Match(
         ),
         arms: [
             MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::A),
-                            ty: core::integer::u8,
-                            idx: 0,
-                        },
-                        inner_pattern: Some(
-                            Variable(
-                                x,
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum,
+                                id: VariantId(test::A),
+                                ty: core::integer::u8,
+                                idx: 0,
+                            },
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum,
-                    },
-                ),
-                expression: Literal(
-                    ExprLiteral {
-                        value: 1,
-                        ty: core::felt252,
-                    },
-                ),
-            },
-            MatchArm {
-                pattern: EnumVariant(
-                    PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::B),
-                            ty: (core::integer::u8, core::integer::u8),
-                            idx: 1,
+                            ty: test::MyEnum,
                         },
-                        inner_pattern: Some(
-                            Tuple(
-                                PatternTuple {
-                                    field_patterns: [
-                                        Variable(
-                                            x,
-                                        ),
-                                        Otherwise(
-                                            PatternOtherwise {
-                                                ty: core::integer::u8,
-                                            },
-                                        ),
-                                    ],
-                                    ty: (core::integer::u8, core::integer::u8),
-                                },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: ConcreteVariant {
+                                concrete_enum_id: test::MyEnum,
+                                id: VariantId(test::B),
+                                ty: (core::integer::u8, core::integer::u8),
+                                idx: 1,
+                            },
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                x,
+                                            ),
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::integer::u8,
+                                                },
+                                            ),
+                                        ],
+                                        ty: (core::integer::u8, core::integer::u8),
+                                    },
+                                ),
                             ),
-                        ),
-                        ty: test::MyEnum,
-                    },
-                ),
+                            ty: test::MyEnum,
+                        },
+                    ),
+                ],
                 expression: Literal(
                     ExprLiteral {
                         value: 1,
@@ -992,8 +943,3 @@ warning: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:15
     MyEnum::A(x) | MyEnum::B((x, _)) => 1,
               ^
-
-warning: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:7:31
-    MyEnum::A(x) | MyEnum::B((x, _)) => 1,
-                              ^

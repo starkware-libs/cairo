@@ -174,22 +174,17 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v6})
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v3 -> v6})
+  Return(v3)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v4 -> v6})
-
-blk4:
-Statements:
-End:
-  Return(v6)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -236,22 +231,17 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v10, v3 -> v9})
+  Return(v2, v3)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v4 -> v10, v5 -> v9})
+  Return(v4, v5)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v6 -> v10, v7 -> v9})
-
-blk4:
-Statements:
-End:
-  Return(v10, v9)
+  Return(v6, v7)
 
 //! > ==========================================================================
 
@@ -391,22 +381,17 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v12 -> v15, v2 -> v10, v3 -> v9})
+  Return(v12, v2, v3)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v13 -> v15, v4 -> v10, v5 -> v9})
+  Return(v13, v4, v5)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v14 -> v15, v6 -> v10, v7 -> v9})
-
-blk4:
-Statements:
-End:
-  Return(v15, v10, v9)
+  Return(v14, v6, v7)
 
 //! > ==========================================================================
 
@@ -533,19 +518,14 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
+  Return(v7, v8, v1)
 
 blk2:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v11, v12, v4)
+  Return(v9, v10, v3)
 
 //! > ==========================================================================
 
@@ -583,16 +563,11 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
+  Return(v7, v8, v1)
 
 blk2:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v11, v12, v4)
+  Return(v9, v10, v3)
