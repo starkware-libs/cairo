@@ -3,7 +3,7 @@ use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::ProfilingInfoPrinter;
+use super::ProfilingInfoProcessor;
 use crate::SierraCasmRunner;
 
 cairo_lang_test_utils::test_file_test!(
@@ -24,7 +24,6 @@ pub fn test_profiling(
 
     let sierra_program = ProgramParser::new().parse(&sierra_code).unwrap();
 
-    // let sierra_program_path = "enum_flow.cairo";
     let runner =
         SierraCasmRunner::new(sierra_program.clone(), None, OrderedHashMap::default(), true)
             .unwrap();
@@ -32,11 +31,14 @@ pub fn test_profiling(
     let result =
         runner.run_function_with_starknet_context(func, &[], None, Default::default()).unwrap();
 
-    let printer = ProfilingInfoPrinter::new(sierra_program);
-    let printed_profiling_info = printer.print(&result.profiling_info.unwrap());
+    let profiling_processor = ProfilingInfoProcessor::new(sierra_program);
+    let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
 
     TestRunnerResult {
-        outputs: OrderedHashMap::from([("expected_profiling_info".into(), printed_profiling_info)]),
+        outputs: OrderedHashMap::from([(
+            "expected_profiling_info".into(),
+            processed_profiling_info.to_string(),
+        )]),
         error: None,
     }
 }
