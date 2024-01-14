@@ -427,6 +427,36 @@ pub fn type_info(
     Ok(TypeInfo { droppable, duplicatable, destruct_impl, panic_destruct_impl })
 }
 
+pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
+    Ok(match db.lookup_intern_type(ty) {
+        semantic::TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(id) => db.struct_members(id.struct_id(db))?.is_empty(),
+            ConcreteTypeId::Enum(id) => {
+                let variants = db.enum_variants(id.enum_id(db))?;
+                if variants.len() != 1 {
+                    return Ok(false);
+                }
+
+                let (_name, variant) = variants.iter().next().unwrap();
+                db.single_value_type(db.variant_semantic(id.enum_id(db), *variant)?.ty)?
+            }
+            ConcreteTypeId::Extern(_) => false,
+        },
+        semantic::TypeLongId::Tuple(types) => {
+            for ty in &types {
+                if !db.single_value_type(*ty)? {
+                    return Ok(false);
+                }
+            }
+            true
+        }
+        semantic::TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        semantic::TypeLongId::GenericParameter(_) => false,
+        semantic::TypeLongId::Var(_) => false,
+        semantic::TypeLongId::Missing(_) => false,
+    })
+}
+
 /// Peels all wrapping Snapshot (`@`) from the type.
 /// Returns the number of peeled snapshots and the inner type.
 pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {

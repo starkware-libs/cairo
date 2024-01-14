@@ -1009,6 +1009,13 @@ pub trait SemanticGroup:
 
     // Concrete type.
     // ==============
+    /// Returns true if there is only one value for the given type and hence the values of the given
+    /// type are all interchangeable.
+    /// Examples include the unit type tuple of a unit type and empty structs.
+    /// Always returns false for extern types.
+    #[salsa::invoke(types::single_value_type)]
+    fn single_value_type(&self, ty: types::TypeId) -> Maybe<bool>;
+
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
     #[salsa::invoke(types::type_info)]
