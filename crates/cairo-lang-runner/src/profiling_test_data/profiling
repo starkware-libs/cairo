@@ -11,45 +11,43 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 35: 5 (enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) 39([2]) 42([3]) })
-  statement 44: 3 (return([4]))
   statement 2: 2 (store_temp<examples::enum_flow::MyEnumShort>([1]) -> ([1]))
-  statement 7: 2 (store_temp<examples::enum_flow::MyEnumShort>([4]) -> ([4]))
-  statement 12: 2 (store_temp<examples::enum_flow::MyEnumLong>([7]) -> ([7]))
-  statement 17: 2 (store_temp<examples::enum_flow::MyEnumLong>([10]) -> ([10]))
-  statement 22: 2 (store_temp<examples::enum_flow::MyEnumLong>([13]) -> ([13]))
-  statement 28: 2 (enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) 32([2]) })
-  statement 34: 2 (return([3]))
   statement 3: 1 (function_call<user@examples::enum_flow::match_short>([1]) -> ([2]))
+  statement 7: 2 (store_temp<examples::enum_flow::MyEnumShort>([4]) -> ([4]))
   statement 8: 1 (function_call<user@examples::enum_flow::match_short>([4]) -> ([5]))
+  statement 12: 2 (store_temp<examples::enum_flow::MyEnumLong>([7]) -> ([7]))
   statement 13: 1 (function_call<user@examples::enum_flow::match_long>([7]) -> ([8]))
+  statement 17: 2 (store_temp<examples::enum_flow::MyEnumLong>([10]) -> ([10]))
   statement 18: 1 (function_call<user@examples::enum_flow::match_long>([10]) -> ([11]))
+  statement 22: 2 (store_temp<examples::enum_flow::MyEnumLong>([13]) -> ([13]))
   statement 23: 1 (function_call<user@examples::enum_flow::match_long>([13]) -> ([14]))
   statement 26: 1 (store_temp<felt252>([15]) -> ([15]))
   statement 27: 1 (return([15]))
-  statement 30: 1 (store_temp<felt252>([1]) -> ([3]))
-  statement 31: 1 (jump() { 34() })
-  statement 33: 1 (store_temp<felt252>([2]) -> ([3]))
-  statement 37: 1 (store_temp<felt252>([1]) -> ([4]))
-  statement 38: 1 (jump() { 44() })
-  statement 40: 1 (store_temp<felt252>([2]) -> ([4]))
-  statement 41: 1 (jump() { 44() })
-  statement 43: 1 (store_temp<felt252>([3]) -> ([4]))
+  statement 28: 2 (enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) 32([2]) })
+  statement 30: 1 (store_temp<felt252>([1]) -> ([1]))
+  statement 31: 1 (return([1]))
+  statement 33: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 34: 1 (return([2]))
+  statement 35: 5 (enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) 39([2]) 42([3]) })
+  statement 37: 1 (store_temp<felt252>([1]) -> ([1]))
+  statement 38: 1 (return([1]))
+  statement 40: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 41: 1 (return([2]))
+  statement 43: 1 (store_temp<felt252>([3]) -> ([3]))
+  statement 44: 1 (return([3]))
 Weight by concrete libfunc:
-  libfunc store_temp<examples::enum_flow::MyEnumLong>: 6
-  libfunc store_temp<felt252>: 6
   libfunc enum_match<examples::enum_flow::MyEnumLong>: 5
-  libfunc store_temp<examples::enum_flow::MyEnumShort>: 4
-  libfunc function_call<user@examples::enum_flow::match_long>: 3
-  libfunc jump: 3
   libfunc enum_match<examples::enum_flow::MyEnumShort>: 2
+  libfunc function_call<user@examples::enum_flow::match_long>: 3
   libfunc function_call<user@examples::enum_flow::match_short>: 2
+  libfunc store_temp<examples::enum_flow::MyEnumLong>: 6
+  libfunc store_temp<examples::enum_flow::MyEnumShort>: 4
+  libfunc store_temp<felt252>: 6
   return: 6
 Weight by generic libfunc:
-  libfunc store_temp: 16
   libfunc enum_match: 7
   libfunc function_call: 5
-  libfunc jump: 3
+  libfunc store_temp: 16
   return: 6
 
 //! > ==========================================================================
@@ -67,93 +65,89 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 116: 12 (store_temp<core::panics::PanicResult::<(core::felt252)>>([32]) -> ([32]))
-  statement 123: 8 (u8_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 129([5], [6]) })
-  statement 68: 7 (enum_match<examples::match_or::MyEnum>([1]) { fallthrough([2]) 75([3]) 81([4]) 100([5]) })
-  statement 142: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8)>>([17]) -> ([17]))
-  statement 154: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8)>>([5]) -> ([5]))
-  statement 5: 4 (store_temp<examples::match_or::MyEnum>([4]) -> ([4]))
-  statement 15: 4 (store_temp<examples::match_or::MyEnum>([12]) -> ([12]))
-  statement 26: 4 (store_temp<examples::match_or::MyEnum>([21]) -> ([21]))
-  statement 37: 4 (store_temp<examples::match_or::MyEnum>([30]) -> ([30]))
-  statement 115: 4 (store_temp<RangeCheck>([8]) -> ([8]))
-  statement 117: 4 (return([8], [32]))
-  statement 127: 4 (store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([7]) -> ([9]))
-  statement 46: 3 (store_temp<core::panics::PanicResult::<(())>>([37]) -> ([37]))
-  statement 126: 2 (store_temp<RangeCheck>([3]) -> ([8]))
-  statement 128: 2 (jump() { 133() })
-  statement 134: 2 (store_temp<felt252>([11]) -> ([11]))
-  statement 135: 2 (function_call<user@core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>>([9], [11]) -> ([12]))
-  statement 136: 2 (enum_match<core::panics::PanicResult::<(core::integer::u8)>>([12]) { fallthrough([13]) 144([14]) })
-  statement 141: 2 (store_temp<RangeCheck>([8]) -> ([8]))
-  statement 143: 2 (return([8], [17]))
-  statement 149: 2 (enum_match<core::result::Result::<core::integer::u8, core::integer::u8>>([0]) { fallthrough([2]) 156([3]) })
-  statement 150: 2 (branch_align() -> ())
-  statement 155: 2 (return([5]))
   statement 4: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 5: 4 (store_temp<examples::match_or::MyEnum>([4]) -> ([4]))
   statement 6: 1 (function_call<user@examples::match_or::foo>([0], [4]) -> ([5], [6]))
   statement 7: 1 (enum_match<core::panics::PanicResult::<(core::felt252)>>([6]) { fallthrough([7]) 63([8]) })
   statement 14: 1 (store_temp<RangeCheck>([5]) -> ([5]))
+  statement 15: 4 (store_temp<examples::match_or::MyEnum>([12]) -> ([12]))
   statement 16: 1 (function_call<user@examples::match_or::foo>([5], [12]) -> ([13], [14]))
   statement 17: 1 (enum_match<core::panics::PanicResult::<(core::felt252)>>([14]) { fallthrough([15]) 58([16]) })
   statement 25: 1 (store_temp<RangeCheck>([13]) -> ([13]))
+  statement 26: 4 (store_temp<examples::match_or::MyEnum>([21]) -> ([21]))
   statement 27: 1 (function_call<user@examples::match_or::foo>([13], [21]) -> ([22], [23]))
   statement 28: 1 (enum_match<core::panics::PanicResult::<(core::felt252)>>([23]) { fallthrough([24]) 53([25]) })
   statement 36: 1 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 37: 4 (store_temp<examples::match_or::MyEnum>([30]) -> ([30]))
   statement 38: 1 (function_call<user@examples::match_or::foo>([22], [30]) -> ([31], [32]))
   statement 39: 1 (enum_match<core::panics::PanicResult::<(core::felt252)>>([32]) { fallthrough([33]) 48([34]) })
   statement 45: 1 (store_temp<RangeCheck>([31]) -> ([31]))
+  statement 46: 3 (store_temp<core::panics::PanicResult::<(())>>([37]) -> ([37]))
   statement 47: 1 (return([31], [37]))
+  statement 68: 7 (enum_match<examples::match_or::MyEnum>([1]) { fallthrough([2]) 74([3]) 81([4]) 87([5]) })
   statement 69: 1 (branch_align() -> ())
-  statement 72: 1 (store_temp<RangeCheck>([0]) -> ([8]))
-  statement 73: 1 (store_temp<felt252>([7]) -> ([9]))
-  statement 74: 1 (jump() { 113() })
-  statement 75: 1 (branch_align() -> ())
-  statement 78: 1 (store_temp<RangeCheck>([0]) -> ([8]))
-  statement 79: 1 (store_temp<felt252>([10]) -> ([9]))
-  statement 80: 1 (jump() { 113() })
-  statement 84: 1 (store_temp<RangeCheck>([0]) -> ([0]))
-  statement 85: 1 (store_temp<u8>([12]) -> ([12]))
-  statement 86: 1 (store_temp<u8>([14]) -> ([14]))
-  statement 87: 1 (function_call<user@core::integer::U8Add::add>([0], [12], [14]) -> ([15], [16]))
-  statement 88: 1 (enum_match<core::panics::PanicResult::<(core::integer::u8)>>([16]) { fallthrough([17]) 95([18]) })
-  statement 92: 1 (store_temp<RangeCheck>([15]) -> ([8]))
-  statement 93: 1 (store_temp<felt252>([20]) -> ([9]))
-  statement 94: 1 (jump() { 113() })
-  statement 103: 1 (store_temp<RangeCheck>([0]) -> ([0]))
-  statement 104: 1 (store_temp<u8>([22]) -> ([22]))
-  statement 105: 1 (store_temp<u8>([24]) -> ([24]))
-  statement 106: 1 (function_call<user@core::integer::U8Add::add>([0], [22], [24]) -> ([25], [26]))
-  statement 107: 1 (enum_match<core::panics::PanicResult::<(core::integer::u8)>>([26]) { fallthrough([27]) 118([28]) })
-  statement 111: 1 (store_temp<RangeCheck>([25]) -> ([8]))
-  statement 112: 1 (store_temp<felt252>([30]) -> ([9]))
+  statement 72: 1 (store_temp<felt252>([7]) -> ([8]))
+  statement 73: 1 (jump() { 78() })
+  statement 74: 1 (branch_align() -> ())
+  statement 77: 1 (store_temp<felt252>([9]) -> ([8]))
+  statement 78: 2 (store_temp<RangeCheck>([0]) -> ([11]))
+  statement 79: 2 (store_temp<felt252>([8]) -> ([12]))
+  statement 80: 2 (jump() { 102() })
+  statement 84: 1 (store_temp<u8>([13]) -> ([16]))
+  statement 85: 1 (store_temp<u8>([15]) -> ([17]))
+  statement 86: 1 (jump() { 92() })
+  statement 90: 1 (store_temp<u8>([18]) -> ([16]))
+  statement 91: 1 (store_temp<u8>([20]) -> ([17]))
+  statement 92: 2 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 93: 2 (store_temp<u8>([16]) -> ([16]))
+  statement 94: 2 (store_temp<u8>([17]) -> ([17]))
+  statement 95: 2 (function_call<user@core::integer::U8Add::add>([0], [16], [17]) -> ([21], [22]))
+  statement 96: 2 (enum_match<core::panics::PanicResult::<(core::integer::u8)>>([22]) { fallthrough([23]) 107([24]) })
+  statement 100: 2 (store_temp<RangeCheck>([21]) -> ([11]))
+  statement 101: 2 (store_temp<felt252>([26]) -> ([12]))
+  statement 104: 4 (store_temp<RangeCheck>([11]) -> ([11]))
+  statement 105: 12 (store_temp<core::panics::PanicResult::<(core::felt252)>>([28]) -> ([28]))
+  statement 106: 4 (return([11], [28]))
+  statement 112: 8 (u8_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 118([5], [6]) })
+  statement 115: 2 (store_temp<RangeCheck>([3]) -> ([8]))
+  statement 116: 4 (store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([7]) -> ([9]))
+  statement 117: 2 (jump() { 122() })
+  statement 123: 2 (store_temp<felt252>([11]) -> ([11]))
+  statement 124: 2 (function_call<user@core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>>([9], [11]) -> ([12]))
+  statement 125: 2 (store_temp<RangeCheck>([8]) -> ([8]))
+  statement 126: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8)>>([12]) -> ([12]))
+  statement 127: 2 (return([8], [12]))
+  statement 128: 2 (enum_match<core::result::Result::<core::integer::u8, core::integer::u8>>([0]) { fallthrough([2]) 135([3]) })
+  statement 129: 2 (branch_align() -> ())
+  statement 133: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8)>>([5]) -> ([5]))
+  statement 134: 2 (return([5]))
 Weight by concrete libfunc:
-  libfunc store_temp<RangeCheck>: 19
-  libfunc store_temp<examples::match_or::MyEnum>: 16
-  libfunc store_temp<core::panics::PanicResult::<(core::felt252)>>: 12
-  libfunc store_temp<core::panics::PanicResult::<(core::integer::u8)>>: 12
-  libfunc u8_overflowing_add: 8
-  libfunc enum_match<examples::match_or::MyEnum>: 7
-  libfunc store_temp<felt252>: 6
-  libfunc jump: 5
   libfunc branch_align: 4
   libfunc enum_match<core::panics::PanicResult::<(core::felt252)>>: 4
-  libfunc enum_match<core::panics::PanicResult::<(core::integer::u8)>>: 4
-  libfunc function_call<user@examples::match_or::foo>: 4
-  libfunc store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>: 4
-  libfunc store_temp<u8>: 4
-  libfunc store_temp<core::panics::PanicResult::<(())>>: 3
+  libfunc enum_match<core::panics::PanicResult::<(core::integer::u8)>>: 2
   libfunc enum_match<core::result::Result::<core::integer::u8, core::integer::u8>>: 2
+  libfunc enum_match<examples::match_or::MyEnum>: 7
   libfunc function_call<user@core::integer::U8Add::add>: 2
   libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>>: 2
+  libfunc function_call<user@examples::match_or::foo>: 4
+  libfunc jump: 6
+  libfunc store_temp<RangeCheck>: 19
+  libfunc store_temp<core::panics::PanicResult::<(())>>: 3
+  libfunc store_temp<core::panics::PanicResult::<(core::felt252)>>: 12
+  libfunc store_temp<core::panics::PanicResult::<(core::integer::u8)>>: 12
+  libfunc store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>: 4
+  libfunc store_temp<examples::match_or::MyEnum>: 16
+  libfunc store_temp<felt252>: 8
+  libfunc store_temp<u8>: 8
+  libfunc u8_overflowing_add: 8
   return: 9
 Weight by generic libfunc:
-  libfunc store_temp: 76
-  libfunc enum_match: 17
-  libfunc function_call: 8
-  libfunc u8_overflowing_add: 8
-  libfunc jump: 5
   libfunc branch_align: 4
+  libfunc enum_match: 15
+  libfunc function_call: 8
+  libfunc jump: 6
+  libfunc store_temp: 82
+  libfunc u8_overflowing_add: 8
   return: 9
 
 //! > ==========================================================================
@@ -171,24 +165,24 @@ test_pedersen
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 4: 2 (pedersen([0], [1], [2]) -> ([3], [4]))
-  statement 8: 2 (pedersen([3], [4], [5]) -> ([6], [7]))
-  statement 12: 2 (pedersen([6], [7], [8]) -> ([9], [10]))
   statement 2: 1 (store_temp<felt252>([1]) -> ([1]))
   statement 3: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 4: 2 (pedersen([0], [1], [2]) -> ([3], [4]))
   statement 6: 1 (store_temp<felt252>([4]) -> ([4]))
   statement 7: 1 (store_temp<felt252>([5]) -> ([5]))
+  statement 8: 2 (pedersen([3], [4], [5]) -> ([6], [7]))
   statement 10: 1 (store_temp<felt252>([7]) -> ([7]))
   statement 11: 1 (store_temp<felt252>([8]) -> ([8]))
+  statement 12: 2 (pedersen([6], [7], [8]) -> ([9], [10]))
   statement 13: 1 (store_temp<Pedersen>([9]) -> ([9]))
   statement 14: 1 (store_temp<felt252>([10]) -> ([10]))
   statement 15: 1 (return([9], [10]))
 Weight by concrete libfunc:
-  libfunc store_temp<felt252>: 7
   libfunc pedersen: 6
   libfunc store_temp<Pedersen>: 1
+  libfunc store_temp<felt252>: 7
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 8
   libfunc pedersen: 6
+  libfunc store_temp: 8
   return: 1
