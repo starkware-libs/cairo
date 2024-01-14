@@ -378,3 +378,91 @@ blk3:
 Statements:
 End:
   Return(v9, v8)
+
+//! > ==========================================================================
+
+//! > Test replacement of unitlike types in struct construct/deconstruct.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(v: Option<(u16, ())>) -> Option<(u16, ())> {
+   match v {
+      Option::Some(v) => {
+        let (x, _) = v;
+        Option::Some((x, ()))
+      },
+      Option::None => {
+        Option::None
+      },
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<(core::integer::u16, ())>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::integer::u16, v4: ()) <- struct_destructure(v1)
+  (v5: ()) <- struct_construct()
+  (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
+  (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
+End:
+  Goto(blk3, {v7 -> v10})
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters: v0: core::option::Option::<(core::integer::u16, ())>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+blk1:
+Statements:
+  (v3: core::integer::u16, v4: ()) <- struct_destructure(v1)
+  (v5: ()) <- struct_construct()
+  (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
+  (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v8)
+End:
+  Return(v9)
+
+blk3:
+Statements:
+End:
+  Return(v10)
