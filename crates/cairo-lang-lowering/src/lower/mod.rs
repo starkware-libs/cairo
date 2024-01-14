@@ -740,6 +740,7 @@ fn build_empty_data_array(
     generators::Call {
         function: data_array_new_function,
         inputs: vec![],
+        coupon_input: None,
         extra_ret_tys: vec![],
         ret_tys: vec![data_array_ty],
         location: ctx.get_location(expr.stable_ptr.untyped()),
@@ -773,6 +774,7 @@ fn add_chunks_to_data_array<'a>(
         *data_array_usage = generators::Call {
             function: data_array_append_function,
             inputs: vec![*data_array_usage, chunk_usage],
+            coupon_input: None,
             extra_ret_tys: vec![data_array_ty],
             ret_tys: vec![],
             location: ctx.get_location(expr_stable_ptr),
@@ -895,6 +897,12 @@ fn lower_expr_function_call(
         .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
     let ref_tys = ref_args_iter.clone().map(|ref_arg| ref_arg.ty()).collect();
 
+    let coupon_input = if let Some(coupon_arg) = expr.coupon_arg {
+        Some(lower_expr_to_var_usage(ctx, builder, coupon_arg)?)
+    } else {
+        None
+    };
+
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
@@ -923,8 +931,18 @@ fn lower_expr_function_call(
         }
     }
 
-    let (ref_outputs, res) =
-        perform_function_call(ctx, builder, expr.function, arg_inputs, ref_tys, expr.ty, location)?;
+    let (ref_outputs, res) = perform_function_call(
+        ctx,
+        builder,
+        FunctionCallInfo {
+            function: expr.function,
+            inputs: arg_inputs,
+            coupon_input,
+            extra_ret_tys: ref_tys,
+            ret_ty: expr.ty,
+        },
+        location,
+    )?;
 
     // Rebind the ref variables.
     for (ref_arg, output_var) in zip_eq(ref_args_iter, ref_outputs) {
@@ -934,23 +952,33 @@ fn lower_expr_function_call(
     Ok(res)
 }
 
+/// Information required for [perform_function_call].
+struct FunctionCallInfo {
+    function: semantic::FunctionId,
+    inputs: Vec<VarUsage>,
+    coupon_input: Option<VarUsage>,
+    extra_ret_tys: Vec<semantic::TypeId>,
+    ret_ty: semantic::TypeId,
+}
+
 /// Creates a LoweredExpr for a function call, taking into consideration external function facades:
 /// For external functions, sometimes the high level signature doesn't exactly correspond to the
 /// external function returned variables / branches.
 fn perform_function_call(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    function: semantic::FunctionId,
-    inputs: Vec<VarUsage>,
-    extra_ret_tys: Vec<semantic::TypeId>,
-    ret_ty: semantic::TypeId,
+    function_call_info: FunctionCallInfo,
     location: LocationId,
 ) -> Result<(Vec<VarUsage>, LoweredExpr), LoweringFlowError> {
+    let FunctionCallInfo { function, inputs, coupon_input, extra_ret_tys, ret_ty } =
+        function_call_info;
+
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
         let call_result = generators::Call {
             function: function.lowered(ctx.db),
             inputs,
+            coupon_input,
             extra_ret_tys,
             ret_tys: vec![ret_ty],
             location,
@@ -987,10 +1015,12 @@ fn perform_function_call(
     };
 
     // Extern function.
+    assert!(coupon_input.is_none(), "Extern functions cannot have a __coupon__ argument.");
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call {
         function: function.lowered(ctx.db),
         inputs,
+        coupon_input: None,
         extra_ret_tys,
         ret_tys,
         location,
@@ -1082,6 +1112,7 @@ fn call_loop_func(
     let call_result = generators::Call {
         function,
         inputs,
+        coupon_input: None,
         extra_ret_tys,
         ret_tys: vec![loop_signature.return_type],
         location,
@@ -1967,6 +1998,7 @@ fn lower_expr_felt252_arm(
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_arm_val, match_input],
+            coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location,

@@ -318,6 +318,10 @@ pub enum ExprFunctionCallArg {
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
+    /// The `__coupon__` argument of the function call, if used. Attaching a coupon to a function
+    /// means that the coupon is used instead of reducing the cost of the called function from the
+    /// gas wallet. In particular, the cost of such a call is constant.
+    pub coupon_arg: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

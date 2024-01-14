@@ -277,7 +277,48 @@ Match(
                                     x,
                                 ),
                             ),
+<<<<<<< HEAD
                             ty: test::MyEnum::<core::integer::u8>,
+||||||| 0b4d15a97
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::D),
+                            ty: test::P,
+                            idx: 3,
+=======
+                            Value(
+                                Var(
+                                    LocalVarId(test::t),
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+            MatchArm {
+                pattern: EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum::<core::integer::u8>,
+                            id: VariantId(test::D),
+                            ty: test::P,
+                            idx: 3,
+>>>>>>> origin/coupons
                         },
                     ),
                     EnumVariant(
@@ -416,6 +457,7 @@ Match(
                                 ),
                             ),
                         ],
+                        coupon_arg: None,
                         ty: core::integer::u8,
                     },
                 ),
@@ -525,7 +567,14 @@ Match(
                                 ),
                             ),
                         ],
+<<<<<<< HEAD
                         ty: core::felt252,
+||||||| 0b4d15a97
+                        ty: core::integer::u8,
+=======
+                        coupon_arg: None,
+                        ty: core::integer::u8,
+>>>>>>> origin/coupons
                     },
                 ),
             },
@@ -632,6 +681,7 @@ Match(
                                 ),
                             ),
                         ],
+                        coupon_arg: None,
                         ty: core::integer::u8,
                     },
                 ),

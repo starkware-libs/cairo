@@ -7,6 +7,7 @@ use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
 use super::const_type::{ConstLibfunc, ConstType};
+use super::coupon::{CouponLibfunc, CouponType};
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -15,6 +16,7 @@ use super::enm::{EnumLibfunc, EnumType};
 use super::felt252_dict::{
     Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
 };
+use super::function_call::CouponCallLibfunc;
 use super::gas::BuiltinCostsType;
 use super::int::signed::{
     Sint16Libfunc, Sint16Type, Sint32Libfunc, Sint32Type, Sint64Libfunc, Sint64Type, Sint8Libfunc,
@@ -52,6 +54,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 define_type_hierarchy! {
     pub enum CoreType {
         Array(ArrayType),
+        Coupon(CouponType),
         Bitwise(BitwiseType),
         Box(BoxType),
         Const(ConstType),
@@ -100,6 +103,8 @@ define_libfunc_hierarchy! {
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
+        Coupon(CouponLibfunc),
+        CouponCall(CouponCallLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),

@@ -288,7 +288,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
             let semantic_db = self.variables.db.upcast();
-            if let Some(function_id) = stmt.function.body(self.variables.db)? {
+            if let (Some(function_id), None) =
+                (stmt.function.body(self.variables.db)?, stmt.coupon_input)
+            {
                 // TODO(spapini): Change logic to be based on concrete.
                 let inline_data = self
                     .variables

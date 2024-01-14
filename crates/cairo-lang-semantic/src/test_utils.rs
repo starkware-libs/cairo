@@ -115,7 +115,11 @@ pub struct TestModule {
 }
 
 /// Sets up a crate with given content, and returns its crate id.
-pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
+pub fn setup_test_crate_ex(
+    db: &dyn SemanticGroup,
+    content: &str,
+    crate_settings: Option<&str>,
+) -> CrateId {
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
@@ -124,6 +128,18 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
         kind: FileKind::Module,
     }));
 
+    let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
+        toml::from_str(crate_settings).expect("Invalid config.")
+    } else {
+        CrateSettings {
+            edition: Edition::default(),
+            experimental_features: ExperimentalFeaturesConfig {
+                negative_impls: true,
+                coupons: true,
+            },
+        }
+    };
+
     db.intern_crate(CrateLongId::Virtual {
         name: "test".into(),
         config: CrateConfiguration {
@@ -131,20 +147,23 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
                 files: BTreeMap::from([("lib.cairo".into(), file_id)]),
                 dirs: Default::default(),
             },
-            settings: CrateSettings {
-                edition: Edition::default(),
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
-            },
+            settings,
         },
     })
 }
 
+/// See [setup_test_crate_ex].
+pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
+    setup_test_crate_ex(db, content, None)
+}
+
 /// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module(
+pub fn setup_test_module_ex(
     db: &(dyn SemanticGroup + 'static),
     content: &str,
+    crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestModule> {
-    let crate_id = setup_test_crate(db, content);
+    let crate_id = setup_test_crate_ex(db, content, crate_settings);
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
@@ -155,6 +174,14 @@ pub fn setup_test_module(
         value: TestModule { crate_id, module_id },
         diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
     }
+}
+
+/// See [setup_test_module_ex].
+pub fn setup_test_module(
+    db: &(dyn SemanticGroup + 'static),
+    content: &str,
+) -> WithStringDiagnostics<TestModule> {
+    setup_test_module_ex(db, content, None)
 }
 
 /// Helper struct for the return value of [setup_test_function].
@@ -169,18 +196,19 @@ pub struct TestFunction {
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
-pub fn setup_test_function(
+pub fn setup_test_function_ex(
     db: &(dyn SemanticGroup + 'static),
     function_code: &str,
     function_name: &str,
     module_code: &str,
+    crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestFunction> {
     let content = if module_code.is_empty() {
         function_code.to_string()
     } else {
         format!("{module_code}\n{function_code}")
     };
-    let (test_module, diagnostics) = setup_test_module(db, &content).split();
+    let (test_module, diagnostics) = setup_test_module_ex(db, &content, crate_settings).split();
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
@@ -202,6 +230,16 @@ pub fn setup_test_function(
         },
         diagnostics,
     }
+}
+
+/// See [setup_test_function_ex].
+pub fn setup_test_function(
+    db: &(dyn SemanticGroup + 'static),
+    function_code: &str,
+    function_name: &str,
+    module_code: &str,
+) -> WithStringDiagnostics<TestFunction> {
+    setup_test_function_ex(db, function_code, function_name, module_code, None)
 }
 
 /// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
@@ -288,11 +326,12 @@ pub fn test_function_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    let diagnostics = setup_test_function(
+    let diagnostics = setup_test_function_ex(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);

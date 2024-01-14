@@ -30,6 +30,9 @@ pub fn try_extract_minus_literal(
     let [ExprFunctionCallArg::Value(expr_id)] = &expr.args[..] else {
         return None;
     };
+    if expr.coupon_arg.is_some() {
+        return None;
+    }
     let literal = try_extract_matches!(&exprs[*expr_id], Expr::Literal)?;
     let imp = try_extract_matches!(
         expr.function.get_concrete(db).generic_function,

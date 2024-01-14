@@ -34,7 +34,12 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         call :"call",
         constant :"constant",
+<<<<<<< HEAD
         cycles :"cycles",
+||||||| 0b4d15a97
+=======
+        coupon :"coupon",
+>>>>>>> origin/coupons
         literal :"literal",
         destruct :"destruct",
         enums :"enums",

@@ -62,7 +62,7 @@ impl GenericArgumentId {
             GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
     }
-    // Returns true if the generic argument does not depend on any generics.
+    /// Returns true if the generic argument does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),

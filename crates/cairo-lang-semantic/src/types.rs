@@ -1,5 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use cairo_lang_defs::ids::{
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
@@ -21,7 +23,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -32,6 +34,7 @@ pub enum TypeLongId {
     Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
+    Coupon(FunctionId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -84,6 +87,7 @@ impl TypeId {
             TypeLongId::GenericParameter(_) => false,
             TypeLongId::Var(_) => false,
             TypeLongId::Missing(_) => false,
+            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         }
     }
 }
@@ -103,6 +107,7 @@ impl TypeLongId {
                 format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
+            TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.fullname(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
         }
     }
@@ -113,6 +118,7 @@ impl TypeLongId {
             TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
             TypeLongId::Tuple(_) => TypeHead::Tuple,
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
+            TypeLongId::Coupon(_) => TypeHead::Coupon,
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
@@ -137,6 +143,7 @@ pub enum TypeHead {
     Concrete(GenericTypeId),
     Snapshot(Box<TypeHead>),
     Tuple,
+    Coupon,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -208,7 +215,7 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(_) => Ok(false),
         }
     }
-    // Returns true if the type does not depend on any generics.
+    /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         self.generic_args(db)
             .iter()
@@ -445,4 +452,11 @@ pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: us
         ty = db.intern_type(TypeLongId::Snapshot(ty));
     }
     ty
+}
+
+/// Returns `true` if coupons are enabled in the module.
+pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.coupons
 }

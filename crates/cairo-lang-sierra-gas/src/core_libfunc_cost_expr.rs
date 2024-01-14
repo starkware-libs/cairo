@@ -1,4 +1,5 @@
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
@@ -57,9 +58,12 @@ pub fn core_libfunc_precost_expr(
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
 ) -> Vec<CostExprMap> {
-    // Keeping the old calculation as is - `withdraw_gas` should only supply gas for consts.
     if matches!(libfunc, CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_))) {
+        // Keeping the old calculation as is - `withdraw_gas` should only supply gas for consts.
         vec![Default::default(), Default::default()]
+    } else if matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))) {
+        // Coupon refund is not supported (zero refund).
+        vec![Default::default()]
     } else {
         core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
     }
@@ -72,5 +76,10 @@ pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    if matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))) {
+        // Coupon refund is not supported (zero refund).
+        vec![Default::default()]
+    } else {
+        core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    }
 }

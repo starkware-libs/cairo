@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
@@ -108,6 +109,13 @@ pub fn get_concrete_long_type_id(
                 .into()
             }
         }
+        semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
+            generic_id: "Coupon".into(),
+            generic_args: vec![SierraGenericArg::UserFunc(
+                db.intern_sierra_function(function_id.lowered(db.upcast())),
+            )],
+        }
+        .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {
@@ -159,6 +167,7 @@ pub fn type_dependencies(
         },
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
+        semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

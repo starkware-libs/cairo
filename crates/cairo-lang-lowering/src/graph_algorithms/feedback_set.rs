@@ -7,14 +7,16 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use super::concrete_function_postiniline_node::ConcreteFunctionWithBodyPostInlineNode;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::DependencyType;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
 pub fn function_with_body_feedback_set(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-    let r = db.concrete_function_with_body_scc_representative(function);
-    db.priv_function_with_body_feedback_set_of_representative(r)
+    let r = db.concrete_function_with_body_scc_representative(function, dependency_type);
+    db.priv_function_with_body_feedback_set_of_representative(r, dependency_type)
 }
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
@@ -29,8 +31,26 @@ pub fn needs_withdraw_gas(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+<<<<<<< HEAD
     Ok(flag_add_withdraw_gas(db)
         && db.function_with_body_feedback_set(function)?.contains(&function))
+||||||| 0b4d15a97
+    if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
+        if !extract_matches!(*flag, Flag::AddWithdrawGas) {
+            return Ok(false);
+        }
+    }
+
+    Ok(db.function_with_body_feedback_set(function)?.contains(&function))
+=======
+    if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
+        if !extract_matches!(*flag, Flag::AddWithdrawGas) {
+            return Ok(false);
+        }
+    }
+
+    Ok(db.function_with_body_feedback_set(function, DependencyType::Cost)?.contains(&function))
+>>>>>>> origin/coupons
 }
 
 /// Query implementation of
@@ -38,8 +58,10 @@ pub fn needs_withdraw_gas(
 pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
+    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
     Ok(calc_feedback_set(
-        &ConcreteFunctionWithBodyPostInlineNode { function_id: function.0, db }.into(),
+        &ConcreteFunctionWithBodyPostInlineNode { function_id: function.0, db, dependency_type }
+            .into(),
     ))
 }

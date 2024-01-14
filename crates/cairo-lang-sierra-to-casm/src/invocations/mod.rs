@@ -4,7 +4,14 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
+<<<<<<< HEAD
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
+||||||| 0b4d15a97
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+=======
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
+>>>>>>> origin/coupons
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
@@ -628,6 +635,7 @@ pub fn compile_invocation(
                 libfunc, builder,
             )
         }
+<<<<<<< HEAD
         Sint128(libfunc) => int::signed128::build(libfunc, builder),
         Gas(libfunc) => gas::build(libfunc, builder),
         BranchAlign(_) => misc::build_branch_align(builder),
@@ -653,6 +661,72 @@ pub fn compile_invocation(
         Bytes31(libfunc) => bytes31::build(libfunc, builder),
         Range(libfunc) => range_reduction::build(libfunc, builder),
         Const(libfunc) => const_type::build(libfunc, builder),
+||||||| 0b4d15a97
+        CoreConcreteLibfunc::Sint128(libfunc) => int::signed128::build(libfunc, builder),
+        CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
+        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
+        CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
+        CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
+        CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
+        CoreConcreteLibfunc::ApTracking(_) => misc::build_update_ap_tracking(builder),
+        CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
+        CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
+        CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
+        CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
+        CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
+        CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
+        CoreConcreteLibfunc::SnapshotTake(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
+            felt252_dict::build_entry(libfunc, builder)
+        }
+        CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
+        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
+=======
+        CoreConcreteLibfunc::Sint128(libfunc) => int::signed128::build(libfunc, builder),
+        CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
+        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
+        CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
+        CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
+        CoreConcreteLibfunc::FunctionCall(libfunc) | CoreConcreteLibfunc::CouponCall(libfunc) => {
+            function_call::build(libfunc, builder)
+        }
+        CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
+        CoreConcreteLibfunc::ApTracking(_) => misc::build_update_ap_tracking(builder),
+        CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
+        CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
+        CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
+        CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
+        CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
+        CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
+        CoreConcreteLibfunc::SnapshotTake(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
+            felt252_dict::build_entry(libfunc, builder)
+        }
+        CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
+        CoreConcreteLibfunc::Range(libfunc) => range_reduction::build(libfunc, builder),
+        CoreConcreteLibfunc::Const(libfunc) => const_type::build(libfunc, builder),
+        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(_) => Ok(builder
+                .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
+            CouponConcreteLibfunc::Refund(_) => {
+                Ok(builder.build_only_reference_changes([].into_iter()))
+            }
+        },
+>>>>>>> origin/coupons
     }
 }
 
