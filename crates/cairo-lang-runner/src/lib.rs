@@ -1,4 +1,5 @@
 //! Basic runner for running a Sierra program on the vm.
+use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
 use ark_std::iterable::Iterable;
@@ -29,6 +30,7 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
@@ -322,17 +324,20 @@ impl SierraCasmRunner {
         // Count the number of times each PC was executed. Note the header and footer (CASM
         // instructions added for running the program by the runner) are also counted (but are
         // later ignored).
-        let pc_counts = trace.iter().fold(OrderedHashMap::default(), |mut acc, step| {
-            *acc.entry(step.pc).or_insert(0) += 1;
-            acc
-        });
+        let pc_counts = trace.iter().fold(
+            UnorderedHashMap::<usize, usize, RandomState>::default(),
+            |mut acc, step| {
+                *acc.entry(step.pc).or_insert(0) += 1;
+                acc
+            },
+        );
 
         // For each pc, find the corresponding Sierra statement, and accumulate the weight to find
         // the total weight of each Sierra statement.
         let mut sierra_statements_weights = pc_counts
-            .into_iter()
-            .filter(|(pc, count)| *count != 0 && *pc >= real_pc_0)
-            .fold(HashMap::default(), |mut acc, (pc, count)| {
+            .iter_sorted()
+            .filter(|(pc, count)| **count != 0 && **pc >= real_pc_0)
+            .fold(UnorderedHashMap::default(), |mut acc, (pc, count)| {
                 let real_pc = pc - real_pc_0;
                 // the `-1` here can't cause an underflow as the first statement is always at offset
                 // 0, so it is always on the left side of the partition, and thus the partition
