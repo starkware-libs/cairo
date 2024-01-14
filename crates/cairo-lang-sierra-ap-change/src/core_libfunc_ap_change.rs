@@ -4,14 +4,8 @@ use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
-<<<<<<< HEAD
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
-||||||| 0b4d15a97
-use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-=======
-use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
->>>>>>> origin/coupons
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
@@ -152,13 +146,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Felt252Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
-<<<<<<< HEAD
-        FunctionCall(libfunc) => {
-||||||| 0b4d15a97
-        CoreConcreteLibfunc::FunctionCall(libfunc) => {
-=======
-        CoreConcreteLibfunc::FunctionCall(libfunc) | CoreConcreteLibfunc::CouponCall(libfunc) => {
->>>>>>> origin/coupons
+        FunctionCall(libfunc) | CouponCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
         Gas(libfunc) => match libfunc {
@@ -360,17 +348,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
         },
-<<<<<<< HEAD
         Const(_) => vec![ApChange::Known(3)],
-||||||| 0b4d15a97
-        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
-=======
-        CoreConcreteLibfunc::Const(_) => vec![ApChange::Known(3)],
-        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+        Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
             CouponConcreteLibfunc::Refund(_) => vec![ApChange::Known(0)],
         },
->>>>>>> origin/coupons
     }
 }
 

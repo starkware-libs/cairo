@@ -10,20 +10,11 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-<<<<<<< HEAD
-    self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Debug, Drop, Dup, Ec, Enum,
-    Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable, Pedersen, Poseidon,
-    Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
-    Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
-||||||| 0b4d15a97
-    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Range, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64,
-    Uint8, UnconditionalJump, UnwrapNonZero,
-=======
-    self, ApTracking, Array, Bool, BranchAlign, CouponCall, Drop, Dup, Ec, Enum, Felt252,
-    FunctionCall, Gas, Mem, Range, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16,
-    Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
->>>>>>> origin/coupons
+    self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Coupon, CouponCall, Debug,
+    Drop, Dup, Ec, Enum, Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable,
+    Pedersen, Poseidon, Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet,
+    Struct, Uint128, Uint16, Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump,
+    UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -360,29 +351,13 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-<<<<<<< HEAD
         Cast(_) => unimplemented!(),
         Felt252DictEntry(_) => unimplemented!(),
         Uint256(_) => unimplemented!(),
         Uint512(_) => unimplemented!(),
         Bytes31(_) => unimplemented!(),
         Const(_) => unimplemented!(),
-||||||| 0b4d15a97
-        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
-        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
-        CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
-        CoreConcreteLibfunc::Const(_) => unimplemented!(),
-=======
-        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
-        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
-        CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
-        CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
-        CoreConcreteLibfunc::Const(_) => unimplemented!(),
-        CoreConcreteLibfunc::Coupon(_) => unimplemented!(),
->>>>>>> origin/coupons
+        Coupon(_) => unimplemented!(),
     }
 }
 

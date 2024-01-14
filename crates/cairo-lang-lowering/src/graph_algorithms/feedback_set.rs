@@ -31,26 +31,8 @@ pub fn needs_withdraw_gas(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-<<<<<<< HEAD
     Ok(flag_add_withdraw_gas(db)
-        && db.function_with_body_feedback_set(function)?.contains(&function))
-||||||| 0b4d15a97
-    if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
-        if !extract_matches!(*flag, Flag::AddWithdrawGas) {
-            return Ok(false);
-        }
-    }
-
-    Ok(db.function_with_body_feedback_set(function)?.contains(&function))
-=======
-    if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
-        if !extract_matches!(*flag, Flag::AddWithdrawGas) {
-            return Ok(false);
-        }
-    }
-
-    Ok(db.function_with_body_feedback_set(function, DependencyType::Cost)?.contains(&function))
->>>>>>> origin/coupons
+        && db.function_with_body_feedback_set(function, DependencyType::Cost)?.contains(&function))
 }
 
 /// Query implementation of

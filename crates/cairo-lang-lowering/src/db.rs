@@ -15,15 +15,8 @@ use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
-<<<<<<< HEAD
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-||||||| 0b4d15a97
-use crate::diagnostic::LoweringDiagnostic;
-use crate::ids::FunctionId;
-=======
-use crate::diagnostic::LoweringDiagnostic;
->>>>>>> origin/coupons
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
