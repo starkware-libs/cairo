@@ -1,7 +1,7 @@
 //! > Test `embeddable_as` with Drop<TContractState>.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -149,3 +149,7 @@ pub mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: Impls with the embeddable attribute must implement a starknet interface trait.
+ --> lib.cairo[component]:33:1
+#[starknet::embeddable]
+^*********************^
