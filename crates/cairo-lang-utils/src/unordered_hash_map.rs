@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "unordered_hash_map_test.rs"]
+mod test;
+
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
@@ -8,9 +12,11 @@ use std::collections::HashMap;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
+use itertools::Itertools;
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
+/// It does support aggregation which can be used in intermediate computations (see `aggregate_by`).
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
 #[cfg(feature = "std")]
 #[derive(Clone, Debug)]
@@ -18,6 +24,13 @@ pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
 pub struct UnorderedHashMap<Key, Value, BH>(HashMap<Key, Value, BH>);
+
+#[cfg(not(feature = "std"))]
+impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
+    pub fn with_hasher(hash_builder: BH) -> Self {
+        Self(HashMap::<Key, Value, BH>::with_hasher(hash_builder))
+    }
+}
 
 #[cfg(feature = "std")]
 impl<Key, Value> UnorderedHashMap<Key, Value> {
@@ -126,6 +139,94 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
         Q: Hash + Eq,
     {
         self.0.contains_key(key)
+    }
+
+    /// Aggregates values of the map using the given functions.
+    /// `mapping_function` maps each key to a new key, possibly mapping multiple original keys to
+    /// the same target key.
+    /// `reduce_function` dictates how to aggregate any two values of the same target key.
+    /// `default_value` is the initial value for each target key.
+    /// Note! as the map is unordered, `reduce_function` should be commutative. Otherwise, the
+    /// result is undefined (nondeterministic).
+    #[cfg(feature = "std")]
+    pub fn aggregate_by<TargetKey: Eq + Hash, TargetValue>(
+        &self,
+        mapping_function: impl Fn(&Key) -> TargetKey,
+        reduce_function: impl Fn(&TargetValue, &Value) -> TargetValue,
+        default_value: &TargetValue,
+    ) -> UnorderedHashMap<TargetKey, TargetValue> {
+        self.0.iter().fold(
+            UnorderedHashMap::<TargetKey, TargetValue>::new(),
+            |mut acc, (key, value)| {
+                let target_key = mapping_function(key);
+                match acc.entry(target_key) {
+                    std::collections::hash_map::Entry::Occupied(mut occupied) => {
+                        let old_target_value = occupied.get_mut();
+                        let new_target_value = reduce_function(old_target_value, value);
+                        *old_target_value = new_target_value;
+                    }
+                    std::collections::hash_map::Entry::Vacant(vacant) => {
+                        let new_value = reduce_function(default_value, value);
+                        vacant.insert(new_value);
+                    }
+                };
+                acc
+            },
+        )
+    }
+
+    /// Aggregates values of the map using the given functions.
+    /// `mapping_function` maps each key to a new key, possibly mapping multiple original keys to
+    /// the same target key.
+    /// `reduce_function` dictates how to aggregate multiple values of the same target key.
+    /// `default_value` is the initial value for each target key.
+    #[cfg(not(feature = "std"))]
+    pub fn aggregate_by<TargetKey: Eq + Hash>(
+        &self,
+        mapping_function: impl Fn(&Key) -> TargetKey,
+        reduce_function: impl Fn(&Value, &Value) -> Value,
+        default_value: &Value,
+        hash_builder: BH,
+    ) -> UnorderedHashMap<TargetKey, Value, BH> {
+        self.0.iter().fold(
+            UnorderedHashMap::<TargetKey, Value, BH>::with_hasher(hash_builder),
+            |mut acc, (key, value)| {
+                let target_key = mapping_function(key);
+                match acc.entry(target_key) {
+                    hashbrown::hash_map::Entry::Occupied(mut occupied) => {
+                        let new_value = reduce_function(occupied.get(), value);
+                        *occupied.get_mut() = new_value;
+                    }
+                    hashbrown::hash_map::Entry::Vacant(vacant) => {
+                        let new_value = reduce_function(default_value, value);
+                        vacant.insert(new_value);
+                    }
+                };
+                acc
+            },
+        )
+    }
+
+    /// Iterates the map in the order applied by the `Ord` implementation of the keys.
+    /// NOTE! To guarantee a deterministic output, the `Ord` implementation must apply a strict
+    /// ordering. That is, `a <= b` and `b <= a`, then `a == b`. If `Ord` is derived (in all
+    /// hierarchy levels), this is probably the case. If the ordering is not strict, the order in
+    /// the output OrderedHashMap map is undefined.
+    /// This can be used to convert an unordered map to an ordered map (mostly when the unordered
+    /// map was used for intermediate processing).
+    pub fn iter_sorted(&self) -> impl Iterator<Item = (&Key, &Value)>
+    where
+        Key: Ord,
+    {
+        self.0.iter().sorted_by_key(|(key, _)| *key)
+    }
+
+    /// A consuming version of `iter_sorted`.
+    pub fn into_iter_sorted(self) -> impl Iterator<Item = (Key, Value)>
+    where
+        Key: Ord + Clone,
+    {
+        self.0.into_iter().sorted_by_key(|(key, _)| (*key).clone())
     }
 }
 
