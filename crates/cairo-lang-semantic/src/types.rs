@@ -407,6 +407,37 @@ pub fn get_impl_at_context(
     Ok(inference.rewrite(impl_id).no_err())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::single_value_type].
+pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
+    Ok(match db.lookup_intern_type(ty) {
+        semantic::TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(id) => db.struct_members(id.struct_id(db))?.is_empty(),
+            ConcreteTypeId::Enum(id) => {
+                let variants = db.enum_variants(id.enum_id(db))?;
+                if variants.len() != 1 {
+                    return Ok(false);
+                }
+
+                let (_name, variant) = variants.iter().next().unwrap();
+                db.single_value_type(db.variant_semantic(id.enum_id(db), *variant)?.ty)?
+            }
+            ConcreteTypeId::Extern(_) => false,
+        },
+        semantic::TypeLongId::Tuple(types) => {
+            for ty in &types {
+                if !db.single_value_type(*ty)? {
+                    return Ok(false);
+                }
+            }
+            true
+        }
+        semantic::TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        semantic::TypeLongId::GenericParameter(_) => false,
+        semantic::TypeLongId::Var(_) => false,
+        semantic::TypeLongId::Missing(_) => false,
+    })
+}
+
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
 // This is to ensure that sierra generator will see a consistent type info of types.
 /// Query implementation of [crate::db::SemanticGroup::type_info].
