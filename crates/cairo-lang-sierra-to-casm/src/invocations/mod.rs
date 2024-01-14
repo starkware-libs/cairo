@@ -461,9 +461,9 @@ impl CompiledInvocationBuilder<'_> {
             .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change));
         if !itertools::equal(expected_ap_changes.iter().cloned(), actual_ap_changes.clone()) {
             panic!(
-                "Wrong ap changes for {}. Expected: {expected_ap_changes:?}, actual: \
-                 {actual_ap_changes:?}.",
-                self.invocation
+                "Wrong ap changes for {}. Expected: {expected_ap_changes:?}, actual: {:?}.",
+                self.invocation,
+                actual_ap_changes.collect_vec(),
             );
         }
         let gas_changes =
@@ -497,9 +497,10 @@ impl CompiledInvocationBuilder<'_> {
             });
         if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
             panic!(
-                "Wrong costs for {}. Expected: {gas_changes:?}, actual: \
-                 {final_costs_with_extra:?}.",
-                self.invocation
+                "Wrong costs for {}. Expected: {:?}, actual: {:?}.",
+                self.invocation,
+                gas_changes.collect_vec(),
+                final_costs_with_extra.collect_vec()
             );
         }
         let branch_relocations = branches.iter().zip_eq(branch_extractions.iter()).flat_map(
