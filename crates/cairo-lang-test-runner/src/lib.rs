@@ -10,7 +10,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_next_item;
-use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoPrinter};
+use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -372,8 +372,9 @@ pub fn run_tests(
                 println!("test {name} ... {status_str}");
             }
             if let Some(profiling_info) = profiling_info {
-                let profiling_printer = ProfilingInfoPrinter::new(sierra_program.clone());
-                println!("Profiling info:\n{}", profiling_printer.print(&profiling_info));
+                let profiling_processor = ProfilingInfoProcessor::new(sierra_program.clone());
+                let processed_profiling_info = profiling_processor.process(&profiling_info);
+                println!("Profiling info:\n{processed_profiling_info}");
             }
             res_type.push(name);
         });
