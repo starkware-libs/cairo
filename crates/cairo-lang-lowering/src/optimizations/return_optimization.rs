@@ -2,6 +2,8 @@
 #[path = "return_optimization_test.rs"]
 mod test;
 
+use std::collections::HashSet;
+
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
@@ -21,9 +23,12 @@ use crate::{
 /// end and there was no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
+        let unit_ty = semantic::corelib::unit_ty(db.upcast());
+        let tuple_with_unit = db.intern_type(semantic::TypeLongId::Tuple(vec![unit_ty]));
+
         let ctx = ReturnOptimizerContext {
             lowered,
-            unit_ty: semantic::corelib::unit_ty(db.upcast()),
+            unitlike_types: HashSet::from_iter([unit_ty, tuple_with_unit]),
             fixes: vec![],
         };
         let mut analysis =
@@ -45,7 +50,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
 pub struct ReturnOptimizerContext<'a> {
     lowered: &'a FlatLowered,
-    unit_ty: semantic::TypeId,
+    unitlike_types: HashSet<semantic::TypeId>,
 
     /// The list of fixes that should be applied.
     fixes: Vec<FixInfo>,
@@ -53,8 +58,9 @@ pub struct ReturnOptimizerContext<'a> {
 impl ReturnOptimizerContext<'_> {
     /// Given a VarUsage, returns the ValueInfo that corresponds to it.
     fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
-        if self.lowered.variables[var_usage.var_id].ty == self.unit_ty {
-            ValueInfo::Unit
+        let var_ty = &self.lowered.variables[var_usage.var_id].ty;
+        if self.unitlike_types.contains(var_ty) {
+            ValueInfo::UnitLike(*var_ty)
         } else {
             ValueInfo::Var(*var_usage)
         }
@@ -75,7 +81,7 @@ pub enum ValueInfo {
     /// The value is available through the given var usage.
     Var(VarUsage),
     /// The value is a unit.
-    Unit,
+    UnitLike(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
         /// The inputs to the StructConstruct statement.
@@ -106,7 +112,7 @@ impl ValueInfo {
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply(f);
             }
-            ValueInfo::Unit => {}
+            ValueInfo::UnitLike(_) => {}
         }
     }
 
@@ -134,7 +140,7 @@ impl ValueInfo {
 
                     match var_info {
                         ValueInfo::Var(var_usage) if &var_usage.var_id == output => {}
-                        ValueInfo::Unit if ctx.lowered.variables[*output].ty == ctx.unit_ty => {}
+                        ValueInfo::UnitLike(ty) if &ctx.lowered.variables[*output].ty == ty => {}
                         _ => cancels_out = false,
                     }
                 }
@@ -153,7 +159,7 @@ impl ValueInfo {
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply_deconstruct(ctx, stmt)
             }
-            ValueInfo::Unit => Ok(()),
+            ValueInfo::UnitLike(_) => Ok(()),
         }
     }
 
@@ -178,7 +184,7 @@ impl ValueInfo {
             ValueInfo::EnumConstruct { ref mut var_info, variant } => {
                 if *variant == arm.variant_id {
                     let cancels_out = match **var_info {
-                        ValueInfo::Unit => true,
+                        ValueInfo::UnitLike(_) => true,
                         ValueInfo::Var(var_usage) if arm.var_ids == [var_usage.var_id] => true,
                         _ => false,
                     };
@@ -193,7 +199,7 @@ impl ValueInfo {
 
                 var_info.apply_match_arm(input, arm)
             }
-            ValueInfo::Unit => Ok(()),
+            ValueInfo::UnitLike(_) => Ok(()),
         }
     }
 }
@@ -271,7 +277,7 @@ impl AnalyzerInfo {
             ValueInfo::Var(_) => true,
             ValueInfo::StructConstruct { .. } => false,
             ValueInfo::EnumConstruct { .. } => false,
-            ValueInfo::Unit => false,
+            ValueInfo::UnitLike(_) => false,
         })
     }
 }
@@ -290,7 +296,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
-                        var_infos: inputs.iter().map(|input| ValueInfo::Var(*input)).collect(),
+                        var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
                     },
                 );
             }
@@ -375,6 +381,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
+        // Note that `self.get_var_info` is not used here because adding struct_construct statements
+        // to get rid of unit-like types is not supported.
         AnalyzerInfo {
             opt_returned_vars: Some(
                 vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
