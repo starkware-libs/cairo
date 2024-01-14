@@ -991,6 +991,11 @@ error: Plugin diagnostic: The first parameter of a function in an #[embeddable_a
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
                               ^**********************************^
 
+warning: Plugin diagnostic: impls with the embeddable attribute must implement a starknet interface trait.
+ --> lib.cairo[component]:33:1
+#[starknet::embeddable]
+^*********************^
+
 error: Not all trait items are implemented. Missing: 'no_self', 'self_of_wrong_type'.
  --> lib.cairo:8:21
     #[embeddable_as(MyImpl)]
