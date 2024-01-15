@@ -90,8 +90,23 @@ impl Range {
     pub fn is_small_range(&self) -> bool {
         self.size() <= BigInt::one().shl(128)
     }
+    /// Returns true if this range can contain all possible values of a CASM cell.
+    pub fn is_full_felt252_range(&self) -> bool {
+        self.size() >= Felt252::prime().into()
+    }
     /// Returns the size of the range.
     pub fn size(&self) -> BigInt {
         &self.upper - &self.lower
+    }
+    /// Returns whether the range is empty.
+    pub fn is_empty(&self) -> bool {
+        self.upper == self.lower
+    }
+    /// Returns the intersection of `self` and `other`.
+    pub fn intersection(&self, other: &Self) -> Self {
+        Self::half_open(
+            std::cmp::max(&self.lower, &other.lower).clone(),
+            std::cmp::min(&self.upper, &other.upper).clone(),
+        )
     }
 }
