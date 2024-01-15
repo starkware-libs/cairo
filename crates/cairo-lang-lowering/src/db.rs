@@ -399,10 +399,14 @@ fn concrete_function_with_body_lowered(
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     reorder_statements(db, &mut lowered);
-    reorganize_blocks(&mut lowered);
-    // Removed blocks may have caused some remappings to be redundant, so they need to be removed,
-    // as SierraGen drop additions assumes all remappings are of used variables.
+    // `reorder_statements` may have caused some remappings to be redundant, so they need to be
+    // removed.
+    // `reorganize_blocks` assumes that there is no remappings on a goto to a block with 1 incoming
+    // edge.
+    // SierraGen drop additions assumes all remappings are of used variables.
     optimize_remappings(&mut lowered);
+    reorganize_blocks(&mut lowered);
+
     Ok(Arc::new(lowered))
 }
 
