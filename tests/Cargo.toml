@@ -8,7 +8,7 @@ description = ""
 
 [dev-dependencies]
 assert_matches.workspace = true
-cairo-felt.workspace = true
+cairo-felt = { workspace = true, default-features = true }
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }
 cairo-lang-compiler = { path = "../crates/cairo-lang-compiler" }
 cairo-lang-defs = { path = "../crates/cairo-lang-defs" }

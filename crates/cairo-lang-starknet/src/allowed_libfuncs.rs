@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 use cairo_lang_sierra::ids::GenericLibfuncId;
 use thiserror::Error;
 
-#[cfg(all(test, features = "serde"))]
+#[cfg(all(test, feature = "serde"))]
 #[path = "allowed_libfuncs_test.rs"]
 mod test;
 

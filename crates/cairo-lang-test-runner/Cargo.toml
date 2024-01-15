@@ -8,7 +8,7 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 
 [dependencies]
 anyhow.workspace = true
-cairo-felt.workspace = true
+cairo-felt = { workspace = true, default-features = true }
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.3" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
 cairo-lang-runner = { path = "../cairo-lang-runner", version = "2.4.3" }

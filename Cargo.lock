@@ -890,6 +890,7 @@ dependencies = [
  "const_format",
  "convert_case",
  "env_logger",
+ "hashbrown 0.14.3",
  "indent",
  "indoc",
  "itertools 0.11.0",
