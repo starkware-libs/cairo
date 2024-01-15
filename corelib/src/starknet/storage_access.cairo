@@ -268,6 +268,16 @@ impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     }
 }
 
+impl StorePackingNonZero<T, +TryInto<T, NonZero<T>>> of StorePacking<NonZero<T>, T> {
+    fn pack(value: NonZero<T>) -> T {
+        value.into()
+    }
+    #[inline]
+    fn unpack(value: T) -> NonZero<T> {
+        value.try_into().expect('StoreNonZero - zero value')
+    }
+}
+
 impl StorePackingStorageAddress of StorePacking<StorageAddress, felt252> {
     fn pack(value: StorageAddress) -> felt252 {
         value.into()
