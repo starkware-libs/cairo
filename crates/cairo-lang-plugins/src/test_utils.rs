@@ -14,7 +14,7 @@ pub fn expand_module_text(
 ) -> String {
     let mut output = String::new();
     // A collection of all the use statements in the module.
-    let mut uses_list = UnorderedHashSet::default();
+    let mut uses_list = UnorderedHashSet::new();
     let syntax_db = db.upcast();
     // Collect the module diagnostics.
     for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
@@ -23,7 +23,11 @@ pub fn expand_module_text(
             file_id: file_id.file_id(db.upcast()).unwrap(),
             span: syntax_node.span_without_trivia(syntax_db),
         };
-        diagnostics.push(format_diagnostics(db.upcast(), Severity::Error, &diag.message, location));
+        diagnostics.push(format!(
+            "{}: {}",
+            Severity::Error,
+            format_diagnostics(db.upcast(), &diag.message, location)
+        ));
     }
     for item_id in db.module_items(module_id).unwrap().iter() {
         if let ModuleItemId::Submodule(item) = item_id {

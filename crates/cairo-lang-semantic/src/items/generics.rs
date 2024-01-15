@@ -12,7 +12,6 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::stable_ptr::SyntaxStablePtr;
 
 use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
@@ -50,7 +49,7 @@ impl GenericArgumentId {
         match self {
             GenericArgumentId::Type(ty) => ty.format(db),
             GenericArgumentId::Literal(lit) => lit.format(db),
-            GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
+            GenericArgumentId::Impl(imp) => imp.format(db),
             GenericArgumentId::NegImpl => "_".into(),
         }
     }
@@ -62,6 +61,15 @@ impl GenericArgumentId {
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
             GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
+    }
+    // Returns true if the generic argument does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
+            GenericArgumentId::Literal(_) => true,
+            GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
+            GenericArgumentId::NegImpl => true,
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
@@ -198,11 +206,8 @@ pub fn generic_param_data(
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = generic_param_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let generic_item_id = generic_param_id.generic_item(db.upcast());
-    // Right now, generic consts are allowed only in extern functions and types.
-    let allow_consts =
-        matches!(generic_item_id, GenericItemId::ExternFunc(_) | GenericItemId::ExternType(_));
-    let lookup_item: LookupItemId = generic_item_id.into();
+    let parent_item_id = generic_param_id.generic_item(db.upcast());
+    let lookup_item: LookupItemId = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
     let inference_id = InferenceId::GenericParam(generic_param_id);
     let mut resolver =
@@ -232,7 +237,7 @@ pub fn generic_param_data(
         &mut diagnostics,
         module_file_id,
         &generic_param_syntax,
-        allow_consts,
+        parent_item_id,
     );
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(
@@ -271,18 +276,11 @@ fn generic_param_generic_params_list(
 ) -> Maybe<ast::OptionWrappedGenericParamList> {
     let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
 
-    // Traverse up the tree to the generic params list ptr.
-    let SyntaxStablePtr::Child { parent, .. } =
-        db.lookup_intern_stable_ptr(generic_param_long_id.1.0)
-    else {
-        panic!()
-    };
-    let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-        panic!()
-    };
+    // The generic params list is 2 level up the tree.
+    let syntax_db = db.upcast();
+    let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
-    let generic_param_list = ast::OptionWrappedGenericParamListPtr(parent).lookup(db.upcast());
-    Ok(generic_param_list)
+    Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
@@ -365,6 +363,13 @@ pub fn semantic_generic_params(
     res
 }
 
+/// Returns true if negative impls are enabled in the module.
+fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.negative_impls
+}
+
 /// Computes the semantic model of a generic parameter give its ast.
 fn semantic_from_generic_param_ast(
     db: &dyn SemanticGroup,
@@ -372,13 +377,16 @@ fn semantic_from_generic_param_ast(
     diagnostics: &mut SemanticDiagnostics,
     module_file_id: ModuleFileId,
     param_syntax: &ast::GenericParam,
-    allow_consts: bool,
+    parent_item_id: GenericItemId,
 ) -> GenericParam {
     let id = db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            if !allow_consts {
+            if !matches!(
+                parent_item_id,
+                GenericItemId::ExternFunc(_) | GenericItemId::ExternType(_)
+            ) {
                 diagnostics
                     .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
             }
@@ -394,7 +402,13 @@ fn semantic_from_generic_param_ast(
             GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
-            diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+            if !are_negative_impls_enabled(db, module_file_id) {
+                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
+            }
+
+            if !matches!(parent_item_id, GenericItemId::Impl(_)) {
+                diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsOnlyOnImpls);
+            }
 
             let path_syntax = syntax.trait_path(db.upcast());
             GenericParam::NegImpl(impl_generic_param_semantic(

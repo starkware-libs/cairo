@@ -1,12 +1,12 @@
 //! > Test 7
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 7
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 7,
@@ -14,19 +14,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 0x123
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 0x123
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 291,
@@ -34,19 +34,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 12_felt252
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 12_felt252
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 12,
@@ -54,19 +54,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 16_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 16_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 16,
@@ -74,19 +74,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 0x16_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 0x16_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 22,
@@ -94,19 +94,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 'a'
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 'a'
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 97,
@@ -114,19 +114,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 'B'_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 'B'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 66,
@@ -134,19 +134,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 'hello world'_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 'hello world'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 126207244316550804821666916,
@@ -154,19 +154,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test '\''
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 '\''
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 39,
@@ -174,19 +174,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test '\x12\x34'_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 '\x12\x34'_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 4660,
@@ -194,19 +194,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 86_400_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 86_400_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -214,19 +214,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 8_6_4_0_0_u128
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 8_6_4_0_0_u128
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -234,19 +234,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 86_400
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 86_400
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -254,19 +254,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 8_6_4_0_0
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 8_6_4_0_0
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 86400,
@@ -274,19 +274,19 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
 //! > Test 0x1_f32
 
 //! > test_runner_name
-test_expr_semantics
+test_expr_semantics(expect_diagnostics: false)
 
 //! > expr_code
 0x1_f32
 
-//! > expected
+//! > expected_semantics
 Literal(
     ExprLiteral {
         value: 7986,
@@ -294,4 +294,4 @@ Literal(
     },
 )
 
-//! > semantic_diagnostics
+//! > expected_diagnostics

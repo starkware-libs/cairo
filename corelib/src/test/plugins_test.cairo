@@ -64,12 +64,10 @@ fn test_derive_serde_enum() {
 
 #[test]
 fn test_derive_default_struct() {
-    assert_eq!(Default::default(), StructForDefault { a: 0, b: 0, c: bool::False });
+    assert_eq!(Default::default(), StructForDefault { a: 0, b: 0, c: false });
 }
 
 #[test]
 fn test_derive_default_enum() {
-    assert_eq!(
-        Default::default(), EnumForDefault::C(StructForDefault { a: 0, b: 0, c: bool::False })
-    );
+    assert_eq!(Default::default(), EnumForDefault::C(StructForDefault { a: 0, b: 0, c: false }));
 }

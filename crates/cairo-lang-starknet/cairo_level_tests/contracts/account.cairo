@@ -1,8 +1,10 @@
-#[starknet::contract]
+#[starknet::contract(account)]
 mod account {
     use core::num::traits::Zero;
     use core::ecdsa::check_ecdsa_signature;
-    use starknet::{account::Call, ContractAddress, call_contract_syscall, SyscallResultTrait};
+    use starknet::{
+        account::Call, ContractAddress, syscalls::call_contract_syscall, SyscallResultTrait
+    };
 
     #[storage]
     struct Storage {
@@ -72,7 +74,7 @@ mod account {
                         let mut res = call_contract_syscall(
                             address: call.to,
                             entry_point_selector: call.selector,
-                            calldata: call.calldata.span()
+                            calldata: call.calldata
                         )
                             .unwrap_syscall();
                         result.append(res);

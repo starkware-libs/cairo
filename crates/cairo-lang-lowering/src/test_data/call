@@ -49,7 +49,7 @@ test_function_lowering
 //! > function
 fn foo() -> Option::<felt252> {
   let x = Option::None;
-  x.is_some();
+  let _ = x.is_some();
   x
 }
 
@@ -69,23 +69,5 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
   (v2: core::option::Option::<core::felt252>, v3: @core::option::Option::<core::felt252>) <- snapshot(v1)
-End:
-  Match(match_enum(v3) {
-    Option::Some(v5) => blk1,
-    Option::None(v6) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
 End:
   Return(v2)

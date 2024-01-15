@@ -184,7 +184,7 @@ const EVENT_EMITTER_CODE: &str = formatcp! {
             let mut keys = Default::<core::array::Array>::default();
             let mut data = Default::<core::array::Array>::default();
             {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::syscalls::emit_event_syscall(
                     core::array::ArrayTrait::span(@keys),
                     core::array::ArrayTrait::span(@data),
@@ -228,11 +228,11 @@ impl ContractSpecificGenerationData {
 fn handle_contract_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
+    item: &ast::ModuleItem,
     data: &mut ContractGenerationData,
 ) {
     match item {
-        ast::Item::FreeFunction(item_function) => {
+        ast::ModuleItem::FreeFunction(item_function) => {
             handle_contract_free_function(
                 db,
                 diagnostics,
@@ -240,10 +240,12 @@ fn handle_contract_item(
                 &mut data.specific.entry_points_code,
             );
         }
-        ast::Item::Impl(item_impl) => {
+        ast::ModuleItem::Impl(item_impl) => {
             handle_contract_impl(db, diagnostics, item_impl, &mut data.specific.entry_points_code);
         }
-        ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
+        ast::ModuleItem::Struct(item_struct)
+            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+        {
             handle_storage_struct(
                 db,
                 diagnostics,
@@ -262,7 +264,7 @@ fn handle_contract_item(
                 }
             }
         }
-        ast::Item::ImplAlias(alias_ast) => {
+        ast::ModuleItem::ImplAlias(alias_ast) => {
             let abi_attrs = alias_ast.query_attr(db, ABI_ATTR);
             if abi_attrs.is_empty() {
                 return;
@@ -284,7 +286,7 @@ fn handle_contract_item(
                 ));
             }
         }
-        ast::Item::InlineMacro(inline_macro_ast)
+        ast::ModuleItem::InlineMacro(inline_macro_ast)
             if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
         {
             handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)

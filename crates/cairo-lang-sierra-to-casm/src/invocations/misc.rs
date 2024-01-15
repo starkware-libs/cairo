@@ -227,6 +227,7 @@ pub fn validate_under_limit<const K: u8>(
                 assert x = *(range_check++);
                 assert diff = x - u128_limit_minus_1;
                 jump Done if diff != 0;
+                // As x cannot be 2**128 - 1, this is unreachable.
                 fail;
             };
         }
@@ -244,9 +245,9 @@ pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocatio
         // be a `ret` instruction.
         call rel 0;
         // After calling an empty function, `[ap - 1]` contains the current `pc`.
-        // Using the relocations below, the immediate value (`1`) will be changed so that it will
-        // compute a pointer to the second cell after the end of the program, which will contain
-        // the pointer to the builtin cost array.
+        // Using the relocations below, the immediate value (`offset`) will be changed so that it
+        // will compute a pointer to the second cell after the end of the program, which will
+        // contain the pointer to the builtin cost array.
         [ap] = [ap - 1] + (offset), ap++;
     };
     let relocations = vec![

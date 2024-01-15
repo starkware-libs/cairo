@@ -1,0 +1,85 @@
+//! > Test expansion of consteval_int! simple usage
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+consteval_int!(4 + 5)
+
+//! > expanded_code
+9
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of consteval_int! complex usage
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
+
+//! > expanded_code
+47
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of consteval_int! handle temporary overflow
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+consteval_int!(255 + 1 - 1)
+
+//! > expanded_code
+255
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of array macro
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+array![1, 2, 3]
+
+//! > expanded_code
+{
+    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+    core::array::ArrayTrait::append(ref __array_builder_macro_result__,3);
+    __array_builder_macro_result__
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of array macro empty
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+array![]
+
+//! > expanded_code
+{
+    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+    __array_builder_macro_result__
+}
+
+//! > diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo[array_inline_macro]:2:67
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                                  ^********^

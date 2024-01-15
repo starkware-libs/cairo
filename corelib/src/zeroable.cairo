@@ -2,10 +2,13 @@
 
 pub(crate) trait Zeroable<T> {
     /// Returns the additive identity element of Self, 0.
+    #[must_use]
     fn zero() -> T;
     /// Returns whether self is equal to 0, the additive identity element.
+    #[must_use]
     fn is_zero(self: T) -> bool;
     /// Returns whether self is not equal to 0, the additive identity element.
+    #[must_use]
     fn is_non_zero(self: T) -> bool;
 }
 
@@ -52,5 +55,30 @@ impl IsZeroResultIntoBool<T, +Drop<T>> of Into<IsZeroResult<T>, bool> {
             IsZeroResult::Zero => true,
             IsZeroResult::NonZero(_) => false,
         }
+    }
+}
+
+impl NonZeroPartialEq<T, +PartialEq<T>, +Copy<T>, +Drop<T>> of PartialEq<NonZero<T>> {
+    #[inline(always)]
+    fn eq(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
+        let lhs: T = (*lhs).into();
+        let rhs: T = (*rhs).into();
+        lhs == rhs
+    }
+    #[inline(always)]
+    fn ne(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
+        let lhs: T = (*lhs).into();
+        let rhs: T = (*rhs).into();
+        lhs != rhs
+    }
+}
+
+impl NonZeroSerde<T, +Serde<T>, +Copy<T>, +Drop<T>, +TryInto<T, NonZero<T>>> of Serde<NonZero<T>> {
+    fn serialize(self: @NonZero<T>, ref output: Array<felt252>) {
+        let value: T = (*self).into();
+        value.serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<NonZero<T>> {
+        Serde::<T>::deserialize(ref serialized)?.try_into()
     }
 }

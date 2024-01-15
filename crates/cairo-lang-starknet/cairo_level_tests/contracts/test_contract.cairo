@@ -20,11 +20,12 @@ mod test_contract {
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait, MyType
     };
-    use core::dict::{felt252_dict_new, Felt252DictTrait};
+    use core::dict::{Felt252DictTrait};
 
     #[storage]
     struct Storage {
-        my_storage_var: felt252
+        my_storage_var: felt252,
+        core: felt252,
     }
 
     fn internal_func() -> felt252 {
@@ -64,14 +65,13 @@ mod test_contract {
 
         #[external(v0)]
         fn libcall_foo(ref self: ContractState, a: u128) -> u128 {
-            IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }
-                .foo(a)
+            IAnotherContractLibraryDispatcher { class_hash: core::num::traits::Zero::zero() }.foo(a)
         }
 
         /// An external method that requires the `segment_arena` builtin.
         #[external(v0)]
         fn segment_arena_builtin(ref self: ContractState,) {
-            let x = felt252_dict_new::<felt252>();
+            let x: Felt252Dict::<felt252> = Default::default();
             x.squash();
         }
 

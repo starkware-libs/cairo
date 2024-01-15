@@ -233,7 +233,7 @@ pub struct Param {
 }
 
 /// Represents the index of a Sierra statement in the Program::statements vector.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize, PartialOrd, Ord)]
 pub struct StatementIdx(pub usize);
 impl StatementIdx {
     pub fn next(&self, target: &BranchTarget) -> StatementIdx {

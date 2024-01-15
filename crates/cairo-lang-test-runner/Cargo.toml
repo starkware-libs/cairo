@@ -9,17 +9,17 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.3.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.3.1" }
-cairo-lang-runner = { path = "../cairo-lang-runner", version = "2.3.1" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.3.1" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.3.1" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.3.1" }
-cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.3.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.1" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
+cairo-lang-runner = { path = "../cairo-lang-runner", version = "2.4.3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.3" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.4.3" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.4.3" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.4.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
 colored.workspace = true
-itertools.workspace = true
-num-traits.workspace = true
+itertools = { workspace = true, default-features = true }
+num-traits = { workspace = true, default-features = true }
 rayon.workspace = true
 
 [dev-dependencies]

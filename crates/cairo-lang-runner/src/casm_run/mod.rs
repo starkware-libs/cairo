@@ -208,8 +208,8 @@ struct TxInfo {
     resource_bounds: Vec<ResourceBounds>,
     tip: Felt252,
     paymaster_data: Vec<Felt252>,
-    nonce_data_availabilty_mode: Felt252,
-    fee_data_availabilty_mode: Felt252,
+    nonce_data_availability_mode: Felt252,
+    fee_data_availability_mode: Felt252,
     account_deployment_data: Vec<Felt252>,
 }
 
@@ -886,8 +886,8 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info.tip.clone())?;
         res_segment.write(paymaster_data_start)?;
         res_segment.write(paymaster_data_end)?;
-        res_segment.write(tx_info.nonce_data_availabilty_mode.clone())?;
-        res_segment.write(tx_info.fee_data_availabilty_mode.clone())?;
+        res_segment.write(tx_info.nonce_data_availability_mode.clone())?;
+        res_segment.write(tx_info.fee_data_availability_mode.clone())?;
         res_segment.write(account_deployment_data_start)?;
         res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
@@ -1983,11 +1983,18 @@ pub fn execute_core_hint(
             let b1 = get_val(vm, b1)?.to_bigint();
             let n0 = get_val(vm, n0)?.to_bigint();
             let n1 = get_val(vm, n1)?.to_bigint();
-            let b: BigInt = b0 + b1.shl(128);
+            let b: BigInt = b0.clone() + b1.clone().shl(128);
             let n: BigInt = n0 + n1.shl(128);
             let ExtendedGcd { gcd: mut g, x: _, y: mut r } = n.extended_gcd(&b);
-            if g != 1.into() {
-                // This makes sure `g0_or_no_inv` is alway non-zero in the no inverse case.
+            if n == 1.into() {
+                insert_value_to_cellref!(vm, s_or_r0, Felt252::from(b0))?;
+                insert_value_to_cellref!(vm, s_or_r1, Felt252::from(b1))?;
+                insert_value_to_cellref!(vm, t_or_k0, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, t_or_k1, Felt252::from(0))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, g1_option, Felt252::from(0))?;
+            } else if g != 1.into() {
+                // This makes sure `g0_or_no_inv` is always non-zero in the no inverse case.
                 if g.is_even() {
                     g = 2u32.into();
                 }
@@ -2128,6 +2135,7 @@ where
     runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(vm, true).map_err(CairoRunError::from)?;
+
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
 

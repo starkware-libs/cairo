@@ -28,25 +28,25 @@ pub struct DerivePlugin;
 const DERIVE_ATTR: &str = "derive";
 
 impl MacroPlugin for DerivePlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
         generate_derive_code_for_type(
             db,
             match item_ast {
-                ast::Item::Struct(struct_ast) => DeriveInfo::new(
+                ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
                     db,
                     struct_ast.name(db),
                     struct_ast.attributes(db),
                     struct_ast.generic_params(db),
                     TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
                 ),
-                ast::Item::Enum(enum_ast) => DeriveInfo::new(
+                ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
                     db,
                     enum_ast.name(db),
                     enum_ast.attributes(db),
                     enum_ast.generic_params(db),
                     TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
                 ),
-                ast::Item::ExternType(extern_type_ast) => DeriveInfo::new(
+                ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
                     db,
                     extern_type_ast.name(db),
                     extern_type_ast.attributes(db),

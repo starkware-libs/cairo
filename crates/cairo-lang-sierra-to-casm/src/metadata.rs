@@ -31,7 +31,7 @@ pub enum MetadataError {
 }
 
 /// Configuration for metadata computation.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MetadataComputationConfig {
     /// Functions to enforce costs for, as well as the costs to enforce.
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -41,6 +41,16 @@ pub struct MetadataComputationConfig {
     /// If true, uses a linear-time algorithm for calculating ap changes, instead of solving
     /// equations.
     pub linear_ap_change_solver: bool,
+}
+
+impl Default for MetadataComputationConfig {
+    fn default() -> Self {
+        Self {
+            function_set_costs: Default::default(),
+            linear_gas_solver: true,
+            linear_ap_change_solver: true,
+        }
+    }
 }
 
 /// Calculates the metadata for a Sierra program, with ap change info only.
@@ -55,6 +65,9 @@ pub fn calc_metadata_ap_change_only(program: &Program) -> Result<Metadata, Metad
 }
 
 /// Calculates the metadata for a Sierra program.
+///
+/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
+/// equations.
 pub fn calc_metadata(
     program: &Program,
     config: MetadataComputationConfig,
@@ -71,15 +84,20 @@ pub fn calc_metadata(
             )
         })
         .collect();
-    let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
-    let pre_gas_info2 = compute_precost_info(program)?;
-    pre_gas_info.assert_eq_variables(&pre_gas_info2);
-    pre_gas_info.assert_eq_functions(&pre_gas_info2);
+    let pre_gas_info_new = compute_precost_info(program)?;
+    let pre_gas_info_old = calc_gas_precost_info(program, pre_function_set_costs)?;
+    pre_gas_info_old.assert_eq_functions(&pre_gas_info_new);
+    let pre_gas_info = if config.linear_gas_solver {
+        pre_gas_info_new
+    } else {
+        pre_gas_info_old.assert_eq_variables(&pre_gas_info_new);
+        pre_gas_info_old
+    };
 
     let ap_change_info =
         if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
             program,
-            |idx, token_type| pre_gas_info.variable_values[(idx, token_type)] as usize,
+            |idx, token_type| pre_gas_info.variable_values[&(idx, token_type)] as usize,
         )?;
 
     let post_function_set_costs = config
@@ -104,12 +122,12 @@ pub fn calc_metadata(
         let enforced_function_costs: OrderedHashMap<FunctionId, i32> = config
             .function_set_costs
             .iter()
-            .map(|(func, costs)| (func.clone(), costs[CostTokenType::Const]))
+            .map(|(func, costs)| (func.clone(), costs[&CostTokenType::Const]))
             .collect();
         let post_gas_info2 = compute_postcost_info(
             program,
             &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
-            &pre_gas_info2,
+            &pre_gas_info,
             &enforced_function_costs,
         )?;
 

@@ -34,21 +34,15 @@ blk1:
 Statements:
   (v3: core::felt252) <- 1u
 End:
-  Goto(blk3, {v3 -> v1})
+  Return(v3)
 
 blk2:
 Statements:
   (v4: core::felt252) <- 0u
 End:
-  Goto(blk3, {v4 -> v1})
-
-blk3:
-Statements:
-End:
-  Return(v1)
+  Return(v4)
 
 //! > last_use
-v1: ((BlockId(3), 0), 0)
 v4: ((BlockId(2), 1), 0)
 v3: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
@@ -93,7 +87,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v6) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk5,
+    IsZeroResult::NonZero(v4) => blk4,
   })
 
 blk1:
@@ -108,33 +102,21 @@ blk2:
 Statements:
   (v8: core::felt252) <- 1u
 End:
-  Goto(blk4, {v8 -> v3})
+  Return(v8)
 
 blk3:
 Statements:
   (v9: core::felt252) <- 0u
 End:
-  Goto(blk4, {v9 -> v3})
+  Return(v9)
 
 blk4:
 Statements:
 End:
-  Goto(blk6, {v3 -> v5})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {v0 -> v5})
-
-blk6:
-Statements:
-End:
-  Return(v5)
+  Return(v0)
 
 //! > last_use
-v5: ((BlockId(6), 0), 0)
-v0: ((BlockId(5), 0), 0)
-v3: ((BlockId(4), 0), 0)
+v0: ((BlockId(4), 0), 0)
 v9: ((BlockId(3), 1), 0)
 v8: ((BlockId(2), 1), 0)
 v0: ((BlockId(1), 0), 0)
@@ -143,7 +125,7 @@ v1: ((BlockId(0), 1), 1)
 
 //! > drops
 BeginningOfBlock(BlockId(3)): v7
-BeginningOfBlock(BlockId(5)): v4
+BeginningOfBlock(BlockId(4)): v4
 
 //! > ==========================================================================
 
@@ -190,22 +172,16 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
+  Return(v0)
 
 blk2:
 Statements:
   (v6: core::felt252) <- core::felt252_add(v0, v0)
   (v5: ()) <- test::revoke_tempvars()
 End:
-  Goto(blk3, {v6 -> v3})
-
-blk3:
-Statements:
-End:
-  Return(v3)
+  Return(v6)
 
 //! > last_use
-v3: ((BlockId(3), 0), 0)
 v6: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)

@@ -14,7 +14,8 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use sierra::extensions::function_call::FunctionCallLibfunc;
-use sierra::extensions::NamedLibfunc;
+use sierra::extensions::structure::StructDeconstructLibfunc;
+use sierra::extensions::{NamedLibfunc, OutputVarReferenceInfo};
 use state::{
     merge_optional_states, DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState,
 };
@@ -49,16 +50,23 @@ pub fn add_store_statements<GetLibfuncSignature>(
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
-    params: &[sierra::ids::VarId],
+    params: &[sierra::program::Param],
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
     let mut handler = AddStoreVariableStatements::new(db, local_variables);
     let mut state_opt = Some(VariablesState {
-        variables: OrderedHashMap::from_iter(
-            params.iter().map(|var| (var.clone(), VarState::LocalVar)),
-        ),
+        variables: OrderedHashMap::from_iter(params.iter().map(|param| {
+            (
+                param.id.clone(),
+                if db.get_type_info(param.ty.clone()).unwrap().zero_sized {
+                    VarState::ZeroSizedVar
+                } else {
+                    VarState::LocalVar
+                },
+            )
+        })),
         known_stack: Default::default(),
     });
     // Go over the statements, restarting whenever we see a branch or a label.
@@ -106,18 +114,61 @@ impl<'a> AddStoreVariableStatements<'a> {
         let mut state_opt = state_opt;
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
+                let libfunc_id = invocation.libfunc_id.clone();
+                let libfunc_info = get_lib_func_signature(libfunc_id.clone());
                 let signature = libfunc_info.signature;
                 let state = &mut state_opt.unwrap_or_default();
 
-                let libfunc_long_id =
-                    self.db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                let libfunc_long_id = self.db.lookup_intern_concrete_lib_func(libfunc_id.clone());
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.
                         // Avoid calling `prepare_libfunc_arguments` as it might copy the
                         // arguments to a local variables.
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
+                    }
+                    StructDeconstructLibfunc::STR_ID => {
+                        let arg = &invocation.args[0];
+                        let var_state = state.pop_var_state(arg);
+
+                        let results = &invocation.branches[0].results;
+                        let mut non_zero_sized_outputs = vec![];
+                        for (output, output_info) in
+                            zip_eq(results, &signature.branch_signatures[0].vars)
+                        {
+                            let output_state = match var_state {
+                                VarState::ZeroSizedVar => VarState::ZeroSizedVar,
+                                _ if matches!(
+                                    output_info.ref_info,
+                                    OutputVarReferenceInfo::ZeroSized
+                                ) =>
+                                {
+                                    VarState::ZeroSizedVar
+                                }
+                                VarState::TempVar { .. } => {
+                                    VarState::TempVar { ty: output_info.ty.clone() }
+                                }
+                                VarState::Deferred { info: DeferredVariableInfo { kind, .. } } => {
+                                    VarState::Deferred {
+                                        info: DeferredVariableInfo {
+                                            kind,
+                                            ty: output_info.ty.clone(),
+                                        },
+                                    }
+                                }
+                                VarState::LocalVar => VarState::LocalVar,
+                                VarState::Removed => unreachable!(),
+                            };
+
+                            if !matches!(output_state, VarState::ZeroSizedVar) {
+                                non_zero_sized_outputs.push(output.clone())
+                            }
+
+                            state.variables.insert(output.clone(), output_state);
+                        }
+                        state.known_stack.deconstruct_variable(arg, &non_zero_sized_outputs);
+                        self.result.push(statement);
+                        return Some(std::mem::take(state));
                     }
                     _ => self.prepare_libfunc_arguments(
                         state,
@@ -291,6 +342,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 VarState::TempVar { ty }
             }
             VarState::LocalVar => VarState::LocalVar,
+            VarState::ZeroSizedVar => VarState::ZeroSizedVar,
         }
     }
 
@@ -380,6 +432,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         }
                     }
                 }
+                VarState::ZeroSizedVar => (true, VarState::ZeroSizedVar),
                 var_state => {
                     // Check if this is part of the prefix. If it is, rename instead of adding
                     // `store_temp`.
@@ -426,7 +479,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                     }
                 }
-                VarState::LocalVar | VarState::Removed => {}
+                VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
@@ -445,7 +498,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         false
     }
 
-    /// Stores all the deffered and temporary variables as local variables.
+    /// Stores all the deferred and temporary variables as local variables.
     fn store_variables_as_locals(&mut self, state: &mut VariablesState) {
         for (var, var_state) in state.variables.iter_mut() {
             if let Some(uninitialized_local_var_id) = self.local_variables.get(var) {
@@ -455,7 +508,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_local(var, &uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
-                    VarState::LocalVar | VarState::Removed => {}
+                    VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
                 };
             }
         }

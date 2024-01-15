@@ -3,6 +3,9 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 
 use super::misc::get_pointer_after_program_code;
@@ -11,7 +14,6 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
-use crate::relocations::InstructionsWithRelocations;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
@@ -27,6 +29,19 @@ pub fn build(
     }
 }
 
+/// Checks that all the pre-cost variables of the given statement are zero.
+fn check_zero_precost_values(
+    variable_values: &OrderedHashMap<(StatementIdx, CostTokenType), i64>,
+    statement_idx: StatementIdx,
+) -> Result<(), InvocationError> {
+    for token_type in CostTokenType::iter_precost() {
+        if variable_values.get(&(statement_idx, *token_type)).copied().unwrap_or_default() != 0 {
+            return Err(InvocationError::PreCostMetadataNotSupported);
+        }
+    }
+    Ok(())
+}
+
 /// Handles the withdraw_gas invocation.
 fn build_withdraw_gas(
     builder: CompiledInvocationBuilder<'_>,
@@ -36,6 +51,9 @@ fn build_withdraw_gas(
         .get(&(builder.idx, CostTokenType::Const))
         .copied()
         .ok_or(InvocationError::UnknownVariableData)?;
+
+    check_zero_precost_values(variable_values, builder.idx)?;
+
     let [range_check, gas_counter] = builder.try_get_single_cells()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
@@ -86,6 +104,9 @@ fn build_redeposit_gas(
         .get(&(builder.idx, CostTokenType::Const))
         .copied()
         .ok_or(InvocationError::UnknownVariableData)?;
+
+    check_zero_precost_values(variable_values, builder.idx)?;
+
     let gas_counter_value = builder.try_get_single_cells::<1>()?[0]
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
@@ -123,11 +144,11 @@ fn build_builtin_withdraw_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
+    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
     for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[(builder.idx, *token_type)];
+        let requested_count = variable_values[&(builder.idx, *token_type)];
         if requested_count == 0 {
             continue;
         }
@@ -189,16 +210,17 @@ fn build_builtin_withdraw_gas(
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (InstructionsWithRelocations { instructions, relocations, .. }, _) =
-        get_pointer_after_program_code(1);
-    Ok(builder.build(
-        instructions,
-        relocations,
-        [vec![ReferenceExpression::from_cell(CellExpression::DoubleDeref(
-            CellRef { register: Register::AP, offset: -1 },
-            0,
-        ))]
-        .into_iter()]
-        .into_iter(),
+    let (pre_instructions, ap_change) = get_pointer_after_program_code(1);
+    let mut casm_builder = CasmBuilder::default();
+    casm_builder.increase_ap_change(ap_change);
+    let cost_builtin_ptr = casm_builder.add_var(CellExpression::DoubleDeref(
+        CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
+        0,
+    ));
+    Ok(builder.build_from_casm_builder_ex(
+        casm_builder,
+        [("Fallthrough", &[&[cost_builtin_ptr]], None)],
+        Default::default(),
+        pre_instructions,
     ))
 }

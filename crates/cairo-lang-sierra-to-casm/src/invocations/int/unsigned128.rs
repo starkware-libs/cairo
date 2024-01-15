@@ -124,7 +124,8 @@ fn build_u128_divmod(
             assert b_or_q_bound_rc_value = b + u128_bound_minus_u64_bound;
             jump VerifyBQ;
         QIsSmall:
-            // `q < 2^64`, compute `2^64 - q`.
+            // `q < 2^64`, so to verify `q < 2^64` we assert `2^128 - 2^64 + q` is in the range
+            // check bound.
             assert b_or_q_bound_rc_value = q + u128_bound_minus_u64_bound;
         VerifyBQ:
             // Now, b_or_q_bound_rc_value contains either `2^128 - 2^64 + q` or
@@ -342,7 +343,7 @@ fn build_u128_from_felt252(
             assert rced_value = *(range_check++);
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
-            // Otherwise, fail.
+            // Otherwise, fail. As `x` must be non-zero in the overflow case, this is unreachable.
             fail;
         NoOverflow:
             assert value = *(range_check++);

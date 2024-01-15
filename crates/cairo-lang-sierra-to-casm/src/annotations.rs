@@ -134,7 +134,7 @@ impl ProgramAnnotations {
                     function_id: func.id.clone(),
                     convergence_allowed: false,
                     environment: Environment::new(if gas_usage_check {
-                        GasWallet::Value(metadata.gas_info.function_costs[func.id.clone()].clone())
+                        GasWallet::Value(metadata.gas_info.function_costs[&func.id].clone())
                     } else {
                         GasWallet::Disabled
                     }),
@@ -439,7 +439,7 @@ fn test_var_consistency(
         return true;
     }
     // If the variable is not ap-dependent it can always be merged.
-    // Note: This makes the assumption that empty variables are always mergable.
+    // Note: This makes the assumption that empty variables are always mergeable.
     if actual.expression.can_apply_unknown() {
         return true;
     }

@@ -1,6 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics};
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
@@ -20,13 +20,13 @@ mod test;
 pub struct DiagnosticsError;
 
 trait DiagnosticCallback {
-    fn on_diagnostic(&mut self, diagnostic: String);
+    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String);
 }
 
 impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
-    fn on_diagnostic(&mut self, diagnostic: String) {
+    fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
         if let Some(callback) = self {
-            callback.on_diagnostic(diagnostic)
+            callback.on_diagnostic(severity, diagnostic)
         }
     }
 }
@@ -47,26 +47,26 @@ impl DiagnosticsReporter<'static> {
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
-        Self::callback(|diagnostic| {
-            eprint!("{diagnostic}");
+        Self::callback(|severity, diagnostic| {
+            eprint!("{severity}: {diagnostic}");
         })
     }
 }
 
 impl<'a> DiagnosticsReporter<'a> {
     // NOTE(mkaput): If Rust will ever have intersection types, one could write
-    //   impl<F> DiagnosticCallback for F where F: FnMut(String)
+    //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
     /// Create a reporter which calls `callback` for each diagnostic.
-    pub fn callback(callback: impl FnMut(String) + 'a) -> Self {
+    pub fn callback(callback: impl FnMut(Severity, String) + 'a) -> Self {
         struct Func<F>(F);
 
         impl<F> DiagnosticCallback for Func<F>
         where
-            F: FnMut(String),
+            F: FnMut(Severity, String),
         {
-            fn on_diagnostic(&mut self, diagnostic: String) {
-                (self.0)(diagnostic)
+            fn on_diagnostic(&mut self, severity: Severity, diagnostic: String) {
+                (self.0)(severity, diagnostic)
             }
         }
 
@@ -75,8 +75,8 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which appends all diagnostics to provided string.
     pub fn write_to_string(string: &'a mut String) -> Self {
-        Self::callback(|diagnostic| {
-            string.push_str(&diagnostic);
+        Self::callback(|severity, diagnostic| {
+            string.push_str(&format!("{severity}: {diagnostic}"));
         })
     }
 
@@ -105,15 +105,16 @@ impl<'a> DiagnosticsReporter<'a> {
         for crate_id in crates {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
-                self.callback.on_diagnostic("Failed to get main module file".to_string());
+                self.callback
+                    .on_diagnostic(Severity::Error, "Failed to get main module file".to_string());
                 continue;
             };
 
             if db.file_content(module_file).is_none() {
                 match db.lookup_intern_file(module_file) {
-                    FileLongId::OnDisk(path) => {
-                        self.callback.on_diagnostic(format!("{} not found\n", path.display()))
-                    }
+                    FileLongId::OnDisk(path) => self
+                        .callback
+                        .on_diagnostic(Severity::Error, format!("{} not found\n", path.display())),
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
                 }
                 found_diagnostics = true;
@@ -144,13 +145,14 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
     ) -> bool {
-        let text = group.format(db);
-        if !text.is_empty() {
-            self.callback.on_diagnostic(text);
-            !self.allow_warnings || group.check_error_free().is_err()
-        } else {
-            false
+        let mut found: bool = false;
+        for entry in group.format_with_severity(db) {
+            if !entry.is_empty() {
+                self.callback.on_diagnostic(entry.severity(), entry.message().to_string());
+                found |= !self.allow_warnings || group.check_error_free().is_err();
+            }
         }
+        found
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.

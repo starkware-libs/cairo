@@ -2,9 +2,11 @@ use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::BitwiseType;
 use super::boolean::BoolLibfunc;
+use super::bounded_int::BoundedIntType;
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
+use super::const_type::{ConstLibfunc, ConstType};
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -37,6 +39,7 @@ use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
+use super::range_reduction::RangeLibfunc;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
@@ -51,6 +54,7 @@ define_type_hierarchy! {
         Array(ArrayType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        Const(ConstType),
         EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
@@ -84,6 +88,7 @@ define_type_hierarchy! {
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
+        BoundedInt(BoundedIntType),
     }, CoreTypeConcrete
 }
 
@@ -98,7 +103,9 @@ define_libfunc_hierarchy! {
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
+        Range(RangeLibfunc),
         Felt252(Felt252Libfunc),
+        Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         Uint8(Uint8Libfunc),

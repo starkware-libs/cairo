@@ -47,6 +47,8 @@ pub enum CostError {
     UnexpectedCycle,
     #[error("failed to enforce function cost")]
     EnforceWalletValueFailed(StatementIdx),
+    #[error("withdraw_gas does not support builtin yet, try using withdraw_gas_all instead")]
+    WithdrawGasPreCostNotSupported,
 }
 
 /// Helper to implement the `InvocationCostInfoProvider` for the equation generation.
@@ -148,7 +150,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 &InvocationCostInfoProviderForEqGen {
                     type_sizes: &type_sizes,
                     token_usages: |token_type| {
-                        precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+                        precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
                     },
                     ap_change_var_value: || ap_change_var_value(*idx),
                 },
@@ -177,7 +179,7 @@ fn calc_gas_info_inner<
         .collect();
     for (func_id, cost_terms) in function_set_costs {
         for token_type in CostTokenType::iter() {
-            equations[*token_type].push(
+            equations[token_type].push(
                 Expr::from_var(Var::StatementFuture(
                     registry.get_function(&func_id)?.entry_point,
                     *token_type,
@@ -244,7 +246,7 @@ fn calc_gas_info_inner<
             if !function_costs.contains_key(id) {
                 function_costs.insert(id.clone(), OrderedHashMap::default());
             }
-            let value = solution[Var::StatementFuture(func.entry_point, token_type)];
+            let value = solution[&Var::StatementFuture(func.entry_point, token_type)];
             if value != 0 {
                 function_costs.get_mut(id).unwrap().insert(token_type, value);
             }

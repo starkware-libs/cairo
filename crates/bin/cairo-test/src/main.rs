@@ -17,6 +17,9 @@ struct Args {
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
+    /// Allows the compilation to succeed with warnings.
+    #[arg(long)]
+    allow_warnings: bool,
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
     filter: String,
@@ -29,6 +32,9 @@ struct Args {
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
+    /// Whether to run the profiler.
+    #[arg(long, default_value_t = false)]
+    run_profiler: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -41,9 +47,10 @@ fn main() -> anyhow::Result<()> {
         filter: args.filter,
         ignored: args.ignored,
         include_ignored: args.include_ignored,
+        run_profiler: args.run_profiler,
     };
 
-    let runner = TestRunner::new(&args.path, args.starknet, config)?;
+    let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;
     runner.run()?;
 
     Ok(())

@@ -1,4 +1,5 @@
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -7,6 +8,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use super::{LibfuncInfo, LocalVariables};
@@ -205,6 +207,11 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             ],
             SierraApChange::Known { new_vars_only: true },
         ),
+        "make_local" => LibfuncSignature::new_non_branch(
+            vec![felt252_ty.clone()],
+            vec![OutputVarInfo { ty: felt252_ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
+            SierraApChange::Known { new_vars_only: true },
+        ),
         _ => panic!("get_branch_signatures() is not implemented for '{name}'."),
     }
 }
@@ -219,12 +226,17 @@ fn test_add_store_statements(
     local_variables: LocalVariables,
     params: &[&str],
 ) -> Vec<String> {
+    let felt252_ty =
+        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     add_store_statements(
         db,
         statements,
         &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
         local_variables,
-        &as_var_id_vec(params),
+        &as_var_id_vec(params)
+            .into_iter()
+            .map(|id| cairo_lang_sierra::program::Param { id, ty: felt252_ty.clone() })
+            .collect_vec(),
     )
     .iter()
     .map(|statement| replace_sierra_ids(db, statement).to_string(db))
@@ -831,6 +843,30 @@ fn consecutive_appends_with_branch() {
             // Return.
             "rename<felt252>(6) -> (7)",
             "return(7)",
+        ]
+    );
+}
+
+#[test]
+fn push_values_with_hole() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
+        dummy_simple_statement(&db, "make_local", &["102"], &["102"]),
+        dummy_push_values(&db, &[("100", "200"), ("101", "201")]),
+        dummy_return_statement(&["201"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1", "2"]),
+        vec![
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(1) -> (101)",
+            "store_temp<felt252>(2) -> (102)",
+            "make_local(102) -> (102)",
+            "store_temp<felt252>(100) -> (200)",
+            "store_temp<felt252>(101) -> (201)",
+            "return(201)",
         ]
     );
 }

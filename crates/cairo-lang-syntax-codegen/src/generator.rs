@@ -208,7 +208,6 @@ fn generate_ast_code() -> rust::Tokens {
 
         #[path = "ast_ext.rs"]
         mod ast_ext;
-        pub use ast_ext::*;
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {
@@ -553,7 +552,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
     let mut field_indices = quote! {};
     let mut args = quote! {};
     let mut params = quote! {};
-    let mut arg_missings = quote! {};
+    let mut args_for_missing = quote! {};
     let mut ptr_getters = quote! {};
     let mut key_field_index: usize = 0;
     for (i, Member { name, kind, key }) in members.iter().enumerate() {
@@ -572,7 +571,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 $kind::from_syntax_node(db, self.children[$i].clone())
             }
         });
-        arg_missings.extend(quote! {$kind::missing(db).0,});
+        args_for_missing.extend(quote! {$kind::missing(db).0,});
 
         if *key {
             ptr_getters.extend(quote! {
@@ -664,7 +663,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 $(&green_name)(db.intern_green(Arc::new(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
-                        children: vec![$arg_missings],
+                        children: vec![$args_for_missing],
                         width: TextWidth::default(),
                     },
                 })))

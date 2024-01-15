@@ -131,7 +131,7 @@ pub fn compute_costs<
             specific_cost_context,
             &StatementIdx(i),
             &mut variable_values,
-        );
+        )?;
     }
 
     let function_costs = program
@@ -204,9 +204,9 @@ fn analyze_gas_statements<
     specific_context: &SpecificCostContext,
     idx: &StatementIdx,
     variable_values: &mut VariableValues,
-) {
+) -> Result<(), CostError> {
     let Statement::Invocation(invocation) = &context.program.get_statement(idx).unwrap() else {
-        return;
+        return Ok(());
     };
     let libfunc_cost: Vec<BranchCost> = context.get_cost(&invocation.libfunc_id);
     let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
@@ -231,7 +231,7 @@ fn analyze_gas_statements<
                 branch_cost,
                 &wallet_value,
                 future_wallet_value,
-            );
+            )?;
             for (token_type, amount) in SpecificCostContext::to_full_cost_map(withdrawal) {
                 assert_eq!(
                     variable_values.insert((*idx, token_type), std::cmp::max(amount, 0)),
@@ -261,6 +261,7 @@ fn analyze_gas_statements<
             }
         }
     }
+    Ok(())
 }
 
 pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
@@ -281,7 +282,7 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
         branch_cost: &BranchCost,
         wallet_value: &CostType,
         future_wallet_value: CostType,
-    ) -> CostType;
+    ) -> Result<CostType, CostError>;
 
     /// Returns the required value for the wallet for a single branch.
     fn get_branch_requirement(
@@ -497,7 +498,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 specific_cost_context,
                 &mut excess,
                 &mut finalized_excess_statements,
-            );
+            )?;
         }
 
         // Compute the target value for each statement by adding the excess to the wallet value.
@@ -523,7 +524,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         specific_cost_context: &SpecificCostContext,
         excess: &mut UnorderedHashMap<StatementIdx, CostType>,
         finalized_excess_statements: &mut UnorderedHashSet<StatementIdx>,
-    ) {
+    ) -> Result<(), CostError> {
         let wallet_value = self.wallet_at_ex(idx, false).value;
 
         if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
@@ -543,7 +544,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             Statement::Invocation(invocation) => invocation,
             Statement::Return(_) => {
                 // Excess cannot be handled, simply drop it.
-                return;
+                return Ok(());
             }
         };
 
@@ -564,7 +565,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             let branch_statement = idx.next(&branch_info.target);
             if finalized_excess_statements.contains(&branch_statement) {
                 // Don't update statements which were already visited.
-                return;
+                return Ok(());
             }
 
             let future_wallet_value = self.wallet_at(&branch_statement).value;
@@ -577,7 +578,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                         branch_cost,
                         &wallet_value,
                         future_wallet_value,
-                    );
+                    )?;
 
                     // Note that planned_withdrawal may be either positive (where there is an actual
                     // withdrawal) or negative (where we do not need to withdraw and the failing
@@ -607,6 +608,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 }
             }
         }
+        Ok(())
     }
 }
 
@@ -649,11 +651,20 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     fn get_gas_withdrawal(
         &self,
         _idx: &StatementIdx,
-        _branch_cost: &BranchCost,
+        branch_cost: &BranchCost,
         wallet_value: &PreCost,
         future_wallet_value: PreCost,
-    ) -> PreCost {
-        future_wallet_value - wallet_value.clone()
+    ) -> Result<PreCost, CostError> {
+        let res = future_wallet_value - wallet_value.clone();
+
+        if let BranchCost::WithdrawGas { with_builtin_costs: false, .. } = branch_cost {
+            // `withdraw_gas` (with with_builtin_costs == false) does not support pre-costs yet.
+            if !res.0.is_empty() {
+                return Err(CostError::WithdrawGasPreCostNotSupported);
+            }
+        }
+
+        Ok(res)
     }
 
     fn get_branch_requirement(
@@ -709,7 +720,7 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
         branch_cost: &BranchCost,
         wallet_value: &i32,
         future_wallet_value: i32,
-    ) -> i32 {
+    ) -> Result<i32, CostError> {
         let BranchCost::WithdrawGas { const_cost, success: true, with_builtin_costs } = branch_cost
         else {
             panic!("Unexpected BranchCost: {:?}.", branch_cost);
@@ -717,7 +728,7 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
 
         let withdraw_gas_cost =
             self.compute_withdraw_gas_cost(idx, const_cost, *with_builtin_costs);
-        future_wallet_value + withdraw_gas_cost - *wallet_value
+        Ok(future_wallet_value + withdraw_gas_cost - *wallet_value)
     }
 
     fn get_branch_requirement(
@@ -769,7 +780,7 @@ impl<'a> PostcostContext<'a> {
 
         if with_builtin_costs {
             let steps = BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
-                self.precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
+                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
             })
             .into_or_panic::<i32>();
             amount += ConstCost { steps, ..Default::default() }.cost();

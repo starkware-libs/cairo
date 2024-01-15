@@ -66,14 +66,16 @@ pub(super) fn generate_component_specific_code(
 fn handle_component_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
+    item: &ast::ModuleItem,
     data: &mut ComponentGenerationData,
 ) {
     match &item {
-        ast::Item::Impl(item_impl) => {
+        ast::ModuleItem::Impl(item_impl) => {
             handle_component_impl(db, diagnostics, item_impl, data);
         }
-        ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
+        ast::ModuleItem::Struct(item_struct)
+            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+        {
             handle_storage_struct(
                 db,
                 diagnostics,
@@ -220,6 +222,7 @@ fn handle_component_impl(
     let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
         return;
     };
+    let origin = attr.as_syntax_node().span_without_trivia(db);
 
     let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
         return;
@@ -293,7 +296,9 @@ fn handle_component_impl(
         .into(),
     );
 
-    data.specific.generated_impls.push(generated_impl_node);
+    data.specific
+        .generated_impls
+        .push(RewriteNode::Mapped { origin, node: generated_impl_node.into() });
 }
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.

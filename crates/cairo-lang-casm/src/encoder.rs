@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::{vec, vec::Vec};
+
 use num_bigint::BigInt;
 
 use crate::assembler::{ApUpdate, FpUpdate, InstructionRepr, Op1Addr, Opcode, PcUpdate, Res};

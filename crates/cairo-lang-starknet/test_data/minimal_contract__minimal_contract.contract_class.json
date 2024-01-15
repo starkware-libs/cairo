@@ -1,13 +1,13 @@
 {
   "sierra_program": [
     "0x1",
-    "0x3",
+    "0x4",
     "0x0",
     "0x2",
+    "0x4",
     "0x3",
-    "0x1",
-    "0x61",
-    "0x9f",
+    "0x58",
+    "0xa8",
     "0xf",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
@@ -37,21 +37,17 @@
     "0x4",
     "0xa",
     "0x66656c74323532",
-    "0x753332",
+    "0x426f78",
     "0x4761734275696c74696e",
-    "0x27",
+    "0x21",
     "0x7265766f6b655f61705f747261636b696e67",
     "0x77697468647261775f676173",
     "0x6272616e63685f616c69676e",
     "0x7374727563745f6465636f6e737472756374",
-    "0x61727261795f6c656e",
-    "0x736e617073686f745f74616b65",
-    "0xd",
-    "0x64726f70",
-    "0x7533325f636f6e7374",
-    "0x72656e616d65",
     "0x73746f72655f74656d70",
-    "0x7533325f6571",
+    "0x61727261795f736e617073686f745f706f705f66726f6e74",
+    "0x64726f70",
+    "0xd",
     "0x61727261795f6e6577",
     "0x66656c743235325f636f6e7374",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
@@ -67,73 +63,65 @@
     "0x6",
     "0x66756e6374696f6e5f63616c6c",
     "0x5",
+    "0x736e617073686f745f74616b65",
     "0x4f7574206f6620676173",
-    "0x50",
+    "0x47",
     "0xffffffffffffffff",
-    "0x3e",
+    "0x37",
+    "0x15",
     "0x10",
-    "0x1c",
     "0x11",
     "0x12",
     "0x13",
     "0x14",
-    "0x15",
+    "0x2a",
     "0x16",
     "0x17",
     "0x18",
     "0x19",
-    "0x31",
     "0x1a",
     "0x1b",
+    "0x1c",
     "0x1d",
     "0x1e",
     "0x1f",
     "0x20",
-    "0x21",
     "0x22",
     "0x23",
     "0x24",
     "0x25",
     "0x26",
+    "0x27",
     "0x28",
     "0x29",
-    "0x2a",
     "0x2b",
-    "0x2c",
-    "0x2d",
-    "0x2e",
-    "0x2f",
-    "0x30",
-    "0x4c",
-    "0x355",
+    "0x45",
+    "0x2f9",
     "0x110b10090e0b10090f050e0b0a090d050c0b0a090505080706050403020100",
-    "0x1f021e131d131c1b051a05190b1618050517050e0b1609150b100902141312",
-    "0x2a260505290b0d05282605052726050525060505240f0505230b220b210b20",
-    "0x530170505300605052f0605052a2e0d052d0605052c0b2b0b05052a260505",
-    "0x505300b373605052a0b353205052a3405052a3305052a050d32050d311b05",
-    "0x5300f05053005050527050505253a05052738050527050f05393805052a38",
-    "0xb3d050b0b0b3c3a05052a3a0505300f0505273b0d052d0b0d32050d311a05",
-    "0x51a0b34053d050f050f0b0b3d050b0d0b36380d3e3a1a0d3d0d050b0d050b",
-    "0x53a0b06053d050b360b0b3d051b05380b321b0d3d0517053a0b17053d0534",
-    "0x170b3f053d053305340b00053d053205340b0b3d052605380b33260d3d0506",
-    "0xb0b3d050b0d0b0b400b3d0d3f000d320b1a053d051a051b0b00053d050005",
-    "0xb43053d0542410d000b42053d054205330b42053d050b260b41053d050b06",
-    "0x1a053d051a051b0b46053d054505420b45053d0543440d410b44053d050b3f",
-    "0xb460d3a1a1a0546053d054605450b0d053d050d05440b3a053d053a05430b",
-    "0x49480d3d0d473a1a0f480b47053d054705470b47053d050b460b0b3d050b0d",
-    "0x3d0540054c0b40053d0540054b0b40053d050b490b0b3d050b0d0b4c4b0d4a",
-    "0xd3d054f054e0b4f053d050b060b0b3d054e054d0b0b3d054d05400b4e4d0d",
-    "0x3d055305520b53053d055205510b52053d055105500b0b3d0550054f0b5150",
-    "0x55405450b0d053d050d05440b49053d054905430b48053d0548051b0b5405",
-    "0x330b56053d050b530b55053d050b060b0b3d050b0d0b540d49481a0554053d",
-    "0x58053d051f570d410b57053d050b3f0b1f053d0556550d000b56053d055605",
-    "0x53d050d05440b4c053d054c05430b4b053d054b051b0b59053d055805420b",
-    "0xb060b0b3d050f05540b0b3d050b0d0b590d4c4b1a0559053d055905450b0d",
-    "0xb3f0b5c053d055b5a0d000b5b053d055b05330b5b053d050b530b5a053d05",
-    "0x430b38053d0538051b0b5f053d055e05420b5e053d055c5d0d410b5d053d05",
-    "0xb550b5f0d36381a055f053d055f05450b0d053d050d05440b36053d053605",
-    "0x1a0f34330b1a0d050b0d0505053d050505560b0b053d050b054b0b05053d05",
-    "0x600b3a380d38050b0f0d050b3234330b"
+    "0x1e0605081d131c1b051a05190b1618050517050e0b1609150b100902141312",
+    "0x50528270505260d050526060505250b0505240f0505230b220b210b201f02",
+    "0x2f050524050d2e050d2d1b05052c1705052c0605052b060505242a0d052906",
+    "0x5052634050526050f05353405052c0b33320505240b312e05052430050524",
+    "0xf050526380d05290b0d2e050d2d1a05052c0f05052c050505260505053736",
+    "0xb3a050b0d0b32340d3b361a0d3a0d050b0d050b0b3a050b0b0b393605052c",
+    "0xb0d0b2e053c1b170d3a0d3005360b1a053a051a051a0b30053a050f050f0b",
+    "0x27053a050b170b06053a050b300b0b3a051b05320b0b3a051705340b0b3a05",
+    "0x3a052f000d270b00053a050b060b2f053a0527060d2e0b27053a0527051b0b",
+    "0x50d053d0b36053a053605000b1a053a051a051a0b3e053a053d052f0b3d05",
+    "0xb0b3a052e05340b0b3a050b0d0b3e0d361a1a053e053a053e053e0b0d053a",
+    "0xd0b433c0d4241400d3a0d3f361a0f410b3f053a053f05400b3f053a050b3f",
+    "0x4605450b0b3a054505440b46450d3a054405430b44053a050b3c0b0b3a050b",
+    "0x54905480b0b3a054805470b49480d3a054705460b47053a050b300b0b3a05",
+    "0x4105000b40053a0540051a0b4c053a054b054a0b4b053a054a05490b4a053a",
+    "0x3a050b0d0b4c0d41401a054c053a054c053e0b0d053a050d053d0b41053a05",
+    "0x53a051f4d0d2e0b1f053a051f051b0b1f053a050b4b0b4d053a050b300b0b",
+    "0x3a053c051a0b51053a0550052f0b50053a054e4f0d270b4f053a050b060b4e",
+    "0xd433c1a0551053a0551053e0b0d053a050d053d0b43053a054305000b3c05",
+    "0x51b0b53053a050b4b0b52053a050b300b0b3a050f054c0b0b3a050b0d0b51",
+    "0xb42053a0554550d270b55053a050b060b54053a0553520d2e0b53053a0553",
+    "0xd053a050d053d0b32053a053205000b34053a0534051a0b56053a0542052f",
+    "0xf302f0b1a0d050b0d0505053a050b4d0b560d32341a0556053a0556053e0b",
+    "0x570b36340d34050b0f0d050b2e302f0b1a"
   ],
   "sierra_program_debug_info": {
     "type_names": [
@@ -191,7 +179,7 @@
       ],
       [
         13,
-        "u32"
+        "Box<felt252>"
       ],
       [
         14,
@@ -217,143 +205,119 @@
       ],
       [
         4,
-        "array_len<felt252>"
-      ],
-      [
-        5,
-        "snapshot_take<u32>"
-      ],
-      [
-        6,
-        "drop<u32>"
-      ],
-      [
-        7,
-        "u32_const<0>"
-      ],
-      [
-        8,
-        "rename<u32>"
-      ],
-      [
-        9,
-        "store_temp<u32>"
-      ],
-      [
-        10,
         "store_temp<RangeCheck>"
       ],
       [
-        11,
-        "u32_eq"
+        5,
+        "array_snapshot_pop_front<felt252>"
       ],
       [
-        12,
+        6,
+        "drop<Snapshot<Array<felt252>>>"
+      ],
+      [
+        7,
+        "drop<Box<felt252>>"
+      ],
+      [
+        8,
         "array_new<felt252>"
       ],
       [
-        13,
+        9,
         "felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
       [
-        14,
+        10,
         "store_temp<felt252>"
       ],
       [
-        15,
+        11,
         "array_append<felt252>"
       ],
       [
-        16,
+        12,
         "struct_construct<core::panics::Panic>"
       ],
       [
-        17,
+        13,
         "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
-        18,
+        14,
         "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
-        19,
+        15,
         "store_temp<GasBuiltin>"
       ],
       [
-        20,
+        16,
         "store_temp<System>"
       ],
       [
-        21,
+        17,
         "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
-        22,
+        18,
         "get_builtin_costs"
       ],
       [
-        23,
+        19,
         "store_temp<BuiltinCosts>"
       ],
       [
-        24,
+        20,
         "withdraw_gas_all"
       ],
       [
-        25,
+        21,
         "struct_construct<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>"
       ],
       [
-        26,
-        "store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>"
-      ],
-      [
-        27,
+        22,
         "function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>"
       ],
       [
-        28,
+        23,
         "drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>"
       ],
       [
-        29,
+        24,
         "drop<Unit>"
       ],
       [
-        30,
+        25,
         "snapshot_take<Array<felt252>>"
       ],
       [
-        31,
+        26,
         "drop<Array<felt252>>"
       ],
       [
-        32,
+        27,
         "struct_construct<core::array::Span::<core::felt252>>"
       ],
       [
-        33,
+        28,
         "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
       ],
       [
-        34,
+        29,
         "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
-        35,
+        30,
         "felt252_const<375233589013918064796019>"
       ],
       [
-        36,
+        31,
         "drop<core::array::Span::<core::felt252>>"
       ],
       [
-        37,
+        32,
         "struct_construct<Unit>"
-      ],
-      [
-        38,
-        "store_temp<Unit>"
       ]
     ],
     "user_func_names": [
