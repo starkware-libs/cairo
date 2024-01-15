@@ -12,6 +12,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("u32".into(), as_type_long_id("u32", &[]));
     elements.insert("u64".into(), as_type_long_id("u64", &[]));
     elements.insert("u128".into(), as_type_long_id("u128", &[]));
+    elements.insert("bytes31".into(), as_type_long_id("bytes31", &[]));
     elements.insert("felt252".into(), as_type_long_id("felt252", &[]));
     elements.insert("Tuple<>".into(), as_named_type_long_id("Struct", "Tuple", &[]));
     elements.insert(

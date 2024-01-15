@@ -6900,9 +6900,15 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "FP",
+                  "offset": -3
+                },
+                "b": {
+                  "Immediate": "0x0"
+                }
               }
             },
             "rhs": {
@@ -8403,7 +8409,7 @@
     [
       2512,
       [
-        "memory[ap + 0] = memory[fp + -3] < 256"
+        "memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 256"
       ]
     ],
     [
