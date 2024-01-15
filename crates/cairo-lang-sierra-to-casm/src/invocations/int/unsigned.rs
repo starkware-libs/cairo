@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::{BigInt, ToBigInt};
 
 use super::{build_const, build_small_diff, build_small_wide_mul};
-use crate::invocations::range_reduction::build_try_range_reduction;
+use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -191,11 +191,9 @@ pub fn build_uint<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits, const L
             IntOperator::OverflowingSub => build_small_diff(builder, BigInt::from(LIMIT)),
         },
         UintConcrete::ToFelt252(_) => misc::build_identity(builder),
-        UintConcrete::FromFelt252(_) => build_try_range_reduction(
-            builder,
-            &Range { lower: 0.into(), upper: Felt252::prime().into() },
-            &Range { lower: 0.into(), upper: LIMIT.into() },
-        ),
+        UintConcrete::FromFelt252(_) => {
+            build_felt252_range_reduction(builder, &Range { lower: 0.into(), upper: LIMIT.into() })
+        }
         UintConcrete::IsZero(_) => misc::build_is_zero(builder),
         UintConcrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         UintConcrete::Bitwise(_) => bitwise::build(builder),

@@ -9,6 +9,7 @@ use num_traits::Zero;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
@@ -30,6 +31,9 @@ pub fn build_downcast(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &DowncastConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
+    if libfunc.from_range.is_felt252() {
+        return build_felt252_range_reduction(builder, &libfunc.to_range);
+    }
     let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables!(casm_builder,
