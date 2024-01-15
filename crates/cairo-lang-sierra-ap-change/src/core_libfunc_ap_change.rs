@@ -28,7 +28,6 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
-use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -100,21 +99,32 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {
-                // Overflow tests are more expensive when asserting a value is above non-zero value.
-                let extra_below = if libfunc.to_range.lower.is_zero() { 0 } else { 1 };
-                let extra_above = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
-                match libfunc.cast_type() {
-                    CastType { overflow_above: false, overflow_below: false } => {
-                        vec![ApChange::Known(0), ApChange::Known(0)]
-                    }
-                    CastType { overflow_above: true, overflow_below: false } => {
-                        vec![ApChange::Known(2), ApChange::Known(1 + extra_above)]
-                    }
-                    CastType { overflow_above: false, overflow_below: true } => {
-                        vec![ApChange::Known(1 + extra_below), ApChange::Known(2)]
-                    }
-                    CastType { overflow_above: true, overflow_below: true } => {
-                        vec![ApChange::Known(2 + extra_below), ApChange::Known(3)]
+                if libfunc.from_range.is_felt252() {
+                    let success_extra_steps = if libfunc.to_range.lower.is_zero() { 0 } else { 1 }
+                        + if &libfunc.to_range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                    let failure_extra_steps = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
+                    vec![
+                        ApChange::Known(success_extra_steps + 1),
+                        ApChange::Known(failure_extra_steps + 6),
+                    ]
+                } else {
+                    // Overflow tests are more expensive when asserting a value is above non-zero
+                    // value.
+                    let extra_below = if libfunc.to_range.lower.is_zero() { 0 } else { 1 };
+                    let extra_above = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
+                    match libfunc.cast_type() {
+                        CastType { overflow_above: false, overflow_below: false } => {
+                            vec![ApChange::Known(0), ApChange::Known(0)]
+                        }
+                        CastType { overflow_above: true, overflow_below: false } => {
+                            vec![ApChange::Known(2), ApChange::Known(1 + extra_above)]
+                        }
+                        CastType { overflow_above: false, overflow_below: true } => {
+                            vec![ApChange::Known(1 + extra_below), ApChange::Known(2)]
+                        }
+                        CastType { overflow_above: true, overflow_below: true } => {
+                            vec![ApChange::Known(2 + extra_below), ApChange::Known(3)]
+                        }
                     }
                 }
             }
@@ -238,17 +248,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
-        Range(libfunc) => match libfunc {
-            RangeConcreteLibfunc::ConstrainRange(libfunc) => {
-                assert!(
-                    libfunc.out_range.lower.is_zero(),
-                    "Non-zero `min` value {} not supported",
-                    libfunc.out_range.lower
-                );
-                vec![ApChange::Known(2), ApChange::Known(7)]
-            }
-        },
-
         Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)

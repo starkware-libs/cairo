@@ -1,4 +1,4 @@
-//! > constrain_range::<felt252, BoundedInt<0, 7>> libfunc
+//! > downcast::<felt252, BoundedInt<0, 7>> libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -6,16 +6,16 @@ SmallE2ETestRunner
 //! > cairo
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-extern fn constrain_range<T, S>(
+extern fn downcast<T, S>(
     index: T
 ) -> Option<S> implicits(RangeCheck) nopanic;
 
 fn foo(index: felt252) -> Option<BoundedInt<0, 7>> {
-    constrain_range::<felt252, BoundedInt<0, 7>>(index)
+    downcast::<felt252, BoundedInt<0, 7>>(index)
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 8 %}
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 8 %}
 jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 8, ap++;
 %{
@@ -57,7 +57,7 @@ type BoundedInt<0, 7> = BoundedInt<0, 7> [storable: true, drop: true, dup: true,
 type core::option::Option::<test::BoundedInt::<0, 7>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 7>>, BoundedInt<0, 7>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc constrain_range<felt252, BoundedInt<0, 7>> = constrain_range<felt252, BoundedInt<0, 7>>;
+libfunc downcast<felt252, BoundedInt<0, 7>> = downcast<felt252, BoundedInt<0, 7>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -65,7 +65,7 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 7>>> = store_tem
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 1>;
 
-constrain_range<felt252, BoundedInt<0, 7>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+downcast<felt252, BoundedInt<0, 7>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0>([3]) -> ([5]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3
@@ -91,16 +91,16 @@ SmallE2ETestRunner
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
-extern fn constrain_range<T, S>(
+extern fn downcast<T, S>(
     index: T
 ) -> Option<S> implicits(RangeCheck) nopanic;
 
 fn foo(index: felt252) -> Option<BoundedInt<0, 1>> {
-    constrain_range::<felt252, BoundedInt<0, 1>>(index)
+    downcast::<felt252, BoundedInt<0, 1>>(index)
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 2 %}
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 2 %}
 jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 2, ap++;
 %{
@@ -142,7 +142,7 @@ type BoundedInt<0, 1> = BoundedInt<0, 1> [storable: true, drop: true, dup: true,
 type core::option::Option::<test::BoundedInt::<0, 1>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 1>>, BoundedInt<0, 1>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc constrain_range<felt252, BoundedInt<0, 1>> = constrain_range<felt252, BoundedInt<0, 1>>;
+libfunc downcast<felt252, BoundedInt<0, 1>> = downcast<felt252, BoundedInt<0, 1>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 1>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 1>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -150,7 +150,7 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 1>>> = store_tem
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 1>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 1>>, 1>;
 
-constrain_range<felt252, BoundedInt<0, 1>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+downcast<felt252, BoundedInt<0, 1>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<test::BoundedInt::<0, 1>>, 0>([3]) -> ([5]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3
@@ -167,7 +167,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > ==========================================================================
 
-//! > constrain_range::<felt252, BoundedInt<0, 0>> libfunc
+//! > downcast::<felt252, BoundedInt<0, 0>> libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -176,16 +176,16 @@ SmallE2ETestRunner
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
-extern fn constrain_range<T, S>(
+extern fn downcast<T, S>(
     index: T
 ) -> Option<S> implicits(RangeCheck) nopanic;
 
 fn foo(index: felt252) -> Option<BoundedInt<0, 0>> {
-    constrain_range::<felt252, BoundedInt<0, 0>>(index)
+    downcast::<felt252, BoundedInt<0, 0>>(index)
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 1 %}
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 1 %}
 jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 1, ap++;
 %{
@@ -227,7 +227,7 @@ type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true,
 type core::option::Option::<test::BoundedInt::<0, 0>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 0>>, BoundedInt<0, 0>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc constrain_range<felt252, BoundedInt<0, 0>> = constrain_range<felt252, BoundedInt<0, 0>>;
+libfunc downcast<felt252, BoundedInt<0, 0>> = downcast<felt252, BoundedInt<0, 0>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -235,7 +235,7 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 0>>> = store_tem
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 1>;
 
-constrain_range<felt252, BoundedInt<0, 0>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+downcast<felt252, BoundedInt<0, 0>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0>([3]) -> ([5]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3
@@ -252,7 +252,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > ==========================================================================
 
-//! > constrain_range::<felt252, BoundedInt<0, 10633823966279327296825105735305134080>> libfunc
+//! > downcast::<felt252, BoundedInt<0, 10633823966279327296825105735305134080>> libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -261,18 +261,18 @@ SmallE2ETestRunner
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
-extern fn constrain_range<T, S>(
+extern fn downcast<T, S>(
     index: T
 ) -> Option<S> implicits(RangeCheck) nopanic;
 
 fn foo(index: felt252) -> Option<BoundedInt<0, 10633823966279327296825105735305134080>> {
-    constrain_range::<
+    downcast::<
         felt252, BoundedInt<0, 10633823966279327296825105735305134080>
     >(index)
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 10633823966279327296825105735305134081 %}
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 10633823966279327296825105735305134081 %}
 jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 10633823966279327296825105735305134081, ap++;
 %{
@@ -314,7 +314,7 @@ type BoundedInt<0, 10633823966279327296825105735305134080> = BoundedInt<0, 10633
 type core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, BoundedInt<0, 10633823966279327296825105735305134080>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc constrain_range<felt252, BoundedInt<0, 10633823966279327296825105735305134080>> = constrain_range<felt252, BoundedInt<0, 10633823966279327296825105735305134080>>;
+libfunc downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134080>> = downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134080>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -322,7 +322,7 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 1063382396627932
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, 1>;
 
-constrain_range<felt252, BoundedInt<0, 10633823966279327296825105735305134080>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134080>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
 enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134080>>, 0>([3]) -> ([5]); // 2
 store_temp<RangeCheck>([2]) -> ([2]); // 3

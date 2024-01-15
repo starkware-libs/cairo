@@ -39,7 +39,6 @@ use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
-use super::range_reduction::RangeLibfunc;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
@@ -103,7 +102,6 @@ define_libfunc_hierarchy! {
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
-        Range(RangeLibfunc),
         Felt252(Felt252Libfunc),
         Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
