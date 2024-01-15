@@ -214,47 +214,51 @@ struct NonDroppable {
     x: u64,
 }
 
-// TODO(lior): Mark as nopanic once the compiler allows it.
-fn destruct(arr: Array<(NonDroppable, destruct::Coupon)>) {
+fn destruct(arr: Array<(NonDroppable, destruct::Coupon)>) nopanic {
     match arr.pop_front_consume() {
         Option::Some((rem, (elm, coupon))) => {
+            destruct(rem, __coupon__: coupon);
             integer::u64_bitwise(elm.x, elm.x);
             drop(elm);
-            destruct(rem, __coupon__: coupon);
         },
         Option::None => {},
     }
 }
 
 //! > casm
+ap += 1;
 [fp + -3] = [ap + 0] + [fp + -4], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 14;
-[ap + 0] = [[fp + -4] + 0], ap++;
-[ap + -1] = [[fp + -5] + 0];
-[ap + -1] = [[fp + -5] + 1];
-[ap + 0] = [fp + -5] + 5, ap++;
+jmp rel 15;
+[ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -13;
+[fp + 0] = [[fp + -4] + 0];
+call rel -12;
+[fp + 0] = [[ap + -1] + 0];
+[fp + 0] = [[ap + -1] + 1];
+[ap + 0] = [ap + -1] + 5, ap++;
 jmp rel 3;
 [ap + 0] = [fp + -5], ap++;
 ret;
 
 //! > function_costs
-test::destruct: OrderedHashMap({Bitwise: 1, Const: 1100})
+test::destruct: OrderedHashMap({Bitwise: 1, Const: 1300})
 
 //! > sierra_code
-type Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::NonDroppable = Struct<ut@test::NonDroppable, u64> [storable: true, drop: true, dup: true, zero_sized: false];
+type Uninitialized<test::NonDroppable> = Uninitialized<test::NonDroppable> [storable: false, drop: true, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
-type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type Coupon<user@test::destruct> = Coupon<user@test::destruct> [storable: true, drop: true, dup: false, zero_sized: true];
-type test::NonDroppable = Struct<ut@test::NonDroppable, u64> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<test::NonDroppable, Coupon<user@test::destruct>> = Struct<ut@Tuple, test::NonDroppable, Coupon<user@test::destruct>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = Struct<ut@Tuple, Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Box<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = Box<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> [storable: true, drop: true, dup: false, zero_sized: false];
 
+libfunc alloc_local<test::NonDroppable> = alloc_local<test::NonDroppable>;
+libfunc finalize_locals = finalize_locals;
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>;
 libfunc branch_align = branch_align;
@@ -262,48 +266,51 @@ libfunc unbox<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = unbox<Tu
 libfunc struct_construct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>> = struct_construct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>;
 libfunc struct_deconstruct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>> = struct_deconstruct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>;
 libfunc struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>> = struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>> = store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>;
+libfunc store_local<test::NonDroppable> = store_local<test::NonDroppable>;
+libfunc coupon_call<user@test::destruct> = coupon_call<user@test::destruct>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc struct_deconstruct<test::NonDroppable> = struct_deconstruct<test::NonDroppable>;
-libfunc store_temp<u64> = store_temp<u64>;
 libfunc dup<u64> = dup<u64>;
 libfunc u64_bitwise = u64_bitwise;
 libfunc drop<u64> = drop<u64>;
 libfunc struct_construct<test::NonDroppable> = struct_construct<test::NonDroppable>;
 libfunc drop<test::NonDroppable> = drop<test::NonDroppable>;
-libfunc store_temp<Bitwise> = store_temp<Bitwise>;
-libfunc store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>> = store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>;
-libfunc coupon_call<user@test::destruct> = coupon_call<user@test::destruct>;
-libfunc drop<Unit> = drop<Unit>;
-libfunc rename<Bitwise> = rename<Bitwise>;
 libfunc jump = jump;
+libfunc drop<Uninitialized<test::NonDroppable>> = drop<Uninitialized<test::NonDroppable>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 
-disable_ap_tracking() -> (); // 0
-array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([1]) { fallthrough([2], [3]) 23() }; // 1
-branch_align() -> (); // 2
-unbox<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([3]) -> ([4]); // 3
-struct_construct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([2], [4]) -> ([5]); // 4
-struct_deconstruct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([5]) -> ([6], [7]); // 5
-struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([7]) -> ([8], [9]); // 6
-struct_deconstruct<test::NonDroppable>([8]) -> ([10]); // 7
-store_temp<u64>([10]) -> ([10]); // 8
-dup<u64>([10]) -> ([10], [11]); // 9
-dup<u64>([10]) -> ([10], [12]); // 10
-u64_bitwise([0], [11], [12]) -> ([13], [14], [15], [16]); // 11
-drop<u64>([14]) -> (); // 12
-drop<u64>([15]) -> (); // 13
-drop<u64>([16]) -> (); // 14
-struct_construct<test::NonDroppable>([10]) -> ([17]); // 15
-drop<test::NonDroppable>([17]) -> (); // 16
-store_temp<Bitwise>([13]) -> ([13]); // 17
-store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([6]) -> ([6]); // 18
-coupon_call<user@test::destruct>([13], [6], [9]) -> ([18], [19]); // 19
-drop<Unit>([19]) -> (); // 20
-rename<Bitwise>([18]) -> ([20]); // 21
-jump() { 25() }; // 22
-branch_align() -> (); // 23
-store_temp<Bitwise>([0]) -> ([20]); // 24
-struct_construct<Unit>() -> ([21]); // 25
-return([20], [21]); // 26
+alloc_local<test::NonDroppable>() -> ([3]); // 0
+finalize_locals() -> (); // 1
+disable_ap_tracking() -> (); // 2
+array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([1]) { fallthrough([4], [5]) 25() }; // 3
+branch_align() -> (); // 4
+unbox<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([5]) -> ([6]); // 5
+struct_construct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([4], [6]) -> ([7]); // 6
+struct_deconstruct<Tuple<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>, Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([7]) -> ([8], [9]); // 7
+struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([9]) -> ([2], [10]); // 8
+store_temp<Bitwise>([0]) -> ([0]); // 9
+store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([8]) -> ([8]); // 10
+store_local<test::NonDroppable>([3], [2]) -> ([2]); // 11
+coupon_call<user@test::destruct>([0], [8], [10]) -> ([11], [12]); // 12
+drop<Unit>([12]) -> (); // 13
+struct_deconstruct<test::NonDroppable>([2]) -> ([13]); // 14
+dup<u64>([13]) -> ([13], [14]); // 15
+dup<u64>([13]) -> ([13], [15]); // 16
+u64_bitwise([11], [14], [15]) -> ([16], [17], [18], [19]); // 17
+drop<u64>([17]) -> (); // 18
+drop<u64>([18]) -> (); // 19
+drop<u64>([19]) -> (); // 20
+struct_construct<test::NonDroppable>([13]) -> ([20]); // 21
+drop<test::NonDroppable>([20]) -> (); // 22
+store_temp<Bitwise>([16]) -> ([21]); // 23
+jump() { 28() }; // 24
+branch_align() -> (); // 25
+drop<Uninitialized<test::NonDroppable>>([3]) -> (); // 26
+store_temp<Bitwise>([0]) -> ([21]); // 27
+struct_construct<Unit>() -> ([22]); // 28
+return([21], [22]); // 29
 
 test::destruct@0([0]: Bitwise, [1]: Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>) -> (Bitwise, Unit);
 

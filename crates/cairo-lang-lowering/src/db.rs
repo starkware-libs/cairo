@@ -181,6 +181,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_direct_callees(
         &self,
         function_id: ids::FunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::FunctionId>>;
     /// Returns the set of direct callees which are functions with body of a function with a body
     /// (i.e. excluding libfunc callees).
@@ -190,6 +191,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_direct_function_with_body_callees(
         &self,
         function_id: ids::FunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::FunctionWithBodyId>>;
 
     /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
@@ -207,7 +209,11 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
     /// `true` for f2 and f3, but false for f0 and f1.
     #[salsa::invoke(crate::graph_algorithms::cycles::in_cycle)]
-    fn in_cycle(&self, function_id: ids::FunctionWithBodyId) -> Maybe<bool>;
+    fn in_cycle(
+        &self,
+        function_id: ids::FunctionWithBodyId,
+        dependency_type: DependencyType,
+    ) -> Maybe<bool>;
 
     // ### Strongly connected components ###
 
@@ -262,6 +268,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_scc(
         &self,
         function_id: ids::FunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Vec<ids::FunctionWithBodyId>;
 
     // ### Feedback set ###
@@ -272,7 +279,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_feedback_set(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns whether the given function needs an additional withdraw_gas call.
@@ -285,7 +291,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_feedback_set_of_representative(
         &self,
         function: ConcreteSCCRepresentative,
-        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
@@ -423,7 +428,7 @@ fn concrete_function_with_body_lowered(
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
 /// according to the given [DependencyType]. See [DependencyType] for more information about
 /// what is considered a dependency.
-fn get_direct_callees(
+pub(crate) fn get_direct_callees(
     lowered_function: &FlatLowered,
     dependency_type: DependencyType,
 ) -> Vec<ids::FunctionId> {
@@ -568,7 +573,10 @@ fn function_with_body_lowering_diagnostics(
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
         diagnostics.extend(lowered.diagnostics.clone());
-        if flag_add_withdraw_gas(db) && !lowered.signature.panicable && db.in_cycle(function_id)? {
+        if flag_add_withdraw_gas(db)
+            && !lowered.signature.panicable
+            && db.in_cycle(function_id, DependencyType::Cost)?
+        {
             let location = Location {
                 stable_location: function_id
                     .base_semantic_function(db)

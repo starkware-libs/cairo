@@ -1,45 +1,19 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use crate::db::LoweringGroup;
+use crate::db::{get_direct_callees, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
-use crate::{DependencyType, MatchInfo};
+use crate::DependencyType;
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].
 pub fn function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId>> {
     let lowered = db.function_with_body_lowering(function_id)?;
-    let mut direct_callees = OrderedHashSet::default();
-    lowered.blocks.has_root()?;
-    for (_, block) in lowered.blocks.iter() {
-        for stmt in &block.statements {
-            match stmt {
-                crate::Statement::Call(stmt) => {
-                    direct_callees.insert(stmt.function);
-                }
-                crate::Statement::Literal(_)
-                | crate::Statement::StructConstruct(_)
-                | crate::Statement::StructDestructure(_)
-                | crate::Statement::EnumConstruct(_)
-                | crate::Statement::Snapshot(_)
-                | crate::Statement::Desnap(_) => {}
-            };
-        }
-        match &block.end {
-            crate::FlatBlockEnd::Match { info: MatchInfo::Extern(s) } => {
-                direct_callees.insert(s.function);
-            }
-            crate::FlatBlockEnd::Match { info: MatchInfo::Enum(_) }
-            | crate::FlatBlockEnd::NotSet
-            | crate::FlatBlockEnd::Return(_)
-            | crate::FlatBlockEnd::Panic(_)
-            | crate::FlatBlockEnd::Goto(_, _) => {}
-        }
-    }
-    Ok(direct_callees)
+    Ok(get_direct_callees(&lowered, dependency_type).into_iter().collect())
 }
 
 /// Query implementation of
@@ -47,9 +21,10 @@ pub fn function_with_body_direct_callees(
 pub fn function_with_body_direct_function_with_body_callees(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionWithBodyId>> {
     Ok(db
-        .function_with_body_direct_callees(function_id)?
+        .function_with_body_direct_callees(function_id, dependency_type)?
         .into_iter()
         .map(|function_id| function_id.body(db))
         .collect::<Maybe<Vec<Option<_>>>>()?
@@ -89,10 +64,16 @@ pub fn contains_cycle_handle_cycle(
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].
-pub fn in_cycle(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<bool> {
-    if db.function_with_body_direct_function_with_body_callees(function_id)?.contains(&function_id)
+pub fn in_cycle(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+    dependency_type: DependencyType,
+) -> Maybe<bool> {
+    if db
+        .function_with_body_direct_function_with_body_callees(function_id, dependency_type)?
+        .contains(&function_id)
     {
         return Ok(true);
     }
-    Ok(db.function_with_body_scc(function_id).len() > 1)
+    Ok(db.function_with_body_scc(function_id, dependency_type).len() > 1)
 }
