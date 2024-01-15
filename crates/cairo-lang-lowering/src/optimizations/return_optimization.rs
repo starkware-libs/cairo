@@ -20,22 +20,23 @@ use crate::{
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there was no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
-    if !lowered.blocks.is_empty() {
-        let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-        analysis.get_root_info();
-        let ctx = analysis.analyzer;
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
-        for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
-            let block = &mut lowered.blocks[block_id];
-            block.end = FlatBlockEnd::Return(
-                return_vars
-                    .iter()
-                    .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
-                    .collect_vec(),
-            )
-        }
+    for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
+        let block = &mut lowered.blocks[block_id];
+        block.end = FlatBlockEnd::Return(
+            return_vars
+                .iter()
+                .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
+                .collect_vec(),
+        )
     }
 }
 

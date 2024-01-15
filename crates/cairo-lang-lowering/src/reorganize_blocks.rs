@@ -15,67 +15,68 @@ use crate::{
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
 /// The order of the blocks is changed to be a topologically sorted.
 pub fn reorganize_blocks(lowered: &mut FlatLowered) {
-    if !lowered.blocks.is_empty() {
-        let ctx = TopSortContext {
-            old_block_rev_order: Default::default(),
-            incoming_gotos: vec![0; lowered.blocks.len()],
-            can_be_merged: vec![true; lowered.blocks.len()],
-        };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-        analysis.get_root_info();
-        let ctx = analysis.analyzer;
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let ctx = TopSortContext {
+        old_block_rev_order: Default::default(),
+        incoming_gotos: vec![0; lowered.blocks.len()],
+        can_be_merged: vec![true; lowered.blocks.len()],
+    };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
-        // Rebuild the blocks in the correct order.
-        let mut new_blocks = FlatBlocksBuilder::default();
+    // Rebuild the blocks in the correct order.
+    let mut new_blocks = FlatBlocksBuilder::default();
 
-        // Keep only blocks that can't be merged or have more than 1 incoming
-        // goto.
-        // Note that unreachable block were not added to `ctx.old_block_rev_order` during
-        // the analysis above.
-        let mut old_block_rev_order = ctx
-            .old_block_rev_order
-            .into_iter()
-            .filter(|block_id| !ctx.can_be_merged[block_id.0] || ctx.incoming_gotos[block_id.0] > 1)
-            .collect_vec();
+    // Keep only blocks that can't be merged or have more than 1 incoming
+    // goto.
+    // Note that unreachable block were not added to `ctx.old_block_rev_order` during
+    // the analysis above.
+    let mut old_block_rev_order = ctx
+        .old_block_rev_order
+        .into_iter()
+        .filter(|block_id| !ctx.can_be_merged[block_id.0] || ctx.incoming_gotos[block_id.0] > 1)
+        .collect_vec();
 
-        // Add the root block as it was filtered above.
-        old_block_rev_order.push(BlockId::root());
+    // Add the root block as it was filtered above.
+    old_block_rev_order.push(BlockId::root());
 
-        let n_visited_blocks = old_block_rev_order.len();
+    let n_visited_blocks = old_block_rev_order.len();
 
-        let mut rebuilder = RebuildContext {
-            block_remapping: HashMap::from_iter(
-                old_block_rev_order
-                    .iter()
-                    .enumerate()
-                    .map(|(idx, block_id)| (*block_id, BlockId(n_visited_blocks - idx - 1))),
-            ),
-        };
-        for block_id in old_block_rev_order.into_iter().rev() {
-            let mut statements = vec![];
+    let mut rebuilder = RebuildContext {
+        block_remapping: HashMap::from_iter(
+            old_block_rev_order
+                .iter()
+                .enumerate()
+                .map(|(idx, block_id)| (*block_id, BlockId(n_visited_blocks - idx - 1))),
+        ),
+    };
+    for block_id in old_block_rev_order.into_iter().rev() {
+        let mut statements = vec![];
 
-            let mut block = &lowered.blocks[block_id];
-            loop {
-                for stmt in &block.statements {
-                    statements.push(rebuilder.rebuild_statement(stmt));
-                }
-                if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
-                    if rebuilder.block_remapping.get(target_block_id).is_none() {
-                        assert!(remappings.is_empty(), "Remapping should be empty.");
-                        block = &lowered.blocks[*target_block_id];
-                        continue;
-                    }
-                }
-                break;
+        let mut block = &lowered.blocks[block_id];
+        loop {
+            for stmt in &block.statements {
+                statements.push(rebuilder.rebuild_statement(stmt));
             }
-
-            let end = rebuilder.rebuild_end(&block.end);
-            new_blocks.alloc(FlatBlock { statements, end });
+            if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
+                if rebuilder.block_remapping.get(target_block_id).is_none() {
+                    assert!(remappings.is_empty(), "Remapping should be empty.");
+                    block = &lowered.blocks[*target_block_id];
+                    continue;
+                }
+            }
+            break;
         }
 
-        lowered.blocks = new_blocks.build().unwrap();
+        let end = rebuilder.rebuild_end(&block.end);
+        new_blocks.alloc(FlatBlock { statements, end });
     }
+
+    lowered.blocks = new_blocks.build().unwrap();
 }
 
 pub struct TopSortContext {
