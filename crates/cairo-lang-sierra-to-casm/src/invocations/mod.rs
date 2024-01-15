@@ -651,7 +651,6 @@ pub fn compile_invocation(
         SnapshotTake(_) => misc::build_dup(builder),
         Felt252DictEntry(libfunc) => felt252_dict::build_entry(libfunc, builder),
         Bytes31(libfunc) => bytes31::build(libfunc, builder),
-        Range(libfunc) => range_reduction::build(libfunc, builder),
         Const(libfunc) => const_type::build(libfunc, builder),
     }
 }
