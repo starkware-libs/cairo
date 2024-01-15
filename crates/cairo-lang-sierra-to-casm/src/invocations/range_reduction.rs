@@ -44,7 +44,6 @@ pub fn build_try_range_reduction(
     in_range: &Range,
     out_range: &Range,
 ) -> Result<CompiledInvocation, InvocationError> {
-    assert!(in_range.lower.is_zero());
     assert!(out_range.lower.is_zero());
 
     assert!(out_range.upper <= Felt252::prime().to_bigint().unwrap() % (u128::MAX));
