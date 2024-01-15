@@ -203,6 +203,31 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     {
         self.0.into_iter().sorted_by_key(|(key, _)| (*key).clone())
     }
+
+    /// Iterates the map in an ascending order of the keys produced by the given function `f`.
+    /// NOTE! To guarantee a deterministic output, `f`'s implementation must apply a strict
+    /// ordering of the (Key, Value) pairs. That is, for any given pair of entries `a=(k_a, v_a)`
+    /// and `b=(k_b, v_b)`, if `a <= b` and `b <= a`, then `a == b`. If the ordering is not strict,
+    /// the order of the output OrderedHashMap is undefined (nondeterministic).
+    /// This can be used to convert an unordered map to an ordered map (mostly when the unordered
+    /// map was used for intermediate processing).
+    pub fn iter_sorted_by_key<TargetKey, F>(&self, f: F) -> impl Iterator<Item = (&Key, &Value)>
+    where
+        Key: Ord,
+        TargetKey: Ord,
+        F: FnMut(&(&Key, &Value)) -> TargetKey,
+    {
+        self.0.iter().sorted_by_key(f)
+    }
+
+    /// A consuming version of `iter_sorted_by_key`.
+    pub fn into_iter_sorted_by_key<TargetKey, F>(self, f: F) -> impl Iterator<Item = (Key, Value)>
+    where
+        TargetKey: Ord,
+        F: FnMut(&(Key, Value)) -> TargetKey,
+    {
+        self.0.into_iter().sorted_by_key(f)
+    }
 }
 
 impl<Key, Q: ?Sized, Value, BH: BuildHasher> Index<&Q> for UnorderedHashMap<Key, Value, BH>
