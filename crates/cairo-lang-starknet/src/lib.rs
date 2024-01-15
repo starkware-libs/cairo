@@ -21,7 +21,6 @@ pub mod allowed_libfuncs;
 #[cfg(feature = "std")]
 mod analyzer;
 pub mod casm_contract_class;
-#[cfg(feature = "std")]
 pub mod compiler_version;
 #[cfg(feature = "std")]
 pub mod contract;
