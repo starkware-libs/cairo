@@ -7,11 +7,25 @@ license-file.workspace = true
 description = "Sierra AP change computation."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.4.1" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.1" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.4.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1" }
 itertools = { workspace = true, default-features = true }
+||||||| 34923c147
+cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.4.1" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.1" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.4.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1" }
+itertools.workspace = true
+=======
+cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.4.3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.3" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.4.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
+itertools.workspace = true
+>>>>>>> origin/dev-v2.4.3
 thiserror.workspace = true
 num-traits = { workspace = true, default-features = true }
 

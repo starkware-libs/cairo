@@ -69,7 +69,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.4.1"
+version = "2.4.3"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -83,8 +83,16 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
+<<<<<<< HEAD
 cairo-felt = "0.9.1"
 cairo-vm = "0.9.1"
+||||||| 34923c147
+cairo-felt = "0.8.2"
+cairo-vm = "0.8.2"
+=======
+cairo-felt = "0.8.2"
+cairo-vm = "=0.8.4-rc.0"
+>>>>>>> origin/dev-v2.4.3
 clap = { version = "4.4", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"
