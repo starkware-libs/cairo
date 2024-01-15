@@ -61,7 +61,7 @@ impl ConstrainRangeLibfunc {
         let in_range = Range::from_type_info(&in_ty_info)?;
         let out_range = Range::from_type_info(&out_ty_info)?;
 
-        if !in_range.lower.is_zero() || !out_range.lower.is_zero() {
+        if in_range.size() < Felt252::prime().into() || !out_range.lower.is_zero() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         if in_range.lower >= in_range.upper || out_range.lower >= out_range.upper {
