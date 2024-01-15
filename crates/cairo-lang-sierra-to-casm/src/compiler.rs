@@ -13,7 +13,7 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use thiserror::Error;
 
@@ -102,6 +102,17 @@ impl CairoProgram {
             bytecode.extend(const_allocation.values.clone());
         }
         AssembledCairoProgram { bytecode, hints }
+    }
+
+    /// Creates an assembled representation of the program preceded by `header` and followed by `footer`.
+    pub fn assemble_ex(
+        &mut self,
+        header: Vec<Instruction>,
+        footer: Vec<Instruction>,
+    ) -> AssembledCairoProgram {
+        self.instructions =
+            chain!(header.iter(), self.instructions.iter(), footer.iter()).cloned().collect();
+        self.assemble()
     }
 }
 

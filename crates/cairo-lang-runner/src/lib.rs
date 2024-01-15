@@ -218,8 +218,7 @@ impl SierraCasmRunner {
         let instructions =
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
-        let assembled_program =
-            assemble_program(instructions.cloned().collect(), self.casm_program.clone());
+        let assembled_program = self.casm_program.clone().assemble_ex(entry_code, footer);
 
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
@@ -665,14 +664,6 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)
         .map_err(|e| Box::new(e.into()))?;
     Ok(())
-}
-
-pub fn assemble_program(
-    instructions: Vec<Instruction>,
-    mut new_program: CairoProgram,
-) -> AssembledCairoProgram {
-    new_program.instructions = instructions;
-    new_program.assemble()
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
