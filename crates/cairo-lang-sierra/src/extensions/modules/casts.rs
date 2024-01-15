@@ -1,3 +1,4 @@
+use cairo_felt::Felt252;
 use num_traits::Zero;
 
 use super::range_check::RangeCheckType;
@@ -96,9 +97,32 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let from_range = Range::from_type(context, from_ty.clone())?;
         let to_range: Range = Range::from_type(context, to_ty.clone())?;
-        if !from_range.is_small_range() || !to_range.is_small_range() {
+        let from_range = Range::from_type(context, from_ty.clone())?;
+        // Shrinking the range of the destination type by the range of the source type.
+        // This is necessary for example in the case `[0, PRIME) -> i8`.
+        // In this case `PRIME - 1` is a valid value in `from_range` and it is equivalent
+        // to `-1` in the field. Yet, we must make sure `PRIME - 1` is not downcasted to `-1`.
+        // By reducing `to_range`, we get a cast `[0, PRIME) -> [0, 128)` where `-1` is not
+        // in the output range.
+        let to_range =
+            to_range.intersection(&from_range).ok_or(SpecializationError::UnsupportedGenericArg)?;
+
+        // Don't allow a downcast that would always fail (disjoint ranges).
+        if to_range.is_empty() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        // Currently, we only support downcasting into `RangeCheck` sized types.
+        if !to_range.is_small_range() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        let is_small_values_downcast = from_range.is_small_range();
+        // Only allow `size < prime % u128::MAX` so that we can safely use `K=2` in
+        // `validate_under_limit`.
+        let is_felt252_valid_downcast = from_range.is_full_felt252_range()
+            && to_range.size() < (Felt252::prime() % u128::MAX).into();
+        if !is_small_values_downcast && !is_felt252_valid_downcast {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
@@ -137,11 +161,16 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
+        let from_range = Range::from_type(context.upcast(), from_ty.clone())?;
+        // Shrinking the range of the destination type by the range of the source type.
+        let to_range: Range = Range::from_type(context.upcast(), to_ty.clone())?
+            .intersection(&from_range)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(DowncastConcreteLibfunc {
             signature: self.specialize_signature(context.upcast(), args)?,
-            from_range: Range::from_type(context.upcast(), from_ty.clone())?,
+            from_range,
             from_ty,
-            to_range: Range::from_type(context.upcast(), to_ty.clone())?,
+            to_range,
             to_ty,
         })
     }

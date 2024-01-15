@@ -33,7 +33,6 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
-use cairo_lang_sierra::extensions::range_reduction::RangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
@@ -140,28 +139,43 @@ pub fn core_libfunc_cost(
         },
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {
-                // Overflow tests are more expensive when asserting a value is above non-zero value.
-                let extra_below = if libfunc.to_range.lower.is_zero() { 0 } else { 1 };
-                let extra_above = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
-                match libfunc.cast_type() {
-                    CastType { overflow_above: false, overflow_below: false } => {
-                        vec![ConstCost::steps(0).into(), ConstCost::steps(0).into()]
-                    }
-                    CastType { overflow_above: true, overflow_below: false } => vec![
-                        (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
-                        (ConstCost::steps(3 + extra_above) + ConstCost::range_checks(1)).into(),
-                    ],
-                    CastType { overflow_above: false, overflow_below: true } => {
-                        vec![
-                            (ConstCost::steps(2 + extra_below) + ConstCost::range_checks(1)).into(),
-                            (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
-                        ]
-                    }
-                    CastType { overflow_above: true, overflow_below: true } => {
-                        vec![
-                            (ConstCost::steps(4 + extra_below) + ConstCost::range_checks(2)).into(),
-                            (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
-                        ]
+                if libfunc.from_range.is_full_felt252_range() {
+                    let success_extra_steps = if libfunc.to_range.lower.is_zero() { 0 } else { 1 }
+                        + if &libfunc.to_range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                    let failure_extra_steps = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
+                    vec![
+                        ConstCost { steps: success_extra_steps + 3, holes: 0, range_checks: 2 }
+                            .into(),
+                        ConstCost { steps: failure_extra_steps + 9, holes: 0, range_checks: 3 }
+                            .into(),
+                    ]
+                } else {
+                    // Overflow tests are more expensive when asserting a value is above non-zero
+                    // value.
+                    let extra_below = if libfunc.to_range.lower.is_zero() { 0 } else { 1 };
+                    let extra_above = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
+                    match libfunc.cast_type() {
+                        CastType { overflow_above: false, overflow_below: false } => {
+                            vec![ConstCost::steps(0).into(), ConstCost::steps(0).into()]
+                        }
+                        CastType { overflow_above: true, overflow_below: false } => vec![
+                            (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                            (ConstCost::steps(3 + extra_above) + ConstCost::range_checks(1)).into(),
+                        ],
+                        CastType { overflow_above: false, overflow_below: true } => {
+                            vec![
+                                (ConstCost::steps(2 + extra_below) + ConstCost::range_checks(1))
+                                    .into(),
+                                (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                            ]
+                        }
+                        CastType { overflow_above: true, overflow_below: true } => {
+                            vec![
+                                (ConstCost::steps(4 + extra_below) + ConstCost::range_checks(2))
+                                    .into(),
+                                (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                            ]
+                        }
                     }
                 }
             }
@@ -333,19 +347,6 @@ pub fn core_libfunc_cost(
                     )
                     .collect_vec(),
                 }
-            }
-        },
-        Range(libfunc) => match libfunc {
-            RangeConcreteLibfunc::ConstrainRange(libfunc) => {
-                assert!(
-                    libfunc.out_range.lower.is_zero(),
-                    "Non-zero `min` value {} not supported",
-                    libfunc.out_range.lower
-                );
-                vec![
-                    ConstCost { steps: 4, holes: 0, range_checks: 2 }.into(),
-                    ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
-                ]
             }
         },
         Struct(
