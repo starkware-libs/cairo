@@ -3,6 +3,7 @@ use std::fmt::Display;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use num_traits::ToPrimitive;
 use smol_str::SmolStr;
 
 #[cfg(test)]
@@ -117,7 +118,10 @@ impl ProfilingInfoProcessor {
         let mut return_weight = 0;
         let mut statements_weights = OrderedHashMap::default();
 
-        for (statement_idx, weight) in raw_profiling_info.sierra_statements_weights.iter_sorted() {
+        for (statement_idx, weight) in raw_profiling_info
+            .sierra_statements_weights
+            .iter_sorted_by_key(|(pc, count)| (-(**count).to_i32().unwrap_or_default(), **pc))
+        {
             let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
                 panic!("Failed fetching statement index {}", statement_idx.0);
             };
@@ -148,7 +152,11 @@ impl ProfilingInfoProcessor {
 
         let mut concrete_libfuncs_weights = OrderedHashMap::default();
         if params.process_by_concrete_libfunc {
-            for (concrete_name, weight) in concrete_libfuncs.iter_sorted() {
+            for (concrete_name, weight) in
+                concrete_libfuncs.iter_sorted_by_key(|(concrete_name, weight)| {
+                    (-(**weight).to_i32().unwrap_or_default(), (*concrete_name).clone())
+                })
+            {
                 if *weight >= params.min_weight {
                     concrete_libfuncs_weights.insert(concrete_name.clone(), *weight);
                 }
@@ -157,7 +165,11 @@ impl ProfilingInfoProcessor {
 
         let mut generic_libfuncs_weights = OrderedHashMap::default();
         if params.process_by_generic_libfunc {
-            for (generic_name, weight) in generic_libfuncs.iter_sorted() {
+            for (generic_name, weight) in
+                generic_libfuncs.iter_sorted_by_key(|(generic_name, weight)| {
+                    (-(**weight).to_i32().unwrap_or_default(), (*generic_name).clone())
+                })
+            {
                 if *weight >= params.min_weight {
                     generic_libfuncs_weights.insert(generic_name.clone(), *weight);
                 }

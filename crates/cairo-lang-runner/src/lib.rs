@@ -331,10 +331,12 @@ impl SierraCasmRunner {
 
         // For each pc, find the corresponding Sierra statement, and accumulate the weight to find
         // the total weight of each Sierra statement.
+        // TODO(yg): change to aggregate_by
         let mut sierra_statements_weights = pc_counts
-            .iter_sorted()
+            .iter_sorted_by_key(|(pc, count)| (-(**count).to_i32().unwrap_or_default(), **pc))
             .filter(|(pc, count)| **count != 0 && **pc >= real_pc_0)
             .fold(UnorderedHashMap::default(), |mut acc, (pc, count)| {
+                println!("yg pc: {}, count: {}", pc, count);
                 let real_pc = pc - real_pc_0;
                 // the `-1` here can't cause an underflow as the first statement is always at offset
                 // 0, so it is always on the left side of the partition, and thus the partition
