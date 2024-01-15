@@ -1846,3 +1846,28 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(4, 3).unwrap(), @1, 'i128: 4 - 3 == 1');
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
+
+mod special_casts {
+    extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+    extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+    extern fn upcast<T, S>(index: T) -> S nopanic;
+
+    // Full prime range, but where the max element is 0.
+    type OneMinusPToZero =
+        BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0>;
+
+    type OneMinusPOnly =
+        BoundedInt<
+            -0x800000000000011000000000000000000000000000000000000000000000000,
+            -0x800000000000011000000000000000000000000000000000000000000000000
+        >;
+    #[test]
+    fn test_special_casts() {
+        let minus_1 = downcast::<felt252, BoundedInt<-1, -1>>(-1).unwrap();
+        assert!(downcast::<OneMinusPToZero, u8>(upcast(minus_1)).is_none());
+        let zero = downcast::<felt252, BoundedInt<0, 0>>(0).unwrap();
+        assert!(downcast::<OneMinusPToZero, u8>(upcast(zero)) == Option::Some(0));
+        let minus_p = downcast::<felt252, OneMinusPOnly,>(1).unwrap();
+        assert!(downcast::<OneMinusPToZero, u8>(upcast(minus_p)).is_none());
+    }
+}
