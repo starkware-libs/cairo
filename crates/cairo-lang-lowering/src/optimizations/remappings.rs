@@ -14,7 +14,9 @@ use itertools::Itertools;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
-fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
+/// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
+/// indicating which blocks are reachable.
+fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -34,15 +36,23 @@ fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
+
+    visited
 }
 
+/// Context for the optimizate remappings optimization.
 #[derive(Default)]
 struct Context {
+    /// Maps a destination variable to the source variables that are remapped to it.
     dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
+    /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
+    /// This mapping is built on demand.
     var_representatives: HashMap<VariableId, VariableId>,
+    /// The set of variables that is used by a reachable blocks.
     variable_used: HashSet<VariableId>,
 }
 impl Context {
+    /// Marks `var` as used.
     fn set_used(&mut self, var: VariableId) {
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
@@ -90,14 +100,18 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
 
     // Find condition 1 (see module doc).
     let mut ctx = Context::default();
-    visit_remappings(lowered, |remapping| {
+    let reachable = visit_remappings(lowered, |remapping| {
         for (dst, src) in remapping.iter() {
             ctx.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
         }
     });
 
     // Find condition 2 (see module doc).
-    for (_, block) in lowered.blocks.iter() {
+    for ((_, block), is_reachable) in lowered.blocks.iter().zip(reachable) {
+        if !is_reachable {
+            continue;
+        }
+
         for stmt in &block.statements {
             for var_usage in stmt.inputs() {
                 let var = ctx.map_var_id(var_usage.var_id);
