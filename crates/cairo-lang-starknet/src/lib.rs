@@ -24,7 +24,6 @@ pub mod casm_contract_class;
 pub mod compiler_version;
 #[cfg(feature = "std")]
 pub mod contract;
-#[cfg(feature = "std")]
 pub mod contract_class;
 #[cfg(feature = "std")]
 mod felt252_serde;
