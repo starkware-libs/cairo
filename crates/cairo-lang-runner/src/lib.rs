@@ -154,6 +154,7 @@ pub fn build_hints_dict<'b>(
     (hints_dict, string_to_hint)
 }
 
+/// Inserts hints from AssembledCairoProgram into `hints_dict` and `string_to_hint`.
 pub fn hints_from_assembled_program(
     casm_program: &AssembledCairoProgram,
     hints_dict: &mut HashMap<usize, Vec<HintParams>>,

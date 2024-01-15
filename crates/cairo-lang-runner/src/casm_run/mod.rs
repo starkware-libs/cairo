@@ -2090,6 +2090,8 @@ pub struct RunFunctionContext<'a> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 
+/// Runs CairoRunner on layout with prime.
+/// Allows injecting custom CairoRunner.
 pub fn run_function_with_runner(
     vm: &mut VirtualMachine,
     data_len: usize,
@@ -2109,6 +2111,7 @@ pub fn run_function_with_runner(
     Ok(())
 }
 
+/// Creates CairoRunner for `program`.
 pub fn build_cairo_runner(
     data: Vec<MaybeRelocatable>,
     builtins: Vec<BuiltinName>,
@@ -2128,7 +2131,7 @@ pub fn build_cairo_runner(
     CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
 }
 
-/// Runs `program` on layout with prime, and returns the memory layout and ap value.
+/// Runs `instructions` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a, Instructions>(
     vm: &mut VirtualMachine,
