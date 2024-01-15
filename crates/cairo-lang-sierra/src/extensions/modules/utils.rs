@@ -56,7 +56,10 @@ impl Range {
     /// Returns the [Range] bounds from the given type info.
     pub fn from_type_info(ty_info: &TypeInfo) -> Result<Self, SpecializationError> {
         Ok(match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
-            (id, []) if *id == Felt252Type::id() => Self::half_open(0, Felt252::prime()),
+            (id, []) if *id == Felt252Type::id() => {
+                let prime = Felt252::prime().into();
+                Self::half_open(1 - &prime, prime)
+            }
             (id, []) if *id == Uint8Type::id() => Self::closed(u8::MIN, u8::MAX),
             (id, []) if *id == Uint16Type::id() => Self::closed(u16::MIN, u16::MAX),
             (id, []) if *id == Uint32Type::id() => Self::closed(u32::MIN, u32::MAX),
