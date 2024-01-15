@@ -13,7 +13,6 @@ extern crate alloc;
 #[cfg(feature = "std")]
 use cairo_lang_semantic::plugin::PluginSuite;
 
-#[cfg(feature = "std")]
 pub mod abi;
 #[cfg(feature = "std")]
 mod aliased;

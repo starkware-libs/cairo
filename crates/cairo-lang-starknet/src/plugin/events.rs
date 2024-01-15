@@ -7,8 +7,9 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use const_format::formatcp;
-use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+
+use crate::abi::EventFieldKind;
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
@@ -18,23 +19,6 @@ use super::starknet_module::StarknetModuleKind;
 pub enum EventData {
     Struct { members: Vec<(SmolStr, EventFieldKind)> },
     Enum { variants: Vec<(SmolStr, EventFieldKind)> },
-}
-
-/// Describes how to serialize the event's field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum EventFieldKind {
-    // Serialize to `keys` using `Serde`.
-    #[serde(rename = "key")]
-    KeySerde,
-    // Serialize to `data` using `Serde`.
-    #[serde(rename = "data")]
-    DataSerde,
-    // Serialize as a nested event.
-    #[serde(rename = "nested")]
-    Nested,
-    // Serialize as a flat event.
-    #[serde(rename = "flat")]
-    Flat,
 }
 
 /// Returns true if the type should be derived as an event.

@@ -5,11 +5,12 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
+use crate::abi::EventFieldKind;
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
     EVENT_TRAIT, EVENT_TYPE_NAME, FLAT_ATTR, KEY_ATTR, NESTED_ATTR, SERDE_ATTR,
 };
-use crate::plugin::events::{EventData, EventFieldKind};
+use crate::plugin::events::EventData;
 
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
 pub fn handle_event_derive(
