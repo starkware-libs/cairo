@@ -79,3 +79,37 @@ fn test_into_iter_sorted() {
         last = cur;
     }
 }
+
+#[test]
+fn test_iter_sorted_by_key() {
+    let mut unordered = new_hashmap();
+    unordered.insert(XY { x: 11, y: 0 }, 4); // sum = 15
+    unordered.insert(XY { x: 11, y: 5 }, 7); // sum = 23
+    unordered.insert(XY { x: 12, y: 2 }, 5); // sum = 19
+    unordered.insert(XY { x: 10, y: 9 }, 9); // sum = 28
+    unordered.insert(XY { x: 10, y: 8 }, 3); // sum = 21
+
+    let mut last_sum = 0;
+    for (key, val) in unordered.iter_sorted_by_key(|a| a.0.x + a.0.y + a.1) {
+        let cur_sum = key.x + key.y + val;
+        assert!(cur_sum >= last_sum);
+        last_sum = cur_sum;
+    }
+}
+
+#[test]
+fn test_into_iter_sorted_by_key() {
+    let mut unordered = new_hashmap();
+    unordered.insert(XY { x: 11, y: 0 }, 4); // sum = 15
+    unordered.insert(XY { x: 11, y: 5 }, 7); // sum = 23
+    unordered.insert(XY { x: 12, y: 2 }, 5); // sum = 19
+    unordered.insert(XY { x: 10, y: 9 }, 9); // sum = 28
+    unordered.insert(XY { x: 10, y: 8 }, 3); // sum = 21
+
+    let mut last_sum = 0;
+    for (key, val) in unordered.into_iter_sorted_by_key(|a| a.0.x + a.0.y + a.1) {
+        let cur_sum = key.x + key.y + val;
+        assert!(cur_sum >= last_sum);
+        last_sum = cur_sum;
+    }
+}
