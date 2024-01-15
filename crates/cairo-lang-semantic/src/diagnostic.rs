@@ -659,6 +659,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
+            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
+                "Coupon cannot be used with extern functions.".into()
+            }
+            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
+                "The __coupon__ argument cannot have modifiers.".into()
+            }
+            SemanticDiagnosticKind::CouponsDisabled => {
+                "Coupons are disabled in the current crate.\nYou can enable them by enabling the \
+                 coupons experimental feature in the crate config."
+                    .into()
+            }
         }
     }
 
@@ -982,6 +993,10 @@ pub enum SemanticDiagnosticKind {
     UnsupportedImplItem {
         kind: String,
     },
+    CouponForExternFunctionNotAllowed,
+    CouponArgumentNoModifiers,
+    /// Coupons are disabled in the current crate.
+    CouponsDisabled,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

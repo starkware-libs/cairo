@@ -70,10 +70,12 @@ fn get_function_code(
         ap_tracking_configuration,
     );
 
-    // If the function starts with revoke_ap_tracking then we can avoid
-    // the first disable_ap_tracking.
+    // If the function starts with `revoke_ap_tracking` then we can avoid
+    // the first `disable_ap_tracking`.
     if let Some(lowering::Statement::Call(call_stmt)) = root_block.statements.first() {
-        if get_concrete_libfunc_id(db, call_stmt.function).1 == revoke_ap_tracking_libfunc_id(db) {
+        if get_concrete_libfunc_id(db, call_stmt.function, false).1
+            == revoke_ap_tracking_libfunc_id(db)
+        {
             context.set_ap_tracking(false);
         }
     }

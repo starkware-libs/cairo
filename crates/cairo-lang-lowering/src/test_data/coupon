@@ -1,0 +1,150 @@
+//! > Call with coupon
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: bar::Coupon) {
+    bar(__coupon__: x);
+}
+
+fn bar() nopanic {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::bar::Coupon
+blk0 (root):
+Statements:
+  (v1: ()) <- test::bar(__coupon__: v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Coupon moved
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: bar::Coupon) -> bar::Coupon {
+    bar(__coupon__: x);
+    x // Variable was previously moved.
+}
+
+fn bar() nopanic {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:3:5
+    x // Variable was previously moved.
+    ^
+note: variable was previously used here:
+  --> lib.cairo:2:21
+    bar(__coupon__: x);
+                    ^
+note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>
+
+//! > lowering_flat
+Parameters: v0: test::bar::Coupon
+
+//! > ==========================================================================
+
+//! > Calling panicable function with coupon
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: bar::Coupon) {
+    bar(__coupon__: x);
+}
+
+fn bar() {
+    panic(array![])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::bar::Coupon
+blk0 (root):
+Statements:
+  (v3: core::panics::PanicResult::<((),)>) <- test::bar(__coupon__: v0)
+End:
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk1,
+    PanicResult::Err(v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v7: ((),)) <- struct_construct(v2)
+  (v8: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v7)
+End:
+  Return(v8)
+
+blk2:
+Statements:
+  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v9)
+
+//! > ==========================================================================
+
+//! > Inlining disabled when coupon is used.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: bar::Coupon) {
+    bar(__coupon__: x);
+}
+
+#[inline(always)]
+fn bar() {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::bar::Coupon
+blk0 (root):
+Statements:
+  (v1: ()) <- test::bar(__coupon__: v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)

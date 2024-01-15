@@ -38,7 +38,7 @@ use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, Con
 use crate::items::visibility;
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::resolve_type;
+use crate::types::{are_coupons_enabled, resolve_type};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -599,6 +599,20 @@ impl<'db> Resolver<'db> {
                     generic_function_id,
                     generic_args_syntax.unwrap_or_default(),
                 )?))
+            }
+            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+                if !are_coupons_enabled(self.db, self.module_file_id) {
+                    diagnostics.report(identifier, CouponsDisabled);
+                }
+                if matches!(
+                    function_id.get_concrete(self.db).generic_function,
+                    GenericFunctionId::Extern(_)
+                ) {
+                    return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                }
+                Ok(ResolvedConcreteItem::Type(
+                    self.db.intern_type(TypeLongId::Coupon(*function_id)),
+                ))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }

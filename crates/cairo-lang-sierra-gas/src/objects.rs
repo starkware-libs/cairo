@@ -74,13 +74,23 @@ impl std::ops::Sub for PreCost {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum BranchCostSign {
+    /// Adds the cost to the wallet (e.g., in `coupon_refund`).
+    Add,
+    /// Subtracts the cost from the wallet (e.g., in `function_call`).
+    Subtract,
+}
+
 /// The cost of executing a libfunc for a specific output branch.
 #[derive(Clone, Debug)]
 pub enum BranchCost {
     /// The cost of the statement is independent on other statements.
     Regular { const_cost: ConstCost, pre_cost: PreCost },
-    /// A cost of a function call.
-    FunctionCall { const_cost: ConstCost, function: Function },
+    /// A cost of a function.
+    /// `sign` controls whether the cost (the function cost as well as `const_cost`) is added
+    /// to or reduced from the wallet.
+    FunctionCost { const_cost: ConstCost, function: Function, sign: BranchCostSign },
     /// The cost of the `branch_align` libfunc.
     BranchAlign,
     /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.

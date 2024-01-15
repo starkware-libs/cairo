@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::{self as semantic, TypeId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
@@ -29,7 +29,7 @@ use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
+use crate::{ids, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -101,12 +101,14 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_postinline_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::FunctionId>>;
 
     /// Returns the set of direct callees of a concrete function with a body after the panic phase.
     fn concrete_function_with_body_postpanic_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::FunctionId>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
@@ -114,6 +116,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_postinline_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
@@ -121,6 +124,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_postpanic_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
 
     /// Aggregates function level lowering diagnostics.
@@ -193,7 +197,11 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
     #[salsa::invoke(crate::graph_algorithms::cycles::contains_cycle)]
     #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
-    fn contains_cycle(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
+    fn contains_cycle(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
+    ) -> Maybe<bool>;
 
     /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
     /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
@@ -211,6 +219,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_scc_representative(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> ConcreteSCCRepresentative;
 
     /// Returns all the concrete functions in the same strongly connected component as the given
@@ -221,6 +230,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_scc(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Vec<ids::ConcreteFunctionWithBodyId>;
 
     /// Returns the representative of the concrete function's strongly connected component. The
@@ -232,6 +242,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_scc_postpanic_representative(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> ConcreteSCCRepresentative;
 
     /// Returns all the concrete functions in the same strongly connected component as the given
@@ -243,6 +254,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn concrete_function_with_body_postpanic_scc(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Vec<ids::ConcreteFunctionWithBodyId>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
@@ -260,6 +272,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_feedback_set(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns whether the given function needs an additional withdraw_gas call.
@@ -272,6 +285,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_feedback_set_of_representative(
         &self,
         function: ConcreteSCCRepresentative,
+        dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
@@ -406,13 +420,24 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
-/// Given the lowering of a function, returns the set of direct callees of that function.
-fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<ids::FunctionId> {
+/// Given the lowering of a function, returns the set of direct dependencies of that function,
+/// according to the given [DependencyType]. See [DependencyType] for more information about
+/// what is considered a dependency.
+fn get_direct_callees(
+    lowered_function: &FlatLowered,
+    dependency_type: DependencyType,
+) -> Vec<ids::FunctionId> {
     let mut direct_callees = Vec::new();
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let Statement::Call(statement_call) = statement {
-                direct_callees.push(statement_call.function);
+                // If the dependency_type is DependencyType::Cost and this call has a coupon input,
+                // then the call statement has a constant cost and therefore there
+                // is no cost dependency in the called function.
+                if dependency_type != DependencyType::Cost || statement_call.coupon_input.is_none()
+                {
+                    direct_callees.push(statement_call.function);
+                }
             }
         }
         if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
@@ -425,51 +450,113 @@ fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<ids::FunctionId> {
 fn concrete_function_with_body_postinline_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
     let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
-    Ok(get_direct_callees(&lowered_function))
+    Ok(get_direct_callees(&lowered_function, dependency_type))
 }
 
 fn concrete_function_with_body_postpanic_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
     let lowered_function = db.concrete_function_with_body_postpanic_lowered(function_id)?;
-    Ok(get_direct_callees(&lowered_function))
+    Ok(get_direct_callees(&lowered_function, dependency_type))
 }
 
 /// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
-/// ConcreteFunctionWithBodyIds
+/// [ids::ConcreteFunctionWithBodyId]s.
+///
+/// If `dependency_type` is `DependencyType::Cost`, returns the coupon functions when
+/// `coupon_buy` and `coupon_refund` are encountered.
+/// For example, for `coupon_buy::<foo::Coupon>()`, `foo` will be added to the list.
 fn functions_with_body_from_function_ids(
     db: &dyn LoweringGroup,
     function_ids: Vec<ids::FunctionId>,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     Ok(function_ids
         .into_iter()
-        .map(|concrete| concrete.body(db.upcast()))
+        .map(|concrete| {
+            if dependency_type == DependencyType::Cost {
+                if let Some(function_with_body) = extract_coupon_function(db, concrete)? {
+                    return Ok(Some(function_with_body));
+                }
+            }
+            concrete.body(db.upcast())
+        })
         .collect::<Maybe<Vec<_>>>()?
         .into_iter()
         .flatten()
         .collect_vec())
 }
 
+/// Given a [ids::FunctionId] that represents `coupon_buy` or `coupon_refund`, returns the coupon's
+/// function.
+///
+/// For example, `coupon_buy::<foo::Coupon>` will return `foo`.
+fn extract_coupon_function(
+    db: &dyn LoweringGroup,
+    concrete: ids::FunctionId,
+) -> Maybe<Option<ids::ConcreteFunctionWithBodyId>> {
+    // Check that the function is a semantic function.
+    let ids::FunctionLongId::Semantic(function_id) = concrete.lookup(db) else {
+        return Ok(None);
+    };
+
+    // Check that it's an extern function named "coupon_buy" or "coupon_refund".
+    let concrete_function = function_id.get_concrete(db.upcast());
+    let generic_function = concrete_function.generic_function;
+    let semantic::items::functions::GenericFunctionId::Extern(extern_function_id) =
+        generic_function
+    else {
+        return Ok(None);
+    };
+    let name = db.lookup_intern_extern_function(extern_function_id).name(db.upcast());
+    if !(name == "coupon_buy" || name == "coupon_refund") {
+        return Ok(None);
+    }
+
+    // Extract the coupon function from the generic argument.
+    let [semantic::GenericArgumentId::Type(type_id)] = concrete_function.generic_args[..] else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+    let semantic::TypeLongId::Coupon(coupon_function) = db.lookup_intern_type(type_id) else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+
+    // Convert [semantic::FunctionId] to [ids::ConcreteFunctionWithBodyId].
+    let Some(coupon_function_with_body_id) =
+        coupon_function.get_concrete(db.upcast()).body(db.upcast())?
+    else {
+        panic!("Unexpected generic_args for coupon_buy().");
+    };
+
+    Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
+}
+
 fn concrete_function_with_body_postinline_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postinline_direct_callees(function_id)?,
+        db.concrete_function_with_body_postinline_direct_callees(function_id, dependency_type)?,
+        dependency_type,
     )
 }
 
 fn concrete_function_with_body_postpanic_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postpanic_direct_callees(function_id)?,
+        db.concrete_function_with_body_postpanic_direct_callees(function_id, dependency_type)?,
+        dependency_type,
     )
 }
 

@@ -53,6 +53,8 @@ pub struct Call {
     pub function: crate::ids::FunctionId,
     /// Inputs to function.
     pub inputs: Vec<VarUsage>,
+    /// The `__coupon__` input to the function, if exists.
+    pub coupon_input: Option<VarUsage>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
     pub extra_ret_tys: Vec<semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
@@ -83,6 +85,7 @@ impl Call {
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
             inputs: self.inputs,
+            coupon_input: self.coupon_input,
             outputs,
             location: self.location,
         }));

@@ -2,93 +2,35 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use test_log::test;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::test_utils::{checked_compile_to_sierra, setup_db_and_get_crate_id};
 
-#[test]
-fn test_program_generator() {
-    // TODO(lior): Make bar return something like felt252_add(5, bar()).
-    let program = checked_compile_to_sierra(indoc! {"
-                fn foo(a: felt252) -> felt252 {
-                    bar(5)
-                }
+cairo_lang_test_utils::test_file_test!(
+    program_generator,
+    "src/program_generator_test_data",
+    {
+        coupon: "coupon",
+        function_call: "function_call",
+        type_dependency: "type_dependency",
+    },
+    test_program_generator
+);
 
-                fn bar(a: felt252) -> felt252 {
-                    felt252_add(felt252_add(a, a), a)
-                }
-            "});
-
-    // TODO(lior): Remove the unnecessary store_temp()s at the end.
-    assert_eq!(
-        program.to_string(),
-        indoc! {"
-            type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-
-            libfunc drop<felt252> = drop<felt252>;
-            libfunc felt252_const<5> = felt252_const<5>;
-            libfunc store_temp<felt252> = store_temp<felt252>;
-            libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-            libfunc dup<felt252> = dup<felt252>;
-            libfunc felt252_add = felt252_add;
-
-            drop<felt252>([0]) -> (); // 0
-            felt252_const<5>() -> ([1]); // 1
-            store_temp<felt252>([1]) -> ([1]); // 2
-            function_call<user@test::bar>([1]) -> ([2]); // 3
-            return([2]); // 4
-            dup<felt252>([0]) -> ([0], [1]); // 5
-            dup<felt252>([0]) -> ([0], [2]); // 6
-            felt252_add([1], [2]) -> ([3]); // 7
-            store_temp<felt252>([3]) -> ([3]); // 8
-            felt252_add([3], [0]) -> ([4]); // 9
-            store_temp<felt252>([4]) -> ([4]); // 10
-            return([4]); // 11
-
-            test::foo@0([0]: felt252) -> (felt252);
-            test::bar@5([0]: felt252) -> (felt252);
-        "},
-    );
-}
-
-#[test]
-fn test_type_dependency() {
-    let program = checked_compile_to_sierra(indoc! {"
-                use box::BoxTrait;
-                fn unbox_twice(a: Box::<Box::<Box::<felt252>>>) -> Box::<felt252> {
-                    a.unbox().unbox()
-                }
-            "});
-
-    assert_eq!(
-        program.to_string(),
-        indoc! {"
-            type Box<Box<Box<felt252>>> = Box<Box<Box<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-            type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-            type Box<Box<felt252>> = Box<Box<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-            type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-
-            libfunc unbox<Box<Box<felt252>>> = unbox<Box<Box<felt252>>>;
-            libfunc store_temp<Box<Box<felt252>>> = store_temp<Box<Box<felt252>>>;
-            libfunc unbox<Box<felt252>> = unbox<Box<felt252>>;
-            libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
-
-            unbox<Box<Box<felt252>>>([0]) -> ([1]); // 0
-            store_temp<Box<Box<felt252>>>([1]) -> ([1]); // 1
-            unbox<Box<felt252>>([1]) -> ([2]); // 2
-            store_temp<Box<felt252>>([2]) -> ([2]); // 3
-            return([2]); // 4
-
-            test::unbox_twice@0([0]: Box<Box<Box<felt252>>>) -> (Box<felt252>);
-        "},
-    );
+fn test_program_generator(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let program = checked_compile_to_sierra(inputs["cairo"].as_str());
+    TestRunnerResult::success(OrderedHashMap::from([("sierra_code".into(), program.to_string())]))
 }
 
 #[test_case(

@@ -16,7 +16,7 @@ use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
-use sierra::extensions::function_call::FunctionCallLibfunc;
+use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use sierra::extensions::gas::RedepositGasLibfunc;
 use sierra::extensions::structure::StructDeconstructLibfunc;
 use sierra::extensions::{NamedLibfunc, OutputVarReferenceInfo};
@@ -136,7 +136,7 @@ impl<'a> AddStoreVariableStatements<'a> {
 
                 let libfunc_long_id = self.db.lookup_intern_concrete_lib_func(libfunc_id.clone());
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
-                    FunctionCallLibfunc::STR_ID => {
+                    FunctionCallLibfunc::STR_ID | CouponCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.
                         // Avoid calling `prepare_libfunc_arguments` as it might copy the
                         // arguments to a local variables.

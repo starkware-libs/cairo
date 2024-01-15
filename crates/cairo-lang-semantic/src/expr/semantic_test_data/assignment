@@ -31,6 +31,7 @@ Assignment(
                         ),
                     ),
                 ],
+                coupon_arg: None,
                 ty: core::felt252,
             },
         ),
