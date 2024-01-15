@@ -150,6 +150,6 @@ pub mod __constructor_MyImpl {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Impls with the embeddable attribute must implement a starknet interface trait.
- --> lib.cairo[component]:33:1
-#[starknet::embeddable]
-^*********************^
+ --> lib.cairo:8:5
+    #[embeddable_as(MyImpl)]
+    ^**********************^
