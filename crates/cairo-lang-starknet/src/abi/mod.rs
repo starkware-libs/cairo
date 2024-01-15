@@ -9,12 +9,22 @@ pub use builder::*;
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
 
+#[cfg(feature = "std")]
+type ContractInternalRepr = OrderedHashSet<Item>;
+#[cfg(not(feature = "std"))]
+type ContractInternalRepr = OrderedHashSet<Item, hashbrown::hash_map::DefaultHashBuilder>;
+
+#[cfg(feature = "std")]
+type TraitFnCount = UnorderedHashMap<String, usize>;
+#[cfg(not(feature = "std"))]
+type TraitFnCount = UnorderedHashMap<String, usize, hashbrown::hash_map::DefaultHashBuilder>;
+
 /// Contract ABI.
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
-    items: OrderedHashSet<Item>,
+    items: ContractInternalRepr,
 }
 impl Contract {
     #[cfg(feature = "serde")]
@@ -29,7 +39,7 @@ impl Contract {
         expected_l1_handler_count: usize,
         expected_constructor_count: usize,
     ) {
-        let trait_fn_count: UnorderedHashMap<_, _> = self
+        let trait_fn_count: TraitFnCount = self
             .items
             .iter()
             .filter_map(|item| {
@@ -63,7 +73,7 @@ impl Contract {
 
 impl IntoIterator for Contract {
     type Item = Item;
-    type IntoIter = <OrderedHashSet<Item> as IntoIterator>::IntoIter;
+    type IntoIter = <ContractInternalRepr as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.items.into_iter()

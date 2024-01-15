@@ -7,36 +7,39 @@ license-file.workspace = true
 description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
-anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.5.3", features = ["serde"] }
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.3" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.3" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.5.3" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.5.3" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.5.3" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.5.3" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.5.3" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", features = ["serde"] }
-const_format.workspace = true
-convert_case.workspace = true
-indoc.workspace = true
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.5.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
 itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint = { workspace = true }
-num-integer.workspace = true
 num-traits = { workspace = true }
-once_cell.workspace = true
-sha3.workspace = true
-smol_str.workspace = true
-starknet-crypto.workspace = true
-thiserror.workspace = true
-indent.workspace = true
+starknet-crypto = { workspace = true }
+hashbrown = { workspace = true }
 
-# Optional
+# Optional std
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3", optional = true }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.3", optional = true }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.3", optional = true }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.5.3", optional = true }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.5.3", optional = true }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.5.3", optional = true }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3", optional = true }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3", optional = true }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.5.3", optional = true }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.5.3", optional = true }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3", optional = true }
+once_cell = { workspace = true, optional = true }
+sha3 = { workspace = true, optional = true }
+smol_str = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+indent = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+const_format = { workspace = true, optional = true }
+convert_case = { workspace = true, optional = true }
+indoc = { workspace = true, optional = true }
+num-integer = { workspace = true, optional = true }
+
+# Optional serde
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 
@@ -53,11 +56,35 @@ test-log.workspace = true
 [features]
 default = ["std", "serde"]
 std = [
+  # The ones used in no_std
   "cairo-lang-casm/std",
   "cairo-lang-utils/std",
   "num-traits/std",
   "num-bigint/std",
+  # The ones used in serde
   "serde?/std",
-  "serde_json?/std"
+  "serde_json?/std",
+  # Everything else used in std
+  "dep:cairo-lang-compiler",
+  "dep:cairo-lang-defs",
+  "dep:cairo-lang-diagnostics",
+  "dep:cairo-lang-filesystem",
+  "dep:cairo-lang-lowering",
+  "dep:cairo-lang-plugins",
+  "dep:cairo-lang-semantic",
+  "dep:cairo-lang-sierra",
+  "dep:cairo-lang-sierra-generator",
+  "dep:cairo-lang-sierra-to-casm",
+  "dep:cairo-lang-syntax",
+  "dep:once_cell",
+  "dep:sha3",
+  "dep:smol_str",
+  "dep:thiserror",
+  "dep:indent",
+  "dep:anyhow",
+  "dep:const_format",
+  "dep:convert_case",
+  "dep:indoc",
+  "dep:num-integer",
 ]
 serde = ["dep:serde", "dep:serde_json", "cairo-lang-casm/serde", "cairo-lang-utils/serde"]
