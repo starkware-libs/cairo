@@ -14,39 +14,43 @@ use itertools::Itertools;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
-fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
-    let mut stack = vec![BlockId::root()];
-    let mut visited = vec![false; lowered.blocks.len()];
-    while let Some(block_id) = stack.pop() {
-        if visited[block_id.0] {
-            continue;
-        }
-        visited[block_id.0] = true;
-        match &lowered.blocks[block_id].end {
-            FlatBlockEnd::Goto(target_block_id, remapping) => {
-                stack.push(*target_block_id);
-                f(remapping)
-            }
-            FlatBlockEnd::Match { info } => {
-                stack.extend(info.arms().iter().map(|arm| arm.block_id));
-            }
-            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
-            FlatBlockEnd::NotSet => unreachable!(),
-        }
-    }
-}
-
 #[derive(Default)]
 struct Context {
     dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
     var_representatives: HashMap<VariableId, VariableId>,
     variable_used: HashSet<VariableId>,
+    visited: Vec<bool>,
 }
 impl Context {
     fn set_used(&mut self, var: VariableId) {
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
                 self.set_used(src);
+            }
+        }
+    }
+
+    fn visit_remappings(&mut self, lowered: &mut FlatLowered) {
+        self.visited.resize(lowered.blocks.len(), false);
+        let mut stack = vec![BlockId::root()];
+
+        while let Some(block_id) = stack.pop() {
+            if self.visited[block_id.0] {
+                continue;
+            }
+            self.visited[block_id.0] = true;
+            match &lowered.blocks[block_id].end {
+                FlatBlockEnd::Goto(target_block_id, remapping) => {
+                    stack.push(*target_block_id);
+                    for (dst, src) in remapping.iter() {
+                        self.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
+                    }
+                }
+                FlatBlockEnd::Match { info } => {
+                    stack.extend(info.arms().iter().map(|arm| arm.block_id));
+                }
+                FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+                FlatBlockEnd::NotSet => unreachable!(),
             }
         }
     }
@@ -90,14 +94,14 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
 
     // Find condition 1 (see module doc).
     let mut ctx = Context::default();
-    visit_remappings(lowered, |remapping| {
-        for (dst, src) in remapping.iter() {
-            ctx.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
-        }
-    });
+    ctx.visit_remappings(lowered);
 
     // Find condition 2 (see module doc).
-    for (_, block) in lowered.blocks.iter() {
+    for (block_id, block) in lowered.blocks.iter() {
+        if !ctx.visited[block_id.0] {
+            continue;
+        }
+
         for stmt in &block.statements {
             for var_usage in stmt.inputs() {
                 let var = ctx.map_var_id(var_usage.var_id);
