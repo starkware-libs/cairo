@@ -1250,24 +1250,65 @@ Statements:
 End:
   Return(v25)
 
-//! > after_reorganize_blocks
+//! > after_optimize_remappings3
 Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
   Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk1,
-    Option::None(v30, v31) => blk2,
+    Option::Some(v28, v29) => blk8,
+    Option::None(v30, v31) => blk9,
   })
 
 blk1:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk2:
 Statements:
   (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v28, v29)
 End:
   Return(v34, v35, v17)
 
-blk2:
+blk3:
+Statements:
+  (v21: ((),)) <- struct_construct(v8)
+  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+End:
+  Return(v22)
+
+blk4:
+Statements:
+  (v5: core::panics::Panic) <- struct_construct()
+  (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
+  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v23)
+
+blk5:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk7:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk6, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk2, {})
+
+blk9:
 Statements:
   (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v12: core::felt252) <- 375233589013918064796019u
@@ -1278,7 +1319,24 @@ Statements:
 End:
   Return(v30, v31, v24)
 
-//! > after_optimize_remappings3 (final)
+blk10:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk11:
+Statements:
+  (v19: ()) <- struct_destructure(v18)
+End:
+  Goto(blk10, {})
+
+blk12:
+Statements:
+  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+End:
+  Return(v25)
+
+//! > after_reorganize_blocks (final)
 Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
 blk0 (root):
 Statements:

@@ -14,6 +14,7 @@ use crate::{
 /// Removes unreachable blocks.
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
 /// The order of the blocks is changed to be a topologically sorted.
+/// Assumes that there are not remappings on gotos to a block with 1 incoming edge.
 pub fn reorganize_blocks(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -100,11 +101,8 @@ impl Analyzer<'_> for TopSortContext {
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        _remapping: &VarRemapping,
     ) {
-        if !remapping.is_empty() {
-            self.can_be_merged[target_block_id.0] = false;
-        }
         self.incoming_gotos[target_block_id.0] += 1;
     }
 
