@@ -113,3 +113,21 @@ fn test_into_iter_sorted_by_key() {
         last_sum = cur_sum;
     }
 }
+
+#[test]
+fn test_filter() {
+    let mut unordered = new_hashmap();
+    unordered.insert(XY { x: 11, y: 0 }, 4);
+    unordered.insert(XY { x: 11, y: 5 }, 7);
+    unordered.insert(XY { x: 12, y: 2 }, 5);
+    unordered.insert(XY { x: 10, y: 9 }, 9);
+    unordered.insert(XY { x: 10, y: 8 }, 3);
+
+    let filtered = unordered.filter(|k, v| k.x != 11 && *v != 9);
+
+    let mut expected = new_hashmap();
+    expected.insert(XY { x: 12, y: 2 }, 5);
+    expected.insert(XY { x: 10, y: 8 }, 3);
+
+    assert_eq!(filtered, expected);
+}

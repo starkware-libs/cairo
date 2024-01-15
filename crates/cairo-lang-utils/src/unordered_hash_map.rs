@@ -228,6 +228,16 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     {
         self.0.into_iter().sorted_by_key(f)
     }
+
+    /// Creates a new map with only the elements from the original map for which the given predicate
+    /// returns `true`.
+    pub fn filter<P>(self, mut p: P) -> Self
+    where
+        BH: Default,
+        P: FnMut(&Key, &Value) -> bool,
+    {
+        Self(self.0.into_iter().filter(|(key, value)| p(key, value)).collect())
+    }
 }
 
 impl<Key, Q: ?Sized, Value, BH: BuildHasher> Index<&Q> for UnorderedHashMap<Key, Value, BH>
