@@ -12,7 +12,7 @@ use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Debug, Drop, Dup, Ec, Enum,
     Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable, Pedersen, Poseidon,
-    Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
+    Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
     Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
@@ -34,7 +34,6 @@ use crate::extensions::int::{IntConstConcreteLibfunc, IntOperator};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::range_reduction::RangeConcreteLibfunc;
 use crate::extensions::structure::StructConcreteLibfunc;
 use crate::ids::FunctionId;
 
@@ -280,7 +279,6 @@ pub fn simulate<
             }
         }
         Enum(EnumConcreteLibfunc::FromBoundedInt(_)) => todo!(),
-        Range(RangeConcreteLibfunc::ConstrainRange(_)) => todo!(),
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
         Struct(
             StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
