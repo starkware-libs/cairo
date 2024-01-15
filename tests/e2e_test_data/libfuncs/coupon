@@ -214,8 +214,7 @@ struct NonDroppable {
     x: u64,
 }
 
-// TODO(lior): Mark as nopanic once the compiler allows it.
-fn destruct(arr: Array<(NonDroppable, destruct::Coupon)>) {
+fn destruct(arr: Array<(NonDroppable, destruct::Coupon)>) nopanic {
     match arr.pop_front_consume() {
         Option::Some((rem, (elm, coupon))) => {
             integer::u64_bitwise(elm.x, elm.x);
