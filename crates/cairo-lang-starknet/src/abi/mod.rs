@@ -1,6 +1,5 @@
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
 mod builder;
@@ -11,13 +10,14 @@ pub use builder::*;
 use alloc::{string::String, vec::Vec};
 
 /// Contract ABI.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
     items: OrderedHashSet<Item>,
 }
 impl Contract {
+    #[cfg(feature = "serde")]
     pub fn json(&self) -> String {
         serde_json::to_string_pretty(&self).unwrap()
     }
@@ -70,51 +70,55 @@ impl IntoIterator for Contract {
     }
 }
 /// Enum of contract item ABIs.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-#[serde(tag = "type")]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(tag = "type"))]
 pub enum Item {
-    #[serde(rename = "function")]
+    #[cfg_attr(feature = "serde", serde(rename = "function"))]
     Function(Function),
-    #[serde(rename = "constructor")]
+    #[cfg_attr(feature = "serde", serde(rename = "constructor"))]
     Constructor(Constructor),
-    #[serde(rename = "l1_handler")]
+    #[cfg_attr(feature = "serde", serde(rename = "l1_handler"))]
     L1Handler(L1Handler),
-    #[serde(rename = "event")]
+    #[cfg_attr(feature = "serde", serde(rename = "event"))]
     Event(Event),
-    #[serde(rename = "struct")]
+    #[cfg_attr(feature = "serde", serde(rename = "struct"))]
     Struct(Struct),
-    #[serde(rename = "enum")]
+    #[cfg_attr(feature = "serde", serde(rename = "enum"))]
     Enum(Enum),
-    #[serde(rename = "interface")]
+    #[cfg_attr(feature = "serde", serde(rename = "interface"))]
     Interface(Interface),
-    #[serde(rename = "impl")]
+    #[cfg_attr(feature = "serde", serde(rename = "impl"))]
     Impl(Imp),
 }
 
 /// Contract interface ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Interface {
     pub name: String,
     pub items: Vec<Item>,
 }
 
 /// Contract impl ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Imp {
     pub name: String,
     pub interface_name: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StateMutability {
-    #[serde(rename = "external")]
+    #[cfg_attr(feature = "serde", serde(rename = "external"))]
     External,
-    #[serde(rename = "view")]
+    #[cfg_attr(feature = "serde", serde(rename = "view"))]
     View,
 }
 
 /// Contract function ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -125,14 +129,16 @@ pub struct Function {
 }
 
 /// Contract constructor ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Constructor {
     pub name: String,
     pub inputs: Vec<Input>,
 }
 
 /// Contract L1 handler ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L1Handler {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -143,90 +149,99 @@ pub struct L1Handler {
 }
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Event {
     pub name: String,
-    #[serde(flatten)]
+    #[cfg_attr(feature = "serde", serde(flatten))]
     pub kind: EventKind,
 }
 
 /// Contract event kind.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-#[serde(tag = "kind")]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(tag = "kind"))]
 pub enum EventKind {
-    #[serde(rename = "struct")]
+    #[cfg_attr(feature = "serde", serde(rename = "struct"))]
     Struct { members: Vec<EventField> },
-    #[serde(rename = "enum")]
+    #[cfg_attr(feature = "serde", serde(rename = "enum"))]
     Enum { variants: Vec<EventField> },
 }
 
 /// Contract event field (member/variant).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EventField {
     pub name: String,
-    #[serde(rename = "type")]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     pub ty: String,
     pub kind: EventFieldKind,
 }
 
 /// Describes how to serialize the event's field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventFieldKind {
     // Serialize to `keys` using `Serde`.
-    #[serde(rename = "key")]
+    #[cfg_attr(feature = "serde", serde(rename = "key"))]
     KeySerde,
     // Serialize to `data` using `Serde`.
-    #[serde(rename = "data")]
+    #[cfg_attr(feature = "serde", serde(rename = "data"))]
     DataSerde,
     // Serialize as a nested event.
-    #[serde(rename = "nested")]
+    #[cfg_attr(feature = "serde", serde(rename = "nested"))]
     Nested,
     // Serialize as a flat event.
-    #[serde(rename = "flat")]
+    #[cfg_attr(feature = "serde", serde(rename = "flat"))]
     Flat,
 }
 
 /// Function input ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Input {
     pub name: String,
-    #[serde(rename = "type")]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     pub ty: String,
 }
 
 /// Function Output ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Output {
-    #[serde(rename = "type")]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     pub ty: String,
 }
 
 /// Struct ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Struct {
     pub name: String,
     pub members: Vec<StructMember>,
 }
 
 /// Struct member.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StructMember {
     pub name: String,
-    #[serde(rename = "type")]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     pub ty: String,
 }
 
 /// Enum ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Enum {
     pub name: String,
     pub variants: Vec<EnumVariant>,
 }
 
 /// Enum variant.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EnumVariant {
     pub name: String,
-    #[serde(rename = "type")]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     pub ty: String,
 }

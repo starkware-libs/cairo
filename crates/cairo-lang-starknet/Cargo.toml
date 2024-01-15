@@ -9,7 +9,7 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.3", features = ["serde"] }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.3", default-features = false }
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.3" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.3" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.3" }
@@ -20,22 +20,24 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.3" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.4.3" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.4.3" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3", features = ["serde"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3", default-features = false }
 const_format.workspace = true
 convert_case.workspace = true
 indoc.workspace = true
-itertools = { workspace = true, default-features = true }
-num-bigint = { workspace = true, default-features = true }
+itertools = { workspace = true, features = ["use_alloc"] }
+num-bigint = { workspace = true }
 num-integer.workspace = true
-num-traits = { workspace = true, default-features = true }
+num-traits = { workspace = true }
 once_cell.workspace = true
-serde = { workspace = true, default-features = true }
-serde_json.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
 starknet-crypto.workspace = true
 thiserror.workspace = true
 indent.workspace = true
+
+# Optional
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
@@ -48,5 +50,13 @@ test-case.workspace = true
 test-log.workspace = true
 
 [features]
-default = ["std"]
-std = ["cairo-lang-utils/std"]
+default = ["std", "serde"]
+std = [
+  "cairo-lang-casm/std",
+  "cairo-lang-utils/std",
+  "num-traits/std",
+  "num-bigint/std",
+  "serde?/std",
+  "serde_json?/std"
+]
+serde = ["dep:serde", "dep:serde_json", "cairo-lang-casm/serde", "cairo-lang-utils/serde"]
