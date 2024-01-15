@@ -1,3 +1,4 @@
+use cairo_felt::Felt252;
 use num_traits::Zero;
 
 use super::range_check::RangeCheckType;
@@ -96,9 +97,23 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let from_range = Range::from_type(context, from_ty.clone())?;
         let to_range: Range = Range::from_type(context, to_ty.clone())?;
-        if !from_range.is_small_range() || !to_range.is_small_range() {
+        let from_range = Range::from_type(context, from_ty.clone())?;
+
+        // Currently, we only support downcasting into `RangeCheck` sized types.
+        if !to_range.is_small_range() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        let is_small_values_downcast = from_range.is_small_range();
+        // Only allow `size <= prime % (2**128 - 1)` so that we can safely use `K=2` in
+        // `validate_under_limit`.
+        let is_felt252_valid_downcast = from_range.is_full_felt252_range()
+            && to_range.size() <= (Felt252::prime() % u128::MAX).into();
+        if !is_small_values_downcast && !is_felt252_valid_downcast {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        // Don't allow a downcast that would always fail (disjoint ranges).
+        if from_range.lower >= to_range.upper || from_range.upper <= to_range.lower {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
