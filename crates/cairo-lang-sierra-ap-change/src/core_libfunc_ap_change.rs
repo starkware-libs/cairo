@@ -241,11 +241,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Range(libfunc) => match libfunc {
             RangeConcreteLibfunc::ConstrainRange(libfunc) => {
                 assert!(
-                    libfunc.in_range.lower.is_zero(),
-                    "Non-zero `min` value {} not supported",
-                    libfunc.in_range.lower
-                );
-                assert!(
                     libfunc.out_range.lower.is_zero(),
                     "Non-zero `min` value {} not supported",
                     libfunc.out_range.lower
