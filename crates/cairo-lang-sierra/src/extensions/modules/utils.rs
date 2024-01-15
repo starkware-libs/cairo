@@ -90,6 +90,10 @@ impl Range {
     pub fn is_small_range(&self) -> bool {
         self.size() <= BigInt::one().shl(128)
     }
+    /// Returns true if this range can contain all possible values of a CASM cell.
+    pub fn is_full_felt252_range(&self) -> bool {
+        self.size() >= Felt252::prime().into()
+    }
     /// Returns the size of the range.
     pub fn size(&self) -> BigInt {
         &self.upper - &self.lower
