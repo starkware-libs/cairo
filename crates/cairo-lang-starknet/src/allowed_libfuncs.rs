@@ -92,10 +92,11 @@ pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 /// Returns the sierra version corresponding to the given version id.
 #[cfg(feature = "serde")]
 mod serde_utils {
+    use std::fs;
+
     use super::*;
     use crate::contract_class::ContractClass;
     use crate::felt252_serde::sierra_from_felt252s;
-    use std::fs;
 
     pub fn lookup_allowed_libfuncs_list(
         list_selector: ListSelector,

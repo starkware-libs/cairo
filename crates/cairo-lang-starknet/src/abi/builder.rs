@@ -24,6 +24,11 @@ use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
 
+use super::{
+    Constructor, Contract, Enum, EnumVariant, Event, EventField, EventFieldKind, EventKind,
+    Function, Imp, Input, Interface, Item, L1Handler, Output, StateMutability, Struct,
+    StructMember,
+};
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
@@ -32,12 +37,6 @@ use crate::plugin::consts::{
     L1_HANDLER_ATTR,
 };
 use crate::plugin::events::EventData;
-
-use super::{
-    Constructor, Contract, Enum, EnumVariant, Event, EventField, EventFieldKind, EventKind,
-    Function, Imp, Input, Interface, Item, L1Handler, Output, StateMutability, Struct,
-    StructMember,
-};
 
 #[cfg(test)]
 #[path = "builder_test.rs"]
@@ -116,11 +115,7 @@ impl<'a> AbiBuilder<'a> {
 
     /// Returns the finalized ABI.
     pub fn finalize(self) -> Result<Contract, ABIError> {
-        if let Some(err) = self.errors.into_iter().next() {
-            Err(err)
-        } else {
-            Ok(self.abi)
-        }
+        if let Some(err) = self.errors.into_iter().next() { Err(err) } else { Ok(self.abi) }
     }
 
     /// Returns the errors accumulated by the builder.
@@ -783,7 +778,7 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db.upcast());
     let file_infos = db.module_generated_file_infos(module_file.0).ok()?;
-    let aux_data = file_infos.get(module_file.1 .0)?.as_ref()?.aux_data.as_ref()?;
+    let aux_data = file_infos.get(module_file.1.0)?.as_ref()?.aux_data.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 

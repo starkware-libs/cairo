@@ -1,12 +1,12 @@
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec, vec::Vec};
+
 use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use itertools::Itertools;
 use num_bigint::BigUint;
 use starknet_crypto::{poseidon_hash_many, FieldElement};
-
-#[cfg(not(feature = "std"))]
-use alloc::{string::String, vec, vec::Vec};
 
 #[cfg(feature = "std")]
 mod from_contract_class;

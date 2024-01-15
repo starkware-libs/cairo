@@ -32,14 +32,13 @@ use num_traits::Signed;
 use once_cell::sync::Lazy;
 use thiserror::Error;
 
+use super::CasmContractClass;
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::casm_contract_class::{CasmContractEntryPoint, CasmContractEntryPoints};
 use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
 use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
-
-use super::CasmContractClass;
 
 #[cfg(test)]
 #[path = "from_contract_class_test.rs"]
