@@ -1846,3 +1846,21 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(4, 3).unwrap(), @1, 'i128: 4 - 3 == 1');
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
+
+mod special_casts {
+    extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+    extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+    extern fn upcast<T, S>(index: T) -> S nopanic;
+
+    #[test]
+    fn test_special_casts() {
+        let x: BoundedInt<-1, -1> = downcast(-1_felt252).unwrap();
+        // Full prime range, but only contains `0` if intersected with `u8`.
+        let x: BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0> =
+            upcast(
+            x
+        );
+        let x: Option<u8> = downcast(x);
+        assert!(x.is_none())
+    }
+}
