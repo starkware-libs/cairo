@@ -1,10 +1,10 @@
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
+
 use cairo_lang_utils::bigint::BigUintAsHex;
 #[cfg(feature = "serde")]
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint};
 use num_bigint::BigUint;
-
-#[cfg(not(feature = "std"))]
-use alloc::{string::String, vec::Vec};
 
 use crate::abi::Contract;
 

@@ -1,10 +1,10 @@
-#[cfg(feature = "std")]
-use crate::test_utils::get_test_contract;
+use indoc::indoc;
 #[cfg(feature = "std")]
 use test_case::test_case;
 
 use super::*;
-use indoc::indoc;
+#[cfg(feature = "std")]
+use crate::test_utils::get_test_contract;
 
 #[test]
 fn test_serialization() {

@@ -18,6 +18,7 @@ use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, Si
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
+use super::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -31,8 +32,6 @@ use crate::contract::{
 use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
-
-use super::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[cfg(all(test, feature = "serde"))]
 #[path = "compile_test.rs"]

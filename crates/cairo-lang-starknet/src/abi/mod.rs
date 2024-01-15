@@ -3,11 +3,11 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 #[cfg(feature = "std")]
 mod builder;
-#[cfg(feature = "std")]
-pub use builder::*;
-
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
+
+#[cfg(feature = "std")]
+pub use builder::*;
 
 #[cfg(feature = "std")]
 type ContractInternalRepr = OrderedHashSet<Item>;

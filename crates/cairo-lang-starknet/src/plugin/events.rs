@@ -9,10 +9,9 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use const_format::formatcp;
 use smol_str::SmolStr;
 
-use crate::abi::EventFieldKind;
-
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
+use crate::abi::EventFieldKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]
