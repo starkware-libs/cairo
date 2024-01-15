@@ -5,22 +5,40 @@
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
 use cairo_lang_semantic::plugin::PluginSuite;
 
+#[cfg(feature = "std")]
 pub mod abi;
+#[cfg(feature = "std")]
 mod aliased;
+#[cfg(feature = "std")]
 pub mod allowed_libfuncs;
+#[cfg(feature = "std")]
 mod analyzer;
 pub mod casm_contract_class;
+#[cfg(feature = "std")]
 pub mod compiler_version;
+#[cfg(feature = "std")]
 pub mod contract;
+#[cfg(feature = "std")]
 pub mod contract_class;
+#[cfg(feature = "std")]
 mod felt252_serde;
+#[cfg(feature = "std")]
 mod felt252_vec_compression;
+#[cfg(feature = "std")]
 pub mod inline_macros;
+#[cfg(feature = "std")]
 pub mod plugin;
 
 /// Get the suite of plugins for compilation with StarkNet.
+#[cfg(feature = "std")]
 pub fn starknet_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
@@ -32,5 +50,5 @@ pub fn starknet_plugin_suite() -> PluginSuite {
     suite
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test_utils;
