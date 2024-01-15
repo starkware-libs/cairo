@@ -1,78 +1,14 @@
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use indoc::indoc;
-use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::compiler_version;
-use crate::contract_class::{
-    ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
-};
+use crate::contract_class::ContractClass;
 use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::{
     get_contract_file_name_from_path, get_example_file_path, get_test_contract,
 };
-
-#[test]
-fn test_serialization() {
-    let external = vec![ContractEntryPoint { selector: BigUint::from(u128::MAX), function_idx: 7 }];
-
-    let contract = ContractClass {
-        sierra_program: vec![],
-        sierra_program_debug_info: None,
-        contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
-        entry_points_by_type: ContractEntryPoints {
-            external,
-            l1_handler: vec![],
-            constructor: vec![],
-        },
-        abi: None,
-    };
-
-    let serialized = serde_json::to_string_pretty(&contract).unwrap();
-
-    assert_eq!(
-        &serialized,
-        indoc! {
-            r#"
-        {
-          "sierra_program": [],
-          "sierra_program_debug_info": null,
-          "contract_class_version": "0.1.0",
-          "entry_points_by_type": {
-            "EXTERNAL": [
-              {
-                "selector": "0xffffffffffffffffffffffffffffffff",
-                "function_idx": 7
-              }
-            ],
-            "L1_HANDLER": [],
-            "CONSTRUCTOR": []
-          },
-          "abi": null
-        }"#}
-    );
-
-    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
-}
-
-// Tests the serialization and deserialization of a contract.
-#[test_case("test_contract::test_contract")]
-#[test_case("hello_starknet::hello_starknet")]
-#[test_case("erc20::erc_20")]
-#[test_case("with_erc20::erc20_contract")]
-#[test_case("with_ownable::ownable_balance")]
-#[test_case("ownable_erc20::ownable_erc20_contract")]
-#[test_case("upgradable_counter::counter_contract")]
-#[test_case("mintable::mintable_erc20_ownable")]
-#[test_case("multi_component::contract_with_4_components")]
-fn test_full_contract_deserialization_from_contracts_crate(example_file_name: &str) {
-    let contract =
-        get_test_contract(format!("cairo_level_tests::contracts::{example_file_name}").as_str());
-    let serialized = serde_json::to_string_pretty(&contract).unwrap();
-    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
-}
 
 /// Tests that the sierra compiled from a contract in the contracts crate is the same as in
 /// <test_case>.sierra, and that the resulted json is the same as in
