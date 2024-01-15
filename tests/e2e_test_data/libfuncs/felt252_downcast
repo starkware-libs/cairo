@@ -1,0 +1,502 @@
+//! > downcast::<felt252, BoundedInt<0, 7>> libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: felt252) -> Option<BoundedInt<0, 7>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 8 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 8, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 319014718988379808869724395961157943303, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 16 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211448, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 5;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<0, 7> = BoundedInt<0, 7> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<0, 7>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 7>>, BoundedInt<0, 7>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<felt252, BoundedInt<0, 7>> = downcast<felt252, BoundedInt<0, 7>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 7>>> = store_temp<core::option::Option::<test::BoundedInt::<0, 7>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 1>;
+
+downcast<felt252, BoundedInt<0, 7>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<0, 7>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<0, 7>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<0, 7>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 7>>);
+
+//! > ==========================================================================
+
+//! > downcast::<felt252, BoundedInt<0, 0>> libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: felt252) -> Option<BoundedInt<0, 0>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 1 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 1, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 319014718988379808869724395961157943296, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 16 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211455, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 5;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<0, 0>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 0>>, BoundedInt<0, 0>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<felt252, BoundedInt<0, 0>> = downcast<felt252, BoundedInt<0, 0>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 0>>> = store_temp<core::option::Option::<test::BoundedInt::<0, 0>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 1>;
+
+downcast<felt252, BoundedInt<0, 0>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<0, 0>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<0, 0>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<0, 0>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 0>>);
+
+//! > ==========================================================================
+
+//! > downcast::<felt252, BoundedInt<0, 10633823966279327296825105735305134079>> libfunc
+
+//! > Comments
+This tests the upper limit for felt252 to small range casting for K == 2.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: felt252) -> Option<BoundedInt<0, 10633823966279327296825105735305134079>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 10633823966279327296825105735305134080 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 10633823966279327296825105735305134080, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 329648542954659136166549501696463077375, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 16 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 329648542954659136166549501696463077376, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 5;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<0, 10633823966279327296825105735305134079> = BoundedInt<0, 10633823966279327296825105735305134079> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, BoundedInt<0, 10633823966279327296825105735305134079>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134079>> = downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134079>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>> = store_temp<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 1>;
+
+downcast<felt252, BoundedInt<0, 10633823966279327296825105735305134079>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 10633823966279327296825105735305134079>>);
+
+//! > ==========================================================================
+
+//! > downcast::<felt252, BoundedInt<-10633823966279327296825105735305134080, -1>> libfunc
+
+//! > Comments
+This tests the upper limit for felt252 to small range casting for K == 2.
+Range moved to have an upper bound 0.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: felt252) -> Option<BoundedInt<-10633823966279327296825105735305134080, -1>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 10633823966279327296825105735305134080) % PRIME < 10633823966279327296825105735305134080 %}
+jmp rel 16 if [ap + 0] != 0, ap++;
+%{
+(value, scalar) = (memory[fp + -3], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[fp + -3] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 329648542954659136166549501696463077375, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 18 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + 0] = [fp + -3] + 10633823966279327296825105735305134080, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 3;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<-10633823966279327296825105735305134080, -1> = BoundedInt<-10633823966279327296825105735305134080, -1> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>> = Enum<ut@core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, BoundedInt<-10633823966279327296825105735305134080, -1>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<felt252, BoundedInt<-10633823966279327296825105735305134080, -1>> = downcast<felt252, BoundedInt<-10633823966279327296825105735305134080, -1>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>> = store_temp<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 1>;
+
+downcast<felt252, BoundedInt<-10633823966279327296825105735305134080, -1>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-10633823966279327296825105735305134080, -1>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1410})
+
+//! > ==========================================================================
+
+//! > downcast::<felt252, BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>> libfunc
+
+//! > Comments
+This tests the upper limit for felt252 to small range casting for K == 2.
+Range moved to have an upper bound 2**128.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: felt252) -> Option<BoundedInt<
+    329648542954659136166549501696463077377,
+    340282366920938463463374607431768211456,
+>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + -329648542954659136166549501696463077377) % PRIME < 10633823966279327296825105735305134080 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 340282366920938463463374607431768211457, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 329648542954659136166549501696463077375, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 18 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + 0] = [fp + -3] + -329648542954659136166549501696463077377, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + -1, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 4;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456> = BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>> = Enum<ut@core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<felt252, BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>> = downcast<felt252, BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>> = store_temp<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 1>;
+
+downcast<felt252, BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<test::BoundedInt::<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
+
+//! > ==========================================================================
+
+//! > downcast::<BoundedInt<1-PRIME, 0>, BoundedInt<0, 10>> libfunc
+
+//! > Comments
+Validiting the basic shrinking of a destination type.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
+
+fn foo(index: BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0>) ->
+  Option<BoundedInt<0, 10>> {
+    downcast(index)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 1 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 1, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134080, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 319014718988379808869724395961157943296, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 16 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211455, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 5;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<0, 10> = BoundedInt<0, 10> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::BoundedInt::<0, 10>> = Enum<ut@core::option::Option::<test::BoundedInt::<0, 10>>, BoundedInt<0, 10>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0> = BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc downcast<BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0>, BoundedInt<0, 10>> = downcast<BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0>, BoundedInt<0, 10>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 0> = enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 10>>> = store_temp<core::option::Option::<test::BoundedInt::<0, 10>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 1>;
+
+downcast<BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0>, BoundedInt<0, 10>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<test::BoundedInt::<0, 10>>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<test::BoundedInt::<0, 10>>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<test::BoundedInt::<0, 10>>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: BoundedInt<-3618502788666131213697322783095070105623107215331596699973092056135872020480, 0>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 10>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
