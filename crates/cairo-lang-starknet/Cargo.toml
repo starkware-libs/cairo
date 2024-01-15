@@ -46,3 +46,7 @@ env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+
+[features]
+default = ["std"]
+std = ["cairo-lang-utils/std"]
