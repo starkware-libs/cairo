@@ -1,6 +1,7 @@
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::BigUintAsHex;
+#[cfg(feature = "serde")]
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint};
 use num_bigint::BigUint;
-use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
@@ -17,7 +18,8 @@ pub use compile::*;
 mod test;
 
 /// Represents a contract in the Starknet network.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ContractClass {
     pub sierra_program: Vec<BigUintAsHex>,
     #[cfg(feature = "std")]
@@ -40,20 +42,25 @@ impl ContractClass {
     }
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ContractEntryPoints {
-    #[serde(rename = "EXTERNAL")]
+    #[cfg_attr(feature = "serde", serde(rename = "EXTERNAL"))]
     pub external: Vec<ContractEntryPoint>,
-    #[serde(rename = "L1_HANDLER")]
+    #[cfg_attr(feature = "serde", serde(rename = "L1_HANDLER"))]
     pub l1_handler: Vec<ContractEntryPoint>,
-    #[serde(rename = "CONSTRUCTOR")]
+    #[cfg_attr(feature = "serde", serde(rename = "CONSTRUCTOR"))]
     pub constructor: Vec<ContractEntryPoint>,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
+    )]
     pub selector: BigUint,
     /// The idx of the user function declaration in the sierra program.
     pub function_idx: usize,

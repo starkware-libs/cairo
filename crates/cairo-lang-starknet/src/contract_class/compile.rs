@@ -1,4 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(feature = "serde")]
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -18,9 +20,9 @@ use thiserror::Error;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
-use crate::allowed_libfuncs::{
-    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
-};
+use crate::allowed_libfuncs::AllowedLibfuncsError;
+#[cfg(feature = "serde")]
+use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
@@ -32,7 +34,7 @@ use crate::starknet_plugin_suite;
 
 use super::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 #[path = "compile_test.rs"]
 mod test;
 
@@ -246,6 +248,7 @@ fn get_entry_points(
 }
 
 /// Compile Starknet crate (or specific contract in the crate).
+#[cfg(feature = "serde")]
 pub fn starknet_compile(
     crate_path: PathBuf,
     contract_path: Option<String>,

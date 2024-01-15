@@ -1,16 +1,10 @@
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
-use std::fs;
 
 use cairo_lang_sierra::ids::GenericLibfuncId;
-use serde::Deserialize;
-use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::contract_class::ContractClass;
-use crate::felt252_serde::sierra_from_felt252s;
-
-#[cfg(test)]
+#[cfg(all(test, features = "serde"))]
 #[path = "allowed_libfuncs_test.rs"]
 mod test;
 
@@ -68,17 +62,21 @@ impl Display for ListSelector {
 }
 
 /// Represents a list of allowed sierra libfuncs.
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct AllowedLibfuncs {
-    #[serde(deserialize_with = "deserialize_libfuncs_set::<_>")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_libfuncs_set::<_>"))]
     pub allowed_libfuncs: HashSet<GenericLibfuncId>,
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_libfuncs_set<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<HashSet<GenericLibfuncId>, D::Error> {
     Ok(HashSet::from_iter(
-        Vec::<SmolStr>::deserialize(deserializer)?.into_iter().map(GenericLibfuncId::from_string),
+        <Vec<smol_str::SmolStr> as serde::Deserialize>::deserialize(deserializer)?
+            .into_iter()
+            .map(GenericLibfuncId::from_string),
     ))
 }
 
@@ -92,60 +90,70 @@ pub const BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental";
 pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 
 /// Returns the sierra version corresponding to the given version id.
-pub fn lookup_allowed_libfuncs_list(
-    list_selector: ListSelector,
-) -> Result<AllowedLibfuncs, AllowedLibfuncsError> {
-    let list_name = list_selector.to_string();
-    let allowed_libfuncs_str: String = match list_selector {
-        ListSelector::ListName(list_name) => match list_name.as_str() {
-            BUILTIN_ALL_LIBFUNCS_LIST => {
-                include_str!("allowed_libfuncs_lists/all.json").to_string()
-            }
-            BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST => {
-                include_str!("allowed_libfuncs_lists/experimental.json").to_string()
-            }
-            BUILTIN_AUDITED_LIBFUNCS_LIST => {
+#[cfg(feature = "serde")]
+mod serde_utils {
+    use super::*;
+    use crate::contract_class::ContractClass;
+    use crate::felt252_serde::sierra_from_felt252s;
+    use std::fs;
+
+    pub fn lookup_allowed_libfuncs_list(
+        list_selector: ListSelector,
+    ) -> Result<AllowedLibfuncs, AllowedLibfuncsError> {
+        let list_name = list_selector.to_string();
+        let allowed_libfuncs_str: String = match list_selector {
+            ListSelector::ListName(list_name) => match list_name.as_str() {
+                BUILTIN_ALL_LIBFUNCS_LIST => {
+                    include_str!("allowed_libfuncs_lists/all.json").to_string()
+                }
+                BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST => {
+                    include_str!("allowed_libfuncs_lists/experimental.json").to_string()
+                }
+                BUILTIN_AUDITED_LIBFUNCS_LIST => {
+                    include_str!("allowed_libfuncs_lists/audited.json").to_string()
+                }
+                _ => {
+                    return Err(AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
+                        allowed_libfuncs_list_name: list_name.to_string(),
+                    });
+                }
+            },
+            ListSelector::ListFile(file_path) => fs::read_to_string(&file_path).map_err(|_| {
+                AllowedLibfuncsError::UnknownAllowedLibfuncsFile {
+                    allowed_libfuncs_list_file: file_path,
+                }
+            })?,
+            ListSelector::DefaultList => {
                 include_str!("allowed_libfuncs_lists/audited.json").to_string()
             }
-            _ => {
-                return Err(AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                    allowed_libfuncs_list_name: list_name.to_string(),
+        };
+        let allowed_libfuncs: Result<AllowedLibfuncs, serde_json::Error> =
+            serde_json::from_str(&allowed_libfuncs_str);
+        allowed_libfuncs.map_err(|_| AllowedLibfuncsError::DeserializationError {
+            allowed_libfuncs_list_file: list_name,
+        })
+    }
+
+    /// Checks that all the used libfuncs in the contract class are allowed in the contract class
+    /// sierra version.
+    pub fn validate_compatible_sierra_version(
+        contract: &ContractClass,
+        list_selector: ListSelector,
+    ) -> Result<(), AllowedLibfuncsError> {
+        let list_name = list_selector.to_string();
+        let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
+        let (_, _, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
+            .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
+        for libfunc in sierra_program.libfunc_declarations.iter() {
+            if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
+                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
+                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
+                    allowed_libfuncs_list_name: list_name,
                 });
             }
-        },
-        ListSelector::ListFile(file_path) => fs::read_to_string(&file_path).map_err(|_| {
-            AllowedLibfuncsError::UnknownAllowedLibfuncsFile {
-                allowed_libfuncs_list_file: file_path,
-            }
-        })?,
-        ListSelector::DefaultList => {
-            include_str!("allowed_libfuncs_lists/audited.json").to_string()
         }
-    };
-    let allowed_libfuncs: Result<AllowedLibfuncs, serde_json::Error> =
-        serde_json::from_str(&allowed_libfuncs_str);
-    allowed_libfuncs.map_err(|_| AllowedLibfuncsError::DeserializationError {
-        allowed_libfuncs_list_file: list_name,
-    })
-}
-
-/// Checks that all the used libfuncs in the contract class are allowed in the contract class
-/// sierra version.
-pub fn validate_compatible_sierra_version(
-    contract: &ContractClass,
-    list_selector: ListSelector,
-) -> Result<(), AllowedLibfuncsError> {
-    let list_name = list_selector.to_string();
-    let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-    let (_, _, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
-        .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-    for libfunc in sierra_program.libfunc_declarations.iter() {
-        if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
-            return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                allowed_libfuncs_list_name: list_name,
-            });
-        }
+        Ok(())
     }
-    Ok(())
 }
+#[cfg(feature = "serde")]
+pub use serde_utils::*;

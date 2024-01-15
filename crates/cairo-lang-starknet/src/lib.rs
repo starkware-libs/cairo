@@ -14,17 +14,18 @@ extern crate alloc;
 use cairo_lang_semantic::plugin::PluginSuite;
 
 pub mod abi;
+pub mod casm_contract_class;
+pub mod compiler_version;
+pub mod contract_class;
+
 #[cfg(feature = "std")]
 mod aliased;
 #[cfg(feature = "std")]
 pub mod allowed_libfuncs;
 #[cfg(feature = "std")]
 mod analyzer;
-pub mod casm_contract_class;
-pub mod compiler_version;
 #[cfg(feature = "std")]
 pub mod contract;
-pub mod contract_class;
 #[cfg(feature = "std")]
 mod felt252_serde;
 #[cfg(feature = "std")]
