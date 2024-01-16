@@ -245,6 +245,8 @@ impl EnumFromBoundedIntLibfunc {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
+        // TODO: refactor this into a function `bounded_int_ty` that takes two Into<BigInt>
+        // arguments.
         let bounded_int_ty = context.get_concrete_type(
             BoundedIntType::id(),
             &[GenericArg::Value(0.into()), GenericArg::Value((n_variants - 1).into())],

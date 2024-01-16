@@ -42,6 +42,7 @@ impl Relocation {
                 .offset
             }
             Relocation::EndOfProgram => {
+                // TODO: Check const usage + withdraw_gas_all in one test (if not exists).
                 *statement_offsets.last().unwrap() + const_segment_info.const_segment_size
             }
         };

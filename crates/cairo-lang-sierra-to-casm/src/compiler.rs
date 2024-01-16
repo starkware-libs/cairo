@@ -142,6 +142,9 @@ impl ConstSegmentInfoBuilder {
     ) -> Result<ConstSegmentInfo, CompilationError> {
         let mut const_allocations = OrderedHashMap::default();
         let mut const_segment_size = 0;
+        // TODO: order by appearance in the type segment of the program. The current order may be
+        //   changed in the future, if we change the order the instructions are processed.
+        //   Thus it may not be forward compatible.
         for const_type in self.used_const_types {
             let const_allocation = ConstAllocation {
                 offset: const_segment_size,
@@ -200,6 +203,7 @@ fn extract_const_value(
                 // The first argument is the variant selector, the second is the variant data.
                 match &const_type.inner_data[..] {
                     [GenericArg::Value(selector), GenericArg::Type(ty)] => {
+                        // TODO: Convert selector to the correct form.
                         values.push(selector.clone());
                         types_stack.push(ty.clone());
                     }
