@@ -1114,9 +1114,10 @@ fn extract_concrete_enum(
 
     // Semantic model should have made sure the type is an enum.
     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
-        ));
+        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+            matched_expr.stable_ptr().untyped(),
+            UnsupportedMatchedType(long_ty.format(ctx.db.upcast())),
+        )));
     };
     let concrete_variants =
         ctx.db.concrete_enum_variants(concrete_enum_id).map_err(LoweringFlowError::Failed)?;
@@ -1975,7 +1976,7 @@ fn lower_expr_felt252_arm(
     let pattern = &ctx.function_body.patterns[arm.patterns[pattern_index]];
     let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotALiteral),
         ));
     };
 
@@ -2099,7 +2100,7 @@ fn lower_expr_match_felt252(
                 _ => {
                     return Err(LoweringFlowError::Failed(
                         ctx.diagnostics
-                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotALiteral),
                     ));
                 }
             }
