@@ -436,21 +436,21 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
         "Merge stack with zero_sized variable.")]
 #[test_case(indoc! {"
         type felt252 = felt252;
-        type const<felt252, 5> = const<felt252, 5>;
-        type const<felt252, 17> = const<felt252, 17>;
+        type Const<felt252, 5> = Const<felt252, 5>;
+        type Const<felt252, 17> = Const<felt252, 17>;
         type BoxFelt252 = Box<felt252>;
 
 
-        libfunc const_as_box<const<felt252, 5>> = const_as_box<const<felt252, 5>>;
-        libfunc const_as_box<const<felt252, 17>> = const_as_box<const<felt252, 17>>;
+        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
+        libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>>;
         libfunc unbox<felt252> = unbox<felt252>;
         libfunc store_temp_felt252 = store_temp<felt252>;
         libfunc drop<felt252> = drop<felt252>;
 
 
-        const_as_box<const<felt252, 5>>() -> ([1]);
-        const_as_box<const<felt252, 17>>() -> ([2]);
-        const_as_box<const<felt252, 5>>() -> ([3]);
+        const_as_box<Const<felt252, 5>>() -> ([1]);
+        const_as_box<Const<felt252, 17>>() -> ([2]);
+        const_as_box<Const<felt252, 5>>() -> ([3]);
         unbox<felt252>([1]) -> ([1]);
         unbox<felt252>([2]) -> ([2]);
         unbox<felt252>([3]) -> ([3]);
@@ -485,53 +485,53 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
 #[test_case(indoc! {"
     type felt252 = felt252;
     type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
-    type const<felt252, 5> = const<felt252, 5>;
-    type const<felt252, 17> = const<felt252, 17>;
-    type const<
+    type Const<felt252, 5> = Const<felt252, 5>;
+    type Const<felt252, 17> = Const<felt252, 17>;
+    type Const<
         Tuple<felt252, felt252>,
-        const<felt252, 5>,
-        const<felt252, 17>
-    > = const<
+        Const<felt252, 5>,
+        Const<felt252, 17>
+    > = Const<
         Tuple<felt252, felt252>,
-        const<felt252, 5>,
-        const<felt252, 17>
+        Const<felt252, 5>,
+        Const<felt252, 17>
     >;
-    type const<
+    type Const<
         Tuple<felt252, felt252>,
-        const<felt252, 17>,
-        const<felt252, 5>
-    > = const<
+        Const<felt252, 17>,
+        Const<felt252, 5>
+    > = Const<
         Tuple<felt252, felt252>,
-        const<felt252, 17>,
-        const<felt252, 5>
+        Const<felt252, 17>,
+        Const<felt252, 5>
     >;
     type Box<Tuple<felt252, felt252>> = Box<Tuple<felt252, felt252>>;
 
 
     libfunc const_as_box<
-        const<
+        Const<
             Tuple<felt252, felt252>,
-            const<felt252, 5>,
-            const<felt252, 17>
+            Const<felt252, 5>,
+            Const<felt252, 17>
         >
     > = const_as_box<
-        const<
+        Const<
             Tuple<felt252, felt252>,
-            const<felt252, 5>,
-            const<felt252, 17>
+            Const<felt252, 5>,
+            Const<felt252, 17>
         >
     >;
     libfunc const_as_box<
-        const<
+        Const<
             Tuple<felt252, felt252>,
-            const<felt252, 17>,
-            const<felt252, 5>
+            Const<felt252, 17>,
+            Const<felt252, 5>
         >
     > = const_as_box<
-        const<
+        Const<
             Tuple<felt252, felt252>,
-            const<felt252, 17>,
-            const<felt252, 5>
+            Const<felt252, 17>,
+            Const<felt252, 5>
         >
     >;
     libfunc unbox<Tuple<felt252, felt252>> = unbox<Tuple<felt252, felt252>>;
@@ -539,9 +539,9 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
     libfunc drop<Tuple<felt252, felt252>> = drop<Tuple<felt252, felt252>>;
 
 
-    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>>() -> ([1]);
-    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 17>, const<felt252, 5>>>() -> ([2]);
-    const_as_box<const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>>() -> ([3]);
+    const_as_box<Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>>() -> ([1]);
+    const_as_box<Const<Tuple<felt252, felt252>, Const<felt252, 17>, Const<felt252, 5>>>() -> ([2]);
+    const_as_box<Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>>() -> ([3]);
     unbox<Tuple<felt252, felt252>>([1]) -> ([1]);
     unbox<Tuple<felt252, felt252>>([2]) -> ([2]);
     unbox<Tuple<felt252, felt252>>([3]) -> ([3]);
@@ -583,39 +583,39 @@ indoc! {"
 type felt252 = felt252;
 type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
 type Tuple<felt252, Tuple<felt252, felt252>> = Struct<ut@Tuple, felt252, Tuple<felt252, felt252>>;
-type const<felt252, 5> = const<felt252, 5>;
-type const<felt252, 17> = const<felt252, 17>;
-type const<
+type Const<felt252, 5> = Const<felt252, 5>;
+type Const<felt252, 17> = Const<felt252, 17>;
+type Const<
         Tuple<felt252, felt252>,
-        const<felt252, 5>,
-        const<felt252, 17>
-    > = const<
+        Const<felt252, 5>,
+        Const<felt252, 17>
+    > = Const<
         Tuple<felt252, felt252>,
-        const<felt252, 5>,
-        const<felt252, 17>
+        Const<felt252, 5>,
+        Const<felt252, 17>
     >;
-type const<
+type Const<
         Tuple<felt252, Tuple<felt252, felt252>>,
-        const<felt252, 17>,
-        const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
-    > = const<
+        Const<felt252, 17>,
+        Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
+    > = Const<
         Tuple<felt252, Tuple<felt252, felt252>>,
-        const<felt252, 17>,
-        const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+        Const<felt252, 17>,
+        Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
     >;
 type Box<Tuple<felt252, Tuple<felt252, felt252>>> = Box<Tuple<felt252, Tuple<felt252, felt252>>>;
 
 libfunc const_as_box<
-        const<
+        Const<
             Tuple<felt252, Tuple<felt252, felt252>>,
-            const<felt252, 17>,
-            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+            Const<felt252, 17>,
+            Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
         >
     > = const_as_box<
-        const<
+        Const<
             Tuple<felt252, Tuple<felt252, felt252>>,
-            const<felt252, 17>,
-            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+            Const<felt252, 17>,
+            Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
         >
     >;
 libfunc unbox<
@@ -635,10 +635,10 @@ libfunc drop<
     >;
 
 const_as_box<
-        const<
+        Const<
             Tuple<felt252, Tuple<felt252, felt252>>,
-            const<felt252, 17>,
-            const<Tuple<felt252, felt252>, const<felt252, 5>, const<felt252, 17>>
+            Const<felt252, 17>,
+            Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
         >
     >() -> ([1]);
 unbox<Tuple<felt252, Tuple<felt252, felt252>>>([1]) -> ([1]);
@@ -666,20 +666,20 @@ indoc! {"
 #[test_case(indoc! {"
         type felt252 = felt252;
         type MyEnum = Enum<ut@MyEnum, felt252, felt252>;
-        type const<felt252, 5> = const<felt252, 5>;
-        type const<MyEnum, 0, const<felt252, 5>> = const<MyEnum, 0, const<felt252, 5>>;
+        type Const<felt252, 5> = Const<felt252, 5>;
+        type Const<MyEnum, 0, Const<felt252, 5>> = Const<MyEnum, 0, Const<felt252, 5>>;
         type Box<MyEnum> = Box<MyEnum>;
 
         libfunc const_as_box<
-            const<MyEnum, 0, const<felt252, 5>>
+            Const<MyEnum, 0, Const<felt252, 5>>
         > = const_as_box<
-            const<MyEnum, 0, const<felt252, 5>>
+            Const<MyEnum, 0, Const<felt252, 5>>
         >;
         libfunc unbox<MyEnum> = unbox<MyEnum>;
         libfunc store_temp<MyEnum> = store_temp<MyEnum>;
         libfunc drop<MyEnum> = drop<MyEnum>;
 
-        const_as_box<const<MyEnum, 0, const<felt252, 5>>>() -> ([1]);
+        const_as_box<Const<MyEnum, 0, Const<felt252, 5>>>() -> ([1]);
         unbox<MyEnum>([1]) -> ([1]);
         store_temp<MyEnum>([1]) -> ([1]);
         drop<MyEnum>([1]) -> ();
@@ -725,13 +725,13 @@ indoc! {"
 #[test_case(indoc! {"
         type BuiltinCosts = BuiltinCosts;
         type felt252 = felt252;
-        type const<felt252, 5> = const<felt252, 5>;
+        type Const<felt252, 5> = Const<felt252, 5>;
         type Box<felt252> = Box<felt252>;
 
         libfunc get_builtin_costs = get_builtin_costs;
         libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
         libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
-        libfunc const_as_box<const<felt252, 5>> = const_as_box<const<felt252, 5>>;
+        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
         libfunc unbox<felt252> = unbox<felt252>;
         libfunc store_temp<felt252> = store_temp<felt252>;
         libfunc drop<felt252> = drop<felt252>;
@@ -739,7 +739,7 @@ indoc! {"
         get_builtin_costs() -> ([1]);
         store_temp<BuiltinCosts>([1]) -> ([1]);
         drop<BuiltinCosts>([1]) -> ();
-        const_as_box<const<felt252, 5>>() -> ([2]);
+        const_as_box<Const<felt252, 5>>() -> ([2]);
         unbox<felt252>([2]) -> ([2]);
         store_temp<felt252>([2]) -> ([2]);
         drop<felt252>([2]) -> ();
