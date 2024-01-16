@@ -14,29 +14,33 @@ use super::{
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, CostValidationInfo};
 
+// TODO: Change the documentation to say it's from felt.
+// TODO: Documentation (last paragraph) is not clear, and not clear if it's related to the function.
+
 /// Builds a libfunc that tries to convert a numeric value in the range
-/// in_range to out_range.
-/// Assumption: in_range.lower==out_range.lower==0.
-///             out_range.upper < in_range.upper.
-///             out_range.upper <= `prime` % (2**128-1).
-/// when 2**128 >=out_range.upper> `prime` % 2**128-1 we can use validate_under_limit with `K=1`
+/// `in_range` to a value in the range `out_range`.
+///
+/// Assumption: out_range.upper <= `prime` % (2**128 - 1).
+///
+/// If 2**128 >= out_range.upper > `prime` % 2**128-1, we can use validate_under_limit with `K=1`
 /// since for value == `prime` % 2**128-1 we get
 ///     * `limit` =  (`prime`-value % 2**128-1) +1
 ///     * `limit` % (2**128-1) = (2**128-1)-1
 ///     * `limit` / (2**128-1) ≈ 2**123+17*2**64
-/// and for smaller value of out_range.upper limit will be larger and the module will be smaller
-/// than neccasry.
+/// and for smaller value of out_range.upper limit will be larger and the modulo will be smaller
+/// than necessary.
 ///
 /// Therefore for smaller values we use `K=2`
 pub fn build_felt252_range_reduction(
     builder: CompiledInvocationBuilder<'_>,
     out_range: &Range,
 ) -> Result<CompiledInvocation, InvocationError> {
+    // TODO: I don't understand the comment below.
+
     // This also works for other values, that are bound by range check size, just suboptimal.
     // `i128` is using this non-optimal implementation.
     assert!(out_range.is_rc());
 
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -46,14 +50,16 @@ pub fn build_felt252_range_reduction(
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
         const range_size = out_range.size();
-        const range_lower = -out_range.lower.clone();
+        const minus_range_lower = -out_range.lower.clone();
         const range_upper = out_range.upper.clone();
-        let canonical_value = value + range_lower;
+        let canonical_value = value + minus_range_lower;
         tempvar in_range;
         hint TestLessThan {lhs: canonical_value, rhs: range_size} into {dst: in_range};
         jump InRange if in_range != 0;
         // OutOfRange:
     }
+    // TODO: Can we refactor this into a function and use it in other places? This
+    //   seems like a pattern we use multiple times.
     let validated_value = if out_range.upper.is_zero() {
         value
     } else {
@@ -63,7 +69,7 @@ pub fn build_felt252_range_reduction(
         shifted_value
     };
 
-    // asserts that `value - out_range.upper < prime - out_range.size()`
+    // Assert that `0 <= value - out_range.upper < prime - out_range.size()`.
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     validate_under_limit::<2>(
         &mut casm_builder,
@@ -72,6 +78,7 @@ pub fn build_felt252_range_reduction(
         range_check,
         &auxiliary_vars,
     );
+
     casm_build_extend!(casm_builder, InRange:);
     if out_range.lower.is_zero() {
         casm_build_extend! {casm_builder,
@@ -100,6 +107,8 @@ pub fn build_felt252_range_reduction(
             }
         }
     }
+
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
