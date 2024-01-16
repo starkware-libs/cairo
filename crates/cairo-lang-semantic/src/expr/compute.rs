@@ -13,9 +13,13 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_syntax::attribute::consts::FEATURE_ATTR;
+use cairo_lang_syntax::attribute::structured::{
+    Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -207,6 +211,7 @@ pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
     used_variables: UnorderedHashSet<semantic::VarId>,
+    allowed_features: UnorderedHashSet<SmolStr>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -236,6 +241,11 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Exp
     let expr = maybe_compute_expr_semantic(ctx, syntax);
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr());
     let id = ctx.exprs.alloc(expr.clone());
+    if let TypeLongId::Concrete(concrete) = ctx.db.lookup_intern_type(expr.ty()) {
+        if let Ok(Some(attr)) = concrete.unstable_attr(ctx.db.upcast()) {
+            validate_unstable_feature_usage(ctx, attr, syntax.stable_ptr());
+        }
+    }
     ExprAndId { expr, id }
 }
 
@@ -2046,6 +2056,15 @@ fn expr_function_call(
     named_args: Vec<NamedArg>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
+    if let Ok(Some(attr)) = ctx
+        .db
+        .lookup_intern_function(function_id)
+        .function
+        .generic_function
+        .unstable_feature(ctx.db.upcast())
+    {
+        validate_unstable_feature_usage(ctx, attr, stable_ptr);
+    }
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx.db.concrete_function_signature(function_id)?;
@@ -2184,6 +2203,25 @@ pub fn compute_statement_semantic(
     // As for now, statement attributes does not have any semantic affect, so we only validate they
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
+    let mut features_to_remove = vec![];
+    for attr_syntax in syntax.query_attr(syntax_db, FEATURE_ATTR) {
+        let attr = attr_syntax.clone().structurize(syntax_db);
+        let feature_name = match &attr.args[..] {
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
+                    ..
+                },
+            ] => value.text(syntax_db),
+            _ => {
+                ctx.diagnostics.report(&attr_syntax, UnsupportedFeatureAttrArguments);
+                continue;
+            }
+        };
+        if ctx.environment.allowed_features.insert(feature_name.clone()) {
+            features_to_remove.push(feature_name);
+        }
+    }
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
@@ -2355,6 +2393,9 @@ pub fn compute_statement_semantic(
         }
         ast::Statement::Missing(_) => todo!(),
     };
+    for feature_name in features_to_remove {
+        ctx.environment.allowed_features.remove(&feature_name);
+    }
     Ok(ctx.statements.alloc(statement))
 }
 
@@ -2412,5 +2453,39 @@ fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast:
             diagnostic.stable_ptr,
             SemanticDiagnosticKind::UnknownStatementAttribute,
         );
+    }
+}
+
+/// Adds diagnostics if an expression using an unstable feature is not explicitly allowed to use the
+/// feature.
+fn validate_unstable_feature_usage(
+    ctx: &mut ComputationContext<'_>,
+    attr: Attribute,
+    stable_ptr: ExprPtr,
+) {
+    let Some(feature_name) = attr.args.iter().find_map(|arg| match &arg.variant {
+        AttributeArgVariant::Named { value: ast::Expr::String(value), name, .. }
+            if name == "feature" =>
+        {
+            Some(value.text(ctx.db.upcast()))
+        }
+        // TODO(orizi): Creates diagnostics for this case.
+        _ => None,
+    }) else {
+        return;
+    };
+    let mut env = &ctx.environment;
+    loop {
+        if env.allowed_features.contains(feature_name.as_str()) {
+            // The feature is allowed.
+            return;
+        }
+        if let Some(parent) = env.parent.as_ref() {
+            // Continue checking if the feature was allowed up the tree.
+            env = parent;
+        } else {
+            ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnstableFeature { feature_name });
+            return;
+        }
     }
 }

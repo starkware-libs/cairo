@@ -104,7 +104,9 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 }
 
 trait IContractSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn get_something(self: T, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252>;
+    #[unstable(feature: "safe_dispatcher")]
 
     fn empty(self: T) -> starknet::SyscallResult<()>;
 }
@@ -777,6 +779,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 }
 
 trait IContractSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
 
     fn empty(self: T) -> starknet::SyscallResult<()>;
 }
