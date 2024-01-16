@@ -211,7 +211,7 @@ impl SierraCasmRunner {
     ) -> Result<RunResultStarknet, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
-        let footer = self.create_code_footer();
+        let footer = Self::create_code_footer();
         let instructions =
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
@@ -678,7 +678,7 @@ impl SierraCasmRunner {
     }
 
     /// Creates a list of instructions that will be appended to the program's bytecode.
-    pub fn create_code_footer(&self) -> Vec<Instruction> {
+    pub fn create_code_footer() -> Vec<Instruction> {
         casm! {
             // Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
             // and `pc` registers.
