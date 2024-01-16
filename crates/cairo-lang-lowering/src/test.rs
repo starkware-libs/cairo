@@ -157,8 +157,8 @@ fn test_function_lowering_phases(
     apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
     apply_stage("after_optimize_remappings2", &optimize_remappings);
     apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
-    apply_stage("after_reorganize_blocks", &reorganize_blocks);
-    apply_stage("after_optimize_remappings3 (final)", &optimize_remappings);
+    apply_stage("after_optimize_remappings3", &optimize_remappings);
+    apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 
