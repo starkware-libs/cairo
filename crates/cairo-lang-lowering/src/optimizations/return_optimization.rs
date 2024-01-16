@@ -5,6 +5,7 @@ mod test;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
+use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
@@ -175,7 +176,11 @@ impl ValueInfo {
                 Ok(())
             }
             ValueInfo::EnumConstruct { ref mut var_info, variant } => {
-                if *variant == arm.variant_id {
+                let MatchArmSelector::VariantId(arm_variant) = &arm.arm_selector else {
+                    panic!("Enum construct should not appear in value match");
+                };
+
+                if *variant == *arm_variant {
                     let cancels_out = match **var_info {
                         ValueInfo::Interchangeable(_) => true,
                         ValueInfo::Var(var_usage) if arm.var_ids == [var_usage.var_id] => true,

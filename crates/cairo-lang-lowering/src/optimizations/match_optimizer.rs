@@ -2,6 +2,7 @@
 #[path = "match_optimizer_test.rs"]
 mod test;
 
+use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
@@ -94,7 +95,9 @@ impl MatchOptimizerContext {
         let (arm_idx, arm) = candidate
             .match_arms
             .iter()
-            .find_position(|arm| arm.variant_id == *variant)
+            .find_position(|arm| {
+                arm.arm_selector == MatchArmSelector::VariantId((*variant).clone())
+            })
             .expect("arm not found.");
 
         let [var_id] = arm.var_ids.as_slice() else {
