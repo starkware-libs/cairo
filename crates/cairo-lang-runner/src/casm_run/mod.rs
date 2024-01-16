@@ -2131,23 +2131,20 @@ pub fn build_cairo_runner(
     CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
 }
 
-/// Runs `instructions` on layout with prime, and returns the memory layout and ap value.
+/// Runs `bytecode` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
-pub fn run_function<'a, 'b: 'a, Instructions>(
+pub fn run_function<'a, 'b: 'a>(
     vm: &mut VirtualMachine,
-    instructions: Instructions,
+    bytecode: impl Iterator<Item = &'a BigInt> + Clone,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
     hints_dict: HashMap<usize, Vec<HintParams>>,
-) -> Result<RunFunctionRes, Box<CairoRunError>>
-where
-    Instructions: Iterator<Item = &'a BigInt> + Clone,
-{
+) -> Result<RunFunctionRes, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
-        instructions.map(Felt252::from).map(MaybeRelocatable::from).collect();
+        bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 

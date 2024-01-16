@@ -3,7 +3,6 @@ use std::collections::HashMap;
 
 use ark_std::iterable::Iterable;
 use cairo_felt::Felt252;
-use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
@@ -347,11 +346,7 @@ impl SierraCasmRunner {
             .iter()
             .find_map(|rt| {
                 let info = self.get_info(rt);
-                if info.long_id.generic_id == *ty {
-                    Some(info)
-                } else {
-                    None
-                }
+                (info.long_id.generic_id == *ty).then_some(info)
             })
             .unwrap();
 

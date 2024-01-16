@@ -117,12 +117,15 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
     };
-    let instructions: Vec<BigInt> =
-        function.instructions.iter().flat_map(|is| is.assemble().encode()).collect();
+    let bytecode: Vec<BigInt> = function
+        .instructions
+        .iter()
+        .flat_map(|instruction| instruction.assemble().encode())
+        .collect();
 
     let (cells, ap) = run_function(
         &mut VirtualMachine::new(true),
-        instructions.iter(),
+        bytecode.iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
@@ -152,12 +155,12 @@ fn test_allocate_segment() {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
     };
-    let instructions: Vec<BigInt> =
-        casm.instructions.iter().flat_map(|is| is.assemble().encode()).collect();
+    let bytecode: Vec<BigInt> =
+        casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
     let (memory, ap) = run_function(
         &mut VirtualMachine::new(true),
-        instructions.iter(),
+        bytecode.iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
