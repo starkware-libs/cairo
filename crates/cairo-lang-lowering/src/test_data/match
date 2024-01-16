@@ -1463,3 +1463,34 @@ Statements:
   (v21: core::felt252) <- 6u
 End:
   Return(v21)
+
+//! > ==========================================================================
+
+//! > Test match unsupported type.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+    match 5_u256 {
+        0 => 1,
+        _ => 2
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported matched type. Type: `core::integer::u256`.
+ --> lib.cairo:2:11
+    match 5_u256 {
+          ^****^
+
+//! > lowering_flat
+Parameters:

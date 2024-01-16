@@ -49,26 +49,21 @@ impl DiagnosticEntry for LoweringDiagnostic {
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
-            LoweringDiagnosticKind::NonZeroValueInMatch => {
-                "Match with a non-zero value is not supported.".into()
-            }
-            LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
-                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
-            }
             LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::VariableNotDropped { .. } => "Variable not dropped.".into(),
             LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
                 "Cannot desnap a non copyable type.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
-                                                                Currently, only matches on enums \
-                                                                and felt252s are supported."
+            LoweringDiagnosticKind::UnsupportedMatchedType(matched_type) => format!("Unsupported matched type. Type: `{}`.", matched_type)
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchedValueTuple => "Unsupported matched value. \
                 Currently, match on tuples only supports enums as tuple members."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmNotALiteral => {
+                "Unsupported match arm - not a literal.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchArmNonSequential => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
@@ -129,19 +124,16 @@ impl DiagnosticEntry for LoweringDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
     Unreachable { last_statement_ptr: SyntaxStablePtrId },
-    // TODO(lior): Remove once supported.
-    NonZeroValueInMatch,
-    // TODO(lior): Remove once supported.
-    OnlyMatchZeroIsSupported,
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
-    UnsupportedMatchedValue,
+    UnsupportedMatchedType(String),
     UnsupportedMatchedValueTuple,
     MissingMatchArm(String),
     UnreachableMatchArm,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
+    UnsupportedMatchArmNotALiteral,
     UnsupportedMatchArmNotATuple,
     UnsupportedMatchArmNonSequential,
     UnsupportedMatchArmOrNotSupported,
