@@ -211,9 +211,11 @@ impl ConstAsBoxLibfuncWrapped {
                 vec![],
                 vec![OutputVarInfo {
                     ty: boxed_inner_ty,
+                    // TODO: check
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                SierraApChange::Known { new_vars_only: true },
+                // TODO: Can we test `new_vars_only` automatically?
+                SierraApChange::Known { new_vars_only: false },
             ),
             const_type: ty,
         })
