@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -424,8 +425,11 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
-        Const(_) => vec![ConstCost::default().into()],
-        CoreConcreteLibfunc::Coupon(libfunc) => match libfunc {
+        Const(libfunc) => match libfunc {
+            // TODO(orizi): Fix.
+            ConstConcreteLibfunc::AsBox(_) => vec![ConstCost::default().into()],
+        }
+        Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(libfunc) => {
                 vec![BranchCost::FunctionCost {
                     const_cost: ConstCost::default(),

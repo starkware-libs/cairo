@@ -201,10 +201,11 @@ impl ConstAsBoxLibfuncWrapped {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let generic_args = context.get_type_info(ty.clone())?.long_id.generic_args;
-        let [GenericArg::Type(inner_ty), ..] = generic_args.as_slice() else {
+        let Some(GenericArg::Type(inner_ty)) = generic_args.first() else {
             return Err(SpecializationError::UnsupportedGenericArg);
         };
         let boxed_inner_ty = box_ty(context, inner_ty.clone())?;
+
         Ok(ConstAsBoxConcreteLibfunc {
             signature: LibfuncSignature::new_non_branch(
                 vec![],

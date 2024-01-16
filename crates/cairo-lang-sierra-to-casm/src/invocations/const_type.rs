@@ -25,13 +25,12 @@ pub fn build_as_box(
     // TODO(Gil): Support non-size-1 consts.
     builder.const_segment_info_builder.insert(&const_type);
     let ctx = casm! {
-        // The relocation will point the `call` to the `ret;` instruction that prepends the
+        // The relocation will point the `call` to the `ret;` instruction that precedes the
         // relevant const.
         call rel 0;
-        // The relocation table will change the address to `[ap - 1]` (which now contains `pc`)
-        // + the const offset, i.e. the const address. The `1` is to skip the `ret` instruction
-        // prepending the const value.
-        // TODO(Gil): Support relocateble CellExpression and return an unstored "[ap - 1] + 1".
+        // The relocation table will add const offset to the `1` below, making it point to the
+        // constant value (the `1` is to skip the `ret` instruction).
+        // TODO(Gil): Support relocatable CellExpression and return an unstored "[ap - 1] + 1".
         [ap] = [ap - 1] + 1, ap++;
     };
     let relocations = vec![

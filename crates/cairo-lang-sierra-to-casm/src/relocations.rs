@@ -16,12 +16,11 @@ pub enum Relocation {
     /// Adds program_offset(StatementIdx) and subtracts the program offset of the casm instruction
     /// that is being relocated.
     RelativeStatementId(StatementIdx),
-    /// Adds the offset between the current statement index and the end of the program code
-    /// segment.
-    EndOfProgram,
-    /// Adds the offset of the const type in the const segment, assuming the const segment is at
-    /// the end of the program.
+    /// Adds the offset of the constant value in the const segment.
     Const(ConcreteTypeId),
+    /// Adds the offset between the current statement index and the end of the program code
+    /// segment (which includes the const segment at its end).
+    EndOfProgram,
 }
 
 impl Relocation {
@@ -34,16 +33,16 @@ impl Relocation {
     ) {
         let target_pc = match self {
             Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
-            Relocation::EndOfProgram => {
-                *statement_offsets.last().unwrap() + const_segment_info.const_segment_size
-            }
             Relocation::Const(ty) => {
                 *statement_offsets.last().unwrap()
-                    + const_segment_info
-                        .const_allocations
-                        .get(ty)
-                        .expect("Const type not found in the const segment.")
-                        .offset
+                + const_segment_info
+                .const_allocations
+                .get(ty)
+                .expect("Const type not found in the const segment.")
+                .offset
+            }
+            Relocation::EndOfProgram => {
+                *statement_offsets.last().unwrap() + const_segment_info.const_segment_size
             }
         };
         match instruction {

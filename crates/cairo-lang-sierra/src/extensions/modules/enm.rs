@@ -219,8 +219,8 @@ impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
 }
 
 /// Libfunc for creating an enum from a `BoundedInt` type.
-/// Will only work where there are the same number of variants as in the range of the `BoundedInt`
-/// type, and the range starts from 0.
+/// Will only work where there are the same number of empty variants as in the range of the
+/// `BoundedInt` type, and the range starts from 0.
 #[derive(Default)]
 pub struct EnumFromBoundedIntLibfunc {}
 impl EnumFromBoundedIntLibfunc {
@@ -241,7 +241,7 @@ impl EnumFromBoundedIntLibfunc {
         for v in variant_types {
             let long_id = context.get_type_info(v)?.long_id;
             // Only trivial empty structs are allowed as variant types.
-            if long_id.generic_id != StructType::ID || long_id.generic_args.len() != 1 {
+            if !(long_id.generic_id == StructType::ID && long_id.generic_args.len() == 1) {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }

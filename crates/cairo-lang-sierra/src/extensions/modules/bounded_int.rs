@@ -22,15 +22,13 @@ impl NamedType for BoundedIntType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let (min, max) = match args {
-            [GenericArg::Value(lower_bound), GenericArg::Value(upper_bound)] => {
-                (lower_bound.clone(), upper_bound.clone())
-            }
+            [GenericArg::Value(min), GenericArg::Value(max)] => (min.clone(), max.clone()),
             [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
 
         let prime: BigInt = Felt252::prime().into();
-        if min > max || min <= -&prime || max >= prime || &max - &min >= prime {
+        if !(-&prime < min && min <= max && max < prime && &max - &min < prime) {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
