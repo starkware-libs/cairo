@@ -253,8 +253,10 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
 }
 
 trait HelloStarknetTraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     // Increases the balance by the given amount.
     fn increase_balance(self: T, amount: usize) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     // Returns the current balance.
     fn get_balance(self: T) -> starknet::SyscallResult<usize>;
 }

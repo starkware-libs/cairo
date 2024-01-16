@@ -6,7 +6,8 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR, STARKNET_INTERFACE_ATTR,
+    FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR,
+    STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -214,6 +215,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
         INLINE_ATTR.into(),
         MUST_USE_ATTR.into(),
+        UNSTABLE_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
@@ -226,7 +228,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
 }
 
 fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into()]);
+    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into(), FEATURE_ATTR.into()]);
     Arc::new(all_attributes)
 }
 

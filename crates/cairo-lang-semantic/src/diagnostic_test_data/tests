@@ -468,3 +468,31 @@ fn must_use_function() -> felt252 {
 //! > function_body
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test usage of unstable.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  unstable_function();
+  #[feature("testing")]
+  unstable_function();
+}
+
+//! > module_code
+#[unstable(feature: "testing")]
+fn unstable_function() -> felt252 {
+  0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:7:3
+  unstable_function();
+  ^*****************^
