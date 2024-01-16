@@ -401,6 +401,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
             }
+            SemanticDiagnosticKind::UnstableFeature { feature_name } => {
+                format!(
+                    r#"Usage of unstable feature `{feature_name}` with no `#[feature({feature_name})]` attribute."#
+                )
+            }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
@@ -624,6 +629,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedFeatureAttrArguments => {
+                "`feature` attribute argument should be a single string.".into()
             }
             SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
             SemanticDiagnosticKind::UnknownStatementAttribute => {
@@ -855,6 +863,9 @@ pub enum SemanticDiagnosticKind {
     UnhandledMustUseType {
         ty: semantic::TypeId,
     },
+    UnstableFeature {
+        feature_name: SmolStr,
+    },
     UnhandledMustUseFunction,
     UnusedVariable,
     ConstGenericParamNotSupported,
@@ -954,6 +965,7 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    UnsupportedFeatureAttrArguments,
     UnsupportedPubArgument,
     UnknownStatementAttribute,
     InlineMacroNotFound {
