@@ -4,6 +4,7 @@ use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -348,7 +349,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
         },
-        Const(_) => vec![ApChange::Known(3)],
+        Const(libfunc) => match libfunc {
+            ConstConcreteLibfunc::AsBox(_) => vec![ApChange::Known(3)],
+        },
         Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
             CouponConcreteLibfunc::Refund(_) => vec![ApChange::Known(0)],

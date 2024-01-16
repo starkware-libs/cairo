@@ -179,13 +179,13 @@ impl FunctionInfo {
     }
 }
 
-/// Returns the offsets of the consts segments.
+/// Returns the offsets of the const segments.
 fn consts_segments_offsets(cairo_program: &CairoProgram, bytecode_len: usize) -> Vec<usize> {
     let const_segment_offset = bytecode_len - cairo_program.const_segment_info.const_segment_size;
     cairo_program
         .const_segment_info
         .const_allocations
         .values()
-        .map(|allocation| allocation.offset + const_segment_offset)
+        .map(|allocation| const_segment_offset + allocation.offset)
         .collect()
 }
