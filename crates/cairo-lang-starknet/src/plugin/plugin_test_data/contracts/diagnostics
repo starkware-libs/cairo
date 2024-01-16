@@ -2180,8 +2180,11 @@ impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<Interf
 }
 
 trait InterfaceTraitSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn foo_external1(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo_l1_handler1(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo_constructor1(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -4321,8 +4324,11 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 }
 
 trait InterfaceSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo2(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -4896,8 +4902,11 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 }
 
 trait InterfaceSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo2(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -5894,7 +5903,9 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
 }
 
 trait Comp3TraitSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
+#[unstable(feature: "safe_dispatcher")]
     fn foo4(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -6626,6 +6637,7 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
 }
 
 trait Comp3TraitSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 

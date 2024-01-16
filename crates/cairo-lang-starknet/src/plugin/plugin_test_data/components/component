@@ -217,7 +217,9 @@ impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispat
 }
 
 trait MyTraitSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn get(self: T, addr: ContractAddress) -> starknet::SyscallResult<u32>;
+#[unstable(feature: "safe_dispatcher")]
     fn set(self: T, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()>;
 }
 

@@ -196,7 +196,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "\n$func_decl$;",
+                    "\n#[unstable(feature: \"safe_dispatcher\")]\n$func_decl$;",
                     &[(
                         "func_decl".to_string(),
                         dispatcher_signature(db, &declaration, "T", false),

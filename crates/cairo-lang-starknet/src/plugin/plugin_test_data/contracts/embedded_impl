@@ -143,7 +143,9 @@ impl OutsideTraitLibraryDispatcherImpl of OutsideTraitDispatcherTrait<OutsideTra
 }
 
 trait OutsideTraitSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn ret_3(self: T) -> starknet::SyscallResult<felt252>;
+#[unstable(feature: "safe_dispatcher")]
     fn ret_identity(self: T, from_address: felt252, value: felt252) -> starknet::SyscallResult<felt252>;
 }
 
@@ -779,6 +781,7 @@ impl OutsideTraitWithDestructLibraryDispatcherImpl of OutsideTraitWithDestructDi
 }
 
 trait OutsideTraitWithDestructSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn ret_3(self: T) -> starknet::SyscallResult<felt252>;
 }
 
@@ -928,6 +931,7 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherImpl of OutsideTraitWithPanic
 }
 
 trait OutsideTraitWithPanicDestructSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn ret_5(self: T) -> starknet::SyscallResult<felt252>;
 }
 
@@ -1645,6 +1649,7 @@ impl OutsideTraitWithDropLibraryDispatcherImpl of OutsideTraitWithDropDispatcher
 }
 
 trait OutsideTraitWithDropSafeDispatcherTrait<T> {
+#[unstable(feature: "safe_dispatcher")]
     fn ret_8(self: T) -> starknet::SyscallResult<felt252>;
 }
 
