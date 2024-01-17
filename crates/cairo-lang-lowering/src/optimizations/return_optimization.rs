@@ -52,11 +52,16 @@ impl ReturnOptimizerContext<'_> {
     /// Given a VarUsage, returns the ValueInfo that corresponds to it.
     fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
         let var_ty = &self.lowered.variables[var_usage.var_id].ty;
-        if self.db.single_value_type(*var_ty).unwrap() {
+        if self.is_droppable(var_usage.var_id) && self.db.single_value_type(*var_ty).unwrap() {
             ValueInfo::Interchangeable(*var_ty)
         } else {
             ValueInfo::Var(*var_usage)
         }
+    }
+
+    /// Returns true if the variable is droppable
+    fn is_droppable(&self, var_id: VariableId) -> bool {
+        self.lowered.variables[var_id].droppable.is_ok()
     }
 }
 
@@ -89,6 +94,13 @@ pub enum ValueInfo {
     },
 }
 
+/// The result of applying an operation to a ValueInfo.
+enum OpResult {
+    InputConsumed,
+    OutputInvalidated,
+    NoChange,
+}
+
 impl ValueInfo {
     /// Applies the given function to the value info.
     fn apply<F>(&mut self, f: &F)
@@ -115,21 +127,30 @@ impl ValueInfo {
         &mut self,
         ctx: &ReturnOptimizerContext<'_>,
         stmt: &StatementStructDestructure,
-    ) -> Result<(), ()> {
+    ) -> OpResult {
         match self {
             ValueInfo::Var(var_usage) => {
                 if stmt.outputs.contains(&var_usage.var_id) {
-                    Err(())
+                    OpResult::OutputInvalidated
                 } else {
-                    Ok(())
+                    OpResult::NoChange
                 }
             }
             ValueInfo::StructConstruct { var_infos } => {
                 let mut cancels_out = var_infos.len() == stmt.outputs.len();
 
-                let mut has_errors = false;
+                let mut input_consumed = false;
+                let mut output_invalidated = false;
                 for (var_info, output) in var_infos.iter_mut().zip(stmt.outputs.iter()) {
-                    has_errors |= var_info.apply_deconstruct(ctx, stmt).is_err();
+                    match var_info.apply_deconstruct(ctx, stmt) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::OutputInvalidated => {
+                            output_invalidated = true;
+                        }
+                        OpResult::NoChange => {}
+                    }
 
                     match var_info {
                         ValueInfo::Var(var_usage) if &var_usage.var_id == output => {}
@@ -144,36 +165,49 @@ impl ValueInfo {
                     // for StructConstruct inputs to be invalidated, otherwise we should return an
                     // error.
                     *self = ValueInfo::Var(stmt.input);
-                } else if has_errors {
-                    return Err(());
+                    return OpResult::InputConsumed;
+                } else if output_invalidated {
+                    return OpResult::OutputInvalidated;
+                } else if input_consumed {
+                    return OpResult::InputConsumed;
                 }
 
-                Ok(())
+                OpResult::NoChange
             }
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply_deconstruct(ctx, stmt)
             }
-            ValueInfo::Interchangeable(_) => Ok(()),
+            ValueInfo::Interchangeable(_) => OpResult::NoChange,
         }
     }
 
     /// Updates the value to the expected value before the match arm.
     /// Returns an error if the value info is invalid before the statement.
-    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) -> Result<(), ()> {
+    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) -> OpResult {
         match self {
             ValueInfo::Var(var_usage) => {
                 if arm.var_ids == [var_usage.var_id] {
-                    Err(())
+                    OpResult::OutputInvalidated
                 } else {
-                    Ok(())
+                    OpResult::NoChange
                 }
             }
             ValueInfo::StructConstruct { ref mut var_infos } => {
+                let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
-                    var_info.apply_match_arm(input, arm)?;
+                    match var_info.apply_match_arm(input, arm) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::OutputInvalidated => return OpResult::OutputInvalidated,
+                        OpResult::NoChange => {}
+                    }
                 }
 
-                Ok(())
+                if input_consumed {
+                    return OpResult::InputConsumed;
+                }
+                OpResult::NoChange
             }
             ValueInfo::EnumConstruct { ref mut var_info, variant } => {
                 let MatchArmSelector::VariantId(arm_variant) = &arm.arm_selector else {
@@ -191,13 +225,13 @@ impl ValueInfo {
                         // If the arm recreates the relevant enum variant, then the arm
                         // assuming the other arms also cancel out.
                         *self = input.clone();
-                        return Ok(());
+                        return OpResult::InputConsumed;
                     }
                 }
 
                 var_info.apply_match_arm(input, arm)
             }
-            ValueInfo::Interchangeable(_) => Ok(()),
+            ValueInfo::Interchangeable(_) => OpResult::NoChange,
         }
     }
 }
@@ -246,9 +280,16 @@ impl AnalyzerInfo {
         stmt: &StatementStructDestructure,
     ) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
+        let is_droppable = ctx.is_droppable(stmt.input.var_id);
 
         for var_info in returned_vars.iter_mut() {
-            if var_info.apply_deconstruct(ctx, stmt).is_err() {
+            let invalidate = match var_info.apply_deconstruct(ctx, stmt) {
+                OpResult::InputConsumed => false,
+                OpResult::OutputInvalidated => true,
+                OpResult::NoChange => !is_droppable,
+            };
+
+            if invalidate {
                 self.invalidate();
                 return;
             }
@@ -256,11 +297,17 @@ impl AnalyzerInfo {
     }
 
     /// Updates the info to the state before match arm.
-    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) {
+    fn apply_match_arm(&mut self, is_droppable: bool, input: &ValueInfo, arm: &MatchArm) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
 
         for var_info in returned_vars.iter_mut() {
-            if var_info.apply_match_arm(input, arm).is_err() {
+            let invalidate = match var_info.apply_match_arm(input, arm) {
+                OpResult::InputConsumed => false,
+                OpResult::OutputInvalidated => true,
+                OpResult::NoChange => !is_droppable,
+            };
+
+            if invalidate {
                 self.invalidate();
                 return;
             }
@@ -291,6 +338,9 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     ) {
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
+                // Note that the ValueInfo::StructConstruct can only be removed by
+                // a StructDeconstruct statement that produces its non-interchangeable inputs so
+                // allowing undroppable inputs is ok here.
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
@@ -347,11 +397,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             return AnalyzerInfo { opt_returned_vars: None };
         }
 
-        let input = self.get_var_info(input);
+        let input_info = self.get_var_info(input);
         let mut opt_prev_info = None;
         for (arm, info) in arms.iter().zip(infos) {
             let mut curr_info = info.clone();
-            curr_info.apply_match_arm(&input, arm);
+            curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
 
             if !curr_info.early_return_possible() {
                 return AnalyzerInfo { opt_returned_vars: None };
@@ -365,11 +415,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 opt_prev_info = Some(curr_info);
             }
         }
-
-        self.fixes.push(FixInfo {
-            block_id,
-            return_vars: opt_prev_info.unwrap().opt_returned_vars.unwrap(),
-        });
+        let return_vars = opt_prev_info.unwrap().opt_returned_vars.unwrap();
+        self.fixes.push(FixInfo { block_id, return_vars });
 
         AnalyzerInfo { opt_returned_vars: None }
     }
