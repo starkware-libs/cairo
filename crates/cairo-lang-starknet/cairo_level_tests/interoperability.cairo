@@ -69,6 +69,27 @@ fn test_flow() {
 }
 
 #[test]
+fn test_flow_safe_dispatcher() {
+    // Set up.
+    let (contract_address, _) = deploy_syscall(
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
+    )
+        .unwrap();
+    let mut contract = IContractSafeDispatcher { contract_address };
+
+    // Interact.
+    #[feature("safe_dispatcher")]
+    assert_eq!(contract.foo(300), Result::Ok(100));
+
+    // Library calls.
+    let mut library = IContractSafeLibraryDispatcher {
+        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
+    };
+    #[feature("safe_dispatcher")]
+    assert_eq!(library.foo(300), Result::Ok(0));
+}
+
+#[test]
 #[available_gas(1170000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {

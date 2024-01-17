@@ -272,7 +272,7 @@ mod mintable {
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');
-            get_dep_component!(self, Ownable).validate_ownership();
+            get_dep_component!(@self, Ownable).validate_ownership();
             let mut erc20_component = get_dep_component_mut!(ref self, ERC20);
             let total_supply = erc20_component.total_supply.read();
             erc20_component.total_supply.write(total_supply + amount);

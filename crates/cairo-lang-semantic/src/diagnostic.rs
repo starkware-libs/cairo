@@ -108,18 +108,22 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
             SemanticDiagnosticKind::NotAnImpl => "Not an impl.".into(),
-            SemanticDiagnosticKind::FunctionNotMemberOfTrait {
+            SemanticDiagnosticKind::ImplItemNotInTrait {
                 impl_def_id,
-                impl_function_id,
+                impl_item_name,
                 trait_id,
+                item_kind,
             } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Impl function `{}::{}` is not a member of trait `{}`.",
+                    "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
                     impl_def_id.name(defs_db),
-                    impl_function_id.name(defs_db),
+                    impl_item_name,
                     trait_id.name(defs_db)
                 )
+            }
+            SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
+                format!("Generic parameters are not supported in {scope} item {item_kind}.")
             }
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
@@ -260,6 +264,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::InconsistentBinding => "variable is bound inconsistently \
+                                                            across alternatives separated by `|` \
+                                                            bound in different ways"
+                .into(),
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -337,8 +345,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_title_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::IfConditionNotBool { condition_ty } => {
-                format!(r#"If condition has type "{}", expected bool."#, condition_ty.format(db))
+            SemanticDiagnosticKind::ConditionNotBool { condition_ty } => {
+                format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
@@ -392,6 +400,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
+            }
+            SemanticDiagnosticKind::UnstableFeature { feature_name } => {
+                format!(
+                    r#"Usage of unstable feature `{feature_name}` with no `#[feature({feature_name})]` attribute."#
+                )
             }
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
@@ -590,6 +603,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
                 "`break` only allowed inside a `loop`.".into()
             }
+            SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
+                "Can only break with a value inside a `loop`.".into()
+            }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
             }
@@ -613,6 +629,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedFeatureAttrArguments => {
+                "`feature` attribute argument should be a single string.".into()
             }
             SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
             SemanticDiagnosticKind::UnknownStatementAttribute => {
@@ -692,10 +711,15 @@ pub enum SemanticDiagnosticKind {
     NotAType,
     NotATrait,
     NotAnImpl,
-    FunctionNotMemberOfTrait {
+    ImplItemNotInTrait {
         impl_def_id: ImplDefId,
-        impl_function_id: ImplFunctionId,
+        impl_item_name: SmolStr,
         trait_id: TraitId,
+        item_kind: String,
+    },
+    GenericsNotSupportedInItem {
+        scope: String,
+        item_kind: String,
     },
     UnexpectedGenericArgs,
     UnknownMember,
@@ -754,6 +778,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    InconsistentBinding,
     WrongArgumentType {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
@@ -793,7 +818,7 @@ pub enum SemanticDiagnosticKind {
         function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
-    IfConditionNotBool {
+    ConditionNotBool {
         condition_ty: semantic::TypeId,
     },
     IncompatibleMatchArms {
@@ -837,6 +862,9 @@ pub enum SemanticDiagnosticKind {
     },
     UnhandledMustUseType {
         ty: semantic::TypeId,
+    },
+    UnstableFeature {
+        feature_name: SmolStr,
     },
     UnhandledMustUseFunction,
     UnusedVariable,
@@ -931,11 +959,13 @@ pub enum SemanticDiagnosticKind {
     TailExpressionNotAllowedInLoop,
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
+    BreakWithValueOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    UnsupportedFeatureAttrArguments,
     UnsupportedPubArgument,
     UnknownStatementAttribute,
     InlineMacroNotFound {

@@ -15,7 +15,7 @@ use itertools::{zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
-use semantic::{ExprVarMemberPath, TypeLongId};
+use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -146,7 +146,7 @@ pub struct LoweringContext<'a, 'db> {
     /// This it the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current loop expression needed for recursive calls in `continue`
-    pub current_loop_expr: Option<semantic::ExprLoop>,
+    pub current_loop_expr_id: Option<semantic::ExprId>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -171,7 +171,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr: Option::None,
+            current_loop_expr_id: Option::None,
             diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
             blocks: Default::default(),
         })
@@ -370,7 +370,11 @@ impl LoweredExprExternEnum {
             function: self.function.lowered(ctx.db),
             inputs: self.inputs,
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-                .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+                .map(|((variant_id, block_id), var_ids)| MatchArm {
+                    arm_selector: MatchArmSelector::VariantId(variant_id),
+                    block_id,
+                    var_ids,
+                })
                 .collect(),
             location: self.location,
         });

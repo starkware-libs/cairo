@@ -134,7 +134,7 @@ impl ProgramAnnotations {
                     function_id: func.id.clone(),
                     convergence_allowed: false,
                     environment: Environment::new(if gas_usage_check {
-                        GasWallet::Value(metadata.gas_info.function_costs[func.id.clone()].clone())
+                        GasWallet::Value(metadata.gas_info.function_costs[&func.id].clone())
                     } else {
                         GasWallet::Disabled
                     }),

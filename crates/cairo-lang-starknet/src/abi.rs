@@ -611,7 +611,7 @@ impl<'a> AbiBuilder<'a> {
                 let event_fields = members
                     .into_iter()
                     .map(|(name, kind)| {
-                        let concrete_member = &concrete_members[name.clone()];
+                        let concrete_member = &concrete_members[&name];
                         let ty = concrete_member.ty;
                         self.add_event_field(kind, ty, name, Source::Member(concrete_member.id))
                     })

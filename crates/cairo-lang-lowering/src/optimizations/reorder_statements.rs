@@ -22,45 +22,43 @@ use crate::{
 ///
 /// Removing unnecessary remapping before this optimization will result in better code.
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
-    if !lowered.blocks.is_empty() {
-        let ctx = ReorderStatementsContext {
-            lowered: &*lowered,
-            moveable_functions: &db.priv_movable_function_ids(),
-            statement_to_move: vec![],
-        };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-        analysis.get_root_info();
-        let ctx = analysis.analyzer;
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let ctx = ReorderStatementsContext {
+        lowered: &*lowered,
+        moveable_functions: &db.priv_movable_function_ids(),
+        statement_to_move: vec![],
+    };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
-        let mut changes_by_block =
-            OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
+    let mut changes_by_block =
+        OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
 
-        for (src, opt_dst) in ctx.statement_to_move.into_iter() {
-            changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
+    for (src, opt_dst) in ctx.statement_to_move.into_iter() {
+        changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
 
-            if let Some(dst) = opt_dst {
-                let statement = lowered.blocks[src.0].statements[src.1].clone();
-                changes_by_block
-                    .entry(dst.0)
-                    .or_insert_with(Vec::new)
-                    .push((dst.1, Some(statement)));
-            }
+        if let Some(dst) = opt_dst {
+            let statement = lowered.blocks[src.0].statements[src.1].clone();
+            changes_by_block.entry(dst.0).or_insert_with(Vec::new).push((dst.1, Some(statement)));
         }
+    }
 
-        for (block_id, block_changes) in changes_by_block.into_iter() {
-            let statements = &mut lowered.blocks[block_id].statements;
+    for (block_id, block_changes) in changes_by_block.into_iter() {
+        let statements = &mut lowered.blocks[block_id].statements;
 
-            // Apply block changes in reverse order to prevent a change from invalidating the
-            // indices of the other changes.
-            for (index, opt_statement) in
-                block_changes.into_iter().sorted_by_key(|(index, _)| Reverse(*index))
-            {
-                match opt_statement {
-                    Some(stmt) => statements.insert(index, stmt),
-                    None => {
-                        statements.remove(index);
-                    }
+        // Apply block changes in reverse order to prevent a change from invalidating the
+        // indices of the other changes.
+        for (index, opt_statement) in
+            block_changes.into_iter().sorted_by_key(|(index, _)| Reverse(*index))
+        {
+            match opt_statement {
+                Some(stmt) => statements.insert(index, stmt),
+                None => {
+                    statements.remove(index);
                 }
             }
         }

@@ -169,14 +169,17 @@ fn foo(orig: @A) -> @A {
 //! > casm
 ret;
 ret;
-jmp rel 8 if [fp + -5] != 0;
+jmp rel 10 if [fp + -5] != 0;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel -6;
-jmp rel 7;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
 ap += 1;
 [ap + 0] = [fp + -3], ap++;
-call rel -12;
+call rel -14;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
@@ -185,7 +188,7 @@ ret;
 //! > function_costs
 test::bar0: OrderedHashMap({})
 test::bar1: OrderedHashMap({})
-test::foo: OrderedHashMap({Const: 900})
+test::foo: OrderedHashMap({Const: 810})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -204,10 +207,9 @@ libfunc branch_align = branch_align;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc function_call<user@test::bar0> = function_call<user@test::bar0>;
 libfunc drop<Unit> = drop<Unit>;
-libfunc jump = jump;
+libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar1> = function_call<user@test::bar1>;
-libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 
 drop<Snapshot<Array<felt252>>>([0]) -> (); // 0
 struct_construct<Unit>() -> ([1]); // 1
@@ -216,18 +218,19 @@ drop<felt252>([0]) -> (); // 3
 struct_construct<Unit>() -> ([1]); // 4
 return([1]); // 5
 dup<Snapshot<test::A>>([0]) -> ([0], [1]); // 6
-enum_snapshot_match<test::A>([1]) { fallthrough([2]) 13([3]) }; // 7
+enum_snapshot_match<test::A>([1]) { fallthrough([2]) 14([3]) }; // 7
 branch_align() -> (); // 8
 store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 9
 function_call<user@test::bar0>([2]) -> ([4]); // 10
 drop<Unit>([4]) -> (); // 11
-jump() { 17() }; // 12
-branch_align() -> (); // 13
-store_temp<felt252>([3]) -> ([3]); // 14
-function_call<user@test::bar1>([3]) -> ([5]); // 15
-drop<Unit>([5]) -> (); // 16
-store_temp<Snapshot<test::A>>([0]) -> ([0]); // 17
-return([0]); // 18
+store_temp<Snapshot<test::A>>([0]) -> ([0]); // 12
+return([0]); // 13
+branch_align() -> (); // 14
+store_temp<felt252>([3]) -> ([3]); // 15
+function_call<user@test::bar1>([3]) -> ([5]); // 16
+drop<Unit>([5]) -> (); // 17
+store_temp<Snapshot<test::A>>([0]) -> ([0]); // 18
+return([0]); // 19
 
 test::bar0@0([0]: Snapshot<Array<felt252>>) -> (Unit);
 test::bar1@3([0]: felt252) -> (Unit);

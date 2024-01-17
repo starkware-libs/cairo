@@ -827,8 +827,9 @@ impl<'a> Parser<'a> {
     fn expect_trait_item_type(&mut self, attributes: AttributeListGreen) -> TraitItemTypeGreen {
         let type_kw = self.take::<TerminalType>();
         let name = self.parse_identifier();
+        let generic_params = self.parse_optional_generic_params();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemType::new_green(self.db, attributes, type_kw, name, semicolon)
+        TraitItemType::new_green(self.db, attributes, type_kw, name, generic_params, semicolon)
     }
 
     /// Assumes the current token is Const.
@@ -1190,6 +1191,9 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalLoop if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_loop_expr().into())
+            }
+            SyntaxKind::TerminalWhile if lbrace_allowed == LbraceAllowed::Allow => {
+                Ok(self.expect_while_expr().into())
             }
 
             _ => {
@@ -1620,6 +1624,16 @@ impl<'a> Parser<'a> {
         let body = self.parse_block();
 
         ExprLoop::new_green(self.db, loop_kw, body)
+    }
+
+    /// Assumes the current token is `While`.
+    /// Expected pattern: `while <expr> <block>`.
+    fn expect_while_expr(&mut self) -> ExprWhileGreen {
+        let while_kw = self.take::<TerminalWhile>();
+        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let body = self.parse_block();
+
+        ExprWhile::new_green(self.db, while_kw, condition, body)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be

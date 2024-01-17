@@ -27,8 +27,9 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
-    Parameter, Signature, TypeId, TypeLongId, VarId,
+    MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm, VarId,
 };
+
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
@@ -225,6 +226,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, TypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, TypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteVariant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ValueSelectorArm, $($exclude)*);
+        $crate::prune_single!(__regular_helper, MatchArmSelector, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteStructId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteStructLongId, $($exclude)*);
@@ -271,6 +274,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprWhile, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprStringLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);

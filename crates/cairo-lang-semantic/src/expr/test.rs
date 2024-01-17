@@ -50,6 +50,7 @@ cairo_lang_test_utils::test_file_test!(
         snapshot: "snapshot",
         statements: "statements",
         structure: "structure",
+        while_: "while",
     },
     test_function_diagnostics
 );

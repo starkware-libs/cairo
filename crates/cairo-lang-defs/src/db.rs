@@ -6,7 +6,8 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR, STARKNET_INTERFACE_ATTR,
+    FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, MUST_USE_ATTR,
+    STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -38,13 +39,15 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
+    fn intern_impl_type(&self, id: ImplTypeLongId) -> ImplTypeId;
+    #[salsa::interned]
     fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
     #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
     #[salsa::interned]
-    fn intern_type_alias(&self, id: TypeAliasLongId) -> TypeAliasId;
+    fn intern_module_type_alias(&self, id: ModuleTypeAliasLongId) -> ModuleTypeAliasId;
     #[salsa::interned]
     fn intern_impl_alias(&self, id: ImplAliasLongId) -> ImplAliasId;
     #[salsa::interned]
@@ -53,6 +56,8 @@ pub trait DefsGroup:
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
     #[salsa::interned]
     fn intern_trait(&self, id: TraitLongId) -> TraitId;
+    #[salsa::interned]
+    fn intern_trait_type(&self, id: TraitTypeLongId) -> TraitTypeId;
     #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
@@ -111,11 +116,16 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>>;
     fn module_constants_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ConstantId>>>;
+    fn module_constant_by_id(&self, constant_id: ConstantId) -> Maybe<Option<ast::ItemConstant>>;
     fn module_free_functions(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>>;
     fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<FreeFunctionId>>>;
+    fn module_free_function_by_id(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<Option<ast::FunctionWithBody>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>>;
     /// Returns the stable ptr of the name of a module item.
     fn module_item_name_stable_ptr(
@@ -128,47 +138,68 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>>;
     fn module_uses_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<UseId>>>;
+    fn module_use_by_id(&self, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>>;
     fn module_structs(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<StructId, ast::ItemStruct>>>;
     fn module_structs_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<StructId>>>;
+    fn module_struct_by_id(&self, struct_id: StructId) -> Maybe<Option<ast::ItemStruct>>;
     fn module_enums(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<EnumId, ast::ItemEnum>>>;
     fn module_enums_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<EnumId>>>;
+    fn module_enum_by_id(&self, enum_id: EnumId) -> Maybe<Option<ast::ItemEnum>>;
     fn module_type_aliases(
         &self,
         module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>>;
-    fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TypeAliasId>>>;
+    ) -> Maybe<Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>>;
+    fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleTypeAliasId>>>;
+    fn module_type_alias_by_id(
+        &self,
+        module_type_alias_id: ModuleTypeAliasId,
+    ) -> Maybe<Option<ast::ItemTypeAlias>>;
     fn module_impl_aliases(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>>;
     fn module_impl_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ImplAliasId>>>;
+    fn module_impl_alias_by_id(
+        &self,
+        impl_alias_id: ImplAliasId,
+    ) -> Maybe<Option<ast::ItemImplAlias>>;
     fn module_traits(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<TraitId, ast::ItemTrait>>>;
     fn module_traits_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TraitId>>>;
+    fn module_trait_by_id(&self, trait_id: TraitId) -> Maybe<Option<ast::ItemTrait>>;
     fn module_impls(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>>;
     fn module_impls_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ImplDefId>>>;
+    fn module_impl_by_id(&self, impl_id: ImplDefId) -> Maybe<Option<ast::ItemImpl>>;
     fn module_extern_types(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>>;
     fn module_extern_types_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ExternTypeId>>>;
+    fn module_extern_type_by_id(
+        &self,
+        extern_type_id: ExternTypeId,
+    ) -> Maybe<Option<ast::ItemExternType>>;
     fn module_extern_functions(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId)
     -> Maybe<Arc<Vec<ExternFunctionId>>>;
+    fn module_extern_function_by_id(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Maybe<Option<ast::ItemExternFunction>>;
     fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_infos(
         &self,
@@ -184,6 +215,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let mut all_attributes = OrderedHashSet::from_iter([
         INLINE_ATTR.into(),
         MUST_USE_ATTR.into(),
+        UNSTABLE_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
@@ -196,7 +228,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
 }
 
 fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into()]);
+    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into(), FEATURE_ATTR.into()]);
     Arc::new(all_attributes)
 }
 
@@ -207,7 +239,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let item_module_ast = &db.priv_module_data(parent)?.submodules[submodule_id];
+            let item_module_ast = &db.priv_module_data(parent)?.submodules[&submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
                     // This is an inline module, we return the file where the inline module was
@@ -307,7 +339,7 @@ pub struct ModuleData {
     free_functions: Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>,
     structs: Arc<OrderedHashMap<StructId, ast::ItemStruct>>,
     enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
-    type_aliases: Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>,
+    type_aliases: Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>,
     impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
     traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
@@ -331,7 +363,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         ModuleId::CrateRoot(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
             let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
-            let item_module_ast = &parent_module_data.submodules[submodule_id];
+            let item_module_ast = &parent_module_data.submodules[&submodule_id];
 
             match item_module_ast.body(syntax_db) {
                 MaybeModuleBody::Some(body) => {
@@ -490,7 +522,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
-                    let item_id = db.intern_type_alias(TypeAliasLongId(
+                    let item_id = db.intern_module_type_alias(ModuleTypeAliasLongId(
                         module_file_id,
                         type_alias.stable_ptr(),
                     ));
@@ -670,6 +702,13 @@ pub fn module_constants_ids(
 ) -> Maybe<Arc<Vec<ConstantId>>> {
     Ok(Arc::new(db.module_constants(module_id)?.keys().copied().collect()))
 }
+pub fn module_constant_by_id(
+    db: &dyn DefsGroup,
+    constant_id: ConstantId,
+) -> Maybe<Option<ast::ItemConstant>> {
+    let module_constants = db.module_constants(constant_id.module_file_id(db.upcast()).0)?;
+    Ok(module_constants.get(&constant_id).cloned())
+}
 
 /// Returns all the *direct* submodules of the given module - including those generated by macro
 /// plugins. To get all the submodules including nested modules, use [`collect_modules_under`].
@@ -681,6 +720,13 @@ fn module_submodules(
 }
 fn module_submodules_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<SubmoduleId>>> {
     Ok(Arc::new(db.module_submodules(module_id)?.keys().copied().collect()))
+}
+pub fn module_submodule_by_id(
+    db: &dyn DefsGroup,
+    submodule_id: SubmoduleId,
+) -> Maybe<Option<ast::ItemModule>> {
+    let module_submodules = db.module_submodules(submodule_id.module_file_id(db.upcast()).0)?;
+    Ok(module_submodules.get(&submodule_id).cloned())
 }
 
 /// Returns all the free functions of the given module.
@@ -696,6 +742,14 @@ pub fn module_free_functions_ids(
 ) -> Maybe<Arc<Vec<FreeFunctionId>>> {
     Ok(Arc::new(db.module_free_functions(module_id)?.keys().copied().collect()))
 }
+pub fn module_free_function_by_id(
+    db: &dyn DefsGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<Option<ast::FunctionWithBody>> {
+    let module_free_functions =
+        db.module_free_functions(free_function_id.module_file_id(db.upcast()).0)?;
+    Ok(module_free_functions.get(&free_function_id).cloned())
+}
 
 /// Returns all the uses of the given module.
 pub fn module_uses(
@@ -706,6 +760,10 @@ pub fn module_uses(
 }
 pub fn module_uses_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<UseId>>> {
     Ok(Arc::new(db.module_uses(module_id)?.keys().copied().collect()))
+}
+pub fn module_use_by_id(db: &dyn DefsGroup, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>> {
+    let module_uses = db.module_uses(use_id.module_file_id(db.upcast()).0)?;
+    Ok(module_uses.get(&use_id).cloned())
 }
 
 /// Returns all the structs of the given module.
@@ -718,6 +776,13 @@ pub fn module_structs(
 pub fn module_structs_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<StructId>>> {
     Ok(Arc::new(db.module_structs(module_id)?.keys().copied().collect()))
 }
+pub fn module_struct_by_id(
+    db: &dyn DefsGroup,
+    struct_id: StructId,
+) -> Maybe<Option<ast::ItemStruct>> {
+    let module_structs = db.module_structs(struct_id.module_file_id(db.upcast()).0)?;
+    Ok(module_structs.get(&struct_id).cloned())
+}
 
 /// Returns all the enums of the given module.
 pub fn module_enums(
@@ -729,19 +794,31 @@ pub fn module_enums(
 pub fn module_enums_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<EnumId>>> {
     Ok(Arc::new(db.module_enums(module_id)?.keys().copied().collect()))
 }
+pub fn module_enum_by_id(db: &dyn DefsGroup, enum_id: EnumId) -> Maybe<Option<ast::ItemEnum>> {
+    let module_enums = db.module_enums(enum_id.module_file_id(db.upcast()).0)?;
+    Ok(module_enums.get(&enum_id).cloned())
+}
 
 /// Returns all the type aliases of the given module.
 pub fn module_type_aliases(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>> {
+) -> Maybe<Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>> {
     Ok(db.priv_module_data(module_id)?.type_aliases)
 }
 pub fn module_type_aliases_ids(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<Vec<TypeAliasId>>> {
+) -> Maybe<Arc<Vec<ModuleTypeAliasId>>> {
     Ok(Arc::new(db.module_type_aliases(module_id)?.keys().copied().collect()))
+}
+pub fn module_type_alias_by_id(
+    db: &dyn DefsGroup,
+    module_type_alias_id: ModuleTypeAliasId,
+) -> Maybe<Option<ast::ItemTypeAlias>> {
+    let module_type_aliases =
+        db.module_type_aliases(module_type_alias_id.module_file_id(db.upcast()).0)?;
+    Ok(module_type_aliases.get(&module_type_alias_id).cloned())
 }
 
 /// Returns all the impl aliases of the given module.
@@ -757,6 +834,14 @@ pub fn module_impl_aliases_ids(
 ) -> Maybe<Arc<Vec<ImplAliasId>>> {
     Ok(Arc::new(db.module_impl_aliases(module_id)?.keys().copied().collect()))
 }
+pub fn module_impl_alias_by_id(
+    db: &dyn DefsGroup,
+    impl_alias_id: ImplAliasId,
+) -> Maybe<Option<ast::ItemImplAlias>> {
+    let module_impl_aliases =
+        db.module_impl_aliases(impl_alias_id.module_file_id(db.upcast()).0)?;
+    Ok(module_impl_aliases.get(&impl_alias_id).cloned())
+}
 
 /// Returns all the traits of the given module.
 pub fn module_traits(
@@ -768,6 +853,10 @@ pub fn module_traits(
 pub fn module_traits_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<TraitId>>> {
     Ok(Arc::new(db.module_traits(module_id)?.keys().copied().collect()))
 }
+pub fn module_trait_by_id(db: &dyn DefsGroup, trait_id: TraitId) -> Maybe<Option<ast::ItemTrait>> {
+    let module_traits = db.module_traits(trait_id.module_file_id(db.upcast()).0)?;
+    Ok(module_traits.get(&trait_id).cloned())
+}
 
 /// Returns all the impls of the given module.
 pub fn module_impls(
@@ -778,6 +867,13 @@ pub fn module_impls(
 }
 pub fn module_impls_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<ImplDefId>>> {
     Ok(Arc::new(db.module_impls(module_id)?.keys().copied().collect()))
+}
+pub fn module_impl_by_id(
+    db: &dyn DefsGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Option<ast::ItemImpl>> {
+    let module_impls = db.module_impls(impl_def_id.module_file_id(db.upcast()).0)?;
+    Ok(module_impls.get(&impl_def_id).cloned())
 }
 
 /// Returns all the extern_types of the given module.
@@ -793,6 +889,14 @@ pub fn module_extern_types_ids(
 ) -> Maybe<Arc<Vec<ExternTypeId>>> {
     Ok(Arc::new(db.module_extern_types(module_id)?.keys().copied().collect()))
 }
+pub fn module_extern_type_by_id(
+    db: &dyn DefsGroup,
+    extern_type_id: ExternTypeId,
+) -> Maybe<Option<ast::ItemExternType>> {
+    let module_extern_types =
+        db.module_extern_types(extern_type_id.module_file_id(db.upcast()).0)?;
+    Ok(module_extern_types.get(&extern_type_id).cloned())
+}
 
 /// Returns all the extern_functions of the given module.
 pub fn module_extern_functions(
@@ -806,6 +910,14 @@ pub fn module_extern_functions_ids(
     module_id: ModuleId,
 ) -> Maybe<Arc<Vec<ExternFunctionId>>> {
     Ok(Arc::new(db.module_extern_functions(module_id)?.keys().copied().collect()))
+}
+pub fn module_extern_function_by_id(
+    db: &dyn DefsGroup,
+    extern_function_id: ExternFunctionId,
+) -> Maybe<Option<ast::ItemExternFunction>> {
+    let module_extern_functions =
+        db.module_extern_functions(extern_function_id.module_file_id(db.upcast()).0)?;
+    Ok(module_extern_functions.get(&extern_function_id).cloned())
 }
 
 pub fn module_ancestors(db: &dyn DefsGroup, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
@@ -846,7 +958,7 @@ fn module_item_name_stable_ptr(
 ) -> Maybe<SyntaxStablePtrId> {
     let data = db.priv_module_data(module_id)?;
     let db = db.upcast();
-    Ok(match item_id {
+    Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {

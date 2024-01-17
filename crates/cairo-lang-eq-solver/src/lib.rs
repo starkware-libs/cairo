@@ -70,7 +70,7 @@ fn try_solve_equations_iteration<Var: Clone + Debug + PartialEq + Eq + Hash>(
     target_vars: &[Var],
 ) -> Option<OrderedHashMap<Var, i64>> {
     let mut vars = variables!();
-    let mut orig_to_solver_var = OrderedHashMap::default();
+    let mut orig_to_solver_var = OrderedHashMap::new();
     // Add all variables to structure and map.
     for eq in equations {
         for var in eq.var_to_coef.keys() {

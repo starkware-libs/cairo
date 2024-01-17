@@ -21,6 +21,7 @@ use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
+use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test::branch_inversion::branch_inversion;
@@ -33,6 +34,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         call :"call",
         constant :"constant",
+        cycles :"cycles",
         literal :"literal",
         destruct :"destruct",
         enums :"enums",
@@ -53,6 +55,7 @@ cairo_lang_test_utils::test_file_test!(
         tests :"tests",
         tuple :"tuple",
         strings :"strings",
+        while_ :"while",
     },
     test_function_lowering
 );
@@ -143,6 +146,7 @@ fn test_function_lowering_phases(
     apply_stage("after_lower_panics", &|lowered| {
         *lowered = lower_panics(&db, function_id, lowered).unwrap();
     });
+    apply_stage("after_return_optimization", &|lowered| return_optimization(&db, lowered));
     apply_stage("after_add_destructs", &|lowered| add_destructs(&db, function_id, lowered));
     apply_stage("after_optimize_remappings1", &optimize_remappings);
     apply_stage("after_reorder_statements1", &|lowered| reorder_statements(&db, lowered));
@@ -153,8 +157,8 @@ fn test_function_lowering_phases(
     apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
     apply_stage("after_optimize_remappings2", &optimize_remappings);
     apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
-    apply_stage("after_reorganize_blocks", &reorganize_blocks);
-    apply_stage("after_optimize_remappings3 (final)", &optimize_remappings);
+    apply_stage("after_optimize_remappings3", &optimize_remappings);
+    apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 

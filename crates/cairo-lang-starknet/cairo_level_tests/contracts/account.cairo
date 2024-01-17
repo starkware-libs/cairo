@@ -74,7 +74,7 @@ mod account {
                         let mut res = call_contract_syscall(
                             address: call.to,
                             entry_point_selector: call.selector,
-                            calldata: call.calldata.span()
+                            calldata: call.calldata
                         )
                             .unwrap_syscall();
                         result.append(res);

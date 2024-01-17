@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_felt::Felt252;
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -345,20 +346,16 @@ impl CasmContractClass {
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
-        let mut bytecode = vec![];
-        let mut hints = vec![];
-        for instruction in cairo_program.instructions {
-            if !instruction.hints.is_empty() {
-                hints.push((bytecode.len(), instruction.hints.clone()))
-            }
-            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+        let bytecode = bytecode
+            .iter()
+            .map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-
                 BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
-            }))
-        }
+            })
+            .collect();
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -433,7 +430,7 @@ impl CasmContractClass {
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
                 .code_offset;
             assert_eq!(
-                metadata.gas_info.function_costs[function.id.clone()],
+                metadata.gas_info.function_costs[&function.id],
                 OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
                 "Unexpected entry point cost."
             );

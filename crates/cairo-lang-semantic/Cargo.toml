@@ -19,12 +19,12 @@ cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.5.0-dev.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.5.0-dev.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.0-dev.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.0-dev.0" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", optional = true, features = ["testing"], version = "2.5.0-dev.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.5.0-dev.0", optional = true, features = ["testing"] }
 id-arena.workspace = true
 indoc.workspace = true
-itertools.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+itertools = { workspace = true, default-features = true }
+num-bigint = { workspace = true, default-features = true }
+num-traits = { workspace = true, default-features = true }
 once_cell.workspace = true
 salsa.workspace = true
 smol_str.workspace = true

@@ -9,10 +9,10 @@ description = "Compiler executable for validating a Sierra upgrade is valid"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-serde.workspace = true
+serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 rayon.workspace = true
 indicatif = "0.17.7"
 
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.0-dev.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.5.0-dev.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.5.0-dev.0", features = ["serde"] }
