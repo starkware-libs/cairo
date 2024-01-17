@@ -51,11 +51,16 @@ impl ReturnOptimizerContext<'_> {
     /// Given a VarUsage, returns the ValueInfo that corresponds to it.
     fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
         let var_ty = &self.lowered.variables[var_usage.var_id].ty;
-        if self.db.single_value_type(*var_ty).unwrap() {
+        if self.is_droppable(var_usage.var_id) && self.db.single_value_type(*var_ty).unwrap() {
             ValueInfo::Interchangeable(*var_ty)
         } else {
             ValueInfo::Var(*var_usage)
         }
+    }
+
+    /// Returns true if the variable is droppable
+    fn is_droppable(&self, var_id: VariableId) -> bool {
+        self.lowered.variables[var_id].droppable.is_ok()
     }
 }
 
@@ -284,6 +289,15 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         stmt: &'a Statement,
     ) {
+        if stmt
+            .inputs()
+            .iter()
+            .any(|var_usage| self.lowered.variables[var_usage.var_id].droppable.is_err())
+        {
+            info.invalidate();
+            return;
+        }
+
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                 info.replace(
@@ -338,7 +352,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return AnalyzerInfo { opt_returned_vars: None };
         };
-        if arms.is_empty() {
+        if arms.is_empty() || !self.is_droppable(input.var_id) {
             return AnalyzerInfo { opt_returned_vars: None };
         }
 
