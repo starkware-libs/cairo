@@ -92,6 +92,7 @@ impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispat
 }
 
 trait MyTraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn do_nothing(self: T) -> starknet::SyscallResult<()>;
 }
 
