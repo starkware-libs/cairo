@@ -87,8 +87,12 @@ pub fn lower_semantic_function(
     }
 
     let block_expr_id = encapsulating_ctx.function_body.body_expr;
-    let main_lowering =
-        lower_function(&mut encapsulating_ctx, function_id, signature.into(), block_expr_id)?;
+    let main_lowering = lower_function(
+        &mut encapsulating_ctx,
+        function_id,
+        Signature::from_semantic(db, signature),
+        block_expr_id,
+    )?;
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
@@ -1032,6 +1036,7 @@ fn lower_expr_loop(
         return_type,
         implicits: vec![],
         panicable: ctx.signature.panicable,
+        location: ctx.get_location(stable_ptr.untyped()),
     };
 
     // Get the function id.
