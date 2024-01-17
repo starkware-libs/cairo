@@ -121,6 +121,7 @@ impl Interface1LibraryDispatcherImpl of Interface1DispatcherTrait<Interface1Libr
 }
 
 trait Interface1SafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -213,6 +214,7 @@ impl Interface2LibraryDispatcherImpl of Interface2DispatcherTrait<Interface2Libr
 }
 
 trait Interface2SafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 

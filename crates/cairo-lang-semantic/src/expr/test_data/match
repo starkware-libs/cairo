@@ -150,3 +150,46 @@ error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
  --> lib.cairo:8:9
         false => 3,
         ^***^
+
+//! > ==========================================================================
+
+//! > Test match with or pattern inconsistent mutability
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: MyEnum) -> felt252 {
+  match a {
+    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct P {
+  x: felt252,
+  y: felt252,
+  z: felt252,
+  w: felt252,
+}
+enum MyEnum {
+  A: felt252,
+  B: (felt252, felt252),
+  C: (felt252, felt252, felt252),
+  D: P,
+}
+
+//! > expected_diagnostics
+error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
+ --> lib.cairo:15:35
+    MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+                                  ^
+
+error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
+ --> lib.cairo:16:46
+    MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
+                                             ^***^

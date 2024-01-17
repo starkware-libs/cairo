@@ -55,8 +55,7 @@ pub fn extern_type_declaration_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_extern_types = db.module_extern_types(module_file_id.0)?;
-    let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
+    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::ExternType(extern_type_id),
@@ -67,7 +66,7 @@ pub fn extern_type_declaration_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &type_syntax.generic_params(db.upcast()),
+        &extern_type_syntax.generic_params(db.upcast()),
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
@@ -76,7 +75,7 @@ pub fn extern_type_declaration_generic_params_data(
         );
     }
     resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, type_syntax.stable_ptr().untyped())
+        inference_err.report(&mut diagnostics, extern_type_syntax.stable_ptr().untyped())
     });
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -90,8 +89,7 @@ pub fn priv_extern_type_declaration_data(
 ) -> Maybe<ExternTypeDeclarationData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_extern_types = db.module_extern_types(module_file_id.0)?;
-    let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
+    let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
     // Generic params.
     let generic_params_data = extern_type_declaration_generic_params_data(db, extern_type_id)?;
@@ -107,8 +105,10 @@ pub fn priv_extern_type_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err
-            .report(&mut diagnostics, stable_ptr.unwrap_or(type_syntax.stable_ptr().untyped()));
+        inference_err.report(
+            &mut diagnostics,
+            stable_ptr.unwrap_or(extern_type_syntax.stable_ptr().untyped()),
+        );
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 

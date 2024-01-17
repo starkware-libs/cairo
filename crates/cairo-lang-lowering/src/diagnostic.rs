@@ -49,26 +49,31 @@ impl DiagnosticEntry for LoweringDiagnostic {
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
-            LoweringDiagnosticKind::NonZeroValueInMatch => {
-                "Match with a non-zero value is not supported.".into()
-            }
-            LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
-                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
-            }
             LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::VariableNotDropped { .. } => "Variable not dropped.".into(),
             LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
                 "Cannot desnap a non copyable type.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
-                                                                Currently, only matches on enums \
-                                                                and felt252s are supported."
+            LoweringDiagnosticKind::UnsupportedMatchedType(matched_type) =>
+                format!("Unsupported matched type. Type: `{}`.", matched_type),
+            LoweringDiagnosticKind::UnsupportedMatchedValueTuple => "Unsupported matched value. \
+                Currently, match on tuples only supports enums as tuple members."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchArmNonSequential=>
-            "Unsupported match arm - numbers must be sequential starting from 0.".into(),
+            LoweringDiagnosticKind::UnsupportedMatchArmNotALiteral => {
+                "Unsupported match arm - not a literal.".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmNonSequential => {
+                "Unsupported match - numbers must be sequential starting from 0.".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmOrNotSupported => {
+                "Unsupported match arm - or pattern is not supported in this context".into()
+            }
+            LoweringDiagnosticKind::UnsupportedMatchArmNotATuple => {
+                "Unsupported match arm - not a tuple.".into()
+            }
             LoweringDiagnosticKind::NonExhaustiveMatchFelt252 => {
                 "Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`)."
                     .into()
@@ -85,11 +90,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "
                 .into()
             }
+            LoweringDiagnosticKind::NoPanicFunctionCycle => {
+                "Call cycle of `nopanic` functions is not allowed.".into()
+            },
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
             }
-            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Enum variant `{}` not covered.", variant),
+            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm: `{}` not covered.", variant),
             LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
         }
     }
@@ -116,22 +124,23 @@ impl DiagnosticEntry for LoweringDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
     Unreachable { last_statement_ptr: SyntaxStablePtrId },
-    // TODO(lior): Remove once supported.
-    NonZeroValueInMatch,
-    // TODO(lior): Remove once supported.
-    OnlyMatchZeroIsSupported,
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
-    UnsupportedMatchedValue,
+    UnsupportedMatchedType(String),
+    UnsupportedMatchedValueTuple,
     MissingMatchArm(String),
     UnreachableMatchArm,
     UnexpectedError,
     UnsupportedMatchArmNotAVariant,
+    UnsupportedMatchArmNotALiteral,
+    UnsupportedMatchArmNotATuple,
     UnsupportedMatchArmNonSequential,
+    UnsupportedMatchArmOrNotSupported,
     NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
+    NoPanicFunctionCycle,
     LiteralError(LiteralError),
     UnsupportedPattern,
 }

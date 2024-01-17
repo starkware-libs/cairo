@@ -73,14 +73,14 @@ fn get_dep_component_generate_code_helper(
         };
     }
     let mut builder = PatchBuilder::new(db);
-    let (let_part, maybe_mut, ref_or_snapshot, maybe_ref) =
-        if is_mut { ("let mut", "_mut", "ref ", "ref ") } else { ("let", "", "@", "") };
+    let (let_part, maybe_mut, maybe_ref) =
+        if is_mut { ("let mut", "_mut", "ref ") } else { ("let", "", "") };
     builder.add_modified(RewriteNode::interpolate_patched(
         &format!(
         "
             {{
                 {let_part} __get_dep_component_macro_temp_contract__ = \
-         HasComponent::get_contract{maybe_mut}({ref_or_snapshot}$contract_path$);
+         HasComponent::get_contract{maybe_mut}({maybe_ref}$contract_path$);
                 $component_impl_path$::get_component{maybe_mut}({maybe_ref}\
          __get_dep_component_macro_temp_contract__)
             }}

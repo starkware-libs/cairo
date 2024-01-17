@@ -46,4 +46,23 @@ impl SyntaxStablePtrId {
             SyntaxStablePtr::Child { parent, .. } => parent.file_id(db),
         }
     }
+    /// Returns the stable pointer of the parent of this stable pointer.
+    pub fn parent(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(*self) else {
+            panic!()
+        };
+        parent
+    }
+    /// Returns the stable pointer of the `n`th parent of this stable pointer.
+    /// n = 0: returns itself.
+    /// n = 1: return the parent.
+    /// n = 2: return the grand parent.
+    /// And so on...
+    pub fn nth_parent(&self, db: &dyn SyntaxGroup, n: usize) -> SyntaxStablePtrId {
+        let mut ptr = *self;
+        for _ in 0..n {
+            ptr = ptr.parent(db);
+        }
+        ptr
+    }
 }

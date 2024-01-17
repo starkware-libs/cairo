@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::{string::ToString, vec};
+
 use indoc::indoc;
 use test_log::test;
 

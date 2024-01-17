@@ -236,7 +236,7 @@ impl FunctionLongId {
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         match self {
             FunctionLongId::Semantic(semantic) => {
-                Ok(db.concrete_function_signature(*semantic)?.into())
+                Ok(Signature::from_semantic(db, db.concrete_function_signature(*semantic)?))
             }
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
         }
@@ -318,10 +318,14 @@ pub struct Signature {
     /// Panicable.
     #[dont_rewrite]
     pub panicable: bool,
+    /// Location.
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub location: LocationId,
 }
-impl From<semantic::Signature> for Signature {
-    fn from(value: semantic::Signature) -> Self {
-        let semantic::Signature { params, return_type, implicits, panicable, .. } = value;
+impl Signature {
+    pub fn from_semantic(db: &dyn LoweringGroup, value: semantic::Signature) -> Self {
+        let semantic::Signature { params, return_type, implicits, panicable, stable_ptr } = value;
         let ref_params = params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
@@ -329,7 +333,17 @@ impl From<semantic::Signature> for Signature {
             .collect();
         let params: Vec<semantic::ExprVarMemberPath> =
             params.into_iter().map(parameter_as_member_path).collect();
-        Self { params, extra_rets: ref_params, return_type, implicits, panicable }
+        Self {
+            params,
+            extra_rets: ref_params,
+            return_type,
+            implicits,
+            panicable,
+            location: LocationId::from_stable_location(
+                db,
+                StableLocation::new(stable_ptr.untyped()),
+            ),
+        }
     }
 }
 semantic::add_rewrite!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, Signature);

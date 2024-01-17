@@ -97,7 +97,7 @@ pub fn calc_metadata(
     let ap_change_info =
         if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
             program,
-            |idx, token_type| pre_gas_info.variable_values[(idx, token_type)] as usize,
+            |idx, token_type| pre_gas_info.variable_values[&(idx, token_type)] as usize,
         )?;
 
     let post_function_set_costs = config
@@ -122,7 +122,7 @@ pub fn calc_metadata(
         let enforced_function_costs: OrderedHashMap<FunctionId, i32> = config
             .function_set_costs
             .iter()
-            .map(|(func, costs)| (func.clone(), costs[CostTokenType::Const]))
+            .map(|(func, costs)| (func.clone(), costs[&CostTokenType::Const]))
             .collect();
         let post_gas_info2 = compute_postcost_info(
             program,

@@ -2,7 +2,13 @@
   "name": "cairo1",
   "displayName": "Cairo 1.0",
   "description": "Support Cairo syntax",
+<<<<<<< HEAD
   "version": "2.5.0-dev.0",
+||||||| 1c02dc554
+  "version": "2.4.1",
+=======
+  "version": "2.4.4",
+>>>>>>> origin/main
   "engines": {
     "vscode": "^1.60.0"
   },

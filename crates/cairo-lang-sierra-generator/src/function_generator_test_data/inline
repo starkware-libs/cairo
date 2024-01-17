@@ -41,21 +41,18 @@ branch_align() -> ()
 felt252_is_zero([0]) { fallthrough() label_test::foo::3([5]) }
 branch_align() -> ()
 felt252_const<1>() -> ([6])
-store_temp<felt252>([6]) -> ([7])
-jump() { label_test::foo::5() }
+store_temp<felt252>([6]) -> ([6])
+return([6])
 label_test::foo::3:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<0>() -> ([8])
-store_temp<felt252>([8]) -> ([7])
-label_test::foo::5:
-rename<felt252>([7]) -> ([9])
-jump() { label_test::foo::6() }
+felt252_const<0>() -> ([7])
+store_temp<felt252>([7]) -> ([7])
+return([7])
 label_test::foo::4:
 label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
-store_temp<felt252>([0]) -> ([9])
-label_test::foo::6:
-return([9])
+store_temp<felt252>([0]) -> ([0])
+return([0])
 label_test::foo::2:

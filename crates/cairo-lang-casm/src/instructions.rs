@@ -1,5 +1,6 @@
-use std::fmt::Display;
-use std::vec;
+#[cfg(not(feature = "std"))]
+use alloc::{vec, vec::Vec};
+use core::fmt::Display;
 
 use crate::hints::{Hint, PythonicHint};
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
@@ -32,7 +33,7 @@ impl InstructionBody {
     }
 }
 impl Display for InstructionBody {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             InstructionBody::AddAp(insn) => write!(f, "{insn}",),
             InstructionBody::AssertEq(insn) => write!(f, "{insn}",),
@@ -58,7 +59,7 @@ impl Instruction {
 }
 
 impl Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         for hint in &self.hints {
             let hint_str = hint.get_pythonic_hint();
             // Skip leading and trailing space if hint starts with `\n`.
@@ -84,7 +85,7 @@ pub struct CallInstruction {
     pub relative: bool,
 }
 impl Display for CallInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "call {} {}", if self.relative { "rel" } else { "abs" }, self.target,)
     }
 }
@@ -112,7 +113,7 @@ impl JumpInstruction {
     }
 }
 impl Display for JumpInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "jmp {} {}", if self.relative { "rel" } else { "abs" }, self.target,)
     }
 }
@@ -132,7 +133,7 @@ impl JnzInstruction {
     }
 }
 impl Display for JnzInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "jmp rel {} if {} != 0", self.jump_offset, self.condition)
     }
 }
@@ -162,7 +163,7 @@ impl AssertEqInstruction {
     }
 }
 impl Display for AssertEqInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} = {}", self.a, self.b)
     }
 }
@@ -171,7 +172,7 @@ impl Display for AssertEqInstruction {
 #[derive(Debug, Eq, PartialEq)]
 pub struct RetInstruction {}
 impl Display for RetInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "ret")
     }
 }
@@ -193,7 +194,7 @@ impl AddApInstruction {
     }
 }
 impl Display for AddApInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "ap += {}", self.operand)
     }
 }

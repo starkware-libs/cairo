@@ -50,8 +50,7 @@ pub fn priv_struct_declaration_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_structs = db.module_structs(module_file_id.0)?;
-    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -110,8 +109,7 @@ pub fn struct_generic_params_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_structs = db.module_structs(module_file_id.0)?;
-    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
     // Generic params.
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
@@ -172,8 +170,7 @@ pub fn priv_struct_definition_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_structs = db.module_structs(module_file_id.0)?;
-    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
+    let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.

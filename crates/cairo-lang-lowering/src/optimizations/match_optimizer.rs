@@ -2,6 +2,7 @@
 #[path = "match_optimizer_test.rs"]
 mod test;
 
+use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
@@ -18,52 +19,53 @@ pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
 pub fn optimize_matches(lowered: &mut FlatLowered) {
-    if !lowered.blocks.is_empty() {
-        let ctx = MatchOptimizerContext { fixes: vec![] };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-        analysis.get_root_info();
-        let ctx = analysis.analyzer;
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let ctx = MatchOptimizerContext { fixes: vec![] };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
-        let mut target_blocks = UnorderedHashSet::default();
-        for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
-            let block = &mut lowered.blocks[statement_location.0];
+    let mut target_blocks = UnorderedHashSet::new();
+    for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
+        let block = &mut lowered.blocks[statement_location.0];
 
-            assert_eq!(
-                block.statements.len() - 1,
-                statement_location.1,
-                "The optimization can only be applied to the last statement in the block."
-            );
-            block.statements.pop();
+        assert_eq!(
+            block.statements.len() - 1,
+            statement_location.1,
+            "The optimization can only be applied to the last statement in the block."
+        );
+        block.statements.pop();
 
-            block.end = FlatBlockEnd::Goto(target_block, remapping);
-            target_blocks.insert(target_block);
-        }
+        block.end = FlatBlockEnd::Goto(target_block, remapping);
+        target_blocks.insert(target_block);
+    }
 
-        // Fix match arms not to jump directly to blocks that have incoming gotos.
-        let mut new_blocks = vec![];
-        let mut next_block_id = BlockId(lowered.blocks.len());
-        for block in lowered.blocks.iter_mut() {
-            if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
-                &mut block.end
-            {
-                for arm in arms {
-                    if target_blocks.contains(&arm.block_id) {
-                        new_blocks.push(FlatBlock {
-                            statements: vec![],
-                            end: FlatBlockEnd::Goto(arm.block_id, VarRemapping::default()),
-                        });
+    // Fix match arms not to jump directly to blocks that have incoming gotos.
+    let mut new_blocks = vec![];
+    let mut next_block_id = BlockId(lowered.blocks.len());
+    for block in lowered.blocks.iter_mut() {
+        if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
+            &mut block.end
+        {
+            for arm in arms {
+                if target_blocks.contains(&arm.block_id) {
+                    new_blocks.push(FlatBlock {
+                        statements: vec![],
+                        end: FlatBlockEnd::Goto(arm.block_id, VarRemapping::default()),
+                    });
 
-                        arm.block_id = next_block_id;
-                        next_block_id = next_block_id.next_block_id();
-                    }
+                    arm.block_id = next_block_id;
+                    next_block_id = next_block_id.next_block_id();
                 }
             }
         }
+    }
 
-        for block in new_blocks.into_iter() {
-            lowered.blocks.push(block);
-        }
+    for block in new_blocks.into_iter() {
+        lowered.blocks.push(block);
     }
 }
 
@@ -93,7 +95,9 @@ impl MatchOptimizerContext {
         let (arm_idx, arm) = candidate
             .match_arms
             .iter()
-            .find_position(|arm| arm.variant_id == *variant)
+            .find_position(|arm| {
+                arm.arm_selector == MatchArmSelector::VariantId((*variant).clone())
+            })
             .expect("arm not found.");
 
         let [var_id] = arm.var_ids.as_slice() else {

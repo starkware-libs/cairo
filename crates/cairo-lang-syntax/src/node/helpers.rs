@@ -398,6 +398,7 @@ impl QueryAttrs for StatementExpr {
         self.attributes(db).elements(db)
     }
 }
+
 /// Allows querying attributes of a syntax node, any typed node which QueryAttrs is implemented for
 /// should be added here.
 impl QueryAttrs for SyntaxNode {
@@ -530,6 +531,32 @@ impl WrappedArgListHelper for WrappedArgList {
             WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr().untyped(),
             WrappedArgList::BracedArgList(args) => args.lbrace(db).stable_ptr().untyped(),
             WrappedArgList::Missing(_) => self.stable_ptr().untyped(),
+        }
+    }
+}
+
+pub trait WrappedGenericParamListHelper {
+    /// Checks whether there are 0 generic parameters
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+}
+impl WrappedGenericParamListHelper for ast::WrappedGenericParamList {
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
+        self.generic_params(db).elements(db).is_empty()
+    }
+}
+
+pub trait OptionWrappedGenericParamListHelper {
+    /// Checks whether there are 0 generic parameters. True either when the generic params clause
+    /// doesn't exist or when it's empty
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool;
+}
+impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList {
+    fn is_empty(&self, db: &dyn SyntaxGroup) -> bool {
+        match self {
+            ast::OptionWrappedGenericParamList::Empty(_) => true,
+            ast::OptionWrappedGenericParamList::WrappedGenericParamList(
+                wrapped_generic_param_list,
+            ) => wrapped_generic_param_list.is_empty(db),
         }
     }
 }

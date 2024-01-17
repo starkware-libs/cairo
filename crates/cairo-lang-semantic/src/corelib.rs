@@ -102,11 +102,12 @@ pub fn try_get_ty_by_name(
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
-        ModuleItemId::TypeAlias(type_alias_id) => {
-            let ty =
-                db.type_alias_resolved_type(type_alias_id).expect("Could not find type alias.");
+        ModuleItemId::TypeAlias(module_type_alias_id) => {
+            let ty = db
+                .module_type_alias_resolved_type(module_type_alias_id)
+                .expect("Could not find type alias.");
             assert!(
-                db.type_alias_generic_params(type_alias_id).unwrap().is_empty(),
+                db.module_type_alias_generic_params(module_type_alias_id).unwrap().is_empty(),
                 "Cannot get type aliases with params from corelib."
             );
             return Ok(ty);
@@ -624,6 +625,36 @@ pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> Str
         "bytes31_const".into()
     } else {
         panic!("No const libfunc for type {}.", ty.format(db))
+    }
+}
+
+/// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
+pub fn get_convert_to_felt252_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<FunctionId> {
+    if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u8_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u16_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u32_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u64_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "u128_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i8_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i16_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i32_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i64_to_felt252".into(), vec![]))
+    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
+        Some(get_function_id(db, core_submodule(db, "integer"), "i128_to_felt252".into(), vec![]))
+    } else {
+        None
     }
 }
 

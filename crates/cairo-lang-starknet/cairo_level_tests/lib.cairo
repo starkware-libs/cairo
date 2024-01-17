@@ -9,6 +9,8 @@ mod deployment;
 #[cfg(test)]
 mod events;
 #[cfg(test)]
+mod erc20_test;
+#[cfg(test)]
 mod interoperability;
 #[cfg(test)]
 mod l2_to_l1_messages;

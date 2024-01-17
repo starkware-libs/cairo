@@ -2180,8 +2180,11 @@ impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<Interf
 }
 
 trait InterfaceTraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo_external1(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo_l1_handler1(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo_constructor1(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -4321,8 +4324,11 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 }
 
 trait InterfaceSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo2(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -4896,8 +4902,11 @@ impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibrary
 }
 
 trait InterfaceSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo1(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo2(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 
@@ -5653,6 +5662,7 @@ impl NotHasComponent of NotHasComponentTrait{
 #[starknet::interface]
 trait Comp3Trait<TContractState> {
     fn foo3(ref self: TContractState);
+    fn foo4(self: @TContractState);
 }
 
 #[starknet::component]
@@ -5671,68 +5681,77 @@ mod component3 {
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
-            get_dep_component!(self, Comp1).foo1();
+            get_dep_component!(@self, Comp1).foo1();
             
             // Should raise diagnostics
-            get_dep_component!(Comp1, self).foo1();
-            get_dep_component!(self, self).foo1();
-            get_dep_component!(Comp1, Comp1).foo1();
-            get_dep_component!(self, Comp2).foo1();
             get_dep_component!(self, Comp1).foo1();
-            get_dep_component!(self, super::NotHasComponent).foo1();
+            get_dep_component!(Comp1, @self).foo1();
+            get_dep_component!(@self, @self).foo1();
+            get_dep_component!(Comp1, Comp1).foo1();
+            get_dep_component!(@self, Comp2).foo1();
+            get_dep_component!(@self, super::NotHasComponent).foo1();
             let not_contract_state: felt252 = 0;
             get_dep_component!(not_contract_state, Comp1).foo1();
-            get_dep_component!(self, NonExistingImpl).foo1();
+            get_dep_component!(@self, NonExistingImpl).foo1();
             
+        }
+        fn foo4(self: @ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component!(self, Comp1).foo1();
         }
     }
 }
 
 //! > expected_diagnostics
-error: Expected variable or constant, found impl.
- --> lib.cairo:58:32
-            get_dep_component!(Comp1, self).foo1();
-                               ^***^
-
-error: Identifier not found.
- --> lib.cairo:58:39
-            get_dep_component!(Comp1, self).foo1();
-                                      ^**^
-
-error: Identifier not found.
- --> lib.cairo:59:38
-            get_dep_component!(self, self).foo1();
-                                     ^**^
+error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
+ --> lib.cairo:59:32
+            get_dep_component!(self, Comp1).foo1();
+                               ^**^
 
 error: Expected variable or constant, found impl.
  --> lib.cairo:60:32
+            get_dep_component!(Comp1, @self).foo1();
+                               ^***^
+
+error: Identifier not found.
+ --> lib.cairo:60:40
+            get_dep_component!(Comp1, @self).foo1();
+                                       ^**^
+
+error: Identifier not found.
+ --> lib.cairo:61:40
+            get_dep_component!(@self, @self).foo1();
+                                       ^**^
+
+error: Expected variable or constant, found impl.
+ --> lib.cairo:62:32
             get_dep_component!(Comp1, Comp1).foo1();
                                ^***^
 
 error: Method `foo1` could not be called on type `@test::component2::ComponentState::<TContractState>`.
-Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `test::component1::ComponentState::<?9>`
- --> lib.cairo:61:45
-            get_dep_component!(self, Comp2).foo1();
-                                            ^**^
+Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `test::component1::ComponentState::<?11>`
+ --> lib.cairo:63:46
+            get_dep_component!(@self, Comp2).foo1();
+                                             ^**^
 
 error: Invalid path.
  --> lib.cairo[get_dep_component_inline_macro]:4:41
                 super::NotHasComponent::get_component(__get_dep_component_macro_temp_contract__)
                                         ^***********^
 
-error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "@core::felt252".
- --> lib.cairo[get_dep_component_inline_macro]:3:92
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@not_contract_state);
-                                                                                           ^*****************^
+error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
+ --> lib.cairo:66:32
+            get_dep_component!(not_contract_state, Comp1).foo1();
+                               ^****************^
 
 error: Identifier not found.
- --> lib.cairo:66:38
-            get_dep_component!(self, NonExistingImpl).foo1();
-                                     ^*************^
+ --> lib.cairo:67:39
+            get_dep_component!(@self, NonExistingImpl).foo1();
+                                      ^*************^
 
-error: Type annotations needed. Failed to infer ?2
+error: Type annotations needed. Failed to infer ?4
  --> lib.cairo[get_dep_component_inline_macro]:3:65
-                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@Comp1);
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(Comp1);
                                                                 ^**********^
 
 //! > generated_cairo_code
@@ -5774,6 +5793,7 @@ impl NotHasComponent of NotHasComponentTrait{
 #[starknet::interface]
 trait Comp3Trait<TContractState> {
     fn foo3(ref self: TContractState);
+    fn foo4(self: @TContractState);
 }
 
 #[starknet::component]
@@ -5792,19 +5812,23 @@ mod component3 {
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
-            get_dep_component!(self, Comp1).foo1();
+            get_dep_component!(@self, Comp1).foo1();
             
             // Should raise diagnostics
-            get_dep_component!(Comp1, self).foo1();
-            get_dep_component!(self, self).foo1();
-            get_dep_component!(Comp1, Comp1).foo1();
-            get_dep_component!(self, Comp2).foo1();
             get_dep_component!(self, Comp1).foo1();
-            get_dep_component!(self, super::NotHasComponent).foo1();
+            get_dep_component!(Comp1, @self).foo1();
+            get_dep_component!(@self, @self).foo1();
+            get_dep_component!(Comp1, Comp1).foo1();
+            get_dep_component!(@self, Comp2).foo1();
+            get_dep_component!(@self, super::NotHasComponent).foo1();
             let not_contract_state: felt252 = 0;
             get_dep_component!(not_contract_state, Comp1).foo1();
-            get_dep_component!(self, NonExistingImpl).foo1();
+            get_dep_component!(@self, NonExistingImpl).foo1();
             
+        }
+        fn foo4(self: @ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component!(self, Comp1).foo1();
         }
     }
 }
@@ -5813,6 +5837,7 @@ Comp3TraitDispatcherTrait:
 
 trait Comp3TraitDispatcherTrait<T> {
     fn foo3(self: T);
+    fn foo4(self: T);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -5827,6 +5852,17 @@ impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher>
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn foo4(self: Comp3TraitDispatcher) {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo4"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
@@ -5852,11 +5888,25 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
+    fn foo4(self: Comp3TraitLibraryDispatcher) {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo4"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
 
 }
 
 trait Comp3TraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn foo4(self: T) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -5871,6 +5921,17 @@ impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3T
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
             selector!("foo3"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn foo4(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo4"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
@@ -5892,6 +5953,17 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
             selector!("foo3"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn foo4(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo4"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
@@ -6231,6 +6303,11 @@ pub impl Comp3<
         let mut component = HasComponent::get_component_mut(ref self);
         Comp3Impl::foo3(ref component)
     }
+    
+    fn foo4(self: @TContractState) {
+        let component = HasComponent::get_component(self);
+        Comp3Impl::foo4(component)
+    }
 }
 
 impls:
@@ -6287,10 +6364,33 @@ fn __wrapper__Comp3__foo3<TContractState,
     core::array::ArrayTrait::span(@arr)
 }
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Comp3__foo4<TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    Comp3::<TContractState, Comp1, Comp2, _, _>::foo4(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
 
 
 pub mod __external_Comp3 {
     pub use super::__wrapper__Comp3__foo3 as foo3;
+    pub use super::__wrapper__Comp3__foo4 as foo4;
 }
 
 pub mod __l1_handler_Comp3 {
@@ -6537,6 +6637,7 @@ impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibr
 }
 
 trait Comp3TraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn foo3(self: T) -> starknet::SyscallResult<()>;
 }
 

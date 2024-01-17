@@ -5,7 +5,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId, ImplDefId,
-    LanguageElementId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
+    LanguageElementId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitId,
+    UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -46,7 +47,7 @@ pub fn priv_module_semantic_data(
     let mut items = OrderedHashMap::default();
     let visibility_extractor = VisibilityExtractor { db: def_db, module_id };
     for item_id in db.module_items(module_id)?.iter().copied() {
-        let (name, visibility) = match item_id {
+        let (name, visibility) = match &item_id {
             ModuleItemId::Constant(item_id) => {
                 (item_id.name(def_db), visibility_extractor.constant(item_id))
             }
@@ -106,40 +107,40 @@ struct VisibilityExtractor<'a> {
     module_id: ModuleId,
 }
 impl<'a> VisibilityExtractor<'a> {
-    fn submodule(&self, item_id: SubmoduleId) -> Maybe<ast::Visibility> {
+    fn submodule(&self, item_id: &SubmoduleId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_submodules(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn constant(&self, item_id: ConstantId) -> Maybe<ast::Visibility> {
+    fn constant(&self, item_id: &ConstantId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_constants(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn free_function(&self, item_id: FreeFunctionId) -> Maybe<ast::Visibility> {
+    fn free_function(&self, item_id: &FreeFunctionId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_free_functions(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn enum_(&self, item_id: EnumId) -> Maybe<ast::Visibility> {
+    fn enum_(&self, item_id: &EnumId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_enums(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn struct_(&self, item_id: StructId) -> Maybe<ast::Visibility> {
+    fn struct_(&self, item_id: &StructId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_structs(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn extern_function(&self, item_id: ExternFunctionId) -> Maybe<ast::Visibility> {
+    fn extern_function(&self, item_id: &ExternFunctionId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_extern_functions(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn extern_type(&self, item_id: ExternTypeId) -> Maybe<ast::Visibility> {
+    fn extern_type(&self, item_id: &ExternTypeId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_extern_types(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn type_alias(&self, item_id: TypeAliasId) -> Maybe<ast::Visibility> {
+    fn type_alias(&self, item_id: &ModuleTypeAliasId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_type_aliases(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn impl_alias(&self, item_id: ImplAliasId) -> Maybe<ast::Visibility> {
+    fn impl_alias(&self, item_id: &ImplAliasId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_impl_aliases(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn trait_(&self, item_id: TraitId) -> Maybe<ast::Visibility> {
+    fn trait_(&self, item_id: &TraitId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_traits(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn impl_def(&self, item_id: ImplDefId) -> Maybe<ast::Visibility> {
+    fn impl_def(&self, item_id: &ImplDefId) -> Maybe<ast::Visibility> {
         Ok(self.db.module_impls(self.module_id)?[item_id].visibility(self.db.upcast()))
     }
-    fn use_(&self, item_id: UseId) -> Maybe<ast::Visibility> {
+    fn use_(&self, item_id: &UseId) -> Maybe<ast::Visibility> {
         let use_ast = &self.db.module_uses(self.module_id)?[item_id];
         let use_path = ast::UsePath::Leaf(use_ast.clone());
         let mut node = use_path.as_syntax_node();
@@ -178,7 +179,7 @@ pub fn module_item_info_by_name(
 
 /// Query implementation of [SemanticGroup::module_attributes].
 pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
-    Ok(match module_id {
+    Ok(match &module_id {
         ModuleId::CrateRoot(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast =

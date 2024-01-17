@@ -3,7 +3,7 @@ use cairo_lang_semantic::corelib::{
     core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
     get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
-use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
+use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -86,18 +86,18 @@ fn add_withdraw_gas_to_function(
                 inputs: vec![VarUsage { var_id: builtin_costs_var, location }],
                 arms: vec![
                     MatchArm {
-                        variant_id: option_some_variant(
+                        arm_selector: MatchArmSelector::VariantId(option_some_variant(
                             db.upcast(),
                             GenericArgumentId::Type(unit_ty(db.upcast())),
-                        ),
+                        )),
                         block_id: old_root_new_id,
                         var_ids: vec![],
                     },
                     MatchArm {
-                        variant_id: option_none_variant(
+                        arm_selector: MatchArmSelector::VariantId(option_none_variant(
                             db.upcast(),
                             GenericArgumentId::Type(unit_ty(db.upcast())),
-                        ),
+                        )),
                         block_id: panic_block_id,
                         var_ids: vec![],
                     },

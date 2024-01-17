@@ -48,8 +48,7 @@ pub fn priv_enum_declaration_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -103,8 +102,7 @@ pub fn enum_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let module_file_id = enum_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
 
     // Generic params.
     let inference_id =
@@ -169,6 +167,23 @@ pub struct ConcreteVariant {
     pub idx: usize,
 }
 
+/// Selector pattern of a match arm of a match on numeric values.
+/// Required for the dont_rewrite attribute to work.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ValueSelectorArm {
+    #[dont_rewrite]
+    pub value: usize,
+}
+
+/// Selector pattern of a match arm.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum MatchArmSelector {
+    VariantId(ConcreteVariant),
+    Value(ValueSelectorArm),
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
 pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,
@@ -179,8 +194,7 @@ pub fn priv_enum_definition_data(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let module_enums = db.module_enums(module_file_id.0)?;
-    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.

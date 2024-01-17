@@ -15,8 +15,9 @@ use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
-    ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
+    ImplFunctionLongId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasLongId, StructLongId, SubmoduleLongId, TraitFunctionLongId,
+    TraitItemId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
@@ -363,7 +364,7 @@ impl Backend {
         let corelib_response = self.client.configuration(item).await;
         match corelib_response.map_err(Error::from) {
             Ok(value_vec) => {
-                if let Some(Value::String(value)) = value_vec.get(0) {
+                if let Some(Value::String(value)) = value_vec.first() {
                     if !value.is_empty() {
                         let root_path: PathBuf = value.into();
 
@@ -814,7 +815,7 @@ impl LanguageServer for Backend {
                 LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                     FunctionWithBodyId::Free(free_function_id)
                 }
-                LookupItemId::ImplFunction(impl_function_id) => {
+                LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)) => {
                     FunctionWithBodyId::Impl(impl_function_id)
                 }
                 _ => {
@@ -1094,9 +1095,11 @@ fn lookup_item_from_ast(
         ))],
         SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                vec![LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
-                    module_file_id,
-                    ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
+                vec![LookupItemId::ImplItem(ImplItemId::Function(db.intern_impl_function(
+                    ImplFunctionLongId(
+                        module_file_id,
+                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
+                    ),
                 )))]
             } else {
                 vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
@@ -1126,9 +1129,11 @@ fn lookup_item_from_ast(
             ))))]
         }
         SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitFunction(db.intern_trait_function(TraitFunctionLongId(
-                module_file_id,
-                ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            vec![LookupItemId::TraitItem(TraitItemId::Function(db.intern_trait_function(
+                TraitFunctionLongId(
+                    module_file_id,
+                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                ),
             )))]
         }
         SyntaxKind::ItemImpl => {
@@ -1164,7 +1169,7 @@ fn lookup_item_from_ast(
             res
         }
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            db.intern_type_alias(TypeAliasLongId(
+            db.intern_module_type_alias(ModuleTypeAliasLongId(
                 module_file_id,
                 ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
             )),

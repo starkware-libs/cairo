@@ -31,6 +31,13 @@ impl DisplayInteger<
     }
 }
 
+impl DisplayNonZero<T, +Display<T>, +Copy<T>, +Drop<T>> of Display<NonZero<T>> {
+    fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
+        let value: T = (*self).into();
+        write!(f, "{value}")
+    }
+}
+
 impl DisplayBool of Display<bool> {
     fn fmt(self: @bool, ref f: Formatter) -> Result<(), Error> {
         if *self {
@@ -55,14 +62,17 @@ impl DebugByteArray of Debug<ByteArray> {
 }
 
 impl DebugInteger<
-    T,
-    +to_byte_array::AppendFormattedToByteArray<T>,
-    +Into<u8, T>,
-    +TryInto<T, NonZero<T>>,
-    +Copy<T>
+    T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
+    }
+}
+
+impl DebugNonZero<T, +Debug<T>, +Copy<T>, +Drop<T>> of Debug<NonZero<T>> {
+    fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
+        let value: T = (*self).into();
+        write!(f, "{value:?}")
     }
 }
 
@@ -144,13 +154,13 @@ impl DebugTuple4<
     }
 }
 
-impl ArrayTDebug<T, +Debug<T>, +Copy<T>> of Debug<Array<T>> {
+impl ArrayTDebug<T, +Debug<T>> of Debug<Array<T>> {
     fn fmt(self: @Array<T>, ref f: Formatter) -> Result<(), Error> {
         Debug::fmt(@self.span(), ref f)
     }
 }
 
-impl SpanTDebug<T, +Debug<T>, +Copy<T>> of Debug<Span<T>> {
+impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
     fn fmt(self: @Span<T>, ref f: Formatter) -> Result<(), Error> {
         let mut self = *self;
         write!(f, "[")?;
