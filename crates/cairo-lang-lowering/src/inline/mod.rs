@@ -217,10 +217,9 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
         match end {
             FlatBlockEnd::Return(returns) => {
                 let remapping = VarRemapping {
-                    remapping: OrderedHashMap::from_iter(izip!(
-                        self.outputs.iter().cloned(),
-                        returns.iter().cloned()
-                    )),
+                    remapping: OrderedHashMap::from_iter(
+                        self.outputs.iter().cloned().zip_eq(returns.iter().cloned()),
+                    ),
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
