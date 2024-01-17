@@ -1,12 +1,6 @@
 [package]
 name = "core"
-<<<<<<< HEAD
 version = "2.5.0-dev.0"
-||||||| 1c02dc554
-version = "2.4.1"
-=======
-version = "2.4.4"
->>>>>>> origin/main
 edition = "2023_11"
 
 # NOTE: This is non-public, unstable Scarb's field, which instructs resolver that this package does not

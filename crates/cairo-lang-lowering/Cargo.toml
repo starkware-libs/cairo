@@ -7,7 +7,6 @@ license-file.workspace = true
 description = "Cairo lowering phase."
 
 [dependencies]
-<<<<<<< HEAD
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.5.0-dev.0" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.0-dev.0" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.0-dev.0" }
@@ -17,27 +16,6 @@ cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.5.0-
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.0-dev.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.0-dev.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.0-dev.0" }
-||||||| 1c02dc554
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.4.1" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.1" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.1" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.4.1" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.4.1" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.4.1" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.1" }
-=======
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.4.4" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.4" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.4" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.4" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.4.4" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.4.4" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.4.4" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.4" }
->>>>>>> origin/main
 id-arena.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
