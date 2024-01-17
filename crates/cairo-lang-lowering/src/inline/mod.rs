@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{izip, Itertools};
+use itertools::{izip, zip_eq, Itertools};
 
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
@@ -217,9 +217,9 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
         match end {
             FlatBlockEnd::Return(returns) => {
                 let remapping = VarRemapping {
-                    remapping: OrderedHashMap::from_iter(izip!(
+                    remapping: OrderedHashMap::from_iter(zip_eq(
                         self.outputs.iter().cloned(),
-                        returns.iter().cloned()
+                        returns.iter().cloned(),
                     )),
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
