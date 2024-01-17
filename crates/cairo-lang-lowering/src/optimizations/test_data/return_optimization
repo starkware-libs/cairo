@@ -526,3 +526,134 @@ Statements:
   (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
 End:
   Return(v2, v3)
+
+//! > ==========================================================================
+
+//! > Test match on non-droppable enum
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: felt252, b: felt252) {
+  let x = f(ref a, b);
+
+  // TODO: find a better solution for the following workaround.
+  // Need to produce the return value before the match to allow the optimization.
+  let res = ();
+  match x {
+    MyEnum::A(_) => {},
+    MyEnum::B(_) => {},
+  };
+  res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: (),
+  B: (),
+}
+extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match test::f(v0, v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v4: test::MyEnum) <- MyEnum::A(v3)
+End:
+  Goto(blk3, {v2 -> v9, v4 -> v8})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: test::MyEnum) <- MyEnum::B(v6)
+End:
+  Goto(blk3, {v5 -> v9, v7 -> v8})
+
+blk3:
+Statements:
+  (v10: ()) <- struct_construct()
+End:
+  Match(match_enum(v8) {
+    MyEnum::A(v11) => blk4,
+    MyEnum::B(v12) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+End:
+  Return(v9, v10)
+
+//! > after
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match test::f(v0, v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v4: test::MyEnum) <- MyEnum::A(v3)
+End:
+  Goto(blk3, {v2 -> v9, v4 -> v8})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: test::MyEnum) <- MyEnum::B(v6)
+End:
+  Goto(blk3, {v5 -> v9, v7 -> v8})
+
+blk3:
+Statements:
+  (v10: ()) <- struct_construct()
+End:
+  Match(match_enum(v8) {
+    MyEnum::A(v11) => blk4,
+    MyEnum::B(v12) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Return(v9, v10)
+
+blk5:
+Statements:
+End:
+  Return(v9, v10)
+
+blk6:
+Statements:
+End:
+  Return(v9, v10)
