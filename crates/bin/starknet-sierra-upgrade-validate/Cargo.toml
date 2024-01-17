@@ -14,5 +14,13 @@ serde_json.workspace = true
 rayon.workspace = true
 indicatif = "0.17.7"
 
+<<<<<<< HEAD
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.3" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.3", features = ["serde"] }
+||||||| 6f359c1c6
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.3" }
+=======
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.4" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.4" }
+>>>>>>> origin/dev-v2.4.4

@@ -9,6 +9,7 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
+<<<<<<< HEAD
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.3", features = ["serde"] }
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.3" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.3" }
@@ -21,6 +22,33 @@ cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.4.3" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3", features = ["serde"] }
+||||||| 6f359c1c6
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.3" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.3" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.3" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.4.3" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.4.3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.3" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.4.3" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.4.3" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
+=======
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.4.4" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.4.4" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.4.4" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.4.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.4" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.4.4" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.4.4" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.4.4" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.4.4" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.4.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.4.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.4" }
+>>>>>>> origin/dev-v2.4.4
 const_format.workspace = true
 convert_case.workspace = true
 indoc.workspace = true

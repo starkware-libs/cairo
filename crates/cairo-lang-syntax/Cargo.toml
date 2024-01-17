@@ -7,11 +7,25 @@ license-file.workspace = true
 description = "Cairo syntax representation."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.4.3" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
 num-bigint = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
+||||||| 6f359c1c6
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.4.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
+num-bigint.workspace = true
+num-traits.workspace = true
+=======
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.4.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.4" }
+num-bigint.workspace = true
+num-traits.workspace = true
+>>>>>>> origin/dev-v2.4.4
 salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true

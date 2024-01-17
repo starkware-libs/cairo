@@ -7,9 +7,19 @@ license-file.workspace = true
 description = "Cairo project specification. For example, crates and flags used for compilation."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
 serde = { workspace = true, default-features = true }
+||||||| 6f359c1c6
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.3" }
+serde.workspace = true
+=======
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.4.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.4.4" }
+serde.workspace = true
+>>>>>>> origin/dev-v2.4.4
 smol_str.workspace = true
 thiserror.workspace = true
 toml.workspace = true
