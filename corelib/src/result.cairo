@@ -31,9 +31,13 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     }
     /// If `val` is `Result::Ok(x)`, returns `x`.
     /// Otherwise returns `Default::<T>::default()`.
-    fn unwrap_or_default<+Drop<T>, +Drop<E>, +Default<T>>(self: Result<T, E>) -> T {
-        self.unwrap_or(Default::default())
+    fn unwrap_or_default<+Drop<E>, +Default<T>>(self: Result<T, E>) -> T {
+        match self {
+            Result::Ok(x) => x,
+            Result::Err(_) => Default::default(),
+        }
     }
+
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect_err<+Drop<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
