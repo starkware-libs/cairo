@@ -78,15 +78,15 @@ impl<'de> Deserialize<'de> for Cfg {
 ///
 /// Behaves like a multimap, i.e. it permits storing multiple values for the same key.
 /// This allows expressing, for example, the `feature` option that Rust/Cargo does.
-#[derive(Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct CfgSet(OrderedHashSet<Cfg>);
+#[derive(Clone, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct CfgSet(Vec<Cfg>);
 
 impl CfgSet {
     /// Creates an empty `CfgSet`.
     ///
     /// This function does not allocate.
     pub fn new() -> Self {
-        Self(OrderedHashSet::new())
+        Self(Vec::new())
     }
 
     /// Returns the number of elements in the set.
@@ -101,12 +101,15 @@ impl CfgSet {
 
     /// Adds a value to the set.
     pub fn insert(&mut self, cfg: Cfg) {
-        self.0.insert(cfg);
+        self.0.push(cfg);
     }
 
     /// Combines two sets into new one.
     pub fn union(&self, other: &Self) -> Self {
-        Self(self.0.union(&other.0).cloned().collect())
+        let set_a: OrderedHashSet<_> = self.iter().cloned().collect();
+        let set_b: OrderedHashSet<_> = other.iter().cloned().collect();
+
+        Self(set_a.union(&set_b).cloned().collect())
     }
 
     /// An iterator visiting all elements in insertion order.
@@ -122,7 +125,10 @@ impl CfgSet {
     /// Returns `true` if the set is a subset of another,
     /// i.e., `other` contains at least all the values in `self`.
     pub fn is_subset(&self, other: &Self) -> bool {
-        self.0.is_subset(&other.0)
+        let set_a: OrderedHashSet<_> = self.iter().collect();
+        let set_b: OrderedHashSet<_> = other.iter().collect();
+
+        set_a.is_subset(&set_b)
     }
 
     /// Returns `true` if the set is a superset of another,
@@ -134,7 +140,7 @@ impl CfgSet {
 
 impl IntoIterator for CfgSet {
     type Item = Cfg;
-    type IntoIter = <OrderedHashSet<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <Vec<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -143,7 +149,7 @@ impl IntoIterator for CfgSet {
 
 impl<'a> IntoIterator for &'a CfgSet {
     type Item = &'a Cfg;
-    type IntoIter = <&'a OrderedHashSet<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <&'a Vec<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()

@@ -3,7 +3,7 @@ mod test;
 
 pub mod consts;
 
-use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
+use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal};
@@ -30,7 +30,12 @@ use self::starknet_module::{handle_module, handle_module_by_storage};
 pub struct StarkNetPlugin;
 
 impl MacroPlugin for StarkNetPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata,
+    ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),
             ast::ModuleItem::Trait(trait_ast) => handle_trait(db, trait_ast),

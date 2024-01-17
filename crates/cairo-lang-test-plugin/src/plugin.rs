@@ -1,4 +1,4 @@
-use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
+use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -12,7 +12,12 @@ use crate::test_config::try_extract_test_config;
 pub struct TestPlugin;
 
 impl MacroPlugin for TestPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata,
+    ) -> PluginResult {
         PluginResult {
             code: None,
             diagnostics: if let ast::ModuleItem::FreeFunction(free_func_ast) = item_ast {

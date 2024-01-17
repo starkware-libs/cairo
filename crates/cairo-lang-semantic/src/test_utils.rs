@@ -134,6 +134,7 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
             settings: CrateSettings {
                 edition: Edition::default(),
                 experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
+                cfg_set: Default::default(),
             },
         },
     })

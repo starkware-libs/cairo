@@ -1,5 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -17,7 +19,12 @@ pub struct PanicablePlugin;
 const PANIC_WITH_ATTR: &str = "panic_with";
 
 impl MacroPlugin for PanicablePlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata,
+    ) -> PluginResult {
         let (declaration, attributes, visibility) = match item_ast {
             ast::ModuleItem::ExternFunction(extern_func_ast) => (
                 extern_func_ast.declaration(db),

@@ -1,7 +1,9 @@
 use std::iter::zip;
 
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
@@ -15,7 +17,12 @@ pub struct GenerateTraitPlugin;
 const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata,
+    ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
             _ => PluginResult::default(),

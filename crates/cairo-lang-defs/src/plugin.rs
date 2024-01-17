@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Severity;
+use cairo_lang_filesystem::db::CrateConfiguration;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -75,13 +76,22 @@ impl PluginDiagnostic {
     }
 }
 
+pub struct MacroPluginMetadata {
+    pub crate_config: Option<CrateConfiguration>,
+}
+
 // TOD(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult;
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &MacroPluginMetadata,
+    ) -> PluginResult;
 
     /// Attributes this plugin uses.
     /// Attributes the plugin uses without declaring here are likely to cause a compilation error

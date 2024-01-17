@@ -1,7 +1,9 @@
 use std::vec;
 
 use cairo_lang_defs::patcher::PatchBuilder;
-use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -21,13 +23,24 @@ pub struct ConfigPlugin;
 const CFG_ATTR: &str = "cfg";
 
 impl MacroPlugin for ConfigPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
-        let cfg_set = db.cfg_set();
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &MacroPluginMetadata,
+    ) -> PluginResult {
+        let db_cfg_set = db.cfg_set();
+        let cfg_set = metadata
+            .crate_config
+            .as_ref()
+            .and_then(|cfg| cfg.settings.cfg_set.as_ref())
+            .unwrap_or(db_cfg_set.as_ref());
+
         let mut diagnostics = vec![];
-        if should_drop(db, &cfg_set, &item_ast, &mut diagnostics) {
+
+        if should_drop(db, cfg_set, &item_ast, &mut diagnostics) {
             PluginResult { code: None, diagnostics, remove_original_item: true }
-        } else if let Some(builder) =
-            handle_undropped_item(db, &cfg_set, item_ast, &mut diagnostics)
+        } else if let Some(builder) = handle_undropped_item(db, cfg_set, item_ast, &mut diagnostics)
         {
             PluginResult {
                 code: Some(PluginGeneratedFile {
