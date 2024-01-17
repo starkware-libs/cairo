@@ -466,3 +466,63 @@ blk3:
 Statements:
 End:
   Return(v10)
+
+//! > ==========================================================================
+
+//! > Returning the arm introduced variable prevents the optimization.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: u16, v: MyEnum) -> MyEnum {
+  match v {
+    MyEnum::MyVariant(val) => {
+       a = val;
+       return MyEnum::MyVariant(val);
+    }
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum MyEnum {
+  MyVariant :u16,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u16, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::MyVariant(v2) => blk1,
+  })
+
+blk1:
+Statements:
+  (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
+End:
+  Return(v2, v3)
+
+//! > after
+Parameters: v0: core::integer::u16, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::MyVariant(v2) => blk1,
+  })
+
+blk1:
+Statements:
+  (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
+End:
+  Return(v2, v3)
