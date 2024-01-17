@@ -160,25 +160,10 @@ impl EnumInitLibfunc {
             [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
-<<<<<<< HEAD
         let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
         let n_variants = variant_types.len();
         if index.is_negative() || index >= n_variants.to_bigint().unwrap() {
             return Err(SpecializationError::IndexOutOfRange { index, range_size: n_variants });
-||||||| 6f359c1c6
-        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
-        let variant_types =
-            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .variants;
-        let num_variants = variant_types.len();
-        if index.is_negative() || index >= num_variants.to_bigint().unwrap() {
-            return Err(SpecializationError::IndexOutOfRange { index, range_size: num_variants });
-=======
-        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
-        let num_variants = variant_types.len();
-        if index.is_negative() || index >= num_variants.to_bigint().unwrap() {
-            return Err(SpecializationError::IndexOutOfRange { index, range_size: num_variants });
->>>>>>> origin/dev-v2.4.4
         }
         let index: usize = index.try_into().unwrap();
         let variant_type = variant_types[index].clone();

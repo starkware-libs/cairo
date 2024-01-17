@@ -12,16 +12,6 @@ clap.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 
-<<<<<<< HEAD
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.4.3" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.3", features = ["serde"] }
-||||||| 6f359c1c6
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.4.3" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.3" }
-=======
 cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.4.4" }
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.4.4" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.4" }
->>>>>>> origin/dev-v2.4.4
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.4.4", features = ["serde"] }
