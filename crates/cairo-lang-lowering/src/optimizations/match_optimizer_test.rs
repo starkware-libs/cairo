@@ -47,8 +47,8 @@ fn test_match_optimizer(
 
     apply_inlining(db, function_id, &mut before).unwrap();
     before = lower_panics(db, function_id, &before).unwrap();
-    reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
+    reorganize_blocks(&mut before);
     reorder_statements(db, &mut before);
 
     let mut after = before.clone();

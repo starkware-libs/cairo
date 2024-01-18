@@ -125,9 +125,19 @@ fn test_validate_gas_cost() {
     let serialization_gas_usage = post_call_building_gas - post_serialization_gas;
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
+<<<<<<< HEAD
         call_building_gas_usage == 6150
             && serialization_gas_usage == 81350
             && entry_point_gas_usage == 327530,
+||||||| b1f4afba8
+        call_building_gas_usage == 6650
+            && serialization_gas_usage == 104450
+            && entry_point_gas_usage == 357130,
+=======
+        call_building_gas_usage == 6050
+            && serialization_gas_usage == 85750
+            && entry_point_gas_usage == 354130,
+>>>>>>> origin/main
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.

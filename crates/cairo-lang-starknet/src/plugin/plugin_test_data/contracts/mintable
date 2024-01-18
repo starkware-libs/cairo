@@ -379,6 +379,7 @@ impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibrary
 }
 
 trait GetSupplySafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 

@@ -6,7 +6,7 @@ use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty}
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::{ConcreteVariant, TypeId};
+use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
@@ -251,12 +251,12 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 input: VarUsage { var_id: panic_result_var, location },
                 arms: vec![
                     MatchArm {
-                        variant_id: callee_info.ok_variant,
+                        arm_selector: MatchArmSelector::VariantId(callee_info.ok_variant),
                         block_id: block_ok,
                         var_ids: vec![inner_ok_value],
                     },
                     MatchArm {
-                        variant_id: callee_info.err_variant,
+                        arm_selector: MatchArmSelector::VariantId(callee_info.err_variant),
                         block_id: block_err,
                         var_ids: vec![err_var],
                     },

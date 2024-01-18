@@ -92,6 +92,27 @@ impl StructConcreteType {
             members,
         })
     }
+
+    /// Returns the StructConcreteType of the given long id, or a specialization error if not
+    /// possible.
+    fn try_from_long_id(
+        context: &dyn SignatureSpecializationContext,
+        long_id: &ConcreteTypeLongId,
+    ) -> Result<Self, SpecializationError> {
+        if long_id.generic_id != StructType::ID {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        Self::new(context.as_type_specialization_context(), &long_id.generic_args)
+    }
+
+    /// Returns the StructConcreteType of the given type, or a specialization error if not possible.
+    fn try_from_concrete_type(
+        context: &dyn SignatureSpecializationContext,
+        ty: &ConcreteTypeId,
+    ) -> Result<Self, SpecializationError> {
+        let long_id = context.get_type_info(ty.clone())?.long_id;
+        Self::try_from_long_id(context, &long_id)
+    }
 }
 impl ConcreteType for StructConcreteType {
     fn info(&self) -> &TypeInfo {
@@ -120,11 +141,8 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
         let type_info = context.get_type_info(struct_type.clone())?;
-        let generic_args = type_info.long_id.generic_args;
-
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_long_id(context, &type_info.long_id)?.members;
 
         let mut opt_same_as_param_idx = None;
         for (idx, ty) in member_types.iter().cloned().enumerate() {
@@ -175,10 +193,8 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: struct_type,
@@ -218,10 +234,8 @@ impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch(
             vec![snapshot_ty(context, struct_type)?],
             member_types

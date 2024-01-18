@@ -5,6 +5,7 @@ mod test;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
+use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
@@ -20,32 +21,29 @@ use crate::{
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there was no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
-    if !lowered.blocks.is_empty() {
-        let ctx = ReturnOptimizerContext {
-            lowered,
-            unit_ty: semantic::corelib::unit_ty(db.upcast()),
-            fixes: vec![],
-        };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
-        analysis.get_root_info();
-        let ctx = analysis.analyzer;
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
-        for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
-            let block = &mut lowered.blocks[block_id];
-            block.end = FlatBlockEnd::Return(
-                return_vars
-                    .iter()
-                    .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
-                    .collect_vec(),
-            )
-        }
+    for FixInfo { block_id, return_vars } in ctx.fixes.into_iter() {
+        let block = &mut lowered.blocks[block_id];
+        block.end = FlatBlockEnd::Return(
+            return_vars
+                .iter()
+                .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
+                .collect_vec(),
+        )
     }
 }
 
 pub struct ReturnOptimizerContext<'a> {
+    db: &'a dyn LoweringGroup,
     lowered: &'a FlatLowered,
-    unit_ty: semantic::TypeId,
 
     /// The list of fixes that should be applied.
     fixes: Vec<FixInfo>,
@@ -53,11 +51,17 @@ pub struct ReturnOptimizerContext<'a> {
 impl ReturnOptimizerContext<'_> {
     /// Given a VarUsage, returns the ValueInfo that corresponds to it.
     fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
-        if self.lowered.variables[var_usage.var_id].ty == self.unit_ty {
-            ValueInfo::Unit
+        let var_ty = &self.lowered.variables[var_usage.var_id].ty;
+        if self.is_droppable(var_usage.var_id) && self.db.single_value_type(*var_ty).unwrap() {
+            ValueInfo::Interchangeable(*var_ty)
         } else {
             ValueInfo::Var(*var_usage)
         }
+    }
+
+    /// Returns true if the variable is droppable
+    fn is_droppable(&self, var_id: VariableId) -> bool {
+        self.lowered.variables[var_id].droppable.is_ok()
     }
 }
 
@@ -74,8 +78,8 @@ pub struct FixInfo {
 pub enum ValueInfo {
     /// The value is available through the given var usage.
     Var(VarUsage),
-    /// The value is a unit.
-    Unit,
+    /// The can be replaced with other values of the same type.
+    Interchangeable(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
         /// The inputs to the StructConstruct statement.
@@ -88,6 +92,16 @@ pub enum ValueInfo {
         /// The constructed variant.
         variant: semantic::ConcreteVariant,
     },
+}
+
+/// The result of applying an operation to a ValueInfo.
+enum OpResult {
+    /// The input of the operation was consumed.
+    InputConsumed,
+    /// One of the value is produced operation and therefore it is invalid before the operation.
+    ValueInvalidated,
+    /// The operation did not change the value info.
+    NoChange,
 }
 
 impl ValueInfo {
@@ -106,35 +120,45 @@ impl ValueInfo {
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply(f);
             }
-            ValueInfo::Unit => {}
+            ValueInfo::Interchangeable(_) => {}
         }
     }
 
     /// Updates the value to the state before the StructDeconstruct statement.
-    /// Returns an error if the value info is invalid before the statement.
+    /// Returns OpResult.
     fn apply_deconstruct(
         &mut self,
         ctx: &ReturnOptimizerContext<'_>,
         stmt: &StatementStructDestructure,
-    ) -> Result<(), ()> {
+    ) -> OpResult {
         match self {
             ValueInfo::Var(var_usage) => {
                 if stmt.outputs.contains(&var_usage.var_id) {
-                    Err(())
+                    OpResult::ValueInvalidated
                 } else {
-                    Ok(())
+                    OpResult::NoChange
                 }
             }
             ValueInfo::StructConstruct { var_infos } => {
                 let mut cancels_out = var_infos.len() == stmt.outputs.len();
 
-                let mut has_errors = false;
+                let mut input_consumed = false;
+                let mut output_invalidated = false;
                 for (var_info, output) in var_infos.iter_mut().zip(stmt.outputs.iter()) {
-                    has_errors |= var_info.apply_deconstruct(ctx, stmt).is_err();
+                    match var_info.apply_deconstruct(ctx, stmt) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::ValueInvalidated => {
+                            output_invalidated = true;
+                        }
+                        OpResult::NoChange => {}
+                    }
 
                     match var_info {
                         ValueInfo::Var(var_usage) if &var_usage.var_id == output => {}
-                        ValueInfo::Unit if ctx.lowered.variables[*output].ty == ctx.unit_ty => {}
+                        ValueInfo::Interchangeable(ty)
+                            if &ctx.lowered.variables[*output].ty == ty => {}
                         _ => cancels_out = false,
                     }
                 }
@@ -144,41 +168,58 @@ impl ValueInfo {
                     // for StructConstruct inputs to be invalidated, otherwise we should return an
                     // error.
                     *self = ValueInfo::Var(stmt.input);
-                } else if has_errors {
-                    return Err(());
+                    return OpResult::InputConsumed;
+                } else if output_invalidated {
+                    return OpResult::ValueInvalidated;
+                } else if input_consumed {
+                    return OpResult::InputConsumed;
                 }
 
-                Ok(())
+                OpResult::NoChange
             }
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply_deconstruct(ctx, stmt)
             }
-            ValueInfo::Unit => Ok(()),
+            ValueInfo::Interchangeable(_) => OpResult::NoChange,
         }
     }
 
     /// Updates the value to the expected value before the match arm.
-    /// Returns an error if the value info is invalid before the statement.
-    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) -> Result<(), ()> {
+    /// Returns OpResult.
+    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) -> OpResult {
         match self {
             ValueInfo::Var(var_usage) => {
                 if arm.var_ids == [var_usage.var_id] {
-                    Err(())
+                    OpResult::ValueInvalidated
                 } else {
-                    Ok(())
+                    OpResult::NoChange
                 }
             }
             ValueInfo::StructConstruct { ref mut var_infos } => {
+                let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
-                    var_info.apply_match_arm(input, arm)?;
+                    match var_info.apply_match_arm(input, arm) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::ValueInvalidated => return OpResult::ValueInvalidated,
+                        OpResult::NoChange => {}
+                    }
                 }
 
-                Ok(())
+                if input_consumed {
+                    return OpResult::InputConsumed;
+                }
+                OpResult::NoChange
             }
             ValueInfo::EnumConstruct { ref mut var_info, variant } => {
-                if *variant == arm.variant_id {
+                let MatchArmSelector::VariantId(arm_variant) = &arm.arm_selector else {
+                    panic!("Enum construct should not appear in value match");
+                };
+
+                if *variant == *arm_variant {
                     let cancels_out = match **var_info {
-                        ValueInfo::Unit => true,
+                        ValueInfo::Interchangeable(_) => true,
                         ValueInfo::Var(var_usage) if arm.var_ids == [var_usage.var_id] => true,
                         _ => false,
                     };
@@ -187,13 +228,13 @@ impl ValueInfo {
                         // If the arm recreates the relevant enum variant, then the arm
                         // assuming the other arms also cancel out.
                         *self = input.clone();
-                        return Ok(());
+                        return OpResult::InputConsumed;
                     }
                 }
 
                 var_info.apply_match_arm(input, arm)
             }
-            ValueInfo::Unit => Ok(()),
+            ValueInfo::Interchangeable(_) => OpResult::NoChange,
         }
     }
 }
@@ -243,23 +284,45 @@ impl AnalyzerInfo {
     ) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
 
+        let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
-            if var_info.apply_deconstruct(ctx, stmt).is_err() {
-                self.invalidate();
-                return;
-            }
+            match var_info.apply_deconstruct(ctx, stmt) {
+                OpResult::InputConsumed => {
+                    input_consumed = true;
+                }
+                OpResult::ValueInvalidated => {
+                    self.invalidate();
+                    return;
+                }
+                OpResult::NoChange => {}
+            };
+        }
+
+        if !(input_consumed || ctx.is_droppable(stmt.input.var_id)) {
+            self.invalidate();
         }
     }
 
     /// Updates the info to the state before match arm.
-    fn apply_match_arm(&mut self, input: &ValueInfo, arm: &MatchArm) {
+    fn apply_match_arm(&mut self, is_droppable: bool, input: &ValueInfo, arm: &MatchArm) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
 
+        let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
-            if var_info.apply_match_arm(input, arm).is_err() {
-                self.invalidate();
-                return;
-            }
+            match var_info.apply_match_arm(input, arm) {
+                OpResult::InputConsumed => {
+                    input_consumed = true;
+                }
+                OpResult::ValueInvalidated => {
+                    self.invalidate();
+                    return;
+                }
+                OpResult::NoChange => {}
+            };
+        }
+
+        if !(input_consumed || is_droppable) {
+            self.invalidate();
         }
     }
 
@@ -271,7 +334,7 @@ impl AnalyzerInfo {
             ValueInfo::Var(_) => true,
             ValueInfo::StructConstruct { .. } => false,
             ValueInfo::EnumConstruct { .. } => false,
-            ValueInfo::Unit => false,
+            ValueInfo::Interchangeable(_) => false,
         })
     }
 }
@@ -287,10 +350,13 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     ) {
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
+                // Note that the ValueInfo::StructConstruct can only be removed by
+                // a StructDeconstruct statement that produces its non-interchangeable inputs so
+                // allowing undroppable inputs is ok here.
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
-                        var_infos: inputs.iter().map(|input| ValueInfo::Var(*input)).collect(),
+                        var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
                     },
                 );
             }
@@ -343,11 +409,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             return AnalyzerInfo { opt_returned_vars: None };
         }
 
-        let input = self.get_var_info(input);
+        let input_info = self.get_var_info(input);
         let mut opt_prev_info = None;
         for (arm, info) in arms.iter().zip(infos) {
             let mut curr_info = info.clone();
-            curr_info.apply_match_arm(&input, arm);
+            curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
 
             if !curr_info.early_return_possible() {
                 return AnalyzerInfo { opt_returned_vars: None };
@@ -361,11 +427,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 opt_prev_info = Some(curr_info);
             }
         }
-
-        self.fixes.push(FixInfo {
-            block_id,
-            return_vars: opt_prev_info.unwrap().opt_returned_vars.unwrap(),
-        });
+        let return_vars = opt_prev_info.unwrap().opt_returned_vars.unwrap();
+        self.fixes.push(FixInfo { block_id, return_vars });
 
         AnalyzerInfo { opt_returned_vars: None }
     }
@@ -375,6 +438,8 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         _statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
+        // Note that `self.get_var_info` is not used here because ValueInfo::Interchangeable is
+        // supported only inside other ValueInfo variants.
         AnalyzerInfo {
             opt_returned_vars: Some(
                 vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),

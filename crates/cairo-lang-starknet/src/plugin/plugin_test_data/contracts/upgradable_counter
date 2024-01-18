@@ -505,8 +505,11 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
 }
 
 trait ICounterContractSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
     fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn decrease_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
     fn get_counter(self: T) -> starknet::SyscallResult<u128>;
 }
 

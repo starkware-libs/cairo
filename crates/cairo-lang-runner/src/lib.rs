@@ -17,7 +17,7 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
-use cairo_lang_sierra::program::{Function, GenericArg};
+use cairo_lang_sierra::program::{Function, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -29,18 +29,22 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_traits::ToPrimitive;
+use profiling::ProfilingInfo;
 use thiserror::Error;
 
 pub mod casm_run;
+pub mod profiling;
 pub mod short_string;
 
 #[derive(Debug, Error)]
@@ -75,6 +79,8 @@ pub struct RunResultStarknet {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
+    /// The profiling info of the run, if requested.
+    pub profiling_info: Option<ProfilingInfo>,
 }
 
 /// The full result of a run.
@@ -83,6 +89,8 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
+    /// The profiling info of the run, if requested.
+    pub profiling_info: Option<ProfilingInfo>,
 }
 
 /// The ran function return value.
@@ -154,14 +162,17 @@ pub struct SierraCasmRunner {
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
     #[allow(dead_code)]
-    // Mapping from class_hash to contract info.
+    /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    /// Whether to run the profiler when running using this runner.
+    run_profiler: bool,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
         starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+        run_profiler: bool,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -182,6 +193,7 @@ impl SierraCasmRunner {
             type_sizes,
             casm_program,
             starknet_contracts_info,
+            run_profiler,
         })
     }
 
@@ -205,13 +217,14 @@ impl SierraCasmRunner {
             string_to_hint,
             run_resources: RunResources::default(),
         };
-        self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
-            RunResultStarknet {
-                gas_counter: v.gas_counter,
-                memory: v.memory,
-                value: v.value,
-                starknet_state: hint_processor.starknet_state,
-            }
+        let RunResult { gas_counter, memory, value, profiling_info } =
+            self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins)?;
+        Ok(RunResultStarknet {
+            gas_counter,
+            memory,
+            value,
+            starknet_state: hint_processor.starknet_state,
+            profiling_info,
         })
     }
 
@@ -234,7 +247,7 @@ impl SierraCasmRunner {
     {
         let (cells, ap) = casm_run::run_function(
             vm,
-            instructions,
+            instructions.clone(),
             builtins,
             |context| {
                 let vm = context.vm;
@@ -285,7 +298,60 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult { gas_counter, memory: cells, value })
+
+        let profiling_info = if self.run_profiler {
+            Some(self.collect_profiling_info(vm.get_relocated_trace().unwrap()))
+        } else {
+            None
+        };
+
+        Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
+    }
+
+    /// Collects profiling info of the current run using the trace.
+    fn collect_profiling_info(&self, trace: &[TraceEntry]) -> ProfilingInfo {
+        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        // The CASM program starts with a header of instructions to wrap the real program.
+        // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
+        // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
+        // subtracted by `real_pc_0` to get the real PC they point to in the original CASM
+        // program.
+        // This is the same as the PC of the last trace entry as the header is built to have a `ret`
+        // last instruction, which must be the last in the trace of any execution.
+        let real_pc_0 = trace.last().unwrap().pc + 1;
+
+        // Count the number of times each PC was executed. Note the header and footer (CASM
+        // instructions added for running the program by the runner) are also counted (but are
+        // later ignored).
+        let pc_counts =
+            trace.iter().fold(UnorderedHashMap::<usize, usize>::default(), |mut acc, step| {
+                *acc.entry(step.pc).or_insert(0) += 1;
+                acc
+            });
+
+        // For each pc, find the corresponding Sierra statement, and accumulate the weight to find
+        // the total weight of each Sierra statement.
+        let mut sierra_statements_weights =
+            pc_counts.filter(|pc, count| *count != 0 && *pc >= real_pc_0).aggregate_by(
+                |pc| {
+                    let real_pc = pc - real_pc_0;
+                    // the `-1` here can't cause an underflow as the first statement is always at
+                    // offset 0, so it is always on the left side of the
+                    // partition, and thus the partition index is >0.
+                    let idx = self
+                        .casm_program
+                        .debug_info
+                        .sierra_statement_info
+                        .partition_point(|x| x.code_offset <= real_pc)
+                        - 1;
+                    StatementIdx(idx)
+                },
+                |x, y| x + y,
+                &0,
+            );
+        sierra_statements_weights.remove(&StatementIdx(sierra_len));
+
+        ProfilingInfo { sierra_statements_weights }
     }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have

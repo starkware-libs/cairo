@@ -13,7 +13,68 @@ pub fn function_with_body_direct_callees(
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId>> {
     let lowered = db.function_with_body_lowering(function_id)?;
+<<<<<<< HEAD
     Ok(get_direct_callees(&lowered, dependency_type).into_iter().collect())
+||||||| b1f4afba8
+    let mut direct_callees = OrderedHashSet::default();
+    lowered.blocks.has_root()?;
+    for (_, block) in lowered.blocks.iter() {
+        for stmt in &block.statements {
+            match stmt {
+                crate::Statement::Call(stmt) => {
+                    direct_callees.insert(stmt.function);
+                }
+                crate::Statement::Literal(_)
+                | crate::Statement::StructConstruct(_)
+                | crate::Statement::StructDestructure(_)
+                | crate::Statement::EnumConstruct(_)
+                | crate::Statement::Snapshot(_)
+                | crate::Statement::Desnap(_) => {}
+            };
+        }
+        match &block.end {
+            crate::FlatBlockEnd::Match { info: MatchInfo::Extern(s) } => {
+                direct_callees.insert(s.function);
+            }
+            crate::FlatBlockEnd::Match { info: MatchInfo::Enum(_) }
+            | crate::FlatBlockEnd::NotSet
+            | crate::FlatBlockEnd::Return(_)
+            | crate::FlatBlockEnd::Panic(_)
+            | crate::FlatBlockEnd::Goto(_, _) => {}
+        }
+    }
+    Ok(direct_callees)
+=======
+    let mut direct_callees = OrderedHashSet::default();
+    lowered.blocks.has_root()?;
+    for (_, block) in lowered.blocks.iter() {
+        for stmt in &block.statements {
+            match stmt {
+                crate::Statement::Call(stmt) => {
+                    direct_callees.insert(stmt.function);
+                }
+                crate::Statement::Literal(_)
+                | crate::Statement::StructConstruct(_)
+                | crate::Statement::StructDestructure(_)
+                | crate::Statement::EnumConstruct(_)
+                | crate::Statement::Snapshot(_)
+                | crate::Statement::Desnap(_) => {}
+            };
+        }
+        match &block.end {
+            crate::FlatBlockEnd::Match { info: MatchInfo::Extern(s) } => {
+                direct_callees.insert(s.function);
+            }
+            crate::FlatBlockEnd::Match { info: MatchInfo::Value(_) }
+            | crate::FlatBlockEnd::Match { info: MatchInfo::Enum(_) }
+            | crate::FlatBlockEnd::NotSet
+            | crate::FlatBlockEnd::Return(_)
+            | crate::FlatBlockEnd::Panic(_)
+            | crate::FlatBlockEnd::Goto(_, _) => {}
+        }
+    }
+    Ok(direct_callees)
+>>>>>>> origin/main
 }
 
 /// Query implementation of

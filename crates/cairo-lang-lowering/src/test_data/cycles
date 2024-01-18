@@ -26,22 +26,42 @@ Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
+<<<<<<< HEAD
   Match(match core::gas::withdraw_gas(v16, v17) {
     Option::Some(v18, v19) => blk1,
     Option::None(v20, v21) => blk4,
+||||||| b1f4afba8
+  Match(match core::gas::withdraw_gas_all(v17, v18, v8) {
+    Option::Some(v19, v20) => blk1,
+    Option::None(v21, v22) => blk4,
+=======
+  Match(match core::gas::withdraw_gas_all(v17, v18, v8) {
+    Option::Some(v19, v20) => blk1,
+    Option::None(v21, v22) => blk2,
+>>>>>>> origin/main
   })
 
 blk1:
 Statements:
   (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v8: core::panics::PanicResult::<((),)>) <- test::foo(v18, v19, v0)
 End:
+<<<<<<< HEAD
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk2,
     PanicResult::Err(v11) => blk3,
   })
+||||||| b1f4afba8
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk2,
+    PanicResult::Err(v12) => blk3,
+  })
+=======
+  Return(v23, v24, v9)
+>>>>>>> origin/main
 
 blk2:
 Statements:
+<<<<<<< HEAD
   (v2: ()) <- struct_construct()
   (v13: ((),)) <- struct_construct(v2)
   (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
@@ -56,6 +76,23 @@ End:
 
 blk4:
 Statements:
+||||||| b1f4afba8
+  (v2: ()) <- struct_construct()
+  (v14: ((),)) <- struct_construct(v2)
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v14)
+End:
+  Return(v23, v24, v15)
+
+blk3:
+Statements:
+  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
+End:
+  Return(v23, v24, v16)
+
+blk4:
+Statements:
+=======
+>>>>>>> origin/main
   (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v4: core::felt252) <- 375233589013918064796019u
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)

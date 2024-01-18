@@ -213,7 +213,7 @@ impl ConstAsBoxLibfuncWrapped {
                     ty: boxed_inner_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                SierraApChange::Known { new_vars_only: true },
+                SierraApChange::Known { new_vars_only: false },
             ),
             const_type: ty,
         })

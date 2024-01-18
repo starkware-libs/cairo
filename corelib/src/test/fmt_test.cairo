@@ -11,6 +11,8 @@ fn test_format() {
     assert(format!("{}{1}", 12_usize, 14_u32) == "1214", 'positional mix bad formatting');
     assert(format!("{ba}_{}_{}_{1}", 12, 14_u32) == "hello_12_14_14", 'full mix bad formatting');
     assert(format!("{{{{}}}}") == "{{}}", 'special cases bad formatting');
+    let nz_value: NonZero<felt252> = 1.try_into().unwrap();
+    assert(format!("{}", nz_value) == "1", 'non zero bad formatting');
 }
 
 #[derive(Debug, Drop)]

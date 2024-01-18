@@ -31,6 +31,13 @@ impl DisplayInteger<
     }
 }
 
+impl DisplayNonZero<T, +Display<T>, +Copy<T>, +Drop<T>> of Display<NonZero<T>> {
+    fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
+        let value: T = (*self).into();
+        write!(f, "{value}")
+    }
+}
+
 impl DisplayBool of Display<bool> {
     fn fmt(self: @bool, ref f: Formatter) -> Result<(), Error> {
         if *self {
@@ -59,6 +66,13 @@ impl DebugInteger<
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
+    }
+}
+
+impl DebugNonZero<T, +Debug<T>, +Copy<T>, +Drop<T>> of Debug<NonZero<T>> {
+    fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
+        let value: T = (*self).into();
+        write!(f, "{value:?}")
     }
 }
 

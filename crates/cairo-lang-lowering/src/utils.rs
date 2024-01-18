@@ -1,8 +1,8 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
+    BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
+    MatchInfo, Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -97,7 +97,7 @@ pub trait RebuilderEx: Rebuilder {
                             .arms
                             .iter()
                             .map(|arm| MatchArm {
-                                variant_id: arm.variant_id.clone(),
+                                arm_selector: arm.arm_selector.clone(),
                                 block_id: self.map_block_id(arm.block_id),
                                 var_ids: arm
                                     .var_ids
@@ -115,7 +115,25 @@ pub trait RebuilderEx: Rebuilder {
                             .arms
                             .iter()
                             .map(|arm| MatchArm {
-                                variant_id: arm.variant_id.clone(),
+                                arm_selector: arm.arm_selector.clone(),
+                                block_id: self.map_block_id(arm.block_id),
+                                var_ids: arm
+                                    .var_ids
+                                    .iter()
+                                    .map(|var_id| self.map_var_id(*var_id))
+                                    .collect(),
+                            })
+                            .collect(),
+                        location: stmt.location,
+                    }),
+                    MatchInfo::Value(stmt) => MatchInfo::Value(MatchEnumValue {
+                        num_of_arms: stmt.num_of_arms,
+                        input: self.map_var_usage(stmt.input),
+                        arms: stmt
+                            .arms
+                            .iter()
+                            .map(|arm| MatchArm {
+                                arm_selector: arm.arm_selector.clone(),
                                 block_id: self.map_block_id(arm.block_id),
                                 var_ids: arm
                                     .var_ids

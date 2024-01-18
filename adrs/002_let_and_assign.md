@@ -30,7 +30,7 @@ Two syntaxes: "let", and "assign".
 - _Assign_ - `<ident> = <expr>`. Does not change the definition of `<ident>`. Inner and outer scopes
   still see the previous definition, but with a new value.
 
-This behaviour is in line with Rust.
+This behavior is in line with Rust.
 
 _Shadowing_ - although the language will permit this, a specific warning will be emitted in such
 cases. Whether the compilation will pass is up to configuration.
@@ -74,7 +74,7 @@ Disadvantages:
 
 ## Decision
 
-We decide to accept the proposed syntax.
+We decided to accept the proposed syntax.
 
 ## Consequences
 

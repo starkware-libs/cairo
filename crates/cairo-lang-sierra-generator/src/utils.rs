@@ -182,6 +182,13 @@ pub fn match_enum_libfunc_id(
     })
 }
 
+pub fn enum_from_bounded_int_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_with_generic_arg(db, "enum_from_bounded_int", ty)
+}
+
 pub fn drop_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,

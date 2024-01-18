@@ -1,6 +1,6 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-  "compiler_version": "2.4.1",
+  "compiler_version": "2.4.4",
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",
@@ -34,9 +34,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x6a0",
+||||||| b1f4afba8
+    "0x6b2",
+=======
+    "0x69d",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x69f",
+||||||| b1f4afba8
+    "0x6b1",
+=======
+    "0x69c",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -167,23 +179,55 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x61b",
+||||||| b1f4afba8
+    "0x62b",
+=======
+    "0x616",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x61a",
+||||||| b1f4afba8
+    "0x62a",
+=======
+    "0x615",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
+<<<<<<< HEAD
     "0x4824800180007fe6",
     "0xaf28",
+||||||| b1f4afba8
+    "0x4824800180007fe4",
+    "0xb180",
+=======
+    "0x4824800180007fe4",
+    "0xb11c",
+>>>>>>> origin/main
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff57fff",
     "0x10780017fff7fff",
     "0x20",
+<<<<<<< HEAD
     "0x4824800180007fe6",
     "0xaf28",
     "0x400080007ff67fff",
     "0x482480017ff68000",
+||||||| b1f4afba8
+    "0x4824800180007fe4",
+    "0xb180",
+    "0x400080007ff47fff",
+    "0x482480017ff48000",
+=======
+    "0x4824800180007fe4",
+    "0xb11c",
+    "0x400080007ff47fff",
+    "0x482480017ff48000",
+>>>>>>> origin/main
     "0x1",
     "0x48127ffe7fff8000",
     "0x480a7ffb7fff8000",
@@ -319,29 +363,61 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x583",
+||||||| b1f4afba8
+    "0x591",
+=======
+    "0x57c",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x582",
+||||||| b1f4afba8
+    "0x590",
+=======
+    "0x57b",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
+<<<<<<< HEAD
     "0x4824800180007fe6",
     "0x12f52",
+||||||| b1f4afba8
+    "0x4824800180007fe4",
+    "0x1333a",
+=======
+    "0x4824800180007fe4",
+    "0x132d6",
+>>>>>>> origin/main
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff57fff",
     "0x10780017fff7fff",
     "0x20",
+<<<<<<< HEAD
     "0x4824800180007fe6",
     "0x12f52",
     "0x400080007ff67fff",
     "0x482480017ff68000",
+||||||| b1f4afba8
+    "0x4824800180007fe4",
+    "0x1333a",
+    "0x400080007ff47fff",
+    "0x482480017ff48000",
+=======
+    "0x4824800180007fe4",
+    "0x132d6",
+    "0x400080007ff47fff",
+    "0x482480017ff48000",
+>>>>>>> origin/main
     "0x1",
     "0x48127ffe7fff8000",
     "0x480a7ffb7fff8000",
     "0x48127ff57fff8000",
     "0x1104800180018000",
-    "0x16e",
+    "0x161",
     "0x20680017fff7ffd",
     "0xc",
     "0x40780017fff7fff",
@@ -455,7 +531,7 @@
     "0x48127fee7fff8000",
     "0x48127fee7fff8000",
     "0x1104800180018000",
-    "0x173",
+    "0x15e",
     "0x20680017fff7ffe",
     "0x51",
     "0x48307ffc80007ffd",
@@ -478,9 +554,21 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x4e4",
+||||||| b1f4afba8
+    "0x4f2",
+=======
+    "0x4dd",
+>>>>>>> origin/main
     "0x482480017fff8000",
+<<<<<<< HEAD
     "0x4e3",
+||||||| b1f4afba8
+    "0x4f1",
+=======
+    "0x4dc",
+>>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -499,7 +587,7 @@
     "0x48127fd97fff8000",
     "0x48127ff57fff8000",
     "0x1104800180018000",
-    "0x180",
+    "0x16b",
     "0x482480017fb48000",
     "0x1",
     "0x20680017fff7ffc",
@@ -590,7 +678,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x14c",
+    "0x137",
     "0x208b7fff7fff7ffe",
     "0xa0680017fff8000",
     "0x16",
@@ -634,33 +722,44 @@
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x1104800180018000",
-    "0x120",
+    "0x10b",
     "0x20680017fff7ffd",
-    "0x3d",
+    "0x30",
     "0x48127ffa7fff8000",
     "0x48127ffe7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x15c",
+    "0x147",
     "0x20680017fff7ffd",
-    "0x2c",
+    "0x1f",
     "0x48127fe57fff8000",
     "0x48127fe57fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x175",
+    "0x160",
     "0x20680017fff7ffd",
-    "0x1b",
+    "0xe",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1a2",
     "0x20680017fff7ffd",
     "0xc",
     "0x48127fb37fff8000",
+||||||| b1f4afba8
+    "0x1a2",
+    "0x20680017fff7ffd",
+    "0xc",
+    "0x48127faf7fff8000",
+=======
+    "0x18d",
+    "0x48127faf7fff8000",
+>>>>>>> origin/main
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
+<<<<<<< HEAD
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
@@ -669,10 +768,18 @@
     "0x0",
     "0x208b7fff7fff7ffe",
     "0x48127fb37fff8000",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
+||||||| b1f4afba8
     "0x480680017fff8000",
-    "0x1",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x208b7fff7fff7ffe",
+    "0x48127faf7fff8000",
+=======
+>>>>>>> origin/main
+    "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
@@ -710,19 +817,32 @@
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1ab",
+||||||| b1f4afba8
+    "0x1af",
+=======
+    "0x1a7",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
-    "0x68",
+    "0x60",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1c5",
+||||||| b1f4afba8
+    "0x1c9",
+=======
+    "0x1c1",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
-    "0x57",
+    "0x4f",
     "0x20680017fff7fff",
-    "0x9",
+    "0xe",
     "0x40780017fff7fff",
+<<<<<<< HEAD
     "0x88",
     "0x48127f487fff8000",
     "0x48127f727fff8000",
@@ -730,36 +850,75 @@
     "0x10780017fff7fff",
     "0x21",
     "0x48127fd07fff8000",
+||||||| b1f4afba8
+    "0x8c",
+    "0x48127f407fff8000",
+    "0x48127f6e7fff8000",
+    "0x48127f6e7fff8000",
+    "0x10780017fff7fff",
+    "0x21",
+    "0x48127fcc7fff8000",
+=======
+    "0x8c",
+    "0x48127f407fff8000",
+    "0x48127f6e7fff8000",
+    "0x48127f6e7fff8000",
+    "0x480680017fff8000",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x208b7fff7fff7ffe",
+    "0x48127fcc7fff8000",
+>>>>>>> origin/main
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x1104800180018000",
-    "0xbd",
+    "0xb0",
     "0x20680017fff7ffd",
-    "0x3d",
+    "0x30",
     "0x48127ffa7fff8000",
     "0x48127ffe7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x1f7",
+||||||| b1f4afba8
+    "0x1fd",
+=======
+    "0x1f0",
+>>>>>>> origin/main
     "0x20680017fff7ffd",
-    "0x2c",
+    "0x1f",
     "0x48127fe57fff8000",
     "0x48127fe57fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x112",
+    "0x105",
     "0x20680017fff7ffd",
-    "0x1b",
+    "0xe",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
+<<<<<<< HEAD
     "0x209",
     "0x20680017fff7ffd",
     "0xc",
     "0x48127fb37fff8000",
+||||||| b1f4afba8
+    "0x20f",
+    "0x20680017fff7ffd",
+    "0xc",
+    "0x48127faf7fff8000",
+=======
+    "0x202",
+    "0x48127faf7fff8000",
+>>>>>>> origin/main
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
+<<<<<<< HEAD
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
@@ -769,9 +928,19 @@
     "0x208b7fff7fff7ffe",
     "0x48127fb37fff8000",
     "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
+||||||| b1f4afba8
     "0x480680017fff8000",
-    "0x1",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x480680017fff8000",
+    "0x0",
+    "0x208b7fff7fff7ffe",
+    "0x48127faf7fff8000",
+    "0x48127ffa7fff8000",
+=======
+>>>>>>> origin/main
+    "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
@@ -937,7 +1106,7 @@
     "0x480a7ffb7fff8000",
     "0x480280067ffd8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffea9",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffebe",
     "0x480280047ffd8000",
     "0x482680017ffd8000",
     "0x7",
@@ -1905,7 +2074,13 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
+<<<<<<< HEAD
               "Immediate": "0xaf28"
+||||||| b1f4afba8
+              "Immediate": "0xb180"
+=======
+              "Immediate": "0xb11c"
+>>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -2014,7 +2189,13 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
+<<<<<<< HEAD
               "Immediate": "0x12f52"
+||||||| b1f4afba8
+              "Immediate": "0x1333a"
+=======
+              "Immediate": "0x132d6"
+>>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -2253,7 +2434,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       829,
+||||||| b1f4afba8
+      833,
+=======
+      812,
+>>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -2275,7 +2462,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       833,
+||||||| b1f4afba8
+      837,
+=======
+      816,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -2304,7 +2497,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       843,
+||||||| b1f4afba8
+      847,
+=======
+      826,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -2333,7 +2532,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       929,
+||||||| b1f4afba8
+      933,
+=======
+      912,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2348,7 +2553,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       953,
+||||||| b1f4afba8
+      957,
+=======
+      936,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2361,7 +2572,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       987,
+||||||| b1f4afba8
+      991,
+=======
+      970,
+>>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -2383,7 +2600,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1029,
+||||||| b1f4afba8
+      1033,
+=======
+      1012,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2398,7 +2621,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1073,
+||||||| b1f4afba8
+      1077,
+=======
+      1056,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2411,7 +2640,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1075,
+||||||| b1f4afba8
+      1079,
+=======
+      1058,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2424,7 +2659,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1093,
+||||||| b1f4afba8
+      1101,
+=======
+      1080,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2439,7 +2680,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1167,
+||||||| b1f4afba8
+      1175,
+=======
+      1154,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2452,7 +2699,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1179,
+||||||| b1f4afba8
+      1189,
+=======
+      1168,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2467,7 +2720,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1218,
+||||||| b1f4afba8
+      1228,
+=======
+      1207,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2480,7 +2739,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1241,
+||||||| b1f4afba8
+      1251,
+=======
+      1230,
+>>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -2502,7 +2767,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1275,
+||||||| b1f4afba8
+      1285,
+=======
+      1264,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2515,7 +2786,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1277,
+||||||| b1f4afba8
+      1287,
+=======
+      1266,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2528,7 +2805,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1295,
+||||||| b1f4afba8
+      1309,
+=======
+      1288,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2543,7 +2826,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1422,
+||||||| b1f4afba8
+      1438,
+=======
+      1417,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2556,7 +2845,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1512,
+||||||| b1f4afba8
+      1528,
+=======
+      1507,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2571,7 +2866,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1537,
+||||||| b1f4afba8
+      1553,
+=======
+      1532,
+>>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -2584,7 +2885,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1649,
+||||||| b1f4afba8
+      1667,
+=======
+      1646,
+>>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -2599,7 +2906,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1690,
+||||||| b1f4afba8
+      1708,
+=======
+      1687,
+>>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -2621,7 +2934,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1694,
+||||||| b1f4afba8
+      1712,
+=======
+      1691,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -2650,7 +2969,13 @@
       ]
     ],
     [
+<<<<<<< HEAD
       1704,
+||||||| b1f4afba8
+      1722,
+=======
+      1701,
+>>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -2731,7 +3056,13 @@
     [
       169,
       [
+<<<<<<< HEAD
         "memory[ap + 0] = 44840 <= memory[ap + -25]"
+||||||| b1f4afba8
+        "memory[ap + 0] = 45440 <= memory[ap + -27]"
+=======
+        "memory[ap + 0] = 45340 <= memory[ap + -27]"
+>>>>>>> origin/main
       ]
     ],
     [
@@ -2773,7 +3104,13 @@
     [
       321,
       [
+<<<<<<< HEAD
         "memory[ap + 0] = 77650 <= memory[ap + -25]"
+||||||| b1f4afba8
+        "memory[ap + 0] = 78650 <= memory[ap + -27]"
+=======
+        "memory[ap + 0] = 78550 <= memory[ap + -27]"
+>>>>>>> origin/main
       ]
     ],
     [
@@ -2861,145 +3198,289 @@
       ]
     ],
     [
+<<<<<<< HEAD
       829,
+||||||| b1f4afba8
+      833,
+=======
+      812,
+>>>>>>> origin/main
       [
         "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
       ]
     ],
     [
+<<<<<<< HEAD
       833,
+||||||| b1f4afba8
+      837,
+=======
+      816,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
       ]
     ],
     [
+<<<<<<< HEAD
       843,
+||||||| b1f4afba8
+      847,
+=======
+      826,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
       ]
     ],
     [
+<<<<<<< HEAD
       929,
+||||||| b1f4afba8
+      933,
+=======
+      912,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
+<<<<<<< HEAD
       953,
+||||||| b1f4afba8
+      957,
+=======
+      936,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       987,
+||||||| b1f4afba8
+      991,
+=======
+      970,
+>>>>>>> origin/main
       [
         "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
       ]
     ],
     [
+<<<<<<< HEAD
       1029,
+||||||| b1f4afba8
+      1033,
+=======
+      1012,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
+<<<<<<< HEAD
       1073,
+||||||| b1f4afba8
+      1077,
+=======
+      1056,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1075,
+||||||| b1f4afba8
+      1079,
+=======
+      1058,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1093,
+||||||| b1f4afba8
+      1101,
+=======
+      1080,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
+<<<<<<< HEAD
       1167,
+||||||| b1f4afba8
+      1175,
+=======
+      1154,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1179,
+||||||| b1f4afba8
+      1189,
+=======
+      1168,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
+<<<<<<< HEAD
       1218,
+||||||| b1f4afba8
+      1228,
+=======
+      1207,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1241,
+||||||| b1f4afba8
+      1251,
+=======
+      1230,
+>>>>>>> origin/main
       [
         "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
       ]
     ],
     [
+<<<<<<< HEAD
       1275,
+||||||| b1f4afba8
+      1285,
+=======
+      1264,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1277,
+||||||| b1f4afba8
+      1287,
+=======
+      1266,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1295,
+||||||| b1f4afba8
+      1309,
+=======
+      1288,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
+<<<<<<< HEAD
       1422,
+||||||| b1f4afba8
+      1438,
+=======
+      1417,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1512,
+||||||| b1f4afba8
+      1528,
+=======
+      1507,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
       ]
     ],
     [
+<<<<<<< HEAD
       1537,
+||||||| b1f4afba8
+      1553,
+=======
+      1532,
+>>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
+<<<<<<< HEAD
       1649,
+||||||| b1f4afba8
+      1667,
+=======
+      1646,
+>>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -6])"
       ]
     ],
     [
+<<<<<<< HEAD
       1690,
+||||||| b1f4afba8
+      1708,
+=======
+      1687,
+>>>>>>> origin/main
       [
         "memory[ap + 4] = memory[fp + -3] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
       ]
     ],
     [
+<<<<<<< HEAD
       1694,
+||||||| b1f4afba8
+      1712,
+=======
+      1691,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
       ]
     ],
     [
+<<<<<<< HEAD
       1704,
+||||||| b1f4afba8
+      1722,
+=======
+      1701,
+>>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[fp + -3], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
       ]

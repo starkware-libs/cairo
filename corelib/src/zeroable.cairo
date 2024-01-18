@@ -57,3 +57,28 @@ impl IsZeroResultIntoBool<T, +Drop<T>> of Into<IsZeroResult<T>, bool> {
         }
     }
 }
+
+impl NonZeroPartialEq<T, +PartialEq<T>, +Copy<T>, +Drop<T>> of PartialEq<NonZero<T>> {
+    #[inline(always)]
+    fn eq(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
+        let lhs: T = (*lhs).into();
+        let rhs: T = (*rhs).into();
+        lhs == rhs
+    }
+    #[inline(always)]
+    fn ne(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
+        let lhs: T = (*lhs).into();
+        let rhs: T = (*rhs).into();
+        lhs != rhs
+    }
+}
+
+impl NonZeroSerde<T, +Serde<T>, +Copy<T>, +Drop<T>, +TryInto<T, NonZero<T>>> of Serde<NonZero<T>> {
+    fn serialize(self: @NonZero<T>, ref output: Array<felt252>) {
+        let value: T = (*self).into();
+        value.serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<NonZero<T>> {
+        Serde::<T>::deserialize(ref serialized)?.try_into()
+    }
+}
