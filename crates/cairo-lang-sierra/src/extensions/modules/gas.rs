@@ -138,8 +138,19 @@ impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
 /// Note that if you add a type here you should update 'iter_precost'
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
-    /// A compile time known cost unit.
+    /// A compile time known cost unit. This is a linear combination of the runtime tokens
+    /// ([CostTokenType::Step], [CostTokenType::Hole], [CostTokenType::RangeCheck]).
     Const,
+
+    // Runtime post-cost token types:
+    /// The number of steps.
+    Step,
+    /// The number of memory holes (untouched memory addresses).
+    Hole,
+    /// The number of range check builtins.
+    RangeCheck,
+
+    // Pre-cost token types (builtins):
     /// One invocation of the pedersen hash function.
     Pedersen,
     /// One invocation of the Poseidon hades permutation.
@@ -172,6 +183,9 @@ impl CostTokenType {
     pub fn name(&self) -> String {
         match self {
             CostTokenType::Const => "const",
+            CostTokenType::Step => "step",
+            CostTokenType::Hole => "hole",
+            CostTokenType::RangeCheck => "range_check",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -186,7 +200,10 @@ impl CostTokenType {
 
     pub fn offset_in_builtin_costs(&self) -> i16 {
         match self {
-            CostTokenType::Const => {
+            CostTokenType::Const
+            | CostTokenType::Step
+            | CostTokenType::Hole
+            | CostTokenType::RangeCheck => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
             CostTokenType::Pedersen => 0,
