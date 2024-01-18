@@ -52,6 +52,34 @@ impl CostTypeTrait for i32 {
     }
 }
 
+impl CostTypeTrait for ConstCost {
+    fn min2(value1: &Self, value2: &Self) -> Self {
+        ConstCost {
+            steps: std::cmp::min(value1.steps, value2.steps),
+            holes: std::cmp::min(value1.holes, value2.holes),
+            range_checks: std::cmp::min(value1.range_checks, value2.range_checks),
+        }
+    }
+
+    fn max(values: impl Iterator<Item = Self>) -> Self {
+        values
+            .reduce(|acc, value| ConstCost {
+                steps: std::cmp::max(acc.steps, value.steps),
+                holes: std::cmp::max(acc.holes, value.holes),
+                range_checks: std::cmp::max(acc.range_checks, value.range_checks),
+            })
+            .unwrap_or_default()
+    }
+
+    fn rectify(value: &Self) -> Self {
+        ConstCost {
+            steps: std::cmp::max(value.steps, 0),
+            holes: std::cmp::max(value.holes, 0),
+            range_checks: std::cmp::max(value.range_checks, 0),
+        }
+    }
+}
+
 impl CostTypeTrait for PreCost {
     fn min2(value1: &Self, value2: &Self) -> Self {
         let map_fn = |(token_type, val1)| {
@@ -728,6 +756,22 @@ impl PostCostTypeEx for i32 {
 
     fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64> {
         [(CostTokenType::Const, self.into())].into_iter().collect()
+    }
+}
+
+impl PostCostTypeEx for ConstCost {
+    fn from_const_cost(const_cost: &ConstCost) -> Self {
+        *const_cost
+    }
+
+    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64> {
+        [
+            (CostTokenType::Step, self.steps.into()),
+            (CostTokenType::Hole, self.holes.into()),
+            (CostTokenType::RangeCheck, self.range_checks.into()),
+        ]
+        .into_iter()
+        .collect()
     }
 }
 

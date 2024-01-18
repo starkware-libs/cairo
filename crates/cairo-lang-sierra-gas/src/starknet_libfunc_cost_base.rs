@@ -75,5 +75,5 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
 /// Returns the costs for system calls.
 fn syscall_cost(arg_size: i32) -> Vec<ConstCost> {
     let cost = ConstCost { steps: SYSTEM_CALL_STEPS + 5 + arg_size, holes: 0, range_checks: 0 };
-    vec![cost.clone(), cost]
+    vec![cost, cost]
 }
