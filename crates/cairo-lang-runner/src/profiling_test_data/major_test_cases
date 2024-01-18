@@ -1684,8 +1684,8 @@ Weight by Cairo function:
   function contract::__wrapper__IERC20Impl__transfer: 37
   function storage_access.cairo::StoreFelt252::write_at_offset: 32
   function array.cairo::SpanImpl::pop_front: 30
+  function option.cairo::OptionTraitImpl::expect: 30
   function starknet.cairo::SyscallResultTraitImpl::unwrap_syscall: 30
-  function option.cairo::OptionTraitImpl::expect: 20
   function contract_address.cairo::ContractAddressSerde::deserialize: 18
   function info.cairo::get_execution_info: 18
   function integer.cairo::Felt252TryIntoU128::try_into: 18
@@ -1703,11 +1703,11 @@ Weight by Cairo function:
   function integer.cairo::u256_checked_sub: 12
   function pedersen.cairo::HashStateImpl::update: 12
   function starknet_derive::EventIsEvent::append_keys_and_data: 12
-  function integer.cairo::U256Add::add: 11
-  function integer.cairo::U256Sub::sub: 11
   function contract_address.cairo::ContractAddressSerde::serialize: 10
   function info.cairo::get_caller_address: 10
   function impls::u256Serde::deserialize: 7
+  function integer.cairo::U256Add::add: 6
+  function integer.cairo::U256Sub::sub: 6
   function lib.cairo::Felt252Serde::serialize: 6
   function starknet_derive::EventTransferIntoEvent::into: 6
   function array.cairo::ArrayImpl::new: 5
