@@ -65,8 +65,7 @@ pub fn contains_cycle(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let direct_callees =
-        db.concrete_function_with_body_postinline_direct_callees_with_body(function_id)?;
+    let direct_callees = db.concrete_function_with_body_direct_callees_with_body(function_id)?;
     for callee in direct_callees {
         if db.contains_cycle(callee)? {
             return Ok(true);
