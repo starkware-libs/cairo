@@ -3,14 +3,16 @@ use std::vec;
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
+use num_traits::ToPrimitive;
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, unit_ty, validate_literal,
@@ -21,7 +23,8 @@ use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath,
-    GenericArgumentId, Pattern, PatternEnumVariant, PatternId, TypeLongId,
+    GenericArgumentId, MatchArmSelector, Pattern, PatternEnumVariant, PatternId, TypeLongId,
+    ValueSelectorArm,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -42,8 +45,8 @@ use crate::ids::{
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    VarUsage, VariableId,
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
+    MatchInfo, VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -87,8 +90,12 @@ pub fn lower_semantic_function(
     }
 
     let block_expr_id = encapsulating_ctx.function_body.body_expr;
-    let main_lowering =
-        lower_function(&mut encapsulating_ctx, function_id, signature.into(), block_expr_id)?;
+    let main_lowering = lower_function(
+        &mut encapsulating_ctx,
+        function_id,
+        Signature::from_semantic(db, signature),
+        block_expr_id,
+    )?;
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
@@ -212,12 +219,12 @@ pub fn lower_while_loop(
         input: condition,
         arms: vec![
             MatchArm {
-                variant_id: corelib::false_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                variant_id: corelib::true_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -1062,6 +1069,7 @@ fn lower_expr_loop(
         return_type,
         implicits: vec![],
         panicable: ctx.signature.panicable,
+        location: ctx.get_location(stable_ptr.untyped()),
     };
 
     // Get the function id.
@@ -1145,9 +1153,10 @@ fn extract_concrete_enum(
 
     // Semantic model should have made sure the type is an enum.
     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
-        ));
+        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+            matched_expr.stable_ptr().untyped(),
+            UnsupportedMatchedType(long_ty.format(ctx.db.upcast())),
+        )));
     };
     let concrete_variants =
         ctx.db.concrete_enum_variants(concrete_enum_id).map_err(LoweringFlowError::Failed)?;
@@ -1525,7 +1534,7 @@ fn lower_full_match_tree(
             arm_var_ids,
         )
         .map(|((variant_id, block_id), var_ids)| MatchArm {
-            variant_id: variant_id.clone(),
+            arm_selector: MatchArmSelector::VariantId(variant_id.clone()),
             block_id,
             var_ids,
         })
@@ -1652,6 +1661,28 @@ fn lower_expr_match(
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder);
     }
+    if let Some(convert_function) =
+        corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty)
+    {
+        let match_input = lowered_expr.as_var_usage(ctx, builder)?;
+        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        let call_result = generators::Call {
+            function: convert_function.lowered(ctx.db),
+            inputs: vec![match_input],
+            coupon_input: None,
+            extra_ret_tys: vec![],
+            ret_tys: vec![ret_ty],
+            location,
+        }
+        .add(ctx, &mut builder.statements);
+
+        return lower_expr_match_felt252(
+            ctx,
+            expr,
+            call_result.returns.into_iter().next().unwrap(),
+            builder,
+        );
+    }
 
     // TODO(spapini): Use diagnostics.
     // TODO(spapini): Handle more than just enums.
@@ -1754,7 +1785,11 @@ fn lower_expr_match(
         concrete_enum_id,
         input: match_input,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1863,7 +1898,11 @@ fn lower_optimized_extern_match(
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .map(|((variant_id, block_id), var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant_id),
+                block_id,
+                var_ids,
+            })
             .collect(),
         location,
     });
@@ -1985,19 +2024,30 @@ fn lower_expr_felt252_arm(
     let pattern = &ctx.function_body.patterns[arm.patterns[pattern_index]];
     let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+            ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotALiteral),
         ));
     };
 
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
-        let lowered_arm_val =
-            lower_expr_literal(ctx, &literal.clone(), builder)?.as_var_usage(ctx, builder)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+        // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
+        // felt252.
+        let lowered_arm_val = lower_expr_literal(
+            ctx,
+            &semantic::ExprLiteral {
+                stable_ptr: literal.stable_ptr,
+                value: literal.value.clone(),
+                ty: ret_ty,
+            },
+            builder,
+        )?
+        .as_var_usage(ctx, builder)?;
+
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
-            inputs: vec![lowered_arm_val, match_input],
+            inputs: vec![match_input, lowered_arm_val],
             coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
@@ -2016,12 +2066,16 @@ fn lower_expr_felt252_arm(
         inputs: vec![if_input],
         arms: vec![
             MatchArm {
-                variant_id: corelib::jump_nz_zero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
+                    semantic_db,
+                )),
                 block_id: main_block_id,
                 var_ids: vec![],
             },
             MatchArm {
-                variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
+                arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
+                    semantic_db,
+                )),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
@@ -2058,7 +2112,59 @@ fn lower_expr_felt252_arm(
     Ok(match_info)
 }
 
+/// lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252,
+/// using an index enum.
+fn lower_expr_match_index_enum(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprMatch,
+    match_input: VarUsage,
+    builder: &BlockBuilder,
+    literals_to_arm_map: &UnorderedHashMap<usize, usize>,
+    branches_block_builders: &mut Vec<MatchLeafBuilder>,
+) -> LoweringResult<MatchInfo> {
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let semantic_db = ctx.db.upcast();
+    let unit_type = unit_ty(semantic_db);
+    let mut arm_var_ids = vec![];
+    let mut block_ids = vec![];
+
+    for index in 0..literals_to_arm_map.len() {
+        let subscope = create_subscope_with_bound_refs(ctx, builder);
+        let block_id = subscope.block_id;
+        block_ids.push(block_id);
+
+        let arm_index = literals_to_arm_map[&index];
+
+        let var_id = ctx.new_var(VarRequest { ty: unit_type, location });
+        arm_var_ids.push(vec![var_id]);
+
+        // Lower the arm expression.
+        branches_block_builders.push(MatchLeafBuilder {
+            arm_index,
+            lowerin_result: Ok(()),
+            builder: subscope,
+        });
+    }
+
+    let arms = zip_eq(block_ids, arm_var_ids)
+        .enumerate()
+        .map(|(value, (block_id, var_ids))| MatchArm {
+            arm_selector: MatchArmSelector::Value(ValueSelectorArm { value }),
+            block_id,
+            var_ids,
+        })
+        .collect();
+    let match_info = MatchInfo::Value(MatchEnumValue {
+        num_of_arms: literals_to_arm_map.len(),
+        arms,
+        input: match_input,
+        location,
+    });
+    Ok(match_info)
+}
+
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
+/// using an index enum to create a jump table.
 fn lower_expr_match_felt252(
     ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprMatch,
@@ -2071,10 +2177,10 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
-    let mut max = 0.into();
-    let mut literals_set = UnorderedHashSet::new();
+    let mut max = 0;
+    let mut literals_to_arm_map = UnorderedHashMap::new();
     let mut otherwise_exist = false;
-    for arm in expr.arms.iter() {
+    for (arm_index, arm) in expr.arms.iter().enumerate() {
         for pattern in arm.patterns.iter() {
             let pattern = &ctx.function_body.patterns[*pattern];
             if otherwise_exist {
@@ -2084,21 +2190,29 @@ fn lower_expr_match_felt252(
             }
             match pattern {
                 semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) => {
-                    if otherwise_exist || !literals_set.insert(literal.value.clone()) {
+                    let Some(literal) = literal.value.to_usize() else {
+                        return Err(LoweringFlowError::Failed(
+                            ctx.diagnostics.report(
+                                expr.stable_ptr.untyped(),
+                                UnsupportedMatchArmNonSequential,
+                            ),
+                        ));
+                    };
+                    if otherwise_exist || literals_to_arm_map.insert(literal, arm_index).is_some() {
                         return Err(LoweringFlowError::Failed(
                             ctx.diagnostics
                                 .report(pattern.stable_ptr().untyped(), UnreachableMatchArm),
                         ));
                     }
-                    if literal.value > max {
-                        max = literal.value.clone();
+                    if literal > max {
+                        max = literal;
                     }
                 }
                 semantic::Pattern::Otherwise(_) => otherwise_exist = true,
                 _ => {
                     return Err(LoweringFlowError::Failed(
                         ctx.diagnostics
-                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchedValue),
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotALiteral),
                     ));
                 }
             }
@@ -2110,25 +2224,101 @@ fn lower_expr_match_felt252(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), NonExhaustiveMatchFelt252),
         ));
     }
-    if max + 1 != literals_set.len().into() {
+    if max + 1 != literals_to_arm_map.len() {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArmNonSequential),
         ));
-    }
+    };
+    let location = ctx.get_location(expr.stable_ptr.untyped());
 
     let mut arms_vec = vec![];
-    let match_info = lower_expr_felt252_arm(ctx, expr, match_input, builder, 0, 0, &mut arms_vec)?;
 
-    let location = ctx.get_location(expr.stable_ptr.untyped());
     let empty_match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt252_is_zero(ctx.db.upcast()).lowered(ctx.db),
         inputs: vec![match_input],
         arms: vec![],
         location,
     });
-    let sealed_blocks = group_match_arms(ctx, empty_match_info, location, &expr.arms, arms_vec)?;
 
+    if max <= numeric_match_optimization_threshold(ctx) {
+        let match_info =
+            lower_expr_felt252_arm(ctx, expr, match_input, builder, 0, 0, &mut arms_vec)?;
+
+        let sealed_blocks =
+            group_match_arms(ctx, empty_match_info, location, &expr.arms, arms_vec)?;
+
+        return builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
+    }
+    let semantic_db = ctx.db.upcast();
+
+    let felt252_ty = core_felt252_ty(semantic_db);
+    let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
+
+    let function_id =
+        corelib::core_constrain_range(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
+
+    let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
+
+    let in_range_block = create_subscope_with_bound_refs(ctx, builder);
+    let in_range_block_id = in_range_block.block_id;
+    let inner_match_info = lower_expr_match_index_enum(
+        ctx,
+        expr,
+        VarUsage { var_id: in_range_block_input_var_id, location: match_input.location },
+        &in_range_block,
+        &literals_to_arm_map,
+        &mut arms_vec,
+    )?;
+    in_range_block.finalize(ctx, FlatBlockEnd::Match { info: inner_match_info });
+
+    let otherwise_block = create_subscope_with_bound_refs(ctx, builder);
+    let otherwise_block_id = otherwise_block.block_id;
+
+    arms_vec.push(MatchLeafBuilder {
+        arm_index: expr.arms.len() - 1,
+        lowerin_result: Ok(()),
+        builder: otherwise_block,
+    });
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: function_id,
+        inputs: vec![match_input],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
+                    semantic_db,
+                    GenericArgumentId::Type(bounded_int_ty),
+                )),
+                block_id: in_range_block_id,
+                var_ids: vec![in_range_block_input_var_id],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
+                    semantic_db,
+                    GenericArgumentId::Type(bounded_int_ty),
+                )),
+                block_id: otherwise_block_id,
+                var_ids: vec![],
+            },
+        ],
+        location,
+    });
+    let sealed_blocks = group_match_arms(ctx, empty_match_info, location, &expr.arms, arms_vec)?;
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
+}
+
+/// Returns the threshold for the number of arms for optimising numeric match expressions, by using
+/// a jump table instead of an if-else construct.
+fn numeric_match_optimization_threshold(ctx: &mut LoweringContext<'_, '_>) -> usize {
+    // Use [usize::max] as the default value, so that the optimization is not used by default.
+    // TODO(TomerStarkware): Make the default to 3 on `sierra-minor-update` branch.
+    ctx.db
+        .get_flag(FlagId::new(ctx.db.upcast(), "numeric_match_optimization_min_arms_threshold"))
+        .map(|flag| match *flag {
+            Flag::NumericMatchOptimizationMinArmsThreshold(threshold) => threshold,
+            _ => panic!("Wrong type flag `{flag:?}`."),
+        })
+        .unwrap_or(usize::MAX)
 }
 
 /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,
@@ -2296,12 +2486,12 @@ fn lower_expr_error_propagate(
         input: match_input,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: vec![expr_var],
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: vec![err_value],
             },
@@ -2362,12 +2552,12 @@ fn lower_optimized_extern_error_propagate(
         inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
-                variant_id: ok_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(ok_variant.clone()),
                 block_id: block_ok_id,
                 var_ids: block_ok_input_vars,
             },
             MatchArm {
-                variant_id: err_variant.clone(),
+                arm_selector: MatchArmSelector::VariantId(err_variant.clone()),
                 block_id: block_err_id,
                 var_ids: block_err_input_vars,
             },

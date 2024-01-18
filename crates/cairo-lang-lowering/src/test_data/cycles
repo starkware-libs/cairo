@@ -28,33 +28,16 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v16, v17) {
     Option::Some(v18, v19) => blk1,
-    Option::None(v20, v21) => blk4,
+    Option::None(v20, v21) => blk2,
   })
 
 blk1:
 Statements:
   (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v8: core::panics::PanicResult::<((),)>) <- test::foo(v18, v19, v0)
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk2,
-    PanicResult::Err(v11) => blk3,
-  })
+  Return(v22, v23, v8)
 
 blk2:
-Statements:
-  (v2: ()) <- struct_construct()
-  (v13: ((),)) <- struct_construct(v2)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
-End:
-  Return(v22, v23, v14)
-
-blk3:
-Statements:
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
-End:
-  Return(v22, v23, v15)
-
-blk4:
 Statements:
   (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v4: core::felt252) <- 375233589013918064796019u

@@ -18,10 +18,11 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
-    drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id, enum_init_libfunc_id,
-    get_concrete_libfunc_id, get_libfunc_signature, jump_libfunc_id, jump_statement,
-    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_statement,
-    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
+    enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
+    get_libfunc_signature, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
+    rename_libfunc_id, return_statement, simple_statement, snapshot_take_libfunc_id,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::FlatBlock].
@@ -157,6 +158,9 @@ pub fn generate_block_code(
                 }
                 lowering::MatchInfo::Enum(s) => {
                     generate_match_enum_code(context, s, &statement_location)?
+                }
+                lowering::MatchInfo::Value(s) => {
+                    generate_match_value_code(context, s, &statement_location)?
                 }
             });
         }
@@ -423,7 +427,6 @@ fn generate_match_extern_code(
     generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
     Ok(statements)
 }
-
 /// Generates Sierra code for the match a [lowering::MatchExternInfo] or [lowering::MatchEnumInfo]
 /// statement.
 fn generate_match_code(
@@ -467,7 +470,7 @@ fn generate_match_code(
     let ap_tracking_enabled = context.get_ap_tracking();
 
     // Generate the blocks.
-    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(arms) {
+    for (i, MatchArm { arm_selector: _, block_id, var_ids: _ }) in enumerate(arms) {
         // Reset ap_tracking to the state before the match.
         context.set_ap_tracking(ap_tracking_enabled);
 
@@ -552,6 +555,41 @@ fn generate_statement_struct_destructure_code(
         &[input],
         &context.get_sierra_variables(&statement.outputs),
     ));
+    Ok(statements)
+}
+
+/// Generates Sierra code for [lowering::MatchEnumInfo]. where the matched value is a felt252.
+/// Note that the input is a bounded_int and we convert it to an enum, using the
+/// enum_from_bounded_int libfunc.
+fn generate_match_value_code(
+    context: &mut ExprGeneratorContext<'_>,
+    match_info: &lowering::MatchEnumValue,
+    statement_location: &StatementLocation,
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    // Prepare the Sierra input variables.
+    let bounded_int = maybe_add_dup_statement(
+        context,
+        statement_location,
+        0,
+        &match_info.input,
+        &mut statements,
+    )?;
+
+    // Get the [ConcreteLibfuncId].
+    let concrete_enum_type = context.get_db().get_index_enum_type_id(match_info.num_of_arms)?;
+    let enum_var = context.allocate_sierra_variable();
+    statements.push(simple_statement(
+        enum_from_bounded_int_libfunc_id(context.get_db().upcast(), concrete_enum_type.clone()),
+        &[bounded_int],
+        &[enum_var.clone()],
+    ));
+
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
+
+    let args = vec![enum_var];
+    generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
     Ok(statements)
 }
 

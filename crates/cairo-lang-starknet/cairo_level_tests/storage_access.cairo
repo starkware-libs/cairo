@@ -3,7 +3,7 @@ use starknet::{
     storage_address_to_felt252, storage_address_try_from_felt252
 };
 use core::test::test_utils::assert_eq;
-use super::utils::serialized;
+use super::utils::{deserialized, serialized};
 use core::integer::BoundedInt;
 use core::zeroable::Zeroable;
 use core::byte_array::ByteArrayTrait;
@@ -17,14 +17,14 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
 struct Abc {
     a: u8,
     b: u16,
     c: u32,
 }
 
-#[derive(Drop, Serde, PartialEq, Copy)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
 struct TupleStructure {
     v1: u256,
     v2: u256,
@@ -39,14 +39,14 @@ impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt2
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
 enum Efg {
     E: (),
     F: (),
     G: u256
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
 struct AbcEtc {
     a: u8,
     b: u16,
@@ -65,7 +65,7 @@ struct AbcEtc {
     efg2: Efg,
 }
 
-#[derive(Drop, Serde, PartialEq, Clone, starknet::Store)]
+#[derive(Clone, Drop, Debug, Serde, PartialEq, starknet::Store)]
 struct ByteArrays {
     empty: ByteArray,
     single_word: ByteArray,
@@ -73,14 +73,22 @@ struct ByteArrays {
     multi_chunk: ByteArray,
 }
 
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
+struct NonZeros {
+    value_u8: NonZero<u8>,
+    value_u256: NonZero<u256>,
+    value_felt252: NonZero<felt252>,
+}
+
 #[starknet::contract]
 mod test_contract {
-    use super::{AbcEtc, ByteArrays};
+    use super::{AbcEtc, ByteArrays, NonZeros};
 
     #[storage]
     struct Storage {
         data: AbcEtc,
         byte_arrays: ByteArrays,
+        non_zeros: NonZeros,
     }
 
     #[external(v0)]
@@ -101,6 +109,16 @@ mod test_contract {
     #[external(v0)]
     pub fn get_byte_arrays(self: @ContractState) -> ByteArrays {
         self.byte_arrays.read()
+    }
+
+    #[external(v0)]
+    pub fn set_non_zeros(ref self: ContractState, value: NonZeros) {
+        self.non_zeros.write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_non_zeros(self: @ContractState) -> NonZeros {
+        self.non_zeros.read()
     }
 }
 
@@ -125,7 +143,7 @@ fn write_read_struct() {
     };
 
     assert!(test_contract::__external::set_data(serialized(x)).is_empty());
-    assert_eq(@test_contract::__external::get_data(serialized(())), @serialized(x), 'Wrong result');
+    assert_eq!(deserialized(test_contract::__external::get_data(serialized(()))), x);
 }
 
 #[test]
@@ -149,9 +167,7 @@ fn write_read_byte_arrays() {
     };
 
     assert!(test_contract::__external::set_byte_arrays(serialized(x.clone())).is_empty());
-    assert_eq(
-        @test_contract::__external::get_byte_arrays(serialized(())), @serialized(x), 'Wrong result'
-    );
+    assert_eq!(deserialized(test_contract::__external::get_byte_arrays(serialized(()))), x);
     // Make sure the lengths were saved correctly.
     let base_address = starknet::storage_base_address_from_felt252(selector!("byte_arrays"));
     assert!(starknet::Store::read_at_offset(0, base_address, 0).unwrap() == 0_usize);
@@ -177,4 +193,16 @@ fn write_read_byte_arrays() {
         starknet::Store::read_at_offset(0, internal_data_address, 2).unwrap(),
         'ef0123456789abcdef0123456789abc'_felt252
     );
+}
+
+#[test]
+fn test_read_write_non_zero() {
+    let x = NonZeros {
+        value_u8: 1_u8.try_into().unwrap(),
+        value_u256: 3_u256.try_into().unwrap(),
+        value_felt252: 5_felt252.try_into().unwrap(),
+    };
+
+    assert!(test_contract::__external::set_non_zeros(serialized(x.clone())).is_empty());
+    assert_eq!(deserialized(test_contract::__external::get_non_zeros(serialized(()))), x);
 }

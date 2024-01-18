@@ -380,56 +380,6 @@ test::foo@0([0]: BoundedInt<0, 4>) -> (test::IndexEnum5);
 
 //! > ==========================================================================
 
-//! > long enum from BoundedInt<2>
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-enum IndexEnum3 {
-    Zero,
-    One,
-    Two,
-}
-extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
-
-
-extern fn enum_from_bounded_int<T>(index: BoundedInt<0, 2>) -> T nopanic;
-
-// This wrapper is required so that the compiler won't assume extern `enum_from_bounded_int` is a
-// branch function.
-fn gen_foo<T>(index: BoundedInt<0, 2>) -> T {
-    enum_from_bounded_int(index)
-}
-
-fn foo(index: BoundedInt<0, 2>) -> IndexEnum3 {
-    gen_foo(index)
-}
-
-//! > casm
-[fp + -3] = [ap + 0] + 1809251394333065606848661391547535052811553607665798349986546028067936010243, ap++;
-[ap + 0] = [ap + -1] * -2, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 200})
-
-//! > sierra_code
-type BoundedInt<0, 2> = BoundedInt<0, 2> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type test::IndexEnum3 = Enum<ut@test::IndexEnum3, Unit, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc enum_from_bounded_int<test::IndexEnum3> = enum_from_bounded_int<test::IndexEnum3>;
-libfunc store_temp<test::IndexEnum3> = store_temp<test::IndexEnum3>;
-
-enum_from_bounded_int<test::IndexEnum3>([0]) -> ([1]); // 0
-store_temp<test::IndexEnum3>([1]) -> ([1]); // 1
-return([1]); // 2
-
-test::foo@0([0]: BoundedInt<0, 2>) -> (test::IndexEnum3);
-
-//! > ==========================================================================
-
 //! > short enum from BoundedInt<0, 1>
 
 //! > test_runner_name

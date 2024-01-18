@@ -66,7 +66,7 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 };
 
                 std::mem::swap(false_arm, true_arm);
-                std::mem::swap(&mut false_arm.variant_id, &mut true_arm.variant_id);
+                std::mem::swap(&mut false_arm.arm_selector, &mut true_arm.arm_selector);
             }
         }
     }

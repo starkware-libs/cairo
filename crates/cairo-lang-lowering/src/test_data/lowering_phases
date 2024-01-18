@@ -520,7 +520,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -610,7 +610,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -700,7 +700,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -790,7 +790,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -880,7 +880,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -966,7 +966,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -1052,7 +1052,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -1138,7 +1138,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -1223,7 +1223,7 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk3, {})
 
 blk11:
 Statements:
@@ -1237,23 +1237,64 @@ Statements:
 End:
   Return(v24)
 
-//! > after_reorganize_blocks
+//! > after_optimize_remappings3
 Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
   Match(match core::gas::withdraw_gas(v25, v26) {
-    Option::Some(v27, v28) => blk1,
-    Option::None(v29, v30) => blk2,
+    Option::Some(v27, v28) => blk8,
+    Option::None(v29, v30) => blk9,
   })
 
 blk1:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk2:
 Statements:
   (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v16: core::panics::PanicResult::<((),)>) <- test::foo(v27, v28)
 End:
   Return(v33, v34, v16)
 
-blk2:
+blk3:
+Statements:
+  (v20: ((),)) <- struct_construct(v8)
+  (v21: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v20)
+End:
+  Return(v21)
+
+blk4:
+Statements:
+  (v5: core::panics::Panic) <- struct_construct()
+  (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
+  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v22)
+
+blk5:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk7:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk6, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk2, {})
+
+blk9:
 Statements:
   (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v12: core::felt252) <- 375233589013918064796019u
@@ -1264,7 +1305,24 @@ Statements:
 End:
   Return(v29, v30, v23)
 
-//! > after_optimize_remappings3 (final)
+blk10:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk11:
+Statements:
+  (v18: ()) <- struct_destructure(v17)
+End:
+  Goto(blk10, {})
+
+blk12:
+Statements:
+  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v19)
+End:
+  Return(v24)
+
+//! > after_reorganize_blocks (final)
 Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:

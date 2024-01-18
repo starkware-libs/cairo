@@ -4,7 +4,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
+use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -215,6 +216,14 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(_) => Ok(false),
         }
     }
+    /// Returns the attribute if a type has the `#[unstable(feature: "some-string")]` attribute.
+    pub fn unstable_attr(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
+        match self {
+            ConcreteTypeId::Struct(id) => id.find_attr(db, UNSTABLE_ATTR),
+            ConcreteTypeId::Enum(id) => id.find_attr(db, UNSTABLE_ATTR),
+            ConcreteTypeId::Extern(_) => Ok(None),
+        }
+    }
     /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         self.generic_args(db)
@@ -412,6 +421,46 @@ pub fn get_impl_at_context(
         return Err(err);
     };
     Ok(inference.rewrite(impl_id).no_err())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::single_value_type].
+pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
+    Ok(match db.lookup_intern_type(ty) {
+        semantic::TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(id) => {
+                for member in db.struct_members(id.struct_id(db))?.values() {
+                    if !db.single_value_type(member.ty)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            }
+            ConcreteTypeId::Enum(id) => {
+                let variants = db.enum_variants(id.enum_id(db))?;
+                if variants.len() != 1 {
+                    return Ok(false);
+                }
+
+                db.single_value_type(
+                    db.variant_semantic(id.enum_id(db), *variants.values().next().unwrap())?.ty,
+                )?
+            }
+            ConcreteTypeId::Extern(_) => false,
+        },
+        semantic::TypeLongId::Tuple(types) => {
+            for ty in &types {
+                if !db.single_value_type(*ty)? {
+                    return Ok(false);
+                }
+            }
+            true
+        }
+        semantic::TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        semantic::TypeLongId::GenericParameter(_) => false,
+        semantic::TypeLongId::Var(_) => false,
+        semantic::TypeLongId::Missing(_) => false,
+        semantic::TypeLongId::Coupon(_) => false,
+    })
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.

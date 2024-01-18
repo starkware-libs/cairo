@@ -7,4 +7,5 @@ pub enum Flag {
     /// Whether automatically add `redeposit_gas` calls on stores of the gas builtin.
     /// Default is false - automatically add.
     AddRedepositGas(bool),
+    NumericMatchOptimizationMinArmsThreshold(usize),
 }

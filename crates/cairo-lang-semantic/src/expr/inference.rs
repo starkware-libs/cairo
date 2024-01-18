@@ -41,7 +41,8 @@ use crate::{
     ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
     ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, ExprLiteral,
     ExprStringLiteral, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, LocalVariable,
-    Member, Parameter, Pattern, SemanticObject, Signature, TypeId, TypeLongId,
+    MatchArmSelector, Member, Parameter, Pattern, SemanticObject, Signature, TypeId, TypeLongId,
+    ValueSelectorArm,
 };
 
 pub mod canonic;

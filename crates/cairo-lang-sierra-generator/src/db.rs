@@ -59,6 +59,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         type_id: semantic::TypeId,
     ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
 
+    /// Returns the ConcreteTypeId of the index enum type with the given index count.
+    #[salsa::invoke(crate::types::get_index_enum_type_id)]
+    fn get_index_enum_type_id(
+        &self,
+        index_count: usize,
+    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
+
     /// Returns the matching sierra concrete type long id for a given semantic type id.
     #[salsa::invoke(crate::types::get_concrete_long_type_id)]
     fn get_concrete_long_type_id(

@@ -192,8 +192,8 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
             FlatBlockEnd::Match { info } => {
                 blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
                 match info {
-                    MatchInfo::Enum(stmt) => {
-                        for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
+                    MatchInfo::Enum(_) | MatchInfo::Value(_) => {
+                        for MatchArm { arm_selector: _, block_id, var_ids: _ } in info.arms() {
                             assert!(
                                 ctx.implicit_vars_for_block
                                     .insert(*block_id, implicits.clone())
@@ -212,7 +212,8 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                         stmt.inputs.splice(0..0, implicit_input_vars);
                         let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
 
-                        for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
+                        for MatchArm { arm_selector: _, block_id, var_ids } in stmt.arms.iter_mut()
+                        {
                             let mut arm_implicits = implicits.clone();
                             let mut implicit_input_vars = vec![];
                             for ty in callee_implicits.iter().copied() {

@@ -62,6 +62,9 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];
+        // Note that droppable here means droppable before monomorphization.
+        // I.e. it is possible that T was substituted with a unit type, but T was not droppable
+        // and therefore the unit type var is not droppable here.
         if var.droppable.is_ok() {
             return;
         };
@@ -239,145 +242,146 @@ pub fn add_destructs(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) {
-    if lowered.blocks.has_root().is_ok() {
-        let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
-        let mut analysis =
-            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
-        let mut root_demand = analysis.get_root_info();
-        root_demand.variables_introduced(
-            &mut analysis.analyzer,
-            &lowered.parameters,
-            (BlockId::root(), 0),
-        );
-        assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
+    if lowered.blocks.is_empty() {
+        return;
+    }
+    let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
+    let mut analysis =
+        BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
+    let mut root_demand = analysis.get_root_info();
+    root_demand.variables_introduced(
+        &mut analysis.analyzer,
+        &lowered.parameters,
+        (BlockId::root(), 0),
+    );
+    assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
-        let mut variables = VariableAllocator::new(
-            db,
-            function_id.function_with_body_id(db).base_semantic_function(db),
-            lowered.variables.clone(),
-        )
+    let mut variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).base_semantic_function(db),
+        lowered.variables.clone(),
+    )
+    .unwrap();
+
+    let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
+    let plain_trait_function =
+        db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
+    let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
+    let panic_trait_function = db
+        .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
+        .unwrap()
         .unwrap();
 
-        let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
-        let plain_trait_function =
-            db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
-        let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
-        let panic_trait_function = db
-            .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
-            .unwrap()
-            .unwrap();
-
-        // Add destructions.
-        let stable_ptr = function_id
-            .function_with_body_id(db.upcast())
-            .base_semantic_function(db)
-            .untyped_stable_ptr(db.upcast());
-        for destruction in analysis.analyzer.destructions {
-            let location = variables.get_location(stable_ptr);
-            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
-            match destruction {
-                DestructionEntry::Plain(PlainDestructionEntry {
-                    position: (block_id, insert_index),
-                    var_id,
-                    impl_id,
-                }) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
-                        function: ConcreteFunction {
-                            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
-                                impl_id,
-                                function: plain_trait_function,
-                            }),
-                            generic_args: vec![],
-                        },
-                    });
-                    lowered.blocks[block_id].statements.insert(
+    // Add destructions.
+    let stable_ptr = function_id
+        .function_with_body_id(db.upcast())
+        .base_semantic_function(db)
+        .untyped_stable_ptr(db.upcast());
+    for destruction in analysis.analyzer.destructions {
+        let location = variables.get_location(stable_ptr);
+        let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+        match destruction {
+            DestructionEntry::Plain(PlainDestructionEntry {
+                position: (block_id, insert_index),
+                var_id,
+                impl_id,
+            }) => {
+                let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    function: ConcreteFunction {
+                        generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id,
+                            function: plain_trait_function,
+                        }),
+                        generic_args: vec![],
+                    },
+                });
+                lowered.blocks[block_id].statements.insert(
+                    insert_index,
+                    Statement::Call(StatementCall {
+                        function: semantic_function.lowered(db),
+                        inputs: vec![VarUsage { var_id, location }],
+                        coupon_input: None,
+                        outputs: vec![output_var],
+                        location: lowered.variables[var_id].location,
+                    }),
+                )
+            }
+            DestructionEntry::Panic(PanicDeconstructionEntry {
+                panic_location,
+                var_id,
+                impl_id,
+            }) => {
+                let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    function: ConcreteFunction {
+                        generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id,
+                            function: panic_trait_function,
+                        }),
+                        generic_args: vec![],
+                    },
+                });
+                match panic_location {
+                    PanicLocation::PanicVar {
+                        panic_var,
+                        statement_location: (block_id, insert_index),
+                    } => lowered.blocks[block_id].statements.insert(
                         insert_index,
                         Statement::Call(StatementCall {
                             function: semantic_function.lowered(db),
-                            inputs: vec![VarUsage { var_id, location }],
+                            inputs: vec![panic_var, var_id]
+                                .into_iter()
+                                .map(|var_id| VarUsage { var_id, location })
+                                .collect(),
                             coupon_input: None,
-                            outputs: vec![output_var],
-                            location: lowered.variables[var_id].location,
+                            outputs: vec![panic_var, output_var],
+                            location: lowered.variables[panic_var].location,
                         }),
-                    )
-                }
-                DestructionEntry::Panic(PanicDeconstructionEntry {
-                    panic_location,
-                    var_id,
-                    impl_id,
-                }) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
-                        function: ConcreteFunction {
-                            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
-                                impl_id,
-                                function: panic_trait_function,
+                    ),
+                    PanicLocation::PanicTuple {
+                        tuple_var,
+                        statement_location: (block_id, insert_index),
+                    } => {
+                        let long_ty = db.lookup_intern_type(lowered.variables[tuple_var].ty);
+                        let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
+
+                        let location = variables.get_location(stable_ptr);
+                        let vars = tys
+                            .iter()
+                            .copied()
+                            .map(|ty| variables.new_var(VarRequest { ty, location }))
+                            .collect::<Vec<_>>();
+                        let output_var =
+                            variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+                        let statements = vec![
+                            Statement::StructDestructure(StatementStructDestructure {
+                                input: VarUsage { var_id: tuple_var, location },
+                                outputs: vars.clone(),
                             }),
-                            generic_args: vec![],
-                        },
-                    });
-                    match panic_location {
-                        PanicLocation::PanicVar {
-                            panic_var,
-                            statement_location: (block_id, insert_index),
-                        } => lowered.blocks[block_id].statements.insert(
-                            insert_index,
                             Statement::Call(StatementCall {
                                 function: semantic_function.lowered(db),
-                                inputs: vec![panic_var, var_id]
+                                inputs: vec![
+                                    VarUsage { var_id: vars[0], location },
+                                    VarUsage { var_id, location },
+                                ],
+                                coupon_input: None,
+                                outputs: vec![vars[0], output_var],
+                                location: lowered.variables[tuple_var].location,
+                            }),
+                            Statement::StructConstruct(StatementStructConstruct {
+                                inputs: vars
                                     .into_iter()
                                     .map(|var_id| VarUsage { var_id, location })
                                     .collect(),
-                                coupon_input: None,
-                                outputs: vec![panic_var, output_var],
-                                location: lowered.variables[panic_var].location,
+                                output: tuple_var,
                             }),
-                        ),
-                        PanicLocation::PanicTuple {
-                            tuple_var,
-                            statement_location: (block_id, insert_index),
-                        } => {
-                            let long_ty = db.lookup_intern_type(lowered.variables[tuple_var].ty);
-                            let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
-
-                            let location = variables.get_location(stable_ptr);
-                            let vars = tys
-                                .iter()
-                                .copied()
-                                .map(|ty| variables.new_var(VarRequest { ty, location }))
-                                .collect::<Vec<_>>();
-                            let output_var = variables
-                                .new_var(VarRequest { ty: unit_ty(db.upcast()), location });
-                            let statements = vec![
-                                Statement::StructDestructure(StatementStructDestructure {
-                                    input: VarUsage { var_id: tuple_var, location },
-                                    outputs: vars.clone(),
-                                }),
-                                Statement::Call(StatementCall {
-                                    function: semantic_function.lowered(db),
-                                    inputs: vec![
-                                        VarUsage { var_id: vars[0], location },
-                                        VarUsage { var_id, location },
-                                    ],
-                                    coupon_input: None,
-                                    outputs: vec![vars[0], output_var],
-                                    location: lowered.variables[tuple_var].location,
-                                }),
-                                Statement::StructConstruct(StatementStructConstruct {
-                                    inputs: vars
-                                        .into_iter()
-                                        .map(|var_id| VarUsage { var_id, location })
-                                        .collect(),
-                                    output: tuple_var,
-                                }),
-                            ];
-                            lowered.blocks[block_id]
-                                .statements
-                                .splice(insert_index..insert_index, statements);
-                        }
+                        ];
+                        lowered.blocks[block_id]
+                            .statements
+                            .splice(insert_index..insert_index, statements);
                     }
                 }
             }
         }
-        lowered.variables = variables.variables;
     }
+    lowered.variables = variables.variables;
 }
