@@ -1,7 +1,9 @@
+use std::fs;
 use std::io::BufReader;
 
 use cairo_felt::Felt252;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
+use num_traits::Num;
 use test_case::test_case;
 
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
@@ -57,5 +59,22 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(example_contract_
             format!("{example_file_name}.compiled_contract_class.json").as_str(),
         ),
         serde_json::to_string_pretty(&casm_contract).unwrap() + "\n",
+    );
+}
+
+/// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
+/// constant that was computed by other implementations.
+#[test_case("account::account", "206bd366ed0c4146b2547ec3e069ef5ef66d4d31c5bb6ccabb4a17b223003be")]
+fn test_compiled_class_hash(example_contract_path: &str, expected_hash: &str) {
+    let example_file_name = get_contract_file_name_from_path(example_contract_path);
+    let compiled_json_path =
+        get_example_file_path(format!("{example_file_name}.compiled_contract_class.json").as_str());
+    let compiled_json_str = fs::read_to_string(compiled_json_path.clone())
+        .unwrap_or_else(|_| panic!("Could not read file: '{compiled_json_path:?}'"));
+    let casm_contract_class: CasmContractClass =
+        serde_json::from_str(compiled_json_str.as_str()).unwrap();
+    assert_eq!(
+        casm_contract_class.compiled_class_hash(),
+        Felt252::from_str_radix(expected_hash, 16).unwrap()
     );
 }
