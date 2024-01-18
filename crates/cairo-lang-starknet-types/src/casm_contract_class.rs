@@ -8,11 +8,6 @@ use itertools::Itertools;
 use num_bigint::BigUint;
 use starknet_crypto::{poseidon_hash_many, FieldElement};
 
-#[cfg(feature = "std")]
-mod from_contract_class;
-#[cfg(feature = "std")]
-pub use from_contract_class::*;
-
 /// Represents a contract in the Starknet network.
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

@@ -28,9 +28,9 @@ use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::compiler_version::VersionId;
 use crate::contract::starknet_keccak;
 use crate::felt252_vec_compression::{compress, decompress};
+use cairo_lang_starknet_types::compiler_version::VersionId;
 
 #[cfg(test)]
 #[path = "felt252_serde_test.rs"]

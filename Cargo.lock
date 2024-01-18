@@ -885,6 +885,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet-types",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -908,6 +909,23 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-starknet-types"
+version = "2.5.3"
+dependencies = [
+ "cairo-felt",
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
+ "hashbrown 0.14.3",
+ "itertools 0.11.0",
+ "num-bigint",
+ "num-traits 0.2.17",
+ "serde",
+ "serde_json",
+ "starknet-crypto",
 ]
 
 [[package]]

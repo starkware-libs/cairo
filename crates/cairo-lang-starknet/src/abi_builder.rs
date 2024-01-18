@@ -24,11 +24,6 @@ use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
 
-use super::{
-    Constructor, Contract, Enum, EnumVariant, Event, EventField, EventFieldKind, EventKind,
-    Function, Imp, Input, Interface, Item, L1Handler, Output, StateMutability, Struct,
-    StructMember,
-};
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
@@ -37,9 +32,14 @@ use crate::plugin::consts::{
     L1_HANDLER_ATTR,
 };
 use crate::plugin::events::EventData;
+pub use cairo_lang_starknet_types::abi::{
+    Constructor, Contract, Enum, EnumVariant, Event, EventField, EventFieldKind, EventKind,
+    Function, Imp, Input, Interface, Item, L1Handler, Output, StateMutability, Struct,
+    StructMember,
+};
 
 #[cfg(test)]
-#[path = "builder_test.rs"]
+#[path = "abi_builder_tests.rs"]
 mod test;
 
 /// Event information.
@@ -115,7 +115,11 @@ impl<'a> AbiBuilder<'a> {
 
     /// Returns the finalized ABI.
     pub fn finalize(self) -> Result<Contract, ABIError> {
-        if let Some(err) = self.errors.into_iter().next() { Err(err) } else { Ok(self.abi) }
+        if let Some(err) = self.errors.into_iter().next() {
+            Err(err)
+        } else {
+            Ok(self.abi)
+        }
     }
 
     /// Returns the errors accumulated by the builder.
@@ -719,7 +723,7 @@ impl<'a> AbiBuilder<'a> {
             self.add_entry_point_name(name, source)?;
         }
 
-        self.abi.insert_item(item, prevent_dups.then_some(source))
+        insert_item_in_contract(&mut self.abi, item, prevent_dups.then_some(source))
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
@@ -778,7 +782,7 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db.upcast());
     let file_infos = db.module_generated_file_infos(module_file.0).ok()?;
-    let aux_data = file_infos.get(module_file.1.0)?.as_ref()?.aux_data.as_ref()?;
+    let aux_data = file_infos.get(module_file.1 .0)?.as_ref()?.aux_data.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 
@@ -894,40 +898,39 @@ impl Source {
     }
 }
 
-impl Contract {
-    /// Inserts an item to the set of items.
-    /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
-    /// item already existed.
-    /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
-    /// specifies whether duplication is OK or not.
-    /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
-    fn insert_item(&mut self, item: Item, prevent_dups: Option<Source>) -> Result<(), ABIError> {
-        let item_description = item.description();
-        let already_existed = !self.items.insert(item);
-        if already_existed {
-            if let Some(source) = prevent_dups {
-                return Err(ABIError::InvalidDuplicatedItem {
-                    description: item_description,
-                    source_ptr: source,
-                });
-            }
+/// Inserts an item to the set of items.
+/// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
+/// item already existed.
+/// This is the only way to insert an item to the ABI, to make sure the caller explicitly
+/// specifies whether duplication is OK or not.
+fn insert_item_in_contract(
+    contract: &mut Contract,
+    item: Item,
+    prevent_dups: Option<Source>,
+) -> Result<(), ABIError> {
+    let item_description = item_description(&item);
+    let already_existed = !contract.insert_item(item);
+    if already_existed {
+        if let Some(source) = prevent_dups {
+            return Err(ABIError::InvalidDuplicatedItem {
+                description: item_description,
+                source_ptr: source,
+            });
         }
-
-        Ok(())
     }
+
+    Ok(())
 }
 
-impl Item {
-    fn description(&self) -> String {
-        match self {
-            Item::Function(item) => format!("Function '{}'", item.name),
-            Item::Constructor(item) => format!("Constructor '{}'", item.name),
-            Item::L1Handler(item) => format!("L1 Handler '{}'", item.name),
-            Item::Event(item) => format!("Event '{}'", item.name),
-            Item::Struct(item) => format!("Struct '{}'", item.name),
-            Item::Enum(item) => format!("Enum '{}'", item.name),
-            Item::Interface(item) => format!("Interface '{}'", item.name),
-            Item::Impl(item) => format!("Impl '{}'", item.name),
-        }
+fn item_description(item: &Item) -> String {
+    match item {
+        Item::Function(item) => format!("Function '{}'", item.name),
+        Item::Constructor(item) => format!("Constructor '{}'", item.name),
+        Item::L1Handler(item) => format!("L1 Handler '{}'", item.name),
+        Item::Event(item) => format!("Event '{}'", item.name),
+        Item::Struct(item) => format!("Struct '{}'", item.name),
+        Item::Enum(item) => format!("Enum '{}'", item.name),
+        Item::Interface(item) => format!("Interface '{}'", item.name),
+        Item::Impl(item) => format!("Impl '{}'", item.name),
     }
 }

@@ -7,13 +7,12 @@ use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
-use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
-use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
-use crate::compile_contract_class::compile_contract_in_prepared_db;
-use crate::starknet_plugin_suite;
+pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
+use cairo_lang_starknet::contract_class::compile_contract_in_prepared_db;
+use cairo_lang_starknet::starknet_plugin_suite;
 
 /// Returns a path to example contract that matches `name`.
 pub fn get_example_file_path(file_name: &str) -> PathBuf {

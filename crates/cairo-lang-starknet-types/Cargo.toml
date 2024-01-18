@@ -1,0 +1,39 @@
+[package]
+name = "cairo-lang-starknet-types"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Starknet types on top of Cairo ones"
+
+[dependencies]
+cairo-felt = { workspace = true }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.5.3", default-features = false }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", default-features = false }
+itertools = { workspace = true, features = ["use_alloc"] }
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+starknet-crypto = { workspace = true }
+hashbrown = { workspace = true }
+
+# Optional std
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3", optional = true }
+
+# Optional serde
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+  "dep:cairo-lang-sierra",
+  "cairo-felt/std",
+  "cairo-lang-casm/std",
+  "cairo-lang-utils/std",
+  "num-bigint/std",
+  "num-traits/std",
+  "starknet-crypto/std",
+]
+serde = ["dep:serde", "dep:serde_json", "cairo-lang-casm/serde", "cairo-lang-utils/serde"]
+
+

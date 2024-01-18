@@ -7,7 +7,7 @@ use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expec
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::BuilderConfig;
-use crate::abi::AbiBuilder;
+use crate::abi_builder::AbiBuilder;
 use crate::plugin::consts::CONTRACT_ATTR;
 use crate::starknet_plugin_suite;
 

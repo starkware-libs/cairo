@@ -10,6 +10,7 @@ description = "Starknet capabilities and utilities on top of Cairo."
 cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.5.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
+cairo-lang-starknet-types= { path = "../cairo-lang-starknet-types", version = "2.5.3" }
 itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
@@ -55,6 +56,7 @@ test-log.workspace = true
 
 [features]
 default = ["std", "serde"]
+serde = ["dep:serde", "dep:serde_json", "cairo-lang-starknet-types/serde"]
 std = [
   # The ones used in no_std
   "cairo-lang-casm/std",
@@ -87,4 +89,3 @@ std = [
   "dep:indoc",
   "dep:num-integer",
 ]
-serde = ["dep:serde", "dep:serde_json", "cairo-lang-casm/serde", "cairo-lang-utils/serde"]

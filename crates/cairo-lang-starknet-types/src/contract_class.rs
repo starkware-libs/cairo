@@ -8,15 +8,6 @@ use num_bigint::BigUint;
 
 use crate::abi::Contract;
 
-#[cfg(feature = "std")]
-mod compile;
-#[cfg(feature = "std")]
-pub use compile::*;
-
-#[cfg(test)]
-#[path = "serde_test.rs"]
-mod test;
-
 /// Represents a contract in the Starknet network.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

@@ -6,7 +6,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_starknet::allowed_libfuncs::ListSelector;
-use cairo_lang_starknet::contract_class::starknet_compile;
+use cairo_lang_starknet::compile_contract_class::starknet_compile;
 use clap::Parser;
 
 /// Command line args parser.

@@ -1,7 +1,10 @@
 use std::fs;
 
 use anyhow::Context;
-use cairo_lang_starknet::contract_class::ContractClass;
+use cairo_lang_starknet::{
+    compile_contract_class::extract_sierra_program_from_contract_class,
+    contract_class::ContractClass,
+};
 use clap::Parser;
 
 /// Command line args parser.
@@ -22,8 +25,7 @@ fn main() -> anyhow::Result<()> {
             .with_context(|| format!("Failed to read {}.", &args.file))?,
     )
     .with_context(|| "deserialization Failed.")?;
-    let sierra_program = contract_class
-        .extract_sierra_program()
+    let sierra_program = extract_sierra_program_from_contract_class(&contract_class)
         .with_context(|| "Failed parsing felt252s stream into Sierra program.")?;
     match args.output {
         Some(path) => fs::write(path, sierra_program.to_string())

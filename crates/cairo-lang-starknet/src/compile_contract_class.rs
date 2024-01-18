@@ -18,13 +18,11 @@ use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, Si
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
-use super::{ContractClass, ContractEntryPoint, ContractEntryPoints};
-use crate::abi::AbiBuilder;
+use crate::abi_builder::AbiBuilder;
 use crate::aliased::Aliased;
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 #[cfg(feature = "serde")]
 use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
-use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
     ContractDeclaration,
@@ -32,9 +30,13 @@ use crate::contract::{
 use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
+use cairo_lang_starknet_types::compiler_version::{self};
+use cairo_lang_starknet_types::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints,
+};
 
 #[cfg(all(test, feature = "serde"))]
-#[path = "compile_test.rs"]
+#[path = "compile_contract_class_tests.rs"]
 mod test;
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
@@ -47,18 +49,16 @@ pub enum StarknetCompilationError {
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
 }
 
-impl ContractClass {
-    /// Extracts Sierra program from the ContractClass and populates it with debug info if
-    /// available.
-    pub fn extract_sierra_program(
-        &self,
-    ) -> Result<cairo_lang_sierra::program::Program, Felt252SerdeError> {
-        let (_, _, mut sierra_program) = sierra_from_felt252s(&self.sierra_program)?;
-        if let Some(info) = &self.sierra_program_debug_info {
-            info.populate(&mut sierra_program);
-        }
-        Ok(sierra_program)
+/// Extracts Sierra program from the ContractClass and populates it with debug info if
+/// available.
+pub fn extract_sierra_program_from_contract_class(
+    contract_class: &ContractClass,
+) -> Result<cairo_lang_sierra::program::Program, Felt252SerdeError> {
+    let (_, _, mut sierra_program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+    if let Some(info) = &contract_class.sierra_program_debug_info {
+        info.populate(&mut sierra_program);
     }
+    Ok(sierra_program)
 }
 
 /// Compile the contract given by path.

@@ -4,11 +4,14 @@ use cairo_felt::Felt252;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use test_case::test_case;
 
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
-use crate::contract_class::ContractClass;
+use crate::casm_contract_class_from_contract_class::{
+    casm_contract_class_from_contract_class, StarknetSierraCompilationError,
+};
 use crate::test_utils::{
     get_contract_file_name_from_path, get_example_file_path, get_test_contract,
 };
+use cairo_lang_starknet_types::contract_class::ContractClass;
+use cairo_lang_utils::bigint::BigUintAsHex;
 
 #[test_case("test_contract::test_contract")]
 #[test_case("new_syntax_test_contract::counter_contract")]
@@ -23,7 +26,7 @@ fn test_casm_contract_from_contract_class_failure(example_contract_path: &str) {
 
     let add_pythonic_hints = false;
     assert_eq!(
-        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints),
+        casm_contract_class_from_contract_class(contract_class, add_pythonic_hints),
         Err(StarknetSierraCompilationError::ValueOutOfRange)
     );
 }
@@ -50,7 +53,7 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(example_contract_
     let example_file_name = get_contract_file_name_from_path(example_contract_path);
     let add_pythonic_hints = true;
     let casm_contract =
-        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints).unwrap();
+        casm_contract_class_from_contract_class(contract_class, add_pythonic_hints).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(

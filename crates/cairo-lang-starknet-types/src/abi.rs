@@ -1,13 +1,8 @@
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-#[cfg(feature = "std")]
-mod builder;
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
-
-#[cfg(feature = "std")]
-pub use builder::*;
 
 #[cfg(feature = "std")]
 type ContractInternalRepr = OrderedHashSet<Item>;
@@ -68,6 +63,10 @@ impl Contract {
         assert_eq!(external_count, expected_external_count);
         assert_eq!(l1_handler_count, expected_l1_handler_count);
         assert_eq!(constructor_count, expected_constructor_count);
+    }
+
+    pub fn insert_item(&mut self, item: Item) -> bool {
+        self.items.insert(item)
     }
 }
 

@@ -1,9 +1,10 @@
+use cairo_lang_starknet_types::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints,
+};
 use indoc::indoc;
-#[cfg(feature = "std")]
+use num_bigint::BigUint;
 use test_case::test_case;
 
-use super::*;
-#[cfg(feature = "std")]
 use crate::test_utils::get_test_contract;
 
 #[test]
@@ -13,7 +14,6 @@ fn test_serialization() {
 
     let contract = ContractClass {
         sierra_program: Vec::new(),
-        #[cfg(feature = "std")]
         sierra_program_debug_info: None,
         contract_class_version: String::from("0.1.0"),
         entry_points_by_type: ContractEntryPoints {
@@ -26,29 +26,10 @@ fn test_serialization() {
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
 
-    #[cfg(feature = "std")]
     let expected_string = indoc! {r#"
         {
           "sierra_program": [],
           "sierra_program_debug_info": null,
-          "contract_class_version": "0.1.0",
-          "entry_points_by_type": {
-            "EXTERNAL": [
-              {
-                "selector": "0xffffffffffffffffffffffffffffffff",
-                "function_idx": 7
-              }
-            ],
-            "L1_HANDLER": [],
-            "CONSTRUCTOR": []
-          },
-          "abi": null
-        }"#};
-
-    #[cfg(not(feature = "std"))]
-    let expected_string = indoc! {r#"
-        {
-          "sierra_program": [],
           "contract_class_version": "0.1.0",
           "entry_points_by_type": {
             "EXTERNAL": [
@@ -69,7 +50,6 @@ fn test_serialization() {
 }
 
 // Tests the serialization and deserialization of a contract.
-#[cfg(feature = "std")]
 #[test_case("test_contract::test_contract")]
 #[test_case("hello_starknet::hello_starknet")]
 #[test_case("erc20::erc_20")]
