@@ -2,7 +2,9 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::core::{
+    CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
+};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
@@ -95,7 +97,7 @@ impl CairoProgram {
             .assemble()
             .encode()[..]
         else {
-            panic!("Ret instruction is a single word")
+            panic!("`ret` instruction should be a single word.")
         };
         for const_allocation in self.const_segment_info.const_allocations.values() {
             bytecode.push(ret_bytecode.clone());
@@ -132,6 +134,7 @@ impl ConstSegmentInfoBuilder {
     pub fn insert(&mut self, const_type: &ConcreteTypeId) {
         self.used_const_types.insert(const_type.clone());
     }
+
     /// Builds the const segment information.
     pub fn build(
         self,
@@ -144,7 +147,8 @@ impl ConstSegmentInfoBuilder {
                 offset: const_segment_size,
                 values: extract_const_value(registry, &const_type).unwrap(),
             };
-            const_segment_size += const_allocation.values.len() + 1;
+            // Add 1 for the `ret` instruction.
+            const_segment_size += 1 + const_allocation.values.len();
             const_allocations.insert(const_type.clone(), const_allocation);
         }
         Ok(ConstSegmentInfo { const_allocations, const_segment_size })
@@ -178,18 +182,13 @@ fn extract_const_value(
     let mut values = Vec::new();
     let mut types_stack = vec![ty.clone()];
     while let Some(ty) = types_stack.pop() {
-        let const_type =
-            if let cairo_lang_sierra::extensions::core::CoreTypeConcrete::Const(const_type) =
-                registry.get_type(&ty).unwrap()
-            {
-                const_type
-            } else {
-                return Err(CompilationError::UnsupportedConstType);
-            };
+        let CoreTypeConcrete::Const(const_type) = registry.get_type(&ty).unwrap() else {
+            return Err(CompilationError::UnsupportedConstType);
+        };
         let inner_type = registry.get_type(&const_type.inner_ty).unwrap();
         match inner_type {
-            cairo_lang_sierra::extensions::core::CoreTypeConcrete::Struct(_) => {
-                // Add the struct members types to the stack.
+            CoreTypeConcrete::Struct(_) => {
+                // Add the struct members' types to the stack in reverse order.
                 for arg in const_type.inner_data.iter().rev() {
                     match arg {
                         GenericArg::Type(arg_ty) => types_stack.push(arg_ty.clone()),
@@ -197,9 +196,9 @@ fn extract_const_value(
                     }
                 }
             }
-            cairo_lang_sierra::extensions::core::CoreTypeConcrete::Enum(_) => {
+            CoreTypeConcrete::Enum(_) => {
                 // The first argument is the variant selector, the second is the variant data.
-                match const_type.inner_data.as_slice() {
+                match &const_type.inner_data[..] {
                     [GenericArg::Value(selector), GenericArg::Type(ty)] => {
                         values.push(selector.clone());
                         types_stack.push(ty.clone());
@@ -207,16 +206,12 @@ fn extract_const_value(
                     _ => return Err(CompilationError::ConstDataMismatch),
                 }
             }
-            _ => values.extend(
-                const_type
-                    .inner_data
-                    .iter()
-                    .map(|arg| match arg {
-                        GenericArg::Value(value) => Ok(value.clone()),
-                        _ => Err(CompilationError::ConstDataMismatch),
-                    })
-                    .collect::<Result<Vec<BigInt>, CompilationError>>()?,
-            ),
+            _ => match &const_type.inner_data[..] {
+                [GenericArg::Value(value)] => {
+                    values.push(value.clone());
+                }
+                _ => return Err(CompilationError::ConstDataMismatch),
+            },
         };
     }
     Ok(values)
