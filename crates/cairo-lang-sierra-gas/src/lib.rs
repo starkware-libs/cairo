@@ -13,6 +13,7 @@ use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use compute_costs::PostCostTypeTrait;
 use core_libfunc_cost_base::InvocationCostInfoProvider;
 use core_libfunc_cost_expr::CostExprMap;
 use cost_expr::Var;
@@ -303,11 +304,11 @@ fn calc_gas_info_inner<
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
-pub fn compute_postcost_info(
+pub fn compute_postcost_info<CostType: PostCostTypeTrait>(
     program: &Program,
     get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
-    enforced_function_costs: &OrderedHashMap<FunctionId, i32>,
+    enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let type_size_map = get_type_size_map(program, &registry).unwrap();
