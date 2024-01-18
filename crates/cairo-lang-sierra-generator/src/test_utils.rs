@@ -123,7 +123,7 @@ impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
 pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::Program {
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
-    let program = db.get_sierra_program(vec![crate_id]).unwrap();
+    let program = db.get_sierra_program(vec![crate_id]).unwrap().0;
     replace_sierra_ids_in_program(&db, &program)
 }
 

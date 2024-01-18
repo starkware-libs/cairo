@@ -183,7 +183,7 @@ fn run_e2e_test(
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 
     // Compile to Sierra.
-    let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
+    let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap().0;
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 

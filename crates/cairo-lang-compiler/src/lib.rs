@@ -102,7 +102,8 @@ pub fn compile_prepared_db(
     let sierra_program = db
         .get_sierra_program(main_crate_ids)
         .to_option()
-        .context("Compilation failed without any diagnostics")?;
+        .context("Compilation failed without any diagnostics")?
+        .0;
 
     // Try to move the program out of the Arc if it is not cached in Salsa, or just clone it.
     let mut sierra_program = Arc::try_unwrap(sierra_program).unwrap_or_else(|arc| (*arc).clone());
