@@ -240,7 +240,7 @@ blk3:
 Statements:
   (v10: ()) <- struct_construct()
 End:
-  Return(v10)
+  Return()
 
 //! > after
 Parameters:
@@ -270,6 +270,5 @@ End:
 
 blk3:
 Statements:
-  (v10: ()) <- struct_construct()
 End:
-  Return(v10)
+  Return()

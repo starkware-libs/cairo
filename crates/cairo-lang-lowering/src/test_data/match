@@ -306,7 +306,7 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk8, {})
+  Return()
 
 blk2:
 Statements:
@@ -341,18 +341,12 @@ End:
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v13: ()) <- struct_construct()
-End:
-  Return(v13)
+  Return()
 
 //! > ==========================================================================
 

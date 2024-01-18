@@ -31,8 +31,8 @@ label_test::foo::0:
 function_call<user@test::get_val>() -> ([0])
 struct_deconstruct<Tuple<u32, Unit, u32>>([0]) -> ([1], [2], [3])
 drop<Unit>([2]) -> ()
-function_call<user@test::test_func>([1], [3]) -> ([4])
-return([4])
+function_call<user@test::test_func>([1], [3]) -> ()
+return()
 
 //! > ==========================================================================
 

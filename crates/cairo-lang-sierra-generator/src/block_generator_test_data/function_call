@@ -36,9 +36,8 @@ Statements:
   (v4: test::MyStruct, v3: core::felt252) <- test::bar(v1, v2, v0)
   (v5: core::felt252) <- core::felt252_add(v3, v3)
   (v7: test::MyStruct, v6: core::felt252) <- test::bar(v3, v5, v4)
-  (v8: ()) <- struct_construct()
 End:
-  Return(v8)
+  Return()
 
 //! > sierra_code
 felt252_const<1>() -> ([0])
@@ -52,9 +51,8 @@ PushValues([4]: felt252, [7]: felt252, [3]: test::MyStruct) -> ([4], [7], [3])
 function_call<user@test::bar>([4], [7], [3]) -> ([8], [9])
 drop<test::MyStruct>([8]) -> ()
 drop<felt252>([9]) -> ()
-struct_construct<Unit>() -> ([10])
-PushValues([10]: Unit) -> ([10])
-return([10])
+PushValues() -> ()
+return()
 
 //! > ==========================================================================
 

@@ -20,9 +20,8 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
 End:
-  Return(v0)
+  Return()
 
 //! > ==========================================================================
 

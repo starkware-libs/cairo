@@ -378,15 +378,14 @@ End:
 blk1:
 Statements:
   (v13: core::integer::u32, v14: test::A, v15: test::A) <- struct_destructure(v12)
-  (v10: ()) <- struct_construct()
-  (v17: (test::A, ())) <- struct_construct(v14, v10)
-  (v18: core::panics::PanicResult::<(test::A, ())>) <- PanicResult::Ok(v17)
+  (v17: (test::A,)) <- struct_construct(v14)
+  (v18: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Ok(v17)
 End:
   Return(v22, v23, v18)
 
 blk2:
 Statements:
-  (v19: core::panics::PanicResult::<(test::A, ())>) <- PanicResult::Err(v16)
+  (v19: core::panics::PanicResult::<(test::A,)>) <- PanicResult::Err(v16)
 End:
   Return(v22, v23, v19)
 
@@ -701,9 +700,9 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr1]()
+  () <- test::foo[expr1]()
 End:
-  Return(v0)
+  Return()
 
 
 Generated lowering for source location:
@@ -722,9 +721,8 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
 End:
-  Return(v0)
+  Return()
 
 //! > ==========================================================================
 
@@ -782,33 +780,32 @@ End:
 
 
 Final lowering:
-Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
+Parameters: v15: core::RangeCheck, v16: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v0: core::integer::u8) <- 3u
   (v1: core::integer::u8) <- 4u
   (v2: test::A) <- struct_construct(v0, v1)
   (v3: core::integer::u8, v4: core::integer::u8) <- struct_destructure(v2)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v16, v17, v3)
+  (v17: core::RangeCheck, v18: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8,)>) <- test::foo[expr25](v15, v16, v3)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
-    PanicResult::Err(v12) => blk2,
+    PanicResult::Err(v11) => blk2,
   })
 
 blk1:
 Statements:
-  (v7: ()) <- struct_construct()
-  (v13: ((),)) <- struct_construct(v7)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+  (v12: ()) <- struct_construct()
+  (v13: core::panics::PanicResult::<()>) <- PanicResult::Ok(v12)
 End:
-  Return(v18, v19, v14)
+  Return(v17, v18, v13)
 
 blk2:
 Statements:
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
+  (v14: core::panics::PanicResult::<()>) <- PanicResult::Err(v11)
 End:
-  Return(v18, v19, v15)
+  Return(v17, v18, v14)
 
 
 Generated lowering for source location:
@@ -869,14 +866,14 @@ End:
 
 
 Final lowering:
-Parameters: v43: core::RangeCheck, v44: core::gas::GasBuiltin, v0: core::integer::u8
+Parameters: v42: core::RangeCheck, v43: core::gas::GasBuiltin, v0: core::integer::u8
 blk0 (root):
 Statements:
   (v31: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v43, v44, v31) {
-    Option::Some(v45, v46) => blk1,
-    Option::None(v47, v48) => blk4,
+  Match(match core::gas::withdraw_gas_all(v42, v43, v31) {
+    Option::Some(v44, v45) => blk1,
+    Option::None(v46, v47) => blk4,
   })
 
 blk1:
@@ -895,17 +892,16 @@ End:
 
 blk2:
 Statements:
-  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v45, v46, v8)
+  (v58: core::RangeCheck, v59: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8,)>) <- test::foo[expr25](v44, v45, v8)
 End:
-  Return(v59, v60, v34)
+  Return(v58, v59, v34)
 
 blk3:
 Statements:
-  (v15: ()) <- struct_construct()
-  (v32: (core::integer::u8, ())) <- struct_construct(v8, v15)
-  (v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v32)
+  (v32: (core::integer::u8,)) <- struct_construct(v8)
+  (v33: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v32)
 End:
-  Return(v45, v46, v33)
+  Return(v44, v45, v33)
 
 blk4:
 Statements:
@@ -914,6 +910,6 @@ Statements:
   (v29: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v26, v27)
   (v28: core::panics::Panic) <- struct_construct()
   (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v28, v29)
-  (v39: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v30)
+  (v38: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v30)
 End:
-  Return(v47, v48, v39)
+  Return(v46, v47, v38)

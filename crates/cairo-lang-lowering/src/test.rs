@@ -139,6 +139,7 @@ fn test_function_lowering_phases(
         (*stage)(&mut curr_state);
         add_stage_state(name, &curr_state);
     };
+
     apply_stage("after_inlining", &|lowered| apply_inlining(&db, function_id, lowered).unwrap());
     apply_stage("after_add_withdraw_gas", &|lowered| {
         add_withdraw_gas(&db, function_id, lowered).unwrap()

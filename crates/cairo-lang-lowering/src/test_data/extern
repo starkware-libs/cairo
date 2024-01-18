@@ -32,9 +32,8 @@ Statements:
   (v5: core::felt252, v4: core::felt252) <- test::g(v3, v1)
   (v8: core::felt252, v6: core::felt252, v7: core::felt252) <- test::h(v5, v1)
   (v10: core::felt252, v9: (core::felt252,)) <- test::i(v8, v1)
-  (v11: ()) <- struct_construct()
 End:
-  Return(v10, v11)
+  Return(v10)
 
 //! > ==========================================================================
 
@@ -111,23 +110,17 @@ End:
 blk5:
 Statements:
 End:
-  Goto(blk8, {})
+  Return(v15)
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Return(v15)
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v19: ()) <- struct_construct()
-End:
-  Return(v15, v19)
+  Return(v15)
 
 //! > ==========================================================================
 
@@ -318,23 +311,17 @@ End:
 blk5:
 Statements:
 End:
-  Goto(blk8, {})
+  Return(v24, v15)
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Return(v24, v15)
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v19: ()) <- struct_construct()
-End:
-  Return(v24, v15, v19)
+  Return(v24, v15)
 
 //! > ==========================================================================
 
@@ -469,18 +456,12 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v8 -> v12, v9 -> v13})
+  Return(v8, v9)
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v10 -> v12, v11 -> v13})
-
-blk3:
-Statements:
-  (v5: ()) <- struct_construct()
-End:
-  Return(v12, v13, v5)
+  Return(v10, v11)
 
 //! > ==========================================================================
 

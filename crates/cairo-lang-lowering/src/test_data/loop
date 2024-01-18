@@ -54,7 +54,6 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr1]()
-  (v1: ()) <- struct_construct()
+  () <- test::foo[expr1]()
 End:
-  Return(v1)
+  Return()
