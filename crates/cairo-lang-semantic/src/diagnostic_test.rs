@@ -75,7 +75,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {

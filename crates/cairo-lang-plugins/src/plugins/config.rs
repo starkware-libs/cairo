@@ -27,7 +27,7 @@ impl MacroPlugin for ConfigPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        metadata: &MacroPluginMetadata,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         let mut diagnostics = vec![];
 

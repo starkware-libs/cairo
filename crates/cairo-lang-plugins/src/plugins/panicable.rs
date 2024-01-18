@@ -23,7 +23,7 @@ impl MacroPlugin for PanicablePlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         let (declaration, attributes, visibility) = match item_ast {
             ast::ModuleItem::ExternFunction(extern_func_ast) => (

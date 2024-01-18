@@ -16,7 +16,7 @@ impl MacroPlugin for TestPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         PluginResult {
             code: None,

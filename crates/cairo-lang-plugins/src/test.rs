@@ -143,7 +143,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {

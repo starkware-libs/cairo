@@ -225,7 +225,7 @@ impl MacroPlugin for DummyPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
@@ -320,7 +320,7 @@ impl MacroPlugin for RemoveOrigPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         let Some(free_function_ast) = try_extract_matches!(item_ast, ast::ModuleItem::FreeFunction)
         else {
@@ -346,7 +346,7 @@ impl MacroPlugin for FooToBarPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         let Some(free_function_ast) = try_extract_matches!(item_ast, ast::ModuleItem::FreeFunction)
         else {

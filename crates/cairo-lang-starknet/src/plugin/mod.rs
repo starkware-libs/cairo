@@ -34,7 +34,7 @@ impl MacroPlugin for StarkNetPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),

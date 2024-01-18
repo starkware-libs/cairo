@@ -21,7 +21,7 @@ impl MacroPlugin for GenerateTraitPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),

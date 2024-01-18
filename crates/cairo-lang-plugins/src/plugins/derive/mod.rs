@@ -34,7 +34,7 @@ impl MacroPlugin for DerivePlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         generate_derive_code_for_type(
             db,
