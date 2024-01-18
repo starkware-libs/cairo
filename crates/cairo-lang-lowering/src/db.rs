@@ -27,6 +27,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
+use crate::optimizations::scrub_units::scrub_units;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
@@ -348,6 +349,8 @@ fn priv_concrete_function_with_body_lowered_flat(
     let mut lowered =
         (*db.function_with_body_lowering(function.function_with_body_id(db))?).clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
+    scrub_units(db, &mut lowered);
+
     Ok(Arc::new(lowered))
 }
 
@@ -374,6 +377,7 @@ fn concrete_function_with_body_postpanic_lowered(
     lowered = lower_panics(db, function, &lowered)?;
     return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
+
     Ok(Arc::new(lowered))
 }
 

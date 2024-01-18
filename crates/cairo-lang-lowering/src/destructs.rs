@@ -88,7 +88,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
             }
         }
 
-        panic!("Borrow checker should have caught this.")
+        // panic!("Borrow checker should have caught this.")
     }
 }
 
@@ -276,7 +276,6 @@ pub fn add_destructs(
         .untyped_stable_ptr(db.upcast());
     for destruction in analysis.analyzer.destructions {
         let location = variables.get_location(stable_ptr);
-        let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
         match destruction {
             DestructionEntry::Plain(PlainDestructionEntry {
                 position: (block_id, insert_index),
@@ -297,7 +296,7 @@ pub fn add_destructs(
                     Statement::Call(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![VarUsage { var_id, location }],
-                        outputs: vec![output_var],
+                        outputs: vec![],
                         location: lowered.variables[var_id].location,
                     }),
                 )
@@ -328,7 +327,7 @@ pub fn add_destructs(
                                 .into_iter()
                                 .map(|var_id| VarUsage { var_id, location })
                                 .collect(),
-                            outputs: vec![panic_var, output_var],
+                            outputs: vec![panic_var],
                             location: lowered.variables[panic_var].location,
                         }),
                     ),

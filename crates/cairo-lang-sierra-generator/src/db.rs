@@ -166,7 +166,10 @@ fn get_function_signature(
         ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
     } else {
         ret_types.extend(extra_rets);
-        ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+
+        if !signature.return_type.is_unit(db.upcast()) {
+            ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+        }
     }
 
     Ok(Arc::new(cairo_lang_sierra::program::FunctionSignature {

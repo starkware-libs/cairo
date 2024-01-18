@@ -42,9 +42,8 @@ drop<Snapshot<Array<felt252>>>([6]) -> ()
 felt252_const<6>() -> ([7])
 store_temp<felt252>([7]) -> ([7])
 array_append<felt252>([5], [7]) -> ([8])
-struct_construct<Unit>() -> ([9])
 store_temp<Array<felt252>>([8]) -> ([8])
-return([8], [9])
+return([8])
 
 //! > ==========================================================================
 

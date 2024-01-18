@@ -5,13 +5,13 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, zip_eq, Itertools};
-use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
+use itertools::{zip_eq, Itertools};
+use semantic::{corelib, ConcreteVariant, MatchArmSelector, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, Signature};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, LocationId, Signature};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -105,13 +105,17 @@ pub struct PanicSignatureInfo {
     err_variant: ConcreteVariant,
     /// The PanicResult concrete type - the new return type of the function.
     pub panic_ty: TypeId,
+    location: LocationId,
 }
 impl PanicSignatureInfo {
     pub fn new(db: &dyn LoweringGroup, signature: &Signature) -> Self {
-        let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
-        let original_return_ty = signature.return_type;
+        let mut ok_ret_tys = signature.extra_rets.iter().map(|param| param.ty()).collect_vec();
 
-        let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
+        let original_return_ty = signature.return_type;
+        if original_return_ty != corelib::unit_ty(db.upcast()) {
+            ok_ret_tys.push(original_return_ty);
+        }
+
         let ok_ty = db.intern_type(semantic::TypeLongId::Tuple(ok_ret_tys.clone()));
         let ok_variant = get_core_enum_concrete_variant(
             db.upcast(),
@@ -126,7 +130,7 @@ impl PanicSignatureInfo {
             "Err",
         );
         let panic_ty = get_panic_ty(db.upcast(), ok_ty);
-        Self { ok_ret_tys, ok_ty, ok_variant, err_variant, panic_ty }
+        Self { ok_ret_tys, ok_ty, ok_variant, err_variant, panic_ty, location: signature.location }
     }
 }
 
@@ -283,8 +287,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::Return(returns) => {
-                // The last var usage is the "real" return value (not implicit or ref).
-                let location = returns.last().unwrap().location;
+                let location = self.ctx.panic_info.location;
 
                 // Tuple construction.
                 let tupled_res =
