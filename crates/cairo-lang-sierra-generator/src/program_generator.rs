@@ -41,11 +41,11 @@ fn generate_libfunc_declarations<'a>(
 
 /// Collects the set of all [ConcreteLibfuncId] used in the given list of [pre_sierra::Statement].
 fn collect_used_libfuncs(
-    statements: &[pre_sierra::Statement],
+    statements: &[pre_sierra::StatementWithLocation],
 ) -> OrderedHashSet<ConcreteLibfuncId> {
     statements
         .iter()
-        .filter_map(|statement| match statement {
+        .filter_map(|statement| match &statement.statement {
             pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
                 Some(invocation.libfunc_id.clone())
             }
@@ -164,7 +164,7 @@ pub fn get_sierra_program_for_functions(
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
 ) -> Maybe<Arc<cairo_lang_sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
@@ -213,10 +213,10 @@ pub fn get_sierra_program_for_functions(
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
 fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
-    statement: &pre_sierra::Statement,
+    statement: &pre_sierra::StatementWithLocation,
 ) -> Option<ConcreteFunctionWithBodyId> {
     let invc = try_extract_matches!(
-        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
+        try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());

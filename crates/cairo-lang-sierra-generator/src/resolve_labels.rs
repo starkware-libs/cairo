@@ -9,18 +9,18 @@ use crate::pre_sierra;
 
 /// Replaces labels with their corresponding StatementIdx.
 pub fn resolve_labels(
-    statements: Vec<pre_sierra::Statement>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
     label_replacer: &LabelReplacer,
 ) -> Vec<program::Statement> {
     statements
         .into_iter()
-        .filter_map(|statement| match statement {
+        .filter_map(|statement| match statement.statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
                 Some(label_replacer.handle_statement(sierra_statement))
             }
             pre_sierra::Statement::Label(_) => None,
             pre_sierra::Statement::PushValues(_) => {
-                panic!("Unexpected pre_sierra::Statement::PushValues in resolve_labels().")
+                panic!("Unexpected pre_sierra::Statement:PushValues in resolve_labels().")
             }
         })
         .collect()
@@ -31,7 +31,7 @@ pub struct LabelReplacer {
     next_statement_index_fetch: NextStatementIndexFetch,
 }
 impl LabelReplacer {
-    pub fn from_statements(statements: &[pre_sierra::Statement]) -> LabelReplacer {
+    pub fn from_statements(statements: &[pre_sierra::StatementWithLocation]) -> LabelReplacer {
         Self { next_statement_index_fetch: NextStatementIndexFetch::new(statements, false) }
     }
 

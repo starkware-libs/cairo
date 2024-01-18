@@ -24,7 +24,9 @@ pub fn get_ap_change(
 
     let function = &*db.function_with_body_sierra(function_id)?;
     for statement in &function.body {
-        if let pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) = statement {
+        if let pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) =
+            &statement.statement
+        {
             let signature = get_libfunc_signature(db, invocation.libfunc_id.clone());
             // Go over the branches.
             for branch_signature in signature.branch_signatures {

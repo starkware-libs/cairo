@@ -47,11 +47,11 @@ pub struct LibfuncInfo {
 /// space.
 pub fn add_store_statements<GetLibfuncSignature>(
     db: &dyn SierraGenGroup,
-    statements: Vec<pre_sierra::Statement>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
     params: &[sierra::program::Param],
-) -> Vec<pre_sierra::Statement>
+) -> Vec<pre_sierra::StatementWithLocation>
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
@@ -81,7 +81,7 @@ struct AddStoreVariableStatements<'a> {
     local_variables: LocalVariables,
     /// A list of output statements (the original statement, together with the added statements,
     /// such as "store_temp").
-    result: Vec<pre_sierra::Statement>,
+    result: Vec<pre_sierra::StatementWithLocation>,
     /// A map from [LabelId](pre_sierra::LabelId) to the known state (so far).
     ///
     /// For every branch that does not continue to the next statement, the current known variables
@@ -105,14 +105,14 @@ impl<'a> AddStoreVariableStatements<'a> {
     fn handle_statement<GetLibfuncInfo>(
         &mut self,
         state_opt: Option<VariablesState>,
-        statement: pre_sierra::Statement,
+        statement: pre_sierra::StatementWithLocation,
         get_lib_func_signature: &GetLibfuncInfo,
     ) -> Option<VariablesState>
     where
         GetLibfuncInfo: Fn(ConcreteLibfuncId) -> LibfuncInfo,
     {
         let mut state_opt = state_opt;
-        match &statement {
+        match &statement.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let libfunc_id = invocation.libfunc_id.clone();
                 let libfunc_info = get_lib_func_signature(libfunc_id.clone());
@@ -514,7 +514,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    fn finalize(self, state_opt: Option<VariablesState>) -> Vec<pre_sierra::Statement> {
+    fn finalize(self, state_opt: Option<VariablesState>) -> Vec<pre_sierra::StatementWithLocation> {
         assert!(
             state_opt.is_none(),
             "Internal compiler error: Found a reachable statement at the end of the function."
