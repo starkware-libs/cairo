@@ -1,8 +1,8 @@
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
+
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 #[cfg(feature = "std")]
 type ContractInternalRepr = OrderedHashSet<Item>;

@@ -1,10 +1,8 @@
 use std::fs;
 
 use anyhow::Context;
-use cairo_lang_starknet::{
-    compile_contract_class::extract_sierra_program_from_contract_class,
-    contract_class::ContractClass,
-};
+use cairo_lang_starknet::compile_contract_class::extract_sierra_program_from_contract_class;
+use cairo_lang_starknet::contract_class::ContractClass;
 use clap::Parser;
 
 /// Command line args parser.

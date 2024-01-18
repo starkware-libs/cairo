@@ -15,6 +15,10 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_starknet_types::compiler_version::{self};
+use cairo_lang_starknet_types::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints,
+};
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
@@ -30,10 +34,6 @@ use crate::contract::{
 use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
-use cairo_lang_starknet_types::compiler_version::{self};
-use cairo_lang_starknet_types::contract_class::{
-    ContractClass, ContractEntryPoint, ContractEntryPoints,
-};
 
 #[cfg(all(test, feature = "serde"))]
 #[path = "compile_contract_class_tests.rs"]

@@ -1,5 +1,6 @@
 use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_starknet_types::abi::EventFieldKind;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -11,7 +12,6 @@ use smol_str::SmolStr;
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
-use cairo_lang_starknet_types::abi::EventFieldKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]

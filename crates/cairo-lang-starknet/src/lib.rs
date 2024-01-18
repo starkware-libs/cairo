@@ -21,10 +21,7 @@ pub mod inline_macros;
 pub mod plugin;
 
 // Rexports for more practicality downstream
-pub use cairo_lang_starknet_types::abi;
-pub use cairo_lang_starknet_types::casm_contract_class;
-pub use cairo_lang_starknet_types::compiler_version;
-pub use cairo_lang_starknet_types::contract_class;
+pub use cairo_lang_starknet_types::{abi, casm_contract_class, compiler_version, contract_class};
 
 /// Get the suite of plugins for compilation with StarkNet.
 pub fn starknet_plugin_suite() -> PluginSuite {

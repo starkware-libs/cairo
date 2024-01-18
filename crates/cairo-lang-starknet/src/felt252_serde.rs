@@ -19,6 +19,7 @@ use cairo_lang_sierra::program::{
     Function, FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program,
     Statement, StatementIdx, TypeDeclaration,
 };
+use cairo_lang_starknet_types::compiler_version::VersionId;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -30,7 +31,6 @@ use thiserror::Error;
 
 use crate::contract::starknet_keccak;
 use crate::felt252_vec_compression::{compress, decompress};
-use cairo_lang_starknet_types::compiler_version::VersionId;
 
 #[cfg(test)]
 #[path = "felt252_serde_test.rs"]

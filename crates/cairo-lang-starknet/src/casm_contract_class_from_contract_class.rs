@@ -21,10 +21,17 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_starknet_types::casm_contract_class::{
+    CasmContractClass, CasmContractEntryPoint, CasmContractEntryPoints,
+};
+use cairo_lang_starknet_types::compiler_version::{
+    current_compiler_version_id, current_sierra_version_id, VersionId,
+};
 use cairo_lang_starknet_types::contract_class;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use contract_class::{ContractClass, ContractEntryPoint};
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
@@ -36,14 +43,6 @@ use thiserror::Error;
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract::starknet_keccak;
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
-use cairo_lang_starknet_types::casm_contract_class::CasmContractClass;
-use cairo_lang_starknet_types::casm_contract_class::{
-    CasmContractEntryPoint, CasmContractEntryPoints,
-};
-use cairo_lang_starknet_types::compiler_version::{
-    current_compiler_version_id, current_sierra_version_id, VersionId,
-};
-use contract_class::{ContractClass, ContractEntryPoint};
 
 #[cfg(all(test, feature = "serde"))]
 #[path = "casm_contract_class_from_contract_class_tests.rs"]

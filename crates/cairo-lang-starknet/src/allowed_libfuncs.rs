@@ -94,9 +94,10 @@ pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 mod serde_utils {
     use std::fs;
 
+    use cairo_lang_starknet_types::contract_class::ContractClass;
+
     use super::*;
     use crate::felt252_serde::sierra_from_felt252s;
-    use cairo_lang_starknet_types::contract_class::ContractClass;
 
     pub fn lookup_allowed_libfuncs_list(
         list_selector: ListSelector,
