@@ -922,7 +922,6 @@ dependencies = [
  "hashbrown 0.14.3",
  "itertools 0.11.0",
  "num-bigint",
- "num-traits 0.2.17",
  "serde",
  "serde_json",
  "starknet-crypto",
