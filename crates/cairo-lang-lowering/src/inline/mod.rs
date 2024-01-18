@@ -343,7 +343,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered =
-            self.variables.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
+            self.variables.db.concrete_function_with_body_postpanic_lowered(function_id)?;
 
         lowered.blocks.has_root()?;
 
