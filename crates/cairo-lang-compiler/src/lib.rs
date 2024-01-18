@@ -99,7 +99,7 @@ pub fn compile_prepared_db(
 ) -> Result<Program> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    let sierra_program = db
+    let (sierra_program, _statements_locations) = db
         .get_sierra_program(main_crate_ids)
         .to_option()
         .context("Compilation failed without any diagnostics")?;

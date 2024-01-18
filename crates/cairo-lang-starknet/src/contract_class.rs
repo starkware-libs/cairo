@@ -193,7 +193,7 @@ fn compile_contract_with_prepared_and_checked_db(
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
         extract_semantic_entrypoints(db, contract)?;
-    let mut sierra_program = db
+    let (mut sierra_program, _statements_locations) = db
         .get_sierra_program_for_functions(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
         )

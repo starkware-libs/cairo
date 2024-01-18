@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
-    let sierra_program = db
+    let (sierra_program, _statements_locations) = db
         .get_sierra_program(main_crate_ids.clone())
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;

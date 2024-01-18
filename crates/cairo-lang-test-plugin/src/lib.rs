@@ -81,7 +81,7 @@ pub fn compile_test_prepared_db(
             })
             .collect();
     let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let sierra_program = db
+    let (sierra_program, _statements_locations) = db
         .get_sierra_program_for_functions(
             chain!(
                 all_entry_points.into_iter(),
