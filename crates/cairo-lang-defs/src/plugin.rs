@@ -76,8 +76,8 @@ impl PluginDiagnostic {
     }
 }
 
-/// A structure containing additional info about
-/// the current module item on which macro plugin operates.
+/// A structure containing additional info about the current module item on which macro plugin
+/// operates.
 pub struct MacroPluginMetadata<'a> {
     /// Config set of a crate to which the current item belongs.
     pub cfg_set: &'a CfgSet,
