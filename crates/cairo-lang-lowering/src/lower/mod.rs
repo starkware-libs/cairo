@@ -2015,7 +2015,7 @@ fn lower_expr_felt252_arm(
 
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
-            inputs: vec![lowered_arm_val, match_input],
+            inputs: vec![match_input, lowered_arm_val],
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location,
