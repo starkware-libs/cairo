@@ -163,21 +163,12 @@ fn build_array_get(
         buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
+        const element_size = element_size;
         let orig_range_check = range_check;
         // Compute the length of the array (in cells).
         tempvar array_length_in_cells = arr_end - arr_start;
-    };
-    let element_offset_in_cells = if element_size == 1 {
-        index
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = index * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar element_offset_in_cells = index * element_size;
         // Check that offset is in range.
         // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1)`.
         tempvar is_in_range;
@@ -239,21 +230,12 @@ fn build_array_slice(
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
+        const element_size = element_size;
         // Compute the length of the array (in cells).
         tempvar array_length_in_cells = arr_end - arr_start;
         tempvar slice_end = slice_start + slice_length;
-    };
-    let slice_end_in_cells = if element_size == 1 {
-        slice_end
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = slice_end * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_end_in_cells = slice_end * element_size;
         // Check that offset is in range.
         // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1) * 2`.
         tempvar is_in_range;
@@ -275,18 +257,8 @@ fn build_array_slice(
         tempvar offset_length_diff = array_length_in_cells - slice_end_in_cells;
         // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
         assert offset_length_diff = *(range_check++);
-    };
-    let slice_start_in_cells = if element_size == 1 {
-        slice_start
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = slice_start * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_start_in_cells = slice_start * element_size;
         let slice_start_cell = arr_start + slice_start_in_cells;
         let slice_end_cell = arr_start + slice_end_in_cells;
     };

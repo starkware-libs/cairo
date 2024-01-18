@@ -5,7 +5,6 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
-use num_traits::Zero;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -80,15 +79,9 @@ pub fn build_felt252_range_reduction(
         hint TestLessThan {lhs: canonical_value, rhs: range_size} into {dst: in_range};
         jump InRange if in_range != 0;
         // OutOfRange:
+        // Since `range_upper` may be 0.
+        maybe_tempvar validated_value = value - range_upper;
     }
-    let validated_value = if out_range.upper.is_zero() {
-        value
-    } else {
-        casm_build_extend! {casm_builder,
-            tempvar shifted_value = value - range_upper;
-        }
-        shifted_value
-    };
 
     // asserts that `value - out_range.upper < prime - out_range.size()`
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
@@ -99,32 +92,22 @@ pub fn build_felt252_range_reduction(
         range_check,
         &auxiliary_vars,
     );
-    casm_build_extend!(casm_builder, InRange:);
-    if out_range.lower.is_zero() {
-        casm_build_extend! {casm_builder,
-            assert value = *(range_check++);
-        };
-    } else {
-        casm_build_extend! {casm_builder,
-            tempvar rc_val = canonical_value;
-            assert rc_val = *(range_check++);
-        }
+    casm_build_extend! {casm_builder,
+    InRange:
+        // Since `minus_range_lower` may be 0.
+        maybe_tempvar rc_val = value + minus_range_lower;
+        assert rc_val = *(range_check++);
     }
     let rc_size = BigInt::from(1).shl(128);
     // If the out range is exactly `rc_size` the previous addition to the buffer validated this
     // case as well.
     if out_range.size() < rc_size {
         let upper_bound_fixer = rc_size - &out_range.upper;
-        if upper_bound_fixer.is_zero() {
-            casm_build_extend! {casm_builder,
-                assert value = *(range_check++);
-            };
-        } else {
-            casm_build_extend! {casm_builder,
-                const upper_bound_fixer = upper_bound_fixer;
-                tempvar rc_val = value + upper_bound_fixer;
-                assert rc_val = *(range_check++);
-            }
+        casm_build_extend! {casm_builder,
+            const upper_bound_fixer = upper_bound_fixer;
+            // Since `upper_bound_fixer` may be 0.
+            maybe_tempvar rc_val = value + upper_bound_fixer;
+            assert rc_val = *(range_check++);
         }
     }
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
