@@ -100,7 +100,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Returns the set of direct callees of a concrete function with a body after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees(
+    fn concrete_function_with_body_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ids::FunctionId>>;
@@ -113,7 +113,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees_with_body(
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
@@ -353,16 +353,6 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-// Applies inlining.
-fn priv_concrete_function_with_body_postinline_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
-    apply_inlining(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
-}
-
 // * Adds `withdraw_gas` calls.
 // * Adds panics.
 // * Adds destructor calls.
@@ -370,12 +360,23 @@ fn concrete_function_with_body_postpanic_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
-    return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
+
+    Ok(Arc::new(lowered))
+}
+
+// Applies inlining.
+fn priv_concrete_function_with_body_postinline_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+
+    apply_inlining(db, function, &mut lowered)?;
     Ok(Arc::new(lowered))
 }
 
@@ -389,8 +390,8 @@ fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-
+    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
+    return_optimization(db, &mut lowered);
     optimize_remappings(&mut lowered);
     // The call to `reorder_statements` before and after `branch_inversion` is intentional.
     // See description of `branch_inversion` for more details.
@@ -431,11 +432,11 @@ fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<ids::FunctionId> {
     direct_callees
 }
 
-fn concrete_function_with_body_postinline_direct_callees(
+fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
+    let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
     Ok(get_direct_callees(&lowered_function))
 }
 
@@ -462,13 +463,13 @@ fn functions_with_body_from_function_ids(
         .collect_vec())
 }
 
-fn concrete_function_with_body_postinline_direct_callees_with_body(
+fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postinline_direct_callees(function_id)?,
+        db.concrete_function_with_body_direct_callees(function_id)?,
     )
 }
 

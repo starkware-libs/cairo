@@ -2294,9 +2294,9 @@ struct_deconstruct<Tuple<u32>>([32]) -> ([34]); // 1857
 array_slice<felt252>([30], [7], [19], [34]) { fallthrough([35], [36]) 1868([37]) }; // 1858
 branch_align() -> (); // 1859
 struct_construct<core::array::Span::<core::felt252>>([25]) -> ([38]); // 1860
-enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 0>([38]) -> ([39]); // 1861
-struct_construct<core::array::Span::<core::felt252>>([36]) -> ([40]); // 1862
-struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([40], [39]) -> ([41]); // 1863
+struct_construct<core::array::Span::<core::felt252>>([36]) -> ([39]); // 1861
+enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 0>([38]) -> ([40]); // 1862
+struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([39], [40]) -> ([41]); // 1863
 enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([41]) -> ([42]); // 1864
 store_temp<RangeCheck>([35]) -> ([35]); // 1865
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([42]) -> ([42]); // 1866
