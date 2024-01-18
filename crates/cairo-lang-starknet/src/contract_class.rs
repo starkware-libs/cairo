@@ -198,7 +198,8 @@ fn compile_contract_with_prepared_and_checked_db(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?;
+        .with_context(|| "Compilation failed without any diagnostics.")?
+        .0;
 
     if compiler_config.replace_ids {
         sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));

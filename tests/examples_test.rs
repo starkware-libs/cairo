@@ -81,7 +81,7 @@ fn checked_compile_to_sierra(
             }
         }
     }
-    let sierra_program = db.get_sierra_program_for_functions(requested_function_ids).unwrap();
+    let sierra_program = db.get_sierra_program_for_functions(requested_function_ids).unwrap().0;
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 

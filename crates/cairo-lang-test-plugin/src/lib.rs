@@ -92,7 +92,8 @@ pub fn compile_test_prepared_db(
             .collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?;
+        .with_context(|| "Compilation failed without any diagnostics.")?
+        .0;
     let replacer = DebugReplacer { db };
     let sierra_program = replacer.apply(&sierra_program);
 
