@@ -112,8 +112,8 @@ impl<'a> AddStoreVariableStatements<'a> {
         GetLibfuncInfo: Fn(ConcreteLibfuncId) -> LibfuncInfo,
     {
         let mut state_opt = state_opt;
-        match &statement {
-            pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
+        match &statement.statement {
+            pre_sierra::StatementInner::Sierra(GenStatement::Invocation(invocation)) => {
                 let libfunc_id = invocation.libfunc_id.clone();
                 let libfunc_info = get_lib_func_signature(libfunc_id.clone());
                 let signature = libfunc_info.signature;
@@ -229,7 +229,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.result.push(statement);
                 state_opt
             }
-            pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
+            pre_sierra::StatementInner::Sierra(GenStatement::Return(_return_statement)) => {
                 self.result.push(statement);
                 // `return` statements are preceded by `PushValues` which takes care of pushing
                 // the return values onto the stack. The rest of the variables are not
@@ -238,7 +238,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // The next statement is not reachable from this one. Set `state` to `None`.
                 None
             }
-            pre_sierra::Statement::Label(pre_sierra::Label { id: label_id }) => {
+            pre_sierra::StatementInner::Label(pre_sierra::Label { id: label_id }) => {
                 // Merge self.known_stack with the future_stack that corresponds to the label, if
                 // any.
                 state_opt = merge_optional_states(
@@ -249,7 +249,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.result.push(statement);
                 state_opt
             }
-            pre_sierra::Statement::PushValues(push_values) => {
+            pre_sierra::StatementInner::PushValues(push_values) => {
                 let state = &mut state_opt.unwrap_or_default();
                 self.push_values(state, push_values);
                 Some(std::mem::take(state))

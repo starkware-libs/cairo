@@ -20,12 +20,13 @@ use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
+// TODO(Gil): Consider returning a 'StatementInner' instead of a 'Statement'.
 pub fn simple_statement(
     libfunc_id: ConcreteLibfuncId,
     args: &[cairo_lang_sierra::ids::VarId],
     results: &[cairo_lang_sierra::ids::VarId],
 ) -> pre_sierra::Statement {
-    pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
+    pre_sierra::StatementInner::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id,
         args: args.into(),
         branches: vec![program::GenBranchInfo {
@@ -33,13 +34,14 @@ pub fn simple_statement(
             results: results.into(),
         }],
     }))
+    .into_statement_without_location()
 }
 
 pub fn jump_statement(
     jump: ConcreteLibfuncId,
     label: pre_sierra::LabelId,
 ) -> pre_sierra::Statement {
-    pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
+    pre_sierra::StatementInner::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id: jump,
         args: vec![],
         branches: vec![program::GenBranchInfo {
@@ -47,10 +49,12 @@ pub fn jump_statement(
             results: vec![],
         }],
     }))
+    .into_statement_without_location()
 }
 
 pub fn return_statement(res: Vec<cairo_lang_sierra::ids::VarId>) -> pre_sierra::Statement {
-    pre_sierra::Statement::Sierra(program::GenStatement::Return(res))
+    pre_sierra::StatementInner::Sierra(program::GenStatement::Return(res))
+        .into_statement_without_location()
 }
 
 pub fn get_libfunc_id_with_generic_arg(

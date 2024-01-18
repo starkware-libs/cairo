@@ -45,14 +45,16 @@ fn collect_used_libfuncs(
 ) -> OrderedHashSet<ConcreteLibfuncId> {
     statements
         .iter()
-        .filter_map(|statement| match statement {
-            pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
+        .filter_map(|statement| match &statement.statement {
+            pre_sierra::StatementInner::Sierra(program::GenStatement::Invocation(invocation)) => {
                 Some(invocation.libfunc_id.clone())
             }
-            pre_sierra::Statement::Sierra(program::GenStatement::Return(_))
-            | pre_sierra::Statement::Label(_) => None,
-            pre_sierra::Statement::PushValues(_) => {
-                panic!("Unexpected pre_sierra::Statement::PushValues in collect_used_libfuncs().")
+            pre_sierra::StatementInner::Sierra(program::GenStatement::Return(_))
+            | pre_sierra::StatementInner::Label(_) => None,
+            pre_sierra::StatementInner::PushValues(_) => {
+                panic!(
+                    "Unexpected pre_sierra::StatementInner::PushValues in collect_used_libfuncs()."
+                )
             }
         })
         .collect()
@@ -216,7 +218,7 @@ fn try_get_function_with_body_id(
     statement: &pre_sierra::Statement,
 ) -> Option<ConcreteFunctionWithBodyId> {
     let invc = try_extract_matches!(
-        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
+        try_extract_matches!(&statement.statement, pre_sierra::StatementInner::Sierra)?,
         program::GenStatement::Invocation
     )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());

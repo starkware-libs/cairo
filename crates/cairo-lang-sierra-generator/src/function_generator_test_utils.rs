@@ -36,7 +36,7 @@ pub fn test_function_generator(
     let sierra_code: String = function.map_or("None".into(), |func| {
         func.body
             .iter()
-            .map(|x| replace_sierra_ids(db, x).to_string(db))
+            .map(|x| replace_sierra_ids(db, x).statement.to_string(db))
             .collect::<Vec<String>>()
             .join("\n")
     });

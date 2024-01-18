@@ -12,8 +12,10 @@ use crate::utils::{jump_statement, simple_statement};
 fn test_resolve_labels() {
     let db_val = SierraGenDatabaseForTesting::default();
     let db = &db_val;
-    let label =
-        |id| pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) });
+    let label = |id| {
+        pre_sierra::StatementInner::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
+            .into_statement_without_location()
+    };
     let jump =
         |id| jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id));
 

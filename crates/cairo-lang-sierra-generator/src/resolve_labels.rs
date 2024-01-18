@@ -14,13 +14,13 @@ pub fn resolve_labels(
 ) -> Vec<program::Statement> {
     statements
         .into_iter()
-        .filter_map(|statement| match statement {
-            pre_sierra::Statement::Sierra(sierra_statement) => {
+        .filter_map(|statement| match statement.statement {
+            pre_sierra::StatementInner::Sierra(sierra_statement) => {
                 Some(label_replacer.handle_statement(sierra_statement))
             }
-            pre_sierra::Statement::Label(_) => None,
-            pre_sierra::Statement::PushValues(_) => {
-                panic!("Unexpected pre_sierra::Statement::PushValues in resolve_labels().")
+            pre_sierra::StatementInner::Label(_) => None,
+            pre_sierra::StatementInner::PushValues(_) => {
+                panic!("Unexpected pre_sierra::StatementInner:PushValues in resolve_labels().")
             }
         })
         .collect()

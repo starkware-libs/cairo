@@ -239,7 +239,7 @@ fn test_add_store_statements(
             .collect_vec(),
     )
     .iter()
-    .map(|statement| replace_sierra_ids(db, statement).to_string(db))
+    .map(|statement| replace_sierra_ids(db, statement).statement.to_string(db))
     .collect()
 }
 
@@ -459,7 +459,7 @@ fn store_local_result_of_if() {
     );
 }
 
-/// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement.
+/// Tests the behavior of the [PushValues](pre_sierra::StatementInner::PushValues) statement.
 #[test]
 fn store_temp_push_values() {
     let db = SierraGenDatabaseForTesting::default();
@@ -498,8 +498,8 @@ fn store_temp_push_values() {
     );
 }
 
-/// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement with
-/// [dup_var](pre_sierra::Statement::PushValues::dup_var).
+/// Tests the behavior of the [PushValues](pre_sierra::StatementInner::PushValues) statement with
+/// [dup_var](pre_sierra::StatementInner::PushValues::dup_var).
 #[test]
 fn store_temp_push_values_with_dup() {
     let db = SierraGenDatabaseForTesting::default();
@@ -532,7 +532,7 @@ fn store_temp_push_values_with_dup() {
     );
 }
 
-/// Tests the [PushValues](pre_sierra::Statement::PushValues) optimization.
+/// Tests the [PushValues](pre_sierra::StatementInner::PushValues) optimization.
 #[test]
 fn push_values_optimization() {
     let db = SierraGenDatabaseForTesting::default();
@@ -600,7 +600,7 @@ fn push_values_temp_not_on_top() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn consecutive_push_values() {
     let db = SierraGenDatabaseForTesting::default();
@@ -649,7 +649,7 @@ fn consecutive_push_values() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn push_values_after_branch_merge() {
     let db = SierraGenDatabaseForTesting::default();
@@ -694,7 +694,7 @@ fn push_values_after_branch_merge() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn push_values_early_return() {
     let db = SierraGenDatabaseForTesting::default();
@@ -736,7 +736,7 @@ fn push_values_early_return() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn consecutive_const_additions() {
     let db = SierraGenDatabaseForTesting::default();
@@ -780,7 +780,7 @@ fn consecutive_const_additions() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn consecutive_const_additions_with_branch() {
     let db = SierraGenDatabaseForTesting::default();
@@ -812,7 +812,7 @@ fn consecutive_const_additions_with_branch() {
     );
 }
 
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::StatementInner::PushValues).
 #[test]
 fn consecutive_appends_with_branch() {
     let db = SierraGenDatabaseForTesting::default();

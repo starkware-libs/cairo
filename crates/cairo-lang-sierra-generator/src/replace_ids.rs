@@ -152,21 +152,32 @@ pub fn replace_sierra_ids(
     statement: &pre_sierra::Statement,
 ) -> pre_sierra::Statement {
     let replacer = DebugReplacer { db };
-    match statement {
-        pre_sierra::Statement::Sierra(cairo_lang_sierra::program::GenStatement::Invocation(p)) => {
-            pre_sierra::Statement::Sierra(cairo_lang_sierra::program::GenStatement::Invocation(
-                cairo_lang_sierra::program::GenInvocation {
-                    libfunc_id: replacer.replace_libfunc_id(&p.libfunc_id),
-                    ..p.clone()
-                },
-            ))
-        }
-        pre_sierra::Statement::PushValues(values) => pre_sierra::Statement::PushValues(
-            values
-                .iter()
-                .map(|value| PushValue { ty: replacer.replace_type_id(&value.ty), ..value.clone() })
-                .collect(),
-        ),
+    match &statement.statement {
+        pre_sierra::StatementInner::Sierra(
+            cairo_lang_sierra::program::GenStatement::Invocation(p),
+        ) => pre_sierra::Statement {
+            statement: pre_sierra::StatementInner::Sierra(
+                cairo_lang_sierra::program::GenStatement::Invocation(
+                    cairo_lang_sierra::program::GenInvocation {
+                        libfunc_id: replacer.replace_libfunc_id(&p.libfunc_id),
+                        ..p.clone()
+                    },
+                ),
+            ),
+            ..statement.clone()
+        },
+        pre_sierra::StatementInner::PushValues(values) => pre_sierra::Statement {
+            statement: pre_sierra::StatementInner::PushValues(
+                values
+                    .iter()
+                    .map(|value| PushValue {
+                        ty: replacer.replace_type_id(&value.ty),
+                        ..value.clone()
+                    })
+                    .collect(),
+            ),
+            ..statement.clone()
+        },
         _ => statement.clone(),
     }
 }

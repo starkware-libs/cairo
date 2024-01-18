@@ -1,6 +1,6 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use crate::pre_sierra::{LabelId, Statement};
+use crate::pre_sierra::{LabelId, Statement, StatementInner};
 
 /// Helper to fetch the next statement index from a branch target, and get the statement indices
 /// for labels.
@@ -16,11 +16,11 @@ impl NextStatementIndexFetch {
         let mut index = 0;
         let mut label_to_statement = UnorderedHashMap::default();
         for statement in statements {
-            match statement {
-                Statement::Sierra(_) => {
+            match &statement.statement {
+                StatementInner::Sierra(_) => {
                     index += 1;
                 }
-                Statement::Label(label) => {
+                StatementInner::Label(label) => {
                     if label_to_statement.insert(label.id, index).is_some() {
                         panic!("Label was already declared.");
                     }
@@ -28,8 +28,8 @@ impl NextStatementIndexFetch {
                         index += 1;
                     }
                 }
-                Statement::PushValues(_) => panic!(
-                    "Unexpected pre_sierra::Statement::PushValues in \
+                StatementInner::PushValues(_) => panic!(
+                    "Unexpected pre_sierra::StatementInner::PushValues in \
                      NextStatementIndexFetch::new()."
                 ),
             }

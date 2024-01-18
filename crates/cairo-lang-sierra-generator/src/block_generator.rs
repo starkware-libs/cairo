@@ -125,9 +125,12 @@ pub fn generate_block_code(
             )?);
 
             if *target_block_id == block_id.next_block_id() {
-                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                    id: *context.block_label(*target_block_id),
-                }));
+                statements.push(
+                    pre_sierra::StatementInner::Label(pre_sierra::Label {
+                        id: *context.block_label(*target_block_id),
+                    })
+                    .into_statement_without_location(),
+                );
 
                 let code = generate_block_code(context, *target_block_id)?;
                 statements.extend(code);
@@ -196,7 +199,7 @@ fn generate_push_values_statement_for_remapping(
             dup,
         })
     }
-    Ok(pre_sierra::Statement::PushValues(push_values))
+    Ok(pre_sierra::StatementInner::PushValues(push_values).into_statement_without_location())
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -228,7 +231,9 @@ pub fn generate_return_code(
         });
     }
 
-    statements.push(pre_sierra::Statement::PushValues(push_values));
+    statements.push(
+        pre_sierra::StatementInner::PushValues(push_values).into_statement_without_location(),
+    );
     statements.push(return_statement(return_variables_on_stack));
 
     Ok(statements)
@@ -324,7 +329,8 @@ fn generate_statement_call_code(
 
         Ok(vec![
             // Push the arguments.
-            pre_sierra::Statement::PushValues(push_values_vec),
+            pre_sierra::StatementInner::PushValues(push_values_vec)
+                .into_statement_without_location(),
             // Call the function.
             simple_statement(
                 libfunc_id,
@@ -454,9 +460,12 @@ fn generate_match_code(
         .collect();
 
     // Call the match libfunc.
-    statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
-        program::GenInvocation { libfunc_id, args, branches },
-    )));
+    statements.push(
+        pre_sierra::StatementInner::Sierra(program::GenStatement::Invocation(
+            program::GenInvocation { libfunc_id, args, branches },
+        ))
+        .into_statement_without_location(),
+    );
 
     let ap_tracking_enabled = context.get_ap_tracking();
 

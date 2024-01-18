@@ -96,9 +96,14 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Generates a label id and a label statement.
+    // TODO(Gil): Consider returning a `StatementInner` instead of a `Statement`.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
         let id = self.alloc_label_id();
-        (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
+        (
+            pre_sierra::StatementInner::Label(pre_sierra::Label { id })
+                .into_statement_without_location(),
+            id,
+        )
     }
 
     /// Adds the block to pending_blocks and returns the label id of the block.

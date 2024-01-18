@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -54,7 +55,7 @@ pub struct Function {
 
 /// Represents a pre-sierra statement - a statement before label-resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Statement {
+pub enum StatementInner {
     /// A compiled Sierra statement (before label resolution).
     Sierra(program::GenStatement<LabelId>),
     /// A label.
@@ -66,26 +67,41 @@ pub enum Statement {
     /// If a prefix of the values is already on the stack, they will not be re-pushed.
     PushValues(Vec<PushValue>),
 }
-impl Statement {
+impl StatementInner {
+    pub fn into_statement_without_location(self) -> Statement {
+        Statement { statement: self, location: None }
+    }
     pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Statement {
+    pub statement: StatementInner,
+    pub location: Option<StableLocation>,
+}
+
+impl Statement {
+    pub fn without_location(statement: &StatementInner) -> Statement {
+        Statement { statement: statement.clone(), location: None }
+    }
+}
+
 struct StatementWithDb<'db> {
     db: &'db dyn SierraGenGroup,
-    statement: Statement,
+    statement: StatementInner,
 }
 impl<'db> std::fmt::Display for StatementWithDb<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.statement {
-            Statement::Sierra(value) => {
+            StatementInner::Sierra(value) => {
                 write!(f, "{}", value.clone().map(|label_id| label_id.with_db(self.db)))
             }
-            Statement::Label(Label { id }) => {
+            StatementInner::Label(Label { id }) => {
                 write!(f, "{}:", id.with_db(self.db))
             }
-            Statement::PushValues(values) => {
+            StatementInner::PushValues(values) => {
                 write!(f, "PushValues(")?;
                 write_comma_separated(
                     f,
@@ -105,7 +121,7 @@ impl<'db> std::fmt::Display for StatementWithDb<'db> {
 }
 
 /// Represents a single element that should be pushed onto the stack as part of
-/// [Statement::PushValues].
+/// [StatementInner::PushValues].
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PushValue {
     /// The variable id to push.

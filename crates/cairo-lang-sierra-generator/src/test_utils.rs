@@ -184,7 +184,7 @@ pub fn dummy_simple_branch(
     args: &[&str],
     target: usize,
 ) -> pre_sierra::Statement {
-    pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
+    pre_sierra::StatementInner::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id: dummy_concrete_lib_func_id(db, name),
         args: as_var_id_vec(args),
         branches: vec![
@@ -198,6 +198,7 @@ pub fn dummy_simple_branch(
             },
         ],
     }))
+    .into_statement_without_location()
 }
 
 /// Generates a dummy return statement.
@@ -207,7 +208,8 @@ pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::Statement {
 
 /// Generates a dummy label.
 pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
-    pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
+    pre_sierra::StatementInner::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
+        .into_statement_without_location()
 }
 
 /// Generates a dummy jump to label statement.
@@ -232,7 +234,7 @@ pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::La
     db.intern_label_id(LabelLongId { parent, id })
 }
 
-/// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.
+/// Generates a dummy [PushValues](pre_sierra::StatementInner::PushValues) statement.
 ///
 /// values is a list of pairs (src, dst) where src refers to a variable that should be pushed onto
 /// the stack, and dst is the variable after placing it on the stack.
@@ -253,7 +255,7 @@ pub fn dummy_push_values_ex(
 ) -> pre_sierra::Statement {
     let felt252_ty =
         db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
-    pre_sierra::Statement::PushValues(
+    pre_sierra::StatementInner::PushValues(
         values
             .iter()
             .map(|(src, dst, dup)| pre_sierra::PushValue {
@@ -264,6 +266,7 @@ pub fn dummy_push_values_ex(
             })
             .collect(),
     )
+    .into_statement_without_location()
 }
 
 /// Creates a test for a given function that reads test files.
