@@ -1,6 +1,6 @@
+use std::collections::BTreeSet;
 use std::fmt;
 
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
@@ -79,14 +79,14 @@ impl<'de> Deserialize<'de> for Cfg {
 /// Behaves like a multimap, i.e. it permits storing multiple values for the same key.
 /// This allows expressing, for example, the `feature` option that Rust/Cargo does.
 #[derive(Clone, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct CfgSet(Vec<Cfg>);
+pub struct CfgSet(BTreeSet<Cfg>);
 
 impl CfgSet {
     /// Creates an empty `CfgSet`.
     ///
     /// This function does not allocate.
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self(BTreeSet::new())
     }
 
     /// Returns the number of elements in the set.
@@ -101,15 +101,12 @@ impl CfgSet {
 
     /// Adds a value to the set.
     pub fn insert(&mut self, cfg: Cfg) {
-        self.0.push(cfg);
+        self.0.insert(cfg);
     }
 
     /// Combines two sets into new one.
     pub fn union(&self, other: &Self) -> Self {
-        let set_a: OrderedHashSet<_> = self.iter().cloned().collect();
-        let set_b: OrderedHashSet<_> = other.iter().cloned().collect();
-
-        Self(set_a.union(&set_b).cloned().collect())
+        Self(self.0.union(&other.0).cloned().collect())
     }
 
     /// An iterator visiting all elements in insertion order.
@@ -125,10 +122,7 @@ impl CfgSet {
     /// Returns `true` if the set is a subset of another,
     /// i.e., `other` contains at least all the values in `self`.
     pub fn is_subset(&self, other: &Self) -> bool {
-        let set_a: OrderedHashSet<_> = self.iter().collect();
-        let set_b: OrderedHashSet<_> = other.iter().collect();
-
-        set_a.is_subset(&set_b)
+        self.0.is_subset(&other.0)
     }
 
     /// Returns `true` if the set is a superset of another,
@@ -140,7 +134,7 @@ impl CfgSet {
 
 impl IntoIterator for CfgSet {
     type Item = Cfg;
-    type IntoIter = <Vec<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <BTreeSet<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -149,7 +143,7 @@ impl IntoIterator for CfgSet {
 
 impl<'a> IntoIterator for &'a CfgSet {
     type Item = &'a Cfg;
-    type IntoIter = <&'a Vec<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <&'a BTreeSet<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
@@ -213,7 +207,7 @@ mod tests {
 
         let json = serde_json::to_value(&cfg).unwrap();
 
-        assert_eq!(json, json!(["name", ["k", "a"], "name2", ["k", "b"]]));
+        assert_eq!(json, json!([["k", "a"], ["k", "b"], "name", "name2"]));
 
         let serde_cfg = serde_json::from_value::<CfgSet>(json).unwrap();
 
