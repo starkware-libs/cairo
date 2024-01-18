@@ -682,7 +682,7 @@ compiler_errors
 
 //! > sierra_code
 type u8 = u8;
-type const<u8, 5, 3> = const<u8, 5, 3>;
+type Const<u8, 5, 3> = Const<u8, 5, 3>;
 
 return ();
 
@@ -700,7 +700,7 @@ compiler_errors
 
 //! > sierra_code
 type u8 = u8;
-type const<u8, 256> = const<u8, 256>;
+type Const<u8, 256> = Const<u8, 256>;
 
 return ();
 
@@ -718,7 +718,7 @@ compiler_errors
 
 //! > sierra_code
 type ECPoint = ECPoint;
-type const<ECPoint, 5> = const<ECPoint, 5>;
+type Const<ECPoint, 5> = Const<ECPoint, 5>;
 
 return ();
 
@@ -736,14 +736,14 @@ compiler_errors
 
 //! > sierra_code
 type felt252 = felt252;
-type const<felt252, 5> = const<felt252, 5>;
+type Const<felt252, 5> = Const<felt252, 5>;
 type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
-type const<
+type Const<
     Tuple<felt252, felt252>,
-    const<felt252, 5>
-> = const<
+    Const<felt252, 5>
+> = Const<
     Tuple<felt252, felt252>,
-    const<felt252, 5>
+    Const<felt252, 5>
 >;
 return ();
 
@@ -762,16 +762,16 @@ compiler_errors
 //! > sierra_code
 type felt252 = felt252;
 type u8 = u8;
-type const<felt252, 5> = const<felt252, 5>;
+type Const<felt252, 5> = Const<felt252, 5>;
 type Tuple<u8, u8> = Struct<ut@Tuple, u8, u8>;
-type const<
+type Const<
     Tuple<u8, u8>,
-    const<felt252, 5>,
-    const<felt252, 5>
-> = const<
+    Const<felt252, 5>,
+    Const<felt252, 5>
+> = Const<
     Tuple<u8, u8>,
-    const<felt252, 5>,
-    const<felt252, 5>
+    Const<felt252, 5>,
+    Const<felt252, 5>
 >;
 return ();
 
