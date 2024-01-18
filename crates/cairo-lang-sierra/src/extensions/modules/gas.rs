@@ -150,11 +150,7 @@ pub enum CostTokenType {
     EcOp,
 }
 impl CostTokenType {
-    pub fn iter()
-    -> std::iter::Chain<std::slice::Iter<'static, Self>, std::slice::Iter<'static, Self>> {
-        chain!(Self::iter_precost(), [CostTokenType::Const].iter())
-    }
-
+    /// Iterates over the pre-cost token types.
     pub fn iter_precost() -> std::slice::Iter<'static, Self> {
         [
             CostTokenType::Pedersen,
@@ -163,6 +159,13 @@ impl CostTokenType {
             CostTokenType::EcOp,
         ]
         .iter()
+    }
+
+    /// Iterates over the tokens that are used in the Sierra->Casm compilation (pre-cost token types
+    /// and [CostTokenType::Const]).
+    pub fn iter_casm_tokens()
+    -> std::iter::Chain<std::slice::Iter<'static, Self>, std::slice::Iter<'static, Self>> {
+        chain!(Self::iter_precost(), [CostTokenType::Const].iter())
     }
 
     /// Returns the name of the token type, in snake_case.
