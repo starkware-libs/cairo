@@ -197,8 +197,11 @@ fn run_e2e_test(
         };
 
     // Compute the metadata.
-    let mut metadata_config =
-        MetadataComputationConfig { function_set_costs: enforced_costs, ..Default::default() };
+    let mut metadata_config = MetadataComputationConfig {
+        function_set_costs: enforced_costs,
+        compute_runtime_costs: params.metadata_computation,
+        ..Default::default()
+    };
     let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
     // Compile to casm.
