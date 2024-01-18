@@ -98,6 +98,9 @@ pub enum RunResultValue {
 pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     match token_type {
         CostTokenType::Const => 1,
+        CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+            panic!("Token type {:?} has no gas cost.", token_type)
+        }
         CostTokenType::Pedersen => 4130,
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
