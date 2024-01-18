@@ -216,11 +216,6 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(_) => Ok(false),
         }
     }
-<<<<<<< HEAD
-    /// Returns true if the type does not depend on any generics.
-||||||| b1f4afba8
-    // Returns true if the type does not depend on any generics.
-=======
     /// Returns the attribute if a type has the `#[unstable(feature: "some-string")]` attribute.
     pub fn unstable_attr(&self, db: &dyn SemanticGroup) -> Maybe<Option<Attribute>> {
         match self {
@@ -229,8 +224,7 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(_) => Ok(None),
         }
     }
-    // Returns true if the type does not depend on any generics.
->>>>>>> origin/main
+    /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         self.generic_args(db)
             .iter()
@@ -465,6 +459,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::GenericParameter(_) => false,
         semantic::TypeLongId::Var(_) => false,
         semantic::TypeLongId::Missing(_) => false,
+        semantic::TypeLongId::Coupon(_) => false,
     })
 }
 
