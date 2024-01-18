@@ -454,9 +454,11 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<SimpleEnum> {
         let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
         core::option::Option::Some(
-            if idx == 0 { SimpleEnum::A(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { SimpleEnum::B(core::serde::Serde::deserialize(ref serialized)?) }
-            else { return core::option::Option::None; }
+            match idx {
+                0 => SimpleEnum::A(core::serde::Serde::deserialize(ref serialized)?),
+                1 => SimpleEnum::B(core::serde::Serde::deserialize(ref serialized)?),
+                _ => { return core::option::Option::None; }
+            }
         )
     }
 }
@@ -467,22 +469,24 @@ starknet_derive:
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
-        if idx == 1 {
-            starknet::SyscallResult::Ok(
-                SimpleEnum::A(
-                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    SimpleEnum::A(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 2 {
-            starknet::SyscallResult::Ok(
-                SimpleEnum::B(
-                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    SimpleEnum::B(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
                 )
-            )
-        }
-        else {
-            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
         }
     }
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
@@ -500,22 +504,24 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     }
     fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
-        if idx == 1 {
-            starknet::SyscallResult::Ok(
-                SimpleEnum::A(
-                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    SimpleEnum::A(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 2 {
-            starknet::SyscallResult::Ok(
-                SimpleEnum::B(
-                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    SimpleEnum::B(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
                 )
-            )
-        }
-        else {
-            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
         }
     }
     #[inline(always)]
@@ -553,10 +559,12 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<EnumWithDefault> {
         let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
         core::option::Option::Some(
-            if idx == 0 { EnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { EnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { EnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?) }
-            else { return core::option::Option::None; }
+            match idx {
+                0 => EnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
+                1 => EnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
+                2 => EnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                _ => { return core::option::Option::None; }
+            }
         )
     }
 }
@@ -567,29 +575,31 @@ starknet_derive:
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
-        if idx == 1 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::A(
-                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::A(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 0 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::B(
-                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+            },
+            0 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::B(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 2 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::C(
-                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::C(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
                 )
-            )
-        }
-        else {
-            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            },
+             _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
         }
     }
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
@@ -611,29 +621,31 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     }
     fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
-        if idx == 1 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::A(
-                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::A(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 0 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::B(
-                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+            },
+            0 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::B(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
                 )
-            )
-        }
-        else if idx == 2 {
-            starknet::SyscallResult::Ok(
-                EnumWithDefault::C(
-                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    EnumWithDefault::C(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
                 )
-            )
-        }
-        else {
-            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            },
+             _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
         }
     }
     #[inline(always)]
@@ -675,10 +687,12 @@ impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<BadEnumWithDefault> {
         let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
         core::option::Option::Some(
-            if idx == 0 { BadEnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { BadEnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 2 { BadEnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?) }
-            else { return core::option::Option::None; }
+            match idx {
+                0 => BadEnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
+                1 => BadEnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
+                2 => BadEnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                _ => { return core::option::Option::None; }
+            }
         )
     }
 }

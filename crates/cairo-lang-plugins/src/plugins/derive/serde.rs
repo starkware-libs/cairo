@@ -53,16 +53,18 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 formatdoc! {"
                     let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
                     core::option::Option::Some(
-                        {}
-                        else {{ return core::option::Option::None; }}
+                        match idx {{
+                            {}
+                            _ => {{ return core::option::Option::None; }}
+                        }}
                     )",
                     variants.iter().enumerate().map(|(idx, variant)| {
                         format!(
-                            "if idx == {idx} {{ {ty}::{variant}(\
-                                core::serde::Serde::deserialize(ref serialized)?) }}",
+                            "{idx} => {ty}::{variant}(\
+                                core::serde::Serde::deserialize(ref serialized)?),",
                             variant=variant.name,
                         )
-                    }).join("\n    else ")
+                    }).join("\n        ")
                 }
             }
             TypeVariantInfo::Struct(members) => {
