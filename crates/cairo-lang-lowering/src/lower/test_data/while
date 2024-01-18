@@ -103,9 +103,9 @@ Final lowering:
 Parameters: v51: core::RangeCheck, v52: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
-  (v41: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
+  (v21: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v51, v52, v41) {
+  Match(match core::gas::withdraw_gas_all(v51, v52, v21) {
     Option::Some(v53, v54) => blk1,
     Option::None(v55, v56) => blk4,
   })
@@ -116,32 +116,32 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v28) => blk3,
+    IsZeroResult::NonZero(v43) => blk3,
   })
 
 blk2:
 Statements:
   (v15: ()) <- struct_construct()
-  (v42: (core::felt252, ())) <- struct_construct(v1, v15)
-  (v43: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v42)
+  (v27: (core::felt252, ())) <- struct_construct(v1, v15)
+  (v28: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v27)
 End:
-  Return(v53, v54, v43)
+  Return(v53, v54, v28)
 
 blk3:
 Statements:
   (v8: core::felt252) <- 1u
-  (v24: core::felt252) <- core::felt252_sub(v1, v8)
-  (v75: core::RangeCheck, v76: core::gas::GasBuiltin, v44: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v53, v54, v24)
+  (v31: core::felt252) <- core::felt252_sub(v1, v8)
+  (v75: core::RangeCheck, v76: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v53, v54, v31)
 End:
-  Return(v75, v76, v44)
+  Return(v75, v76, v22)
 
 blk4:
 Statements:
-  (v36: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v37: core::felt252) <- 375233589013918064796019u
-  (v39: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v36, v37)
-  (v38: core::panics::Panic) <- struct_construct()
-  (v40: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v38, v39)
-  (v49: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v40)
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v17: core::felt252) <- 375233589013918064796019u
+  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v17)
+  (v18: core::panics::Panic) <- struct_construct()
+  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v19)
+  (v29: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v20)
 End:
-  Return(v55, v56, v49)
+  Return(v55, v56, v29)

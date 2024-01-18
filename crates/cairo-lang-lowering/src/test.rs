@@ -145,15 +145,16 @@ fn test_function_lowering_phases(
         (*stage)(&mut curr_state);
         add_stage_state(name, &curr_state);
     };
-    apply_stage("after_inlining", &|lowered| apply_inlining(&db, function_id, lowered).unwrap());
+
     apply_stage("after_add_withdraw_gas", &|lowered| {
         add_withdraw_gas(&db, function_id, lowered).unwrap()
     });
     apply_stage("after_lower_panics", &|lowered| {
         *lowered = lower_panics(&db, function_id, lowered).unwrap();
     });
-    apply_stage("after_return_optimization", &|lowered| return_optimization(&db, lowered));
     apply_stage("after_add_destructs", &|lowered| add_destructs(&db, function_id, lowered));
+    apply_stage("after_inlining", &|lowered| apply_inlining(&db, function_id, lowered).unwrap());
+    apply_stage("after_return_optimization", &|lowered| return_optimization(&db, lowered));
     apply_stage("after_optimize_remappings1", &optimize_remappings);
     apply_stage("after_reorder_statements1", &|lowered| reorder_statements(&db, lowered));
     apply_stage("after_branch_inversion", &|lowered| branch_inversion(&db, lowered));
