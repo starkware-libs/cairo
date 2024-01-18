@@ -121,7 +121,9 @@ fn build_redeposit_gas(
             .into_iter(),
         ));
     }
-    if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
+    if !CostTokenType::iter_casm_tokens()
+        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
+    {
         return Err(InvocationError::UnknownVariableData);
     }
     let mut casm_builder = CasmBuilder::default();
@@ -218,7 +220,9 @@ fn add_get_total_requested_count_code(
     builtin_cost: Var,
 ) -> Result<(i64, Var), InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
+    if !CostTokenType::iter_casm_tokens()
+        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
+    {
         return Err(InvocationError::UnknownVariableData);
     }
     let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];

@@ -216,7 +216,7 @@ fn calc_gas_info_inner<
         .map(|f| f.entry_point)
         .collect();
     for (func_id, cost_terms) in function_set_costs {
-        for token_type in CostTokenType::iter() {
+        for token_type in CostTokenType::iter_casm_tokens() {
             equations[token_type].push(
                 Expr::from_var(Var::StatementFuture(
                     registry.get_function(&func_id)?.entry_point,

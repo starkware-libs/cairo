@@ -68,7 +68,7 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
             let precost = precost?;
             let postcost = postcost?;
             Some(
-                CostTokenType::iter()
+                CostTokenType::iter_casm_tokens()
                     .map(|token| {
                         (
                             *token,
