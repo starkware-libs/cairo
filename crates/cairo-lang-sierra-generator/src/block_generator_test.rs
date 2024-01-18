@@ -89,7 +89,7 @@ fn block_generator_test(
 
     let statements = generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
     for statement in &statements {
-        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string(db));
+        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).statement.to_string(db));
         expected_sierra_code.push('\n');
     }
 
