@@ -4958,7 +4958,7 @@ array_new<felt252>() -> ([4]); // 4598
 array_new<felt252>() -> ([5]); // 4599
 snapshot_take<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([3]) -> ([6], [7]); // 4600
 drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([6]) -> (); // 4601
-enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([7]) { fallthrough([8]) 4638([9]) 4643([10]) }; // 4602
+enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([7]) { fallthrough([8]) 4637([9]) 4642([10]) }; // 4602
 branch_align() -> (); // 4603
 felt252_const<1315179652631394294064859285368582092817875666364334119489007832181357818971>() -> ([11]); // 4604
 store_temp<felt252>([11]) -> ([11]); // 4605
@@ -4966,149 +4966,147 @@ array_append<felt252>([4], [11]) -> ([12]); // 4606
 store_temp<cairo_level_tests::components::erc20::erc20::Event>([8]) -> ([8]); // 4607
 store_temp<Array<felt252>>([12]) -> ([12]); // 4608
 store_temp<Array<felt252>>([5]) -> ([5]); // 4609
-function_call<user@cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data>([8], [12], [5]) -> ([13], [14], [15]); // 4610
-drop<Unit>([15]) -> (); // 4611
-snapshot_take<Array<felt252>>([13]) -> ([16], [17]); // 4612
-drop<Array<felt252>>([16]) -> (); // 4613
-snapshot_take<Array<felt252>>([14]) -> ([18], [19]); // 4614
-drop<Array<felt252>>([18]) -> (); // 4615
-struct_construct<core::array::Span::<core::felt252>>([17]) -> ([20]); // 4616
-struct_construct<core::array::Span::<core::felt252>>([19]) -> ([21]); // 4617
+function_call<user@cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data>([8], [12], [5]) -> ([13], [14]); // 4610
+snapshot_take<Array<felt252>>([13]) -> ([15], [16]); // 4611
+drop<Array<felt252>>([15]) -> (); // 4612
+snapshot_take<Array<felt252>>([14]) -> ([17], [18]); // 4613
+drop<Array<felt252>>([17]) -> (); // 4614
+struct_construct<core::array::Span::<core::felt252>>([16]) -> ([19]); // 4615
+struct_construct<core::array::Span::<core::felt252>>([18]) -> ([20]); // 4616
+store_temp<core::array::Span::<core::felt252>>([19]) -> ([19]); // 4617
 store_temp<core::array::Span::<core::felt252>>([20]) -> ([20]); // 4618
-store_temp<core::array::Span::<core::felt252>>([21]) -> ([21]); // 4619
-emit_event_syscall([0], [1], [20], [21]) { fallthrough([22], [23]) 4629([24], [25], [26]) }; // 4620
-branch_align() -> (); // 4621
-struct_construct<Unit>() -> ([27]); // 4622
-struct_construct<Tuple<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, Unit>>([2], [27]) -> ([28]); // 4623
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>, 0>([28]) -> ([29]); // 4624
-store_temp<GasBuiltin>([22]) -> ([22]); // 4625
-store_temp<System>([23]) -> ([23]); // 4626
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([29]) -> ([29]); // 4627
-return([22], [23], [29]); // 4628
-branch_align() -> (); // 4629
-drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>([2]) -> (); // 4630
-struct_construct<core::panics::Panic>() -> ([30]); // 4631
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([30], [26]) -> ([31]); // 4632
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>, 1>([31]) -> ([32]); // 4633
-store_temp<GasBuiltin>([24]) -> ([24]); // 4634
-store_temp<System>([25]) -> ([25]); // 4635
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([32]) -> ([32]); // 4636
-return([24], [25], [32]); // 4637
-branch_align() -> (); // 4638
-felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382>() -> ([33]); // 4639
-store_temp<felt252>([33]) -> ([33]); // 4640
-array_append<felt252>([4], [33]) -> ([34]); // 4641
-enum_match<cairo_level_tests::components::ownable::ownable::Event>([9]) { }; // 4642
-branch_align() -> (); // 4643
-felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293>() -> ([35]); // 4644
-store_temp<felt252>([35]) -> ([35]); // 4645
-array_append<felt252>([4], [35]) -> ([36]); // 4646
-enum_match<cairo_level_tests::components::mintable::mintable::Event>([10]) { }; // 4647
-enum_init<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, 0>([3]) -> ([4]); // 4648
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([5]); // 4649
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([6]); // 4650
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([7]); // 4651
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([8]); // 4652
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([9]); // 4653
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([10]); // 4654
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([5], [6], [7], [8], [9], [10]) -> ([11]); // 4655
-struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([12]); // 4656
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([12]) -> ([13]); // 4657
-struct_construct<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>() -> ([14]); // 4658
-struct_construct<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>([11], [13], [14]) -> ([15]); // 4659
-store_temp<GasBuiltin>([0]) -> ([0]); // 4660
-store_temp<System>([1]) -> ([1]); // 4661
-store_temp<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([4]) -> ([4]); // 4662
-function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>>>([0], [1], [15], [4]) -> ([16], [17], [18]); // 4663
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([18]) { fallthrough([19]) 4674([20]) }; // 4664
-branch_align() -> (); // 4665
-drop<Tuple<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, Unit>>([19]) -> (); // 4666
-struct_construct<Unit>() -> ([21]); // 4667
-struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>([2], [21]) -> ([22]); // 4668
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>([22]) -> ([23]); // 4669
-store_temp<GasBuiltin>([16]) -> ([16]); // 4670
-store_temp<System>([17]) -> ([17]); // 4671
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>([23]) -> ([23]); // 4672
-return([16], [17], [23]); // 4673
-branch_align() -> (); // 4674
-drop<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([2]) -> (); // 4675
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>([20]) -> ([24]); // 4676
-store_temp<GasBuiltin>([16]) -> ([16]); // 4677
-store_temp<System>([17]) -> ([17]); // 4678
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>([24]) -> ([24]); // 4679
-return([16], [17], [24]); // 4680
-enum_match<cairo_level_tests::components::erc20::erc20::Event>([0]) { fallthrough([3]) 4717([4]) }; // 4681
-branch_align() -> (); // 4682
-felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>() -> ([5]); // 4683
-store_temp<felt252>([5]) -> ([5]); // 4684
-array_append<felt252>([1], [5]) -> ([6]); // 4685
-dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([3], [7]); // 4686
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([7]) -> ([8], [9], [10]); // 4687
-drop<ContractAddress>([9]) -> (); // 4688
-drop<core::integer::u256>([10]) -> (); // 4689
-rename<ContractAddress>([8]) -> ([11]); // 4690
-contract_address_to_felt252([11]) -> ([12]); // 4691
-array_append<felt252>([2], [12]) -> ([13]); // 4692
-dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([3], [14]); // 4693
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([14]) -> ([15], [16], [17]); // 4694
-drop<ContractAddress>([15]) -> (); // 4695
-drop<core::integer::u256>([17]) -> (); // 4696
-rename<ContractAddress>([16]) -> ([18]); // 4697
-contract_address_to_felt252([18]) -> ([19]); // 4698
-array_append<felt252>([13], [19]) -> ([20]); // 4699
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([21], [22], [23]); // 4700
-drop<ContractAddress>([21]) -> (); // 4701
-drop<ContractAddress>([22]) -> (); // 4702
-dup<core::integer::u256>([23]) -> ([23], [24]); // 4703
-struct_deconstruct<core::integer::u256>([24]) -> ([25], [26]); // 4704
-drop<u128>([26]) -> (); // 4705
-rename<u128>([25]) -> ([27]); // 4706
-u128_to_felt252([27]) -> ([28]); // 4707
-array_append<felt252>([20], [28]) -> ([29]); // 4708
-struct_deconstruct<core::integer::u256>([23]) -> ([30], [31]); // 4709
-drop<u128>([30]) -> (); // 4710
-rename<u128>([31]) -> ([32]); // 4711
-u128_to_felt252([32]) -> ([33]); // 4712
-array_append<felt252>([29], [33]) -> ([34]); // 4713
-store_temp<Array<felt252>>([6]) -> ([35]); // 4714
-store_temp<Array<felt252>>([34]) -> ([36]); // 4715
-jump() { 4751() }; // 4716
-branch_align() -> (); // 4717
-felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>() -> ([37]); // 4718
-store_temp<felt252>([37]) -> ([37]); // 4719
-array_append<felt252>([1], [37]) -> ([38]); // 4720
-dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([4], [39]); // 4721
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([39]) -> ([40], [41], [42]); // 4722
-drop<ContractAddress>([41]) -> (); // 4723
-drop<core::integer::u256>([42]) -> (); // 4724
-rename<ContractAddress>([40]) -> ([43]); // 4725
-contract_address_to_felt252([43]) -> ([44]); // 4726
-array_append<felt252>([2], [44]) -> ([45]); // 4727
-dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([4], [46]); // 4728
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([46]) -> ([47], [48], [49]); // 4729
-drop<ContractAddress>([47]) -> (); // 4730
-drop<core::integer::u256>([49]) -> (); // 4731
-rename<ContractAddress>([48]) -> ([50]); // 4732
-contract_address_to_felt252([50]) -> ([51]); // 4733
-array_append<felt252>([45], [51]) -> ([52]); // 4734
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([53], [54], [55]); // 4735
-drop<ContractAddress>([53]) -> (); // 4736
-drop<ContractAddress>([54]) -> (); // 4737
-dup<core::integer::u256>([55]) -> ([55], [56]); // 4738
-struct_deconstruct<core::integer::u256>([56]) -> ([57], [58]); // 4739
-drop<u128>([58]) -> (); // 4740
-rename<u128>([57]) -> ([59]); // 4741
-u128_to_felt252([59]) -> ([60]); // 4742
-array_append<felt252>([52], [60]) -> ([61]); // 4743
-struct_deconstruct<core::integer::u256>([55]) -> ([62], [63]); // 4744
-drop<u128>([62]) -> (); // 4745
-rename<u128>([63]) -> ([64]); // 4746
-u128_to_felt252([64]) -> ([65]); // 4747
-array_append<felt252>([61], [65]) -> ([66]); // 4748
-store_temp<Array<felt252>>([38]) -> ([35]); // 4749
-store_temp<Array<felt252>>([66]) -> ([36]); // 4750
-struct_construct<Unit>() -> ([67]); // 4751
-return([35], [36], [67]); // 4752
+emit_event_syscall([0], [1], [19], [20]) { fallthrough([21], [22]) 4628([23], [24], [25]) }; // 4619
+branch_align() -> (); // 4620
+struct_construct<Unit>() -> ([26]); // 4621
+struct_construct<Tuple<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, Unit>>([2], [26]) -> ([27]); // 4622
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>, 0>([27]) -> ([28]); // 4623
+store_temp<GasBuiltin>([21]) -> ([21]); // 4624
+store_temp<System>([22]) -> ([22]); // 4625
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([28]) -> ([28]); // 4626
+return([21], [22], [28]); // 4627
+branch_align() -> (); // 4628
+drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>([2]) -> (); // 4629
+struct_construct<core::panics::Panic>() -> ([29]); // 4630
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([29], [25]) -> ([30]); // 4631
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>, 1>([30]) -> ([31]); // 4632
+store_temp<GasBuiltin>([23]) -> ([23]); // 4633
+store_temp<System>([24]) -> ([24]); // 4634
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([31]) -> ([31]); // 4635
+return([23], [24], [31]); // 4636
+branch_align() -> (); // 4637
+felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382>() -> ([32]); // 4638
+store_temp<felt252>([32]) -> ([32]); // 4639
+array_append<felt252>([4], [32]) -> ([33]); // 4640
+enum_match<cairo_level_tests::components::ownable::ownable::Event>([9]) { }; // 4641
+branch_align() -> (); // 4642
+felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293>() -> ([34]); // 4643
+store_temp<felt252>([34]) -> ([34]); // 4644
+array_append<felt252>([4], [34]) -> ([35]); // 4645
+enum_match<cairo_level_tests::components::mintable::mintable::Event>([10]) { }; // 4646
+enum_init<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, 0>([3]) -> ([4]); // 4647
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([5]); // 4648
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([6]); // 4649
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([7]); // 4650
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([8]); // 4651
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([9]); // 4652
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([10]); // 4653
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([5], [6], [7], [8], [9], [10]) -> ([11]); // 4654
+struct_construct<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState>() -> ([12]); // 4655
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([12]) -> ([13]); // 4656
+struct_construct<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>() -> ([14]); // 4657
+struct_construct<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>([11], [13], [14]) -> ([15]); // 4658
+store_temp<GasBuiltin>([0]) -> ([0]); // 4659
+store_temp<System>([1]) -> ([1]); // 4660
+store_temp<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>([4]) -> ([4]); // 4661
+function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>>>([0], [1], [15], [4]) -> ([16], [17], [18]); // 4662
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>>([18]) { fallthrough([19]) 4673([20]) }; // 4663
+branch_align() -> (); // 4664
+drop<Tuple<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, Unit>>([19]) -> (); // 4665
+struct_construct<Unit>() -> ([21]); // 4666
+struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>([2], [21]) -> ([22]); // 4667
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>([22]) -> ([23]); // 4668
+store_temp<GasBuiltin>([16]) -> ([16]); // 4669
+store_temp<System>([17]) -> ([17]); // 4670
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>([23]) -> ([23]); // 4671
+return([16], [17], [23]); // 4672
+branch_align() -> (); // 4673
+drop<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([2]) -> (); // 4674
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>([20]) -> ([24]); // 4675
+store_temp<GasBuiltin>([16]) -> ([16]); // 4676
+store_temp<System>([17]) -> ([17]); // 4677
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>([24]) -> ([24]); // 4678
+return([16], [17], [24]); // 4679
+enum_match<cairo_level_tests::components::erc20::erc20::Event>([0]) { fallthrough([3]) 4716([4]) }; // 4680
+branch_align() -> (); // 4681
+felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>() -> ([5]); // 4682
+store_temp<felt252>([5]) -> ([5]); // 4683
+array_append<felt252>([1], [5]) -> ([6]); // 4684
+dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([3], [7]); // 4685
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([7]) -> ([8], [9], [10]); // 4686
+drop<ContractAddress>([9]) -> (); // 4687
+drop<core::integer::u256>([10]) -> (); // 4688
+rename<ContractAddress>([8]) -> ([11]); // 4689
+contract_address_to_felt252([11]) -> ([12]); // 4690
+array_append<felt252>([2], [12]) -> ([13]); // 4691
+dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([3], [14]); // 4692
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([14]) -> ([15], [16], [17]); // 4693
+drop<ContractAddress>([15]) -> (); // 4694
+drop<core::integer::u256>([17]) -> (); // 4695
+rename<ContractAddress>([16]) -> ([18]); // 4696
+contract_address_to_felt252([18]) -> ([19]); // 4697
+array_append<felt252>([13], [19]) -> ([20]); // 4698
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([21], [22], [23]); // 4699
+drop<ContractAddress>([21]) -> (); // 4700
+drop<ContractAddress>([22]) -> (); // 4701
+dup<core::integer::u256>([23]) -> ([23], [24]); // 4702
+struct_deconstruct<core::integer::u256>([24]) -> ([25], [26]); // 4703
+drop<u128>([26]) -> (); // 4704
+rename<u128>([25]) -> ([27]); // 4705
+u128_to_felt252([27]) -> ([28]); // 4706
+array_append<felt252>([20], [28]) -> ([29]); // 4707
+struct_deconstruct<core::integer::u256>([23]) -> ([30], [31]); // 4708
+drop<u128>([30]) -> (); // 4709
+rename<u128>([31]) -> ([32]); // 4710
+u128_to_felt252([32]) -> ([33]); // 4711
+array_append<felt252>([29], [33]) -> ([34]); // 4712
+store_temp<Array<felt252>>([6]) -> ([6]); // 4713
+store_temp<Array<felt252>>([34]) -> ([34]); // 4714
+return([6], [34]); // 4715
+branch_align() -> (); // 4716
+felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>() -> ([35]); // 4717
+store_temp<felt252>([35]) -> ([35]); // 4718
+array_append<felt252>([1], [35]) -> ([36]); // 4719
+dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([4], [37]); // 4720
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([37]) -> ([38], [39], [40]); // 4721
+drop<ContractAddress>([39]) -> (); // 4722
+drop<core::integer::u256>([40]) -> (); // 4723
+rename<ContractAddress>([38]) -> ([41]); // 4724
+contract_address_to_felt252([41]) -> ([42]); // 4725
+array_append<felt252>([2], [42]) -> ([43]); // 4726
+dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([4], [44]); // 4727
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([44]) -> ([45], [46], [47]); // 4728
+drop<ContractAddress>([45]) -> (); // 4729
+drop<core::integer::u256>([47]) -> (); // 4730
+rename<ContractAddress>([46]) -> ([48]); // 4731
+contract_address_to_felt252([48]) -> ([49]); // 4732
+array_append<felt252>([43], [49]) -> ([50]); // 4733
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([4]) -> ([51], [52], [53]); // 4734
+drop<ContractAddress>([51]) -> (); // 4735
+drop<ContractAddress>([52]) -> (); // 4736
+dup<core::integer::u256>([53]) -> ([53], [54]); // 4737
+struct_deconstruct<core::integer::u256>([54]) -> ([55], [56]); // 4738
+drop<u128>([56]) -> (); // 4739
+rename<u128>([55]) -> ([57]); // 4740
+u128_to_felt252([57]) -> ([58]); // 4741
+array_append<felt252>([50], [58]) -> ([59]); // 4742
+struct_deconstruct<core::integer::u256>([53]) -> ([60], [61]); // 4743
+drop<u128>([60]) -> (); // 4744
+rename<u128>([61]) -> ([62]); // 4745
+u128_to_felt252([62]) -> ([63]); // 4746
+array_append<felt252>([59], [63]) -> ([64]); // 4747
+store_temp<Array<felt252>>([36]) -> ([36]); // 4748
+store_temp<Array<felt252>>([64]) -> ([64]); // 4749
+return([36], [64]); // 4750
 
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::__wrapper__ImplGetSupply__get_total_supply_plus_1@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>@105([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -5151,5 +5149,5 @@ cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests
 core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write@4503([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, [5]: Tuple<ContractAddress, ContractAddress>, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, ())>);
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::ApprovalEvent, cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent>@4564([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, [3]: cairo_level_tests::components::erc20::erc20::ApprovalEvent) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>);
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>>@4598([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, [3]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, ())>);
-cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::Event, core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>>@4648([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, [3]: cairo_level_tests::components::erc20::erc20::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>);
-cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data@4681([0]: cairo_level_tests::components::erc20::erc20::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::Event, core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>>@4647([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, [3]: cairo_level_tests::components::erc20::erc20::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>);
+cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data@4680([0]: cairo_level_tests::components::erc20::erc20::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>);

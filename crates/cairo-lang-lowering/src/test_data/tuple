@@ -33,6 +33,5 @@ Statements:
   (v7: core::felt252) <- 2u
   (v8: (core::felt252, core::felt252)) <- struct_construct(v6, v7)
   (v9: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v8)
-  (v12: ()) <- struct_construct()
 End:
-  Return(v12)
+  Return()

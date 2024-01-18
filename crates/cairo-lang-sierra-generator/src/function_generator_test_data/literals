@@ -30,13 +30,10 @@ disable_ap_tracking() -> ()
 felt252_const<5>() -> ([0])
 dup<felt252>([0]) -> ([0], [1])
 store_temp<felt252>([1]) -> ([1])
-function_call<user@test::bar>([1]) -> ([2])
-drop<Unit>([2]) -> ()
+function_call<user@test::bar>([1]) -> ()
 store_temp<felt252>([0]) -> ([0])
-function_call<user@test::bar>([0]) -> ([3])
-drop<Unit>([3]) -> ()
-struct_construct<Unit>() -> ([4])
-return([4])
+function_call<user@test::bar>([0]) -> ()
+return()
 
 //! > comment
 When fixing this test, Make sure that the added dups are on the const, and not the temps.

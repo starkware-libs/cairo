@@ -77,6 +77,5 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
 End:
-  Return(v1)
+  Return()

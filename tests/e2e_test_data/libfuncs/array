@@ -54,19 +54,16 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_append<felt252> = array_append<felt252>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 
 array_append<felt252>([0], [1]) -> ([2]); // 0
-struct_construct<Unit>() -> ([3]); // 1
-store_temp<Array<felt252>>([2]) -> ([2]); // 2
-return([2], [3]); // 3
+store_temp<Array<felt252>>([2]) -> ([2]); // 1
+return([2]); // 2
 
-test::foo@0([0]: Array<felt252>, [1]: felt252) -> (Array<felt252>, Unit);
+test::foo@0([0]: Array<felt252>, [1]: felt252) -> (Array<felt252>);
 
 //! > ==========================================================================
 
@@ -93,20 +90,17 @@ test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_append<felt252> = array_append<felt252>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 
 array_append<felt252>([0], [1]) -> ([3]); // 0
 array_append<felt252>([3], [2]) -> ([4]); // 1
-struct_construct<Unit>() -> ([5]); // 2
-store_temp<Array<felt252>>([4]) -> ([4]); // 3
-return([4], [5]); // 4
+store_temp<Array<felt252>>([4]) -> ([4]); // 2
+return([4]); // 3
 
-test::foo@0([0]: Array<felt252>, [1]: felt252, [2]: felt252) -> (Array<felt252>, Unit);
+test::foo@0([0]: Array<felt252>, [1]: felt252, [2]: felt252) -> (Array<felt252>);
 
 //! > ==========================================================================
 

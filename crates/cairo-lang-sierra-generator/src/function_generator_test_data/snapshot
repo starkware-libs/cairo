@@ -47,9 +47,8 @@ drop<felt252>([7]) -> ()
 felt252_const<6>() -> ([8])
 store_temp<felt252>([8]) -> ([8])
 array_append<felt252>([4], [8]) -> ([9])
-struct_construct<Unit>() -> ([10])
 store_temp<Array<felt252>>([9]) -> ([9])
-return([9], [10])
+return([9])
 
 //! > ==========================================================================
 
