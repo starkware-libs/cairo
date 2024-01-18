@@ -76,7 +76,6 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr32]()
-  (v1: ()) <- struct_construct()
+  () <- test::foo[expr32]()
 End:
-  Return(v1)
+  Return()

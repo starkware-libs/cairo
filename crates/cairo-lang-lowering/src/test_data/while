@@ -264,7 +264,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0u
-  (v2: core::felt252, v1: ()) <- test::foo[expr10](v0)
+  (v2: core::felt252) <- test::foo[expr10](v0)
   (v3: core::felt252) <- 1u
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
@@ -305,7 +305,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0u
-  (v2: core::felt252, v1: ()) <- test::foo[expr8](v0)
+  (v2: core::felt252) <- test::foo[expr8](v0)
   (v3: core::felt252) <- 1u
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
@@ -410,7 +410,7 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0u
-  (v3: core::felt252, v2: ()) <- test::foo[expr8](v0, v1)
+  (v3: core::felt252) <- test::foo[expr8](v0, v1)
   (v4: core::felt252) <- 1u
   (v5: core::felt252) <- core::Felt252Add::add(v3, v4)
 End:

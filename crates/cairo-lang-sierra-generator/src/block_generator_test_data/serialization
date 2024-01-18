@@ -42,19 +42,15 @@ enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label
 branch_align() -> ()
 array_append<felt252>([12], [10]) -> ([13])
 PushValues([13]: Array<felt252>, [6]: Array<felt252>) -> ([13], [6])
-function_call<user@test::serialize_array_felt_helper>([13], [6]) -> ([14], [15])
-drop<Unit>([15]) -> ()
-PushValues([14]: Array<felt252>) -> ([16])
-jump() { label_test::serialize_array_felt_helper::5() }
+function_call<user@test::serialize_array_felt_helper>([13], [6]) -> ([14])
+PushValues([14]: Array<felt252>) -> ([14])
+return([14])
 label_test::serialize_array_felt_helper::3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
 drop<Array<felt252>>([6]) -> ()
-PushValues([12]: Array<felt252>) -> ([16])
-label_test::serialize_array_felt_helper::5:
-struct_construct<Unit>() -> ([17])
-PushValues([16]: Array<felt252>, [17]: Unit) -> ([16], [17])
-return([16], [17])
+PushValues([12]: Array<felt252>) -> ([12])
+return([12])
 label_test::serialize_array_felt_helper::4:
 label_test::serialize_array_felt_helper::1:
 
@@ -93,17 +89,11 @@ End:
 blk4:
 Statements:
   (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v4)
-  (v11: core::array::Array::<core::felt252>, v10: ()) <- test::serialize_array_felt_helper(v28, v19)
+  (v11: core::array::Array::<core::felt252>) <- test::serialize_array_felt_helper(v28, v19)
 End:
-  Goto(blk6, {v11 -> v12})
+  Return(v11)
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {v0 -> v12})
-
-blk6:
-Statements:
-  (v13: ()) <- struct_construct()
-End:
-  Return(v12, v13)
+  Return(v0)

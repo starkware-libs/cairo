@@ -708,9 +708,8 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
 End:
-  Return(v1)
+  Return()
 
 
 Generated lowering for source location:
@@ -729,9 +728,8 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
 End:
-  Return(v0)
+  Return()
 
 //! > ==========================================================================
 

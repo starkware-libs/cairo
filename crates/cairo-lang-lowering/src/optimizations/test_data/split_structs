@@ -513,9 +513,8 @@ End:
 
 blk3:
 Statements:
-  (v7: ()) <- struct_construct()
 End:
-  Return(v7)
+  Return()
 
 //! > after
 Parameters: v0: core::felt252
@@ -542,9 +541,8 @@ End:
 
 blk3:
 Statements:
-  (v7: ()) <- struct_construct()
 End:
-  Return(v7)
+  Return()
 
 //! > ==========================================================================
 
