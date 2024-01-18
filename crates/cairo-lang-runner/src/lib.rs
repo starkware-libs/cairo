@@ -451,11 +451,7 @@ impl SierraCasmRunner {
             .funcs
             .iter()
             .find(|f| {
-                if let Some(name) = &f.id.debug_name {
-                    name.ends_with(name_suffix)
-                } else {
-                    false
-                }
+                if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
             })
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }

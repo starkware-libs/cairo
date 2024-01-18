@@ -2190,11 +2190,7 @@ impl FormattedItem {
     }
     /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
     pub fn quote_if_string(self) -> String {
-        if self.is_string {
-            format!("\"{}\"", self.item)
-        } else {
-            self.item
-        }
+        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
     }
 }
 

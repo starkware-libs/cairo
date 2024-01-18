@@ -104,7 +104,8 @@ impl CairoProgram {
         AssembledCairoProgram { bytecode, hints }
     }
 
-    /// Creates an assembled representation of the program preceded by `header` and followed by `footer`.
+    /// Creates an assembled representation of the program preceded by `header` and followed by
+    /// `footer`.
     pub fn assemble_ex(
         &mut self,
         header: Vec<Instruction>,
