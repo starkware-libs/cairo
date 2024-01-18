@@ -17,6 +17,7 @@ use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCost
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
@@ -138,43 +139,30 @@ impl BranchChanges {
             !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
         let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
         let mut new_stack_size = stack_base;
-        Self {
-            refs: zip_eq(expressions, &branch_signature.vars)
-                .enumerate()
-                .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
-                    validate_output_var_refs(ref_info, &expression);
-                    let stack_idx = calc_output_var_stack_idx(
-                        ref_info,
-                        stack_base,
-                        clear_old_stack,
-                        &param_ref,
-                    );
-                    if let Some(stack_idx) = stack_idx {
-                        new_stack_size = new_stack_size.max(stack_idx + 1);
-                    }
-                    let introduction_point =
-                        if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
-                            OutputReferenceValueIntroductionPoint::Existing(
-                                param_ref(*param_idx).introduction_point.clone(),
-                            )
-                        } else {
-                            // Marking the statement as unknown to be fixed later.
-                            OutputReferenceValueIntroductionPoint::New(output_idx)
-                        };
-                    OutputReferenceValue {
-                        expression,
-                        ty: ty.clone(),
-                        stack_idx,
-                        introduction_point,
-                    }
-                })
-                .collect(),
-            ap_change,
-            ap_tracking_change,
-            gas_change,
-            clear_old_stack,
-            new_stack_size,
-        }
+
+        let refs: Vec<_> = zip_eq(expressions, &branch_signature.vars)
+            .enumerate()
+            .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
+                validate_output_var_refs(ref_info, &expression);
+                let stack_idx =
+                    calc_output_var_stack_idx(ref_info, stack_base, clear_old_stack, &param_ref);
+                if let Some(stack_idx) = stack_idx {
+                    new_stack_size = new_stack_size.max(stack_idx + 1);
+                }
+                let introduction_point =
+                    if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
+                        OutputReferenceValueIntroductionPoint::Existing(
+                            param_ref(*param_idx).introduction_point.clone(),
+                        )
+                    } else {
+                        // Marking the statement as unknown to be fixed later.
+                        OutputReferenceValueIntroductionPoint::New(output_idx)
+                    };
+                OutputReferenceValue { expression, ty: ty.clone(), stack_idx, introduction_point }
+            })
+            .collect();
+        validate_stack_top(ap_change, branch_signature, &refs);
+        Self { refs, ap_change, ap_tracking_change, gas_change, clear_old_stack, new_stack_size }
     }
 }
 
@@ -206,6 +194,53 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
         }
         OutputVarReferenceInfo::PartialParam { .. } | OutputVarReferenceInfo::Deferred(_) => {}
     };
+}
+
+/// Validates that the variables that are now on the top of the stack are contiguous and that if the
+/// stack was not broken the size of all the variables is consistent with the ap change.
+fn validate_stack_top(
+    ap_change: ApChange,
+    branch_signature: &BranchSignature,
+    refs: &[OutputReferenceValue],
+) {
+    // A mapping for the new temp vars allocated on the top of the stack from their index on the
+    // top of the stack to their index in the `refs` vector.
+    let stack_top_vars = UnorderedHashMap::<usize, usize>::from_iter(
+        branch_signature.vars.iter().enumerate().filter_map(|(arg_idx, var)| {
+            if let OutputVarReferenceInfo::NewTempVar { idx: stack_idx } = var.ref_info {
+                Some((stack_idx, arg_idx))
+            } else {
+                None
+            }
+        }),
+    );
+    let mut prev_ap_offset = None;
+    let mut stack_top_size = 0;
+    for i in 0..stack_top_vars.len() {
+        let Some(arg) = stack_top_vars.get(&i) else {
+            panic!("Missing top stack var #{i} out of {}.", stack_top_vars.len());
+        };
+        let cells = &refs[*arg].expression.cells;
+        stack_top_size += cells.len();
+        for cell in cells {
+            let ap_offset = match cell {
+                CellExpression::Deref(CellRef { register: Register::AP, offset }) => *offset,
+                _ => unreachable!("Tested in `validate_output_var_refs`."),
+            };
+            if let Some(prev_ap_offset) = prev_ap_offset {
+                assert_eq!(ap_offset, prev_ap_offset + 1, "Top stack vars are not contiguous.");
+            }
+            prev_ap_offset = Some(ap_offset);
+        }
+    }
+    if matches!(branch_signature.ap_change, SierraApChange::Known { new_vars_only: true }) {
+        assert_eq!(
+            ap_change,
+            ApChange::Known(stack_top_size),
+            "New tempvar variables are not contiguous with the old stack."
+        );
+    }
+    // TODO(orizi): Add assertion for the non-new_vars_only case, that it is optimal.
 }
 
 /// Calculates the continuous stack index for an output var of a branch.
@@ -518,7 +553,7 @@ impl CompiledInvocationBuilder<'_> {
         );
         let relocations = chain!(pre_instructions.relocations, branch_relocations).collect();
         let output_expressions =
-            branches.into_iter().zip_eq(branch_extractions).map(|((state, _), (_, vars, _))| {
+            zip_eq(branches, branch_extractions).map(|((state, _), (_, vars, _))| {
                 vars.iter().map(move |var_cells| ReferenceExpression {
                     cells: var_cells.iter().map(|cell| state.get_adjusted(*cell)).collect(),
                 })
