@@ -20,6 +20,7 @@ use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::inline::get_inline_diagnostics;
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::config::OptimizationConfig;
+use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
 use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
@@ -376,6 +377,7 @@ fn concrete_function_with_body_postpanic_lowered(
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     add_destructs(db, function, &mut lowered);
+    scrub_units(db, &mut lowered);
 
     Ok(Arc::new(lowered))
 }

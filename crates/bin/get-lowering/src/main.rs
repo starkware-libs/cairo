@@ -14,6 +14,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
@@ -107,6 +108,7 @@ impl fmt::Debug for PhasesFormatter<'_> {
             *lowered = lower_panics(db, function_id, lowered).unwrap();
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
+        apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
 
         for phase in db.lookup_intern_strategy(strategy).0 {
             let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
