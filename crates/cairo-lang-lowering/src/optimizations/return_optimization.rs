@@ -283,19 +283,23 @@ impl AnalyzerInfo {
         stmt: &StatementStructDestructure,
     ) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
-        let is_droppable = ctx.is_droppable(stmt.input.var_id);
 
+        let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
-            let invalidate = match var_info.apply_deconstruct(ctx, stmt) {
-                OpResult::InputConsumed => false,
-                OpResult::ValueInvalidated => true,
-                OpResult::NoChange => !is_droppable,
+            match var_info.apply_deconstruct(ctx, stmt) {
+                OpResult::InputConsumed => {
+                    input_consumed = true;
+                }
+                OpResult::ValueInvalidated => {
+                    self.invalidate();
+                    return;
+                }
+                OpResult::NoChange => {}
             };
+        }
 
-            if invalidate {
-                self.invalidate();
-                return;
-            }
+        if !(input_consumed || ctx.is_droppable(stmt.input.var_id)) {
+            self.invalidate();
         }
     }
 
@@ -303,17 +307,22 @@ impl AnalyzerInfo {
     fn apply_match_arm(&mut self, is_droppable: bool, input: &ValueInfo, arm: &MatchArm) {
         let Some(ref mut returned_vars) = self.opt_returned_vars else { return };
 
+        let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
-            let invalidate = match var_info.apply_match_arm(input, arm) {
-                OpResult::InputConsumed => false,
-                OpResult::ValueInvalidated => true,
-                OpResult::NoChange => !is_droppable,
+            match var_info.apply_match_arm(input, arm) {
+                OpResult::InputConsumed => {
+                    input_consumed = true;
+                }
+                OpResult::ValueInvalidated => {
+                    self.invalidate();
+                    return;
+                }
+                OpResult::NoChange => {}
             };
+        }
 
-            if invalidate {
-                self.invalidate();
-                return;
-            }
+        if !(input_consumed || is_droppable) {
+            self.invalidate();
         }
     }
 
