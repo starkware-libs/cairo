@@ -177,7 +177,7 @@ End:
 blk2:
 Statements:
   (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v5: ()) <- test::revoke_tempvars()
+  () <- test::revoke_tempvars()
 End:
   Return(v6)
 
@@ -187,7 +187,6 @@ v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
 

@@ -191,11 +191,13 @@ type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: f
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<Unit> = unbox<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 
 unbox<Unit>([0]) -> ([1]); // 0
-return([1]); // 1
+drop<Unit>([1]) -> (); // 1
+return(); // 2
 
-test::foo@0([0]: Box<Unit>) -> (Unit);
+test::foo@0([0]: Box<Unit>) -> ();
 
 //! > ==========================================================================
 

@@ -53,9 +53,8 @@ error: The value does not fit within the range of type core::felt252.
 Parameters:
 blk0 (root):
 Statements:
-  (v6: ()) <- struct_construct()
 End:
-  Return(v6)
+  Return()
 
 //! > semantic_diagnostics
 
@@ -116,8 +115,7 @@ error: The value does not fit within the range of type core::felt252.
 Parameters:
 blk0 (root):
 Statements:
-  (v6: ()) <- struct_construct()
 End:
-  Return(v6)
+  Return()
 
 //! > semantic_diagnostics

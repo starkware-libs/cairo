@@ -43,9 +43,8 @@ Statements:
   (v8: core::bool) <- bool::False(v7)
   (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
   (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v14)
-  (v12: ()) <- struct_construct()
 End:
-  Return(v12)
+  Return()
 
 //! > ==========================================================================
 
@@ -119,9 +118,9 @@ impl MyImpl of MyTrait {
 Parameters:
 blk0 (root):
 Statements:
-  (v1: ()) <- test::MyImpl::foo()
+  () <- test::MyImpl::foo()
 End:
-  Return(v1)
+  Return()
 
 //! > ==========================================================================
 
@@ -155,10 +154,9 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
-  (v2: ()) <- struct_construct()
+  () <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
 End:
-  Return(v2)
+  Return()
 
 //! > ==========================================================================
 

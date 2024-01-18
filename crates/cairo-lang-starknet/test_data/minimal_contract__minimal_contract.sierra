@@ -3,7 +3,6 @@ type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, ze
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
 type cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState = Struct<ut@[1223120574780935717470737749329807619549781166213122588752729638981143389984]> [storable: true, drop: true, dup: true, zero_sized: true];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
@@ -38,7 +37,6 @@ libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc struct_construct<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState> = struct_construct<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>;
 libfunc function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty> = function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>;
 libfunc drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState> = drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
 libfunc drop<Array<felt252>> = drop<Array<felt252>>;
 libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
@@ -46,10 +44,9 @@ libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_con
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 
 revoke_ap_tracking() -> (); // 0
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 55([6], [7]) }; // 1
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 54([6], [7]) }; // 1
 branch_align() -> (); // 2
 struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 3
 store_temp<RangeCheck>([4]) -> ([4]); // 4
@@ -73,52 +70,50 @@ branch_align() -> (); // 21
 drop<Snapshot<Array<felt252>>>([11]) -> (); // 22
 get_builtin_costs() -> ([18]); // 23
 store_temp<BuiltinCosts>([18]) -> ([18]); // 24
-withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 42([21], [22]) }; // 25
+withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 41([21], [22]) }; // 25
 branch_align() -> (); // 26
 struct_construct<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>() -> ([23]); // 27
-function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>([23]) -> ([24], [25]); // 28
+function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>([23]) -> ([24]); // 28
 drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([24]) -> (); // 29
-drop<Unit>([25]) -> (); // 30
-array_new<felt252>() -> ([26]); // 31
-snapshot_take<Array<felt252>>([26]) -> ([27], [28]); // 32
-drop<Array<felt252>>([27]) -> (); // 33
-struct_construct<core::array::Span::<core::felt252>>([28]) -> ([29]); // 34
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([29]) -> ([30]); // 35
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([30]) -> ([31]); // 36
-store_temp<RangeCheck>([19]) -> ([19]); // 37
-store_temp<GasBuiltin>([20]) -> ([20]); // 38
-store_temp<System>([2]) -> ([2]); // 39
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([31]) -> ([31]); // 40
-return([19], [20], [2], [31]); // 41
-branch_align() -> (); // 42
-array_new<felt252>() -> ([32]); // 43
-felt252_const<375233589013918064796019>() -> ([33]); // 44
-store_temp<felt252>([33]) -> ([33]); // 45
-array_append<felt252>([32], [33]) -> ([34]); // 46
-struct_construct<core::panics::Panic>() -> ([35]); // 47
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([35], [34]) -> ([36]); // 48
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([36]) -> ([37]); // 49
-store_temp<RangeCheck>([21]) -> ([21]); // 50
-store_temp<GasBuiltin>([22]) -> ([22]); // 51
-store_temp<System>([2]) -> ([2]); // 52
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([37]) -> ([37]); // 53
-return([21], [22], [2], [37]); // 54
-branch_align() -> (); // 55
-drop<core::array::Span::<core::felt252>>([3]) -> (); // 56
-array_new<felt252>() -> ([38]); // 57
-felt252_const<375233589013918064796019>() -> ([39]); // 58
-store_temp<felt252>([39]) -> ([39]); // 59
-array_append<felt252>([38], [39]) -> ([40]); // 60
-struct_construct<core::panics::Panic>() -> ([41]); // 61
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([41], [40]) -> ([42]); // 62
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([42]) -> ([43]); // 63
-store_temp<RangeCheck>([6]) -> ([6]); // 64
-store_temp<GasBuiltin>([7]) -> ([7]); // 65
-store_temp<System>([2]) -> ([2]); // 66
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([43]) -> ([43]); // 67
-return([6], [7], [2], [43]); // 68
-struct_construct<Unit>() -> ([1]); // 69
-return([0], [1]); // 70
+array_new<felt252>() -> ([25]); // 30
+snapshot_take<Array<felt252>>([25]) -> ([26], [27]); // 31
+drop<Array<felt252>>([26]) -> (); // 32
+struct_construct<core::array::Span::<core::felt252>>([27]) -> ([28]); // 33
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([28]) -> ([29]); // 34
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([29]) -> ([30]); // 35
+store_temp<RangeCheck>([19]) -> ([19]); // 36
+store_temp<GasBuiltin>([20]) -> ([20]); // 37
+store_temp<System>([2]) -> ([2]); // 38
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([30]) -> ([30]); // 39
+return([19], [20], [2], [30]); // 40
+branch_align() -> (); // 41
+array_new<felt252>() -> ([31]); // 42
+felt252_const<375233589013918064796019>() -> ([32]); // 43
+store_temp<felt252>([32]) -> ([32]); // 44
+array_append<felt252>([31], [32]) -> ([33]); // 45
+struct_construct<core::panics::Panic>() -> ([34]); // 46
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([34], [33]) -> ([35]); // 47
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([35]) -> ([36]); // 48
+store_temp<RangeCheck>([21]) -> ([21]); // 49
+store_temp<GasBuiltin>([22]) -> ([22]); // 50
+store_temp<System>([2]) -> ([2]); // 51
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([36]) -> ([36]); // 52
+return([21], [22], [2], [36]); // 53
+branch_align() -> (); // 54
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 55
+array_new<felt252>() -> ([37]); // 56
+felt252_const<375233589013918064796019>() -> ([38]); // 57
+store_temp<felt252>([38]) -> ([38]); // 58
+array_append<felt252>([37], [38]) -> ([39]); // 59
+struct_construct<core::panics::Panic>() -> ([40]); // 60
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41]); // 61
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([41]) -> ([42]); // 62
+store_temp<RangeCheck>([6]) -> ([6]); // 63
+store_temp<GasBuiltin>([7]) -> ([7]); // 64
+store_temp<System>([2]) -> ([2]); // 65
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([42]); // 66
+return([6], [7], [2], [42]); // 67
+return([0]); // 68
 
 cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::contracts::minimal_contract::minimal_contract::empty@69([0]: cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState) -> (cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState, Unit);
+cairo_level_tests::contracts::minimal_contract::minimal_contract::empty@68([0]: cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState) -> (cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState);

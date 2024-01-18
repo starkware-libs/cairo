@@ -55,48 +55,42 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v18: ()) <- struct_construct()
-End:
-  Return(v18)
+  Return()
 
 //! > ==========================================================================
 
@@ -158,48 +152,42 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {v1 -> v27})
+  Return(v1)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v6 -> v27})
+  Return(v6)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v9 -> v27})
+  Return(v9)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v13 -> v27})
+  Return(v13)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v16 -> v27})
+  Return(v16)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v20 -> v27})
+  Return(v20)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v22 -> v27})
+  Return(v22)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v25 -> v27})
-
-blk9:
-Statements:
-  (v28: ()) <- struct_construct()
-End:
-  Return(v27, v28)
+  Return(v25)
 
 //! > ==========================================================================
 
@@ -262,48 +250,42 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {})
+  Return()
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v46: ()) <- struct_construct()
-End:
-  Return(v46)
+  Return()
 
 //! > ==========================================================================
 
@@ -365,48 +347,42 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {v30 -> v38})
+  Return(v30)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v31 -> v38})
+  Return(v31)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v32 -> v38})
+  Return(v32)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v33 -> v38})
+  Return(v33)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v34 -> v38})
+  Return(v34)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v35 -> v38})
+  Return(v35)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v36 -> v38})
+  Return(v36)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v37 -> v38})
-
-blk9:
-Statements:
-  (v28: ()) <- struct_construct()
-End:
-  Return(v38, v28)
+  Return(v37)
 
 //! > ==========================================================================
 
@@ -469,45 +445,39 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {v58 -> v67})
+  Return(v58)
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v59 -> v67})
+  Return(v59)
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v60 -> v67})
+  Return(v60)
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v61 -> v67})
+  Return(v61)
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v62 -> v67})
+  Return(v62)
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v63 -> v67})
+  Return(v63)
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v64 -> v67})
+  Return(v64)
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v65 -> v67})
-
-blk9:
-Statements:
-  (v56: ()) <- struct_construct()
-End:
-  Return(v67, v56)
+  Return(v65)

@@ -5,3 +5,4 @@ pub mod match_optimizer;
 pub mod remappings;
 pub mod reorder_statements;
 pub mod return_optimization;
+pub mod scrub_units;

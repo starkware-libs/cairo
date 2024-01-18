@@ -42,40 +42,31 @@ test::bar: OrderedHashMap({})
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-libfunc drop<Unit> = drop<Unit>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([1]) { fallthrough() 11([2]) }; // 0
+felt252_is_zero([1]) { fallthrough() 7([2]) }; // 0
 branch_align() -> (); // 1
-function_call<user@test::bar>() -> ([3]); // 2
-drop<Unit>([3]) -> (); // 3
-function_call<user@test::bar>() -> ([4]); // 4
-drop<Unit>([4]) -> (); // 5
-function_call<user@test::bar>() -> ([5]); // 6
-drop<Unit>([5]) -> (); // 7
-struct_construct<Unit>() -> ([6]); // 8
-store_temp<GasBuiltin>([0]) -> ([0]); // 9
-return([0], [6]); // 10
-branch_align() -> (); // 11
-drop<NonZero<felt252>>([2]) -> (); // 12
-redeposit_gas([0]) -> ([7]); // 13
-struct_construct<Unit>() -> ([8]); // 14
-store_temp<GasBuiltin>([7]) -> ([7]); // 15
-return([7], [8]); // 16
-struct_construct<Unit>() -> ([0]); // 17
-return([0]); // 18
+function_call<user@test::bar>() -> (); // 2
+function_call<user@test::bar>() -> (); // 3
+function_call<user@test::bar>() -> (); // 4
+store_temp<GasBuiltin>([0]) -> ([0]); // 5
+return([0]); // 6
+branch_align() -> (); // 7
+drop<NonZero<felt252>>([2]) -> (); // 8
+redeposit_gas([0]) -> ([3]); // 9
+store_temp<GasBuiltin>([3]) -> ([3]); // 10
+return([3]); // 11
+return(); // 12
 
-test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
-test::bar@17() -> (Unit);
+test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin);
+test::bar@12() -> ();
 
 //! > ==========================================================================
 

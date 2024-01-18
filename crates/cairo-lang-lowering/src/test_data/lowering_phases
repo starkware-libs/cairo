@@ -42,14 +42,14 @@ End:
 
 blk2:
 Statements:
-  (v7: ()) <- test::foo()
+  () <- test::foo()
 End:
   Goto(blk3, {v7 -> v8})
 
 blk3:
 Statements:
 End:
-  Return(v8)
+  Return()
 
 //! > after_inlining
 Parameters:
@@ -70,14 +70,14 @@ End:
 
 blk2:
 Statements:
-  (v7: ()) <- test::foo()
+  () <- test::foo()
 End:
   Goto(blk3, {v7 -> v8})
 
 blk3:
 Statements:
 End:
-  Return(v8)
+  Return()
 
 blk4:
 Statements:
@@ -120,14 +120,14 @@ End:
 
 blk2:
 Statements:
-  (v7: ()) <- test::foo()
+  () <- test::foo()
 End:
   Goto(blk3, {v7 -> v8})
 
 blk3:
 Statements:
 End:
-  Return(v8)
+  Return()
 
 blk4:
 Statements:
@@ -190,27 +190,27 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Match(match_enum(v17) {
     PanicResult::Ok(v18) => blk11,
-    PanicResult::Err(v20) => blk12,
+    PanicResult::Err(v19) => blk12,
   })
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v4)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -245,9 +245,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -256,15 +256,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
-  Goto(blk10, {v19 -> v7})
+  Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_return_optimization
 Parameters:
@@ -284,24 +284,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v4)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -336,9 +336,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -347,15 +347,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
-  Goto(blk10, {v19 -> v7})
+  Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_add_destructs
 Parameters:
@@ -375,24 +375,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v4)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -427,9 +427,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -438,15 +438,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
-  Goto(blk10, {v19 -> v7})
+  Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_optimize_remappings1
 Parameters:
@@ -466,24 +466,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -518,9 +518,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -529,15 +529,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_reorder_statements1
 Parameters:
@@ -557,24 +557,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -609,9 +609,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -620,15 +620,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_branch_inversion
 Parameters:
@@ -648,24 +648,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -700,9 +700,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -711,15 +711,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_reorder_statements2
 Parameters:
@@ -739,24 +739,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -791,9 +791,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -802,15 +802,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > const_folding
 Parameters:
@@ -830,24 +830,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -882,9 +882,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v24)
+  Return(v23)
 
 blk10:
 Statements:
@@ -893,15 +893,15 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_optimize_matches
 Parameters:
@@ -921,24 +921,24 @@ End:
 
 blk2:
 Statements:
-  (v17: core::panics::PanicResult::<((),)>) <- test::foo()
+  (v17: core::panics::PanicResult::<()>) <- test::foo()
 End:
   Return(v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -969,36 +969,36 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
+End:
+  Return(v23)
+
+blk10:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk11:
+Statements:
+  () <- struct_destructure(v18)
+End:
+  Goto(blk10, {})
+
+blk12:
+Statements:
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
   Return(v24)
 
-blk10:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk11:
-Statements:
-  (v19: ()) <- struct_destructure(v18)
-End:
-  Goto(blk10, {})
-
-blk12:
-Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
-End:
-  Return(v25)
-
 //! > after_lower_implicits
-Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk8,
-    Option::None(v30, v31) => blk9,
+  Match(match core::gas::withdraw_gas_all(v25, v26, v16) {
+    Option::Some(v27, v28) => blk8,
+    Option::None(v29, v30) => blk9,
   })
 
 blk1:
@@ -1008,24 +1008,24 @@ End:
 
 blk2:
 Statements:
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v32, v33)
+  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v17: core::panics::PanicResult::<()>) <- test::foo(v31, v32)
 End:
-  Return(v34, v35, v17)
+  Return(v33, v34, v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -1047,7 +1047,7 @@ blk8:
 Statements:
   (v0: ()) <- struct_construct()
 End:
-  Goto(blk2, {v28 -> v32, v29 -> v33})
+  Goto(blk2, {v27 -> v31, v28 -> v32})
 
 blk9:
 Statements:
@@ -1056,9 +1056,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v30, v31, v24)
+  Return(v29, v30, v23)
 
 blk10:
 Statements:
@@ -1067,25 +1067,25 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_optimize_remappings2
-Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk8,
-    Option::None(v30, v31) => blk9,
+  Match(match core::gas::withdraw_gas_all(v25, v26, v16) {
+    Option::Some(v27, v28) => blk8,
+    Option::None(v29, v30) => blk9,
   })
 
 blk1:
@@ -1095,24 +1095,24 @@ End:
 
 blk2:
 Statements:
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v28, v29)
+  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v17: core::panics::PanicResult::<()>) <- test::foo(v27, v28)
 End:
-  Return(v34, v35, v17)
+  Return(v33, v34, v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -1143,9 +1143,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v30, v31, v24)
+  Return(v29, v30, v23)
 
 blk10:
 Statements:
@@ -1154,25 +1154,25 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_reorder_statements3
-Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk8,
-    Option::None(v30, v31) => blk9,
+  Match(match core::gas::withdraw_gas_all(v25, v26, v16) {
+    Option::Some(v27, v28) => blk8,
+    Option::None(v29, v30) => blk9,
   })
 
 blk1:
@@ -1182,24 +1182,24 @@ End:
 
 blk2:
 Statements:
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v28, v29)
+  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v17: core::panics::PanicResult::<()>) <- test::foo(v27, v28)
 End:
-  Return(v34, v35, v17)
+  Return(v33, v34, v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -1229,9 +1229,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v30, v31, v24)
+  Return(v29, v30, v23)
 
 blk10:
 Statements:
@@ -1240,25 +1240,25 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_optimize_remappings3
-Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk8,
-    Option::None(v30, v31) => blk9,
+  Match(match core::gas::withdraw_gas_all(v25, v26, v16) {
+    Option::Some(v27, v28) => blk8,
+    Option::None(v29, v30) => blk9,
   })
 
 blk1:
@@ -1268,24 +1268,24 @@ End:
 
 blk2:
 Statements:
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v28, v29)
+  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v17: core::panics::PanicResult::<()>) <- test::foo(v27, v28)
 End:
-  Return(v34, v35, v17)
+  Return(v33, v34, v17)
 
 blk3:
 Statements:
-  (v21: ((),)) <- struct_construct(v8)
-  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
+  (v20: ()) <- struct_construct()
+  (v21: core::panics::PanicResult::<()>) <- PanicResult::Ok(v20)
 End:
-  Return(v22)
+  Return(v21)
 
 blk4:
 Statements:
   (v5: core::panics::Panic) <- struct_construct()
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v5, v10)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+  (v22: core::panics::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
-  Return(v23)
+  Return(v22)
 
 blk5:
 Statements:
@@ -1315,9 +1315,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v30, v31, v24)
+  Return(v29, v30, v23)
 
 blk10:
 Statements:
@@ -1326,32 +1326,32 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
+  () <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
 blk12:
 Statements:
-  (v25: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v20)
+  (v24: core::panics::PanicResult::<()>) <- PanicResult::Err(v19)
 End:
-  Return(v25)
+  Return(v24)
 
 //! > after_reorganize_blocks (final)
-Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v16: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v26, v27, v16) {
-    Option::Some(v28, v29) => blk1,
-    Option::None(v30, v31) => blk2,
+  Match(match core::gas::withdraw_gas_all(v25, v26, v16) {
+    Option::Some(v27, v28) => blk1,
+    Option::None(v29, v30) => blk2,
   })
 
 blk1:
 Statements:
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v17: core::panics::PanicResult::<((),)>) <- test::foo(v28, v29)
+  (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v17: core::panics::PanicResult::<()>) <- test::foo(v27, v28)
 End:
-  Return(v34, v35, v17)
+  Return(v33, v34, v17)
 
 blk2:
 Statements:
@@ -1360,6 +1360,6 @@ Statements:
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v12)
   (v13: core::panics::Panic) <- struct_construct()
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v14)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v15)
+  (v23: core::panics::PanicResult::<()>) <- PanicResult::Err(v15)
 End:
-  Return(v30, v31, v24)
+  Return(v29, v30, v23)

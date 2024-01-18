@@ -426,9 +426,9 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
   (v1: core::felt252) <- 5u
-  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
+  (v3: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
 End:
-  Return(v2)
+  Return()
 
 //! > after
 Parameters:
@@ -452,14 +452,14 @@ End:
 blk3:
 Statements:
 End:
-  Return(v2)
+  Return()
 
 blk4:
 Statements:
   (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
   (v6: ()) <- struct_construct()
 End:
-  Goto(blk3, {v5 -> v3, v6 -> v2})
+  Goto(blk3, {v5 -> v3})
 
 //! > lowering_diagnostics
 

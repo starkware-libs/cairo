@@ -1,0 +1,37 @@
+//! > Test return optimizer simple scenario.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: u128, b: u128) {
+  let (_, _, g) = core::integer::u128_guarantee_mul(a, b);
+  g.destruct()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u128, v1: core::integer::u128
+blk0 (root):
+Statements:
+  (v2: core::integer::u128, v3: core::integer::u128, v4: core::integer::U128MulGuarantee) <- core::integer::u128_guarantee_mul(v0, v1)
+  (v5: ()) <- core::integer::U128MulGuaranteeDestruct::destruct(v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::integer::u128, v1: core::integer::u128
+blk0 (root):
+Statements:
+  (v2: core::integer::u128, v3: core::integer::u128, v4: core::integer::U128MulGuarantee) <- core::integer::u128_guarantee_mul(v0, v1)
+  () <- core::integer::U128MulGuaranteeDestruct::destruct(v4)
+End:
+  Return()
