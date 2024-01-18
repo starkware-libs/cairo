@@ -22,7 +22,7 @@ log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json.workspace = true
+serde_json = { workspace = true, default-features = true }
 test-case.workspace = true
 test-log.workspace = true
 env_logger.workspace = true

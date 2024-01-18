@@ -36,7 +36,7 @@ use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODU
 use crate::starknet_plugin_suite;
 
 #[cfg(all(test, feature = "serde"))]
-#[path = "compile_contract_class_tests.rs"]
+#[path = "compile_contract_class_test.rs"]
 mod test;
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";

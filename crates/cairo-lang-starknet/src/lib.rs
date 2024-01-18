@@ -8,17 +8,17 @@
 use cairo_lang_semantic::plugin::PluginSuite;
 
 pub mod abi_builder;
-pub mod compile_contract_class;
-
-mod aliased;
 pub mod allowed_libfuncs;
-mod analyzer;
 pub mod casm_contract_class_from_contract_class;
+pub mod compile_contract_class;
 pub mod contract;
-mod felt252_serde;
-mod felt252_vec_compression;
 pub mod inline_macros;
 pub mod plugin;
+
+mod aliased;
+mod analyzer;
+mod felt252_serde;
+mod felt252_vec_compression;
 
 // Rexports for more practicality downstream
 pub use cairo_lang_starknet_types::{abi, casm_contract_class, compiler_version, contract_class};
@@ -36,7 +36,7 @@ pub fn starknet_plugin_suite() -> PluginSuite {
 }
 
 #[cfg(all(test, feature = "serde"))]
-#[path = "contract_class_serde_tests.rs"]
+#[path = "contract_class_serde_test.rs"]
 mod contract_class_serde_tests;
 #[cfg(test)]
 mod test_utils;
