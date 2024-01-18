@@ -73,7 +73,7 @@ fn gather_inlining_info(
     let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
     // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
     // we can inline it.
-    if db.in_cycle(function_id)? {
+    if db.in_cycle(function_id, crate::DependencyType::Call)? {
         if report_diagnostics {
             diagnostics.report(
                 stable_ptr,

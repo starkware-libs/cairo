@@ -13,10 +13,9 @@ use crate::DependencyType;
 pub fn function_with_body_feedback_set(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
-    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-    let r = db.concrete_function_with_body_scc_representative(function, dependency_type);
-    db.priv_function_with_body_feedback_set_of_representative(r, dependency_type)
+    let r = db.concrete_function_with_body_scc_representative(function, DependencyType::Cost);
+    db.priv_function_with_body_feedback_set_of_representative(r)
 }
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
@@ -32,7 +31,7 @@ pub fn needs_withdraw_gas(
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
     Ok(flag_add_withdraw_gas(db)
-        && db.function_with_body_feedback_set(function, DependencyType::Cost)?.contains(&function))
+        && db.function_with_body_feedback_set(function)?.contains(&function))
 }
 
 /// Query implementation of
@@ -40,10 +39,13 @@ pub fn needs_withdraw_gas(
 pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
-    dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
     Ok(calc_feedback_set(
-        &ConcreteFunctionWithBodyPostInlineNode { function_id: function.0, db, dependency_type }
-            .into(),
+        &ConcreteFunctionWithBodyPostInlineNode {
+            function_id: function.0,
+            db,
+            dependency_type: DependencyType::Cost,
+        }
+        .into(),
     ))
 }
