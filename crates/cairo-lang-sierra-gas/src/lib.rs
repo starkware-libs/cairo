@@ -303,7 +303,10 @@ fn calc_gas_info_inner<
     Ok(GasInfo { variable_values, function_costs })
 }
 
-/// Calculates gas postcost information for a given program - the gas costs of step token.
+/// Calculates gas postcost information for a given program.
+///
+/// `CostType` can be either `i32` to get the total gas cost for CASM generation,
+/// or `ConstCost` to get the separate components (steps, holes, range-checks).
 pub fn compute_postcost_info<CostType: PostCostTypeTrait>(
     program: &Program,
     get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
