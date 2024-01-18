@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::CrateConfiguration;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -77,7 +76,10 @@ impl PluginDiagnostic {
     }
 }
 
+/// A structure containing additional info about
+/// the current module item on which macro plugin operates.
 pub struct MacroPluginMetadata<'a> {
+    /// Config set of a crate to which the current item belongs.
     pub cfg_set: &'a CfgSet,
 }
 
