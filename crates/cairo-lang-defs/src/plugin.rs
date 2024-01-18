@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Severity;
+use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::CrateConfiguration;
 use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
@@ -76,8 +77,8 @@ impl PluginDiagnostic {
     }
 }
 
-pub struct MacroPluginMetadata {
-    pub crate_config: Option<CrateConfiguration>,
+pub struct MacroPluginMetadata<'a> {
+    pub cfg_set: &'a CfgSet,
 }
 
 // TOD(spapini): Move to another place.

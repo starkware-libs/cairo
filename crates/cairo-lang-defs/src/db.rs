@@ -404,8 +404,11 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut files = Vec::new();
     let mut plugin_diagnostics = Vec::new();
 
-    let metadata =
-        MacroPluginMetadata { crate_config: db.crate_config(module_id.owning_crate(db)) };
+    let cfg_set = db
+        .crate_config(module_id.owning_crate(db))
+        .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+        .unwrap_or(db.cfg_set());
+    let metadata = MacroPluginMetadata { cfg_set: &cfg_set };
 
     let mut items = vec![];
     generated_file_infos.push(main_file_info);
