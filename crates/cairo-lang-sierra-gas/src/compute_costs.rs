@@ -712,62 +712,82 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     }
 }
 
+pub trait PostCostTypeTrait: CostTypeTrait + Copy {
+    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64>;
+    fn from_const_cost(const_cost: &ConstCost) -> Self;
+}
+
+impl PostCostTypeTrait for i32 {
+    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64> {
+        [(CostTokenType::Const, self.into())].into_iter().collect()
+    }
+
+    fn from_const_cost(const_cost: &ConstCost) -> Self {
+        const_cost.cost()
+    }
+}
+
 pub struct PostcostContext<'a> {
     pub get_ap_change_fn: &'a dyn Fn(&StatementIdx) -> usize,
     pub precost_gas_info: &'a GasInfo,
 }
 
-impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
-    fn to_cost_map(cost: i32) -> OrderedHashMap<CostTokenType, i64> {
-        if cost == 0 { Default::default() } else { Self::to_full_cost_map(cost) }
+impl<'a, CostType: PostCostTypeTrait> SpecificCostContextTrait<CostType> for PostcostContext<'a> {
+    fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
+        if cost == CostType::default() { Default::default() } else { Self::to_full_cost_map(cost) }
     }
 
-    fn to_full_cost_map(cost: i32) -> OrderedHashMap<CostTokenType, i64> {
-        [(CostTokenType::Const, cost.into())].into_iter().collect()
+    fn to_full_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
+        cost.to_full_cost_map()
     }
 
     fn get_gas_withdrawal(
         &self,
         idx: &StatementIdx,
         branch_cost: &BranchCost,
-        wallet_value: &i32,
-        future_wallet_value: i32,
-    ) -> Result<i32, CostError> {
+        wallet_value: &CostType,
+        future_wallet_value: CostType,
+    ) -> Result<CostType, CostError> {
         let BranchCost::WithdrawGas(info) = branch_cost else {
             panic!("Unexpected BranchCost: {branch_cost:?}.");
         };
         assert!(info.success, "Unexpected BranchCost: Expected `success == true`, got {info:?}.");
 
-        let withdraw_gas_cost = self.compute_withdraw_gas_cost(idx, info);
+        let withdraw_gas_cost =
+            CostType::from_const_cost(&self.compute_withdraw_gas_cost(idx, info));
         Ok(future_wallet_value + withdraw_gas_cost - *wallet_value)
     }
 
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<i32>,
+        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
-    ) -> WalletInfo<i32> {
+    ) -> WalletInfo<CostType> {
         let branch_cost_val = match branch_cost {
-            BranchCost::Regular { const_cost, pre_cost: _ } => const_cost.cost(),
+            BranchCost::Regular { const_cost, pre_cost: _ } => {
+                CostType::from_const_cost(const_cost)
+            }
             BranchCost::BranchAlign => {
                 let ap_change = (self.get_ap_change_fn)(idx);
-                if ap_change == 0 {
-                    0
+                let res = if ap_change == 0 {
+                    ConstCost::default()
                 } else {
-                    ConstCost { steps: 1, holes: ap_change as i32, range_checks: 0 }.cost()
-                }
+                    ConstCost { steps: 1, holes: ap_change as i32, range_checks: 0 }
+                };
+                CostType::from_const_cost(&res)
             }
             BranchCost::FunctionCost { const_cost, function, sign } => {
-                let cost = wallet_at_fn(&function.entry_point).value + const_cost.cost();
+                let cost = wallet_at_fn(&function.entry_point).value
+                    + CostType::from_const_cost(const_cost);
                 match sign {
-                    BranchCostSign::Add => -cost,
+                    BranchCostSign::Add => CostType::default() - cost,
                     BranchCostSign::Subtract => cost,
                 }
             }
             BranchCost::WithdrawGas(info) => {
-                let cost = self.compute_withdraw_gas_cost(idx, info);
+                let cost = CostType::from_const_cost(&self.compute_withdraw_gas_cost(idx, info));
 
                 // If withdraw_gas succeeds, we don't need to take
                 // future_wallet_value into account, so we simply return.
@@ -776,7 +796,9 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
                 }
                 cost
             }
-            BranchCost::RedepositGas => self.compute_redeposit_gas_cost(idx),
+            BranchCost::RedepositGas => {
+                CostType::from_const_cost(&self.compute_redeposit_gas_cost(idx))
+            }
         };
         let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
         WalletInfo { value: branch_cost_val } + future_wallet_value
@@ -785,21 +807,23 @@ impl<'a> SpecificCostContextTrait<i32> for PostcostContext<'a> {
 
 impl<'a> PostcostContext<'a> {
     /// Computes the cost of the withdraw_gas libfunc.
-    fn compute_withdraw_gas_cost(&self, idx: &StatementIdx, info: &WithdrawGasBranchInfo) -> i32 {
+    fn compute_withdraw_gas_cost(
+        &self,
+        idx: &StatementIdx,
+        info: &WithdrawGasBranchInfo,
+    ) -> ConstCost {
         info.const_cost(|token_type| {
             self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
         })
-        .cost()
     }
 
     /// Computes the cost of the redeposit_gas libfunc.
-    fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> i32 {
+    fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> ConstCost {
         ConstCost::steps(
             BuiltinCostsType::cost_computation_steps(false, |token_type| {
                 self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
             })
             .into_or_panic(),
         )
-        .cost()
     }
 }
