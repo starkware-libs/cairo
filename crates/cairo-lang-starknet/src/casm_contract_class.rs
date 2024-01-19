@@ -118,15 +118,7 @@ impl CasmContractClass {
         let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
         let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
         let constructors_hash = self.entry_points_hash(&self.entry_points_by_type.constructor);
-        let bytecode_hash = poseidon_hash_many(
-            &self
-                .bytecode
-                .iter()
-                .map(|big_uint| {
-                    FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
-                })
-                .collect_vec(),
-        );
+        let bytecode_hash = self.compute_bytecode_hash();
 
         // Compute total hash by hashing each component on top of the previous one.
         Felt252::from_bytes_be(
@@ -140,6 +132,14 @@ impl CasmContractClass {
             .to_bytes_be(),
         )
     }
+
+    /// Returns the lengths of the bytecode segments.
+    ///
+    /// If the length field is missing, the entire bytecode is considered a single segment.
+    pub fn get_bytecode_segment_lengths(&self) -> NestedIntList {
+        self.bytecode_segment_lengths.clone().unwrap_or(NestedIntList::Leaf(self.bytecode.len()))
+    }
+
     /// Returns the hash for a set of entry points.
     fn entry_points_hash(&self, entry_points: &[CasmContractEntryPoint]) -> FieldElement {
         let mut entry_point_hash_elements = vec![];
@@ -157,6 +157,44 @@ impl CasmContractClass {
             ));
         }
         poseidon_hash_many(&entry_point_hash_elements)
+    }
+
+    /// Returns the bytecode hash.
+    fn compute_bytecode_hash(&self) -> FieldElement {
+        let mut bytecode_iter = self.bytecode.iter().map(|big_uint| {
+            FieldElement::from_byte_slice_be(&big_uint.value.to_bytes_be()).unwrap()
+        });
+
+        let (len, bytecode_hash) =
+            bytecode_hash_node(&mut bytecode_iter, &self.get_bytecode_segment_lengths());
+        assert_eq!(len, self.bytecode.len());
+
+        bytecode_hash
+    }
+}
+
+/// Computes the hash of a bytecode segment. See the documentation of `bytecode_hash_node` in
+/// the Starknet OS.
+///
+/// Returns the length of the processed segment and its hash.
+fn bytecode_hash_node(
+    iter: &mut impl Iterator<Item = FieldElement>,
+    node: &NestedIntList,
+) -> (usize, FieldElement) {
+    match node {
+        NestedIntList::Leaf(len) => {
+            let data = &iter.take(*len).collect_vec();
+            assert_eq!(data.len(), *len);
+            (*len, poseidon_hash_many(data))
+        }
+        NestedIntList::Node(nodes) => {
+            // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
+            let inner_nodes = nodes.iter().map(|node| bytecode_hash_node(iter, node)).collect_vec();
+            let hash = poseidon_hash_many(
+                &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
+            ) + 1u32.into();
+            (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
+        }
     }
 }
 
