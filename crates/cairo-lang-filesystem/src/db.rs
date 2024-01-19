@@ -39,6 +39,8 @@ pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
 
+    pub cfg_set: Option<CfgSet>,
+
     #[serde(default)]
     pub experimental_features: ExperimentalFeaturesConfig,
 }
@@ -156,6 +158,7 @@ pub fn init_dev_corelib_from_directory(
             root: core_lib_dir,
             settings: CrateSettings {
                 edition: Edition::V2023_11,
+                cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
             },
         }),
