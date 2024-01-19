@@ -208,6 +208,12 @@ impl CasmBuilder {
         CasmBuildResult { instructions, branches }
     }
 
+    /// Returns the current ap change of the builder.
+    /// Useful for manual ap change handling.
+    pub fn curr_ap_change(&self) -> usize {
+        self.main_state.ap_change
+    }
+
     /// Computes the code offsets of all the labels.
     fn compute_label_offsets(&self) -> HashMap<String, usize> {
         let mut label_offsets = HashMap::<String, usize>::default();
