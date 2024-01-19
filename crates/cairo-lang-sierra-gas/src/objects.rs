@@ -6,7 +6,7 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Represents constant cost.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ConstCost {
     pub steps: i32,
     pub holes: i32,
@@ -45,6 +45,19 @@ impl std::ops::Add for ConstCost {
 
     fn add(self, rhs: Self) -> Self::Output {
         self.add(rhs)
+    }
+}
+
+/// Subtracts two [ConstCost] instances.
+impl std::ops::Sub for ConstCost {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            steps: self.steps - rhs.steps,
+            holes: self.holes - rhs.holes,
+            range_checks: self.range_checks - rhs.range_checks,
+        }
     }
 }
 
