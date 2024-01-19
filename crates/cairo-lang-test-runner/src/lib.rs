@@ -285,6 +285,7 @@ pub fn run_tests(
             linear_gas_solver: true,
             linear_ap_change_solver: true,
             skip_non_linear_solver_comparisons: false,
+            compute_runtime_costs: false,
         }),
         contracts_info,
         run_profiler,
