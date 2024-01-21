@@ -106,7 +106,7 @@ impl StructConcreteType {
     }
 
     /// Returns the StructConcreteType of the given type, or a specialization error if not possible.
-    fn try_from_concrete_type(
+    pub fn try_from_concrete_type(
         context: &dyn SignatureSpecializationContext,
         ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
