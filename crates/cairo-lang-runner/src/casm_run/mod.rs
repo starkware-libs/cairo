@@ -9,7 +9,6 @@ use ark_ff::{BigInteger, Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
-use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
@@ -2091,28 +2090,33 @@ pub struct RunFunctionContext<'a> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 
-/// Runs `program` on layout with prime, and returns the memory layout and ap value.
-/// Allows injecting custom HintProcessor.
-pub fn run_function<'a, 'b: 'a, Instructions>(
+/// Runs CairoRunner on layout with prime.
+/// Allows injecting custom CairoRunner.
+pub fn run_function_with_runner(
     vm: &mut VirtualMachine,
-    instructions: Instructions,
-    builtins: Vec<BuiltinName>,
+    data_len: usize,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
-) -> Result<RunFunctionRes, Box<CairoRunError>>
-where
-    Instructions: Iterator<Item = &'a Instruction> + Clone,
-{
-    let data: Vec<MaybeRelocatable> = instructions
-        .flat_map(|inst| inst.assemble().encode())
-        .map(Felt252::from)
-        .map(MaybeRelocatable::from)
-        .collect();
+    runner: &mut CairoRunner,
+) -> Result<(), Box<CairoRunError>> {
+    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
 
-    let data_len = data.len();
+    additional_initialization(RunFunctionContext { vm, data_len })?;
+
+    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.relocate(vm, true).map_err(CairoRunError::from)?;
+    Ok(())
+}
+
+/// Creates CairoRunner for `program`.
+pub fn build_cairo_runner(
+    data: Vec<MaybeRelocatable>,
+    builtins: Vec<BuiltinName>,
+    hints_dict: HashMap<usize, Vec<HintParams>>,
+) -> Result<CairoRunner, Box<CairoRunError>> {
     let program = Program::new(
         builtins,
         data,
@@ -2124,17 +2128,27 @@ where
         None,
     )
     .map_err(CairoRunError::from)?;
-    let mut runner = CairoRunner::new(&program, "all_cairo", false)
-        .map_err(CairoRunError::from)
-        .map_err(Box::new)?;
+    CairoRunner::new(&program, "all_cairo", false).map_err(CairoRunError::from).map_err(Box::new)
+}
 
-    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
+/// Runs `bytecode` on layout with prime, and returns the memory layout and ap value.
+/// Allows injecting custom HintProcessor.
+pub fn run_function<'a, 'b: 'a>(
+    vm: &mut VirtualMachine,
+    bytecode: impl Iterator<Item = &'a BigInt> + Clone,
+    builtins: Vec<BuiltinName>,
+    additional_initialization: fn(
+        context: RunFunctionContext<'_>,
+    ) -> Result<(), Box<CairoRunError>>,
+    hint_processor: &mut dyn HintProcessor,
+    hints_dict: HashMap<usize, Vec<HintParams>>,
+) -> Result<RunFunctionRes, Box<CairoRunError>> {
+    let data: Vec<MaybeRelocatable> =
+        bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
+    let data_len = data.len();
+    let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
-    additional_initialization(RunFunctionContext { vm, data_len })?;
-
-    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(vm, true).map_err(CairoRunError::from)?;
+    run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
 
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }

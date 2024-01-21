@@ -137,6 +137,7 @@ pub fn setup_test_crate_ex(
                 negative_impls: true,
                 coupons: true,
             },
+            cfg_set: Default::default(),
         }
     };
 

@@ -21,7 +21,8 @@ use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
 use crate::plugin::{
-    DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, PluginDiagnostic,
+    DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata,
+    PluginDiagnostic,
 };
 
 /// Salsa database interface.
@@ -403,6 +404,12 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut files = Vec::new();
     let mut plugin_diagnostics = Vec::new();
 
+    let cfg_set = db
+        .crate_config(module_id.owning_crate(db))
+        .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+        .unwrap_or(db.cfg_set());
+    let metadata = MacroPluginMetadata { cfg_set: &cfg_set };
+
     let mut items = vec![];
     generated_file_infos.push(main_file_info);
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
@@ -416,7 +423,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             // generate new code, remove the original code, or both), breaks the loop. If more
             // plugins might have act on the item, they can do it on the generated code.
             for plugin in db.macro_plugins() {
-                let result = plugin.generate_code(db.upcast(), item_ast.clone());
+                let result = plugin.generate_code(db.upcast(), item_ast.clone(), &metadata);
                 for plugin_diag in result.diagnostics {
                     plugin_diagnostics.push((module_file_id, plugin_diag));
                 }

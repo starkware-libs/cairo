@@ -18,6 +18,7 @@ fn test_serde() {
             global: CrateSettings {
                 edition: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig::default(),
+                cfg_set: Default::default(),
             },
             override_map: [
                 (
@@ -25,6 +26,7 @@ fn test_serde() {
                     CrateSettings {
                         edition: Edition::V2023_10,
                         experimental_features: ExperimentalFeaturesConfig::default(),
+                        cfg_set: Default::default(),
                     },
                 ),
                 (
@@ -35,6 +37,7 @@ fn test_serde() {
                             negative_impls: true,
                             coupons: false,
                         },
+                        cfg_set: Default::default(),
                     },
                 ),
             ]

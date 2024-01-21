@@ -22,7 +22,7 @@ use num_traits::Signed;
 use super::bounded_int::BoundedIntType;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
-use super::utils::reinterpret_cast_signature;
+use super::utils::{reinterpret_cast_signature, Range};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -245,19 +245,16 @@ impl EnumFromBoundedIntLibfunc {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
-        let bounded_int_ty = context.get_concrete_type(
-            BoundedIntType::id(),
-            &[GenericArg::Value(0.into()), GenericArg::Value((n_variants - 1).into())],
-        )?;
+        let input_ty = bounded_int_ty(context, Range::half_open(0, n_variants))?;
         if n_variants <= 2 {
             Ok(EnumFromBoundedIntConcreteLibfunc {
-                signature: reinterpret_cast_signature(bounded_int_ty, enum_type),
+                signature: reinterpret_cast_signature(input_ty, enum_type),
                 n_variants,
             })
         } else {
             Ok(EnumFromBoundedIntConcreteLibfunc {
                 signature: LibfuncSignature::new_non_branch_ex(
-                    vec![ParamSignature::new(bounded_int_ty)],
+                    vec![ParamSignature::new(input_ty)],
                     vec![OutputVarInfo {
                         ty: enum_type,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -367,4 +364,15 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
             fallthrough: Some(0),
         })
     }
+}
+
+/// Creates a `BoundedInt` type with the given range.
+fn bounded_int_ty(
+    context: &dyn SignatureSpecializationContext,
+    range: Range,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(
+        BoundedIntType::id(),
+        &[GenericArg::Value(range.lower), GenericArg::Value(range.upper - 1)],
+    )
 }

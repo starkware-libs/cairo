@@ -101,7 +101,11 @@ impl ScarbService {
                         crate_id,
                         source_path,
                         // TODO(ilya): Get experimental features from Scarb.
-                        CrateSettings { edition, experimental_features: Default::default() },
+                        CrateSettings {
+                            edition,
+                            cfg_set: Default::default(),
+                            experimental_features: Default::default(),
+                        },
                     ))
                 } else {
                     None

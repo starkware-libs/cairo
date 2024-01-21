@@ -6,6 +6,7 @@ use cairo_vm::vm::runners::cairo_runner::RunResources;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use indoc::indoc;
 use itertools::Itertools;
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use test_case::test_case;
 
@@ -116,10 +117,15 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
     };
+    let bytecode: Vec<BigInt> = function
+        .instructions
+        .iter()
+        .flat_map(|instruction| instruction.assemble().encode())
+        .collect();
 
     let (cells, ap) = run_function(
         &mut VirtualMachine::new(true),
-        function.instructions.iter(),
+        bytecode.iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
@@ -149,10 +155,12 @@ fn test_allocate_segment() {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
     };
+    let bytecode: Vec<BigInt> =
+        casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
     let (memory, ap) = run_function(
         &mut VirtualMachine::new(true),
-        casm.instructions.iter(),
+        bytecode.iter(),
         vec![],
         |_| Ok(()),
         &mut hint_processor,
