@@ -17,9 +17,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
 use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
+use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
     check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
 };
@@ -196,11 +198,18 @@ fn extract_const_value(
                     }
                 }
             }
-            CoreTypeConcrete::Enum(_) => {
+            CoreTypeConcrete::Enum(enm) => {
                 // The first argument is the variant selector, the second is the variant data.
                 match &const_type.inner_data[..] {
-                    [GenericArg::Value(selector), GenericArg::Type(ty)] => {
-                        values.push(selector.clone());
+                    [GenericArg::Value(variant_index), GenericArg::Type(ty)] => {
+                        values.push(
+                            get_variant_selector(
+                                enm.variants.len(),
+                                variant_index.to_usize().unwrap(),
+                            )
+                            .unwrap()
+                            .into(),
+                        );
                         types_stack.push(ty.clone());
                     }
                     _ => return Err(CompilationError::ConstDataMismatch),

@@ -42,7 +42,7 @@ mod casts;
 mod const_type;
 mod debug;
 mod ec;
-mod enm;
+pub mod enm;
 mod felt252;
 mod felt252_dict;
 mod function_call;
