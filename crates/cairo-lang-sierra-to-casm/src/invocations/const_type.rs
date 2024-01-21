@@ -22,8 +22,6 @@ pub fn build_as_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let const_type = libfunc.const_type.clone();
-    // TODO(Gil): Support non-size-1 consts.
-    builder.const_segment_info_builder.insert(&const_type);
     let ctx = casm! {
         // The relocation will point the `call` to the `ret;` instruction that precedes the
         // relevant const.

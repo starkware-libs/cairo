@@ -23,7 +23,6 @@ use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
-use crate::compiler::ConstSegmentInfoBuilder;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -360,7 +359,6 @@ pub struct CompiledInvocationBuilder<'a> {
     /// The arguments of the libfunc.
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
-    pub const_segment_info_builder: &'a mut ConstSegmentInfoBuilder,
 }
 impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation.
@@ -623,17 +621,9 @@ pub fn compile_invocation(
     idx: StatementIdx,
     refs: &[ReferenceValue],
     environment: Environment,
-    const_segment_info_builder: &mut ConstSegmentInfoBuilder,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let builder = CompiledInvocationBuilder {
-        program_info,
-        invocation,
-        libfunc,
-        idx,
-        refs,
-        environment,
-        const_segment_info_builder,
-    };
+    let builder =
+        CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         Felt252(libfunc) => felt252::build(libfunc, builder),
         Bool(libfunc) => boolean::build(libfunc, builder),
