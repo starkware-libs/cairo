@@ -149,7 +149,11 @@ fn collect_used_types(
                 DebugReplacer { db }.replace_libfunc_id(&libfunc.id)));
         chain!(
             signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
-            signature.branch_signatures.into_iter().flat_map(|info| info.vars).map(|var| var.ty)
+            signature.branch_signatures.into_iter().flat_map(|info| info.vars).map(|var| var.ty),
+            libfunc.long_id.generic_args.iter().filter_map(|arg| match arg {
+                program::GenericArg::Type(ty) => Some(ty.clone()),
+                _ => None,
+            })
         )
     });
 
