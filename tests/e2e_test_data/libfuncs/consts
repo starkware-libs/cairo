@@ -233,7 +233,7 @@ call rel 5;
 [ap + 0] = [ap + -1] + 4, ap++;
 ret;
 ret;
-dw 1;
+dw 3;
 dw 16;
 dw 32;
 
