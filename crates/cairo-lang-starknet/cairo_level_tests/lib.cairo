@@ -20,4 +20,6 @@ mod multi_component_test;
 mod replace_class_test;
 #[cfg(test)]
 mod storage_access;
+#[cfg(test)]
+mod contract_address_test;
 mod utils;
