@@ -15,7 +15,15 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+<<<<<<< HEAD
 use itertools::zip_eq;
+||||||| 3e7b56aa4
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::zip_eq;
+=======
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::{chain, zip_eq};
+>>>>>>> origin/main
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -63,7 +71,7 @@ pub enum CompilationError {
 }
 
 /// The casm program representation.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
@@ -107,10 +115,22 @@ impl CairoProgram {
         }
         AssembledCairoProgram { bytecode, hints }
     }
+
+    /// Creates an assembled representation of the program preceded by `header` and followed by
+    /// `footer`.
+    pub fn assemble_ex(
+        &mut self,
+        header: Vec<Instruction>,
+        footer: Vec<Instruction>,
+    ) -> AssembledCairoProgram {
+        self.instructions =
+            chain!(header.iter(), self.instructions.iter(), footer.iter()).cloned().collect();
+        self.assemble()
+    }
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct SierraStatementDebugInfo {
     /// The offset of the sierra statement within the bytecode.
     pub code_offset: usize,
@@ -119,14 +139,14 @@ pub struct SierraStatementDebugInfo {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
 /// The data of a single const in the const segment.
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstAllocation {
     /// The offset of the const within the constants segment.
     pub offset: CodeOffset,
@@ -135,7 +155,7 @@ pub struct ConstAllocation {
 }
 
 /// The information about the constants used in the program.
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
 pub struct ConstSegmentInfo {
     /// A map between the const type and the data of the const.
     pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,

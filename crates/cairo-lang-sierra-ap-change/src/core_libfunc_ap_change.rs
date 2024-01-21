@@ -100,23 +100,22 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {
-                match libfunc.from_info.cast_type(&libfunc.to_info) {
+                // Overflow tests are more expensive when asserting a value is above non-zero value.
+                let extra_below = if libfunc.to_range.lower.is_zero() { 0 } else { 1 };
+                let extra_above = if libfunc.to_range.upper.is_zero() { 0 } else { 1 };
+                match libfunc.cast_type() {
                     CastType { overflow_above: false, overflow_below: false } => {
                         vec![ApChange::Known(0), ApChange::Known(0)]
                     }
                     CastType { overflow_above: true, overflow_below: false } => {
-                        vec![ApChange::Known(2), ApChange::Known(2)]
+                        vec![ApChange::Known(2), ApChange::Known(1 + extra_above)]
                     }
-                    // Overflow below test is more expensive for casting into signed types.
-                    CastType { overflow_above: false, overflow_below: true } => vec![
-                        ApChange::Known(1 + usize::from(libfunc.to_info.signed)),
-                        ApChange::Known(2),
-                    ],
-                    // Overflow below test is more expensive for casting into signed types.
-                    CastType { overflow_above: true, overflow_below: true } => vec![
-                        ApChange::Known(2 + usize::from(libfunc.to_info.signed)),
-                        ApChange::Known(3),
-                    ],
+                    CastType { overflow_above: false, overflow_below: true } => {
+                        vec![ApChange::Known(1 + extra_below), ApChange::Known(2)]
+                    }
+                    CastType { overflow_above: true, overflow_below: true } => {
+                        vec![ApChange::Known(2 + extra_below), ApChange::Known(3)]
+                    }
                 }
             }
             CastConcreteLibfunc::Upcast(_) => vec![ApChange::Known(0)],
