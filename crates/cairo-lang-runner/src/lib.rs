@@ -212,9 +212,15 @@ impl SierraCasmRunner {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
-        let instructions =
-            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
-        let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
+        for instruction in &footer {
+            assert!(
+                instruction.hints.is_empty(),
+                "All footer instructions must have no hints since these cannot be added to the \
+                 hints dict."
+            );
+        }
+        let (hints_dict, string_to_hint) =
+            build_hints_dict(chain!(entry_code.iter(), self.casm_program.instructions.iter()));
         let assembled_program = self.casm_program.clone().assemble_ex(entry_code, footer);
 
         let mut hint_processor = CairoHintProcessor {
@@ -244,17 +250,17 @@ impl SierraCasmRunner {
     /// `available_gas` before the execution begins.
     ///
     /// Allows injecting Cairo `VirtualMachine`
-    pub fn run_function_with_vm<'a, Instructions>(
+    pub fn run_function_with_vm<'a, Bytecode>(
         &self,
         func: &Function,
         vm: &mut VirtualMachine,
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
-        instructions: Instructions,
+        instructions: Bytecode,
         builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
-        Instructions: Iterator<Item = &'a BigInt> + Clone,
+        Bytecode: Iterator<Item = &'a BigInt> + Clone,
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
@@ -362,19 +368,19 @@ impl SierraCasmRunner {
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// `available_gas` before the execution begins.
-    pub fn run_function<'a, Instructions>(
+    pub fn run_function<'a, Bytecode>(
         &self,
         func: &Function,
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
-        instructions: Instructions,
+        bytecode: Bytecode,
         builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
-        Instructions: Iterator<Item = &'a BigInt> + Clone,
+        Bytecode: Iterator<Item = &'a BigInt> + Clone,
     {
         let mut vm = VirtualMachine::new(true);
-        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, instructions, builtins)
+        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, bytecode, builtins)
     }
 
     /// Handling the main return value to create a `RunResultValue`.
