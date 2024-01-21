@@ -15,6 +15,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
+        ArrayConcreteLibfunc::SpanFromTuple(libfunc) => build_span_from_tuple(builder, &libfunc.ty),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
         | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => {
@@ -46,6 +47,30 @@ fn build_array_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_start]], None)],
+        Default::default(),
+    ))
+}
+
+fn build_span_from_tuple(
+    builder: CompiledInvocationBuilder<'_>,
+    ty: &ConcreteTypeId,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [elem_ptr] = builder.try_get_single_cells()?;
+    let size = builder.program_info.type_sizes[ty];
+
+    let mut casm_builder = CasmBuilder::default();
+
+    add_input_variables! {casm_builder,
+        deref elem_ptr;
+    };
+    casm_build_extend! {casm_builder,
+        let arr_start = elem_ptr;
+        const size = size;
+        tempvar arr_end = arr_start + size;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_end]], None)],
         Default::default(),
     ))
 }

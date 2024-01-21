@@ -1,5 +1,23 @@
 use core::test::test_utils::{assert_eq, assert_ne};
 
+
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+#[derive(Drop)]
+struct A {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+#[test]
+fn test_span_from_tuple() {
+    let x1 = A { a: 10, b: 20, c: 30 };
+    let span = span_from_tuple(BoxTrait::new(@x1));
+    assert_eq(span[0], @10, 'Unexpected element');
+    assert_eq(span[1], @20, 'Unexpected element');
+    assert_eq(span[2], @30, 'Unexpected element');
+}
+
+
 #[test]
 fn test_array() {
     let arr = array![10, 11, 12];

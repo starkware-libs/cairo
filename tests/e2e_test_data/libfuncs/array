@@ -856,3 +856,62 @@ store_temp<u32>([3]) -> ([3]); // 3
 return([1], [3]); // 4
 
 test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);
+
+//! > ==========================================================================
+
+//! > span_from_tuple libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+#[derive(Drop)]
+struct A {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+fn foo(x1:A) -> @Array<felt252> {
+    span_from_tuple(BoxTrait::new(@x1))
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 3
+%}
+[fp + -5] = [[ap + 0] + 0], ap++;
+[fp + -4] = [[ap + -1] + 1];
+[fp + -3] = [[ap + -1] + 2];
+[ap + 0] = [ap + -1] + 3, ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 600})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Struct<ut@test::A, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::A> = Box<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc snapshot_take<test::A> = snapshot_take<test::A>;
+libfunc drop<test::A> = drop<test::A>;
+libfunc into_box<test::A> = into_box<test::A>;
+libfunc span_from_tuple<test::A> = span_from_tuple<test::A>;
+libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
+
+snapshot_take<test::A>([0]) -> ([1], [2]); // 0
+drop<test::A>([1]) -> (); // 1
+into_box<test::A>([2]) -> ([3]); // 2
+span_from_tuple<test::A>([3]) -> ([4]); // 3
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([4]); // 4
+return([4]); // 5
+
+test::foo@0([0]: test::A) -> (Snapshot<Array<felt252>>);
