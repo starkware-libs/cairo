@@ -77,13 +77,11 @@ struct Query<V> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1u
-  (v1: test::Query::<core::felt252>) <- struct_construct(v0)
   (v2: core::felt252) <- struct_destructure(v1)
-  (v3: core::felt252) <- 2u
-  (v4: test::Query::<core::felt252>) <- struct_construct(v3)
   (v5: core::felt252) <- struct_destructure(v4)
-  (v7: core::felt252) <- core::felt252_add(v5, v2)
+  (v0: core::felt252) <- 1u
+  (v3: core::felt252) <- 2u
+  (v7: core::felt252) <- core::felt252_add(v3, v0)
 End:
   Return(v7)
 

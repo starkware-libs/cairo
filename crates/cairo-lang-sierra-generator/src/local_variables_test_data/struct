@@ -89,9 +89,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 12u
-  (v1: test::MyStruct) <- struct_construct(v0)
-  (v2: core::felt252) <- struct_destructure(v1)
-  (v3: core::felt252) <- test::immovable::<core::felt252>(v2)
+  (v3: core::felt252) <- test::immovable::<core::felt252>(v0)
   () <- core::internal::revoke_ap_tracking()
 End:
   Return(v3)
