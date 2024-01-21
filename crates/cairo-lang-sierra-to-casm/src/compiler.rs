@@ -2,19 +2,19 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
 };
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -125,38 +125,6 @@ pub struct CairoProgramDebugInfo {
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
-/// A builder for the const segment information.
-#[derive(Debug, Default)]
-pub struct ConstSegmentInfoBuilder {
-    used_const_types: OrderedHashSet<ConcreteTypeId>,
-}
-
-impl ConstSegmentInfoBuilder {
-    /// Inserts a const type into the builder, to be added to the const segment.
-    pub fn insert(&mut self, const_type: &ConcreteTypeId) {
-        self.used_const_types.insert(const_type.clone());
-    }
-
-    /// Builds the const segment information.
-    pub fn build(
-        self,
-        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-    ) -> Result<ConstSegmentInfo, CompilationError> {
-        let mut const_allocations = OrderedHashMap::default();
-        let mut const_segment_size = 0;
-        for const_type in self.used_const_types {
-            let const_allocation = ConstAllocation {
-                offset: const_segment_size,
-                values: extract_const_value(registry, &const_type).unwrap(),
-            };
-            // Add 1 for the `ret` instruction.
-            const_segment_size += 1 + const_allocation.values.len();
-            const_allocations.insert(const_type.clone(), const_allocation);
-        }
-        Ok(ConstSegmentInfo { const_allocations, const_segment_size })
-    }
-}
-
 /// The data of a single const in the const segment.
 #[derive(Debug, Eq, PartialEq, Default)]
 pub struct ConstAllocation {
@@ -173,6 +141,31 @@ pub struct ConstSegmentInfo {
     pub const_allocations: OrderedHashMap<ConcreteTypeId, ConstAllocation>,
     /// The size of the constants segment.
     pub const_segment_size: usize,
+}
+
+impl ConstSegmentInfo {
+    /// Creates a new `ConstSegmentInfo` from the given libfuncs.
+    pub fn new<'a>(
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+    ) -> Result<Self, CompilationError> {
+        let mut const_allocations = OrderedHashMap::default();
+        let mut const_segment_size = 0;
+        for id in libfunc_ids {
+            if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
+                registry.get_libfunc(id).unwrap()
+            {
+                let const_allocation = ConstAllocation {
+                    offset: const_segment_size,
+                    values: extract_const_value(registry, &as_box.const_type).unwrap(),
+                };
+                // Add 1 for the `ret` instruction.
+                const_segment_size += 1 + const_allocation.values.len();
+                const_allocations.insert(as_box.const_type.clone(), const_allocation);
+            }
+        }
+        Ok(Self { const_allocations, const_segment_size })
+    }
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
@@ -267,7 +260,6 @@ pub fn compile(
         metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
-    let mut const_segment_info_builder = ConstSegmentInfoBuilder::default();
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_annotations = ProgramAnnotations::create(
@@ -345,7 +337,6 @@ pub fn compile(
                     statement_idx,
                     &invoke_refs,
                     annotations.environment,
-                    &mut const_segment_info_builder,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
@@ -401,7 +392,8 @@ pub fn compile(
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
-    let const_segment_info = const_segment_info_builder.build(&registry)?;
+    let const_segment_info =
+        ConstSegmentInfo::new(&registry, program.libfunc_declarations.iter().map(|ld| &ld.id))?;
     relocate_instructions(&relocations, &statement_offsets, &const_segment_info, &mut instructions);
 
     Ok(CairoProgram {
