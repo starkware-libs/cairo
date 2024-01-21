@@ -141,9 +141,9 @@ test::foo: OrderedHashMap({Const: 700})
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<core::felt252>>, Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_pop_front<felt252> = array_pop_front<felt252>;
 libfunc branch_align = branch_align;
@@ -201,10 +201,10 @@ test::foo: OrderedHashMap({Const: 700})
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<Array<felt252>, Box<felt252>> = Struct<ut@Tuple, Array<felt252>, Box<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)> = Enum<ut@core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, Tuple<Array<felt252>, Box<felt252>>, Unit> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_pop_front_consume<felt252> = array_pop_front_consume<felt252>;
 libfunc branch_align = branch_align;
@@ -262,9 +262,9 @@ test::foo: OrderedHashMap({Const: 700})
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<@core::felt252>>, Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_snapshot_pop_front<felt252> = array_snapshot_pop_front<felt252>;
 libfunc branch_align = branch_align;
@@ -323,9 +323,9 @@ test::foo: OrderedHashMap({Const: 700})
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<@core::felt252>>, Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_snapshot_pop_back<felt252> = array_snapshot_pop_back<felt252>;
 libfunc branch_align = branch_align;
@@ -531,8 +531,8 @@ type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: tr
 type core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>> = Enum<ut@core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>, Box<Snapshot<Array<felt252>>>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<Array<felt252>> = Array<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<Array<felt252>>> = Snapshot<Array<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 
@@ -603,8 +603,8 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<@core::array::Array::<core::felt252>> = Enum<ut@core::option::Option::<@core::array::Array::<core::felt252>>, Snapshot<Array<felt252>>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_slice<felt252> = array_slice<felt252>;
 libfunc branch_align = branch_align;
@@ -674,9 +674,9 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type Array<core::integer::u256> = Array<core::integer::u256> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<@core::array::Array::<core::integer::u256>> = Enum<ut@core::option::Option::<@core::array::Array::<core::integer::u256>>, Snapshot<Array<core::integer::u256>>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_slice<core::integer::u256> = array_slice<core::integer::u256>;
 libfunc branch_align = branch_align;
@@ -748,8 +748,8 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type Array<Array<felt252>> = Array<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<Array<felt252>>> = Snapshot<Array<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>> = Enum<ut@core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, Snapshot<Array<Array<felt252>>>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_slice<Array<felt252>> = array_slice<Array<felt252>>;
@@ -798,8 +798,8 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
@@ -839,9 +839,9 @@ test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type Array<core::integer::u256> = Array<core::integer::u256> [storable: true, drop: true, dup: false, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc snapshot_take<Array<core::integer::u256>> = snapshot_take<Array<core::integer::u256>>;

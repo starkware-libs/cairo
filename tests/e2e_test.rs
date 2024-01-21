@@ -58,6 +58,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         box_: "box",
         builtin_costs: "builtin_costs",
         casts: "casts",
+        consts: "consts",
         coupon: "coupon",
         ec: "ec",
         enum_: "enum",

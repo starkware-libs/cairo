@@ -282,10 +282,10 @@ test::foo: OrderedHashMap({Const: 100})
 //! > sierra_code
 type Box<Array<felt252>> = Box<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Box<Array<felt252>>> = Snapshot<Box<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc box_forward_snapshot<Array<felt252>> = box_forward_snapshot<Array<felt252>>;
 libfunc store_temp<Box<Snapshot<Array<felt252>>>> = store_temp<Box<Snapshot<Array<felt252>>>>;
