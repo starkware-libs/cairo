@@ -49,8 +49,8 @@ test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc nullable_from_box<felt252> = nullable_from_box<felt252>;
 libfunc store_temp<Nullable<felt252>> = store_temp<Nullable<felt252>>;
@@ -88,8 +88,8 @@ test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc match_nullable<felt252> = match_nullable<felt252>;
 libfunc branch_align = branch_align;
@@ -129,10 +129,10 @@ test::foo: OrderedHashMap({Const: 100})
 //! > sierra_code
 type Nullable<Array<felt252>> = Nullable<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Nullable<Array<felt252>>> = Snapshot<Nullable<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Nullable<Snapshot<Array<felt252>>> = Nullable<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Nullable<Snapshot<Array<felt252>>> = Nullable<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc nullable_forward_snapshot<Array<felt252>> = nullable_forward_snapshot<Array<felt252>>;
 libfunc store_temp<Nullable<Snapshot<Array<felt252>>>> = store_temp<Nullable<Snapshot<Array<felt252>>>>;
@@ -171,9 +171,9 @@ test::foo: OrderedHashMap({Const: 200})
 //! > sierra_code
 type Nullable<Array<felt252>> = Nullable<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Nullable<Array<felt252>>> = Snapshot<Nullable<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Nullable<Snapshot<Array<felt252>>> = Nullable<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 

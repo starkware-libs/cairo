@@ -55,8 +55,8 @@ test::foo: OrderedHashMap({Const: 1900})
 
 //! > sierra_code
 type SegmentArena = SegmentArena [storable: true, drop: false, dup: false, zero_sized: false];
-type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc felt252_dict_new<felt252> = felt252_dict_new<felt252>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
@@ -508,9 +508,9 @@ test::foo: OrderedHashMap({Const: 6410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Felt252Dict<felt252> = Felt252Dict<felt252> [storable: true, drop: false, dup: false, zero_sized: false];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type SegmentArena = SegmentArena [storable: true, drop: false, dup: false, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 
