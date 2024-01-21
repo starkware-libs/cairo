@@ -164,17 +164,11 @@ pub fn init_dev_corelib_from_directory(
             root: core_lib_dir,
             settings: CrateSettings {
                 edition: Edition::V2023_11,
-<<<<<<< HEAD
+                cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
                     coupons: true,
                 },
-||||||| 3e7b56aa4
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
-=======
-                cfg_set: Default::default(),
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
->>>>>>> origin/main
             },
         }),
     );

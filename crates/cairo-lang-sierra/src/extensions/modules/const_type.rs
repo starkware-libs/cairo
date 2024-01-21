@@ -74,24 +74,8 @@ fn validate_const_data(
     } else if inner_type_info.long_id.generic_id == EnumType::ID {
         validate_const_enum_data(context, &inner_type_info, inner_data)?;
     } else {
-<<<<<<< HEAD
-        let type_range = extract_bounds(&inner_type_info)?;
-        let [GenericArg::Value(value)] = inner_data else {
-||||||| 3e7b56aa4
-        let type_range = extract_bounds(&inner_type_info)?;
-        if let [GenericArg::Value(value)] = inner_data {
-            if value < &type_range.lower || value >= &type_range.upper {
-                return Err(SpecializationError::UnsupportedGenericArg);
-            }
-        } else {
-=======
         let type_range = Range::from_type_info(&inner_type_info)?;
-        if let [GenericArg::Value(value)] = inner_data {
-            if value < &type_range.lower || value >= &type_range.upper {
-                return Err(SpecializationError::UnsupportedGenericArg);
-            }
-        } else {
->>>>>>> origin/main
+        let [GenericArg::Value(value)] = inner_data else {
             return Err(SpecializationError::WrongNumberOfGenericArgs);
         };
         if !(&type_range.lower <= value && value < &type_range.upper) {
