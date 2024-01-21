@@ -137,6 +137,7 @@ pub fn setup_test_crate_ex(
                 negative_impls: true,
                 coupons: true,
             },
+            cfg_set: Default::default(),
         }
     };
 
@@ -147,20 +148,7 @@ pub fn setup_test_crate_ex(
                 files: BTreeMap::from([("lib.cairo".into(), file_id)]),
                 dirs: Default::default(),
             },
-<<<<<<< HEAD
             settings,
-||||||| 3e7b56aa4
-            settings: CrateSettings {
-                edition: Edition::default(),
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
-            },
-=======
-            settings: CrateSettings {
-                edition: Edition::default(),
-                experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
-                cfg_set: Default::default(),
-            },
->>>>>>> origin/main
         },
     })
 }

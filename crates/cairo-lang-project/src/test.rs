@@ -33,17 +33,11 @@ fn test_serde() {
                     "crate3".into(),
                     CrateSettings {
                         edition: Default::default(),
-<<<<<<< HEAD
                         experimental_features: ExperimentalFeaturesConfig {
                             negative_impls: true,
                             coupons: false,
                         },
-||||||| 3e7b56aa4
-                        experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
-=======
-                        experimental_features: ExperimentalFeaturesConfig { negative_impls: true },
                         cfg_set: Default::default(),
->>>>>>> origin/main
                     },
                 ),
             ]

@@ -15,15 +15,7 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-<<<<<<< HEAD
-use itertools::zip_eq;
-||||||| 3e7b56aa4
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::zip_eq;
-=======
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{chain, zip_eq};
->>>>>>> origin/main
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use thiserror::Error;
