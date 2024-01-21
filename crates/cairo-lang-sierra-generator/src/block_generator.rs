@@ -54,9 +54,17 @@ pub fn generate_block_body_code(
 
     // Process the statements.
     for (i, statement) in block.statements.iter().enumerate() {
-        let statement_location = (block_id, i);
-        statements.extend(generate_statement_code(context, statement, &statement_location)?);
-        let drop_location = &DropLocation::PostStatement(statement_location);
+        let statement_lowering_location = (block_id, i);
+        let statement_cairo_location = statement.location().map(|location_id| {
+            context.get_db().lookup_intern_location(location_id).stable_location
+        });
+        let mut sierra_statements =
+            generate_statement_code(context, statement, &statement_lowering_location)?;
+        sierra_statements.iter_mut().for_each(|sierra_statement| {
+            sierra_statement.set_location(statement_cairo_location);
+        });
+        statements.extend(sierra_statements);
+        let drop_location = &DropLocation::PostStatement(statement_lowering_location);
         add_drop_statements(context, drops, drop_location, &mut statements)?;
     }
 
