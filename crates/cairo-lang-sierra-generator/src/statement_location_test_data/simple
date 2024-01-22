@@ -36,30 +36,37 @@ felt252_add([0], [2]) -> ([3])
 Originating location:
     let b = felt252_add(a, 5);
             ^***************^
+In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([4])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 dup<felt252>([4]) -> ([4], [3])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 dup<felt252>([3]) -> ([3], [5])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 store_temp<felt252>([5]) -> ([5])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([3])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 function_call<user@test::bar>([4], [5], [3]) -> ([6])
 Originating location:
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 return([6])
 
 //! > ==========================================================================
@@ -107,10 +114,12 @@ enum_match<test::MyEnum>([0]) { fallthrough([1]) label_test::foo::1([2]) label_t
 Originating location:
     match myEnum {
     ^************^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
     match myEnum {
     ^************^
+In function: lib.cairo::foo
 store_temp<felt252>([1]) -> ([1])
 
 return([1])
@@ -121,6 +130,7 @@ branch_align() -> ()
 Originating location:
     match myEnum {
     ^************^
+In function: lib.cairo::foo
 store_temp<felt252>([2]) -> ([2])
 
 return([2])
@@ -131,24 +141,29 @@ branch_align() -> ()
 Originating location:
     match myEnum {
     ^************^
+In function: lib.cairo::foo
 struct_deconstruct<Tuple<felt252, felt252>>([3]) -> ([4], [5])
 Originating location:
         MyEnum::C((c1, c2)) => {
                   ^******^
+In function: lib.cairo::foo
 dup<felt252>([4]) -> ([4], [6])
 
 felt252_is_zero([6]) { fallthrough() label_test::foo::4([7]) }
 Originating location:
             if c1 == 0 {
             ^**********^
+In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
             if c1 == 0 {
             ^**********^
+In function: lib.cairo::foo
 felt252_add([4], [5]) -> ([8])
 Originating location:
         felt252_add(lhs, rhs)
         ^*******************^
+In function: lib.cairo::Felt252Add::add
 store_temp<felt252>([8]) -> ([8])
 
 return([8])
@@ -159,12 +174,14 @@ branch_align() -> ()
 Originating location:
             if c1 == 0 {
             ^**********^
+In function: lib.cairo::foo
 drop<NonZero<felt252>>([7]) -> ()
 
 felt252_mul([4], [5]) -> ([9])
 Originating location:
         felt252_mul(lhs, rhs)
         ^*******************^
+In function: lib.cairo::Felt252Mul::mul
 store_temp<felt252>([9]) -> ([9])
 
 return([9])
