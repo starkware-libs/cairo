@@ -91,7 +91,7 @@ fn test_flow_safe_dispatcher() {
 
 #[test]
 #[available_gas(1170000)]
-#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
+#[should_panic(expected: ('Syscall out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Set up.
     let (address0, _) = deploy_syscall(

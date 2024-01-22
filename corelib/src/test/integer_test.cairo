@@ -100,7 +100,7 @@ fn test_u8_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('Division by 0',))]
 fn test_u8_div_by_0() {
     2_u8 / 0_u8;
 }
@@ -203,7 +203,7 @@ fn test_u16_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('Division by 0',))]
 fn test_u16_div_by_0() {
     2_u16 / 0_u16;
 }
@@ -306,7 +306,7 @@ fn test_u32_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('Division by 0',))]
 fn test_u32_div_by_0() {
     2_u32 / 0_u32;
 }
@@ -411,7 +411,7 @@ fn test_u64_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('Division by 0',))]
 fn test_u64_div_by_0() {
     2_u64 / 0_u64;
 }
@@ -561,7 +561,7 @@ fn test_u128_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('Division by 0',))]
 fn test_u128_div_by_0() {
     2_u128 / 0_u128;
 }
