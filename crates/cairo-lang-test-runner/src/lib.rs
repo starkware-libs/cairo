@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use std::vec::IntoIter;
@@ -14,7 +15,7 @@ use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -96,6 +97,7 @@ impl CompiledTestRunner {
             compiled.function_set_costs,
             compiled.contracts_info,
             self.config.run_profiler,
+            compiled.statements_functions,
         )?;
 
         if failed.is_empty() {
@@ -274,6 +276,7 @@ pub fn run_tests(
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     run_profiler: bool,
+    statements_functions: HashMap<StatementIdx, String>,
 ) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
@@ -372,7 +375,10 @@ pub fn run_tests(
                 println!("test {name} ... {status_str}");
             }
             if let Some(profiling_info) = profiling_info {
-                let profiling_processor = ProfilingInfoProcessor::new(sierra_program.clone());
+                let profiling_processor = ProfilingInfoProcessor::new(
+                    sierra_program.clone(),
+                    statements_functions.clone(),
+                );
                 let processed_profiling_info = profiling_processor.process(&profiling_info);
                 println!("Profiling info:\n{processed_profiling_info}");
             }
