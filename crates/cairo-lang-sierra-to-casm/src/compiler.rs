@@ -13,11 +13,12 @@ use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
-use num_traits::ToPrimitive;
+use num_traits::{ToPrimitive, Zero};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -165,6 +166,7 @@ impl ConstSegmentInfo {
     /// Creates a new `ConstSegmentInfo` from the given libfuncs.
     pub fn new<'a>(
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        type_sizes: &TypeSizeMap,
         libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
     ) -> Result<Self, CompilationError> {
         let mut const_allocations = OrderedHashMap::default();
@@ -175,7 +177,7 @@ impl ConstSegmentInfo {
             {
                 let const_allocation = ConstAllocation {
                     offset: const_segment_size,
-                    values: extract_const_value(registry, &as_box.const_type).unwrap(),
+                    values: extract_const_value(registry, type_sizes, &as_box.const_type).unwrap(),
                 };
                 // Add 1 for the `ret` instruction.
                 const_segment_size += 1 + const_allocation.values.len();
@@ -190,6 +192,7 @@ impl ConstSegmentInfo {
 /// const segment.
 fn extract_const_value(
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    type_sizes: &TypeSizeMap,
     ty: &ConcreteTypeId,
 ) -> Result<Vec<BigInt>, CompilationError> {
     let mut values = Vec::new();
@@ -213,14 +216,19 @@ fn extract_const_value(
                 // The first argument is the variant selector, the second is the variant data.
                 match &const_type.inner_data[..] {
                     [GenericArg::Value(variant_index), GenericArg::Type(ty)] => {
+                        let variant_index = variant_index.to_usize().unwrap();
                         values.push(
-                            get_variant_selector(
-                                enm.variants.len(),
-                                variant_index.to_usize().unwrap(),
-                            )
-                            .unwrap()
-                            .into(),
+                            get_variant_selector(enm.variants.len(), variant_index).unwrap().into(),
                         );
+                        let full_enum_size: usize =
+                            type_sizes[&const_type.inner_ty].into_or_panic();
+                        let variant_size: usize =
+                            type_sizes[&enm.variants[variant_index]].into_or_panic();
+                        // Padding with zeros to full enum size.
+                        values.extend(itertools::repeat_n(
+                            BigInt::zero(),
+                            full_enum_size - variant_size - 1,
+                        ));
                         types_stack.push(ty.clone());
                     }
                     _ => return Err(CompilationError::ConstDataMismatch),
@@ -410,8 +418,11 @@ pub fn compile(
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
-    let const_segment_info =
-        ConstSegmentInfo::new(&registry, program.libfunc_declarations.iter().map(|ld| &ld.id))?;
+    let const_segment_info = ConstSegmentInfo::new(
+        &registry,
+        &type_sizes,
+        program.libfunc_declarations.iter().map(|ld| &ld.id),
+    )?;
     relocate_instructions(&relocations, &statement_offsets, &const_segment_info, &mut instructions);
 
     Ok(CairoProgram {

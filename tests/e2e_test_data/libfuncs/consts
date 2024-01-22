@@ -258,3 +258,58 @@ const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128,
 return([0]); // 1
 
 test::foo@0() -> (Box<test::ThreeOptions>);
+
+//! > ==========================================================================
+
+//! > const complex with padding
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
+mod value { extern type Const<T, const VALUE: T>; }
+extern fn const_as_box<T>() -> Box<ThreeOptions> nopanic;
+
+enum ThreeOptions {
+    A: felt252,
+    B: u256,
+    C,
+}
+
+fn foo() -> Box<ThreeOptions> {
+    const_as_box::<enum_value::Const<
+    ThreeOptions,
+        0,
+        value::Const<felt252, 1337>,
+    >>()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 5;
+dw 0;
+dw 1337;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>;
+
+const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (Box<test::ThreeOptions>);
