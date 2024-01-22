@@ -782,6 +782,52 @@ Error from program registry: Error during type specialization
 
 //! > ==========================================================================
 
+//! > Const segments with hole.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type BoxFelt252 = Box<felt252>;
+type Const = Const<felt252, 5>;
+
+libfunc usage0 = const_as_box<Const, 0>;
+libfunc usage1 = const_as_box<Const, 1>;
+libfunc usage3 = const_as_box<Const, 3>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Const segments must appear in ascending order without holes.
+
+//! > ==========================================================================
+
+//! > Unordered const segments.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type BoxFelt252 = Box<felt252>;
+type Const = Const<felt252, 5>;
+
+libfunc usage0 = const_as_box<Const, 0>;
+libfunc usage2 = const_as_box<Const, 2>;
+libfunc usage1 = const_as_box<Const, 1>;
+
+return ();
+
+foo@0() -> ();
+
+//! > error
+Const segments must appear in ascending order without holes.
+
+//! > ==========================================================================
+
 //! > Recursively buy coupon
 
 //! > test_runner_name
