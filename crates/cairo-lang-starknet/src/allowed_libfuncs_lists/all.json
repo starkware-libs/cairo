@@ -141,6 +141,7 @@
         "secp256r1_new_syscall",
         "send_message_to_l1_syscall",
         "snapshot_take",
+        "span_from_tuple",
         "storage_address_from_base",
         "storage_address_from_base_and_offset",
         "storage_address_to_felt252",
