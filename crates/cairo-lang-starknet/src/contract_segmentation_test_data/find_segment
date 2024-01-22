@@ -82,17 +82,19 @@ BytecodeSegmentLengthTest
 type felt252 = felt252;
 type Const<felt252, 5> = Const<felt252, 5>;
 type Const<felt252, 17> = Const<felt252, 17>;
+type Const<felt252, 15> = Const<felt252, 15>;
 type BoxFelt252 = Box<felt252>;
 
-libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
-libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>>;
+libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>, 0>;
+libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>, 1>;
+libfunc const_as_box<Const<felt252, 15>> = const_as_box<Const<felt252, 15>, 0>;
 libfunc unbox<felt252> = unbox<felt252>;
 libfunc store_temp_felt252 = store_temp<felt252>;
 libfunc drop<felt252> = drop<felt252>;
 
 const_as_box<Const<felt252, 5>>() -> ([1]); // 0
 const_as_box<Const<felt252, 17>>() -> ([2]); // 1
-const_as_box<Const<felt252, 5>>() -> ([3]); // 2
+const_as_box<Const<felt252, 15>>() -> ([3]); // 2
 unbox<felt252>([1]) -> ([1]); // 3
 unbox<felt252>([2]) -> ([2]); // 4
 unbox<felt252>([3]) -> ([3]); // 5
@@ -108,16 +110,17 @@ test_program@0() -> (felt252);
 //! > cairo_program
 call rel 16;
 [ap + 0] = [ap + -1] + 15, ap++;
-call rel 14;
-[ap + 0] = [ap + -1] + 13, ap++;
+call rel 15;
+[ap + 0] = [ap + -1] + 14, ap++;
 call rel 8;
-[ap + 0] = [ap + -1] + 7, ap++;
+[ap + 0] = [ap + -1] + 8, ap++;
 [ap + 0] = [[ap + -7] + 0], ap++;
 [ap + 0] = [[ap + -5] + 0], ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
 ret;
 ret;
 dw 5;
+dw 15;
 ret;
 dw 17;
 
@@ -125,7 +128,7 @@ dw 17;
 Ok([0])
 
 //! > bytecode_lengths
-Ok(Node([Leaf(16), Leaf(2), Leaf(2)]))
+Ok(Node([Leaf(16), Leaf(3), Leaf(2)]))
 
 //! > ==========================================================================
 
@@ -164,16 +167,14 @@ libfunc const_as_box<
         Tuple<felt252, felt252>,
         Const<felt252, 5>,
         Const<felt252, 17>
-    >
+    >,
+    0,
 >;
 libfunc unbox<Tuple<felt252, felt252>> = unbox<Tuple<felt252, felt252>>;
 libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
 libfunc drop<Tuple<felt252, felt252>> = drop<Tuple<felt252, felt252>>;
-libfunc const_as_box<
-    Const<MyEnum, 0, Const<felt252, 5>>
-> = const_as_box<
-    Const<MyEnum, 0, Const<felt252, 5>>
->;
+libfunc const_as_box<Const<MyEnum, 0, Const<felt252, 5>>> =
+    const_as_box<Const<MyEnum, 0, Const<felt252, 5>>, 1>;
 libfunc unbox<MyEnum> = unbox<MyEnum>;
 libfunc store_temp<MyEnum> = store_temp<MyEnum>;
 libfunc drop<MyEnum> = drop<MyEnum>;

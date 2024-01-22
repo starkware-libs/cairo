@@ -5,10 +5,10 @@ SmallE2ETestRunner
 
 //! > cairo
 extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T>() -> Box<felt252> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
 
 fn foo() -> Box<felt252> {
-    const_as_box::<Const<felt252, 100>>()
+    const_as_box::<Const<felt252, 100>, 0>()
 }
 
 //! > casm
@@ -26,9 +26,9 @@ type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_si
 type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc const_as_box<Const<felt252, 100>> = const_as_box<Const<felt252, 100>>;
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
 
-const_as_box<Const<felt252, 100>>() -> ([0]); // 0
+const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<felt252>);
@@ -42,10 +42,10 @@ SmallE2ETestRunner
 
 //! > cairo
 extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T>() -> Box<u8> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u8> nopanic;
 
 fn foo() -> Box<u8> {
-    const_as_box::<Const<u8, 100>>()
+    const_as_box::<Const<u8, 100>, 1>()
 }
 
 //! > casm
@@ -63,9 +63,9 @@ type Box<u8> = Box<u8> [storable: true, drop: true, dup: true, zero_sized: false
 type Const<u8, 100> = Const<u8, 100> [storable: false, drop: false, dup: false, zero_sized: false];
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc const_as_box<Const<u8, 100>> = const_as_box<Const<u8, 100>>;
+libfunc const_as_box<Const<u8, 100>, 1> = const_as_box<Const<u8, 100>, 1>;
 
-const_as_box<Const<u8, 100>>() -> ([0]); // 0
+const_as_box<Const<u8, 100>, 1>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<u8>);
@@ -79,10 +79,10 @@ SmallE2ETestRunner
 
 //! > cairo
 extern type Const<T, const VALUE: T>;
-extern fn const_as_box<T>() -> Box<i16> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<i16> nopanic;
 
 fn foo() -> Box<i16> {
-    const_as_box::<Const<i16, -1000>>()
+    const_as_box::<Const<i16, -1000>, 2>()
 }
 
 //! > casm
@@ -100,9 +100,9 @@ type Box<i16> = Box<i16> [storable: true, drop: true, dup: true, zero_sized: fal
 type Const<i16, -1000> = Const<i16, -1000> [storable: false, drop: false, dup: false, zero_sized: false];
 type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc const_as_box<Const<i16, -1000>> = const_as_box<Const<i16, -1000>>;
+libfunc const_as_box<Const<i16, -1000>, 2> = const_as_box<Const<i16, -1000>, 2>;
 
-const_as_box<Const<i16, -1000>>() -> ([0]); // 0
+const_as_box<Const<i16, -1000>, 2>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<i16>);
@@ -117,14 +117,13 @@ SmallE2ETestRunner
 //! > cairo
 mod value { extern type Const<T, const VALUE: T>; }
 mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T>() -> Box<u256> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u256> nopanic;
 
 fn foo() -> Box<u256> {
-    const_as_box::<struct2::Const<
-        u256,
-        value::Const<u128, 0x10>,
-        value::Const<u128, 0x20>,
-    >>()
+    const_as_box::<
+        struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>,
+        0
+    >()
 }
 
 //! > casm
@@ -146,9 +145,9 @@ type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable:
 type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>;
+libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0> = const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>;
 
-const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 0
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<core::integer::u256>);
@@ -163,14 +162,10 @@ SmallE2ETestRunner
 //! > cairo
 mod struct0 { extern type Const<T>; }
 mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
-extern fn const_as_box<T>() -> Box<bool> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<bool> nopanic;
 
 fn foo() -> Box<bool> {
-    const_as_box::<enum_value::Const<
-        bool,
-        0,
-        struct0::Const<()>,
-    >>()
+    const_as_box::<enum_value::Const<bool, 0, struct0::Const<()>>, 0>()
 }
 
 //! > casm
@@ -190,9 +185,9 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<core::bool, 0, Const<Unit>>> = const_as_box<Const<core::bool, 0, Const<Unit>>>;
+libfunc const_as_box<Const<core::bool, 0, Const<Unit>>, 0> = const_as_box<Const<core::bool, 0, Const<Unit>>, 0>;
 
-const_as_box<Const<core::bool, 0, Const<Unit>>>() -> ([0]); // 0
+const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<core::bool>);
@@ -208,7 +203,7 @@ SmallE2ETestRunner
 mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
 mod value { extern type Const<T, const VALUE: T>; }
 mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T>() -> Box<ThreeOptions> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<ThreeOptions> nopanic;
 
 enum ThreeOptions {
     A: felt252,
@@ -217,15 +212,14 @@ enum ThreeOptions {
 }
 
 fn foo() -> Box<ThreeOptions> {
-    const_as_box::<enum_value::Const<
-    ThreeOptions,
-        1,
-        struct2::Const<
-            u256,
-            value::Const<u128, 0x10>,
-            value::Const<u128, 0x20>,
+    const_as_box::<
+        enum_value::Const<
+            ThreeOptions,
+            1,
+            struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>,
         >,
-    >>()
+        0
+    >()
 }
 
 //! > casm
@@ -252,9 +246,9 @@ type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::
 type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>> = const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>;
+libfunc const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0> = const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>;
 
-const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>() -> ([0]); // 0
+const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<test::ThreeOptions>);
@@ -269,7 +263,7 @@ SmallE2ETestRunner
 //! > cairo
 mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
 mod value { extern type Const<T, const VALUE: T>; }
-extern fn const_as_box<T>() -> Box<ThreeOptions> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<ThreeOptions> nopanic;
 
 enum ThreeOptions {
     A: felt252,
@@ -278,11 +272,7 @@ enum ThreeOptions {
 }
 
 fn foo() -> Box<ThreeOptions> {
-    const_as_box::<enum_value::Const<
-    ThreeOptions,
-        0,
-        value::Const<felt252, 1337>,
-    >>()
+    const_as_box::<enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>, 0>()
 }
 
 //! > casm
@@ -307,9 +297,9 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>;
+libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>;
 
-const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 0
+const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<test::ThreeOptions>);
@@ -326,7 +316,9 @@ mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
 mod value { extern type Const<T, const VALUE: T>; }
 mod struct0 { extern type Const<T>; }
 mod struct2 { extern type Const<T, C0, C1>; }
-extern fn const_as_box<T>() -> Box<(ThreeOptions, ThreeOptions)> nopanic;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<
+    (ThreeOptions, ThreeOptions)
+> nopanic;
 
 enum ThreeOptions {
     A: felt252,
@@ -335,11 +327,14 @@ enum ThreeOptions {
 }
 
 fn foo() -> Box<(ThreeOptions, ThreeOptions)> {
-    const_as_box::<struct2::Const<
-        (ThreeOptions, ThreeOptions),
-        enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>,
-        enum_value::Const<ThreeOptions, 2, struct0::Const<()>>,
-    >>()
+    const_as_box::<
+        struct2::Const<
+            (ThreeOptions, ThreeOptions),
+            enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>,
+            enum_value::Const<ThreeOptions, 2, struct0::Const<()>>,
+        >,
+        0
+    >()
 }
 
 //! > casm
@@ -376,9 +371,80 @@ type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptio
 type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>> = const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>;
+libfunc const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0> = const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>;
 
-const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]); // 0
+const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]); // 0
 return([0]); // 1
 
 test::foo@0() -> (Box<Tuple<test::ThreeOptions, test::ThreeOptions>>);
+
+//! > ==========================================================================
+
+//! > const segmentation
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type Const<T, const VALUE: T>;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
+
+fn foo() -> (Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>) {
+    (
+        const_as_box::<Const<felt252, 100>, 0>(),
+        const_as_box::<Const<felt252, 200>, 2>(),
+        const_as_box::<Const<felt252, 300>, 1>(),
+        const_as_box::<Const<felt252, 400>, 0>(),
+    )
+}
+
+//! > casm
+call rel 21;
+[ap + 0] = [ap + -1] + 20, ap++;
+call rel 20;
+[ap + 0] = [ap + -1] + 19, ap++;
+call rel 18;
+[ap + 0] = [ap + -1] + 17, ap++;
+call rel 9;
+[ap + 0] = [ap + -1] + 9, ap++;
+[ap + 0] = [ap + -10], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+ret;
+dw 100;
+dw 400;
+ret;
+dw 200;
+ret;
+dw 300;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1600})
+
+//! > sierra_code
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> = Struct<ut@Tuple, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
+libfunc const_as_box<Const<felt252, 200>, 2> = const_as_box<Const<felt252, 200>, 2>;
+libfunc const_as_box<Const<felt252, 300>, 1> = const_as_box<Const<felt252, 300>, 1>;
+libfunc const_as_box<Const<felt252, 400>, 0> = const_as_box<Const<felt252, 400>, 0>;
+libfunc struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+libfunc store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+
+const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
+const_as_box<Const<felt252, 200>, 2>() -> ([1]); // 1
+const_as_box<Const<felt252, 300>, 1>() -> ([2]); // 2
+const_as_box<Const<felt252, 400>, 0>() -> ([3]); // 3
+struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([0], [1], [2], [3]) -> ([4]); // 4
+store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([4]) -> ([4]); // 5
+return([4]); // 6
+
+test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
