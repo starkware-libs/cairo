@@ -87,4 +87,17 @@ impl StatementsLocations {
         }
         Self { locations }
     }
+    /// A map between the statement index and a string representation of the high level function
+    /// that contains it. (See [containing_function_identifier]). It is used for places with db
+    /// access such as the profiler.
+    // TODO(Gil): Add a db access to the profiler and remove this function.
+    pub fn get_statements_functions_map(
+        &self,
+        db: &dyn SierraGenGroup,
+    ) -> UnorderedHashMap<StatementIdx, String> {
+        self.locations
+            .iter_sorted()
+            .map(|(idx, location)| (*idx, containing_function_identifier(db, Some(*location))))
+            .collect()
+    }
 }

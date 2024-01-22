@@ -12,7 +12,7 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
@@ -23,6 +23,7 @@ use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
 use serde::{Deserialize, Serialize};
 pub use test_config::{try_extract_test_config, TestConfig};
@@ -81,7 +82,7 @@ pub fn compile_test_prepared_db(
             })
             .collect();
     let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let (sierra_program, _statements_locations) = db
+    let (sierra_program, statements_locations) = db
         .get_sierra_program_for_functions(
             chain!(
                 all_entry_points.into_iter(),
@@ -95,6 +96,7 @@ pub fn compile_test_prepared_db(
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let replacer = DebugReplacer { db };
     let sierra_program = replacer.apply(&sierra_program);
+    let statements_functions = statements_locations.get_statements_functions_map(db);
 
     let named_tests = all_tests
         .into_iter()
@@ -116,7 +118,13 @@ pub fn compile_test_prepared_db(
         .collect_vec();
     let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
 
-    Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
+    Ok(TestCompilation {
+        named_tests,
+        sierra_program,
+        function_set_costs,
+        contracts_info,
+        statements_functions,
+    })
 }
 
 /// Compiled test cases.
@@ -134,6 +142,8 @@ pub struct TestCompilation {
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
     pub sierra_program: Program,
+    #[serde(skip)]
+    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
 }
 
 /// Finds the tests in the requested crates.

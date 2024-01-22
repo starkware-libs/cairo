@@ -28,6 +28,8 @@ pub struct ProcessedProfilingInfo {
     pub concrete_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
     /// Weight (in steps in the relevant run) of each generic libfunc.
     pub generic_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each high level function.
+    pub cairo_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each user function (including generated
     /// functions).
     pub user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
@@ -68,7 +70,13 @@ impl Display for ProcessedProfilingInfo {
                 writeln!(f, "  function {name}: {weight}")?;
             }
         }
-
+        if let Some(cairo_functions_weights) = &self.cairo_functions_weights {
+            writeln!(f, "Weight by high level function:")?;
+            for (function_identifier, weight) in cairo_functions_weights.iter() {
+                writeln!(f, "  function {function_identifier}: {weight}")?;
+            }
+            writeln!(f, "  return: {}", self.return_weight)?;
+        }
         Ok(())
     }
 }
@@ -88,6 +96,9 @@ pub struct ProfilingInfoProcessorParams {
     pub process_by_user_function: bool,
     /// Whether to process the profiling info by original user function only.
     pub process_by_original_user_function: bool,
+    /// Whether to process the profiling info by cairo function (computed from the compiler
+    /// StableLocation).
+    pub process_by_high_level_function: bool,
 }
 impl Default for ProfilingInfoProcessorParams {
     fn default() -> Self {
@@ -97,6 +108,7 @@ impl Default for ProfilingInfoProcessorParams {
             process_by_generic_libfunc: true,
             process_by_user_function: true,
             process_by_original_user_function: true,
+            process_by_high_level_function: true,
         }
     }
 }
@@ -104,11 +116,19 @@ impl Default for ProfilingInfoProcessorParams {
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor {
     sierra_program: Program,
+    statements_functions: UnorderedHashMap<StatementIdx, String>,
     params: ProfilingInfoProcessorParams,
 }
 impl ProfilingInfoProcessor {
-    pub fn new(sierra_program: Program) -> Self {
-        Self { sierra_program, params: ProfilingInfoProcessorParams::default() }
+    pub fn new(
+        sierra_program: Program,
+        statements_functions: UnorderedHashMap<StatementIdx, String>,
+    ) -> Self {
+        Self {
+            sierra_program,
+            statements_functions,
+            params: ProfilingInfoProcessorParams::default(),
+        }
     }
 
     /// Processes the raw profiling info according to the params set in the processor.
@@ -154,6 +174,7 @@ impl ProfilingInfoProcessor {
             UnorderedHashMap::new()
         };
 
+        let mut cairo_functions = UnorderedHashMap::new();
         let mut return_weight = 0;
         let mut statements_weights = OrderedHashMap::default();
 
@@ -178,6 +199,14 @@ impl ProfilingInfoProcessor {
                         // sierra program registry, if it's extended to have this mapping.
                         let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
                         *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
+                    }
+                    if params.process_by_high_level_function {
+                        let function_identifier = self
+                            .statements_functions
+                            .get(statement_idx)
+                            .unwrap_or(&"Unknown function".to_string())
+                            .clone();
+                        *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
                     }
                 }
                 GenStatement::Return(_) => {
@@ -261,12 +290,26 @@ impl ProfilingInfoProcessor {
             }
         }
 
+        let mut high_level_functions_weights = OrderedHashMap::default();
+        if params.process_by_high_level_function {
+            for (function_identifier, weight) in
+                cairo_functions.iter_sorted_by_key(|(function_identifier, weight)| {
+                    (usize::MAX - **weight, (*function_identifier).clone())
+                })
+            {
+                if *weight >= params.min_weight {
+                    high_level_functions_weights.insert(function_identifier.clone(), *weight);
+                }
+            }
+        }
+
         ProcessedProfilingInfo {
             sierra_statements_weights: statements_weights,
             generic_libfuncs_weights: Some(generic_libfuncs_weights),
             concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
             user_functions_weights: Some(user_functions_weights),
             original_user_functions_weights: Some(original_user_functions_weights),
+            cairo_functions_weights: Some(high_level_functions_weights),
             return_weight,
         }
     }
