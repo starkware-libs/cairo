@@ -3,7 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{GenericTypeId, ModuleId, TopLevelLanguageElementId};
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -69,7 +71,12 @@ fn test_missing_module_file() {
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
                 let mut builder = PatchBuilder::new(db);

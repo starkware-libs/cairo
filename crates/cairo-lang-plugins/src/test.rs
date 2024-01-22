@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -137,7 +139,12 @@ pub fn test_expand_plugin_inner(
 #[derive(Debug)]
 struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 if struct_ast.has_attr(db, "first") {

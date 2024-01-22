@@ -64,6 +64,26 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     }
 }
 
+impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {
+    fn lt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        // TODO(orizi): Check if implementing a libfunc for `felt252` ordering is more efficient.
+        let lhs: u256 = contract_address_to_felt252(lhs).into();
+        lhs < contract_address_to_felt252(rhs).into()
+    }
+    #[inline(always)]
+    fn le(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        !(rhs < lhs)
+    }
+    #[inline(always)]
+    fn gt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        rhs < lhs
+    }
+    #[inline(always)]
+    fn ge(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        !(lhs < rhs)
+    }
+}
+
 impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
 
