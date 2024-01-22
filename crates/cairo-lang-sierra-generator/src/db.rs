@@ -12,9 +12,9 @@ use lowering::ids::ConcreteFunctionWithBodyId;
 use semantic::items::imp::ImplLookupContext;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
-use crate::pre_sierra::StatementsLocations;
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::statements_locations::StatementsLocations;
 use crate::{ap_change, function_generator, pre_sierra};
 
 /// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.

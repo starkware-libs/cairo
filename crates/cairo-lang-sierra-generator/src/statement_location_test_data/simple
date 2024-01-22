@@ -36,6 +36,7 @@ felt252_add([0], [2]) -> ([3])
 lib.cairo:5:13
     let b = felt252_add(a, 5);
             ^***************^
+In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([4])
 lib.cairo:6:5
     bar(b, b, b)
@@ -60,4 +61,5 @@ function_call<user@test::bar>([4], [5], [3]) -> ([6])
 lib.cairo:6:5
     bar(b, b, b)
     ^**********^
+In function: lib.cairo::foo
 return([6])

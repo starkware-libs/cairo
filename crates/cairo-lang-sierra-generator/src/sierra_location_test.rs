@@ -7,6 +7,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
+use crate::statements_locations::containing_function_identifier;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 /// Compiles a single function to Sierra and checks the generated code, together with the
@@ -38,7 +39,11 @@ pub fn test_sierra_locations(
             .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
         // TODO(Gil): Improve the location string.
         let location_str = if let Some(location) = stmt.location {
-            format!("{:?}", location.diagnostic_location(db).debug(db))
+            format!(
+                "{:?}\nIn function: {}",
+                location.diagnostic_location(db).debug(db),
+                containing_function_identifier(db, stmt.location)
+            )
         } else {
             "".to_string()
         };
