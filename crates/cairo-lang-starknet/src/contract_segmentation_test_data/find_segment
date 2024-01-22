@@ -84,8 +84,8 @@ type Const<felt252, 5> = Const<felt252, 5>;
 type Const<felt252, 17> = Const<felt252, 17>;
 type BoxFelt252 = Box<felt252>;
 
-libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
-libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>>;
+libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>, 0>;
+libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>, 1>;
 libfunc unbox<felt252> = unbox<felt252>;
 libfunc store_temp_felt252 = store_temp<felt252>;
 libfunc drop<felt252> = drop<felt252>;
@@ -164,16 +164,14 @@ libfunc const_as_box<
         Tuple<felt252, felt252>,
         Const<felt252, 5>,
         Const<felt252, 17>
-    >
+    >,
+    0,
 >;
 libfunc unbox<Tuple<felt252, felt252>> = unbox<Tuple<felt252, felt252>>;
 libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
 libfunc drop<Tuple<felt252, felt252>> = drop<Tuple<felt252, felt252>>;
-libfunc const_as_box<
-    Const<MyEnum, 0, Const<felt252, 5>>
-> = const_as_box<
-    Const<MyEnum, 0, Const<felt252, 5>>
->;
+libfunc const_as_box<Const<MyEnum, 0, Const<felt252, 5>>> =
+    const_as_box<Const<MyEnum, 0, Const<felt252, 5>>, 1>;
 libfunc unbox<MyEnum> = unbox<MyEnum>;
 libfunc store_temp<MyEnum> = store_temp<MyEnum>;
 libfunc drop<MyEnum> = drop<MyEnum>;
