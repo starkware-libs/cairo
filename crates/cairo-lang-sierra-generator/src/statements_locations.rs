@@ -8,6 +8,9 @@ use itertools::Itertools;
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::StatementWithLocation;
 
+#[cfg(test)]
+#[path = "statements_locations_test.rs"]
+mod test;
 
 /// Returns an identifier of the function that contains the given [StableLocation]. It is composed
 /// of the file name, and the path (modules and impls) to the function in the file.
