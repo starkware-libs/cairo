@@ -69,7 +69,7 @@ pub fn containing_function_identifier(
     }
 }
 
-/// The location of the high level source code which caused a statement to be generated.
+/// The location of the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct StatementsLocations {
     pub locations: UnorderedHashMap<StatementIdx, StableLocation>,
@@ -85,5 +85,21 @@ impl StatementsLocations {
             }
         }
         Self { locations }
+    }
+    /// Builds a map between the Sierra statement index and a string representation of the Cairo
+    /// function that it was built from (see [containing_function_identifier]). It is used for
+    /// places without db access such as the profiler.
+    // TODO(Gil): Add a db access to the profiler and remove this function.
+    pub fn get_statements_functions_map(
+        &self,
+        db: &dyn SierraGenGroup,
+    ) -> UnorderedHashMap<StatementIdx, String> {
+        // The keys mapping function is the identity function, so no aggregation is done, and thus
+        // no redundant string copies are created.
+        self.locations.aggregate_by(
+            |k| *k,
+            |s1: &String, s2| s1.to_string() + &containing_function_identifier(db, Some(*s2)),
+            &"".to_string(),
+        )
     }
 }
