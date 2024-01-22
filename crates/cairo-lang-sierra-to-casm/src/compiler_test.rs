@@ -441,8 +441,8 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
         type BoxFelt252 = Box<felt252>;
 
 
-        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
-        libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>>;
+        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>, 0>;
+        libfunc const_as_box<Const<felt252, 17>> = const_as_box<Const<felt252, 17>, 0>;
         libfunc unbox<felt252> = unbox<felt252>;
         libfunc store_temp_felt252 = store_temp<felt252>;
         libfunc drop<felt252> = drop<felt252>;
@@ -468,8 +468,8 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
     indoc! {"
         call rel 16;
         [ap + 0] = [ap + -1] + 15, ap++;
-        call rel 14;
-        [ap + 0] = [ap + -1] + 13, ap++;
+        call rel 12;
+        [ap + 0] = [ap + -1] + 12, ap++;
         call rel 8;
         [ap + 0] = [ap + -1] + 7, ap++;
         [ap + 0] = [[ap + -7] + 0], ap++;
@@ -478,7 +478,6 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
         ret;
         ret;
         dw 5;
-        ret;
         dw 17;
     "};
     "Simple use of constants.")]
@@ -519,7 +518,8 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
             Tuple<felt252, felt252>,
             Const<felt252, 5>,
             Const<felt252, 17>
-        >
+        >,
+        1,
     >;
     libfunc const_as_box<
         Const<
@@ -532,7 +532,8 @@ use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks}
             Tuple<felt252, felt252>,
             Const<felt252, 17>,
             Const<felt252, 5>
-        >
+        >,
+        0,
     >;
     libfunc unbox<Tuple<felt252, felt252>> = unbox<Tuple<felt252, felt252>>;
     libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
@@ -616,7 +617,8 @@ libfunc const_as_box<
             Tuple<felt252, Tuple<felt252, felt252>>,
             Const<felt252, 17>,
             Const<Tuple<felt252, felt252>, Const<felt252, 5>, Const<felt252, 17>>
-        >
+        >,
+        0,
     >;
 libfunc unbox<
         Tuple<felt252, Tuple<felt252, felt252>>
@@ -670,11 +672,8 @@ indoc! {"
         type Const<MyEnum, 0, Const<felt252, 5>> = Const<MyEnum, 0, Const<felt252, 5>>;
         type Box<MyEnum> = Box<MyEnum>;
 
-        libfunc const_as_box<
-            Const<MyEnum, 0, Const<felt252, 5>>
-        > = const_as_box<
-            Const<MyEnum, 0, Const<felt252, 5>>
-        >;
+        libfunc const_as_box<Const<MyEnum, 0, Const<felt252, 5>>> =
+            const_as_box<Const<MyEnum, 0, Const<felt252, 5>>, 0>;
         libfunc unbox<MyEnum> = unbox<MyEnum>;
         libfunc store_temp<MyEnum> = store_temp<MyEnum>;
         libfunc drop<MyEnum> = drop<MyEnum>;
@@ -731,7 +730,7 @@ indoc! {"
         libfunc get_builtin_costs = get_builtin_costs;
         libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
         libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
-        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>>;
+        libfunc const_as_box<Const<felt252, 5>> = const_as_box<Const<felt252, 5>, 0>;
         libfunc unbox<felt252> = unbox<felt252>;
         libfunc store_temp<felt252> = store_temp<felt252>;
         libfunc drop<felt252> = drop<felt252>;

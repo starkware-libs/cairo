@@ -110,10 +110,7 @@ pub fn get_variant_selector(n_variants: usize, index: usize) -> Result<usize, In
         // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
         //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
         //   which makes them of size 2.
-        match (n_variants - index).checked_mul(2) {
-            Some(double) => double - 1,
-            None => return Err(InvocationError::IntegerOverflow),
-        }
+        (n_variants - index).checked_mul(2).ok_or(InvocationError::IntegerOverflow)? - 1
     })
 }
 
