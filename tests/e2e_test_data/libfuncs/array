@@ -856,3 +856,42 @@ store_temp<u32>([3]) -> ([3]); // 3
 return([1], [3]); // 4
 
 test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);
+
+//! > ==========================================================================
+
+//! > span_from_tuple libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+
+fn foo(x1:Box<@(felt252, felt252, felt252)>) -> @Array<felt252> {
+    span_from_tuple(x1)
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 3, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type Box<Tuple<felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc span_from_tuple<Tuple<felt252, felt252, felt252>> = span_from_tuple<Tuple<felt252, felt252, felt252>>;
+libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
+
+span_from_tuple<Tuple<felt252, felt252, felt252>>([0]) -> ([1]); // 0
+store_temp<Snapshot<Array<felt252>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Box<Tuple<felt252, felt252, felt252>>) -> (Snapshot<Array<felt252>>);
