@@ -235,7 +235,7 @@ fn foo(v: felt252) -> Option::<u32> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 4294967296 %}
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 4294967296 %}
 jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 4294967296, ap++;
 %{
