@@ -87,9 +87,19 @@ impl Display for CairoProgram {
 impl CairoProgram {
     /// Creates an assembled representation of the program.
     pub fn assemble(&self) -> AssembledCairoProgram {
+        self.assemble_ex(&[], &[])
+    }
+
+    /// Creates an assembled representation of the program preceded by `header` and followed by
+    /// `footer`.
+    pub fn assemble_ex(
+        &self,
+        header: &[Instruction],
+        footer: &[Instruction],
+    ) -> AssembledCairoProgram {
         let mut bytecode = vec![];
         let mut hints = vec![];
-        for instruction in self.instructions.iter() {
+        for instruction in chain!(header, &self.instructions) {
             if !instruction.hints.is_empty() {
                 hints.push((bytecode.len(), instruction.hints.clone()))
             }
@@ -105,19 +115,15 @@ impl CairoProgram {
             bytecode.push(ret_bytecode.clone());
             bytecode.extend(const_allocation.values.clone());
         }
+        for instruction in footer {
+            assert!(
+                instruction.hints.is_empty(),
+                "All footer instructions must have no hints since these cannot be added to the \
+                 hints dict."
+            );
+            bytecode.extend(instruction.assemble().encode().into_iter())
+        }
         AssembledCairoProgram { bytecode, hints }
-    }
-
-    /// Creates an assembled representation of the program preceded by `header` and followed by
-    /// `footer`.
-    pub fn assemble_ex(
-        &mut self,
-        header: Vec<Instruction>,
-        footer: Vec<Instruction>,
-    ) -> AssembledCairoProgram {
-        self.instructions =
-            chain!(header.iter(), self.instructions.iter(), footer.iter()).cloned().collect();
-        self.assemble()
     }
 }
 

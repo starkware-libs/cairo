@@ -215,16 +215,9 @@ impl SierraCasmRunner {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
-        for instruction in &footer {
-            assert!(
-                instruction.hints.is_empty(),
-                "All footer instructions must have no hints since these cannot be added to the \
-                 hints dict."
-            );
-        }
         let (hints_dict, string_to_hint) =
             build_hints_dict(chain!(entry_code.iter(), self.casm_program.instructions.iter()));
-        let assembled_program = self.casm_program.clone().assemble_ex(entry_code, footer);
+        let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
 
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
