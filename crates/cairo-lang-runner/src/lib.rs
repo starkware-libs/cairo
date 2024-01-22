@@ -216,7 +216,7 @@ impl SierraCasmRunner {
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
         let (hints_dict, string_to_hint) =
-            build_hints_dict(chain!(entry_code.iter(), self.casm_program.instructions.iter()));
+            build_hints_dict(chain!(&entry_code, &self.casm_program.instructions));
         let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
 
         let mut hint_processor = CairoHintProcessor {
