@@ -1,12 +1,17 @@
 use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
-use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
+use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::chain;
+use pretty_assertions::assert_eq;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
@@ -184,13 +189,40 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 }
 
 #[test]
-fn test_diagnostics() {
+fn test_location_and_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
+
     let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
+
+    let function_body = db.function_body(test_expr.function_id).unwrap();
+
+    let expr_location = StableLocation::new(
+        extract_matches!(&function_body.exprs[test_expr.expr_id], semantic::Expr::Assignment)
+            .stable_ptr
+            .untyped(),
+    )
+    .diagnostic_location(db);
+
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
         .with_auto_generation_note(db, "withdraw_gas")
-        .with_auto_generation_note(db, "destructor")
+        .with_note(
+            db,
+            DiagnosticNote::with_location("Adding destructor for".to_string(), expr_location),
+        )
         .get(db);
+
+    assert_eq!(
+        format!("{:?}", location.debug(db)),
+        indoc::indoc! {"
+lib.cairo:1:1
+fn test_func() { let mut a = 5; {
+^*******************************^
+note: this error originates in auto-generated withdraw_gas logic.
+note: Adding destructor for:
+  --> lib.cairo:2:1
+a = a * 3
+^*******^"}
+    );
 
     let mut builder = DiagnosticsBuilder::new();
 
@@ -199,7 +231,6 @@ fn test_diagnostics() {
         kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
     });
 
-    // TODO(ilya): Consider moving the notes to the end of the error message.
     assert_eq!(
         builder.build().format(db),
         indoc::indoc! {"
@@ -208,7 +239,10 @@ error: Cannot inline a function that might call itself.
 fn test_func() { let mut a = 5; {
 ^*******************************^
 note: this error originates in auto-generated withdraw_gas logic.
-note: this error originates in auto-generated destructor logic.
+note: Adding destructor for:
+  --> lib.cairo:2:1
+a = a * 3
+^*******^
 
 "}
     );
