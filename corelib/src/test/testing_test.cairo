@@ -40,6 +40,50 @@ fn test_assert_ne_no_description() {
 }
 
 #[test]
+fn test_assert_lt_with_description() {
+    assert_lt!(1, 2, "Description");
+}
+
+#[test]
+fn test_assert_lt_no_description() {
+    assert_lt!(1, 2);
+}
+
+#[test]
+fn test_assert_le_with_description() {
+    assert_le!(1, 2, "Description");
+    assert_le!(1, 1, "Description");
+}
+
+#[test]
+fn test_assert_le_no_description() {
+    assert_le!(1, 2);
+    assert_le!(1, 1);
+}
+
+#[test]
+fn test_assert_gt_with_description() {
+    assert_gt!(2, 1, "Description");
+}
+
+#[test]
+fn test_assert_gt_no_description() {
+    assert_gt!(2, 1);
+}
+
+#[test]
+fn test_assert_ge_with_description() {
+    assert_ge!(2, 1, "Description");
+    assert_ge!(2, 2, "Description");
+}
+
+#[test]
+fn test_assert_ge_no_description() {
+    assert_ge!(2, 1);
+    assert_ge!(2, 2);
+}
+
+#[test]
 #[should_panic(expected: "assertion failed: `false`.")]
 fn test_assert_macro_no_input() {
     assert!(false);

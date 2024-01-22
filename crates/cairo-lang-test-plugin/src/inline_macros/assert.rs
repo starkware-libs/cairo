@@ -207,3 +207,31 @@ define_compare_assert_macro!(
     "assert_ne",
     "!="
 );
+
+define_compare_assert_macro!(
+    /// Macro for less-than assertion.
+    AssertLtMacro,
+    "assert_lt",
+    "<"
+);
+
+define_compare_assert_macro!(
+    /// Macro for less-than-or-equal assertion.
+    AssertLeMacro,
+    "assert_le",
+    "<="
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than assertion.
+    AssertGtMacro,
+    "assert_gt",
+    ">"
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than-or-equal assertion.
+    AssertGeMacro,
+    "assert_ge",
+    ">="
+);
