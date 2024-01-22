@@ -231,6 +231,7 @@ pub fn core_libfunc_cost(
         BranchAlign(_) => vec![BranchCost::BranchAlign],
         Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ConstCost::steps(1).into()],
+            ArrayConcreteLibfunc::SpanFromTuple(_) => vec![ConstCost::steps(0).into()],
             ArrayConcreteLibfunc::Append(libfunc) => {
                 vec![ConstCost::steps(info_provider.type_size(&libfunc.ty) as i32).into()]
             }
