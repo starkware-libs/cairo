@@ -62,6 +62,9 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
         panic_state: PanicState,
     ) {
         let var = &self.lowered.variables[var_id];
+        // Note that droppable here means droppable before monomorphization.
+        // I.e. it is possible that T was substituted with a unit type, but T was not droppable
+        // and therefore the unit type var is not droppable here.
         if var.droppable.is_ok() {
             return;
         };

@@ -526,3 +526,167 @@ Statements:
   (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
 End:
   Return(v2, v3)
+
+//! > ==========================================================================
+
+//! > Test match with consumed non-droppable enum (optimization applies)
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: felt252, b: MyEnum) -> MyEnum {
+  match b {
+    MyEnum::A(x) => MyEnum::A(x),
+    MyEnum::B(x) => MyEnum::B(x),
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt252,
+  B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v2)
+End:
+  Goto(blk3, {v4 -> v6})
+
+blk2:
+Statements:
+  (v5: test::MyEnum) <- MyEnum::B(v3)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v0, v6)
+
+//! > after
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Return(v0, v1)
+
+blk1:
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v2)
+End:
+  Return(v0, v4)
+
+blk2:
+Statements:
+  (v5: test::MyEnum) <- MyEnum::B(v3)
+End:
+  Return(v0, v5)
+
+blk3:
+Statements:
+End:
+  Return(v0, v6)
+
+//! > ==========================================================================
+
+//! > Test match with non consumed non-droppable enum (optimization does not apply).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: felt252, b: MyEnum) -> felt252 {
+
+  // TODO: find a better solution for the following workaround.
+  // Need to produce the return value before the match to allow the optimization.
+  let res = 3;
+  match b {
+    MyEnum::A(x) => x,
+    MyEnum::B(x) => x,
+  };
+  res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt252,
+  B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 3u
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Return(v0, v2)
+
+//! > after
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 3u
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v0, v2)
+
+blk2:
+Statements:
+End:
+  Return(v0, v2)
+
+blk3:
+Statements:
+End:
+  Return(v0, v2)

@@ -74,7 +74,7 @@ End:
 blk2:
 Statements:
   (v2: core::felt252) <- 2u
-  (v13: core::felt252) <- core::felt252_sub(v2, v0)
+  (v13: core::felt252) <- core::felt252_sub(v0, v2)
 End:
   Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk3,
@@ -90,7 +90,7 @@ End:
 blk4:
 Statements:
   (v5: core::felt252) <- 1u
-  (v14: core::felt252) <- core::felt252_sub(v5, v0)
+  (v14: core::felt252) <- core::felt252_sub(v0, v5)
 End:
   Match(match core::felt252_is_zero(v14) {
     IsZeroResult::Zero => blk5,
@@ -311,7 +311,7 @@ End:
 blk2:
 Statements:
   (v3: core::felt252) <- 1u
-  (v14: core::felt252) <- core::felt252_sub(v3, v1)
+  (v14: core::felt252) <- core::felt252_sub(v1, v3)
 End:
   Match(match core::felt252_is_zero(v14) {
     IsZeroResult::Zero => blk3,
@@ -326,7 +326,7 @@ End:
 blk4:
 Statements:
   (v6: core::felt252) <- 2u
-  (v15: core::felt252) <- core::felt252_sub(v6, v1)
+  (v15: core::felt252) <- core::felt252_sub(v1, v6)
 End:
   Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk5,
@@ -1011,7 +1011,7 @@ End:
 blk2:
 Statements:
   (v2: core::felt252) <- 1u
-  (v15: core::felt252) <- core::felt252_sub(v2, v0)
+  (v15: core::felt252) <- core::felt252_sub(v0, v2)
 End:
   Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk3,
@@ -1032,7 +1032,7 @@ End:
 blk5:
 Statements:
   (v5: core::felt252) <- 2u
-  (v16: core::felt252) <- core::felt252_sub(v5, v0)
+  (v16: core::felt252) <- core::felt252_sub(v0, v5)
 End:
   Match(match core::felt252_is_zero(v16) {
     IsZeroResult::Zero => blk6,
@@ -1047,7 +1047,7 @@ End:
 blk7:
 Statements:
   (v8: core::felt252) <- 3u
-  (v17: core::felt252) <- core::felt252_sub(v8, v0)
+  (v17: core::felt252) <- core::felt252_sub(v0, v8)
 End:
   Match(match core::felt252_is_zero(v17) {
     IsZeroResult::Zero => blk8,

@@ -4,7 +4,7 @@ use num_traits::Zero;
 
 use super::bounded_int::BoundedIntType;
 use super::range_check::RangeCheckType;
-use super::utils::{extract_bounds, Range};
+use super::utils::Range;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -58,10 +58,10 @@ impl ConstrainRangeLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        let in_range = extract_bounds(&in_ty_info)?;
-        let out_range = extract_bounds(&out_ty_info)?;
+        let in_range = Range::from_type_info(&in_ty_info)?;
+        let out_range = Range::from_type_info(&out_ty_info)?;
 
-        if !in_range.lower.is_zero() || !out_range.lower.is_zero() {
+        if in_range.size() < Felt252::prime().into() || !out_range.lower.is_zero() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         if in_range.lower >= in_range.upper || out_range.lower >= out_range.upper {
