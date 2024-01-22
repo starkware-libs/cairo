@@ -15,10 +15,11 @@ use itertools::chain;
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
-use crate::pre_sierra::{self, StatementsLocations};
+use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::statements_locations::StatementsLocations;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
