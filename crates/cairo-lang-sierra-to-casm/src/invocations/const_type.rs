@@ -21,7 +21,6 @@ pub fn build_as_box(
     libfunc: &ConstAsBoxConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let const_type = libfunc.const_type.clone();
     let ctx = casm! {
         // The relocation will point the `call` to the `ret;` instruction that precedes the
         // relevant const.
@@ -32,8 +31,14 @@ pub fn build_as_box(
         [ap] = [ap - 1] + 1, ap++;
     };
     let relocations = vec![
-        RelocationEntry { instruction_idx: 0, relocation: Relocation::Const(const_type.clone()) },
-        RelocationEntry { instruction_idx: 1, relocation: Relocation::Const(const_type) },
+        RelocationEntry {
+            instruction_idx: 0,
+            relocation: Relocation::SegmentStart(libfunc.segment_id),
+        },
+        RelocationEntry {
+            instruction_idx: 1,
+            relocation: Relocation::ConstStart(libfunc.segment_id, libfunc.const_type.clone()),
+        },
     ];
     Ok(builder.build(
         ctx.instructions,
