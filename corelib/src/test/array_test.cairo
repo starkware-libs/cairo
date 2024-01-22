@@ -116,3 +116,32 @@ fn test_append_span() {
     assert_eq(arr[4], @11, 'Unexpected element');
     assert_eq(arr[5], @12, 'Unexpected element');
 }
+
+#[derive(Drop, PartialEq)]
+struct A {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+mod span_from_tuple_felt252 {
+    pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+}
+mod span_from_tuple_A {
+    pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<super::A> nopanic;
+}
+#[test]
+fn test_span_from_tuple_felt252() {
+    let x1 = A { a: 10, b: 20, c: 30 };
+    let span = span_from_tuple_felt252::span_from_tuple(BoxTrait::new(@x1));
+    assert_eq(span[0], @10, 'Unexpected element');
+    assert_eq(span[1], @20, 'Unexpected element');
+    assert_eq(span[2], @30, 'Unexpected element');
+}
+#[test]
+fn test_span_from_tuple_A() {
+    let x1 = (A { a: 10, b: 20, c: 30 }, A { a: 40, b: 50, c: 60 }, A { a: 70, b: 80, c: 90 });
+    let span: @Array<A> = span_from_tuple_A::span_from_tuple(BoxTrait::new(@x1));
+    assert_eq(span[0], @A { a: 10, b: 20, c: 30 }, 'Unexpected element');
+    assert_eq(span[1], @A { a: 40, b: 50, c: 60 }, 'Unexpected element');
+    assert_eq(span[2], @A { a: 70, b: 80, c: 90 }, 'Unexpected element');
+}
