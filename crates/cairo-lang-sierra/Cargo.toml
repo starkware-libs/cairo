@@ -14,7 +14,7 @@ regex = "1"
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.0-dev.0", features = ["serde", "schemars"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.0", features = ["serde", "schemars"] }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
