@@ -395,7 +395,7 @@ fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
 
 impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
     fn try_into(self: u8) -> Option<NonZero<u8>> {
-        Option::Some(u8_as_non_zero(self))
+        u8_try_as_non_zero(self)
     }
 }
 
@@ -789,7 +789,7 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
 
 pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
     fn try_into(self: u32) -> Option<NonZero<u32>> {
-        Option::Some(u32_as_non_zero(self))
+        u32_try_as_non_zero(self)
     }
 }
 
@@ -986,7 +986,7 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
 
 impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
     fn try_into(self: u64) -> Option<NonZero<u64>> {
-        Option::Some(u64_as_non_zero(self))
+        u64_try_as_non_zero(self)
     }
 }
 
@@ -1255,7 +1255,7 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
 
 pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
     fn try_into(self: u256) -> Option<NonZero<u256>> {
-        Option::Some(u256_as_non_zero(self))
+        u256_try_as_non_zero(self)
     }
 }
 
