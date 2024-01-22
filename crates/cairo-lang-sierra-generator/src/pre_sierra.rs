@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use cairo_lang_debug::DebugWithDb;
@@ -8,7 +7,6 @@ use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
 use cairo_lang_utils::{define_short_id, write_comma_separated};
-use sierra::program::StatementIdx;
 
 use crate::db::SierraGenGroup;
 
@@ -90,25 +88,6 @@ pub struct StatementWithLocation {
 impl StatementWithLocation {
     pub fn set_location(&mut self, location: Option<StableLocation>) {
         self.location = location;
-    }
-}
-
-/// The location of the high level source code which caused a statement to be generated.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StatementsLocations {
-    pub locations: HashMap<StatementIdx, StableLocation>,
-}
-
-impl StatementsLocations {
-    /// Creates a new [StatementsLocations] object from a list of [StatementWithLocation].
-    pub fn from_statements(statements: &[StatementWithLocation]) -> Self {
-        let mut locations = HashMap::new();
-        for (idx, statement) in statements.iter().enumerate() {
-            if let Some(location) = &statement.location {
-                locations.insert(StatementIdx(idx), *location);
-            }
-        }
-        Self { locations }
     }
 }
 
