@@ -5,7 +5,6 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
-use crate::pre_sierra::StatementWithLocation;
 #[cfg(test)]
 #[path = "statements_locations_test.rs"]
 mod test;
@@ -76,11 +75,11 @@ pub struct StatementsLocations {
 }
 
 impl StatementsLocations {
-    /// Creates a new [StatementsLocations] object from a list of [StatementWithLocation].
-    pub fn from_statements(statements: &[StatementWithLocation]) -> Self {
+    /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
+    pub fn from_locations_vec(locations_vec: &[Option<StableLocation>]) -> Self {
         let mut locations = UnorderedHashMap::new();
-        for (idx, statement) in statements.iter().enumerate() {
-            if let Some(location) = &statement.location {
+        for (idx, location) in locations_vec.iter().enumerate() {
+            if let Some(location) = location {
                 locations.insert(StatementIdx(idx), *location);
             }
         }
