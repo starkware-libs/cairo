@@ -243,6 +243,18 @@ impl Statement {
             Statement::Desnap(stmt) => vec![stmt.output],
         }
     }
+    pub fn location(&self) -> Option<LocationId> {
+        // TODO(Gil): Add location to all statements.
+        match &self {
+            Statement::Literal(_) => None,
+            Statement::Call(stmt) => Some(stmt.location),
+            Statement::StructConstruct(_) => None,
+            Statement::StructDestructure(stmt) => Some(stmt.input.location),
+            Statement::EnumConstruct(stmt) => Some(stmt.input.location),
+            Statement::Snapshot(stmt) => Some(stmt.input.location),
+            Statement::Desnap(stmt) => Some(stmt.input.location),
+        }
+    }
 }
 
 /// A statement that binds a literal value to a variable.
