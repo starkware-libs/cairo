@@ -97,7 +97,7 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let to_range: Range = Range::from_type(context, to_ty.clone())?;
+        let to_range = Range::from_type(context, to_ty.clone())?;
         let from_range = Range::from_type(context, from_ty.clone())?;
         // Shrinking the range of the destination type by the range of the source type.
         // This is necessary for example in the case `[0, PRIME) -> i8`.
@@ -122,7 +122,7 @@ impl NamedLibfunc for DowncastLibfunc {
         // `validate_under_limit`.
         let is_felt252_valid_downcast = from_range.is_full_felt252_range()
             && to_range.size() < (Felt252::prime() % u128::MAX).into();
-        if !is_small_values_downcast && !is_felt252_valid_downcast {
+        if !(is_small_values_downcast || is_felt252_valid_downcast) {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
