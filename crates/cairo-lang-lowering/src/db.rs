@@ -10,6 +10,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
+use semantic::corelib;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -17,6 +18,7 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
+use crate::ids::FunctionLongId;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
@@ -29,7 +31,9 @@ use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
+use crate::{
+    ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement,
+};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -433,11 +437,25 @@ fn concrete_function_with_body_lowered(
 /// according to the given [DependencyType]. See [DependencyType] for more information about
 /// what is considered a dependency.
 pub(crate) fn get_direct_callees(
+    db: &dyn LoweringGroup,
     lowered_function: &FlatLowered,
     dependency_type: DependencyType,
 ) -> Vec<ids::FunctionId> {
+    // TODO(orizi): Follow calls for destructors as well.
     let mut direct_callees = Vec::new();
-    for (_, block) in &lowered_function.blocks {
+    if lowered_function.blocks.is_empty() {
+        return direct_callees;
+    }
+    let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast())
+        .map(|id| db.intern_lowering_function(FunctionLongId::Semantic(id)));
+    let mut visited = vec![false; lowered_function.blocks.len()];
+    let mut stack = vec![BlockId(0)];
+    while let Some(block_id) = stack.pop() {
+        if visited[block_id.0] {
+            continue;
+        }
+        visited[block_id.0] = true;
+        let block = &lowered_function.blocks[block_id];
         for statement in &block.statements {
             if let Statement::Call(statement_call) = statement {
                 // If the dependency_type is DependencyType::Cost and this call has a coupon input,
@@ -449,8 +467,22 @@ pub(crate) fn get_direct_callees(
                 }
             }
         }
-        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
-            direct_callees.push(s.function);
+        match &block.end {
+            FlatBlockEnd::NotSet | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::Goto(next, _) => stack.push(*next),
+            FlatBlockEnd::Match { info } => {
+                if let MatchInfo::Extern(s) = info {
+                    direct_callees.push(s.function);
+                    if DependencyType::Cost == dependency_type
+                        && withdraw_gas_fns.contains(&s.function)
+                    {
+                        // Not following the option when successfully fetched gas.
+                        stack.extend(info.arms().iter().skip(1).map(|arm| arm.block_id));
+                        continue;
+                    }
+                }
+                stack.extend(info.arms().iter().map(|arm| arm.block_id));
+            }
         }
     }
     direct_callees
@@ -462,7 +494,7 @@ fn concrete_function_with_body_postinline_direct_callees(
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
     let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
-    Ok(get_direct_callees(&lowered_function, dependency_type))
+    Ok(get_direct_callees(db, &lowered_function, dependency_type))
 }
 
 fn concrete_function_with_body_postpanic_direct_callees(
@@ -471,7 +503,7 @@ fn concrete_function_with_body_postpanic_direct_callees(
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
     let lowered_function = db.concrete_function_with_body_postpanic_lowered(function_id)?;
-    Ok(get_direct_callees(&lowered_function, dependency_type))
+    Ok(get_direct_callees(db, &lowered_function, dependency_type))
 }
 
 /// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
