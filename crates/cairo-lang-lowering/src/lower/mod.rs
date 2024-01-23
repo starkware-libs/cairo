@@ -22,7 +22,7 @@ use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath,
+    ConcreteTypeId, ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, FunctionId,
     GenericArgumentId, MatchArmSelector, Pattern, PatternEnumVariant, PatternId, TypeLongId,
     ValueSelectorArm,
 };
@@ -1628,28 +1628,14 @@ fn lower_expr_match(
 
     if ty == ctx.db.core_felt252_ty() {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
-        return lower_expr_match_felt252(ctx, expr, match_input, builder);
+        return lower_expr_match_felt252(ctx, expr, match_input, builder, None);
     }
     if let Some(convert_function) =
         corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty)
     {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
-        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
-        let call_result = generators::Call {
-            function: convert_function.lowered(ctx.db),
-            inputs: vec![match_input],
-            extra_ret_tys: vec![],
-            ret_tys: vec![ret_ty],
-            location,
-        }
-        .add(ctx, &mut builder.statements);
 
-        return lower_expr_match_felt252(
-            ctx,
-            expr,
-            call_result.returns.into_iter().next().unwrap(),
-            builder,
-        );
+        return lower_expr_match_felt252(ctx, expr, match_input, builder, Some(convert_function));
     }
 
     // TODO(spapini): Use diagnostics.
@@ -2137,6 +2123,7 @@ fn lower_expr_match_felt252(
     expr: &semantic::ExprMatch,
     match_input: VarUsage,
     builder: &mut BlockBuilder,
+    convert_function: Option<FunctionId>,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a match-felt252 expression.");
     if expr.arms.is_empty() {
@@ -2208,6 +2195,20 @@ fn lower_expr_match_felt252(
     });
 
     if max <= numeric_match_optimization_threshold(ctx) {
+        let match_input = if let Some(convert_function) = convert_function {
+            let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
+            let call_result = generators::Call {
+                function: convert_function.lowered(ctx.db),
+                inputs: vec![match_input],
+                extra_ret_tys: vec![],
+                ret_tys: vec![ret_ty],
+                location,
+            }
+            .add(ctx, &mut builder.statements);
+            call_result.returns.into_iter().next().unwrap()
+        } else {
+            match_input
+        };
         let match_info =
             lower_expr_felt252_arm(ctx, expr, match_input, builder, 0, 0, &mut arms_vec)?;
 
@@ -2218,11 +2219,10 @@ fn lower_expr_match_felt252(
     }
     let semantic_db = ctx.db.upcast();
 
-    let felt252_ty = core_felt252_ty(semantic_db);
+    let input_ty = ctx.function_body.exprs[expr.matched_expr].ty();
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
-    let function_id =
-        corelib::core_downcast(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
+    let function_id = corelib::core_downcast(semantic_db, input_ty, bounded_int_ty).lowered(ctx.db);
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
 
