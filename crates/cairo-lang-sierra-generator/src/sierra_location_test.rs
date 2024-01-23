@@ -1,9 +1,11 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
@@ -38,7 +40,7 @@ pub fn test_sierra_locations(
             .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
         // TODO(Gil): Improve the location string.
         let location_str = if let Some(location) = stmt.location {
-            format!("{:?}", location.diagnostic_location(db).debug(db))
+            format!("Originating location:\n{}", get_location_marks(db, &location.diagnostic_location(db)))
         } else {
             "".to_string()
         };
