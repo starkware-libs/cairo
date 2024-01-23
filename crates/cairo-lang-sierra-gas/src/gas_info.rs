@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use cairo_lang_sierra::extensions::branch_align::BranchAlignLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::sub_maps;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
@@ -56,16 +58,29 @@ impl GasInfo {
         GasInfo { variable_values, function_costs }
     }
 
-    /// Asserts that all the values in `self.variable_values` are equal to the values in
-    /// `other.variable_values`. Panics otherwise, printing the differences.
-    pub fn assert_eq_variables(&self, other: &GasInfo) {
+    /// Asserts that all non-branch align values in `self.variable_values` are equal to the values
+    /// in `other.variable_values`. Panics otherwise, printing the differences.
+    /// We allow branch align values to be different, as they do not affect generated code directly.
+    pub fn assert_eq_variables(&self, other: &GasInfo, program: &Program) {
+        let branch_align_id = program
+            .libfunc_declarations
+            .iter()
+            .find(|fd| fd.long_id.generic_id.0 == BranchAlignLibfunc::STR_ID)
+            .map(|fd| &fd.id);
         let mut fail = false;
-        for (key, val) in sub_maps(self.variable_values.clone(), other.variable_values.clone()) {
-            if val != 0 {
+        for ((idx, token), val) in
+            sub_maps(self.variable_values.clone(), other.variable_values.clone())
+        {
+            if val != 0
+                && !matches!(
+                    (program.get_statement(&idx), branch_align_id),
+                    (Some(Statement::Invocation(x)), Some(branch_align_id))
+                    if &x.libfunc_id == branch_align_id)
+            {
                 println!(
-                    "Difference in {key:?}: {:?} != {:?}.",
-                    self.variable_values.get(&key),
-                    other.variable_values.get(&key)
+                    "Difference in ({idx:?}, {token:?}): {:?} != {:?}.",
+                    self.variable_values.get(&(idx, token)),
+                    other.variable_values.get(&(idx, token))
                 );
                 fail = true;
             }
