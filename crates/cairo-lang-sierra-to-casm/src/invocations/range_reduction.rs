@@ -60,7 +60,7 @@ pub fn build_felt252_range_reduction(
         hint TestLessThan {lhs: canonical_value, rhs: range_size} into {dst: in_range};
         jump InRange if in_range != 0;
         // OutOfRange:
-        // Since `range_upper` may be 0.
+        // Using `maybe_tempvar` since `range_upper` may be 0.
         maybe_tempvar validated_value = value - range_upper;
     }
 
@@ -85,7 +85,7 @@ pub fn build_felt252_range_reduction(
     );
     casm_build_extend! {casm_builder,
     InRange:
-        // Since `minus_range_lower` may be 0.
+        // Using `maybe_tempvar` since `minus_range_lower` may be 0.
         maybe_tempvar rc_val = value + minus_range_lower;
         assert rc_val = *(range_check++);
     }
@@ -96,7 +96,7 @@ pub fn build_felt252_range_reduction(
         let upper_bound_fixer = rc_size - &out_range.upper;
         casm_build_extend! {casm_builder,
             const upper_bound_fixer = upper_bound_fixer;
-            // Since `upper_bound_fixer` may be 0.
+            // Using `maybe_tempvar` since `upper_bound_fixer` may be 0.
             maybe_tempvar rc_val = value + upper_bound_fixer;
             assert rc_val = *(range_check++);
         }
