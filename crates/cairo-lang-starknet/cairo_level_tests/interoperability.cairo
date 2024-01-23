@@ -90,7 +90,7 @@ fn test_flow_safe_dispatcher() {
 }
 
 #[test]
-#[available_gas(1170000)]
+#[available_gas(1160000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Set up.
