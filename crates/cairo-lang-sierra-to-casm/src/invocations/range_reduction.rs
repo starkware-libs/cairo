@@ -66,16 +66,19 @@ pub fn build_felt252_range_reduction(
 
     // Assert that `value - out_range.upper < prime - out_range.size()`.
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
-    // `validate_under_limit` is guaranteed to work with `K=2` for
-    // `out_range.size() < prime % u128::MAX`:
-    // Let `x` be such that `out_range.size() == prime % u128::MAX - 1 - x`.
+    // Note that if `verify_optimal_range = true` then `out_range.size() < prime % u128::MAX`
+    // and therefore `validate_under_limit<2>` is guaranteed to work:
+    //
+    // Let `x` be such that `out_range.size() == (prime % u128::MAX) - 1 - x`.
     // We have:
     //   * `0 <= x < prime % u128::MAX - 1`,
-    //   * `A = limit / (u128::MAX - 1) = 2**123 + 17*2**64 + x / (u128::MAX - 1)`,
+    //   * `limit = prime - size = 2**251 + 17*2**192 + 1 - (2**123 + 17 * 2**64 + 1) + 1 + x`,
+    //   * `A = limit / (u128::MAX - 1) = 2**123 + 17*2**64`,
     //   * `B = limit % (u128::MAX - 1) = 2**123 + 17*2**64 + 1 + x`.
-    // Since `x < prime % u128::MAX - 1 < u128::MAX - 1` so the `A <= B` condition is satisfied.
-    // The other cases would work if `validate_under_limit` assertions pass (the only such case
-    // currently called is the felt252 to i128 cast).
+    // Since `x >= 0`, the `A <= B` condition is satisfied.
+    //
+    // The other cases would work if the inner assertions of `validate_under_limit` pass
+    // (the only such case currently used is the `felt252` to `i128` cast).
     validate_under_limit::<2>(
         &mut casm_builder,
         &(prime - out_range.size()),
