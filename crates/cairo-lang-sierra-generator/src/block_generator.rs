@@ -248,10 +248,17 @@ pub fn generate_return_code(
             dup: should_dup,
         });
     }
+    let location = returned_variables
+        .last()
+        .map(|var| context.get_db().lookup_intern_location(var.location).stable_location);
+    let mut push_statement =
+        pre_sierra::Statement::PushValues(push_values).into_statement_without_location();
+    push_statement.set_location(location);
+    statements.push(push_statement);
+    let mut return_statement = return_statement(return_variables_on_stack);
 
-    statements
-        .push(pre_sierra::Statement::PushValues(push_values).into_statement_without_location());
-    statements.push(return_statement(return_variables_on_stack));
+    return_statement.set_location(location);
+    statements.push(return_statement);
 
     Ok(statements)
 }
