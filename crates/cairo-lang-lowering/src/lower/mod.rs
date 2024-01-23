@@ -2222,7 +2222,7 @@ fn lower_expr_match_felt252(
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
     let function_id =
-        corelib::core_constrain_range(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
+        corelib::core_downcast(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
 
