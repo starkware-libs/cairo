@@ -4,6 +4,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
@@ -38,7 +39,9 @@ pub fn test_sierra_locations(
             .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
         // TODO(Gil): Improve the location string.
         let location_str = if let Some(location) = stmt.location {
-            format!("{:?}", location.diagnostic_location(db).debug(db))
+            let diagnostic_str = format!("{:?}", location.diagnostic_location(db).debug(db));
+            // Remove the file name (first line) from the diagnostic string.
+            format!("Originating location:\n{}", diagnostic_str.lines().skip(1).join("\n"))
         } else {
             "".to_string()
         };
