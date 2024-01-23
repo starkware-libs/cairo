@@ -33,7 +33,6 @@ drop<felt252>([1]) -> ()
 felt252_const<5>() -> ([2])
 
 felt252_add([0], [2]) -> ([3])
-lib.cairo:5:13
     let b = felt252_add(a, 5);
             ^***************^
 store_temp<felt252>([3]) -> ([4])
@@ -47,7 +46,6 @@ store_temp<felt252>([5]) -> ([5])
 store_temp<felt252>([3]) -> ([3])
 
 function_call<user@test::bar>([4], [5], [3]) -> ([6])
-lib.cairo:6:5
     bar(b, b, b)
     ^**********^
 return([6])
