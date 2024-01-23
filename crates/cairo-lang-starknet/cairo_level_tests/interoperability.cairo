@@ -89,33 +89,14 @@ fn test_flow_safe_dispatcher() {
     assert_eq!(library.foo(300), Result::Ok(0));
 }
 
+// If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
+// gas usage and remove 10000.
 #[test]
-#[available_gas(1160000)]
+#[available_gas(1165170)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
-    // Set up.
-    let (address0, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![100].span(), false
-    )
-        .unwrap();
-    let mut contract0 = IContractDispatcher { contract_address: address0 };
-    let (address1, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, array![200].span(), false
-    )
-        .unwrap();
-    let mut contract1 = IContractDispatcher { contract_address: address1 };
-
-    // Interact.
-    assert_eq!(contract0.foo(300), 100);
-    assert_eq!(contract1.foo(300), 200);
-    assert_eq!(contract0.foo(300), 300);
-    assert_eq!(contract1.foo(300), 300);
-
-    // Library calls.
-    let mut library = IContractLibraryDispatcher {
-        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
-    };
-    assert_eq!(library.foo(300), 0);
+    // Calling the `test_flow` test but a low gas limit.
+    test_flow();
 }
 
 #[test]
