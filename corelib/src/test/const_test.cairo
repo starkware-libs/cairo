@@ -99,3 +99,28 @@ fn test_complex_enum() {
             .unbox() == ThreeOptions::C
     );
 }
+
+#[derive(Copy, Drop, PartialEq, Debug)]
+enum ThreeOptions2 {
+    A: felt252,
+    B: (u256, u256),
+    C,
+}
+
+mod const_tuple_three_options {
+    pub extern fn const_as_box<T>() -> Box<(super::ThreeOptions2, super::ThreeOptions2)> nopanic;
+}
+
+#[test]
+fn test_two_complex_enums() {
+    assert!(
+        const_tuple_three_options::const_as_box::<
+            struct2::Const<
+                (ThreeOptions2, ThreeOptions2),
+                enum_value::Const<ThreeOptions2, 0, value::Const<felt252, 1337>>,
+                enum_value::Const<ThreeOptions2, 2, struct0::Const<()>>,
+            >
+        >()
+            .unbox() == (ThreeOptions2::A(1337), ThreeOptions2::C),
+    );
+}

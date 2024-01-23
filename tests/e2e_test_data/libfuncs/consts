@@ -313,3 +313,72 @@ const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 
 return([0]); // 1
 
 test::foo@0() -> (Box<test::ThreeOptions>);
+
+//! > ==========================================================================
+
+//! > const several complex enums
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+mod enum_value { extern type Const<T, const VARIANT_INDEX: felt252, V>; }
+mod value { extern type Const<T, const VALUE: T>; }
+mod struct0 { extern type Const<T>; }
+mod struct2 { extern type Const<T, C0, C1>; }
+extern fn const_as_box<T>() -> Box<(ThreeOptions, ThreeOptions)> nopanic;
+
+enum ThreeOptions {
+    A: felt252,
+    B: (u256, u256),
+    C,
+}
+
+fn foo() -> Box<(ThreeOptions, ThreeOptions)> {
+    const_as_box::<struct2::Const<
+        (ThreeOptions, ThreeOptions),
+        enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>,
+        enum_value::Const<ThreeOptions, 2, struct0::Const<()>>,
+    >>()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 5;
+dw 0;
+dw 0;
+dw 0;
+dw 1337;
+dw 1;
+dw 0;
+dw 0;
+dw 0;
+dw 0;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type Box<Tuple<test::ThreeOptions, test::ThreeOptions>> = Box<Tuple<test::ThreeOptions, test::ThreeOptions>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> = Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, Tuple<core::integer::u256, core::integer::u256>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<test::ThreeOptions, test::ThreeOptions> = Struct<ut@Tuple, test::ThreeOptions, test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 2, Const<Unit>> = Const<test::ThreeOptions, 2, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>> = const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>;
+
+const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (Box<Tuple<test::ThreeOptions, test::ThreeOptions>>);
