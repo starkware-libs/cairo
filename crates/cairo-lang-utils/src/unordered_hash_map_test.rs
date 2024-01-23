@@ -34,6 +34,23 @@ fn new_hashmap<K, V>() -> UnorderedHashMap<K, V> {
 }
 
 #[test]
+fn test_map() {
+    let mut source = new_hashmap();
+    source.insert(20, 1);
+    source.insert(8, 3);
+    source.insert(9, 5);
+    source.insert(11, 5);
+    let target = source.map(|x| x * 2);
+    let mut expected_target = new_hashmap();
+    expected_target.insert(11, 10);
+    expected_target.insert(20, 2);
+    expected_target.insert(9, 10);
+    expected_target.insert(8, 6);
+
+    assert_eq!(target, expected_target);
+}
+
+#[test]
 fn test_aggregate_by() {
     let mut source = new_hashmap();
     source.insert(20, 1);
