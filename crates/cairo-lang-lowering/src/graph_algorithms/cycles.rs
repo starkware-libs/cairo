@@ -13,7 +13,7 @@ pub fn function_with_body_direct_callees(
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionId>> {
     let lowered = db.function_with_body_lowering(function_id)?;
-    Ok(get_direct_callees(&lowered, dependency_type).into_iter().collect())
+    Ok(get_direct_callees(db, &lowered, dependency_type).into_iter().collect())
 }
 
 /// Query implementation of
