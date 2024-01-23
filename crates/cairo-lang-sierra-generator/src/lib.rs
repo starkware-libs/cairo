@@ -25,3 +25,6 @@ mod store_variables;
 pub mod test_utils;
 mod types;
 mod utils;
+
+#[cfg(test)]
+mod sierra_location_test;
