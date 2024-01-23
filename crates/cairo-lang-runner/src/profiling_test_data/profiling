@@ -61,6 +61,10 @@ Weight by Cairo function:
   function lib.cairo::main: 17
   function lib.cairo::match_long: 11
   function lib.cairo::match_short: 6
+Weight by stack trace:
+  examples::enum_flow::main: 34
+  examples::enum_flow::main -> examples::enum_flow::match_long: 11
+  examples::enum_flow::main -> examples::enum_flow::match_short: 6
 
 //! > ==========================================================================
 
@@ -176,6 +180,11 @@ Weight by Cairo function:
   function lib.cairo::main: 33
   function integer.cairo::U8Add::add: 30
   function result.cairo::ResultTraitImpl::expect: 12
+Weight by stack trace:
+  examples::match_or::main: 132
+  examples::match_or::main -> examples::match_or::foo: 99
+  examples::match_or::main -> examples::match_or::foo -> core::integer::U8Add::add: 42
+  examples::match_or::main -> examples::match_or::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 
 //! > ==========================================================================
 
@@ -219,6 +228,8 @@ Weight by original user function:
   function test::test_pedersen: 15
 Weight by Cairo function:
   function lib.cairo::test_pedersen: 15
+Weight by stack trace:
+  test::test_pedersen: 15
 
 //! > ==========================================================================
 
@@ -294,4 +305,11 @@ Weight by user function (inc. generated):
 Weight by original user function:
   function test::main: 90
 Weight by Cairo function:
-  function lib.cairo::main: 90
+  function test::main: 90
+Weight by stack trace:
+  main: 23
+  main -> main[expr15]: 19
+  main -> main[expr15] -> main[expr15]: 15
+  main -> main[expr15] -> main[expr15] -> main[expr15]: 11
+  main -> main[expr15] -> main[expr15] -> main[expr15] -> main[expr15]: 7
+  main -> main[expr15] -> main[expr15] -> main[expr15] -> main[expr15] -> main[expr15]: 3
