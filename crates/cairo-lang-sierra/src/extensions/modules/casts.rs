@@ -108,6 +108,9 @@ impl NamedLibfunc for DowncastLibfunc {
         let to_range =
             to_range.intersection(&from_range).ok_or(SpecializationError::UnsupportedGenericArg)?;
 
+        // TODO: I think `Range` should fail on construction if the range is empty, and then you
+        //   can skip `is_empty` checks.
+
         // Don't allow a downcast that would always fail (disjoint ranges).
         if to_range.is_empty() {
             return Err(SpecializationError::UnsupportedGenericArg);
