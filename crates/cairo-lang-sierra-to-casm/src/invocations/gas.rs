@@ -121,6 +121,8 @@ fn build_redeposit_gas(
             .into_iter(),
         ));
     }
+    // TODO: Can we move this up and replace `unwrap_or` -> `unwrap`?
+    // TODO: Note this is also verified inside `add_get_total_requested_count_code`.
     if !CostTokenType::iter_casm_tokens()
         .all(|token| variable_values.contains_key(&(builder.idx, *token)))
     {
@@ -134,7 +136,7 @@ fn build_redeposit_gas(
     casm_build_extend! {casm_builder,
         tempvar builtin_cost = cost_builtin_ptr;
     };
-    let (requested_count, total_requested_count) =
+    let (_, total_requested_count) =
         add_get_total_requested_count_code(&builder, &mut casm_builder, builtin_cost)?;
 
     casm_build_extend! {casm_builder,
