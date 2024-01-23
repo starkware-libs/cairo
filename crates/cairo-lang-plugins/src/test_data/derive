@@ -390,9 +390,11 @@ impl TwoVariantEnumSerde of core::serde::Serde::<TwoVariantEnum> {
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoVariantEnum> {
         let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
         core::option::Option::Some(
-            if idx == 0 { TwoVariantEnum::First(core::serde::Serde::deserialize(ref serialized)?) }
-            else if idx == 1 { TwoVariantEnum::Second(core::serde::Serde::deserialize(ref serialized)?) }
-            else { return core::option::Option::None; }
+            match idx {
+                0 => TwoVariantEnum::First(core::serde::Serde::deserialize(ref serialized)?),
+                1 => TwoVariantEnum::Second(core::serde::Serde::deserialize(ref serialized)?),
+                _ => { return core::option::Option::None; }
+            }
         )
     }
 }
