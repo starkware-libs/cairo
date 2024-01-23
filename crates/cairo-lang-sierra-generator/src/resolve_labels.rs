@@ -2,28 +2,29 @@
 #[path = "resolve_labels_test.rs"]
 mod test;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_sierra::program;
 
 use crate::next_statement_index_fetch::NextStatementIndexFetch;
 use crate::pre_sierra;
 
 /// Replaces labels with their corresponding StatementIdx.
-pub fn resolve_labels(
+pub fn resolve_labels_and_extract_locations(
     statements: Vec<pre_sierra::StatementWithLocation>,
     label_replacer: &LabelReplacer,
-) -> Vec<program::Statement> {
+) -> (Vec<program::Statement>, Vec<Option<StableLocation>>) {
     statements
         .into_iter()
         .filter_map(|statement| match statement.statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
-                Some(label_replacer.handle_statement(sierra_statement))
+                Some((label_replacer.handle_statement(sierra_statement), statement.location))
             }
             pre_sierra::Statement::Label(_) => None,
             pre_sierra::Statement::PushValues(_) => {
                 panic!("Unexpected pre_sierra::Statement:PushValues in resolve_labels().")
             }
         })
-        .collect()
+        .unzip()
 }
 
 /// Helper struct for resolve_labels.

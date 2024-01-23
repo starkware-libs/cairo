@@ -17,7 +17,7 @@ use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
-use crate::resolve_labels::{resolve_labels, LabelReplacer};
+use crate::resolve_labels::{resolve_labels_and_extract_locations, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::statements_locations::StatementsLocations;
 
@@ -188,10 +188,10 @@ pub fn get_sierra_program_for_functions(
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
         generate_type_declarations(db, collect_used_types(db, &libfunc_declarations));
-    let statements_locations = StatementsLocations::from_statements(&statements);
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
-    let resolved_statements = resolve_labels(statements, &label_replacer);
+    let (resolved_statements, statements_locations) =
+        resolve_labels_and_extract_locations(statements, &label_replacer);
 
     let program = program::Program {
         type_declarations,
@@ -210,7 +210,10 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
-    Ok((Arc::new(program), Arc::new(statements_locations)))
+    Ok((
+        Arc::new(program),
+        Arc::new(StatementsLocations::from_locations_vec(&statements_locations)),
+    ))
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.

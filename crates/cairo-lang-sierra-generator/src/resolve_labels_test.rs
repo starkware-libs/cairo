@@ -2,7 +2,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use super::resolve_labels;
+use super::resolve_labels_and_extract_locations;
 use crate::pre_sierra;
 use crate::resolve_labels::LabelReplacer;
 use crate::test_utils::{label_id_from_usize, SierraGenDatabaseForTesting};
@@ -38,11 +38,10 @@ fn test_resolve_labels() {
         label(9),
     ];
     let label_replacer = LabelReplacer::from_statements(&statements);
+    let (statements, _statements_location) =
+        resolve_labels_and_extract_locations(statements, &label_replacer);
     assert_eq!(
-        resolve_labels(statements, &label_replacer)
-            .iter()
-            .map(|x| format!("{x}"))
-            .collect::<Vec<String>>(),
+        statements.iter().map(|x| format!("{x}")).collect::<Vec<String>>(),
         vec![
             // labels 7 and 5 (instruction index 0).
             "Instruction0() -> ()",
