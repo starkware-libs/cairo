@@ -3,7 +3,9 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 
 use super::misc::get_pointer_after_program_code;
@@ -39,11 +41,10 @@ fn build_withdraw_gas(
         deref gas_counter;
     };
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
+    validate_all_casm_token_vars_available(variable_values, builder.idx)?;
 
     // Check if we need to fetch the builtin cost table.
-    if CostTokenType::iter_precost()
-        .any(|token| *variable_values.get(&(builder.idx, *token)).unwrap_or(&0) > 0)
-    {
+    if CostTokenType::iter_precost().any(|token| variable_values[&(builder.idx, *token)] > 0) {
         let (pre_instructions, cost_builtin_ptr) =
             add_cost_builtin_ptr_fetch_code(&mut casm_builder);
         casm_build_extend!(casm_builder, tempvar cost_builtin = cost_builtin_ptr;);
@@ -97,14 +98,10 @@ fn build_redeposit_gas(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [gas_counter] = builder.try_get_single_cells()?;
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    let requested_count: i64 = variable_values
-        .get(&(builder.idx, CostTokenType::Const))
-        .copied()
-        .ok_or(InvocationError::UnknownVariableData)?;
+    validate_all_casm_token_vars_available(variable_values, builder.idx)?;
+    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     // Check if we need to fetch the builtin cost table.
-    if CostTokenType::iter_precost()
-        .all(|token| *variable_values.get(&(builder.idx, *token)).unwrap_or(&0) == 0)
-    {
+    if CostTokenType::iter_precost().all(|token| variable_values[&(builder.idx, *token)] == 0) {
         let gas_counter_value =
             gas_counter.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
@@ -120,11 +117,6 @@ fn build_redeposit_gas(
             }]
             .into_iter(),
         ));
-    }
-    if !CostTokenType::iter_casm_tokens()
-        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
-    {
-        return Err(InvocationError::UnknownVariableData);
     }
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -160,6 +152,10 @@ fn build_builtin_withdraw_gas(
         deref gas_counter;
         deref builtin_cost;
     };
+    validate_all_casm_token_vars_available(
+        &builder.program_info.metadata.gas_info.variable_values,
+        builder.idx,
+    )?;
     build_withdraw_gas_given_cost_table(
         builder,
         casm_builder,
@@ -220,11 +216,6 @@ fn add_get_total_requested_count_code(
     builtin_cost: Var,
 ) -> Result<(i64, Var), InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    if !CostTokenType::iter_casm_tokens()
-        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
-    {
-        return Err(InvocationError::UnknownVariableData);
-    }
     let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
@@ -256,6 +247,19 @@ fn add_get_total_requested_count_code(
         total_requested_count = updated_total_requested_count;
     }
     Ok((requested_count, total_requested_count))
+}
+
+/// Validates that all the cost token variables are available for statement at `idx`.
+fn validate_all_casm_token_vars_available(
+    variable_values: &OrderedHashMap<(StatementIdx, CostTokenType), i64>,
+    idx: StatementIdx,
+) -> Result<(), InvocationError> {
+    for token in CostTokenType::iter_casm_tokens() {
+        if !variable_values.contains_key(&(idx, *token)) {
+            return Err(InvocationError::UnknownVariableData);
+        }
+    }
+    Ok(())
 }
 
 /// Handles the get_builtin_costs invocation.
