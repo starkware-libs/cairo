@@ -7,7 +7,7 @@ use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
@@ -18,7 +18,7 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
-use cairo_lang_sierra::program::{Function, GenericArg, StatementIdx};
+use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -42,7 +42,7 @@ pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use profiling::ProfilingInfo;
+use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
 use thiserror::Error;
 
 use crate::casm_run::RunFunctionContext;
@@ -295,42 +295,99 @@ impl SierraCasmRunner {
         // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
         // subtracted by `real_pc_0` to get the real PC they point to in the original CASM
         // program.
-        // This is the same as the PC of the last trace entry as the header is built to have a `ret`
-        // last instruction, which must be the last in the trace of any execution.
+        // This is the same as the PC of the last trace entry plus 1, as the header is built to have
+        // a `ret` last instruction, which must be the last in the trace of any execution.
+        // The first instruction after that is the first instruction in the original CASM program.
         let real_pc_0 = trace.last().unwrap().pc + 1;
 
-        // Count the number of times each PC was executed. Note the header and footer (CASM
-        // instructions added for running the program by the runner) are also counted (but are
-        // later ignored).
-        let pc_counts =
-            trace.iter().fold(UnorderedHashMap::<usize, usize>::default(), |mut acc, step| {
-                *acc.entry(step.pc).or_insert(0) += 1;
-                acc
-            });
+        // The function stack trace of the current function, excluding the current function (that
+        // is, the stack of the caller). Represented as a vector of indices of the functions
+        // in the stack (indices of the functions according to the list in the sierra program).
+        let mut function_stack = Vec::new();
+        let mut cur_weight = 0;
+        // The key is a function stack trace (see `function_stack`, but including the current
+        // function).
+        // The value is the weight of the stack trace so far, not including the pending weight being
+        // tracked at the time.
+        let mut stack_trace_weights = UnorderedHashMap::new();
+        let mut end_of_program_reached = false;
+        // The total weight of each Sierra statement.
+        // Note the header and footer (CASM instructions added for running the program by the
+        // runner). The header is not counted, and the footer is, but then the relevant
+        // entry is removed.
+        let mut sierra_statements_weights = UnorderedHashMap::new();
+        for step in trace.iter() {
+            // Skip the header.
+            if step.pc < real_pc_0 {
+                continue;
+            }
+            if end_of_program_reached {
+                unreachable!("End of program reached, but trace continues.");
+            }
 
-        // For each pc, find the corresponding Sierra statement, and accumulate the weight to find
-        // the total weight of each Sierra statement.
-        let mut sierra_statements_weights =
-            pc_counts.filter(|pc, count| *count != 0 && *pc >= real_pc_0).aggregate_by(
-                |pc| {
-                    let real_pc = pc - real_pc_0;
-                    // the `-1` here can't cause an underflow as the first statement is always at
-                    // offset 0, so it is always on the left side of the
-                    // partition, and thus the partition index is >0.
-                    let idx = self
-                        .casm_program
-                        .debug_info
-                        .sierra_statement_info
-                        .partition_point(|x| x.code_offset <= real_pc)
-                        - 1;
-                    StatementIdx(idx)
-                },
-                |x, y| x + y,
-                &0,
+            cur_weight += 1;
+
+            let real_pc = step.pc - real_pc_0;
+            // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
+            // save lookups.
+            let sierra_statement_idx = self.sierra_statement_index_by_pc(real_pc);
+            let user_function_idx = user_function_idx_by_sierra_statement_idx(
+                &self.sierra_program,
+                &sierra_statement_idx,
             );
+
+            *sierra_statements_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+
+            let Some(gen_statement) = self.sierra_program.statements.get(sierra_statement_idx.0)
+            else {
+                panic!("Failed fetching statement index {}", sierra_statement_idx.0);
+            };
+
+            match gen_statement {
+                GenStatement::Invocation(invocation) => {
+                    if matches!(
+                        self.sierra_program_registry.get_libfunc(&invocation.libfunc_id),
+                        Ok(CoreConcreteLibfunc::FunctionCall(_))
+                    ) {
+                        // Push to the stack.
+                        function_stack.push((user_function_idx, cur_weight));
+                        cur_weight = 0;
+                    }
+                }
+                GenStatement::Return(_) => {
+                    // The current stack trace, including the current function.
+                    let cur_stack: Vec<_> =
+                        chain!(function_stack.iter().map(|f| f.0), [user_function_idx]).collect();
+                    *stack_trace_weights.entry(cur_stack).or_insert(0) += cur_weight;
+
+                    // Pop from the stack.
+                    let Some(popped) = function_stack.pop() else {
+                        // End of the program.
+                        end_of_program_reached = true;
+                        continue;
+                    };
+                    cur_weight += popped.1;
+                }
+            }
+        }
+
+        // Remove the footer.
         sierra_statements_weights.remove(&StatementIdx(sierra_len));
 
-        ProfilingInfo { sierra_statements_weights }
+        ProfilingInfo { sierra_statements_weights, stack_trace_weights }
+    }
+
+    fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
+        // the `-1` here can't cause an underflow as the first statement is always at
+        // offset 0, so it is always on the left side of the
+        // partition, and thus the partition index is >0.
+        StatementIdx(
+            self.casm_program
+                .debug_info
+                .sierra_statement_info
+                .partition_point(|x| x.code_offset <= pc)
+                - 1,
+        )
     }
 
     /// Extract inner type if `ty` is a panic wrapper

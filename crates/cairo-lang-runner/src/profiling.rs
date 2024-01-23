@@ -15,15 +15,28 @@ mod test;
 pub struct ProfilingInfo {
     /// The number of steps in the trace that originated from each sierra statement.
     pub sierra_statements_weights: UnorderedHashMap<StatementIdx, usize>,
+
+    /// A map of weights of each stack trace.
+    /// The key is a function stack trace of an executed function. The stack trace is represented
+    /// as a vector of indices of the functions in the stack (indices of the functions according to
+    /// the list in the sierra program).
+    /// The value is the weight of the stack trace.
+    pub stack_trace_weights: UnorderedHashMap<Vec<usize>, usize>,
 }
 
 // Full profiling info of a single run. This is the processed info which went through additional
 // processing after collecting the raw data during the run itself.
 pub struct ProcessedProfilingInfo {
-    /// For each sierra statement: the number of steps in the trace that originated for it, and the
-    /// relevant GenStatement.
+    /// For each sierra statement: the number of steps in the trace that originated from it, and
+    /// the relevant GenStatement.
     pub sierra_statements_weights:
         OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
+    /// A map of weights of each stack trace.
+    /// The key is a function stack trace of an executed function. The stack trace is represented
+    /// as a vector of the function names.
+    /// The value is the weight of the stack trace.
+    pub stack_trace_weights: OrderedHashMap<Vec<String>, usize>,
+
     /// Weight (in steps in the relevant run) of each concrete libfunc.
     pub concrete_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
     /// Weight (in steps in the relevant run) of each generic libfunc.
@@ -67,6 +80,12 @@ impl Display for ProcessedProfilingInfo {
             for (name, weight) in original_user_functions_weights.iter() {
                 writeln!(f, "  function {name}: {weight}")?;
             }
+        }
+
+        writeln!(f, "Weight by stack trace:")?;
+        for (stack_trace, weight) in self.stack_trace_weights.iter() {
+            let stack_trace_str = stack_trace.join(" -> ");
+            writeln!(f, "  {stack_trace_str}: {weight}")?;
         }
 
         Ok(())
@@ -137,7 +156,7 @@ impl ProfilingInfoProcessor {
             self.sierra_program
                 .libfunc_declarations
                 .iter()
-                .map(|concrete_libfunc| (concrete_libfunc.long_id.generic_id.0.clone(), 0))
+                .map(|generic_libfunc| (generic_libfunc.long_id.generic_id.0.clone(), 0))
                 .collect::<UnorderedHashMap<SmolStr, usize>>()
         } else {
             UnorderedHashMap::new()
@@ -155,7 +174,7 @@ impl ProfilingInfoProcessor {
         };
 
         let mut return_weight = 0;
-        let mut statements_weights = OrderedHashMap::default();
+        let mut sierra_statements_weights = OrderedHashMap::default();
 
         for (statement_idx, weight) in raw_profiling_info
             .sierra_statements_weights
@@ -172,11 +191,7 @@ impl ProfilingInfoProcessor {
                     }
 
                     if params.process_by_generic_libfunc {
-                        // TODO(yuval): This depends on the format of a concrete libfunc name. Fix
-                        // to be more resilient by getting the long ID from the short ID and from
-                        // there get the generic name. This can be done either using a DB, or with a
-                        // sierra program registry, if it's extended to have this mapping.
-                        let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
+                        let generic_name = concrete_name_to_generic_name(concrete_name);
                         *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
                     }
                 }
@@ -186,19 +201,13 @@ impl ProfilingInfoProcessor {
             }
 
             if params.process_by_user_function {
-                // The `-1` here can't cause an underflow as the first function's entry point is
-                // always 0, so it is always on the left side of the partition, and thus the
-                // partition index is >0.
-                let function_idx = self
-                    .sierra_program
-                    .funcs
-                    .partition_point(|x| x.entry_point.0 <= statement_idx.0)
-                    - 1;
+                let function_idx: usize =
+                    user_function_idx_by_sierra_statement_idx(&self.sierra_program, statement_idx);
                 *(user_functions.get_mut(&function_idx).unwrap()) += weight;
             }
 
             if *weight >= params.min_weight {
-                statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
+                sierra_statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
             }
         }
 
@@ -261,8 +270,22 @@ impl ProfilingInfoProcessor {
             }
         }
 
+        let stack_trace_weights = raw_profiling_info
+            .stack_trace_weights
+            .iter_sorted_by_key(|(idx_stack_trace, weight)| {
+                (usize::MAX - **weight, (*idx_stack_trace).clone())
+            })
+            .map(|(idx_stack_trace, weight)| {
+                (
+                    index_stack_trace_to_name_stack_trace(&self.sierra_program, idx_stack_trace),
+                    *weight,
+                )
+            })
+            .collect();
+
         ProcessedProfilingInfo {
-            sierra_statements_weights: statements_weights,
+            sierra_statements_weights,
+            stack_trace_weights,
             generic_libfuncs_weights: Some(generic_libfuncs_weights),
             concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
             user_functions_weights: Some(user_functions_weights),
@@ -270,4 +293,39 @@ impl ProfilingInfoProcessor {
             return_weight,
         }
     }
+}
+
+/// Converts a sierra statement index to the index of the function that contains it (the index in
+/// the list in the sierra program).
+/// Assumes that the given `statement_idx` is valid (that is within range of the given
+/// `sierra_program`) and that the given `sierra_program` is valid, specifically that the first
+/// function's entry point is 0.
+pub fn user_function_idx_by_sierra_statement_idx(
+    sierra_program: &Program,
+    statement_idx: &StatementIdx,
+) -> usize {
+    // The `-1` here can't cause an underflow as the first function's entry point is
+    // always 0, so it is always on the left side of the partition, and thus the
+    // partition index is >0.
+    sierra_program.funcs.partition_point(|f| f.entry_point.0 <= statement_idx.0) - 1
+}
+
+/// Converts a stack trace represented as a vector of indices of functions in the sierra program to
+/// a stack trace represented as a vector of function names.
+/// Assumes that the given `idx_stack_trace` is valid with respect to the given `sierra_program`.
+/// That is, each index in the stack trace is within range of the sierra program.
+fn index_stack_trace_to_name_stack_trace(
+    sierra_program: &Program,
+    idx_stack_trace: &[usize],
+) -> Vec<String> {
+    idx_stack_trace.iter().map(|idx| sierra_program.funcs[*idx].id.to_string()).collect()
+}
+
+/// Extracts the generic libfunc name of the given concrete libfunc name.
+fn concrete_name_to_generic_name(concrete_name: SmolStr) -> SmolStr {
+    // TODO(yuval): This depends on the format of a concrete libfunc name. Fix to be more resilient
+    // by getting the long ID from the short ID and from there get the generic name. This can be
+    // done either using a DB, or with a sierra program registry, if it's extended to have this
+    // mapping.
+    concrete_name.split('<').next().unwrap().into()
 }
