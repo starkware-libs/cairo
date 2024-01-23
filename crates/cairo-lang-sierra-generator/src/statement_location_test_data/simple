@@ -61,3 +61,115 @@ lib.cairo:6:5
     bar(b, b, b)
     ^**********^
 return([6])
+
+//! > ==========================================================================
+
+//! > match statement
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+fn foo(myEnum:MyEnum) -> felt252 {
+    match myEnum {
+        MyEnum::A(a) => a,
+        MyEnum::B(b) => b,
+        MyEnum::C((c1, c2)) => {
+            if c1 == 0 {
+                c1+c2
+            }
+            else {
+                c1*c2
+            }
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A:felt252,
+    B:felt252,
+    C:(felt252,felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+
+enum_match<test::MyEnum>([0]) { fallthrough([1]) label_test::foo::1([2]) label_test::foo::2([3]) }
+lib.cairo:7:5
+    match myEnum {
+    ^************^
+branch_align() -> ()
+lib.cairo:7:5
+    match myEnum {
+    ^************^
+store_temp<felt252>([1]) -> ([1])
+
+return([1])
+
+label_test::foo::1:
+
+branch_align() -> ()
+lib.cairo:7:5
+    match myEnum {
+    ^************^
+store_temp<felt252>([2]) -> ([2])
+
+return([2])
+
+label_test::foo::2:
+
+branch_align() -> ()
+lib.cairo:7:5
+    match myEnum {
+    ^************^
+struct_deconstruct<Tuple<felt252, felt252>>([3]) -> ([4], [5])
+lib.cairo:10:19
+        MyEnum::C((c1, c2)) => {
+                  ^******^
+dup<felt252>([4]) -> ([4], [6])
+
+felt252_is_zero([6]) { fallthrough() label_test::foo::4([7]) }
+lib.cairo:11:13
+            if c1 == 0 {
+            ^**********^
+branch_align() -> ()
+lib.cairo:11:13
+            if c1 == 0 {
+            ^**********^
+felt252_add([4], [5]) -> ([8])
+/home/tomer/workspace/repworkspace/cairo/corelib/src/lib.cairo:126:9
+        felt252_add(lhs, rhs)
+        ^*******************^
+store_temp<felt252>([8]) -> ([8])
+
+return([8])
+
+label_test::foo::4:
+
+branch_align() -> ()
+lib.cairo:11:13
+            if c1 == 0 {
+            ^**********^
+drop<NonZero<felt252>>([7]) -> ()
+
+felt252_mul([4], [5]) -> ([9])
+/home/tomer/workspace/repworkspace/cairo/corelib/src/lib.cairo:154:9
+        felt252_mul(lhs, rhs)
+        ^*******************^
+store_temp<felt252>([9]) -> ([9])
+
+return([9])
+
+label_test::foo::5:
+
+label_test::foo::3:
