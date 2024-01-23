@@ -1,4 +1,3 @@
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -36,9 +35,9 @@ pub fn test_sierra_locations(
     for stmt in function.unwrap().body.iter() {
         sierra_code
             .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
-        // TODO(Gil): Improve the location string.
+        // TODO(Gil): Add containing function to the string.
         let location_str = if let Some(location) = stmt.location {
-            format!("{:?}", location.diagnostic_location(db).debug(db))
+            format!("Originating code: {}", location.syntax_node(db).get_text_without_trivia(db))
         } else {
             "".to_string()
         };
