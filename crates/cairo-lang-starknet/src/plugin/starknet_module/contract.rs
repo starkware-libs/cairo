@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_plugins::plugins::InCfg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
@@ -229,6 +230,7 @@ fn handle_contract_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
     data: &mut ContractGenerationData,
 ) {
     match item {
@@ -250,6 +252,7 @@ fn handle_contract_item(
                 db,
                 diagnostics,
                 item_struct.clone(),
+                metadata,
                 StarknetModuleKind::Contract,
                 &mut data.common,
             );
@@ -302,12 +305,13 @@ pub(super) fn generate_contract_specific_code(
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
     module_ast: &ast::ItemModule,
+    metadata: &MacroPluginMetadata<'_>,
     event_variants: Vec<SmolStr>,
 ) -> RewriteNode {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
-    for item in body.items(db).elements(db) {
-        handle_contract_item(db, diagnostics, &item, &mut generation_data);
+    for item in InCfg::new(db, metadata.cfg_set, body.items(db).elements(db)) {
+        handle_contract_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
 
     let test_class_hash = format!(
