@@ -1,27 +1,43 @@
 {
   "comments": {
-    // Symbol used for single line comment.
     "lineComment": "//"
   },
-  // Symbols used as brackets.
   "brackets": [
     ["{", "}"],
     ["[", "]"],
     ["(", ")"]
   ],
-  // Symbols that are auto closed when typing.
+  "colorizedBracketPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
   "autoClosingPairs": [
     { "open": "{", "close": "}" },
     { "open": "[", "close": "]" },
     { "open": "(", "close": ")" },
     { "open": "\"", "close": "\"", "notIn": ["string"] },
-    { "open": "'", "close": "'", "notIn": ["string"] }
+    { "open": "'", "close": "'", "notIn": ["string"] },
+    { "open": "`", "close": "`", "notIn": ["string"] }
   ],
+  "autoCloseBefore": ";:.,=}])> \n\t",
   "surroundingPairs": [
     ["{", "}"],
     ["[", "]"],
     ["(", ")"],
+    ["<", ">"],
     ["\"", "\""],
-    ["'", "'"]
-  ]
+    ["'", "'"],
+    ["`", "`"]
+  ],
+  "indentationRules": {
+    "increaseIndentPattern": "^.*\\{[^}\"']*$|^.*\\([^\\)\"']*$",
+    "decreaseIndentPattern": "^\\s*(\\s*\\/[*].*[*]\\/\\s*)*[})]"
+  },
+  "folding": {
+    "markers": {
+      "start": "^\\s*// region:\\b",
+      "end": "^\\s*// endregion\\b"
+    }
+  }
 }
