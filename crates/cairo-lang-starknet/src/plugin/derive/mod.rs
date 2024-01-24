@@ -1,5 +1,7 @@
 use cairo_lang_defs::patcher::PatchBuilder;
-use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    DynGeneratedFileAuxData, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
+};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -38,13 +40,17 @@ fn has_derive<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup, derived_type:
 }
 
 /// Handles the derive attributes for the given item.
-pub fn handle_derive(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> PluginResult {
+pub fn handle_derive(
+    db: &dyn SyntaxGroup,
+    item_ast: ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
+) -> PluginResult {
     let mut builder = PatchBuilder::new(db);
     let mut diagnostics = vec![];
     let mut aux_data = None;
     if has_derive(&item_ast, db, EVENT_TRAIT) {
         if let Some((node, starknet_aux_data)) =
-            event::handle_event_derive(db, &item_ast, &mut diagnostics)
+            event::handle_event_derive(db, &item_ast, metadata, &mut diagnostics)
         {
             builder.add_modified(node);
             aux_data = Some(DynGeneratedFileAuxData::new(starknet_aux_data));

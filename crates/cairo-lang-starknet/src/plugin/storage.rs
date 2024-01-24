@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
+use cairo_lang_plugins::plugins::InCfg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
@@ -19,6 +20,7 @@ pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     struct_ast: ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
     starknet_module_kind: StarknetModuleKind,
     data: &mut StarknetModuleCommonGenerationData,
 ) {
@@ -31,7 +33,7 @@ pub fn handle_storage_struct(
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
-    for member in struct_ast.members(db).elements(db) {
+    for member in InCfg::new(db, metadata.cfg_set, struct_ast.members(db).elements(db)) {
         let member_code_pieces = get_storage_member_code(
             db,
             diagnostics,

@@ -1,5 +1,8 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
+use cairo_lang_plugins::plugins::InCfg;
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -15,7 +18,11 @@ use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 const RET_DATA: &str = "__dispatcher_return_data__";
 
 /// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
-pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+pub fn handle_trait(
+    db: &dyn SyntaxGroup,
+    trait_ast: ast::ItemTrait,
+    metadata: &MacroPluginMetadata<'_>,
+) -> PluginResult {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
             code: None,
@@ -83,7 +90,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
-    for item_ast in body.items(db).elements(db) {
+    for item_ast in InCfg::new(db, metadata.cfg_set, body.items(db).elements(db)) {
         match item_ast {
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);
