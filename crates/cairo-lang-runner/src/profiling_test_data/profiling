@@ -173,10 +173,9 @@ Weight by original user function:
   function core::integer::U8Add::add: 30
   function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 Weight by Cairo function:
-  function lib.cairo::foo: 35
+  function lib.cairo::foo: 53
   function lib.cairo::main: 32
-  function unknown: 26
-  function integer.cairo::U8Add::add: 20
+  function integer.cairo::U8Add::add: 28
   function result.cairo::ResultTraitImpl::expect: 10
   return: 9
 

@@ -125,9 +125,15 @@ Originating location:
     ^************^
 In function: lib.cairo::foo
 store_temp<u8>([2]) -> ([5])
-
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
 jump() { label_test::foo::4() }
-
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
 label_test::foo::1:
 
 branch_align() -> ()
@@ -136,7 +142,10 @@ Originating location:
     ^************^
 In function: lib.cairo::foo
 store_temp<u8>([3]) -> ([5])
-
+Originating location:
+        MyEnum::B(b) => b,
+                        ^
+In function: lib.cairo::foo
 label_test::foo::4:
 
 struct_construct<Tuple<u8>>([5]) -> ([6])

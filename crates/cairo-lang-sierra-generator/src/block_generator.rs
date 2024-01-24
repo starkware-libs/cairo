@@ -114,6 +114,7 @@ pub fn generate_block_code(
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
+    let last_location = statements.iter().rev().find_map(|statement| statement.location);
 
     match &block.end {
         lowering::FlatBlockEnd::Return(returned_variables) => {
@@ -121,17 +122,20 @@ pub fn generate_block_code(
                 context,
                 returned_variables,
                 &statement_location,
+                last_location,
             )?);
         }
         lowering::FlatBlockEnd::Panic(_) => {
             unreachable!("Panics should have been stripped in a previous phase.")
         }
         lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
+            let push_values_statement = generate_push_values_statement_for_remapping(
                 context,
                 statement_location,
                 remapping,
-            )?);
+            )?;
+            let push_values_statement_location = push_values_statement.location;
+            statements.push(push_values_statement);
 
             if *target_block_id == block_id.next_block_id() {
                 statements.push(
@@ -144,10 +148,12 @@ pub fn generate_block_code(
                 let code = generate_block_code(context, *target_block_id)?;
                 statements.extend(code);
             } else {
-                statements.push(jump_statement(
+                let mut jump = jump_statement(
                     jump_libfunc_id(context.get_db()),
                     *context.block_label(*target_block_id),
-                ));
+                );
+                jump.location = push_values_statement_location.or(last_location);
+                statements.push(jump);
             }
         }
         lowering::FlatBlockEnd::NotSet => unreachable!(),
@@ -217,7 +223,13 @@ fn generate_push_values_statement_for_remapping(
             dup,
         })
     }
-    Ok(pre_sierra::Statement::PushValues(push_values).into_statement_without_location())
+    let location = remapping.iter().last().map(|(_, inner_output)| {
+        context.get_db().lookup_intern_location(inner_output.location).stable_location
+    });
+    Ok(StatementWithLocation {
+        statement: pre_sierra::Statement::PushValues(push_values),
+        location,
+    })
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -228,6 +240,7 @@ pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
     returned_variables: &[lowering::VarUsage],
     statement_location: &StatementLocation,
+    last_cairo_location: Option<StableLocation>,
 ) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     // Copy the result to the top of the stack before returning.
@@ -257,7 +270,7 @@ pub fn generate_return_code(
     statements.push(push_statement);
     let mut return_statement = return_statement(return_variables_on_stack);
 
-    return_statement.set_location(location);
+    return_statement.set_location(location.or(last_cairo_location));
     statements.push(return_statement);
 
     Ok(statements)
