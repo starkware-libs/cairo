@@ -402,6 +402,7 @@ libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>;
 libfunc store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>> = store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>;
+libfunc dup<Snapshot<Array<felt252>>> = dup<Snapshot<Array<felt252>>>;
 libfunc function_call<user@core::integer::Felt252TryIntoU32::try_into> = function_call<user@core::integer::Felt252TryIntoU32::try_into>;
 libfunc enum_match<core::option::Option::<core::integer::u32>> = enum_match<core::option::Option::<core::integer::u32>>;
 libfunc dup<u32> = dup<u32>;
@@ -2295,199 +2296,200 @@ struct_construct<Unit>() -> ([9]); // 1860
 enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([9]) -> ([10]); // 1861
 store_temp<Snapshot<Array<felt252>>>([5]) -> ([7]); // 1862
 store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([10]) -> ([8]); // 1863
-struct_construct<core::array::Span::<core::felt252>>([7]) -> ([11]); // 1864
-store_temp<core::array::Span::<core::felt252>>([11]) -> ([11]); // 1865
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([12]) 1945([13]) }; // 1866
-branch_align() -> (); // 1867
-unbox<felt252>([12]) -> ([14]); // 1868
-rename<felt252>([14]) -> ([15]); // 1869
-store_temp<RangeCheck>([0]) -> ([0]); // 1870
-store_temp<felt252>([15]) -> ([15]); // 1871
-function_call<user@core::integer::Felt252TryIntoU32::try_into>([0], [15]) -> ([16], [17]); // 1872
-enum_match<core::option::Option::<core::integer::u32>>([17]) { fallthrough([18]) 1938([19]) }; // 1873
-branch_align() -> (); // 1874
-u32_const<0>() -> ([20]); // 1875
-dup<core::array::Span::<core::felt252>>([11]) -> ([11], [21]); // 1876
-struct_deconstruct<core::array::Span::<core::felt252>>([21]) -> ([22]); // 1877
-dup<u32>([18]) -> ([18], [23]); // 1878
-store_temp<u32>([20]) -> ([20]); // 1879
-array_slice<felt252>([16], [22], [20], [23]) { fallthrough([24], [25]) 1925([26]) }; // 1880
-branch_align() -> (); // 1881
-dup<core::array::Span::<core::felt252>>([11]) -> ([11], [27]); // 1882
-struct_deconstruct<core::array::Span::<core::felt252>>([27]) -> ([28]); // 1883
-array_len<felt252>([28]) -> ([29]); // 1884
+dup<Snapshot<Array<felt252>>>([7]) -> ([7], [11]); // 1864
+struct_construct<core::array::Span::<core::felt252>>([11]) -> ([12]); // 1865
+store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]); // 1866
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([13]) 1945([14]) }; // 1867
+branch_align() -> (); // 1868
+unbox<felt252>([13]) -> ([15]); // 1869
+rename<felt252>([15]) -> ([16]); // 1870
+store_temp<RangeCheck>([0]) -> ([0]); // 1871
+store_temp<felt252>([16]) -> ([16]); // 1872
+function_call<user@core::integer::Felt252TryIntoU32::try_into>([0], [16]) -> ([17], [18]); // 1873
+enum_match<core::option::Option::<core::integer::u32>>([18]) { fallthrough([19]) 1937([20]) }; // 1874
+branch_align() -> (); // 1875
+drop<core::array::Span::<core::felt252>>([12]) -> (); // 1876
+u32_const<0>() -> ([21]); // 1877
+dup<Snapshot<Array<felt252>>>([7]) -> ([7], [22]); // 1878
+dup<u32>([19]) -> ([19], [23]); // 1879
+store_temp<u32>([21]) -> ([21]); // 1880
+array_slice<felt252>([17], [22], [21], [23]) { fallthrough([24], [25]) 1924([26]) }; // 1881
+branch_align() -> (); // 1882
+dup<Snapshot<Array<felt252>>>([7]) -> ([7], [27]); // 1883
+array_len<felt252>([27]) -> ([28]); // 1884
 store_temp<RangeCheck>([24]) -> ([24]); // 1885
-store_temp<u32>([29]) -> ([29]); // 1886
-dup<u32>([18]) -> ([18], [30]); // 1887
-store_temp<u32>([30]) -> ([30]); // 1888
-function_call<user@core::integer::U32Sub::sub>([24], [29], [30]) -> ([31], [32]); // 1889
+store_temp<u32>([28]) -> ([28]); // 1886
+dup<u32>([19]) -> ([19], [29]); // 1887
+store_temp<u32>([29]) -> ([29]); // 1888
+function_call<user@core::integer::U32Sub::sub>([24], [28], [29]) -> ([30], [31]); // 1889
 store_temp<Snapshot<Array<felt252>>>([25]) -> ([25]); // 1890
-enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([32]) { fallthrough([33]) 1917([34]) }; // 1891
+enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([31]) { fallthrough([32]) 1916([33]) }; // 1891
 branch_align() -> (); // 1892
-struct_deconstruct<Tuple<u32>>([33]) -> ([35]); // 1893
-struct_deconstruct<core::array::Span::<core::felt252>>([11]) -> ([36]); // 1894
-array_slice<felt252>([31], [36], [18], [35]) { fallthrough([37], [38]) 1905([39]) }; // 1895
-branch_align() -> (); // 1896
-struct_construct<core::array::Span::<core::felt252>>([25]) -> ([40]); // 1897
-struct_construct<core::array::Span::<core::felt252>>([38]) -> ([41]); // 1898
-enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 0>([40]) -> ([42]); // 1899
-struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([41], [42]) -> ([43]); // 1900
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([43]) -> ([44]); // 1901
-store_temp<RangeCheck>([37]) -> ([37]); // 1902
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([44]) -> ([44]); // 1903
-return([37], [44]); // 1904
-branch_align() -> (); // 1905
-drop<Snapshot<Array<felt252>>>([25]) -> (); // 1906
-array_new<felt252>() -> ([45]); // 1907
-felt252_const<1637570914057682275393755530660268060279989363>() -> ([46]); // 1908
-store_temp<felt252>([46]) -> ([46]); // 1909
-array_append<felt252>([45], [46]) -> ([47]); // 1910
-struct_construct<core::panics::Panic>() -> ([48]); // 1911
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([48], [47]) -> ([49]); // 1912
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([49]) -> ([50]); // 1913
-store_temp<RangeCheck>([39]) -> ([39]); // 1914
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([50]) -> ([50]); // 1915
-return([39], [50]); // 1916
-branch_align() -> (); // 1917
-drop<Snapshot<Array<felt252>>>([25]) -> (); // 1918
-drop<core::array::Span::<core::felt252>>([11]) -> (); // 1919
-drop<u32>([18]) -> (); // 1920
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([34]) -> ([51]); // 1921
-store_temp<RangeCheck>([31]) -> ([31]); // 1922
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([51]) -> ([51]); // 1923
-return([31], [51]); // 1924
-branch_align() -> (); // 1925
-drop<u32>([18]) -> (); // 1926
-drop<core::array::Span::<core::felt252>>([11]) -> (); // 1927
-array_new<felt252>() -> ([52]); // 1928
-felt252_const<1637570914057682275393755530660268060279989363>() -> ([53]); // 1929
-store_temp<felt252>([53]) -> ([53]); // 1930
-array_append<felt252>([52], [53]) -> ([54]); // 1931
-struct_construct<core::panics::Panic>() -> ([55]); // 1932
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([55], [54]) -> ([56]); // 1933
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([56]) -> ([57]); // 1934
-store_temp<RangeCheck>([26]) -> ([26]); // 1935
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([57]) -> ([57]); // 1936
-return([26], [57]); // 1937
-branch_align() -> (); // 1938
-enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 1>([19]) -> ([58]); // 1939
-struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([11], [58]) -> ([59]); // 1940
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([59]) -> ([60]); // 1941
-store_temp<RangeCheck>([16]) -> ([16]); // 1942
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([60]) -> ([60]); // 1943
-return([16], [60]); // 1944
+struct_deconstruct<Tuple<u32>>([32]) -> ([34]); // 1893
+array_slice<felt252>([30], [7], [19], [34]) { fallthrough([35], [36]) 1904([37]) }; // 1894
+branch_align() -> (); // 1895
+struct_construct<core::array::Span::<core::felt252>>([25]) -> ([38]); // 1896
+struct_construct<core::array::Span::<core::felt252>>([36]) -> ([39]); // 1897
+enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 0>([38]) -> ([40]); // 1898
+struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([39], [40]) -> ([41]); // 1899
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([41]) -> ([42]); // 1900
+store_temp<RangeCheck>([35]) -> ([35]); // 1901
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([42]) -> ([42]); // 1902
+return([35], [42]); // 1903
+branch_align() -> (); // 1904
+drop<Snapshot<Array<felt252>>>([25]) -> (); // 1905
+array_new<felt252>() -> ([43]); // 1906
+felt252_const<1637570914057682275393755530660268060279989363>() -> ([44]); // 1907
+store_temp<felt252>([44]) -> ([44]); // 1908
+array_append<felt252>([43], [44]) -> ([45]); // 1909
+struct_construct<core::panics::Panic>() -> ([46]); // 1910
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([46], [45]) -> ([47]); // 1911
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([47]) -> ([48]); // 1912
+store_temp<RangeCheck>([37]) -> ([37]); // 1913
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([48]) -> ([48]); // 1914
+return([37], [48]); // 1915
+branch_align() -> (); // 1916
+drop<Snapshot<Array<felt252>>>([25]) -> (); // 1917
+drop<u32>([19]) -> (); // 1918
+drop<Snapshot<Array<felt252>>>([7]) -> (); // 1919
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([33]) -> ([49]); // 1920
+store_temp<RangeCheck>([30]) -> ([30]); // 1921
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([49]) -> ([49]); // 1922
+return([30], [49]); // 1923
+branch_align() -> (); // 1924
+drop<u32>([19]) -> (); // 1925
+drop<Snapshot<Array<felt252>>>([7]) -> (); // 1926
+array_new<felt252>() -> ([50]); // 1927
+felt252_const<1637570914057682275393755530660268060279989363>() -> ([51]); // 1928
+store_temp<felt252>([51]) -> ([51]); // 1929
+array_append<felt252>([50], [51]) -> ([52]); // 1930
+struct_construct<core::panics::Panic>() -> ([53]); // 1931
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([53], [52]) -> ([54]); // 1932
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 1>([54]) -> ([55]); // 1933
+store_temp<RangeCheck>([26]) -> ([26]); // 1934
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([55]) -> ([55]); // 1935
+return([26], [55]); // 1936
+branch_align() -> (); // 1937
+drop<Snapshot<Array<felt252>>>([7]) -> (); // 1938
+enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 1>([20]) -> ([56]); // 1939
+struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([12], [56]) -> ([57]); // 1940
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([57]) -> ([58]); // 1941
+store_temp<RangeCheck>([17]) -> ([17]); // 1942
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([58]) -> ([58]); // 1943
+return([17], [58]); // 1944
 branch_align() -> (); // 1945
-drop<Unit>([13]) -> (); // 1946
-struct_construct<Unit>() -> ([61]); // 1947
-enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 1>([61]) -> ([62]); // 1948
-struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([11], [62]) -> ([63]); // 1949
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([63]) -> ([64]); // 1950
-store_temp<RangeCheck>([0]) -> ([0]); // 1951
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([64]) -> ([64]); // 1952
-return([0], [64]); // 1953
-disable_ap_tracking() -> (); // 1954
-get_builtin_costs() -> ([4]); // 1955
-store_temp<BuiltinCosts>([4]) -> ([4]); // 1956
-withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 1999([7], [8]) }; // 1957
-branch_align() -> (); // 1958
-struct_deconstruct<core::array::Span::<core::felt252>>([2]) -> ([9]); // 1959
-enable_ap_tracking() -> (); // 1960
-store_temp<RangeCheck>([5]) -> ([5]); // 1961
-array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) 1968([12]) }; // 1962
-branch_align() -> (); // 1963
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([11]) -> ([13]); // 1964
-store_temp<Snapshot<Array<felt252>>>([10]) -> ([14]); // 1965
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([13]) -> ([15]); // 1966
-jump() { 1973() }; // 1967
-branch_align() -> (); // 1968
-struct_construct<Unit>() -> ([16]); // 1969
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([16]) -> ([17]); // 1970
-store_temp<Snapshot<Array<felt252>>>([12]) -> ([14]); // 1971
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([17]) -> ([15]); // 1972
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([15]) { fallthrough([18]) 1988([19]) }; // 1973
-branch_align() -> (); // 1974
-disable_ap_tracking() -> (); // 1975
-unbox<felt252>([18]) -> ([20]); // 1976
-store_temp<felt252>([20]) -> ([20]); // 1977
-store_temp<Array<felt252>>([3]) -> ([3]); // 1978
-function_call<user@core::Felt252Serde::serialize>([20], [3]) -> ([21], [22]); // 1979
-drop<Unit>([22]) -> (); // 1980
-struct_construct<core::array::Span::<core::felt252>>([14]) -> ([23]); // 1981
-store_temp<RangeCheck>([5]) -> ([5]); // 1982
-store_temp<GasBuiltin>([6]) -> ([6]); // 1983
-store_temp<core::array::Span::<core::felt252>>([23]) -> ([23]); // 1984
-store_temp<Array<felt252>>([21]) -> ([21]); // 1985
-function_call<user@core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>>([5], [6], [23], [21]) -> ([24], [25], [26]); // 1986
-return([24], [25], [26]); // 1987
-branch_align() -> (); // 1988
-disable_ap_tracking() -> (); // 1989
-drop<Unit>([19]) -> (); // 1990
-drop<Snapshot<Array<felt252>>>([14]) -> (); // 1991
-struct_construct<Unit>() -> ([27]); // 1992
-struct_construct<Tuple<Array<felt252>, Unit>>([3], [27]) -> ([28]); // 1993
-enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>([28]) -> ([29]); // 1994
-store_temp<RangeCheck>([5]) -> ([5]); // 1995
-store_temp<GasBuiltin>([6]) -> ([6]); // 1996
-store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([29]) -> ([29]); // 1997
-return([5], [6], [29]); // 1998
-branch_align() -> (); // 1999
-drop<Array<felt252>>([3]) -> (); // 2000
-drop<core::array::Span::<core::felt252>>([2]) -> (); // 2001
-array_new<felt252>() -> ([30]); // 2002
-felt252_const<375233589013918064796019>() -> ([31]); // 2003
-store_temp<felt252>([31]) -> ([31]); // 2004
-array_append<felt252>([30], [31]) -> ([32]); // 2005
-struct_construct<core::panics::Panic>() -> ([33]); // 2006
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([33], [32]) -> ([34]); // 2007
-enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([34]) -> ([35]); // 2008
-store_temp<RangeCheck>([7]) -> ([7]); // 2009
-store_temp<GasBuiltin>([8]) -> ([8]); // 2010
-store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([35]) -> ([35]); // 2011
-return([7], [8], [35]); // 2012
-u32_try_from_felt252([0], [1]) { fallthrough([2], [3]) 2019([4]) }; // 2013
-branch_align() -> (); // 2014
-enum_init<core::option::Option::<core::integer::u32>, 0>([3]) -> ([5]); // 2015
-store_temp<RangeCheck>([2]) -> ([2]); // 2016
-store_temp<core::option::Option::<core::integer::u32>>([5]) -> ([5]); // 2017
-return([2], [5]); // 2018
-branch_align() -> (); // 2019
-struct_construct<Unit>() -> ([6]); // 2020
-enum_init<core::option::Option::<core::integer::u32>, 1>([6]) -> ([7]); // 2021
-store_temp<RangeCheck>([4]) -> ([4]); // 2022
-store_temp<core::option::Option::<core::integer::u32>>([7]) -> ([7]); // 2023
-return([4], [7]); // 2024
-u32_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 2031([5], [6]) }; // 2025
-branch_align() -> (); // 2026
-enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0>([4]) -> ([7]); // 2027
-store_temp<RangeCheck>([3]) -> ([8]); // 2028
-store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([7]) -> ([9]); // 2029
-jump() { 2035() }; // 2030
-branch_align() -> (); // 2031
-enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>([6]) -> ([10]); // 2032
-store_temp<RangeCheck>([5]) -> ([8]); // 2033
-store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([10]) -> ([9]); // 2034
-felt252_const<155785504329508738615720351733824384887>() -> ([11]); // 2035
-store_temp<felt252>([11]) -> ([11]); // 2036
-function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>([9], [11]) -> ([12]); // 2037
-store_temp<RangeCheck>([8]) -> ([8]); // 2038
-store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([12]) -> ([12]); // 2039
-return([8], [12]); // 2040
-enum_match<core::result::Result::<core::integer::u32, core::integer::u32>>([0]) { fallthrough([2]) 2048([3]) }; // 2041
-branch_align() -> (); // 2042
-drop<felt252>([1]) -> (); // 2043
-struct_construct<Tuple<u32>>([2]) -> ([4]); // 2044
-enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0>([4]) -> ([5]); // 2045
-store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([5]) -> ([5]); // 2046
-return([5]); // 2047
-branch_align() -> (); // 2048
-drop<u32>([3]) -> (); // 2049
-array_new<felt252>() -> ([6]); // 2050
-array_append<felt252>([6], [1]) -> ([7]); // 2051
-struct_construct<core::panics::Panic>() -> ([8]); // 2052
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([8], [7]) -> ([9]); // 2053
-enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>([9]) -> ([10]); // 2054
-store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([10]) -> ([10]); // 2055
-return([10]); // 2056
+drop<Unit>([14]) -> (); // 1946
+drop<Snapshot<Array<felt252>>>([7]) -> (); // 1947
+struct_construct<Unit>() -> ([59]); // 1948
+enum_init<core::option::Option::<core::array::Span::<core::felt252>>, 1>([59]) -> ([60]); // 1949
+struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>>>([12], [60]) -> ([61]); // 1950
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>, 0>([61]) -> ([62]); // 1951
+store_temp<RangeCheck>([0]) -> ([0]); // 1952
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([62]) -> ([62]); // 1953
+return([0], [62]); // 1954
+disable_ap_tracking() -> (); // 1955
+get_builtin_costs() -> ([4]); // 1956
+store_temp<BuiltinCosts>([4]) -> ([4]); // 1957
+withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 2000([7], [8]) }; // 1958
+branch_align() -> (); // 1959
+struct_deconstruct<core::array::Span::<core::felt252>>([2]) -> ([9]); // 1960
+enable_ap_tracking() -> (); // 1961
+store_temp<RangeCheck>([5]) -> ([5]); // 1962
+array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) 1969([12]) }; // 1963
+branch_align() -> (); // 1964
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([11]) -> ([13]); // 1965
+store_temp<Snapshot<Array<felt252>>>([10]) -> ([14]); // 1966
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([13]) -> ([15]); // 1967
+jump() { 1974() }; // 1968
+branch_align() -> (); // 1969
+struct_construct<Unit>() -> ([16]); // 1970
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([16]) -> ([17]); // 1971
+store_temp<Snapshot<Array<felt252>>>([12]) -> ([14]); // 1972
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([17]) -> ([15]); // 1973
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([15]) { fallthrough([18]) 1989([19]) }; // 1974
+branch_align() -> (); // 1975
+disable_ap_tracking() -> (); // 1976
+unbox<felt252>([18]) -> ([20]); // 1977
+store_temp<felt252>([20]) -> ([20]); // 1978
+store_temp<Array<felt252>>([3]) -> ([3]); // 1979
+function_call<user@core::Felt252Serde::serialize>([20], [3]) -> ([21], [22]); // 1980
+drop<Unit>([22]) -> (); // 1981
+struct_construct<core::array::Span::<core::felt252>>([14]) -> ([23]); // 1982
+store_temp<RangeCheck>([5]) -> ([5]); // 1983
+store_temp<GasBuiltin>([6]) -> ([6]); // 1984
+store_temp<core::array::Span::<core::felt252>>([23]) -> ([23]); // 1985
+store_temp<Array<felt252>>([21]) -> ([21]); // 1986
+function_call<user@core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>>([5], [6], [23], [21]) -> ([24], [25], [26]); // 1987
+return([24], [25], [26]); // 1988
+branch_align() -> (); // 1989
+disable_ap_tracking() -> (); // 1990
+drop<Unit>([19]) -> (); // 1991
+drop<Snapshot<Array<felt252>>>([14]) -> (); // 1992
+struct_construct<Unit>() -> ([27]); // 1993
+struct_construct<Tuple<Array<felt252>, Unit>>([3], [27]) -> ([28]); // 1994
+enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>([28]) -> ([29]); // 1995
+store_temp<RangeCheck>([5]) -> ([5]); // 1996
+store_temp<GasBuiltin>([6]) -> ([6]); // 1997
+store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([29]) -> ([29]); // 1998
+return([5], [6], [29]); // 1999
+branch_align() -> (); // 2000
+drop<Array<felt252>>([3]) -> (); // 2001
+drop<core::array::Span::<core::felt252>>([2]) -> (); // 2002
+array_new<felt252>() -> ([30]); // 2003
+felt252_const<375233589013918064796019>() -> ([31]); // 2004
+store_temp<felt252>([31]) -> ([31]); // 2005
+array_append<felt252>([30], [31]) -> ([32]); // 2006
+struct_construct<core::panics::Panic>() -> ([33]); // 2007
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([33], [32]) -> ([34]); // 2008
+enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([34]) -> ([35]); // 2009
+store_temp<RangeCheck>([7]) -> ([7]); // 2010
+store_temp<GasBuiltin>([8]) -> ([8]); // 2011
+store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>([35]) -> ([35]); // 2012
+return([7], [8], [35]); // 2013
+u32_try_from_felt252([0], [1]) { fallthrough([2], [3]) 2020([4]) }; // 2014
+branch_align() -> (); // 2015
+enum_init<core::option::Option::<core::integer::u32>, 0>([3]) -> ([5]); // 2016
+store_temp<RangeCheck>([2]) -> ([2]); // 2017
+store_temp<core::option::Option::<core::integer::u32>>([5]) -> ([5]); // 2018
+return([2], [5]); // 2019
+branch_align() -> (); // 2020
+struct_construct<Unit>() -> ([6]); // 2021
+enum_init<core::option::Option::<core::integer::u32>, 1>([6]) -> ([7]); // 2022
+store_temp<RangeCheck>([4]) -> ([4]); // 2023
+store_temp<core::option::Option::<core::integer::u32>>([7]) -> ([7]); // 2024
+return([4], [7]); // 2025
+u32_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 2032([5], [6]) }; // 2026
+branch_align() -> (); // 2027
+enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0>([4]) -> ([7]); // 2028
+store_temp<RangeCheck>([3]) -> ([8]); // 2029
+store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([7]) -> ([9]); // 2030
+jump() { 2036() }; // 2031
+branch_align() -> (); // 2032
+enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>([6]) -> ([10]); // 2033
+store_temp<RangeCheck>([5]) -> ([8]); // 2034
+store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([10]) -> ([9]); // 2035
+felt252_const<155785504329508738615720351733824384887>() -> ([11]); // 2036
+store_temp<felt252>([11]) -> ([11]); // 2037
+function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>([9], [11]) -> ([12]); // 2038
+store_temp<RangeCheck>([8]) -> ([8]); // 2039
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([12]) -> ([12]); // 2040
+return([8], [12]); // 2041
+enum_match<core::result::Result::<core::integer::u32, core::integer::u32>>([0]) { fallthrough([2]) 2049([3]) }; // 2042
+branch_align() -> (); // 2043
+drop<felt252>([1]) -> (); // 2044
+struct_construct<Tuple<u32>>([2]) -> ([4]); // 2045
+enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0>([4]) -> ([5]); // 2046
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([5]) -> ([5]); // 2047
+return([5]); // 2048
+branch_align() -> (); // 2049
+drop<u32>([3]) -> (); // 2050
+array_new<felt252>() -> ([6]); // 2051
+array_append<felt252>([6], [1]) -> ([7]); // 2052
+struct_construct<core::panics::Panic>() -> ([8]); // 2053
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([8], [7]) -> ([9]); // 2054
+enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>([9]) -> ([10]); // 2055
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([10]) -> ([10]); // 2056
+return([10]); // 2057
 
 cairo_level_tests::contracts::account::account::__wrapper____validate_deploy__@0([0]: RangeCheck, [1]: EcOp, [2]: GasBuiltin, [3]: System, [4]: core::array::Span::<core::felt252>) -> (RangeCheck, EcOp, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::account::account::__wrapper__AccountContractImpl____validate_declare__@158([0]: RangeCheck, [1]: EcOp, [2]: GasBuiltin, [3]: System, [4]: core::array::Span::<core::felt252>) -> (RangeCheck, EcOp, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -2523,7 +2525,7 @@ core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1804([0]: core::res
 core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall@1816([0]: core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)>);
 core::starknet::contract_address::ContractAddressSerde::deserialize@1828([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 core::array::SpanFelt252Serde::deserialize@1852([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>);
-core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>@1954([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
-core::integer::Felt252TryIntoU32::try_into@2013([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u32>);
-core::integer::U32Sub::sub@2025([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u32,)>);
-core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>@2041([0]: core::result::Result::<core::integer::u32, core::integer::u32>, [1]: felt252) -> (core::panics::PanicResult::<(core::integer::u32,)>);
+core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>@1955([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
+core::integer::Felt252TryIntoU32::try_into@2014([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u32>);
+core::integer::U32Sub::sub@2026([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u32,)>);
+core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>@2042([0]: core::result::Result::<core::integer::u32, core::integer::u32>, [1]: felt252) -> (core::panics::PanicResult::<(core::integer::u32,)>);
