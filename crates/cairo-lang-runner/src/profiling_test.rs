@@ -3,6 +3,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -14,6 +15,7 @@ cairo_lang_test_utils::test_file_test!(
     profiling,
     "src/profiling_test_data/",
     {
+        major_test_cases: "major_test_cases",
         profiling: "profiling",
     },
     test_profiling
@@ -23,7 +25,8 @@ pub fn test_profiling(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = RootDatabase::builder().detect_corelib().build().unwrap();
+    let db = RootDatabase::builder()
+    .with_plugin_suite(starknet_plugin_suite()).detect_corelib().build().unwrap();
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let test_module = setup_test_module(&db, &cairo_code).unwrap();
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
