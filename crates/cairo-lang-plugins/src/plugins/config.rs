@@ -56,6 +56,74 @@ impl MacroPlugin for ConfigPlugin {
     }
 }
 
+/// Iterator over the items that are included in the given config set, among the given items.
+pub struct ItemsInCfg<'a, Item: QueryAttrs> {
+    db: &'a dyn SyntaxGroup,
+    cfg_set: &'a CfgSet,
+    iterator: <Vec<Item> as IntoIterator>::IntoIter,
+}
+impl<'a, Item: QueryAttrs> ItemsInCfg<'a, Item> {
+    fn new(db: &'a dyn SyntaxGroup, cfg_set: &'a CfgSet, items: Vec<Item>) -> Self {
+        Self { db, cfg_set, iterator: items.into_iter() }
+    }
+}
+
+impl<'a, Item: QueryAttrs> Iterator for ItemsInCfg<'a, Item> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iterator.find(|item| !should_drop(self.db, self.cfg_set, item, &mut vec![]))
+    }
+}
+
+/// Trait for AST nodes that contain items, providing an iterator over the items that are included
+/// in the cfg.
+pub trait HasItemsInCfg {
+    type Item: QueryAttrs;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item>;
+}
+
+impl HasItemsInCfg for ast::ModuleBody {
+    type Item = ast::ModuleItem;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item> {
+        ItemsInCfg::new(db, cfg_set, self.items(db).elements(db))
+    }
+}
+
+impl HasItemsInCfg for ast::TraitBody {
+    type Item = ast::TraitItem;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item> {
+        ItemsInCfg::new(db, cfg_set, self.items(db).elements(db))
+    }
+}
+
+impl HasItemsInCfg for ast::ImplBody {
+    type Item = ast::ImplItem;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item> {
+        ItemsInCfg::new(db, cfg_set, self.items(db).elements(db))
+    }
+}
+
 /// Handles an item that is not dropped from the AST completely due to not matching the config.
 /// In case it includes dropped elements and needs to be rewritten, it returns the appropriate
 /// PatchBuilder. Otherwise returns `None`, and it won't be rewritten or dropped.

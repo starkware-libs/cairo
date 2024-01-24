@@ -1,5 +1,8 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::{
+    MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+};
+use cairo_lang_plugins::plugins::HasItemsInCfg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GenericParamEx;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -16,7 +19,11 @@ use super::entry_point::{
 use super::utils::{forbid_attributes_in_impl, GenericParamExtract};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
-pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
+pub fn handle_embeddable(
+    db: &dyn SyntaxGroup,
+    item_impl: ast::ItemImpl,
+    metadata: &MacroPluginMetadata<'_>,
+) -> PluginResult {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,
@@ -111,7 +118,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
     let mut data = EntryPointsGenerationData::default();
-    for item in body.items(db).elements(db) {
+    for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
         // TODO(yuval): do the same in embeddable_As, to get a better diagnostic.
         forbid_attributes_in_impl(db, &mut diagnostics, &item, "#[embeddable]");
         let ast::ImplItem::Function(item_function) = item else {
