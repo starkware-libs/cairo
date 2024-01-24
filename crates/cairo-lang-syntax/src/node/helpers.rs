@@ -560,3 +560,35 @@ impl OptionWrappedGenericParamListHelper for ast::OptionWrappedGenericParamList 
         }
     }
 }
+
+/// Trait for getting the items of a node that contains items as a vector.
+pub trait BodyItems {
+    /// The type of an Item.
+    type Item;
+    /// Returns the items of the node as a vector.
+    /// Use with caution, as this will include items that may be filtered out by plugins.
+    /// Do note that plugins that directly ran on this node without going up on the syntax tree may
+    /// assume that out of config items were already filtered out.
+    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<Self::Item>;
+}
+
+impl BodyItems for ast::ModuleBody {
+    type Item = ModuleItem;
+    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ModuleItem> {
+        self.items(db).elements(db)
+    }
+}
+
+impl BodyItems for ast::TraitBody {
+    type Item = TraitItem;
+    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<TraitItem> {
+        self.items(db).elements(db)
+    }
+}
+
+impl BodyItems for ast::ImplBody {
+    type Item = ImplItem;
+    fn items_vec(&self, db: &dyn SyntaxGroup) -> Vec<ImplItem> {
+        self.items(db).elements(db)
+    }
+}

@@ -2,7 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -83,7 +83,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
-    for item_ast in body.items(db).elements(db) {
+    for item_ast in body.items_vec(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);

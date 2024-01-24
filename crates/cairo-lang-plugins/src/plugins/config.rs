@@ -9,7 +9,7 @@ use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
@@ -56,6 +56,51 @@ impl MacroPlugin for ConfigPlugin {
     }
 }
 
+/// Iterator over the items that are included in the given config set, among the given items in
+/// `iterator`.
+pub struct ItemsInCfg<'a, Item: QueryAttrs> {
+    db: &'a dyn SyntaxGroup,
+    cfg_set: &'a CfgSet,
+    iterator: <Vec<Item> as IntoIterator>::IntoIter,
+}
+impl<'a, Item: QueryAttrs> ItemsInCfg<'a, Item> {
+    fn new(db: &'a dyn SyntaxGroup, cfg_set: &'a CfgSet, items: Vec<Item>) -> Self {
+        Self { db, cfg_set, iterator: items.into_iter() }
+    }
+}
+
+impl<'a, Item: QueryAttrs> Iterator for ItemsInCfg<'a, Item> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iterator.find(|item| !should_drop(self.db, self.cfg_set, item, &mut vec![]))
+    }
+}
+
+/// Trait for AST nodes that contain items, providing an iterator over the items that are included
+/// in the cfg.
+pub trait HasItemsInCfgEx {
+    type Item: QueryAttrs;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item>;
+}
+
+impl<BodyItem: QueryAttrs, Body: BodyItems<Item = BodyItem>> HasItemsInCfgEx for Body {
+    type Item = BodyItem;
+
+    fn iter_items_in_cfg<'a>(
+        &self,
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+    ) -> ItemsInCfg<'a, Self::Item> {
+        ItemsInCfg::new(db, cfg_set, self.items_vec(db))
+    }
+}
+
 /// Handles an item that is not dropped from the AST completely due to not matching the config.
 /// In case it includes dropped elements and needs to be rewritten, it returns the appropriate
 /// PatchBuilder. Otherwise returns `None`, and it won't be rewritten or dropped.
@@ -68,8 +113,7 @@ fn handle_undropped_item<'a>(
     match item_ast {
         ast::ModuleItem::Trait(trait_item) => {
             let body = try_extract_matches!(trait_item.body(db), ast::MaybeTraitBody::Some)?;
-            let items =
-                get_kept_items_nodes(db, cfg_set, &body.items(db).elements(db), diagnostics)?;
+            let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db);
             builder.add_node(trait_item.attributes(db).as_syntax_node());
             builder.add_node(trait_item.trait_kw(db).as_syntax_node());
@@ -84,8 +128,7 @@ fn handle_undropped_item<'a>(
         }
         ast::ModuleItem::Impl(impl_item) => {
             let body = try_extract_matches!(impl_item.body(db), ast::MaybeImplBody::Some)?;
-            let items =
-                get_kept_items_nodes(db, cfg_set, &body.items(db).elements(db), diagnostics)?;
+            let items = get_kept_items_nodes(db, cfg_set, &body.items_vec(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db);
             builder.add_node(impl_item.attributes(db).as_syntax_node());
             builder.add_node(impl_item.impl_kw(db).as_syntax_node());

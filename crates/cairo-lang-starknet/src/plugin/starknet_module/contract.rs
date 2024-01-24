@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
@@ -229,6 +230,7 @@ fn handle_contract_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
     data: &mut ContractGenerationData,
 ) {
     match item {
@@ -241,7 +243,13 @@ fn handle_contract_item(
             );
         }
         ast::ModuleItem::Impl(item_impl) => {
-            handle_contract_impl(db, diagnostics, item_impl, &mut data.specific.entry_points_code);
+            handle_contract_impl(
+                db,
+                diagnostics,
+                item_impl,
+                metadata,
+                &mut data.specific.entry_points_code,
+            );
         }
         ast::ModuleItem::Struct(item_struct)
             if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
@@ -302,12 +310,13 @@ pub(super) fn generate_contract_specific_code(
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
     module_ast: &ast::ItemModule,
+    metadata: &MacroPluginMetadata<'_>,
     event_variants: Vec<SmolStr>,
 ) -> RewriteNode {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
-    for item in body.items(db).elements(db) {
-        handle_contract_item(db, diagnostics, &item, &mut generation_data);
+    for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
+        handle_contract_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
 
     let test_class_hash = format!(
@@ -379,6 +388,7 @@ fn handle_contract_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     imp: &ast::ItemImpl,
+    metadata: &MacroPluginMetadata<'_>,
     data: &mut EntryPointsGenerationData,
 ) {
     let abi_config = impl_abi_config(db, diagnostics, imp);
@@ -390,7 +400,7 @@ fn handle_contract_impl(
     };
     let impl_name = imp.name(db);
     let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
-    for item in impl_body.items(db).elements(db) {
+    for item in impl_body.iter_items_in_cfg(db, metadata.cfg_set) {
         if abi_config == ImplAbiConfig::Embed {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
         } else if abi_config == ImplAbiConfig::External {

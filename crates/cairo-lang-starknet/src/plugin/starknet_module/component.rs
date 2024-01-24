@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
+use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
@@ -53,11 +54,12 @@ pub(super) fn generate_component_specific_code(
     diagnostics: &mut Vec<PluginDiagnostic>,
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> RewriteNode {
     let mut generation_data = ComponentGenerationData { common: common_data, ..Default::default() };
     generate_has_component_trait_code(&mut generation_data.specific);
-    for item in body.items(db).elements(db) {
-        handle_component_item(db, diagnostics, &item, &mut generation_data);
+    for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
+        handle_component_item(db, diagnostics, &item, metadata, &mut generation_data);
     }
     generation_data.into_rewrite_node(db, diagnostics)
 }
@@ -67,11 +69,12 @@ fn handle_component_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
     data: &mut ComponentGenerationData,
 ) {
     match &item {
         ast::ModuleItem::Impl(item_impl) => {
-            handle_component_impl(db, diagnostics, item_impl, data);
+            handle_component_impl(db, diagnostics, item_impl, metadata, data);
         }
         ast::ModuleItem::Struct(item_struct)
             if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
@@ -217,6 +220,7 @@ fn handle_component_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item_impl: &ast::ItemImpl,
+    metadata: &MacroPluginMetadata<'_>,
     data: &mut ComponentGenerationData,
 ) {
     let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
@@ -245,7 +249,7 @@ fn handle_component_impl(
     let trait_path_without_generics = remove_generics_from_path(db, &params.trait_path);
 
     let mut impl_functions = vec![];
-    for item in params.impl_body.items(db).elements(db) {
+    for item in params.impl_body.iter_items_in_cfg(db, metadata.cfg_set) {
         let Some(impl_function) = handle_component_embeddable_as_impl_item(
             db,
             diagnostics,

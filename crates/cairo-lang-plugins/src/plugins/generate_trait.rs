@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
@@ -147,7 +147,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         ast::MaybeImplBody::Some(body) => {
             builder.add_node(impl_generic_params.as_syntax_node());
             builder.add_node(body.lbrace(db).as_syntax_node());
-            for item in body.items(db).elements(db) {
+            for item in body.items_vec(db) {
                 let ast::ImplItem::Function(item) = item else {
                     // Only functions are supported as trait items for now.
                     continue;
