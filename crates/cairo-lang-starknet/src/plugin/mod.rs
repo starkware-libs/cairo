@@ -34,7 +34,7 @@ impl MacroPlugin for StarkNetPlugin {
         &self,
         db: &dyn SyntaxGroup,
         item_ast: ast::ModuleItem,
-        _metadata: &MacroPluginMetadata<'_>,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),
@@ -43,7 +43,7 @@ impl MacroPlugin for StarkNetPlugin {
                 handle_embeddable(db, impl_ast)
             }
             ast::ModuleItem::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
-                handle_module_by_storage(db, struct_ast).unwrap_or_default()
+                handle_module_by_storage(db, struct_ast, metadata).unwrap_or_default()
             }
             ast::ModuleItem::Struct(_) | ast::ModuleItem::Enum(_)
                 if derive_needed(&item_ast, db) =>

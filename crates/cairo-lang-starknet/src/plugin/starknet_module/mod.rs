@@ -3,8 +3,10 @@ use std::vec;
 use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
+    PluginResult,
 };
+use cairo_lang_plugins::plugins::should_drop;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
@@ -159,6 +161,7 @@ fn validate_module(
 pub(super) fn handle_module_by_storage(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> Option<PluginResult> {
     let (module_ast, module_kind) =
         grand_grand_parent_starknet_module(struct_ast.as_syntax_node(), db)?;
@@ -173,6 +176,9 @@ pub(super) fn handle_module_by_storage(
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
+        if should_drop(db, metadata.cfg_set, &item, &mut vec![]) {
+            continue;
+        }
         if let Some(variants) =
             get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
         {
