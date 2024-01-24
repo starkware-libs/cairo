@@ -75,7 +75,6 @@ impl Display for ProcessedProfilingInfo {
             for (function_identifier, weight) in cairo_functions_weights.iter() {
                 writeln!(f, "  function {function_identifier}: {weight}")?;
             }
-            writeln!(f, "  return: {}", self.return_weight)?;
         }
         Ok(())
     }
@@ -203,16 +202,6 @@ impl ProfilingInfoProcessor {
                         let generic_name: SmolStr = concrete_name.split('<').next().unwrap().into();
                         *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
                     }
-                    if params.process_by_cairo_function {
-                        // TODO(Gil): Fill all the `Unknown functions` in the cairo functions
-                        // profiling.
-                        let function_identifier = self
-                            .statements_functions
-                            .get(statement_idx)
-                            .unwrap_or(&"unknown".to_string())
-                            .clone();
-                        *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
-                    }
                 }
                 GenStatement::Return(_) => {
                     return_weight += weight;
@@ -231,6 +220,16 @@ impl ProfilingInfoProcessor {
                 *(user_functions.get_mut(&function_idx).unwrap()) += weight;
             }
 
+            if params.process_by_cairo_function {
+                // TODO(Gil): Fill all the `Unknown functions` in the cairo functions
+                // profiling.
+                let function_identifier = self
+                    .statements_functions
+                    .get(statement_idx)
+                    .unwrap_or(&"unknown".to_string())
+                    .clone();
+                *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
+            }
             if *weight >= params.min_weight {
                 statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
             }
