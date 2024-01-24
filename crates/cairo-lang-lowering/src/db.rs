@@ -21,6 +21,7 @@ use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
+use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
@@ -398,6 +399,7 @@ fn concrete_function_with_body_lowered(
     optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
+    cancel_ops(&mut lowered);
     reorder_statements(db, &mut lowered);
     // `reorder_statements` may have caused some remappings to be redundant, so they need to be
     // removed.
