@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::{ModifiedNode, RewriteNode};
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
+use cairo_lang_plugins::plugins::InCfg;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -15,10 +16,11 @@ use crate::plugin::events::{EventData, EventFieldKind};
 pub fn handle_event_derive(
     db: &dyn SyntaxGroup,
     item_ast: &ast::ModuleItem,
+    metadata: &MacroPluginMetadata<'_>,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
     match item_ast {
-        ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast, diagnostics),
+        ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast, metadata, diagnostics),
         ast::ModuleItem::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
         _ => None,
     }
@@ -29,6 +31,7 @@ pub fn handle_event_derive(
 fn handle_struct(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
     // TODO(spapini): Support generics.
@@ -46,7 +49,7 @@ fn handle_struct(
     let mut deserialize_members = vec![];
     let mut ctor = vec![];
     let mut members = vec![];
-    for member in struct_ast.members(db).elements(db) {
+    for member in InCfg::new(db, metadata.cfg_set, struct_ast.members(db).elements(db)) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
         let member_kind =
             get_field_kind_for_member(db, diagnostics, &member, EventFieldKind::DataSerde);

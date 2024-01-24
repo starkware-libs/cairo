@@ -56,6 +56,38 @@ impl MacroPlugin for ConfigPlugin {
     }
 }
 
+/// Iterator over items in a scope that would remain in config.
+pub struct InCfg<'a, ScopeItem: QueryAttrs, ScopeItems: Iterator<Item = ScopeItem>> {
+    db: &'a dyn SyntaxGroup,
+    cfg_set: &'a CfgSet,
+    items: ScopeItems,
+}
+impl<'a, ScopeItem: QueryAttrs, ScopeItems: Iterator<Item = ScopeItem>>
+    InCfg<'a, ScopeItem, ScopeItems>
+{
+    pub fn new(
+        db: &'a dyn SyntaxGroup,
+        cfg_set: &'a CfgSet,
+        items: impl IntoIterator<IntoIter = ScopeItems>,
+    ) -> Self {
+        Self { db, cfg_set, items: items.into_iter() }
+    }
+}
+impl<'a, ScopeItem: QueryAttrs, ScopeItems: Iterator<Item = ScopeItem>> Iterator
+    for InCfg<'a, ScopeItem, ScopeItems>
+{
+    type Item = ScopeItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(item) = self.items.next() {
+            if !should_drop(self.db, self.cfg_set, &item, &mut vec![]) {
+                return Some(item);
+            }
+        }
+        None
+    }
+}
+
 /// Handles an item that is not dropped from the AST completely due to not matching the config.
 /// In case it includes dropped elements and needs to be rewritten, it returns the appropriate
 /// PatchBuilder. Otherwise returns `None`, and it won't be rewritten or dropped.
