@@ -10,23 +10,10 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-<<<<<<< HEAD
     self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Coupon, CouponCall, Debug,
     Drop, Dup, Ec, Enum, Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable,
-    Pedersen, Poseidon, Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet,
-    Struct, Uint128, Uint16, Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump,
-    UnwrapNonZero,
-||||||| 4d48a8ede
-    self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Debug, Drop, Dup, Ec, Enum,
-    Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable, Pedersen, Poseidon,
-    Range, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
-    Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
-=======
-    self, ApTracking, Array, Bool, BranchAlign, Bytes31, Cast, Const, Debug, Drop, Dup, Ec, Enum,
-    Felt252, Felt252Dict, Felt252DictEntry, FunctionCall, Gas, Mem, Nullable, Pedersen, Poseidon,
-    Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct, Uint128, Uint16,
-    Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
->>>>>>> origin/main
+    Pedersen, Poseidon, Sint128, Sint16, Sint32, Sint64, Sint8, SnapshotTake, StarkNet, Struct,
+    Uint128, Uint16, Uint256, Uint32, Uint512, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};

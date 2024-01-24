@@ -881,10 +881,10 @@ test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Box<Tuple<felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc span_from_tuple<Tuple<felt252, felt252, felt252>> = span_from_tuple<Tuple<felt252, felt252, felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
