@@ -450,8 +450,7 @@ Statements:
   (v12: test::B) <- struct_construct(v0, v5)
   (v11: core::felt252) <- 5u
   (v13: test::A) <- struct_construct(v12, v11)
-  (v14: core::integer::u32, v15: core::integer::u128) <- struct_destructure(v12)
-  (v29: (core::integer::u32, test::A, test::A)) <- struct_construct(v14, v13, v13)
+  (v29: (core::integer::u32, test::A, test::A)) <- struct_construct(v0, v13, v13)
   (v30: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Ok(v29)
 End:
   Return(v43, v44, v30)
@@ -786,10 +785,7 @@ Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v0: core::integer::u8) <- 3u
-  (v1: core::integer::u8) <- 4u
-  (v2: test::A) <- struct_construct(v0, v1)
-  (v3: core::integer::u8, v4: core::integer::u8) <- struct_destructure(v2)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v16, v17, v3)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v16, v17, v0)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
