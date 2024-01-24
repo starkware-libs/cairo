@@ -419,16 +419,15 @@ Weight by original user function:
   function core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 12
   function test::test_contract::__validate__: 1
 Weight by Cairo function:
+  function array.cairo::SpanImpl::pop_front: 70
   function array.cairo::deserialize_array_helper: 63
   function impls::CallSerde::deserialize: 50
   function array.cairo::ArrayImpl::append: 46
-  function unknown: 43
   function array.cairo::SpanFelt252Serde::deserialize: 38
   function contract_address.cairo::ContractAddressSerde::deserialize: 36
-  function array.cairo::SpanImpl::pop_front: 35
+  function integer.cairo::U32Sub::sub: 30
   function contract::__wrapper____validate__: 25
   function array.cairo::SpanImpl::slice: 24
-  function integer.cairo::U32Sub::sub: 22
   function lib.cairo::Felt252Serde::deserialize: 20
   function integer.cairo::Felt252TryIntoU32::try_into: 18
   function lib.cairo::validate_call: 14
