@@ -58,10 +58,9 @@ Weight by original user function:
   function test::match_long: 11
   function test::match_short: 6
 Weight by Cairo function:
-  function lib.cairo::main: 16
-  function lib.cairo::match_long: 8
-  function lib.cairo::match_short: 4
-  return: 6
+  function lib.cairo::main: 17
+  function lib.cairo::match_long: 11
+  function lib.cairo::match_short: 6
 
 //! > ==========================================================================
 
@@ -173,12 +172,11 @@ Weight by original user function:
   function core::integer::U8Add::add: 30
   function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 Weight by Cairo function:
-  function lib.cairo::foo: 35
-  function lib.cairo::main: 32
+  function lib.cairo::foo: 39
+  function lib.cairo::main: 33
   function unknown: 26
-  function integer.cairo::U8Add::add: 20
-  function result.cairo::ResultTraitImpl::expect: 10
-  return: 9
+  function integer.cairo::U8Add::add: 22
+  function result.cairo::ResultTraitImpl::expect: 12
 
 //! > ==========================================================================
 
@@ -221,8 +219,7 @@ Weight by user function (inc. generated):
 Weight by original user function:
   function test::test_pedersen: 15
 Weight by Cairo function:
-  function lib.cairo::test_pedersen: 14
-  return: 1
+  function lib.cairo::test_pedersen: 15
 
 //! > ==========================================================================
 
@@ -298,5 +295,4 @@ Weight by user function (inc. generated):
 Weight by original user function:
   function test::main: 90
 Weight by Cairo function:
-  function lib.cairo::main: 83
-  return: 7
+  function lib.cairo::main: 90
