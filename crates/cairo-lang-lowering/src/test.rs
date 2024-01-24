@@ -22,6 +22,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion;
+use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
@@ -161,6 +162,7 @@ fn test_function_lowering_phases(
     apply_stage("after_optimize_matches", &optimize_matches);
     apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
     apply_stage("after_optimize_remappings2", &optimize_remappings);
+    apply_stage("cancel_ops", &cancel_ops);
     apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
     apply_stage("after_optimize_remappings3", &optimize_remappings);
     apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
