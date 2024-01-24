@@ -41,8 +41,9 @@ pub fn test_profiling(
     )
     .unwrap();
     let func = runner.find_function(&inputs["function_name"]).unwrap();
-    let result =
-        runner.run_function_with_starknet_context(func, &[], None, Default::default()).unwrap();
+    let result = runner
+        .run_function_with_starknet_context(func, &[], Some(u32::MAX as usize), Default::default())
+        .unwrap();
     let profiling_processor = ProfilingInfoProcessor::new(sierra_program, statements_functions);
     let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
 
