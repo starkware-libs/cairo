@@ -193,7 +193,7 @@ fn handle_enum(
         };
 
         match_idx.push(formatdoc!(
-            "if idx == {indicator} {{
+            "{indicator} => {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
                         {STORE_TRAIT}::read_at_offset(address_domain, base, 1_u8)?
@@ -202,7 +202,7 @@ fn handle_enum(
             }}",
         ));
         match_idx_at_offset.push(formatdoc!(
-            "if idx == {indicator} {{
+            "{indicator} => {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
                         {STORE_TRAIT}::read_at_offset(address_domain, base, offset + 1_u8)?
@@ -231,15 +231,18 @@ fn handle_enum(
         }
     }
 
+    let zero_or_none = if default_index.is_some() { "" } else { "0 |" };
     let store_impl = formatdoc!(
         "
         impl Store{enum_name} of {STORE_TRAIT}::<{enum_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{enum_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read(address_domain, base)?;
-                {match_idx}
-                else {{
-                    starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+                match idx {{
+                    {match_idx},
+                    {zero_or_none} _ => {{
+                        starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+                    }}
                 }}
             }}
             fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {enum_name}) \
@@ -252,9 +255,11 @@ fn handle_enum(
             fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
          -> starknet::SyscallResult<{enum_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read_at_offset(address_domain, base, offset)?;
-                {match_idx_at_offset}
-                else {{
-                    starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+                match idx {{
+                    {match_idx_at_offset},
+                    {zero_or_none} _ => {{
+                        starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+                    }}
                 }}
             }}
             #[inline(always)]
@@ -271,8 +276,8 @@ fn handle_enum(
             }}
         }}
         ",
-        match_idx = indent_by(8, match_idx.join("\nelse ")),
-        match_idx_at_offset = indent_by(8, match_idx_at_offset.join("\nelse ")),
+        match_idx = indent_by(12, match_idx.join(",\n")),
+        match_idx_at_offset = indent_by(12, match_idx_at_offset.join(",\n")),
         match_value = indent_by(12, match_value.join(",\n")),
         match_value_at_offset = indent_by(12, match_value_at_offset.join(",\n")),
     );

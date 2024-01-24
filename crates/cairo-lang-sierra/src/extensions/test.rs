@@ -41,6 +41,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
         if id == "T".into()
             || id == "felt252".into()
             || id == "u128".into()
+            || id == "bytes31".into()
             || id == "Option".into()
             || id == "NonZeroFelt252".into()
             || id == "NonZeroInt".into()
@@ -300,16 +301,10 @@ Ok(());"enum_init<Option,1>")]
             "enum_snapshot_match<Option>")]
 #[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(());
             "enum_snapshot_match<NonDupEnum>")]
-#[test_case("constrain_range", vec![type_arg("felt252"), type_arg("BoundedInt0_3")]
-            => Ok(()); "BoundedInt<0, 3>")]
-#[test_case("constrain_range", vec![type_arg("BoundedInt0_10"), type_arg("BoundedInt2_3")]
-            => Err(UnsupportedGenericArg); "BoundedInt<2, 3>")]
-#[test_case("constrain_range", vec![type_arg("felt252"), type_arg("BoundedInt0_0")]
-            => Ok(()); "BoundedInt<0, 0>")]
-#[test_case("constrain_range", vec![type_arg("BoundedInt0_3"), type_arg("BoundedInt0_10")]
-            => Err(UnsupportedGenericArg); "BoundedInt<0, 10>")]
-#[test_case("constrain_range", vec![type_arg("BoundedInt0_10"), type_arg("BoundedInt0_-1")]
-            => Err(UnsupportedGenericArg); "BoundedInt<0, -1>")]
+#[test_case("downcast", vec![type_arg("felt252"), type_arg("bytes31")]
+            => Err(UnsupportedGenericArg); "downcast<felt252, bytes31>")]
+#[test_case("downcast", vec![type_arg("bytes31"), type_arg("BoundedInt0_10")]
+            => Err(UnsupportedGenericArg); "downcast<bytes31, BoundedInt<0, 10>>")]
 #[test_case("struct_construct", vec![type_arg("U128AndFelt252")] => Ok(());
             "struct_construct<U128AndFelt252>")]
 #[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);

@@ -1,0 +1,807 @@
+//! > Simple function call
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+fn foo(a: felt252, b: felt252) -> felt252 {
+    let b = felt252_add(a, 5);
+    bar(b, b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
+    bar(x, y, z)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+
+disable_ap_tracking() -> ()
+
+drop<felt252>([1]) -> ()
+
+felt252_const<5>() -> ([2])
+
+felt252_add([0], [2]) -> ([3])
+Originating location:
+    let b = felt252_add(a, 5);
+            ^***************^
+In function: lib.cairo::foo
+store_temp<felt252>([3]) -> ([4])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+dup<felt252>([4]) -> ([4], [3])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+dup<felt252>([3]) -> ([3], [5])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+store_temp<felt252>([5]) -> ([5])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+store_temp<felt252>([3]) -> ([3])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+function_call<user@test::bar>([4], [5], [3]) -> ([6])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+return([6])
+Originating location:
+    bar(b, b, b)
+    ^**********^
+In function: lib.cairo::foo
+
+//! > ==========================================================================
+
+//! > match statement
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+fn foo(myEnum: MyEnum) -> u8 {
+    match myEnum {
+        MyEnum::A(a) => a,
+        MyEnum::B(b) => b,
+        MyEnum::C((c1, c2)) => {
+            if c1 > c2 {
+                c1 + c2
+            } else {
+                c1 * c2
+            }
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: u8,
+    B: u8,
+    C: (u8, u8),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+
+enum_match<test::MyEnum>([1]) { fallthrough([2]) label_test::foo::1([3]) label_test::foo::2([4]) }
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+branch_align() -> ()
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+store_temp<u8>([2]) -> ([5])
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
+jump() { label_test::foo::4() }
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
+label_test::foo::1:
+
+branch_align() -> ()
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+store_temp<u8>([3]) -> ([5])
+Originating location:
+        MyEnum::B(b) => b,
+                        ^
+In function: lib.cairo::foo
+label_test::foo::4:
+
+struct_construct<Tuple<u8>>([5]) -> ([6])
+
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+store_temp<RangeCheck>([0]) -> ([0])
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+return([0], [7])
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+label_test::foo::2:
+
+branch_align() -> ()
+Originating location:
+    match myEnum {
+    ^************^
+In function: lib.cairo::foo
+struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
+Originating location:
+        MyEnum::C((c1, c2)) => {
+                  ^******^
+In function: lib.cairo::foo
+dup<u8>([9]) -> ([9], [10])
+
+dup<u8>([8]) -> ([8], [11])
+
+u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
+branch_align() -> ()
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
+drop<u8>([13]) -> ()
+
+store_temp<RangeCheck>([12]) -> ([12])
+Originating location:
+                c1 * c2
+                ^*****^
+In function: lib.cairo::foo
+store_temp<u8>([8]) -> ([8])
+Originating location:
+                c1 * c2
+                ^*****^
+In function: lib.cairo::foo
+store_temp<u8>([9]) -> ([9])
+Originating location:
+                c1 * c2
+                ^*****^
+In function: lib.cairo::foo
+function_call<user@core::integer::U8Mul::mul>([12], [8], [9]) -> ([16], [17])
+Originating location:
+                c1 * c2
+                ^*****^
+In function: lib.cairo::foo
+return([16], [17])
+Originating location:
+                c1 * c2
+                ^*****^
+In function: lib.cairo::foo
+label_test::foo::5:
+
+branch_align() -> ()
+Originating location:
+        u8_overflowing_sub(rhs, lhs).into_is_err()
+        ^**************************^
+In function: integer.cairo::U8PartialOrd::gt
+drop<u8>([15]) -> ()
+
+store_temp<RangeCheck>([14]) -> ([14])
+Originating location:
+                c1 + c2
+                ^*****^
+In function: lib.cairo::foo
+store_temp<u8>([8]) -> ([8])
+Originating location:
+                c1 + c2
+                ^*****^
+In function: lib.cairo::foo
+store_temp<u8>([9]) -> ([9])
+Originating location:
+                c1 + c2
+                ^*****^
+In function: lib.cairo::foo
+function_call<user@core::integer::U8Add::add>([14], [8], [9]) -> ([18], [19])
+Originating location:
+                c1 + c2
+                ^*****^
+In function: lib.cairo::foo
+return([18], [19])
+Originating location:
+                c1 + c2
+                ^*****^
+In function: lib.cairo::foo
+label_test::foo::6:
+
+label_test::foo::3:
+
+//! > ==========================================================================
+
+//! > enum flow
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+
+//! > function_name
+main
+
+//! > module_code
+>>> file: ../../examples/enum_flow.cairo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::main::0:
+
+felt252_const<10>() -> ([0])
+
+enum_init<test::MyEnumShort, 0>([0]) -> ([1])
+Originating location:
+    let es0 = MyEnumShort::a(10);
+                             ^^
+In function: lib.cairo::main
+store_temp<test::MyEnumShort>([1]) -> ([1])
+Originating location:
+    match_short(es0);
+    ^**************^
+In function: lib.cairo::main
+function_call<user@test::match_short>([1]) -> ([2])
+Originating location:
+    match_short(es0);
+    ^**************^
+In function: lib.cairo::main
+drop<felt252>([2]) -> ()
+
+felt252_const<11>() -> ([3])
+
+enum_init<test::MyEnumShort, 1>([3]) -> ([4])
+Originating location:
+    let es1 = MyEnumShort::b(11);
+                             ^^
+In function: lib.cairo::main
+store_temp<test::MyEnumShort>([4]) -> ([4])
+Originating location:
+    match_short(es1);
+    ^**************^
+In function: lib.cairo::main
+function_call<user@test::match_short>([4]) -> ([5])
+Originating location:
+    match_short(es1);
+    ^**************^
+In function: lib.cairo::main
+drop<felt252>([5]) -> ()
+
+felt252_const<20>() -> ([6])
+
+enum_init<test::MyEnumLong, 0>([6]) -> ([7])
+Originating location:
+    let el0 = MyEnumLong::a(20);
+                            ^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([7]) -> ([7])
+Originating location:
+    match_long(el0);
+    ^*************^
+In function: lib.cairo::main
+function_call<user@test::match_long>([7]) -> ([8])
+Originating location:
+    match_long(el0);
+    ^*************^
+In function: lib.cairo::main
+drop<felt252>([8]) -> ()
+
+felt252_const<21>() -> ([9])
+
+enum_init<test::MyEnumLong, 1>([9]) -> ([10])
+Originating location:
+    let el1 = MyEnumLong::b(21);
+                            ^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([10]) -> ([10])
+Originating location:
+    match_long(el1);
+    ^*************^
+In function: lib.cairo::main
+function_call<user@test::match_long>([10]) -> ([11])
+Originating location:
+    match_long(el1);
+    ^*************^
+In function: lib.cairo::main
+drop<felt252>([11]) -> ()
+
+felt252_const<22>() -> ([12])
+
+enum_init<test::MyEnumLong, 2>([12]) -> ([13])
+Originating location:
+    let el2 = MyEnumLong::c(22);
+                            ^^
+In function: lib.cairo::main
+store_temp<test::MyEnumLong>([13]) -> ([13])
+Originating location:
+    match_long(el2);
+    ^*************^
+In function: lib.cairo::main
+function_call<user@test::match_long>([13]) -> ([14])
+Originating location:
+    match_long(el2);
+    ^*************^
+In function: lib.cairo::main
+drop<felt252>([14]) -> ()
+
+felt252_const<300>() -> ([15])
+
+store_temp<felt252>([15]) -> ([15])
+Originating location:
+    300
+    ^*^
+In function: lib.cairo::main
+return([15])
+Originating location:
+    300
+    ^*^
+In function: lib.cairo::main
+
+//! > ==========================================================================
+
+//! > match or
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+
+//! > function_name
+main
+
+//! > module_code
+>>> file: ../../examples/match_or.cairo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::main::0:
+
+felt252_const<1>() -> ([1])
+
+felt252_const<2>() -> ([2])
+
+struct_construct<Tuple<felt252, felt252>>([1], [2]) -> ([3])
+
+enum_init<test::MyEnum, 0>([3]) -> ([4])
+Originating location:
+    let a = MyEnum::A((1, 2));
+                      ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([0]) -> ([0])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([4]) -> ([4])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+function_call<user@test::foo>([0], [4]) -> ([5], [6])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([6]) { fallthrough([7]) label_test::main::1([8]) }
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+drop<Tuple<felt252>>([7]) -> ()
+
+felt252_const<1>() -> ([9])
+
+felt252_const<2>() -> ([10])
+
+struct_construct<Tuple<felt252, felt252>>([9], [10]) -> ([11])
+
+enum_init<test::MyEnum, 1>([11]) -> ([12])
+Originating location:
+    let b = MyEnum::B((1, 2));
+                      ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([5]) -> ([5])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([12]) -> ([12])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+function_call<user@test::foo>([5], [12]) -> ([13], [14])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([14]) { fallthrough([15]) label_test::main::3([16]) }
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+drop<Tuple<felt252>>([15]) -> ()
+
+u8_const<1>() -> ([17])
+
+u8_const<2>() -> ([18])
+
+u8_const<3>() -> ([19])
+
+struct_construct<Tuple<u8, u8, u8>>([17], [18], [19]) -> ([20])
+
+enum_init<test::MyEnum, 2>([20]) -> ([21])
+Originating location:
+    let c = MyEnum::C((1, 2, 3));
+                      ^*******^
+In function: lib.cairo::main
+store_temp<RangeCheck>([13]) -> ([13])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([21]) -> ([21])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+function_call<user@test::foo>([13], [21]) -> ([22], [23])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([23]) { fallthrough([24]) label_test::main::5([25]) }
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+drop<Tuple<felt252>>([24]) -> ()
+
+u8_const<1>() -> ([26])
+
+u8_const<2>() -> ([27])
+
+u8_const<9>() -> ([28])
+
+struct_construct<test::P>([26], [27], [28]) -> ([29])
+
+enum_init<test::MyEnum, 3>([29]) -> ([30])
+Originating location:
+    let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+                      ^********************^
+In function: lib.cairo::main
+store_temp<RangeCheck>([22]) -> ([22])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([30]) -> ([30])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+function_call<user@test::foo>([22], [30]) -> ([31], [32])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([32]) { fallthrough([33]) label_test::main::7([34]) }
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+branch_align() -> ()
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+drop<Tuple<felt252>>([33]) -> ()
+
+struct_construct<Unit>() -> ([35])
+
+struct_construct<Tuple<Unit>>([35]) -> ([36])
+
+enum_init<core::panics::PanicResult::<((),)>, 0>([36]) -> ([37])
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
+store_temp<RangeCheck>([31]) -> ([31])
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
+store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37])
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
+return([31], [37])
+Originating location:
+fn main() {
+          ^
+In function: lib.cairo::main
+label_test::main::7:
+
+branch_align() -> ()
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+enum_init<core::panics::PanicResult::<((),)>, 1>([34]) -> ([38])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([31]) -> ([31])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+store_temp<core::panics::PanicResult::<((),)>>([38]) -> ([38])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+return([31], [38])
+Originating location:
+    let _ = foo(d);
+            ^****^
+In function: lib.cairo::main
+label_test::main::8:
+
+label_test::main::5:
+
+branch_align() -> ()
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+enum_init<core::panics::PanicResult::<((),)>, 1>([25]) -> ([39])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([22]) -> ([22])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+store_temp<core::panics::PanicResult::<((),)>>([39]) -> ([39])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+return([22], [39])
+Originating location:
+    let _ = foo(c);
+            ^****^
+In function: lib.cairo::main
+label_test::main::6:
+
+label_test::main::3:
+
+branch_align() -> ()
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+enum_init<core::panics::PanicResult::<((),)>, 1>([16]) -> ([40])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([13]) -> ([13])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+store_temp<core::panics::PanicResult::<((),)>>([40]) -> ([40])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+return([13], [40])
+Originating location:
+    let _ = foo(b);
+            ^****^
+In function: lib.cairo::main
+label_test::main::4:
+
+label_test::main::1:
+
+branch_align() -> ()
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+enum_init<core::panics::PanicResult::<((),)>, 1>([8]) -> ([41])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+store_temp<RangeCheck>([5]) -> ([5])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+store_temp<core::panics::PanicResult::<((),)>>([41]) -> ([41])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+return([5], [41])
+Originating location:
+    let _ = foo(a);
+            ^****^
+In function: lib.cairo::main
+label_test::main::2:
+
+//! > ==========================================================================
+
+//! > pedersen test
+
+//! > test_runner_name
+test_sierra_locations
+
+//! > function
+
+//! > function_name
+test_pedersen
+
+//! > module_code
+>>> file: ../../examples/pedersen_test.cairo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::test_pedersen::0:
+
+felt252_const<1>() -> ([1])
+
+felt252_const<2>() -> ([2])
+
+store_temp<felt252>([1]) -> ([1])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^************^
+In function: lib.cairo::test_pedersen
+store_temp<felt252>([2]) -> ([2])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^************^
+In function: lib.cairo::test_pedersen
+pedersen([0], [1], [2]) -> ([3], [4])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^************^
+In function: lib.cairo::test_pedersen
+felt252_const<3>() -> ([5])
+
+store_temp<felt252>([4]) -> ([4])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^*************************^
+In function: lib.cairo::test_pedersen
+store_temp<felt252>([5]) -> ([5])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^*************************^
+In function: lib.cairo::test_pedersen
+pedersen([3], [4], [5]) -> ([6], [7])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^*************************^
+In function: lib.cairo::test_pedersen
+felt252_const<4>() -> ([8])
+
+store_temp<felt252>([7]) -> ([7])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen
+store_temp<felt252>([8]) -> ([8])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen
+pedersen([6], [7], [8]) -> ([9], [10])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen
+store_temp<Pedersen>([9]) -> ([9])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen
+store_temp<felt252>([10]) -> ([10])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen
+return([9], [10])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^**************************************^
+In function: lib.cairo::test_pedersen

@@ -1,4 +1,7 @@
+use std::hash::Hash;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -43,7 +46,7 @@ pub struct Function {
     /// The source function which was compiled.
     pub id: sierra::ids::FunctionId,
     /// The body of the function.
-    pub body: Vec<Statement>,
+    pub body: Vec<StatementWithLocation>,
     /// A label pointing to the first instruction of the function.
     pub entry_point: LabelId,
     /// The parameters for the function.
@@ -67,8 +70,24 @@ pub enum Statement {
     PushValues(Vec<PushValue>),
 }
 impl Statement {
+    pub fn into_statement_without_location(self) -> StatementWithLocation {
+        StatementWithLocation { statement: self, location: None }
+    }
     pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
+    }
+}
+
+/// Represents a pre-sierra statement, with its location in the source code.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StatementWithLocation {
+    pub statement: Statement,
+    pub location: Option<StableLocation>,
+}
+
+impl StatementWithLocation {
+    pub fn set_location(&mut self, location: Option<StableLocation>) {
+        self.location = location;
     }
 }
 

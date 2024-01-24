@@ -14,6 +14,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::statements_locations::StatementsLocations;
 use crate::{ap_change, function_generator, pre_sierra};
 
 /// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.
@@ -121,14 +122,14 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-    ) -> Maybe<Arc<cairo_lang_sierra::program::Program>>;
+    ) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)>;
 
     /// Returns the [cairo_lang_sierra::program::Program] object of the requested crates.
     #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program(
         &self,
         requested_crate_ids: Vec<CrateId>,
-    ) -> Maybe<Arc<cairo_lang_sierra::program::Program>>;
+    ) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)>;
 }
 
 fn get_function_signature(

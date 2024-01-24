@@ -116,3 +116,31 @@ fn test_append_span() {
     assert_eq(arr[4], @11, 'Unexpected element');
     assert_eq(arr[5], @12, 'Unexpected element');
 }
+
+mod felt252_span_from_tuple {
+    pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+}
+
+mod tuple_span_from_tuple {
+    pub extern fn span_from_tuple<T>(
+        struct_like: Box<@T>
+    ) -> @Array<(felt252, felt252, felt252)> nopanic;
+}
+
+#[test]
+fn test_felt252_span_from_tuple() {
+    let span = felt252_span_from_tuple::span_from_tuple(BoxTrait::new(@(10, 20, 30)));
+    assert!(*span[0] == 10);
+    assert!(*span[1] == 20);
+    assert!(*span[2] == 30);
+}
+
+#[test]
+fn test_tuple_span_from_tuple() {
+    let multi_tuple = ((10, 20, 30), (40, 50, 60), (70, 80, 90));
+    let span = tuple_span_from_tuple::span_from_tuple(BoxTrait::new(@multi_tuple));
+    assert!(*span[0] == (10, 20, 30));
+    assert!(*span[1] == (40, 50, 60));
+    assert!(*span[2] == (70, 80, 90));
+}
+

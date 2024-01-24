@@ -9,4 +9,3 @@ extern type index_enum_type<const NUM_VARIANTS: felt252>;
 
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-extern fn constrain_range<T, S>(value: T) -> Option<S> implicits(RangeCheck) nopanic;

@@ -17,7 +17,7 @@ use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{find_variable_lifetime, SierraGenVar};
 use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
-use crate::pre_sierra::{self, Statement};
+use crate::pre_sierra::{self, StatementWithLocation};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, finalize_locals_libfunc_id,
@@ -97,7 +97,7 @@ fn get_function_code(
 
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
-    let mut statements: Vec<pre_sierra::Statement> = vec![label];
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![label];
 
     let (sierra_local_variables, allocate_local_statements) =
         allocate_local_variables(&mut context, &local_variables)?;
@@ -143,8 +143,8 @@ fn get_function_code(
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
     local_variables: &OrderedHashSet<lowering::VariableId>,
-) -> Maybe<(LocalVariables, Vec<Statement>)> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<(LocalVariables, Vec<StatementWithLocation>)> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();
     for lowering_var_id in local_variables.iter() {

@@ -15,10 +15,11 @@ use itertools::chain;
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
-use crate::pre_sierra::{self};
+use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
-use crate::resolve_labels::{resolve_labels, LabelReplacer};
+use crate::resolve_labels::{resolve_labels_and_extract_locations, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::statements_locations::StatementsLocations;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -41,11 +42,11 @@ fn generate_libfunc_declarations<'a>(
 
 /// Collects the set of all [ConcreteLibfuncId] used in the given list of [pre_sierra::Statement].
 fn collect_used_libfuncs(
-    statements: &[pre_sierra::Statement],
+    statements: &[pre_sierra::StatementWithLocation],
 ) -> OrderedHashSet<ConcreteLibfuncId> {
     statements
         .iter()
-        .filter_map(|statement| match statement {
+        .filter_map(|statement| match &statement.statement {
             pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
                 Some(invocation.libfunc_id.clone())
             }
@@ -171,9 +172,9 @@ fn collect_used_types(
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-) -> Maybe<Arc<cairo_lang_sierra::program::Program>> {
+) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
@@ -198,9 +199,10 @@ pub fn get_sierra_program_for_functions(
         generate_type_declarations(db, collect_used_types(db, &libfunc_declarations, &functions));
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
-    let resolved_statements = resolve_labels(statements, &label_replacer);
+    let (resolved_statements, statements_locations) =
+        resolve_labels_and_extract_locations(statements, &label_replacer);
 
-    Ok(Arc::new(program::Program {
+    let program = program::Program {
         type_declarations,
         libfunc_declarations,
         statements: resolved_statements,
@@ -216,16 +218,20 @@ pub fn get_sierra_program_for_functions(
                 )
             })
             .collect(),
-    }))
+    };
+    Ok((
+        Arc::new(program),
+        Arc::new(StatementsLocations::from_locations_vec(&statements_locations)),
+    ))
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
 fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
-    statement: &pre_sierra::Statement,
+    statement: &pre_sierra::StatementWithLocation,
 ) -> Option<ConcreteFunctionWithBodyId> {
     let invc = try_extract_matches!(
-        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
+        try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
@@ -261,7 +267,7 @@ fn try_get_function_with_body_id(
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-) -> Maybe<Arc<cairo_lang_sierra::program::Program>> {
+) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {

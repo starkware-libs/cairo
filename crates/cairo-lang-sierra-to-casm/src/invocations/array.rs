@@ -15,6 +15,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
+        ArrayConcreteLibfunc::SpanFromTuple(libfunc) => build_span_from_tuple(builder, &libfunc.ty),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
         | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => {
@@ -46,6 +47,33 @@ fn build_array_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_start]], None)],
+        Default::default(),
+    ))
+}
+
+// Builds instructions for converting a box of a struct containing only the same type as members
+// into a span of that type.
+fn build_span_from_tuple(
+    builder: CompiledInvocationBuilder<'_>,
+    ty: &ConcreteTypeId,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [start_ptr] = builder.try_get_single_cells()?;
+    let full_struct_size = builder.program_info.type_sizes[ty];
+
+    let mut casm_builder = CasmBuilder::default();
+
+    add_input_variables! {casm_builder,
+        deref start_ptr;
+    };
+    casm_build_extend! {casm_builder,
+        let arr_start = start_ptr;
+        // As the actual size of the span is exactly the same as the wrapping struct.
+        const span_size_in_cells = full_struct_size;
+        let arr_end = arr_start + span_size_in_cells;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_end]], None)],
         Default::default(),
     ))
 }
@@ -163,21 +191,12 @@ fn build_array_get(
         buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
+        const element_size = element_size;
         let orig_range_check = range_check;
         // Compute the length of the array (in cells).
         tempvar array_length_in_cells = arr_end - arr_start;
-    };
-    let element_offset_in_cells = if element_size == 1 {
-        index
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = index * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar element_offset_in_cells = index * element_size;
         // Check that offset is in range.
         // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1)`.
         tempvar is_in_range;
@@ -239,21 +258,12 @@ fn build_array_slice(
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
+        const element_size = element_size;
         // Compute the length of the array (in cells).
         tempvar array_length_in_cells = arr_end - arr_start;
         tempvar slice_end = slice_start + slice_length;
-    };
-    let slice_end_in_cells = if element_size == 1 {
-        slice_end
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = slice_end * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_end_in_cells = slice_end * element_size;
         // Check that offset is in range.
         // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1) * 2`.
         tempvar is_in_range;
@@ -275,18 +285,8 @@ fn build_array_slice(
         tempvar offset_length_diff = array_length_in_cells - slice_end_in_cells;
         // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
         assert offset_length_diff = *(range_check++);
-    };
-    let slice_start_in_cells = if element_size == 1 {
-        slice_start
-    } else {
-        casm_build_extend! {casm_builder,
-            const element_size = element_size;
-            // Compute the offset of the element (in cells).
-            tempvar element_offset = slice_start * element_size;
-        };
-        element_offset
-    };
-    casm_build_extend! {casm_builder,
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_start_in_cells = slice_start * element_size;
         let slice_start_cell = arr_start + slice_start_in_cells;
         let slice_end_cell = arr_start + slice_end_in_cells;
     };

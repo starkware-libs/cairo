@@ -69,7 +69,6 @@ impl Relocation {
                         target: DerefOrImmediate::Immediate(value),
                         relative: true,
                     }),
-                inc_ap: false,
                 ..
             }
             | Instruction {

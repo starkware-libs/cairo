@@ -5,6 +5,7 @@
 
 use std::ops::{Deref, DerefMut};
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
@@ -66,6 +67,19 @@ impl Location {
             text.into(),
             location.get(db).stable_location.diagnostic_location(db.upcast()),
         ))
+    }
+}
+
+impl DebugWithDb<dyn LoweringGroup> for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
+        let files_db = db.upcast();
+        self.stable_location.diagnostic_location(db.upcast()).fmt(f, files_db)?;
+
+        for note in &self.notes {
+            f.write_str("\nnote: ")?;
+            note.fmt(f, files_db)?;
+        }
+        Ok(())
     }
 }
 
@@ -228,6 +242,18 @@ impl Statement {
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
             Statement::Desnap(stmt) => vec![stmt.output],
+        }
+    }
+    pub fn location(&self) -> Option<LocationId> {
+        // TODO(Gil): Add location to all statements.
+        match &self {
+            Statement::Literal(_) => None,
+            Statement::Call(stmt) => Some(stmt.location),
+            Statement::StructConstruct(_) => None,
+            Statement::StructDestructure(stmt) => Some(stmt.input.location),
+            Statement::EnumConstruct(stmt) => Some(stmt.input.location),
+            Statement::Snapshot(stmt) => Some(stmt.input.location),
+            Statement::Desnap(stmt) => Some(stmt.input.location),
         }
     }
 }

@@ -488,15 +488,14 @@ pub fn core_withdraw_gas_fns(db: &dyn SemanticGroup) -> [FunctionId; 2] {
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
     get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
 }
-/// The function `constrain_range` from the `internal` submodule.
-/// Todo(TomerStarkware): use upcast instead.
-pub fn core_constrain_range(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
-    let internal = core_submodule(db, "internal");
+/// The function `downcast` from the `integer` submodule.
+pub fn core_downcast(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
+    let internal = core_submodule(db, "integer");
 
     get_function_id(
         db,
         internal,
-        "constrain_range".into(),
+        "downcast".into(),
         vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
     )
 }

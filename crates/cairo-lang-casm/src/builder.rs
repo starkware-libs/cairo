@@ -12,7 +12,7 @@ use cairo_lang_utils::extract_matches;
 #[cfg(not(feature = "std"))]
 use hashbrown::{hash_map::Entry, HashMap, HashSet};
 use num_bigint::BigInt;
-use num_traits::One;
+use num_traits::{One, Zero};
 
 use crate::ap_change::ApplyApChange;
 use crate::cell_expression::{CellExpression, CellOperator};
@@ -208,6 +208,12 @@ impl CasmBuilder {
         CasmBuildResult { instructions, branches }
     }
 
+    /// Returns the current ap change of the builder.
+    /// Useful for manual ap change handling.
+    pub fn curr_ap_change(&self) -> usize {
+        self.main_state.ap_change
+    }
+
     /// Computes the code offsets of all the labels.
     fn compute_label_offsets(&self) -> HashMap<String, usize> {
         let mut label_offsets = HashMap::<String, usize>::default();
@@ -324,6 +330,30 @@ impl CasmBuilder {
         let (cell, offset) = self.buffer_get_and_inc(buffer);
         let location = self.add_var(CellExpression::DoubleDeref(cell, offset));
         self.assert_vars_eq(value, location);
+    }
+
+    /// Writes `var` as a new tempvar and returns it as a variable, unless its value is already
+    /// `deref` (which includes trivial calculations as well) so it instead returns a variable
+    /// pointing to that location.
+    pub fn maybe_add_tempvar(&mut self, var: Var) -> Var {
+        self.add_var(CellExpression::Deref(match self.get_value(var, false) {
+            CellExpression::Deref(cell) => cell,
+            CellExpression::BinOp {
+                op: CellOperator::Add | CellOperator::Sub,
+                a,
+                b: DerefOrImmediate::Immediate(imm),
+            } if imm.value.is_zero() => a,
+            CellExpression::BinOp {
+                op: CellOperator::Mul | CellOperator::Div,
+                a,
+                b: DerefOrImmediate::Immediate(imm),
+            } if imm.value.is_one() => a,
+            _ => {
+                let temp = self.alloc_var(false);
+                self.assert_vars_eq(temp, var);
+                return temp;
+            }
+        }))
     }
 
     /// Increments a buffer and allocates and returns variable pointing to its previous value.
@@ -740,6 +770,38 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, tempvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = *$buffer; $($tok)*);
+    };
+    ($builder:ident, maybe_tempvar $var:ident = $value:ident; $($tok:tt)*) => {
+        let $var = $builder.maybe_add_tempvar($value);
+        $crate::casm_build_extend!($builder, $($tok)*);
+    };
+    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            let $var = $lhs + $rhs;
+            maybe_tempvar $var = $var;
+            $($tok)*
+        };
+    };
+    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            let $var = $lhs * $rhs;
+            maybe_tempvar $var = $var;
+            $($tok)*
+        };
+    };
+    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            let $var = $lhs - $rhs;
+            maybe_tempvar $var = $var;
+            $($tok)*
+        };
+    };
+    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            let $var = $lhs / $rhs;
+            maybe_tempvar $var = $var;
+            $($tok)*
+        };
     };
     ($builder:ident, localvar $var:ident = $value:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $value; $($tok)*);
