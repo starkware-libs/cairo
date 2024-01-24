@@ -837,30 +837,30 @@ ecdsa_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 84: 14 (ec_point_from_x_nz([0], [3]) { fallthrough([28], [29]) 246([30]) })
-  statement 88: 14 (ec_point_from_x_nz([28], [31]) { fallthrough([32], [33]) 233([34]) })
-  statement 104: 12 (ec_state_try_finalize_nz([41]) { fallthrough([42]) 205() })
-  statement 114: 12 (ec_state_try_finalize_nz([49]) { fallthrough([50]) 194() })
-  statement 120: 12 (ec_state_try_finalize_nz([53]) { fallthrough([54]) 143() })
-  statement 165: 12 (ec_state_try_finalize_nz([73]) { fallthrough([74]) 184() })
-  statement 118: 10 (ec_state_add([51], [52]) -> ([53]))
-  statement 163: 10 (ec_state_add([47], [66]) -> ([73]))
-  statement 96: 7 (ec_point_try_new_nz([35], [36]) { fallthrough([37]) 219() })
-  statement 98: 7 (ec_state_init() -> ([38]))
-  statement 100: 5 (ec_state_add_mul([1], [39], [5], [33]) -> ([40], [41]))
-  statement 109: 5 (ec_state_add_mul([40], [45], [2], [37]) -> ([46], [47]))
-  statement 110: 5 (ec_state_add_mul([46], [38], [4], [29]) -> ([48], [49]))
+  statement 75: 14 (ec_point_from_x_nz([0], [3]) { fallthrough([30], [31]) 237([32]) })
+  statement 79: 14 (ec_point_from_x_nz([30], [33]) { fallthrough([34], [35]) 224([36]) })
+  statement 95: 12 (ec_state_try_finalize_nz([43]) { fallthrough([44]) 196() })
+  statement 105: 12 (ec_state_try_finalize_nz([51]) { fallthrough([52]) 185() })
+  statement 111: 12 (ec_state_try_finalize_nz([55]) { fallthrough([56]) 134() })
+  statement 156: 12 (ec_state_try_finalize_nz([75]) { fallthrough([76]) 175() })
+  statement 109: 10 (ec_state_add([53], [54]) -> ([55]))
+  statement 154: 10 (ec_state_add([49], [68]) -> ([75]))
+  statement 87: 7 (ec_point_try_new_nz([37], [38]) { fallthrough([39]) 210() })
+  statement 89: 7 (ec_state_init() -> ([40]))
+  statement 91: 5 (ec_state_add_mul([1], [41], [5], [35]) -> ([42], [43]))
+  statement 100: 5 (ec_state_add_mul([42], [47], [2], [39]) -> ([48], [49]))
+  statement 101: 5 (ec_state_add_mul([48], [40], [4], [31]) -> ([50], [51]))
   statement 19: 3 (store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]))
-  statement 101: 3 (store_temp<EcState>([41]) -> ([41]))
-  statement 111: 3 (store_temp<EcState>([49]) -> ([49]))
-  statement 112: 3 (store_temp<EcState>([47]) -> ([47]))
-  statement 119: 3 (store_temp<EcState>([53]) -> ([53]))
-  statement 164: 3 (store_temp<EcState>([73]) -> ([73]))
-  statement 179: 3 (store_temp<core::panics::PanicResult::<(core::bool,)>>([82]) -> ([82]))
-  statement 87: 2 (store_temp<NonZero<EcPoint>>([29]) -> ([29]))
-  statement 95: 2 (store_temp<NonZero<EcPoint>>([33]) -> ([33]))
-  statement 102: 2 (store_temp<NonZero<EcPoint>>([37]) -> ([37]))
-  statement 146: 2 (store_temp<EcPoint>([65]) -> ([65]))
+  statement 92: 3 (store_temp<EcState>([43]) -> ([43]))
+  statement 102: 3 (store_temp<EcState>([51]) -> ([51]))
+  statement 103: 3 (store_temp<EcState>([49]) -> ([49]))
+  statement 110: 3 (store_temp<EcState>([55]) -> ([55]))
+  statement 155: 3 (store_temp<EcState>([75]) -> ([75]))
+  statement 170: 3 (store_temp<core::panics::PanicResult::<(core::bool,)>>([84]) -> ([84]))
+  statement 78: 2 (store_temp<NonZero<EcPoint>>([31]) -> ([31]))
+  statement 86: 2 (store_temp<NonZero<EcPoint>>([35]) -> ([35]))
+  statement 93: 2 (store_temp<NonZero<EcPoint>>([39]) -> ([39]))
+  statement 137: 2 (store_temp<EcPoint>([67]) -> ([67]))
   statement 4: 1 (store_temp<RangeCheck>([0]) -> ([0]))
   statement 5: 1 (store_temp<EcOp>([1]) -> ([1]))
   statement 6: 1 (store_temp<felt252>([2]) -> ([2]))
@@ -872,25 +872,27 @@ Weight by sierra statement:
   statement 17: 1 (store_temp<RangeCheck>([6]) -> ([6]))
   statement 18: 1 (store_temp<EcOp>([7]) -> ([7]))
   statement 20: 1 (return([6], [7], [13]))
-  statement 28: 1 (felt252_is_zero([6]) { fallthrough() 42([7]) })
-  statement 47: 1 (store_temp<felt252>([14]) -> ([14]))
-  statement 48: 1 (felt252_is_zero([14]) { fallthrough() 62([15]) })
-  statement 67: 1 (store_temp<felt252>([22]) -> ([22]))
-  statement 68: 1 (felt252_is_zero([22]) { fallthrough() 82([23]) })
-  statement 92: 1 (store_temp<felt252>([35]) -> ([35]))
-  statement 93: 1 (store_temp<felt252>([36]) -> ([36]))
-  statement 94: 1 (store_temp<RangeCheck>([32]) -> ([32]))
-  statement 103: 1 (store_temp<EcOp>([40]) -> ([40]))
-  statement 113: 1 (store_temp<EcOp>([48]) -> ([48]))
-  statement 126: 1 (store_temp<felt252>([58]) -> ([58]))
-  statement 127: 1 (felt252_is_zero([58]) { fallthrough() 140([59]) })
-  statement 142: 1 (jump() { 144() })
-  statement 147: 1 (ec_point_is_zero([65]) { fallthrough() 162([66]) })
-  statement 170: 1 (store_temp<felt252>([77]) -> ([77]))
-  statement 171: 1 (felt252_is_zero([77]) { fallthrough() 181([78]) })
-  statement 177: 1 (store_temp<RangeCheck>([32]) -> ([32]))
-  statement 178: 1 (store_temp<EcOp>([48]) -> ([48]))
-  statement 180: 1 (return([32], [48], [82]))
+  statement 28: 1 (felt252_is_zero([6]) { fallthrough() 34([7]) })
+  statement 39: 1 (store_temp<felt252>([13]) -> ([13]))
+  statement 40: 1 (felt252_is_zero([13]) { fallthrough() 46([14]) })
+  statement 50: 1 (store_temp<core::bool>([19]) -> ([17]))
+  statement 52: 1 (enum_match<core::bool>([10]) { fallthrough([20]) 249([21]) })
+  statement 58: 1 (store_temp<felt252>([24]) -> ([24]))
+  statement 59: 1 (felt252_is_zero([24]) { fallthrough() 73([25]) })
+  statement 83: 1 (store_temp<felt252>([37]) -> ([37]))
+  statement 84: 1 (store_temp<felt252>([38]) -> ([38]))
+  statement 85: 1 (store_temp<RangeCheck>([34]) -> ([34]))
+  statement 94: 1 (store_temp<EcOp>([42]) -> ([42]))
+  statement 104: 1 (store_temp<EcOp>([50]) -> ([50]))
+  statement 117: 1 (store_temp<felt252>([60]) -> ([60]))
+  statement 118: 1 (felt252_is_zero([60]) { fallthrough() 131([61]) })
+  statement 133: 1 (jump() { 135() })
+  statement 138: 1 (ec_point_is_zero([67]) { fallthrough() 153([68]) })
+  statement 161: 1 (store_temp<felt252>([79]) -> ([79]))
+  statement 162: 1 (felt252_is_zero([79]) { fallthrough() 172([80]) })
+  statement 168: 1 (store_temp<RangeCheck>([34]) -> ([34]))
+  statement 169: 1 (store_temp<EcOp>([50]) -> ([50]))
+  statement 171: 1 (return([34], [50], [84]))
 Weight by concrete libfunc:
   libfunc ec_state_try_finalize_nz: 48
   libfunc ec_point_from_x_nz: 28
@@ -908,45 +910,48 @@ Weight by concrete libfunc:
   libfunc store_temp<core::panics::PanicResult::<(core::bool,)>>: 3
   libfunc store_temp<EcPoint>: 2
   libfunc ec_point_is_zero: 1
+  libfunc enum_match<core::bool>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::bool,)>>: 1
   libfunc function_call<user@core::ecdsa::check_ecdsa_signature>: 1
   libfunc jump: 1
+  libfunc store_temp<core::bool>: 1
   return: 2
 Weight by generic libfunc:
+  libfunc store_temp: 49
   libfunc ec_state_try_finalize_nz: 48
-  libfunc store_temp: 48
   libfunc ec_point_from_x_nz: 28
   libfunc ec_state_add: 20
   libfunc ec_state_add_mul: 15
   libfunc ec_point_try_new_nz: 7
   libfunc ec_state_init: 7
   libfunc felt252_is_zero: 5
+  libfunc enum_match: 2
   libfunc ec_point_is_zero: 1
-  libfunc enum_match: 1
   libfunc function_call: 1
   libfunc jump: 1
   return: 2
 Weight by user function (inc. generated):
-  function core::ecdsa::check_ecdsa_signature: 170
+  function core::ecdsa::check_ecdsa_signature: 172
   function test::ecdsa_call: 14
 Weight by original user function:
-  function core::ecdsa::check_ecdsa_signature: 170
+  function core::ecdsa::check_ecdsa_signature: 172
   function test::ecdsa_call: 14
 Weight by Cairo function:
   function ec.cairo::EcStateImpl::finalize_nz: 67
   function ec.cairo::EcPointImpl::new_nz_from_x: 30
   function ec.cairo::EcStateImpl::add_mul: 15
-  function ecdsa.cairo::check_ecdsa_signature: 15
   function lib.cairo::ecdsa_call: 14
+  function ecdsa.cairo::check_ecdsa_signature: 13
   function ec.cairo::EcPointImpl::new_nz: 12
   function ec.cairo::EcStateImpl::add: 10
   function ec.cairo::EcStateImpl::sub: 10
   function ec.cairo::EcStateImpl::init: 7
+  function lib.cairo::Felt252PartialEq::eq: 4
   function ec.cairo::EcPointTryIntoNonZero::try_into: 3
   function unknown: 1
 Weight by Sierra stack trace:
-  test::ecdsa_call: 184
-  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 170
+  test::ecdsa_call: 186
+  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 172
 
 //! > ==========================================================================
 
