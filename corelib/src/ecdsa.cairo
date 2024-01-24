@@ -25,14 +25,11 @@ use core::zeroable::IsZeroResult;
 pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
-    // TODO(orizi): Change to || once it does not prevent `a == 0` comparison optimization.
     // Check that s != 0 (mod stark_curve::ORDER).
-    if signature_s == 0 {
+    if signature_s == 0 || signature_s == ec::stark_curve::ORDER {
         return false;
     }
-    if signature_s == ec::stark_curve::ORDER {
-        return false;
-    }
+    // r != 0 is checked bellow so we only check that r != stark_curve::ORDER.
     if signature_r == ec::stark_curve::ORDER {
         return false;
     }
