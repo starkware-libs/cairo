@@ -880,11 +880,8 @@ Statements:
   (v4: core::integer::u8) <- 0u
   (v8: core::integer::u8, v9: @core::integer::u8) <- snapshot(v4)
   (v10: core::integer::u8) <- 0u
-  (v11: core::integer::u8, v12: @core::integer::u8) <- snapshot(v10)
-  (v19: core::integer::u8) <- desnap(v9)
-  (v20: core::integer::u8) <- desnap(v12)
 End:
-  Match(match core::integer::u8_eq(v19, v20) {
+  Match(match core::integer::u8_eq(v4, v10) {
     bool::False => blk2,
     bool::True => blk3,
   })

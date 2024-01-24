@@ -32,13 +32,9 @@ Parameters: v41: core::RangeCheck, v0: core::integer::u256
 blk0 (root):
 Statements:
   (v3: core::integer::u128, v4: core::integer::u128) <- struct_destructure(v0)
-  (v5: core::integer::u128, v6: @core::integer::u128) <- snapshot(v4)
   (v7: core::integer::u128) <- 0u
-  (v8: core::integer::u128, v9: @core::integer::u128) <- snapshot(v7)
-  (v19: core::integer::u128) <- desnap(v6)
-  (v20: core::integer::u128) <- desnap(v9)
 End:
-  Match(match core::integer::u128_eq(v19, v20) {
+  Match(match core::integer::u128_eq(v4, v7) {
     bool::False => blk1,
     bool::True => blk2,
   })

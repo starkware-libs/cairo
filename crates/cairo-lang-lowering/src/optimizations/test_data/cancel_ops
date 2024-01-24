@@ -210,3 +210,48 @@ Statements:
   (v15: core::felt252) <- 1u
 End:
   Return(v15)
+
+//! > ==========================================================================
+
+//! > Test snap/desnap
+
+//! > test_runner_name
+test_cancel_ops
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let snap = @a;
+   let desnap = *snap;
+   let snap_desnap = @desnap;
+   *snap + *snap_desnap
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- desnap(v2)
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::felt252) <- desnap(v2)
+  (v7: core::felt252) <- desnap(v5)
+  (v9: core::felt252) <- core::felt252_add(v6, v7)
+End:
+  Return(v9)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v9: core::felt252) <- core::felt252_add(v0, v0)
+End:
+  Return(v9)
