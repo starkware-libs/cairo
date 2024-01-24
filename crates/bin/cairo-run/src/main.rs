@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
-    let sierra_program = db
+    let (sierra_program, statements_locations) = db
         .get_sierra_program(main_crate_ids.clone())
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -86,7 +86,10 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Failed to run the function.")?;
 
     if args.run_profiler {
-        let profiling_info_processor = ProfilingInfoProcessor::new(sierra_program);
+        let profiling_info_processor = ProfilingInfoProcessor::new(
+            sierra_program,
+            statements_locations.get_statements_functions_map(db),
+        );
         match result.profiling_info {
             Some(raw_profiling_info) => {
                 let profiling_info = profiling_info_processor.process(&raw_profiling_info);

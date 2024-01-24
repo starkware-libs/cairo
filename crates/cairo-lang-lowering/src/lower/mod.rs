@@ -2255,7 +2255,7 @@ fn lower_expr_match_felt252(
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
     let function_id =
-        corelib::core_constrain_range(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
+        corelib::core_downcast(semantic_db, felt252_ty, bounded_int_ty).lowered(ctx.db);
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
 
@@ -2311,7 +2311,7 @@ fn lower_expr_match_felt252(
 /// a jump table instead of an if-else construct.
 fn numeric_match_optimization_threshold(ctx: &mut LoweringContext<'_, '_>) -> usize {
     // Use [usize::max] as the default value, so that the optimization is not used by default.
-    // TODO(TomerStarkware): Make the default to 3 on `sierra-minor-update` branch.
+    // TODO(TomerStarkware): Set the default to be optimal on `sierra-minor-update` branch.
     ctx.db
         .get_flag(FlagId::new(ctx.db.upcast(), "numeric_match_optimization_min_arms_threshold"))
         .map(|flag| match *flag {

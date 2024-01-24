@@ -14,7 +14,7 @@ use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    match_optimizer,
+    const_folding,
     "src/optimizations/test_data",
     {
         const_folding: "const_folding",

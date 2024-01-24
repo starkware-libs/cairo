@@ -123,7 +123,7 @@ impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
 pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::Program {
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
-    let program = db.get_sierra_program(vec![crate_id]).unwrap();
+    let (program, _statements_locations) = db.get_sierra_program(vec![crate_id]).unwrap();
     replace_sierra_ids_in_program(&db, &program)
 }
 
@@ -156,7 +156,7 @@ pub fn dummy_simple_statement(
     name: &str,
     inputs: &[&str],
     outputs: &[&str],
-) -> pre_sierra::Statement {
+) -> pre_sierra::StatementWithLocation {
     simple_statement(
         dummy_concrete_lib_func_id(db, name),
         &as_var_id_vec(inputs),
@@ -183,7 +183,7 @@ pub fn dummy_simple_branch(
     name: &str,
     args: &[&str],
     target: usize,
-) -> pre_sierra::Statement {
+) -> pre_sierra::StatementWithLocation {
     pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
         libfunc_id: dummy_concrete_lib_func_id(db, name),
         args: as_var_id_vec(args),
@@ -198,20 +198,25 @@ pub fn dummy_simple_branch(
             },
         ],
     }))
+    .into_statement_without_location()
 }
 
 /// Generates a dummy return statement.
-pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::Statement {
+pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::StatementWithLocation {
     return_statement(as_var_id_vec(args))
 }
 
 /// Generates a dummy label.
-pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::StatementWithLocation {
     pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
+        .into_statement_without_location()
 }
 
 /// Generates a dummy jump to label statement.
-pub fn dummy_jump_statement(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+pub fn dummy_jump_statement(
+    db: &dyn SierraGenGroup,
+    id: usize,
+) -> pre_sierra::StatementWithLocation {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
 }
 
@@ -239,7 +244,7 @@ pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::La
 pub fn dummy_push_values(
     db: &dyn SierraGenGroup,
     values: &[(&str, &str)],
-) -> pre_sierra::Statement {
+) -> pre_sierra::StatementWithLocation {
     dummy_push_values_ex(
         db,
         &values.iter().map(|(src, dst)| (*src, *dst, false)).collect::<Vec<_>>(),
@@ -250,7 +255,7 @@ pub fn dummy_push_values(
 pub fn dummy_push_values_ex(
     db: &dyn SierraGenGroup,
     values: &[(&str, &str, bool)],
-) -> pre_sierra::Statement {
+) -> pre_sierra::StatementWithLocation {
     let felt252_ty =
         db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     pre_sierra::Statement::PushValues(
@@ -264,6 +269,7 @@ pub fn dummy_push_values_ex(
             })
             .collect(),
     )
+    .into_statement_without_location()
 }
 
 /// Creates a test for a given function that reads test files.

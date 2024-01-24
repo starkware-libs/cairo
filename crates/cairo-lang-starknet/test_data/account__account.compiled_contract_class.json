@@ -1,6 +1,6 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-  "compiler_version": "2.4.4",
+  "compiler_version": "2.5.0",
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",
@@ -3786,9 +3786,15 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "FP",
+                  "offset": -3
+                },
+                "b": {
+                  "Immediate": "0x0"
+                }
               }
             },
             "rhs": {
@@ -4293,7 +4299,7 @@
     [
       2443,
       [
-        "memory[ap + 0] = memory[fp + -3] < 4294967296"
+        "memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 4294967296"
       ]
     ],
     [

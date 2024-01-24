@@ -906,15 +906,14 @@ fn foo(a: i8) -> Option::<BoundedInt<-5, -1>> {
 
 //! > casm
 %{ memory[ap + 0] = (memory[fp + -3] + 5) % PRIME < 5 %}
-jmp rel 14 if [ap + 0] != 0, ap++;
+jmp rel 12 if [ap + 0] != 0, ap++;
 %{ memory[ap + 0] = (memory[fp + -3] + 5) % PRIME < 340282366920938463463374607431768211456 %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + -3] + 340282366920938463463374607431768211461, ap++;
 [ap + -1] = [[fp + -4] + 0];
-jmp rel 19;
-[fp + -3] = [ap + 0] + 0, ap++;
-[ap + -1] = [[fp + -4] + 0];
-jmp rel 14;
+jmp rel 17;
+[fp + -3] = [[fp + -4] + 0];
+jmp rel 14, ap++;
 [fp + -3] = [ap + 0] + -5, ap++;
 [ap + -1] = [[fp + -4] + 0];
 [ap + 0] = [fp + -3] + 340282366920938463463374607431768211456, ap++;

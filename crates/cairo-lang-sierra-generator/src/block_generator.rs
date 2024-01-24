@@ -2,6 +2,7 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
@@ -14,7 +15,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
-use crate::pre_sierra;
+use crate::pre_sierra::{self, StatementWithLocation};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
@@ -31,8 +32,8 @@ pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
     block: &lowering::FlatBlock,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     if context.should_disable_ap_tracking(&block_id) {
         context.set_ap_tracking(false);
@@ -54,9 +55,17 @@ pub fn generate_block_body_code(
 
     // Process the statements.
     for (i, statement) in block.statements.iter().enumerate() {
-        let statement_location = (block_id, i);
-        statements.extend(generate_statement_code(context, statement, &statement_location)?);
-        let drop_location = &DropLocation::PostStatement(statement_location);
+        let statement_lowering_location = (block_id, i);
+        let statement_cairo_location = statement.location().map(|location_id| {
+            context.get_db().lookup_intern_location(location_id).stable_location
+        });
+        let mut sierra_statements =
+            generate_statement_code(context, statement, &statement_lowering_location)?;
+        sierra_statements.iter_mut().for_each(|sierra_statement| {
+            sierra_statement.set_location(statement_cairo_location);
+        });
+        statements.extend(sierra_statements);
+        let drop_location = &DropLocation::PostStatement(statement_lowering_location);
         add_drop_statements(context, drops, drop_location, &mut statements)?;
     }
 
@@ -76,7 +85,7 @@ fn add_drop_statements(
     context: &mut ExprGeneratorContext<'_>,
     drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
     drop_location: &DropLocation,
-    statements: &mut Vec<pre_sierra::Statement>,
+    statements: &mut Vec<pre_sierra::StatementWithLocation>,
 ) -> Maybe<()> {
     let Some(vars) = drops.get(drop_location) else { return Ok(()) };
 
@@ -100,11 +109,12 @@ fn add_drop_statements(
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-) -> Maybe<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
+    let last_location = statements.iter().rev().find_map(|statement| statement.location);
 
     match &block.end {
         lowering::FlatBlockEnd::Return(returned_variables) => {
@@ -112,37 +122,46 @@ pub fn generate_block_code(
                 context,
                 returned_variables,
                 &statement_location,
+                last_location,
             )?);
         }
         lowering::FlatBlockEnd::Panic(_) => {
             unreachable!("Panics should have been stripped in a previous phase.")
         }
         lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
+            let push_values_statement = generate_push_values_statement_for_remapping(
                 context,
                 statement_location,
                 remapping,
-            )?);
+            )?;
+            let push_values_statement_location = push_values_statement.location;
+            statements.push(push_values_statement);
 
             if *target_block_id == block_id.next_block_id() {
-                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                    id: *context.block_label(*target_block_id),
-                }));
+                statements.push(
+                    pre_sierra::Statement::Label(pre_sierra::Label {
+                        id: *context.block_label(*target_block_id),
+                    })
+                    .into_statement_without_location(),
+                );
 
                 let code = generate_block_code(context, *target_block_id)?;
                 statements.extend(code);
             } else {
-                statements.push(jump_statement(
+                let mut jump = jump_statement(
                     jump_libfunc_id(context.get_db()),
                     *context.block_label(*target_block_id),
-                ));
+                );
+                jump.location = push_values_statement_location.or(last_location);
+                statements.push(jump);
             }
         }
         lowering::FlatBlockEnd::NotSet => unreachable!(),
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
-
+            let statement_cairo_location =
+                Some(context.get_db().lookup_intern_location(*info.location()).stable_location);
             if context.should_enable_ap_tracking(&block_id) {
                 context.set_ap_tracking(true);
                 statements.push(simple_statement(
@@ -151,17 +170,25 @@ pub fn generate_block_code(
                     &[],
                 ));
             }
-
             statements.extend(match info {
-                lowering::MatchInfo::Extern(s) => {
-                    generate_match_extern_code(context, s, &statement_location)?
-                }
-                lowering::MatchInfo::Enum(s) => {
-                    generate_match_enum_code(context, s, &statement_location)?
-                }
-                lowering::MatchInfo::Value(s) => {
-                    generate_match_value_code(context, s, &statement_location)?
-                }
+                lowering::MatchInfo::Extern(s) => generate_match_extern_code(
+                    context,
+                    s,
+                    &statement_location,
+                    statement_cairo_location,
+                )?,
+                lowering::MatchInfo::Enum(s) => generate_match_enum_code(
+                    context,
+                    s,
+                    &statement_location,
+                    statement_cairo_location,
+                )?,
+                lowering::MatchInfo::Value(s) => generate_match_value_code(
+                    context,
+                    s,
+                    &statement_location,
+                    statement_cairo_location,
+                )?,
             });
         }
     }
@@ -173,7 +200,7 @@ fn generate_push_values_statement_for_remapping(
     context: &mut ExprGeneratorContext<'_>,
     statement_location: (lowering::BlockId, usize),
     remapping: &lowering::VarRemapping,
-) -> Maybe<pre_sierra::Statement> {
+) -> Maybe<pre_sierra::StatementWithLocation> {
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
     for (idx, (output, inner_output)) in remapping.iter().enumerate() {
         let ty = context.get_variable_sierra_type(*inner_output)?;
@@ -196,7 +223,13 @@ fn generate_push_values_statement_for_remapping(
             dup,
         })
     }
-    Ok(pre_sierra::Statement::PushValues(push_values))
+    let location = remapping.iter().last().map(|(_, inner_output)| {
+        context.get_db().lookup_intern_location(inner_output.location).stable_location
+    });
+    Ok(StatementWithLocation {
+        statement: pre_sierra::Statement::PushValues(push_values),
+        location,
+    })
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -207,8 +240,9 @@ pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
     returned_variables: &[lowering::VarUsage],
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    last_cairo_location: Option<StableLocation>,
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     // Copy the result to the top of the stack before returning.
     let mut return_variables_on_stack = vec![];
     let mut push_values = vec![];
@@ -227,9 +261,17 @@ pub fn generate_return_code(
             dup: should_dup,
         });
     }
+    let location = returned_variables
+        .last()
+        .map(|var| context.get_db().lookup_intern_location(var.location).stable_location);
+    let mut push_statement =
+        pre_sierra::Statement::PushValues(push_values).into_statement_without_location();
+    push_statement.set_location(location);
+    statements.push(push_statement);
+    let mut return_statement = return_statement(return_variables_on_stack);
 
-    statements.push(pre_sierra::Statement::PushValues(push_values));
-    statements.push(return_statement(return_variables_on_stack));
+    return_statement.set_location(location.or(last_cairo_location));
+    statements.push(return_statement);
 
     Ok(statements)
 }
@@ -239,7 +281,7 @@ pub fn generate_statement_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::Statement,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     match statement {
         lowering::Statement::Literal(statement_literal) => {
             generate_statement_literal_code(context, statement_literal)
@@ -269,7 +311,7 @@ pub fn generate_statement_code(
 fn generate_statement_literal_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementLiteral,
-) -> Maybe<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     let output_var = context.get_sierra_variable(statement.output);
     Ok(vec![simple_statement(
         const_libfunc_id_by_type(
@@ -287,7 +329,7 @@ fn generate_statement_call_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementCall,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     // Check if this is a user defined function or a libfunc.
     let (body, libfunc_id) = get_concrete_libfunc_id(
         context.get_db(),
@@ -328,7 +370,7 @@ fn generate_statement_call_code(
 
         Ok(vec![
             // Push the arguments.
-            pre_sierra::Statement::PushValues(push_values_vec),
+            pre_sierra::Statement::PushValues(push_values_vec).into_statement_without_location(),
             // Call the function.
             simple_statement(
                 libfunc_id,
@@ -343,7 +385,7 @@ fn generate_statement_call_code(
         );
 
         // Dup variables as needed.
-        let mut statements: Vec<pre_sierra::Statement> = vec![];
+        let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
         let inputs_after_dup = maybe_add_dup_statements(
             context,
             statement_location,
@@ -371,7 +413,7 @@ fn maybe_add_dup_statements(
     context: &mut ExprGeneratorContext<'_>,
     statement_location: &StatementLocation,
     lowering_vars: &[VarUsage],
-    statements: &mut Vec<pre_sierra::Statement>,
+    statements: &mut Vec<pre_sierra::StatementWithLocation>,
 ) -> Maybe<Vec<sierra::ids::VarId>> {
     lowering_vars
         .iter()
@@ -389,7 +431,7 @@ fn maybe_add_dup_statement(
     statement_location: &StatementLocation,
     idx: usize,
     lowering_var: &VarUsage,
-    statements: &mut Vec<pre_sierra::Statement>,
+    statements: &mut Vec<pre_sierra::StatementWithLocation>,
 ) -> Maybe<sierra::ids::VarId> {
     let sierra_var = context.get_sierra_variable(*lowering_var);
 
@@ -414,8 +456,9 @@ fn generate_match_extern_code(
     context: &mut ExprGeneratorContext<'_>,
     match_info: &lowering::MatchExternInfo,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    statement_cairo_location: Option<StableLocation>,
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     // Prepare the Sierra input variables.
     let args =
@@ -424,7 +467,14 @@ fn generate_match_extern_code(
     let (_function_long_id, libfunc_id) =
         get_concrete_libfunc_id(context.get_db(), match_info.function, false);
 
-    generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
+    generate_match_code(
+        context,
+        libfunc_id,
+        args,
+        &match_info.arms,
+        &mut statements,
+        statement_cairo_location,
+    )?;
     Ok(statements)
 }
 /// Generates Sierra code for the match a [lowering::MatchExternInfo] or [lowering::MatchEnumInfo]
@@ -434,10 +484,11 @@ fn generate_match_code(
     libfunc_id: ConcreteLibfuncId,
     args: Vec<sierra::ids::VarId>,
     arms: &[lowering::MatchArm],
-    statements: &mut Vec<pre_sierra::Statement>,
+    statements: &mut Vec<pre_sierra::StatementWithLocation>,
+    statement_cairo_location: Option<StableLocation>,
 ) -> Maybe<()> {
     // Generate labels for all the arms, except for the first (which will be Fallthrough).
-    let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
+    let arm_labels: Vec<(pre_sierra::StatementWithLocation, pre_sierra::LabelId)> =
         (1..arms.len()).map(|_i| context.new_label()).collect();
     // Generate a label for the end of the match.
     let (end_label, _) = context.new_label();
@@ -463,9 +514,12 @@ fn generate_match_code(
         .collect();
 
     // Call the match libfunc.
-    statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
-        program::GenInvocation { libfunc_id, args, branches },
-    )));
+    statements.push(StatementWithLocation {
+        statement: pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
+            program::GenInvocation { libfunc_id, args, branches },
+        )),
+        location: statement_cairo_location,
+    });
 
     let ap_tracking_enabled = context.get_ap_tracking();
 
@@ -479,7 +533,10 @@ fn generate_match_code(
             statements.push(arm_labels[i - 1].0.clone());
         }
         // Add branch_align to equalize gas costs across the merging paths.
-        statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
+        let mut branch_align_statement =
+            simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]);
+        branch_align_statement.set_location(statement_cairo_location);
+        statements.push(branch_align_statement);
 
         let code = generate_block_code(context, *block_id)?;
         statements.extend(code);
@@ -496,8 +553,8 @@ fn generate_statement_enum_construct(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementEnumConstruct,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     let input =
         maybe_add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
@@ -519,8 +576,8 @@ fn generate_statement_struct_construct_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructConstruct,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     let inputs =
         maybe_add_dup_statements(context, statement_location, &statement.inputs, &mut statements)?;
@@ -541,8 +598,8 @@ fn generate_statement_struct_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructDestructure,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     let input =
         maybe_add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
@@ -565,8 +622,9 @@ fn generate_match_value_code(
     context: &mut ExprGeneratorContext<'_>,
     match_info: &lowering::MatchEnumValue,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    statement_cairo_location: Option<StableLocation>,
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     // Prepare the Sierra input variables.
     let bounded_int = maybe_add_dup_statement(
@@ -589,7 +647,14 @@ fn generate_match_value_code(
     let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
 
     let args = vec![enum_var];
-    generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
+    generate_match_code(
+        context,
+        libfunc_id,
+        args,
+        &match_info.arms,
+        &mut statements,
+        statement_cairo_location,
+    )?;
     Ok(statements)
 }
 
@@ -598,8 +663,9 @@ fn generate_match_enum_code(
     context: &mut ExprGeneratorContext<'_>,
     match_info: &lowering::MatchEnumInfo,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    statement_cairo_location: Option<StableLocation>,
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     // Prepare the Sierra input variables.
     let matched_enum = maybe_add_dup_statement(
@@ -614,7 +680,14 @@ fn generate_match_enum_code(
     let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
 
     let args = vec![matched_enum];
-    generate_match_code(context, libfunc_id, args, &match_info.arms, &mut statements)?;
+    generate_match_code(
+        context,
+        libfunc_id,
+        args,
+        &match_info.arms,
+        &mut statements,
+        statement_cairo_location,
+    )?;
     Ok(statements)
 }
 
@@ -623,8 +696,8 @@ fn generate_statement_snapshot(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementSnapshot,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
 
     // Prepare the Sierra input variables.
     let input =
@@ -649,9 +722,9 @@ fn generate_statement_desnap(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementDesnap,
     statement_location: &StatementLocation,
-) -> Maybe<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     // Dup variables as needed.
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let inputs_after_dup =
         maybe_add_dup_statements(context, statement_location, &[statement.input], &mut statements)?;
 

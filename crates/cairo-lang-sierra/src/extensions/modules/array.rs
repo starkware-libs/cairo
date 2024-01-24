@@ -1,6 +1,7 @@
 use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
+use super::structure::StructConcreteType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -49,6 +50,7 @@ pub type ArrayType = GenericTypeArgGenericTypeWrapper<ArrayTypeWrapped>;
 define_libfunc_hierarchy! {
     pub enum ArrayLibfunc {
         New(ArrayNewLibfunc),
+        SpanFromTuple(SpanFromTupleLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
         PopFrontConsume(ArrayPopFrontConsumeLibfunc),
@@ -82,6 +84,51 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
         ))
     }
 }
+
+/// Libfunc for creating a span from a box of struct of members of the same type.
+#[derive(Default)]
+pub struct SpanFromTupleLibfuncWrapped;
+impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
+    const STR_ID: &'static str = "span_from_tuple";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let struct_type = StructConcreteType::try_from_concrete_type(context, &ty)?;
+        if struct_type.info.zero_sized {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        let member_type =
+            struct_type.members.first().ok_or(SpecializationError::UnsupportedGenericArg)?;
+        // Validate all members are of the same type.
+        for member in &struct_type.members {
+            if member != member_type {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        }
+
+        let input_ty = box_ty(context, snapshot_ty(context, ty)?)?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![input_ty],
+            vec![OutputVarInfo {
+                ty: snapshot_ty(
+                    context,
+                    context.get_wrapped_concrete_type(ArrayType::id(), member_type.clone())?,
+                )?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                    param_idx: 0,
+                }),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+pub type SpanFromTupleLibfunc = WrapSignatureAndTypeGenericLibfunc<SpanFromTupleLibfuncWrapped>;
 
 /// Libfunc for getting the length of the array.
 #[derive(Default)]
