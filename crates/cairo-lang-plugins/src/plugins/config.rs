@@ -125,7 +125,7 @@ fn get_kept_items_nodes<Item: QueryAttrs + TypedSyntaxNode>(
 }
 
 /// Check if the given item should be dropped from the AST.
-fn should_drop<Item: QueryAttrs>(
+pub fn should_drop<Item: QueryAttrs>(
     db: &dyn SyntaxGroup,
     cfg_set: &CfgSet,
     item: &Item,

@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_plugins::plugins::should_drop;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
@@ -298,6 +299,7 @@ fn handle_contract_item(
 /// Generates the code that is specific for a contract.
 pub(super) fn generate_contract_specific_code(
     db: &dyn SyntaxGroup,
+    metadata: &MacroPluginMetadata<'_>,
     diagnostics: &mut Vec<PluginDiagnostic>,
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
@@ -307,6 +309,9 @@ pub(super) fn generate_contract_specific_code(
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
     for item in body.items(db).elements(db) {
+        if should_drop(db, metadata.cfg_set, &item, &mut vec![]) {
+            continue;
+        }
         handle_contract_item(db, diagnostics, &item, &mut generation_data);
     }
 

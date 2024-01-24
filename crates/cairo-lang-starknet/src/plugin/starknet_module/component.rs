@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
+use cairo_lang_plugins::plugins::should_drop;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
@@ -50,6 +51,7 @@ impl ComponentSpecificGenerationData {
 /// Generates the specific code for a component.
 pub(super) fn generate_component_specific_code(
     db: &dyn SyntaxGroup,
+    metadata: &MacroPluginMetadata<'_>,
     diagnostics: &mut Vec<PluginDiagnostic>,
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
@@ -57,6 +59,9 @@ pub(super) fn generate_component_specific_code(
     let mut generation_data = ComponentGenerationData { common: common_data, ..Default::default() };
     generate_has_component_trait_code(&mut generation_data.specific);
     for item in body.items(db).elements(db) {
+        if should_drop(db, metadata.cfg_set, &item, &mut vec![]) {
+            continue;
+        }
         handle_component_item(db, diagnostics, &item, &mut generation_data);
     }
     generation_data.into_rewrite_node(db, diagnostics)
