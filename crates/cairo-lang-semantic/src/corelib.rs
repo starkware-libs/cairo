@@ -476,8 +476,13 @@ pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt252_is_zero".into(), vec![])
 }
 
-pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
-    get_function_id(db, core_submodule(db, "gas"), "withdraw_gas".into(), vec![])
+/// The gas withdrawal functions from the `gas` submodule.
+pub fn core_withdraw_gas_fns(db: &dyn SemanticGroup) -> [FunctionId; 2] {
+    let gas = core_submodule(db, "gas");
+    [
+        get_function_id(db, gas, "withdraw_gas".into(), vec![]),
+        get_function_id(db, gas, "withdraw_gas_all".into(), vec![]),
+    ]
 }
 
 pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {

@@ -47,3 +47,95 @@ Statements:
   (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
 End:
   Return(v20, v21, v12)
+
+//! > ==========================================================================
+
+//! > Test explicit gas handling.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: felt252) {  
+  match core::gas::withdraw_gas() {
+    Option::Some(_) => foo(x),
+    Option::None => {}
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v4: core::RangeCheck, v5: core::gas::GasBuiltin, v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v4, v5) {
+    Option::Some(v6, v7) => blk1,
+    Option::None(v8, v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v1: ()) <- test::foo(v6, v7, v0)
+End:
+  Return(v10, v11, v1)
+
+blk2:
+Statements:
+  (v3: ()) <- struct_construct()
+End:
+  Return(v8, v9, v3)
+
+//! > ==========================================================================
+
+//! > Test nopanic function cycle with withdraw gas.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
+  match core::gas::withdraw_gas_all(costs) {
+    Option::Some(_) => foo(x, costs),
+    Option::None => {}
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin, v0: core::felt252, v1: core::gas::BuiltinCosts
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas_all(v5, v6, v1) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9, v10) => blk2,
+  })
+
+blk1:
+Statements:
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v2: ()) <- test::foo(v7, v8, v0, v1)
+End:
+  Return(v11, v12, v2)
+
+blk2:
+Statements:
+  (v4: ()) <- struct_construct()
+End:
+  Return(v9, v10, v4)
