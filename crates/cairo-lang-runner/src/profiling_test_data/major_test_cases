@@ -74,9 +74,8 @@ Weight by original user function:
   function test::pow2_by_add_loop: 196014
   function test::pow2_14000: 12
 Weight by Cairo function:
-  function lib.cairo::pow2_by_add_loop: 182013
-  function lib.cairo::pow2_14000: 11
-  return: 14002
+  function lib.cairo::pow2_by_add_loop: 196014
+  function lib.cairo::pow2_14000: 12
 
 //! > ==========================================================================
 
@@ -420,22 +419,22 @@ Weight by original user function:
   function core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 12
   function test::test_contract::__validate__: 1
 Weight by Cairo function:
-  function array.cairo::deserialize_array_helper: 60
-  function impls::CallSerde::deserialize: 48
+  function array.cairo::deserialize_array_helper: 63
+  function impls::CallSerde::deserialize: 50
   function array.cairo::ArrayImpl::append: 46
   function unknown: 43
-  function array.cairo::SpanFelt252Serde::deserialize: 36
+  function array.cairo::SpanFelt252Serde::deserialize: 38
+  function contract_address.cairo::ContractAddressSerde::deserialize: 36
   function array.cairo::SpanImpl::pop_front: 35
-  function contract_address.cairo::ContractAddressSerde::deserialize: 34
+  function contract::__wrapper____validate__: 25
   function array.cairo::SpanImpl::slice: 24
-  function contract::__wrapper____validate__: 24
-  function integer.cairo::U32Sub::sub: 20
-  function integer.cairo::Felt252TryIntoU32::try_into: 16
-  function lib.cairo::Felt252Serde::deserialize: 16
-  function lib.cairo::validate_call: 13
-  function result.cairo::ResultTraitImpl::expect: 10
-  function array.cairo::ArraySerde::deserialize: 8
+  function integer.cairo::U32Sub::sub: 22
+  function lib.cairo::Felt252Serde::deserialize: 20
+  function integer.cairo::Felt252TryIntoU32::try_into: 18
+  function lib.cairo::validate_call: 14
+  function result.cairo::ResultTraitImpl::expect: 12
+  function array.cairo::ArraySerde::deserialize: 9
   function array.cairo::ArrayImpl::new: 3
   function array.cairo::SpanImpl::is_empty: 3
+  function lib.cairo::test_contract::__validate__: 1
   function option.cairo::OptionTraitImpl::expect: 1
-  return: 23
