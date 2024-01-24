@@ -667,6 +667,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
+            SemanticDiagnosticKind::StructTailExpressionNotLast => {
+                "The base struct must always be the last field.".into()
+            }
+            SemanticDiagnosticKind::StructTailExpressionNoEffect => "Struct update has no effect, \
+                                                                     all the fields in the struct \
+                                                                     have already been specified."
+                .into(),
         }
     }
 
@@ -724,6 +731,8 @@ pub enum SemanticDiagnosticKind {
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
+    StructTailExpressionNotLast,
+    StructTailExpressionNoEffect,
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,
