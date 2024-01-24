@@ -44,6 +44,7 @@ use crate::ids::{
     SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
+use crate::lower::generators::StructDestructure;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
     MatchInfo, VarUsage, VariableId,
@@ -2356,12 +2357,15 @@ fn lower_expr_member_access(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
             )
         })?;
+
     if let Some(member_path) = &expr.member_path {
+        // assert!(expr.n_snapshots == 0, "Member access should not have snapshots.");
         return Ok(LoweredExpr::Member(
             member_path.clone(),
             ctx.get_location(expr.stable_ptr.untyped()),
         ));
     }
+
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
@@ -2388,12 +2392,39 @@ fn lower_expr_struct_ctor(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_expr = UnorderedHashMap::<_, _>::from_iter(expr.members.iter().cloned());
+    let mut members_vars_usages =
+        UnorderedHashMap::<_, _>::from_iter(expr.members.iter().map(|(member_id, expr_id)| {
+            (*member_id, lower_expr_to_var_usage(ctx, builder, *expr_id))
+        }));
+    if members.len() != members_vars_usages.len() {
+        let tail_struct_usage =
+            expr.tail_struct.map(|tail| lower_expr_to_var_usage(ctx, builder, tail)).unwrap()?;
+
+        let mut tail_memebers_usages = StructDestructure {
+            input: tail_struct_usage.var_id,
+            var_reqs: members
+                .iter()
+                .map(|(_, member)| VarRequest { ty: member.ty, location })
+                .collect(),
+        }
+        .add(ctx, &mut builder.statements);
+        for (_, member) in members.iter() {
+            if members_vars_usages.get(&member.id).is_some() {
+                tail_memebers_usages.remove(0);
+                continue;
+            }
+
+            members_vars_usages.insert(
+                member.id,
+                Ok(VarUsage { var_id: tail_memebers_usages.remove(0), location }),
+            );
+        }
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
+                .map(|(_, member)| members_vars_usages.remove(&member.id).unwrap())
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,
