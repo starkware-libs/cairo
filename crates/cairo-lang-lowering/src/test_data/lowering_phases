@@ -1251,7 +1251,6 @@ Statements:
 End:
   Return(v25)
 
-
 //! > after_reorder_statements3
 Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
 blk0 (root):

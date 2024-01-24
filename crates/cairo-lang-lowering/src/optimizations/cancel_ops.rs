@@ -90,54 +90,99 @@ pub struct AnalysisInfo {
 }
 impl<'a> CancelOpsContext<'a> {
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) {
-        let Statement::StructConstruct(stmt) = stmt else {
-            return;
+        let mut add_var_remapping = |(from, to)| {
+            assert!(
+                self.renamed_vars.insert(from, to).is_none(),
+                "Variable {:?} was already renamed",
+                from
+            );
         };
 
-        let Some(use_sites) = self.use_sites.get(&stmt.output) else {
-            return;
-        };
+        match stmt {
+            Statement::StructConstruct(stmt) => {
+                let Some(use_sites) = self.use_sites.get(&stmt.output) else {
+                    return;
+                };
 
-        let mut can_remove_struct_construct = true;
-        let destructures = use_sites
-            .iter()
-            .filter_map(|location| {
-                if let Some(Statement::StructDestructure(destructure_stmt)) =
-                    self.lowered.blocks[location.0].statements.get(location.1)
+                let mut can_remove_struct_construct = true;
+                let destructures = use_sites
+                    .iter()
+                    .filter_map(|location| {
+                        if let Some(Statement::StructDestructure(destructure_stmt)) =
+                            self.lowered.blocks[location.0].statements.get(location.1)
+                        {
+                            self.stmts_to_remove.push(*location);
+                            Some(destructure_stmt)
+                        } else {
+                            can_remove_struct_construct = false;
+                            None
+                        }
+                    })
+                    .collect_vec();
+
+                if !(can_remove_struct_construct
+                    || stmt
+                        .inputs
+                        .iter()
+                        .all(|input| self.lowered.variables[input.var_id].duplicatable.is_ok()))
                 {
-                    self.stmts_to_remove.push(*location);
-                    Some(destructure_stmt)
-                } else {
-                    can_remove_struct_construct = false;
-                    None
+                    // We can't remove any of the destructure statements.
+                    self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
+                    return;
                 }
-            })
-            .collect_vec();
 
-        if !(can_remove_struct_construct
-            || stmt
-                .inputs
-                .iter()
-                .all(|input| self.lowered.variables[input.var_id].duplicatable.is_ok()))
-        {
-            // We can't remove any of the destructure statements.
-            self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
-            return;
-        }
+                // Mark the statements for removal and set the renaming for it outputs.
+                if can_remove_struct_construct {
+                    self.stmts_to_remove.push(statement_location);
+                }
 
-        // Mark the statements for removal and set the renaming for it outputs.
-        if can_remove_struct_construct {
-            self.stmts_to_remove.push(statement_location);
-        }
-
-        for destructure_stmt in destructures {
-            for (output, input) in izip!(destructure_stmt.outputs.iter(), stmt.inputs.iter()) {
-                assert!(
-                    self.renamed_vars.insert(*output, input.var_id).is_none(),
-                    "Variable {:?} was already renamed",
-                    output
-                );
+                for destructure_stmt in destructures {
+                    for (output, input) in
+                        izip!(destructure_stmt.outputs.iter(), stmt.inputs.iter())
+                    {
+                        add_var_remapping((*output, input.var_id));
+                    }
+                }
             }
+
+            Statement::Snapshot(stmt) => {
+                let Some(use_sites) = self.use_sites.get(&stmt.output_snapshot) else {
+                    return;
+                };
+
+                let mut can_remove_snap = !self.use_sites.contains_key(&stmt.output_original);
+                let desnaps = use_sites
+                    .iter()
+                    .filter_map(|location| {
+                        if let Some(Statement::Desnap(desnap_stmt)) =
+                            self.lowered.blocks[location.0].statements.get(location.1)
+                        {
+                            self.stmts_to_remove.push(*location);
+                            Some(desnap_stmt)
+                        } else {
+                            can_remove_snap = false;
+                            None
+                        }
+                    })
+                    .collect_vec();
+
+                let new_var = if can_remove_snap {
+                    self.stmts_to_remove.push(statement_location);
+                    add_var_remapping((stmt.output_original, stmt.input.var_id));
+                    stmt.input.var_id
+                } else if desnaps.is_empty()
+                    && self.lowered.variables[stmt.input.var_id].duplicatable.is_err()
+                {
+                    stmt.output_original
+                } else {
+                    stmt.input.var_id
+                };
+
+                for desnap in desnaps {
+                    add_var_remapping((desnap.output, new_var));
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -226,7 +271,15 @@ pub struct CancelOpsRebuilder {
 
 impl Rebuilder for CancelOpsRebuilder {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        self.renamed_vars.get(&var).copied().unwrap_or(var)
+        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
+            return var;
+        };
+        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
+            new_var_id = *new_id;
+        }
+
+        self.renamed_vars.insert(var, new_var_id);
+        new_var_id
     }
 
     fn map_block_id(&mut self, block: BlockId) -> BlockId {
