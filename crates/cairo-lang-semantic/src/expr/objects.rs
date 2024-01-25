@@ -444,6 +444,9 @@ pub struct ExprMemberAccess {
 pub struct ExprStructCtor {
     pub concrete_struct_id: ConcreteStructId,
     pub members: Vec<(MemberId, ExprId)>,
+    // An optional base struct to copy missing members from in the struct construction.
+    // For example `let x = MyStruct { a: 1, ..base }`.
+    pub base_struct: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
