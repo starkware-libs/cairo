@@ -246,10 +246,9 @@ test_function_generator
 
 //! > function
 fn foo() -> felt252 {
-    let strct1 = immovable(MyStruct1{strct: MyStruct2{value: 12}});
-    let strct2 = immovable(strct1.strct);
-    let value = strct1.strct.value;
-    immovable(value);
+    let strct1 = immovable(MyStruct1{strct: MyStruct2{value: immovable(12)}});
+    let strct2 = strct1.strct;
+    let value = immovable(strct1.strct.value);
     internal::revoke_ap_tracking();
     get_value_1(strct1) + get_value_2(strct2) + value
 }
@@ -291,33 +290,31 @@ alloc_local<test::MyStruct2>() -> ([3])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
 felt252_const<12>() -> ([4])
-struct_construct<test::MyStruct2>([4]) -> ([5])
-struct_construct<test::MyStruct1>([5]) -> ([6])
-store_temp<test::MyStruct1>([6]) -> ([6])
-function_call<user@test::immovable::<test::MyStruct1>>([6]) -> ([7])
-struct_deconstruct<test::MyStruct1>([7]) -> ([8])
-dup<test::MyStruct2>([8]) -> ([8], [9])
-function_call<user@test::immovable::<test::MyStruct2>>([9]) -> ([2])
-struct_deconstruct<test::MyStruct2>([8]) -> ([0])
-dup<felt252>([0]) -> ([0], [10])
-store_temp<felt252>([10]) -> ([10])
-function_call<user@test::immovable::<core::felt252>>([10]) -> ([11])
-drop<felt252>([11]) -> ()
+store_temp<felt252>([4]) -> ([4])
+function_call<user@test::immovable::<core::felt252>>([4]) -> ([5])
+struct_construct<test::MyStruct2>([5]) -> ([6])
+struct_construct<test::MyStruct1>([6]) -> ([7])
+store_temp<test::MyStruct1>([7]) -> ([7])
+function_call<user@test::immovable::<test::MyStruct1>>([7]) -> ([8])
+struct_deconstruct<test::MyStruct1>([8]) -> ([2])
 store_local<test::MyStruct2>([3], [2]) -> ([2])
+dup<test::MyStruct2>([2]) -> ([2], [9])
+struct_deconstruct<test::MyStruct2>([9]) -> ([10])
+store_temp<felt252>([10]) -> ([10])
+function_call<user@test::immovable::<core::felt252>>([10]) -> ([0])
 store_local<felt252>([1], [0]) -> ([0])
 revoke_ap_tracking() -> ()
-dup<felt252>([0]) -> ([0], [12])
-struct_construct<test::MyStruct2>([12]) -> ([13])
-struct_construct<test::MyStruct1>([13]) -> ([14])
-store_temp<test::MyStruct1>([14]) -> ([14])
-function_call<user@test::get_value_1>([14]) -> ([15])
+dup<test::MyStruct2>([2]) -> ([2], [11])
+struct_construct<test::MyStruct1>([11]) -> ([12])
+store_temp<test::MyStruct1>([12]) -> ([12])
+function_call<user@test::get_value_1>([12]) -> ([13])
 store_temp<test::MyStruct2>([2]) -> ([2])
-function_call<user@test::get_value_2>([2]) -> ([16])
-felt252_add([15], [16]) -> ([17])
-store_temp<felt252>([17]) -> ([17])
-felt252_add([17], [0]) -> ([18])
-store_temp<felt252>([18]) -> ([18])
-return([18])
+function_call<user@test::get_value_2>([2]) -> ([14])
+felt252_add([13], [14]) -> ([15])
+store_temp<felt252>([15]) -> ([15])
+felt252_add([15], [0]) -> ([16])
+store_temp<felt252>([16]) -> ([16])
+return([16])
 
 //! > ==========================================================================
 
