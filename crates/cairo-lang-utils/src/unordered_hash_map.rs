@@ -140,6 +140,37 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
         self.0.contains_key(key)
     }
 
+    /// Maps the values of the map to new values using the given function.
+    pub fn map<TargetValue>(
+        &self,
+        mapper: impl Fn(&Value) -> TargetValue,
+    ) -> UnorderedHashMap<Key, TargetValue, BH>
+    where
+        Key: Clone,
+        BH: Clone,
+    {
+        #[cfg(feature = "std")]
+        use std::collections::hash_map;
+
+        #[cfg(not(feature = "std"))]
+        use hashbrown::hash_map;
+
+        self.0.iter().fold(
+            UnorderedHashMap::<_, _, _>::with_hasher(self.0.hasher().clone()),
+            |mut acc, (key, value)| {
+                match acc.entry(key.clone()) {
+                    hash_map::Entry::Occupied(_) => {
+                        unreachable!("The original map should not contain duplicate keys.");
+                    }
+                    hash_map::Entry::Vacant(vacant) => {
+                        vacant.insert(mapper(value));
+                    }
+                };
+                acc
+            },
+        )
+    }
+
     /// Aggregates values of the map using the given functions.
     /// `mapping_function` maps each key to a new key, possibly mapping multiple original keys to
     /// the same target key.
