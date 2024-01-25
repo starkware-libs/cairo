@@ -68,6 +68,5 @@ blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
-  (v2: core::option::Option::<core::felt252>, v3: @core::option::Option::<core::felt252>) <- snapshot(v1)
 End:
-  Return(v2)
+  Return(v1)

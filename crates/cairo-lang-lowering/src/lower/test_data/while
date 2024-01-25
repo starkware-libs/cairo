@@ -112,7 +112,6 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
@@ -122,7 +121,7 @@ End:
 blk2:
 Statements:
   (v15: ()) <- struct_construct()
-  (v42: (core::felt252, ())) <- struct_construct(v1, v15)
+  (v42: (core::felt252, ())) <- struct_construct(v0, v15)
   (v43: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v42)
 End:
   Return(v53, v54, v43)
@@ -130,7 +129,7 @@ End:
 blk3:
 Statements:
   (v8: core::felt252) <- 1u
-  (v24: core::felt252) <- core::felt252_sub(v1, v8)
+  (v24: core::felt252) <- core::felt252_sub(v0, v8)
   (v75: core::RangeCheck, v76: core::gas::GasBuiltin, v44: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v53, v54, v24)
 End:
   Return(v75, v76, v44)
