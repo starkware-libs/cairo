@@ -402,7 +402,7 @@ impl UnstableSalsaId for ImplFunctionId {
 }
 impl TopLevelLanguageElementId for ImplFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
 
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
