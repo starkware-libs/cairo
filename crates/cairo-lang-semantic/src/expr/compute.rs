@@ -1594,78 +1594,124 @@ fn struct_ctor_expr(
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
-    for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
+    let mut base_struct = None;
+    for (index, arg) in ctor_syntax
+        .arguments(syntax_db)
+        .arguments(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .enumerate()
+    {
         // TODO: Extract to a function for results.
-        let arg = match arg {
-            ast::StructArg::StructArgSingle(arg) => arg,
-            ast::StructArg::StructArgTail(tail_expr) => {
-                ctx.diagnostics.report(&tail_expr, Unsupported);
-                continue;
-            }
-        };
-        let arg_identifier = arg.identifier(syntax_db);
-        let arg_name = arg_identifier.text(syntax_db);
+        match arg {
+            ast::StructArg::StructArgSingle(arg) => {
+                let arg_identifier = arg.identifier(syntax_db);
+                let arg_name = arg_identifier.text(syntax_db);
 
-        // Find struct member by name.
-        let member = if let Some(member) = members.get(&arg_name) {
-            member
-        } else {
-            ctx.diagnostics.report(&arg_identifier, UnknownMember);
-            continue;
-        };
-        check_struct_member_is_visible(
-            ctx,
-            member,
-            arg_identifier.stable_ptr().untyped(),
-            &arg_name,
-        );
-
-        // Extract expression.
-        let arg_expr = match arg.arg_expr(syntax_db) {
-            ast::OptionStructArgExpr::Empty(_) => {
-                let Ok(expr) =
-                    resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())
-                else {
-                    // Insert only the member id, for correct duplicate member reporting.
-                    if member_exprs.insert(member.id, None).is_some() {
-                        ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
-                    }
+                // Find struct member by name.
+                let Some(member) = members.get(&arg_name) else {
+                    ctx.diagnostics.report(&arg_identifier, UnknownMember);
                     continue;
                 };
-                ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
+                check_struct_member_is_visible(
+                    ctx,
+                    member,
+                    arg_identifier.stable_ptr().untyped(),
+                    &arg_name,
+                );
+
+                // Extract expression.
+                let arg_expr = match arg.arg_expr(syntax_db) {
+                    ast::OptionStructArgExpr::Empty(_) => {
+                        let Ok(expr) = resolve_variable_by_name(
+                            ctx,
+                            &arg_identifier,
+                            path.stable_ptr().into(),
+                        ) else {
+                            // Insert only the member id, for correct duplicate member reporting.
+                            if member_exprs.insert(member.id, None).is_some() {
+                                ctx.diagnostics
+                                    .report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+                            }
+                            continue;
+                        };
+                        ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
+                    }
+                    ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
+                        compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
+                    }
+                };
+
+                // Insert and check for duplicates.
+                if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
+                    ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+                }
+
+                // Check types.
+                let expected_ty = ctx.reduce_ty(member.ty);
+                let actual_ty = ctx.reduce_ty(arg_expr.ty());
+                if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
+                    if !member.ty.is_missing(db) {
+                        ctx.diagnostics
+                            .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
+                    }
+                    continue;
+                }
             }
-            ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
-                compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
+            ast::StructArg::StructArgTail(base_struct_syntax) => {
+                // TODO(TomerStarkware): remove tail expression from argument list.
+                if index
+                    != ctor_syntax
+                        .arguments(syntax_db)
+                        .arguments(syntax_db)
+                        .elements(syntax_db)
+                        .len()
+                        - 1
+                {
+                    ctx.diagnostics.report(&base_struct_syntax, StructTailExpressionNotLast);
+                    continue;
+                }
+                let base_struct_expr =
+                    compute_expr_semantic(ctx, &base_struct_syntax.expression(syntax_db));
+                let base_struct_ty = ctx.reduce_ty(base_struct_expr.ty());
+                if ctx.resolver.inference().conform_ty(base_struct_ty, ty).is_err() {
+                    ctx.diagnostics.report(
+                        &base_struct_syntax,
+                        WrongArgumentType { expected_ty: ty, actual_ty: base_struct_ty },
+                    );
+                    continue;
+                }
+
+                base_struct = Some((base_struct_expr.id, base_struct_syntax));
             }
         };
-
-        // Insert and check for duplicates.
-        if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
-            ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
-        }
-
-        // Check types.
-        let expected_ty = ctx.reduce_ty(member.ty);
-        let actual_ty = ctx.reduce_ty(arg_expr.ty());
-        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-            if !member.ty.is_missing(db) {
-                ctx.diagnostics
-                    .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
-            }
-            continue;
-        }
     }
 
     // Report errors for missing members.
     for (member_name, member) in members.iter() {
         if !member_exprs.contains_key(&member.id) {
-            ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+            if base_struct.is_some() {
+                check_struct_member_is_visible(
+                    ctx,
+                    member,
+                    base_struct.clone().unwrap().1.stable_ptr().untyped(),
+                    member_name,
+                );
+            } else {
+                ctx.diagnostics
+                    .report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+            }
         }
     }
-
+    if members.len() == member_exprs.len() {
+        if let Some((_, base_struct_syntax)) = base_struct {
+            return Err(ctx.diagnostics.report(&base_struct_syntax, StructTailExpressionNoEffect));
+        }
+    }
     Ok(Expr::StructCtor(ExprStructCtor {
         concrete_struct_id,
         members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
+        base_struct: base_struct.map(|(x, _)| x),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
