@@ -13,7 +13,9 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onLanguage:cairo"
+    "onLanguage:cairo",
+    "workspaceContains:**/cairo_project.toml",
+    "workspaceContains:**/Scarb.toml"
   ],
   "main": "./out/extension",
   "contributes": {
