@@ -91,19 +91,25 @@ pub struct AnalysisInfo {
     demand: CancelOpsDemand,
 }
 impl<'a> CancelOpsContext<'a> {
-    fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) {
-        let mut add_var_remapping = |(from, to)| {
-            assert!(
-                self.renamed_vars.insert(from, to).is_none(),
-                "Variable {:?} was already renamed",
-                from
-            );
-        };
+    fn rename_var(&mut self, from: VariableId, to: VariableId) {
+        assert!(
+            self.renamed_vars.insert(from, to).is_none(),
+            "Variable {:?} was already renamed",
+            from
+        );
 
+        // Move `from` used sites to `to` to allow the optimization to be applied to them.
+        if let Some(from_use_sites) = self.use_sites.remove(&from) {
+            self.use_sites.entry(to).or_default().extend(from_use_sites);
+        }
+    }
+
+    /// Handles a statement and returns true if it can be removed.
+    fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
             Statement::StructConstruct(stmt) => {
                 let Some(use_sites) = self.use_sites.get(&stmt.output) else {
-                    return;
+                    return false;
                 };
 
                 let mut can_remove_struct_construct = true;
@@ -130,7 +136,7 @@ impl<'a> CancelOpsContext<'a> {
                 {
                     // We can't remove any of the destructure statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
-                    return;
+                    return false;
                 }
 
                 // Mark the statements for removal and set the renaming for it outputs.
@@ -142,14 +148,15 @@ impl<'a> CancelOpsContext<'a> {
                     for (output, input) in
                         izip!(destructure_stmt.outputs.iter(), stmt.inputs.iter())
                     {
-                        add_var_remapping((*output, input.var_id));
+                        self.rename_var(*output, input.var_id);
                     }
                 }
+                can_remove_struct_construct
             }
 
             Statement::Snapshot(stmt) => {
                 let Some(use_sites) = self.use_sites.get(&stmt.output_snapshot) else {
-                    return;
+                    return false;
                 };
 
                 let mut can_remove_snap = !self.use_sites.contains_key(&stmt.output_original);
@@ -170,7 +177,7 @@ impl<'a> CancelOpsContext<'a> {
 
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
-                    add_var_remapping((stmt.output_original, stmt.input.var_id));
+                    self.rename_var(stmt.output_original, stmt.input.var_id);
                     stmt.input.var_id
                 } else if desnaps.is_empty()
                     && self.lowered.variables[stmt.input.var_id].duplicatable.is_err()
@@ -181,10 +188,11 @@ impl<'a> CancelOpsContext<'a> {
                 };
 
                 for desnap in desnaps {
-                    add_var_remapping((desnap.output, new_var));
+                    self.rename_var(desnap.output, new_var);
                 }
+                can_remove_snap
             }
-            _ => {}
+            _ => false,
         }
     }
 }
@@ -198,12 +206,13 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         statement_location: StatementLocation,
         stmt: &'a Statement,
     ) {
-        self.handle_stmt(stmt, statement_location);
-        info.demand.variables_introduced(self, &stmt.outputs(), ());
-        info.demand.variables_used(
-            self,
-            stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-        );
+        if !self.handle_stmt(stmt, statement_location) {
+            info.demand.variables_introduced(self, &stmt.outputs(), ());
+            info.demand.variables_used(
+                self,
+                stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
+            );
+        }
     }
 
     fn visit_goto(
