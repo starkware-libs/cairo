@@ -183,3 +183,70 @@ Statements:
   (v9: core::felt252) <- 1u
 End:
   Return(v9)
+
+//! > ==========================================================================
+
+//! > Test if a == 0 || a = 5
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+    if a == 0 || a == 5 {
+        0
+    } else {
+        1
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v27) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+  (v11: core::felt252) <- 5u
+  (v43: core::felt252) <- core::felt252_sub(v0, v11)
+End:
+  Match(match core::felt252_is_zero(v43) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v36) => blk5,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v20: core::felt252) <- 0u
+End:
+  Return(v20)
+
+blk5:
+Statements:
+  (v22: core::felt252) <- 1u
+End:
+  Return(v22)

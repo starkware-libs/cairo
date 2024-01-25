@@ -1219,7 +1219,6 @@ End:
 
 blk8:
 Statements:
-  (v0: ()) <- struct_construct()
 End:
   Goto(blk2, {})
 
