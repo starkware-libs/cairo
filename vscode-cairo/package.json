@@ -101,10 +101,12 @@
     "lint": "eslint . src --ext .ts,.tsx"
   },
   "devDependencies": {
+    "@tsconfig/node14": "^14.1.0",
+    "@tsconfig/strictest": "^2.0.2",
     "@types/node": "^14.0.0",
+    "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@vscode/test-electron": "^2.3.1",
-    "@types/vscode": "^1.60.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "3.2.4",

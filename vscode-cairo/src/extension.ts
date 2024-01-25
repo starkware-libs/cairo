@@ -56,7 +56,7 @@ function isExecutable(path: string): boolean {
 function replacePathPlaceholders(path: string, root: string): string {
   return path
     .replace(/\${workspaceFolder}/g, root)
-    .replace(/\${userHome}/g, process.env.HOME ?? "");
+    .replace(/\${userHome}/g, process.env["HOME"] ?? "");
 }
 
 function findLanguageServerExecutable(
@@ -78,8 +78,8 @@ function findLanguageServerExecutable(
 }
 
 async function findExecutableFromPathVar(name: string) {
-  const envPath = process.env.PATH || "";
-  const envExt = process.env.PATHEXT || "";
+  const envPath = process.env["PATH"] || "";
+  const envExt = process.env["PATHEXT"] || "";
   const pathDirs = envPath
     .replace(/["]+/g, "")
     .split(path.delimiter)
@@ -110,9 +110,9 @@ async function findScarbExecutablePathInAsdfDir() {
     return undefined;
   }
 
-  let asdfDataDir = process.env.ASDF_DATA_DIR;
+  let asdfDataDir = process.env["ASDF_DATA_DIR"];
   if (!asdfDataDir) {
-    const home = process.env.HOME;
+    const home = process.env["HOME"];
     if (!home) {
       return undefined;
     }
