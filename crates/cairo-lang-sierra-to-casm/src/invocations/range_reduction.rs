@@ -39,10 +39,6 @@ pub fn build_felt252_range_reduction(
         out_range.is_small_range(),
         "build_felt252_range_reduction only works for small target ranges."
     );
-    assert!(
-        !out_range.is_empty(),
-        "build_felt252_range_reduction doesn't work for empty target ranges."
-    );
 
     let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();

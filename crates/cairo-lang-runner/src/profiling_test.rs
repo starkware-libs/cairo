@@ -25,6 +25,11 @@ pub fn test_profiling(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
+    let prev_max_stack_trace_depth_env_var = std::env::var("MAX_STACK_TRACE_DEPTH");
+    if let Some(max_stack_trace_depth) = inputs.get("max_stack_trace_depth") {
+        std::env::set_var("MAX_STACK_TRACE_DEPTH", max_stack_trace_depth);
+    }
+
     let db = RootDatabase::builder()
         .with_plugin_suite(starknet_plugin_suite())
         .detect_corelib()
@@ -52,6 +57,13 @@ pub fn test_profiling(
         .unwrap();
     let profiling_processor = ProfilingInfoProcessor::new(sierra_program, statements_functions);
     let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
+
+    if inputs.contains_key("max_stack_trace_depth") {
+        match prev_max_stack_trace_depth_env_var {
+            Ok(val) => std::env::set_var("MAX_STACK_TRACE_DEPTH", val),
+            Err(_) => std::env::remove_var("MAX_STACK_TRACE_DEPTH"),
+        }
+    }
 
     TestRunnerResult {
         outputs: OrderedHashMap::from([(
