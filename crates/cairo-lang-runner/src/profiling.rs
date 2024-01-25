@@ -90,7 +90,7 @@ impl Display for ProcessedProfilingInfo {
             }
         }
 
-        writeln!(f, "Weight by stack trace:")?;
+        writeln!(f, "Weight by Sierra stack trace:")?;
         for (stack_trace, weight) in self.stack_trace_weights.iter() {
             let stack_trace_str = stack_trace.join(" -> ");
             writeln!(f, "  {stack_trace_str}: {weight}")?;
