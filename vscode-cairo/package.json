@@ -84,6 +84,9 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
         "editor.semanticHighlighting.enabled": true
+      },
+      "explorer.fileNesting.patterns": {
+        "Scarb.toml": "Scarb.lock"
       }
     }
   },
