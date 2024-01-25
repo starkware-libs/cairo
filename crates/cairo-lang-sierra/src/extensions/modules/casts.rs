@@ -105,13 +105,10 @@ impl NamedLibfunc for DowncastLibfunc {
         // to `-1` in the field. Yet, we must make sure `PRIME - 1` is not downcasted to `-1`.
         // By reducing `to_range`, we get a cast `[0, PRIME) -> [0, 128)` where `-1` is not
         // in the output range.
+        //
+        // Note that the call to `intersection` additionally disallows disjoint ranges.
         let to_range =
             to_range.intersection(&from_range).ok_or(SpecializationError::UnsupportedGenericArg)?;
-
-        // Don't allow a downcast that would always fail (disjoint ranges).
-        if to_range.is_empty() {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
 
         // Currently, we only support downcasting into `RangeCheck` sized types.
         if !to_range.is_small_range() {
