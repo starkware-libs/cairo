@@ -444,6 +444,7 @@ pub struct ExprMemberAccess {
 pub struct ExprStructCtor {
     pub concrete_struct_id: ConcreteStructId,
     pub members: Vec<(MemberId, ExprId)>,
+    pub tail_struct: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
