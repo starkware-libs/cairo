@@ -382,3 +382,52 @@ const_as_box<Const<Tuple<test::ThreeOptions, test::ThreeOptions>, Const<test::Th
 return([0]); // 1
 
 test::foo@0() -> (Box<Tuple<test::ThreeOptions, test::ThreeOptions>>);
+
+//! > ==========================================================================
+
+//! > const and builtin costs
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type Const<T, const VALUE: T>;
+extern fn const_as_box<T>() -> Box<felt252> nopanic;
+
+fn foo() -> (Box<felt252>, BuiltinCosts) {
+    (const_as_box::<Const<felt252, 100>>(), get_builtin_costs())
+}
+
+//! > casm
+call rel 11;
+[ap + 0] = [ap + -1] + 10, ap++;
+call rel 9;
+[ap + 0] = [ap + -1] + 8, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [[ap + -2] + 0], ap++;
+ret;
+ret;
+dw 100;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 800})
+
+//! > sierra_code
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<felt252>, BuiltinCosts> = Struct<ut@Tuple, Box<felt252>, BuiltinCosts> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<felt252, 100>> = const_as_box<Const<felt252, 100>>;
+libfunc get_builtin_costs = get_builtin_costs;
+libfunc struct_construct<Tuple<Box<felt252>, BuiltinCosts>> = struct_construct<Tuple<Box<felt252>, BuiltinCosts>>;
+libfunc store_temp<Tuple<Box<felt252>, BuiltinCosts>> = store_temp<Tuple<Box<felt252>, BuiltinCosts>>;
+
+const_as_box<Const<felt252, 100>>() -> ([0]); // 0
+get_builtin_costs() -> ([1]); // 1
+struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([0], [1]) -> ([2]); // 2
+store_temp<Tuple<Box<felt252>, BuiltinCosts>>([2]) -> ([2]); // 3
+return([2]); // 4
+
+test::foo@0() -> (Tuple<Box<felt252>, BuiltinCosts>);
