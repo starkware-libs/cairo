@@ -2,6 +2,7 @@
 #[path = "cancel_ops_test.rs"]
 mod test;
 
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
 
@@ -86,6 +87,19 @@ pub struct CancelOpsContext<'a> {
     stmts_to_remove: Vec<StatementLocation>,
 }
 
+/// Returns the use sites of a variable.
+///
+/// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
+fn get_use_sites<'a>(
+    use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
+    var: &VariableId,
+) -> &'a [StatementLocation] {
+    match use_sites.get(var) {
+        Some(use_sites) => &use_sites[..],
+        None => &[],
+    }
+}
+
 #[derive(Clone)]
 pub struct AnalysisInfo {
     demand: CancelOpsDemand,
@@ -107,11 +121,61 @@ impl<'a> CancelOpsContext<'a> {
     /// Handles a statement and returns true if it can be removed.
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
+            Statement::StructDestructure(stmt) => {
+                let mut use_sites = OrderedHashSet::<&StatementLocation>::default();
+
+                for output in stmt.outputs.iter() {
+                    let output_use_sites = get_use_sites(&self.use_sites, output);
+                    use_sites.extend(output_use_sites);
+                }
+
+                let mut can_remove_struct_destructure = true;
+
+                let constructs = use_sites
+                    .iter()
+                    .filter_map(|location| {
+                        match self.lowered.blocks[location.0].statements.get(location.1) {
+                            Some(Statement::StructConstruct(construct_stmt))
+                                if stmt.outputs.len() == construct_stmt.inputs.len()
+                                    && self.lowered.variables[stmt.input.var_id].ty
+                                        == self.lowered.variables[construct_stmt.output].ty
+                                    && zip_eq(
+                                        stmt.outputs.iter(),
+                                        construct_stmt.inputs.iter(),
+                                    )
+                                    .all(|(output, input)| output == &input.var_id) =>
+                            {
+                                self.stmts_to_remove.push(**location);
+                                Some(construct_stmt)
+                            }
+                            _ => {
+                                can_remove_struct_destructure = false;
+                                None
+                            }
+                        }
+                    })
+                    .collect_vec();
+
+                if !(can_remove_struct_destructure
+                    || self.lowered.variables[stmt.input.var_id].duplicatable.is_ok())
+                {
+                    // We can't remove any of of the construct statements.
+                    self.stmts_to_remove.truncate(self.stmts_to_remove.len() - constructs.len());
+                    return false;
+                }
+
+                // Mark the statements for removal and set the renaming for it outputs.
+                if can_remove_struct_destructure {
+                    self.stmts_to_remove.push(statement_location);
+                }
+
+                for construct in constructs {
+                    self.rename_var(construct.output, stmt.input.var_id)
+                }
+                can_remove_struct_destructure
+            }
             Statement::StructConstruct(stmt) => {
-                let use_sites = match self.use_sites.get(&stmt.output) {
-                    Some(use_sites) => &use_sites[..],
-                    None => &[],
-                };
+                let use_sites = get_use_sites(&self.use_sites, &stmt.output);
 
                 let mut can_remove_struct_construct = true;
                 let destructures = use_sites
@@ -154,12 +218,8 @@ impl<'a> CancelOpsContext<'a> {
                 }
                 can_remove_struct_construct
             }
-
             Statement::Snapshot(stmt) => {
-                let use_sites = match self.use_sites.get(&stmt.output_snapshot) {
-                    Some(use_sites) => &use_sites[..],
-                    None => &[],
-                };
+                let use_sites = get_use_sites(&self.use_sites, &stmt.output_snapshot);
 
                 let mut can_remove_snap = true;
                 let desnaps = use_sites

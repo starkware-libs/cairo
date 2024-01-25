@@ -259,3 +259,115 @@ Statements:
   (v9: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Return(v9)
+
+//! > ==========================================================================
+
+//! > Test remove panic generated destructure construct pair.
+
+//! > test_runner_name
+test_cancel_ops
+
+//! > function
+fn foo(a: u32) -> u32 {
+  a + a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v0, v0)
+End:
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk1,
+    PanicResult::Err(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::integer::u32) <- struct_destructure(v3)
+  (v6: (core::integer::u32,)) <- struct_construct(v4)
+  (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v6)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
+End:
+  Return(v8)
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v0, v0)
+End:
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk1,
+    PanicResult::Err(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v3)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > Test destructure + construct to different type (optimization not possible).
+
+//! > test_runner_name
+test_cancel_ops
+
+//! > function
+fn foo(a: (u32,) ) -> MyStruct {
+  let (b, ) = a;
+  MyStruct { b }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+  b: u32,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: test::MyStruct) <- struct_construct(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: test::MyStruct) <- struct_construct(v1)
+End:
+  Return(v2)
