@@ -97,6 +97,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+
             SyntaxKind::ExprPath
                 if matches!(parent_kind(db, self), Some(SyntaxKind::PatternEnum))
                     && db
@@ -136,6 +137,12 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenDotDot
+                if grandparent_kind(db, self) == Some(SyntaxKind::StructArgTail) =>
+            {
+                true
+            }
+
             _ => false,
         }
     }

@@ -4,6 +4,7 @@
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
+#[cairofmt::skip]
 fn foo(a: A) -> A {
     A {
         b: 1_felt252,
@@ -11,6 +12,7 @@ fn foo(a: A) -> A {
         c: 7,
         a: 3,
         ..d,
+        f: 4,
     }
 }
 
@@ -25,24 +27,29 @@ struct A {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
- --> lib.cairo:7:9
+ --> lib.cairo:8:9
         b: 1_felt252,
         ^
 
 error: Unknown member.
- --> lib.cairo:9:9
+ --> lib.cairo:10:9
         c: 7,
         ^
 
 error: Member specified more than once.
- --> lib.cairo:10:9
+ --> lib.cairo:11:9
         a: 3,
         ^
 
-error: Unsupported feature.
- --> lib.cairo:11:9
+error: The base struct must always be the last field.
+ --> lib.cairo:12:9
         ..d,
         ^*^
+
+error: Unknown member.
+ --> lib.cairo:13:9
+        f: 4,
+        ^
 
 //! > ==========================================================================
 
@@ -52,7 +59,7 @@ error: Unsupported feature.
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(a: A){
+fn foo(a: A) {
     a.f;
     a.a::b;
     a.4.4;
@@ -94,3 +101,29 @@ error: Type "core::felt252" has no members.
  --> lib.cairo:10:15
     5_felt252.a;
               ^
+
+//! > ==========================================================================
+
+//! > No effect tail struct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> A {
+    A { a: 4, ..a }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: felt252,
+}
+
+//! > expected_diagnostics
+error: Struct update has no effect, all the fields in the struct have already been specified.
+ --> lib.cairo:5:15
+    A { a: 4, ..a }
+              ^*^
