@@ -878,7 +878,6 @@ End:
 blk1:
 Statements:
   (v4: core::integer::u8) <- 0u
-  (v8: core::integer::u8, v9: @core::integer::u8) <- snapshot(v4)
   (v10: core::integer::u8) <- 0u
 End:
   Match(match core::integer::u8_eq(v4, v10) {
@@ -888,14 +887,14 @@ End:
 
 blk2:
 Statements:
-  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v45, v46, v8)
+  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v45, v46, v4)
 End:
   Return(v59, v60, v34)
 
 blk3:
 Statements:
   (v15: ()) <- struct_construct()
-  (v32: (core::integer::u8, ())) <- struct_construct(v8, v15)
+  (v32: (core::integer::u8, ())) <- struct_construct(v4, v15)
   (v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v32)
 End:
   Return(v45, v46, v33)

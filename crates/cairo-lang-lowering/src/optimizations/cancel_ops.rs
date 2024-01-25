@@ -108,9 +108,8 @@ impl<'a> CancelOpsContext<'a> {
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
             Statement::StructConstruct(stmt) => {
-                let Some(use_sites) = self.use_sites.get(&stmt.output) else {
-                    return false;
-                };
+                let empty = vec![];
+                let use_sites = self.use_sites.get(&stmt.output).unwrap_or(&empty);
 
                 let mut can_remove_struct_construct = true;
                 let destructures = use_sites
@@ -155,11 +154,10 @@ impl<'a> CancelOpsContext<'a> {
             }
 
             Statement::Snapshot(stmt) => {
-                let Some(use_sites) = self.use_sites.get(&stmt.output_snapshot) else {
-                    return false;
-                };
+                let empty = vec![];
+                let use_sites = self.use_sites.get(&stmt.output_snapshot).unwrap_or(&empty);
 
-                let mut can_remove_snap = !self.use_sites.contains_key(&stmt.output_original);
+                let mut can_remove_snap = true;
                 let desnaps = use_sites
                     .iter()
                     .filter_map(|location| {
