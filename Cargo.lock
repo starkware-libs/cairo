@@ -1569,6 +1569,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "get-lowering"
+version = "2.5.0"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-lowering",
+ "cairo-lang-semantic",
+ "cairo-lang-starknet",
+ "clap",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"

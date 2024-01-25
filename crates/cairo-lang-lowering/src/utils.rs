@@ -1,11 +1,19 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use crate::db::LoweringGroup;
+use crate::fmt::LoweredFormatter;
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue,
+    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementDesnap, StatementEnumConstruct,
+    StatementLiteral, StatementSnapshot, StatementStructConstruct, StatementStructDestructure,
+    VarRemapping, VarUsage, VariableId,
 };
+
+pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
+    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+    format!("{:?}", lowered.debug(&lowered_formatter))
+}
 
 /// A rebuilder trait for rebuilding lowered representation.
 pub trait Rebuilder {

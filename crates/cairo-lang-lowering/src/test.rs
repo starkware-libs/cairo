@@ -17,7 +17,6 @@ use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
@@ -32,6 +31,7 @@ use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test::branch_inversion::branch_inversion;
 use crate::test_utils::LoweringDatabaseForTesting;
+use crate::utils::formatted_lowered;
 use crate::FlatLowered;
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -183,11 +183,6 @@ fn test_function_lowering_phases(
         .into_iter(),
         stage_states.into_iter()
     )))
-}
-
-fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
-    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-    format!("{:?}", lowered.debug(&lowered_formatter))
 }
 
 #[test]
