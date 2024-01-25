@@ -61,6 +61,10 @@ Weight by Cairo function:
   function lib.cairo::main: 17
   function lib.cairo::match_long: 11
   function lib.cairo::match_short: 6
+Weight by Sierra stack trace:
+  test::main: 34
+  test::main -> test::match_long: 11
+  test::main -> test::match_short: 6
 
 //! > ==========================================================================
 
@@ -176,6 +180,11 @@ Weight by Cairo function:
   function lib.cairo::main: 33
   function integer.cairo::U8Add::add: 30
   function result.cairo::ResultTraitImpl::expect: 12
+Weight by Sierra stack trace:
+  test::main: 132
+  test::main -> test::foo: 99
+  test::main -> test::foo -> core::integer::U8Add::add: 42
+  test::main -> test::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 
 //! > ==========================================================================
 
@@ -219,6 +228,8 @@ Weight by original user function:
   function test::test_pedersen: 15
 Weight by Cairo function:
   function lib.cairo::test_pedersen: 15
+Weight by Sierra stack trace:
+  test::test_pedersen: 15
 
 //! > ==========================================================================
 
@@ -295,3 +306,139 @@ Weight by original user function:
   function test::main: 90
 Weight by Cairo function:
   function lib.cairo::main: 90
+Weight by Sierra stack trace:
+  test::main: 90
+  test::main -> test::main[expr12]: 79
+  test::main -> test::main[expr12] -> test::main[expr12]: 66
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 53
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 40
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 27
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 14
+
+//! > ==========================================================================
+
+//! > Test max stack trace depth.
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    foo1();
+}
+fn foo1() {
+  foo2();
+  foo2();
+}
+fn foo2() {
+  foo3();
+}
+fn foo3() {
+}
+
+//! > max_stack_trace_depth
+2
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 10: 2 (function_call<user@test::foo3>() -> ([0]))
+  statement 13: 2 (return([1]))
+  statement 15: 2 (return([0]))
+  statement 0: 1 (function_call<user@test::foo1>() -> ([0]))
+  statement 3: 1 (return([1]))
+  statement 4: 1 (function_call<user@test::foo2>() -> ([0]))
+  statement 6: 1 (function_call<user@test::foo2>() -> ([1]))
+  statement 9: 1 (return([2]))
+Weight by concrete libfunc:
+  libfunc function_call<user@test::foo2>: 2
+  libfunc function_call<user@test::foo3>: 2
+  libfunc function_call<user@test::foo1>: 1
+  return: 6
+Weight by generic libfunc:
+  libfunc function_call: 5
+  return: 6
+Weight by user function (inc. generated):
+  function test::foo2: 4
+  function test::foo1: 3
+  function test::foo3: 2
+  function test::main: 2
+Weight by original user function:
+  function test::foo2: 4
+  function test::foo1: 3
+  function test::foo3: 2
+  function test::main: 2
+Weight by Cairo function:
+  function lib.cairo::foo2: 4
+  function lib.cairo::foo1: 3
+  function lib.cairo::foo3: 2
+  function lib.cairo::main: 2
+Weight by Sierra stack trace:
+  test::main: 11
+  test::main -> test::foo1: 9
+  test::main -> test::foo1 -> test::foo2: 6
+
+//! > ==========================================================================
+
+//! > Test max stack trace depth.2
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    foo1();
+}
+fn foo1() {
+  foo2();
+  foo2();
+}
+fn foo2() {
+  foo3();
+}
+fn foo3() {
+}
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 10: 2 (function_call<user@test::foo3>() -> ([0]))
+  statement 13: 2 (return([1]))
+  statement 15: 2 (return([0]))
+  statement 0: 1 (function_call<user@test::foo1>() -> ([0]))
+  statement 3: 1 (return([1]))
+  statement 4: 1 (function_call<user@test::foo2>() -> ([0]))
+  statement 6: 1 (function_call<user@test::foo2>() -> ([1]))
+  statement 9: 1 (return([2]))
+Weight by concrete libfunc:
+  libfunc function_call<user@test::foo2>: 2
+  libfunc function_call<user@test::foo3>: 2
+  libfunc function_call<user@test::foo1>: 1
+  return: 6
+Weight by generic libfunc:
+  libfunc function_call: 5
+  return: 6
+Weight by user function (inc. generated):
+  function test::foo2: 4
+  function test::foo1: 3
+  function test::foo3: 2
+  function test::main: 2
+Weight by original user function:
+  function test::foo2: 4
+  function test::foo1: 3
+  function test::foo3: 2
+  function test::main: 2
+Weight by Cairo function:
+  function lib.cairo::foo2: 4
+  function lib.cairo::foo1: 3
+  function lib.cairo::foo3: 2
+  function lib.cairo::main: 2
+Weight by Sierra stack trace:
+  test::main: 11
+  test::main -> test::foo1: 9
+  test::main -> test::foo1 -> test::foo2: 6
+  test::main -> test::foo1 -> test::foo2 -> test::foo3: 2
