@@ -6,8 +6,10 @@ test_cancel_ops
 //! > function
 fn foo(a: felt252) -> felt252 {
    let b = (a,);
-   let (c,)  = b;
-   c
+   let c = (b,);
+   let (d,)  = c;
+   let (e,)  = d;
+   e
 }
 
 //! > function_name
@@ -24,9 +26,11 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: (core::felt252,)) <- struct_construct(v0)
-  (v2: core::felt252) <- struct_destructure(v1)
+  (v2: ((core::felt252,),)) <- struct_construct(v1)
+  (v3: (core::felt252,)) <- struct_destructure(v2)
+  (v4: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v2)
+  Return(v4)
 
 //! > after
 Parameters: v0: core::felt252
