@@ -1218,26 +1218,26 @@ branch_align() -> (); // 885
 disable_ap_tracking() -> (); // 886
 store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([88]) -> ([88]); // 887
 unbox<core::starknet::info::v2::ExecutionInfo>([88]) -> ([92]); // 888
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([93], [94], [95], [96], [97]); // 889
-drop<Box<core::starknet::info::BlockInfo>>([93]) -> (); // 890
-drop<Box<core::starknet::info::v2::TxInfo>>([94]) -> (); // 891
-drop<ContractAddress>([96]) -> (); // 892
-drop<felt252>([97]) -> (); // 893
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([98]); // 894
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([99]); // 895
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([100]); // 896
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([101]); // 897
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([102]); // 898
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([103]); // 899
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>>([98], [99], [100], [101], [102], [103]) -> ([104]); // 900
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([93]); // 889
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([94]); // 890
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([95]); // 891
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([96]); // 892
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([97]); // 893
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([98]); // 894
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([99]); // 895
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([100], [101], [102], [103], [104]); // 896
+drop<Box<core::starknet::info::BlockInfo>>([100]) -> (); // 897
+drop<Box<core::starknet::info::v2::TxInfo>>([101]) -> (); // 898
+drop<ContractAddress>([103]) -> (); // 899
+drop<felt252>([104]) -> (); // 900
 store_temp<RangeCheck>([82]) -> ([82]); // 901
 store_temp<GasBuiltin>([86]) -> ([86]); // 902
 store_temp<Pedersen>([0]) -> ([0]); // 903
 store_temp<System>([87]) -> ([87]); // 904
-store_temp<ContractAddress>([95]) -> ([95]); // 905
+store_temp<ContractAddress>([102]) -> ([102]); // 905
 store_temp<ContractAddress>([23]) -> ([23]); // 906
 store_temp<core::integer::u256>([70]) -> ([70]); // 907
-function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp>::transfer_helper>([82], [86], [0], [87], [104], [95], [23], [70]) -> ([105], [106], [107], [108], [109]); // 908
+function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp>::transfer_helper>([82], [86], [0], [87], [99], [102], [23], [70]) -> ([105], [106], [107], [108], [109]); // 908
 enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>([109]) { fallthrough([110]) 924([111]) }; // 909
 branch_align() -> (); // 910
 drop<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, Unit>>([110]) -> (); // 911
@@ -1765,26 +1765,26 @@ branch_align() -> (); // 1432
 disable_ap_tracking() -> (); // 1433
 store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([88]) -> ([88]); // 1434
 unbox<core::starknet::info::v2::ExecutionInfo>([88]) -> ([92]); // 1435
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([93], [94], [95], [96], [97]); // 1436
-drop<Box<core::starknet::info::BlockInfo>>([93]) -> (); // 1437
-drop<Box<core::starknet::info::v2::TxInfo>>([94]) -> (); // 1438
-drop<ContractAddress>([96]) -> (); // 1439
-drop<felt252>([97]) -> (); // 1440
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([98]); // 1441
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([99]); // 1442
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([100]); // 1443
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([101]); // 1444
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([102]); // 1445
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([103]); // 1446
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>>([98], [99], [100], [101], [102], [103]) -> ([104]); // 1447
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([93]); // 1436
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([94]); // 1437
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([95]); // 1438
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([96]); // 1439
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([97]); // 1440
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([98]); // 1441
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([99]); // 1442
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([100], [101], [102], [103], [104]); // 1443
+drop<Box<core::starknet::info::BlockInfo>>([100]) -> (); // 1444
+drop<Box<core::starknet::info::v2::TxInfo>>([101]) -> (); // 1445
+drop<ContractAddress>([103]) -> (); // 1446
+drop<felt252>([104]) -> (); // 1447
 store_temp<RangeCheck>([82]) -> ([82]); // 1448
 store_temp<GasBuiltin>([86]) -> ([86]); // 1449
 store_temp<Pedersen>([0]) -> ([0]); // 1450
 store_temp<System>([87]) -> ([87]); // 1451
-store_temp<ContractAddress>([95]) -> ([95]); // 1452
+store_temp<ContractAddress>([102]) -> ([102]); // 1452
 store_temp<ContractAddress>([23]) -> ([23]); // 1453
 store_temp<core::integer::u256>([70]) -> ([70]); // 1454
-function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp>::approve_helper>([82], [86], [0], [87], [104], [95], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1455
+function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp>::approve_helper>([82], [86], [0], [87], [99], [102], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1455
 enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>([109]) { fallthrough([110]) 1471([111]) }; // 1456
 branch_align() -> (); // 1457
 drop<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, Unit>>([110]) -> (); // 1458

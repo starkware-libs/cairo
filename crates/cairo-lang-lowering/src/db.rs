@@ -389,7 +389,6 @@ fn concrete_function_with_body_lowered(
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     cancel_ops(&mut lowered);
-    split_structs(&mut lowered);
     reorder_statements(db, &mut lowered);
     // `reorder_statements` may have caused some remappings to be redundant, so they need to be
     // removed.
