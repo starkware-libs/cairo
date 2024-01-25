@@ -48,7 +48,7 @@ fn test_lowering_consistency() {
 
     let db: &dyn LoweringGroup = &db_val;
 
-    format_phases_by_name(db, &[db.core_crate()], "core::poseidon::poseidon_hash_span".to_string())
+    format_phases_by_name(db, &[db.core_crate()], "core::poseidon::_poseidon_hash_span_inner".to_string())
         .unwrap();
 }
 
@@ -118,8 +118,8 @@ impl fmt::Debug for PhasesFormatter<'_> {
         apply_stage("const_folding", &|lowered| const_folding(db, lowered));
         apply_stage("after_optimize_matches1", &optimize_matches);
         apply_stage("split_structs", &split_structs);
-        apply_stage("after_reorder_statements3", &|lowered| reorder_statements(db, lowered));
         apply_stage("after_optimize_remappings2", &optimize_remappings);
+        apply_stage("after_reorder_statements3", &|lowered| reorder_statements(db, lowered));
         apply_stage("after_optimize_matches2", &optimize_matches);
         apply_stage("after_lower_implicits", &|lowered| lower_implicits(db, function_id, lowered));
         apply_stage("after_optimize_remappings3", &optimize_remappings);
