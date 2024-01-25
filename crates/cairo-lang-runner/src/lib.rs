@@ -51,6 +51,8 @@ pub mod casm_run;
 pub mod profiling;
 pub mod short_string;
 
+const MAX_STACK_TRACE_DEPTH_DEFAULT: usize = 100;
+
 #[derive(Debug, Error)]
 pub enum RunnerError {
     #[error("Not enough gas to call function.")]
@@ -289,7 +291,11 @@ impl SierraCasmRunner {
 
     /// Collects profiling info of the current run using the trace.
     fn collect_profiling_info(&self, trace: &[TraceEntry]) -> ProfilingInfo {
+        let max_stack_trace_depth = get_max_stack_trace_depth();
+
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
+        let bytecode_len =
+            self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
         // The CASM program starts with a header of instructions to wrap the real program.
         // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
         // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
@@ -303,7 +309,13 @@ impl SierraCasmRunner {
         // The function stack trace of the current function, excluding the current function (that
         // is, the stack of the caller). Represented as a vector of indices of the functions
         // in the stack (indices of the functions according to the list in the sierra program).
+        // Limited to depth `max_stack_trace_depth`. Note `function_stack_depth` tracks the real
+        // depth, even if >= `max_stack_trace_depth`.
         let mut function_stack = Vec::new();
+        // Tracks the depth of the function stack, without limit. This is usually equal to
+        // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
+        // this remains reliable while `function_stack` does not.
+        let mut function_stack_depth = 0;
         let mut cur_weight = 0;
         // The key is a function stack trace (see `function_stack`, but including the current
         // function).
@@ -321,13 +333,18 @@ impl SierraCasmRunner {
             if step.pc < real_pc_0 {
                 continue;
             }
+            let real_pc = step.pc - real_pc_0;
+            // Skip the footer.
+            if real_pc == bytecode_len {
+                continue;
+            }
+
             if end_of_program_reached {
                 unreachable!("End of program reached, but trace continues.");
             }
 
             cur_weight += 1;
 
-            let real_pc = step.pc - real_pc_0;
             // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
             // save lookups.
             let sierra_statement_idx = self.sierra_statement_index_by_pc(real_pc);
@@ -350,23 +367,30 @@ impl SierraCasmRunner {
                         Ok(CoreConcreteLibfunc::FunctionCall(_))
                     ) {
                         // Push to the stack.
-                        function_stack.push((user_function_idx, cur_weight));
-                        cur_weight = 0;
+                        if function_stack_depth < max_stack_trace_depth {
+                            function_stack.push((user_function_idx, cur_weight));
+                            cur_weight = 0;
+                        }
+                        function_stack_depth += 1;
                     }
                 }
                 GenStatement::Return(_) => {
-                    // The current stack trace, including the current function.
-                    let cur_stack: Vec<_> =
-                        chain!(function_stack.iter().map(|f| f.0), [user_function_idx]).collect();
-                    *stack_trace_weights.entry(cur_stack).or_insert(0) += cur_weight;
-
                     // Pop from the stack.
-                    let Some(popped) = function_stack.pop() else {
-                        // End of the program.
-                        end_of_program_reached = true;
-                        continue;
-                    };
-                    cur_weight += popped.1;
+                    if function_stack_depth <= max_stack_trace_depth {
+                        // The current stack trace, including the current function.
+                        let cur_stack: Vec<_> =
+                            chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
+                                .collect();
+                        *stack_trace_weights.entry(cur_stack).or_insert(0) += cur_weight;
+
+                        let Some(popped) = function_stack.pop() else {
+                            // End of the program.
+                            end_of_program_reached = true;
+                            continue;
+                        };
+                        cur_weight += popped.1;
+                    }
+                    function_stack_depth -= 1;
                 }
             }
         }
@@ -741,6 +765,21 @@ impl SierraCasmRunner {
 
     pub fn get_casm_program(&self) -> &CairoProgram {
         &self.casm_program
+    }
+}
+
+// TODO(yuval): consider changing this setting to use flags.
+/// Gets the max_stack_trace_depth according to the environment variable `MAX_STACK_TRACE_DEPTH`, if
+/// set.
+fn get_max_stack_trace_depth() -> usize {
+    if let Ok(max) = std::env::var("MAX_STACK_TRACE_DEPTH") {
+        if max.is_empty() {
+            MAX_STACK_TRACE_DEPTH_DEFAULT
+        } else {
+            max.parse::<usize>().expect("MAX_STACK_TRACE_DEPTH_DEFAULT env var is not numeric")
+        }
+    } else {
+        MAX_STACK_TRACE_DEPTH_DEFAULT
     }
 }
 
