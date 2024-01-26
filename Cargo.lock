@@ -578,7 +578,6 @@ dependencies = [
  "cairo-lang-test-plugin",
  "cairo-lang-utils",
  "log",
- "lsp-types",
  "salsa",
  "scarb-metadata",
  "serde",
