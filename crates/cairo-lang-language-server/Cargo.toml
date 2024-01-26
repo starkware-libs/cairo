@@ -22,7 +22,6 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.0" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.0" }
 log.workspace = true
-lsp.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
 serde = { workspace = true, default-features = true }

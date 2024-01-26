@@ -56,13 +56,13 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
-use lsp::notification::Notification;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
+use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
@@ -80,12 +80,7 @@ const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 pub async fn serve_language_service() {
-    #[cfg(feature = "runtime-agnostic")]
-    use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
-
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
-    #[cfg(feature = "runtime-agnostic")]
-    let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
     let db = configured_db();
 

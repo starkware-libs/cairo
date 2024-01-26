@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
-use lsp::SemanticTokenType;
+use tower_lsp::lsp_types::SemanticTokenType;
 
 use crate::{find_node_module, lookup_item_from_ast};
 

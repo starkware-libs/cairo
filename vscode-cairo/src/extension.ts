@@ -10,7 +10,6 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
-import { ChildProcessWithoutNullStreams } from "child_process";
 
 let client: LanguageClient;
 
@@ -192,8 +191,8 @@ async function isScarbLsPresent(
     .filter((v) => !!v)
     .map((v) => JSON.parse(v))
     .some(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (commands: any) => !!commands["cairo-language-server"],
+      (commands: Record<string, unknown>) =>
+        !!commands["cairo-language-server"],
     );
 }
 
@@ -202,7 +201,7 @@ async function runStandaloneLs(
   outputChannel: vscode.OutputChannel,
   config: vscode.WorkspaceConfiguration,
   context: vscode.ExtensionContext,
-): Promise<undefined | ChildProcessWithoutNullStreams> {
+): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
   const executable = findLanguageServerExecutable(config, context);
   if (!executable) {
     outputChannel.appendLine(
@@ -221,7 +220,7 @@ async function runScarbLs(
   scarbPath: undefined | string,
   outputChannel: vscode.OutputChannel,
   context: vscode.ExtensionContext,
-): Promise<undefined | ChildProcessWithoutNullStreams> {
+): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
   if (!scarbPath) {
     return;
   }
@@ -297,7 +296,7 @@ async function setupLanguageServer(
     outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
   }
   const serverOptions: ServerOptions =
-    async (): Promise<ChildProcessWithoutNullStreams> => {
+    async (): Promise<child_process.ChildProcessWithoutNullStreams> => {
       const serverType = await getServerType(
         isScarbEnabled,
         scarbPath,
@@ -349,50 +348,55 @@ async function setupLanguageServer(
     serverOptions,
     clientOptions,
   );
+
   client.registerFeature(new SemanticTokensFeature(client));
-  client.onReady().then(() => {
-    const myProvider = new (class
-      implements vscode.TextDocumentContentProvider
-    {
-      async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res: any = await client.sendRequest("vfs/provide", {
-          uri: uri.toString(),
-        });
-        return res.content;
+
+  const myProvider = new (class implements vscode.TextDocumentContentProvider {
+    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+      interface ProvideVirtualFileResponse {
+        content?: string;
       }
 
-      onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-      onDidChange = this.onDidChangeEmitter.event;
-    })();
-    client.onNotification("vfs/update", (param) => {
-      myProvider.onDidChangeEmitter.fire(param.uri);
-    });
-    vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
-
-    client.onNotification("scarb/could-not-find-scarb-executable", () =>
-      notifyScarbMissing(outputChannel),
-    );
-
-    client.onNotification("scarb/resolving-start", () => {
-      vscode.window.withProgress(
+      const res = await client.sendRequest<ProvideVirtualFileResponse>(
+        "vfs/provide",
         {
-          title: "Scarb is resolving the project...",
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        async (_progress, _token) => {
-          return new Promise((resolve) => {
-            client.onNotification("scarb/resolving-finish", () => {
-              resolve(null);
-            });
-          });
+          uri: uri.toString(),
         },
       );
-    });
+
+      return res.content ?? "";
+    }
+
+    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+    onDidChange = this.onDidChangeEmitter.event;
+  })();
+  client.onNotification("vfs/update", (param) => {
+    myProvider.onDidChangeEmitter.fire(param.uri);
   });
-  client.start();
+  vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+
+  client.onNotification("scarb/could-not-find-scarb-executable", () =>
+    notifyScarbMissing(outputChannel),
+  );
+
+  client.onNotification("scarb/resolving-start", () => {
+    vscode.window.withProgress(
+      {
+        title: "Scarb is resolving the project...",
+        location: vscode.ProgressLocation.Notification,
+        cancellable: false,
+      },
+      async () => {
+        return new Promise((resolve) => {
+          client.onNotification("scarb/resolving-finish", () => {
+            resolve(null);
+          });
+        });
+      },
+    );
+  });
+
+  await client.start();
 }
 
 export async function activate(context: vscode.ExtensionContext) {

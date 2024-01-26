@@ -1,7 +1,7 @@
 {
   "extends": [
     "@tsconfig/strictest/tsconfig.json",
-    "@tsconfig/node14/tsconfig.json",
+    "@tsconfig/node18/tsconfig.json",
   ],
   "compilerOptions": {
     "outDir": "out",
