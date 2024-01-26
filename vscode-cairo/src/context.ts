@@ -2,7 +2,9 @@ import * as vscode from "vscode";
 
 export class Context {
   public static create(extensionContext: vscode.ExtensionContext): Context {
-    const log = vscode.window.createOutputChannel("Cairo Extension");
+    const log = vscode.window.createOutputChannel("Cairo Extension", {
+      log: true,
+    });
     extensionContext.subscriptions.push(log);
 
     return new Context(extensionContext, log);
@@ -10,7 +12,7 @@ export class Context {
 
   private constructor(
     public readonly extension: vscode.ExtensionContext,
-    public readonly log: vscode.OutputChannel,
+    public readonly log: vscode.LogOutputChannel,
   ) {}
 
   /**
