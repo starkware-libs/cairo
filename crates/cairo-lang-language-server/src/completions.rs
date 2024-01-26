@@ -19,7 +19,7 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use lsp::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 
 use crate::{find_node_module, from_pos};
 
