@@ -15,8 +15,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
       ctx.log,
     );
   } else {
-    ctx.log.appendLine(
-      "Language server is not enabled. Use the cairo1.enableLanguageServer config",
+    ctx.log.warn("language server is disabled");
+    ctx.log.warn(
+      "note: set `cairo1.enableLanguageServer` to `true` to enable it",
     );
   }
 }
