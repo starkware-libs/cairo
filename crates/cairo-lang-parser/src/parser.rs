@@ -530,7 +530,7 @@ impl<'a> Parser<'a> {
                 ))
             }
             _ => {
-                // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
+                // TODO(spapini): Don't return ItemExternType if we don't see a type.
                 let type_kw = self.parse_token::<TerminalType>();
 
                 let name = self.parse_identifier();
