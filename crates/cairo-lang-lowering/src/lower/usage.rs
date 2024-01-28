@@ -211,7 +211,13 @@ impl BlockUsages {
                 }
             }
             Expr::If(expr) => {
-                self.handle_expr(function_body, expr.condition, current);
+                match expr.condition {
+                    semantic::Condition::BoolExpr(expr) => {
+                        self.handle_expr(function_body, expr, current);
+                    }
+                    semantic::Condition::Let(_, _) => {}
+                }
+
                 self.handle_expr(function_body, expr.if_block, current);
                 if let Some(expr) = expr.else_block {
                     self.handle_expr(function_body, expr, current);

@@ -99,6 +99,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm: `{}` not covered.", variant),
             LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
+            LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
         }
     }
 
@@ -143,4 +144,5 @@ pub enum LoweringDiagnosticKind {
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
     UnsupportedPattern,
+    Unsupported,
 }

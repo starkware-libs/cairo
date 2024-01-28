@@ -8,6 +8,7 @@ use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
+use crate::items::imp;
 use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
 
 pub type PatternId = Id<Pattern>;
@@ -338,13 +339,28 @@ pub struct ExprMatch {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
-    pub condition: ExprId,
+    pub condition: Condition,
     pub if_block: ExprId,
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub enum Condition {
+    BoolExpr(ExprId),
+    Let(ExprId, Vec<PatternId>),
+}
+impl Condition {
+    pub fn expr(&self) -> ExprId {
+        match self {
+            Condition::BoolExpr(expr) => *expr,
+            Condition::Let(expr, _) => *expr,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
