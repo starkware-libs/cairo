@@ -1003,6 +1003,9 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
                     let else_if = compute_expr_if_semantic(ctx, &expr_if)?;
                     (Some(else_if.clone()), else_if.ty())
                 }
+                BlockOrIf::IfLet(_) => {
+                    return Err(ctx.diagnostics.report(syntax, Unsupported));
+                }
             }
         }
     };
