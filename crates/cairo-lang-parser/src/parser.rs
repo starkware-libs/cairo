@@ -1628,7 +1628,8 @@ impl<'a> Parser<'a> {
         .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
             Self::try_parse_pattern,
             is_of_kind!(eq),
-            "pattern",Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
+            "pattern",
+            Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
         );
 
         let pattern_list_green = if pattern_list.is_empty() {
