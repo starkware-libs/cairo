@@ -44,3 +44,94 @@ error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
             ^**^
+
+//! > ==========================================================================
+
+//! > Test if-let missing pattern
+
+//! > test_comments
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    if let = 5 {
+    }
+}
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a pattern.
+ --> dummy_file.cairo:2:11
+    if let = 5 {
+          ^
+
+//! > ==========================================================================
+
+//! > Test if-let no expression
+
+//! > test_comments
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    if let x {}
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalEq.
+ --> dummy_file.cairo:2:16
+    if let x {}
+               ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:16
+    if let x {}
+               ^
+
+error: Missing token TerminalLBrace.
+ --> dummy_file.cairo:2:16
+    if let x {}
+               ^
+
+//! > ==========================================================================
+
+//! > Test if-let equality check
+
+//! > test_comments
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    if let x == y {}
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalOr.
+ --> dummy_file.cairo:2:13
+    if let x==y {}
+            ^
+
+error: Skipped tokens. Expected: pattern.
+ --> dummy_file.cairo:2:13
+    if let x==y {}
+            ^^
+
+error: Missing token TerminalEq.
+ --> dummy_file.cairo:2:19
+    if let x==y {}
+                  ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:19
+    if let x==y {}
+                  ^
+
+error: Missing token TerminalLBrace.
+ --> dummy_file.cairo:2:19
+    if let x==y {}
+                  ^
