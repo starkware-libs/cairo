@@ -1635,16 +1635,16 @@ storage_write_syscall([0], [1], [2], [7], [6]) { fallthrough([8], [9]) 1346([10]
 branch_align() -> (); // 1339
 struct_construct<Unit>() -> ([13]); // 1340
 enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>([13]) -> ([14]); // 1341
-store_temp<GasBuiltin>([8]) -> ([15]); // 1342
-store_temp<System>([9]) -> ([16]); // 1343
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([14]) -> ([17]); // 1344
-jump() { 1351() }; // 1345
+store_temp<GasBuiltin>([8]) -> ([8]); // 1342
+store_temp<System>([9]) -> ([9]); // 1343
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([14]) -> ([14]); // 1344
+return([8], [9], [14]); // 1345
 branch_align() -> (); // 1346
-enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([12]) -> ([18]); // 1347
-store_temp<GasBuiltin>([10]) -> ([15]); // 1348
-store_temp<System>([11]) -> ([16]); // 1349
-store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([18]) -> ([17]); // 1350
-return([15], [16], [17]); // 1351
+enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>([12]) -> ([15]); // 1347
+store_temp<GasBuiltin>([10]) -> ([10]); // 1348
+store_temp<System>([11]) -> ([11]); // 1349
+store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([15]) -> ([15]); // 1350
+return([10], [11], [15]); // 1351
 drop<Array<felt252>>([1]) -> (); // 1352
 drop<Array<felt252>>([2]) -> (); // 1353
 enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>([0]) { }; // 1354
