@@ -69,6 +69,7 @@ fn test_flow() {
 }
 
 #[test]
+#[feature("safe_dispatcher")]
 fn test_flow_safe_dispatcher() {
     // Set up.
     let (contract_address, _) = deploy_syscall(
@@ -78,14 +79,12 @@ fn test_flow_safe_dispatcher() {
     let mut contract = IContractSafeDispatcher { contract_address };
 
     // Interact.
-    #[feature("safe_dispatcher")]
     assert_eq!(contract.foo(300), Result::Ok(100));
 
     // Library calls.
     let mut library = IContractSafeLibraryDispatcher {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
     };
-    #[feature("safe_dispatcher")]
     assert_eq!(library.foo(300), Result::Ok(0));
 }
 

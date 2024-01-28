@@ -9,7 +9,7 @@ use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
-    MemberId, TraitFunctionId, TraitId,
+    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -157,7 +157,7 @@ impl<'ctx> ComputationContext<'ctx> {
         F: FnOnce(&mut Self) -> T,
     {
         // Push an environment to the stack.
-        let new_environment = Box::<Environment>::default();
+        let new_environment = Box::new(Environment::empty());
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 
@@ -206,7 +206,7 @@ pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
@@ -230,6 +230,76 @@ impl Environment {
                 ast_param,
                 ParamNameRedefinition { function_title_id, param_name: semantic_param.name },
             ))
+        }
+    }
+
+    fn empty() -> Self {
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            allowed_features: Default::default(),
+        }
+    }
+
+    pub fn from_lookup_item_id(
+        db: &dyn SemanticGroup,
+        lookup_item_id: LookupItemId,
+        diagnostics: &mut SemanticDiagnostics,
+    ) -> Self {
+        let defs_db = db.upcast();
+        let semantic_db = db.upcast();
+        let allowed_features = match lookup_item_id {
+            LookupItemId::ModuleItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+            LookupItemId::TraitItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+            LookupItemId::ImplItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+        };
+
+        Self::from_element_id(db, lookup_item_id, allowed_features.into_iter().collect())
+    }
+
+    fn from_element_id(
+        db: &dyn SemanticGroup,
+        element_id: impl LanguageElementId,
+        mut allowed_features: UnorderedHashSet<SmolStr>,
+    ) -> Environment {
+        let defs_db = db.upcast();
+        let syntax_db = db.upcast();
+        let ignored_diagnostics = &mut SemanticDiagnostics::new(
+            element_id.module_file_id(defs_db).file_id(defs_db).unwrap(),
+        );
+        let mut curr_module_id = element_id.parent_module(defs_db);
+        loop {
+            let submodule_id = match curr_module_id {
+                ModuleId::CrateRoot(_) => break,
+                ModuleId::Submodule(id) => id,
+            };
+            let parent = submodule_id.parent_module(defs_db);
+            let module = &defs_db.module_submodules(parent).unwrap()[&submodule_id];
+            // TODO(orizi): Add parent module diagnostics.
+            for allowed_feature in extract_allowed_features(syntax_db, module, ignored_diagnostics)
+            {
+                allowed_features.insert(allowed_feature);
+            }
+            curr_module_id = parent;
+        }
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            allowed_features,
         }
     }
 }
@@ -2252,20 +2322,7 @@ pub fn compute_statement_semantic(
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
     let mut features_to_remove = vec![];
-    for attr_syntax in syntax.query_attr(syntax_db, FEATURE_ATTR) {
-        let attr = attr_syntax.clone().structurize(syntax_db);
-        let feature_name = match &attr.args[..] {
-            [
-                AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
-                    ..
-                },
-            ] => value.text(syntax_db),
-            _ => {
-                ctx.diagnostics.report(&attr_syntax, UnsupportedFeatureAttrArguments);
-                continue;
-            }
-        };
+    for feature_name in extract_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
         if ctx.environment.allowed_features.insert(feature_name.clone()) {
             features_to_remove.push(feature_name);
         }
@@ -2445,6 +2502,33 @@ pub fn compute_statement_semantic(
         ctx.environment.allowed_features.remove(&feature_name);
     }
     Ok(ctx.statements.alloc(statement))
+}
+
+/// Returns the allowed features of a query
+fn extract_allowed_features(
+    db: &dyn SyntaxGroup,
+    syntax: &impl QueryAttrs,
+    diagnostics: &mut SemanticDiagnostics,
+) -> Vec<SmolStr> {
+    let mut features = vec![];
+    for attr_syntax in syntax.query_attr(db, FEATURE_ATTR) {
+        let attr = attr_syntax.structurize(db);
+        let feature_name = match &attr.args[..] {
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
+                    ..
+                },
+            ] => value.text(db),
+            _ => {
+                diagnostics
+                    .report_by_ptr(attr.args_stable_ptr.untyped(), UnsupportedFeatureAttrArguments);
+                continue;
+            }
+        };
+        features.push(feature_name);
+    }
+    features
 }
 
 /// Computes the semantic model of an expression and reports diaganostics if
