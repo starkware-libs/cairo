@@ -690,3 +690,89 @@ blk3:
 Statements:
 End:
   Return(v0, v2)
+
+//! > ==========================================================================
+
+//! > Deconstruct + construct with diffrent type (optimization does not apply).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: felt252, b: (felt252,)) -> FeltWrap {
+
+  // create goto, since the return optimization works on block boundaries.
+  let (value,) = match a {
+     0 => b,
+     _ => b,
+  };
+
+  FeltWrap { value }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct FeltWrap {
+    value: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- struct_destructure(v1)
+  (v5: test::FeltWrap) <- struct_construct(v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- struct_destructure(v1)
+  (v5: test::FeltWrap) <- struct_construct(v4)
+End:
+  Return(v5)
