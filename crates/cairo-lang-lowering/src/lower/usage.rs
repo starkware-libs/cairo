@@ -217,6 +217,7 @@ impl BlockUsages {
                     self.handle_expr(function_body, expr, current);
                 }
             }
+            Expr::IfLet(_) => {}
             Expr::Var(expr) => {
                 current
                     .usage
