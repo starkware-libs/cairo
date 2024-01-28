@@ -66,6 +66,7 @@ cairo_lang_test_utils::test_file_test!(
         let_statement: "let_statement",
         literals: "literals",
         match_: "match",
+        if_:"if",
         operator: "operator",
         structure: "structure",
         tuple: "tuple",
