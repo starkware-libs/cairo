@@ -141,18 +141,9 @@ impl ValueInfo {
             }
             ValueInfo::StructConstruct { var_infos } => {
                 let mut cancels_out = var_infos.len() == stmt.outputs.len();
-
-                let mut input_consumed = false;
-                let mut output_invalidated = false;
-                for (var_info, output) in var_infos.iter_mut().zip(stmt.outputs.iter()) {
-                    match var_info.apply_deconstruct(ctx, stmt) {
-                        OpResult::InputConsumed => {
-                            input_consumed = true;
-                        }
-                        OpResult::ValueInvalidated => {
-                            output_invalidated = true;
-                        }
-                        OpResult::NoChange => {}
+                for (var_info, output) in var_infos.iter().zip(stmt.outputs.iter()) {
+                    if !cancels_out {
+                        break;
                     }
 
                     match var_info {
@@ -164,18 +155,31 @@ impl ValueInfo {
                 }
 
                 if cancels_out {
-                    // If the StructDeconstruct cancels out the StructConstruct, then its ok
-                    // for StructConstruct inputs to be invalidated, otherwise we should return an
-                    // error.
+                    // If the StructDeconstruct cancels out the StructConstruct, then we don't need
+                    // to `apply_deconstruct` to the innner var infos.
                     *self = ValueInfo::Var(stmt.input);
-                    return OpResult::InputConsumed;
-                } else if output_invalidated {
-                    return OpResult::ValueInvalidated;
-                } else if input_consumed {
                     return OpResult::InputConsumed;
                 }
 
-                OpResult::NoChange
+                let mut input_consumed = false;
+                for var_info in var_infos.iter_mut() {
+                    match var_info.apply_deconstruct(ctx, stmt) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::ValueInvalidated => {
+                            // If one of the values is invalidated the optimization is no longer
+                            // applicable.
+                            return OpResult::ValueInvalidated;
+                        }
+                        OpResult::NoChange => {}
+                    }
+                }
+
+                match input_consumed {
+                    true => OpResult::InputConsumed,
+                    false => OpResult::NoChange,
+                }
             }
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply_deconstruct(ctx, stmt)

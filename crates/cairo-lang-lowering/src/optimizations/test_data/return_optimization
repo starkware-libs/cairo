@@ -690,3 +690,95 @@ blk3:
 Statements:
 End:
   Return(v0, v2)
+
+//! > ==========================================================================
+
+//! > Test struct construct that is shorter then the return value (optimization not possible).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: (felt252,)) -> ((), (felt252,)) {
+  let (x,) = a;
+
+  if x == 0 {
+    ((), (x,))
+  } else {
+    ((), (x,))
+  }
+
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- struct_destructure(v0)
+End:
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: (core::felt252,)) <- struct_construct(v1)
+  (v4: ((), (core::felt252,))) <- struct_construct(v2, v3)
+End:
+  Goto(blk3, {v4 -> v9})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: (core::felt252,)) <- struct_construct(v1)
+  (v8: ((), (core::felt252,))) <- struct_construct(v6, v7)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk3:
+Statements:
+End:
+  Return(v9)
+
+//! > after
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- struct_destructure(v0)
+End:
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: (core::felt252,)) <- struct_construct(v1)
+  (v4: ((), (core::felt252,))) <- struct_construct(v2, v3)
+End:
+  Return(v4)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: (core::felt252,)) <- struct_construct(v1)
+  (v8: ((), (core::felt252,))) <- struct_construct(v6, v7)
+End:
+  Return(v8)
+
+blk3:
+Statements:
+End:
+  Return(v9)
