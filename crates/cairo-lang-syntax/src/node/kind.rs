@@ -29,6 +29,7 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ExprIfLet,
     ExprLoop,
     ExprWhile,
     ElseClause,
