@@ -48,9 +48,8 @@ pub fn priv_constant_semantic_data(
     let const_ast = db.module_constant_by_id(const_id)?.to_maybe()?;
     let syntax_db = db.upcast();
 
-    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
-        ModuleItemId::Constant(const_id),
-    ));
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
+    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
     let const_type = resolve_type(
@@ -60,8 +59,8 @@ pub fn priv_constant_semantic_data(
         &const_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    let mut ctx =
-        ComputationContext::new(db, &mut diagnostics, None, resolver, None, Environment::default());
+    let environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
+    let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
     if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), const_type) {
         err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());

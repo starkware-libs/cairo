@@ -683,9 +683,8 @@ pub fn priv_trait_function_declaration_data(
     let function_generic_params_data =
         db.priv_trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
-    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::TraitItem(
-        TraitItemId::Function(trait_function_id),
-    ));
+    let lookup_item_id = LookupItemId::TraitItem(TraitItemId::Function(trait_function_id));
+    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
         (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
@@ -693,7 +692,7 @@ pub fn priv_trait_function_declaration_data(
     diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
-    let mut environment = Environment::default();
+    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
