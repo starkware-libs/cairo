@@ -17,13 +17,14 @@ use cairo_lang_syntax::attribute::consts::FEATURE_ATTR;
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
+use cairo_lang_syntax::node::ast::{
+    BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils as utils;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -223,9 +224,7 @@ impl Environment {
         ast_param: &ast::Param,
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
-        if let utils::ordered_hash_map::Entry::Vacant(entry) =
-            self.variables.entry(semantic_param.name.clone())
-        {
+        if let Entry::Vacant(entry) = self.variables.entry(semantic_param.name.clone()) {
             entry.insert(Variable::Param(semantic_param));
             Ok(())
         } else {
@@ -877,6 +876,80 @@ impl FlowMergeTypeHelper {
     }
 }
 
+/// computes the semnatic of a match arm pattern and the block expression.
+fn compute_arm_semantic(
+    ctx: &mut ComputationContext<'_>,
+    expr: &Expr,
+    arm_expr_syntax: &ast::Expr,
+    patterns_syntax: &PatternListOr,
+) -> (Vec<PatternAndId>, ExprAndId) {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+    ctx.run_in_subscope(|new_ctx| {
+        // Typecheck the arms's patterns, and introduce the new variables to the subscope.
+        // Note that if the arm expr is a block, there will be *another* subscope
+        // for it.
+        let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
+            UnorderedHashMap::default();
+        let patterns: Vec<_> = patterns_syntax
+            .elements(syntax_db)
+            .iter()
+            .map(|pattern_syntax| {
+                let pattern: PatternAndId = compute_pattern_semantic(
+                    new_ctx,
+                    pattern_syntax,
+                    expr.ty(),
+                    &mut arm_patterns_variables,
+                );
+                let variables = pattern.variables(&new_ctx.patterns);
+                for variable in variables {
+                    match arm_patterns_variables.entry(variable.name.clone()) {
+                        std::collections::hash_map::Entry::Occupied(entry) => {
+                            let get_location = || variable.stable_ptr.lookup(db.upcast());
+                            let var = entry.get();
+                            let expected_ty = var.ty;
+
+                            if expected_ty != variable.var.ty {
+                                new_ctx.diagnostics.report(
+                                    &get_location(),
+                                    WrongType { expected_ty, actual_ty: variable.var.ty },
+                                );
+                            } else if var.is_mut != variable.var.is_mut {
+                                new_ctx.diagnostics.report(&get_location(), InconsistentBinding);
+                            }
+                        }
+                        std::collections::hash_map::Entry::Vacant(entry) => {
+                            entry.insert(variable.var.clone());
+                        }
+                    }
+                }
+                pattern
+            })
+            .collect();
+
+        for (pattern_syntax, pattern) in
+            patterns_syntax.elements(syntax_db).iter().zip(patterns.iter())
+        {
+            let variables = pattern.variables(&new_ctx.patterns);
+
+            if variables.len() != arm_patterns_variables.len() {
+                new_ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
+            }
+
+            for v in variables {
+                let var_def = Variable::Local(v.var.clone());
+                // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                // insertion.
+                new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                new_ctx.semantic_defs.insert(var_def.id(), var_def);
+            }
+        }
+        let arm_expr = compute_expr_semantic(new_ctx, arm_expr_syntax);
+        (patterns, arm_expr)
+    })
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprMatch].
 fn compute_expr_match_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprMatch,
@@ -892,73 +965,12 @@ fn compute_expr_match_semantic(
     let patterns_and_exprs: Vec<_> = syntax_arms
         .iter()
         .map(|syntax_arm| {
-            let arm_expr_syntax = syntax_arm.expression(syntax_db);
-            ctx.run_in_subscope(|new_ctx| {
-                // Typecheck the arms's patterns, and introduce the new variables to the subscope.
-                // Note that if the arm expr is a block, there will be *another* subscope
-                // for it.
-
-                let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
-                    UnorderedHashMap::default();
-                let patterns: Vec<_> = syntax_arm
-                    .patterns(syntax_db)
-                    .elements(syntax_db)
-                    .iter()
-                    .map(|pattern_syntax| {
-                        let pattern: PatternAndId = compute_pattern_semantic(
-                            new_ctx,
-                            pattern_syntax,
-                            expr.ty(),
-                            &mut arm_patterns_variables,
-                        );
-                        let variables = pattern.variables(&new_ctx.patterns);
-                        for variable in variables {
-                            match arm_patterns_variables.entry(variable.name.clone()) {
-                                utils::unordered_hash_map::Entry::Occupied(entry) => {
-                                    let get_location = || variable.stable_ptr.lookup(db.upcast());
-                                    let var = entry.get();
-                                    let expected_ty = var.ty;
-
-                                    if expected_ty != variable.var.ty {
-                                        new_ctx.diagnostics.report(
-                                            &get_location(),
-                                            WrongType { expected_ty, actual_ty: variable.var.ty },
-                                        );
-                                    } else if var.is_mut != variable.var.is_mut {
-                                        new_ctx
-                                            .diagnostics
-                                            .report(&get_location(), InconsistentBinding);
-                                    }
-                                }
-                                utils::unordered_hash_map::Entry::Vacant(entry) => {
-                                    entry.insert(variable.var.clone());
-                                }
-                            }
-                        }
-                        pattern
-                    })
-                    .collect();
-
-                for (pattern_syntax, pattern) in
-                    syntax_arm.patterns(syntax_db).elements(syntax_db).iter().zip(patterns.iter())
-                {
-                    let variables = pattern.variables(&new_ctx.patterns);
-
-                    if variables.len() != arm_patterns_variables.len() {
-                        new_ctx.diagnostics.report(pattern_syntax, MissingVariableInPattern);
-                    }
-
-                    for v in variables {
-                        let var_def = Variable::Local(v.var.clone());
-                        // TODO(spapini): Wrap this in a function to couple with semantic_defs
-                        // insertion.
-                        new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
-                        new_ctx.semantic_defs.insert(var_def.id(), var_def);
-                    }
-                }
-                let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                (patterns, arm_expr)
-            })
+            compute_arm_semantic(
+                ctx,
+                &expr,
+                &syntax_arm.expression(syntax_db),
+                &syntax_arm.patterns(syntax_db),
+            )
         })
         .collect();
     // Unify arm types.
@@ -988,10 +1000,18 @@ fn compute_expr_match_semantic(
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
+
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-    let condition = compute_bool_condition_semantic(ctx, &syntax.condition(syntax_db)).id;
+
+    let condition = match &syntax.condition(syntax_db) {
+        ast::Condition::Let(_) => return Err(ctx.diagnostics.report(syntax, Unsupported)),
+        ast::Condition::Expr(expr) => {
+            compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id
+        }
+    };
+
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
