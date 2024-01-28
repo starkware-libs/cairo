@@ -2,18 +2,24 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use num_traits::Zero;
-use semantic::{ExprFunctionCallArg, MatchArmSelector};
+use semantic::types::peel_snapshots;
+use semantic::{Condition, ExprFunctionCallArg, MatchArmSelector, TypeLongId};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::lowered_expr_to_block_scope_end;
-use crate::diagnostic::LoweringDiagnosticKind::*;
+use crate::diagnostic::LoweringDiagnosticKind::{self};
+use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
+use crate::lower::lower_match::{
+    lower_concrete_enum_match, lower_expr_match_tuple, lower_optimized_extern_match,
+    MatchArmWrapper, TupleInfo,
+};
 use crate::lower::{
-    create_subscope_with_bound_refs, generators, lower_block, lower_expr_to_var_usage,
+    create_subscope_with_bound_refs, generators, lower_block, lower_expr, lower_expr_to_var_usage,
 };
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
 
@@ -65,16 +71,15 @@ pub fn lower_expr_if(
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
-    let semantic::Condition::BoolExpr(expr_condition) = expr.condition else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), Unsupported),
-        ));
-    };
-
-    match analyze_condition(ctx, expr_condition) {
-        IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, builder, expr, expr_condition),
-        IfCondition::Eq(expr_a, expr_b) => {
-            lower_expr_if_eq(ctx, builder, expr, expr_condition, expr_a, expr_b)
+    match &expr.condition {
+        Condition::BoolExpr(expr_condition) => match analyze_condition(ctx, *expr_condition) {
+            IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, builder, expr, *expr_condition),
+            IfCondition::Eq(expr_a, expr_b) => {
+                lower_expr_if_eq(ctx, builder, expr, *expr_condition, expr_a, expr_b)
+            }
+        },
+        Condition::Let(matched_expr, patterns) => {
+            lower_expr_if_let(ctx, builder, expr, *matched_expr, patterns)
         }
     }
 }
@@ -212,6 +217,67 @@ pub fn lower_expr_if_eq(
     builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
 
+/// Lowers an expression of type [semantic::ExprIfLet].
+pub fn lower_expr_if_let(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: &semantic::ExprIf,
+    matched_expr: semantic::ExprId,
+    patterns: &[semantic::PatternId],
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
+
+    let matched_expr = ctx.function_body.exprs[matched_expr].clone();
+    let ty = matched_expr.ty();
+
+    if ty == ctx.db.core_felt252_ty()
+        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
+    {
+        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+            expr.stable_ptr.untyped(),
+            LoweringDiagnosticKind::MatchError(MatchError {
+                kind: MatchKind::IfLet,
+                error: MatchDiagnostic::UnsupportedNumericInLetCondition,
+            }),
+        )));
+    }
+
+    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+
+    let arms = vec![
+        MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },
+        MatchArmWrapper { patterns: vec![], expr: expr.else_block },
+    ];
+
+    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
+        return lower_expr_match_tuple(
+            ctx,
+            builder,
+            lowered_expr,
+            &matched_expr,
+            &TupleInfo { types, n_snapshots },
+            &arms,
+            MatchKind::IfLet,
+        );
+    }
+
+    // TODO(spapini): Use diagnostics.
+    // TODO(spapini): Handle more than just enums.
+    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
+        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, MatchKind::IfLet);
+    }
+    lower_concrete_enum_match(
+        ctx,
+        builder,
+        &matched_expr,
+        lowered_expr,
+        &arms,
+        location,
+        MatchKind::IfLet,
+    )
+}
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
 /// Returns the sealed block builder of the else block.
