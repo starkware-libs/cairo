@@ -3379,9 +3379,125 @@ impl TypedSyntaxNode for ExprIf {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprIfLet {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ExprIfLet {
+    pub const INDEX_IF_KW: usize = 0;
+    pub const INDEX_LET_KW: usize = 1;
+    pub const INDEX_PATTERN: usize = 2;
+    pub const INDEX_EQ: usize = 3;
+    pub const INDEX_RHS: usize = 4;
+    pub const INDEX_IF_BLOCK: usize = 5;
+    pub const INDEX_ELSE_CLAUSE: usize = 6;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        if_kw: TerminalIfGreen,
+        let_kw: TerminalLetGreen,
+        pattern: PatternListOrGreen,
+        eq: TerminalEqGreen,
+        rhs: ExprGreen,
+        if_block: ExprBlockGreen,
+        else_clause: OptionElseClauseGreen,
+    ) -> ExprIfLetGreen {
+        let children: Vec<GreenId> =
+            vec![if_kw.0, let_kw.0, pattern.0, eq.0, rhs.0, if_block.0, else_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprIfLetGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprIfLet,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl ExprIfLet {
+    pub fn if_kw(&self, db: &dyn SyntaxGroup) -> TerminalIf {
+        TerminalIf::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
+        TerminalLet::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> PatternListOr {
+        PatternListOr::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
+        TerminalEq::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
+        ExprBlock::from_syntax_node(db, self.children[5].clone())
+    }
+    pub fn else_clause(&self, db: &dyn SyntaxGroup) -> OptionElseClause {
+        OptionElseClause::from_syntax_node(db, self.children[6].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIfLetPtr(pub SyntaxStablePtrId);
+impl ExprIfLetPtr {
+    pub fn pattern_green(self, db: &dyn SyntaxGroup) -> PatternListOrGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            PatternListOrGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ExprIfLet {
+        ExprIfLet::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIfLetGreen(pub GreenId);
+impl TypedSyntaxNode for ExprIfLet {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIfLet);
+    type StablePtr = ExprIfLetPtr;
+    type Green = ExprIfLetGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprIfLetGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ExprIfLet,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalIf::missing(db).0,
+                    TerminalLet::missing(db).0,
+                    PatternListOr::missing(db).0,
+                    TerminalEq::missing(db).0,
+                    Expr::missing(db).0,
+                    ExprBlock::missing(db).0,
+                    OptionElseClause::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprIfLet,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprIfLet
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprIfLetPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum BlockOrIf {
     Block(ExprBlock),
     If(ExprIf),
+    IfLet(ExprIfLet),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BlockOrIfPtr(pub SyntaxStablePtrId);
@@ -3403,6 +3519,11 @@ impl From<ExprIfPtr> for BlockOrIfPtr {
         Self(value.0)
     }
 }
+impl From<ExprIfLetPtr> for BlockOrIfPtr {
+    fn from(value: ExprIfLetPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprBlockGreen> for BlockOrIfGreen {
     fn from(value: ExprBlockGreen) -> Self {
         Self(value.0)
@@ -3410,6 +3531,11 @@ impl From<ExprBlockGreen> for BlockOrIfGreen {
 }
 impl From<ExprIfGreen> for BlockOrIfGreen {
     fn from(value: ExprIfGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprIfLetGreen> for BlockOrIfGreen {
+    fn from(value: ExprIfLetGreen) -> Self {
         Self(value.0)
     }
 }
@@ -3427,6 +3553,7 @@ impl TypedSyntaxNode for BlockOrIf {
         match kind {
             SyntaxKind::ExprBlock => BlockOrIf::Block(ExprBlock::from_syntax_node(db, node)),
             SyntaxKind::ExprIf => BlockOrIf::If(ExprIf::from_syntax_node(db, node)),
+            SyntaxKind::ExprIfLet => BlockOrIf::IfLet(ExprIfLet::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BlockOrIf"),
         }
     }
@@ -3434,6 +3561,7 @@ impl TypedSyntaxNode for BlockOrIf {
         match self {
             BlockOrIf::Block(x) => x.as_syntax_node(),
             BlockOrIf::If(x) => x.as_syntax_node(),
+            BlockOrIf::IfLet(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -3446,6 +3574,7 @@ impl BlockOrIf {
         match kind {
             SyntaxKind::ExprBlock => true,
             SyntaxKind::ExprIf => true,
+            SyntaxKind::ExprIfLet => true,
             _ => false,
         }
     }
