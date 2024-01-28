@@ -77,6 +77,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprIf => {
             vec![]
         }
+        SyntaxKind::ExprIfLet => {
+            vec![/* pattern */ children[2]]
+        }
         SyntaxKind::ExprLoop => {
             vec![]
         }
