@@ -181,14 +181,18 @@ impl<'a> CancelOpsContext<'a> {
                 let destructures = use_sites
                     .iter()
                     .filter_map(|location| {
-                        if let Some(Statement::StructDestructure(destructure_stmt)) =
-                            self.lowered.blocks[location.0].statements.get(location.1)
-                        {
-                            self.stmts_to_remove.push(*location);
-                            Some(destructure_stmt)
-                        } else {
-                            can_remove_struct_construct = false;
-                            None
+                        match self.lowered.blocks[location.0].statements.get(location.1) {
+                            Some(Statement::StructDestructure(destructure_stmt))
+                                if self.lowered.variables[destructure_stmt.input.var_id].ty
+                                    == self.lowered.variables[stmt.output].ty =>
+                            {
+                                self.stmts_to_remove.push(*location);
+                                Some(destructure_stmt)
+                            }
+                            _ => {
+                                can_remove_struct_construct = false;
+                                None
+                            }
                         }
                     })
                     .collect_vec();
