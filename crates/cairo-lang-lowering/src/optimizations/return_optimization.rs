@@ -414,7 +414,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         }
 
         let input_info = self.get_var_info(input);
-        let mut opt_prev_info = None;
+        let mut opt_last_info = None;
         for (arm, info) in arms.iter().zip(infos) {
             let mut curr_info = info.clone();
             curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
@@ -423,18 +423,19 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 return AnalyzerInfo { opt_returned_vars: None };
             }
 
-            if let Some(prev_info) = &opt_prev_info {
+            if let Some(prev_info) = &opt_last_info {
                 if prev_info != &curr_info {
                     return AnalyzerInfo { opt_returned_vars: None };
                 }
             } else {
-                opt_prev_info = Some(curr_info);
+                opt_last_info = Some(curr_info);
             }
         }
-        let return_vars = opt_prev_info.unwrap().opt_returned_vars.unwrap();
-        self.fixes.push(FixInfo { block_id, return_vars });
 
-        AnalyzerInfo { opt_returned_vars: None }
+        let last_info = opt_last_info.unwrap();
+        let return_vars = last_info.opt_returned_vars.clone().unwrap();
+        self.fixes.push(FixInfo { block_id, return_vars });
+        last_info
     }
 
     fn info_from_return(

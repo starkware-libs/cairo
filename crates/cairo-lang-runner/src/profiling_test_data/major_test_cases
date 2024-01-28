@@ -583,7 +583,7 @@ Weight by sierra statement:
   statement 689: 6 (store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([17]) -> ([17]))
   statement 744: 6 (store_temp<core::panics::PanicResult::<(test::erc_20::__member_module_balances::ContractMemberState, ())>>([21]) -> ([21]))
   statement 939: 6 (store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([4]) -> ([4]))
-  statement 985: 6 (store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([25]) -> ([28]))
+  statement 985: 6 (store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([25]) -> ([25]))
   statement 652: 5 (get_execution_info_v2_syscall([0], [1]) { fallthrough([2], [3], [4]) 659([5], [6], [7]) })
   statement 784: 5 (store_temp<test::erc_20::Event>([8]) -> ([8]))
   statement 1035: 5 (store_temp<test::erc_20::Event>([1]) -> ([1]))
@@ -719,10 +719,9 @@ Weight by sierra statement:
   statement 949: 2 (store_temp<core::integer::u256>([2]) -> ([2]))
   statement 977: 2 (store_temp<GasBuiltin>([11]) -> ([11]))
   statement 978: 2 (store_temp<StorageAddress>([18]) -> ([18]))
-  statement 983: 2 (store_temp<GasBuiltin>([19]) -> ([26]))
-  statement 984: 2 (store_temp<System>([20]) -> ([27]))
-  statement 986: 2 (jump() { 992() })
-  statement 992: 2 (return([26], [27], [28]))
+  statement 983: 2 (store_temp<GasBuiltin>([19]) -> ([19]))
+  statement 984: 2 (store_temp<System>([20]) -> ([20]))
+  statement 986: 2 (return([19], [20], [25]))
   statement 1015: 2 (store_temp<core::integer::u256>([1]) -> ([1]))
   statement 1016: 2 (store_temp<core::integer::u256>([2]) -> ([2]))
   statement 1043: 2 (store_temp<Array<felt252>>([6]) -> ([6]))
@@ -968,13 +967,13 @@ Weight by concrete libfunc:
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 12
   libfunc store_temp<test::erc_20::Transfer>: 12
   libfunc u128s_from_felt252: 12
-  libfunc jump: 10
   libfunc store_temp<test::erc_20::Event>: 10
   libfunc array_append<felt252>: 9
   libfunc array_snapshot_pop_front<felt252>: 9
   libfunc emit_event_syscall: 9
   libfunc store_temp<core::option::Option::<core::integer::u256>>: 9
   libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>: 9
+  libfunc jump: 8
   libfunc pedersen: 8
   libfunc store_temp<StorageBaseAddress>: 8
   libfunc store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>>: 8
@@ -1065,10 +1064,10 @@ Weight by generic libfunc:
   libfunc storage_read_syscall: 28
   libfunc branch_align: 15
   libfunc u128s_from_felt252: 12
-  libfunc jump: 10
   libfunc array_append: 9
   libfunc array_snapshot_pop_front: 9
   libfunc emit_event_syscall: 9
+  libfunc jump: 8
   libfunc pedersen: 8
   libfunc contract_address_try_from_felt252: 7
   libfunc u128_overflowing_add: 6
@@ -1086,7 +1085,7 @@ Weight by user function (inc. generated):
   function core::integer::Storeu256::read: 72
   function test::erc_20::__member_module_balances::InternalContractMemberStateImpl::address: 72
   function test::erc_20::StorageImpl::transfer_helper: 71
-  function core::integer::Storeu256::write: 50
+  function core::integer::Storeu256::write: 48
   function test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read: 46
   function test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent>: 44
   function test::erc_20::__wrapper__IERC20Impl__transfer: 43
@@ -1119,7 +1118,7 @@ Weight by original user function:
   function core::integer::Storeu256::read: 72
   function test::erc_20::__member_module_balances::InternalContractMemberStateImpl::address: 72
   function test::erc_20::StorageImpl::transfer_helper: 71
-  function core::integer::Storeu256::write: 50
+  function core::integer::Storeu256::write: 48
   function test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read: 46
   function test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent>: 44
   function test::erc_20::__wrapper__IERC20Impl__transfer: 43
@@ -1193,19 +1192,18 @@ Weight by Cairo function:
   function serde.cairo::into_felt252_based::SerdeImpl::serialize: 3
   function lib.cairo::BoolNot::not: 2
   function serde.cairo::into_felt252_based::SerdeImpl::deserialize: 2
-  function starknet_derive::Storeu256::write: 2
 Weight by Sierra stack trace:
-  test::erc20_transfer: 798
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 767
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer: 642
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper: 595
+  test::erc20_transfer: 796
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 765
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer: 640
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper: 593
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read: 192
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::write: 138
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::write: 136
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent>: 110
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read -> core::integer::Storeu256::read: 100
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent> -> test::erc_20::EventIsEvent::append_keys_and_data: 55
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::write -> core::integer::Storeu256::write: 50
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> core::integer::u256Serde::deserialize: 49
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::write -> core::integer::Storeu256::write: 48
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::U256Sub::sub: 42
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::U256Add::add: 42
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent> -> test::erc_20::EventIsEvent::append_keys_and_data -> test::erc_20::TransferIsEvent::append_keys_and_data: 41
