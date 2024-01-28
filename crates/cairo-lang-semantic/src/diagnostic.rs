@@ -667,6 +667,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
+            SemanticDiagnosticKind::StructBaseStructExpressionNotLast => {
+                "The base struct must always be the last argument.".into()
+            }
+            SemanticDiagnosticKind::StructBaseStructExpressionNoEffect => {
+                "Base struct has no effect, all the fields in the struct have already been \
+                 specified."
+                    .into()
+            }
         }
     }
 
@@ -724,6 +732,8 @@ pub enum SemanticDiagnosticKind {
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
+    StructBaseStructExpressionNotLast,
+    StructBaseStructExpressionNoEffect,
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,

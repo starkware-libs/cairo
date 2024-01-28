@@ -5,7 +5,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: felt252) -> MyStruct {
-    MyStruct{a: (), c: (3, 7), b: a}
+  MyStruct { a: (), c: (3, 7), b: a }
 }
 
 //! > function_name
@@ -43,7 +43,7 @@ test_function_lowering
 
 //! > function
 fn foo(s: MyStruct) -> felt252 {
-    s.b
+  s.b
 }
 
 //! > function_name
@@ -77,8 +77,8 @@ test_function_lowering
 
 //! > function
 fn foo(s: MyStruct) -> (felt252, felt252) {
-    let MyStruct { a: _, c: (v, _), b} = s;
-    (v, b)
+  let MyStruct{a: _, c: (v, _), b } = s;
+  (v, b)
 }
 
 //! > function_name
@@ -104,3 +104,42 @@ Statements:
   (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v2)
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > Test struct tail construction.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(s: MyStruct) -> MyStruct {
+  MyStruct { c: (1, 2), ..s }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy)]
+struct MyStruct {
+  a: (),
+  b: felt252,
+  c: (felt252, felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: (), v2: core::felt252, v3: (core::felt252, core::felt252)) <- struct_destructure(v0)
+  (v4: core::felt252) <- 1u
+  (v5: core::felt252) <- 2u
+  (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v5)
+  (v7: test::MyStruct) <- struct_construct(v1, v2, v6)
+End:
+  Return(v7)

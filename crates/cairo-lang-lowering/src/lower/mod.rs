@@ -44,6 +44,7 @@ use crate::ids::{
     SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
+use crate::lower::generators::StructDestructure;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
     MatchInfo, VarUsage, VariableId,
@@ -2389,11 +2390,34 @@ fn lower_expr_struct_ctor(
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
     let member_expr = UnorderedHashMap::<_, _>::from_iter(expr.members.iter().cloned());
+    let mut base_members_usages = if members.len() != member_expr.len() {
+        // Semantic model should have made sure base struct exist if some members are missing.
+        let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
+
+        StructDestructure {
+            input: base_struct_usage.var_id,
+            var_reqs: members
+                .iter()
+                .map(|(_, member)| VarRequest { ty: member.ty, location })
+                .collect(),
+        }
+        .add(ctx, &mut builder.statements)
+    } else {
+        vec![]
+    };
+    base_members_usages.reverse();
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
+                .map(|(_, member)| {
+                    if member_expr.contains_key(&member.id) {
+                        base_members_usages.pop();
+                        lower_expr_to_var_usage(ctx, builder, member_expr[&member.id])
+                    } else {
+                        Ok(VarUsage { var_id: base_members_usages.pop().unwrap(), location })
+                    }
+                })
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,
