@@ -50,9 +50,9 @@ struct ExtractedEnumDetails {
 
 /// MatchArm wrapper that allow for optional expression clause.
 /// Used in the case of if-let with missing else clause.
-struct MatchArmWrapper {
-    patterns: Vec<PatternId>,
-    expr: Option<semantic::ExprId>,
+pub struct MatchArmWrapper {
+    pub patterns: Vec<PatternId>,
+    pub expr: Option<semantic::ExprId>,
 }
 
 impl From<&semantic::MatchArm> for MatchArmWrapper {
@@ -146,6 +146,16 @@ fn get_underscore_pattern_path(
         .find(|option| option.is_some())??;
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
+        if arm.patterns.is_empty() && arm.expr.is_some() {
+            let expr = ctx.function_body.exprs[arm.expr.unwrap()].clone();
+            ctx.diagnostics.report(
+                expr.stable_ptr().untyped(),
+                MatchError(MatchError {
+                    kind: match_type,
+                    error: MatchDiagnostic::UnreachableMatchArm,
+                }),
+            );
+        }
         for pattern in arm.patterns.iter() {
             let pattern = ctx.function_body.patterns[*pattern].clone();
             ctx.diagnostics.report(
@@ -547,14 +557,14 @@ fn lower_full_match_tree(
 }
 
 /// The types and number of snapshots of a tuple expression in a match statement.
-struct TupleInfo {
-    n_snapshots: usize,
-    types: Vec<semantic::TypeId>,
+pub struct TupleInfo {
+    pub n_snapshots: usize,
+    pub types: Vec<semantic::TypeId>,
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a tuple of
 /// enums.
-fn lower_expr_match_tuple(
+pub(crate) fn lower_expr_match_tuple(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     expr: LoweredExpr,
@@ -717,8 +727,7 @@ pub(crate) fn lower_expr_match(
     )
 }
 
-/// Lowers a match expression on a concrete enum.
-fn lower_concrete_enum_match(
+pub(crate) fn lower_concrete_enum_match(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     matched_expr: &semantic::Expr,
@@ -857,7 +866,7 @@ fn lower_concrete_enum_match(
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
-fn lower_optimized_extern_match(
+pub(crate) fn lower_optimized_extern_match(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     extern_enum: LoweredExprExternEnum,
@@ -1040,15 +1049,20 @@ fn group_match_arms(
                 .into_iter()
                 .map(|(lowering_inner_pattern_result, subscope)| {
                     // Use the first pattern for the location of the for variable assignment block.
-                    let pattern = &ctx.function_body.patterns[arm.patterns[0]];
+                    let location = arm
+                        .patterns
+                        .first()
+                        .map(|pattern| {
+                            ctx.get_location(
+                                ctx.function_body.patterns[*pattern].stable_ptr().untyped(),
+                            )
+                        })
+                        .unwrap_or(location);
                     match lowering_inner_pattern_result {
                         Ok(_) => lowered_expr_to_block_scope_end(
                             ctx,
                             subscope,
-                            Ok(LoweredExpr::Tuple {
-                                exprs: vec![],
-                                location: ctx.get_location(pattern.stable_ptr().untyped()),
-                            }),
+                            Ok(LoweredExpr::Tuple { exprs: vec![], location }),
                         ),
                         Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
                     }
