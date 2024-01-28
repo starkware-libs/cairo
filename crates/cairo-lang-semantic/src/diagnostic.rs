@@ -360,6 +360,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     block_else_ty.format(db),
                 )
             }
+            SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
+                "Logical operator not allowed in if-let.".into()
+            }
             SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
                 format!(
                     r#"Loop has incompatible return types: "{}" and "{}""#,
@@ -839,6 +842,7 @@ pub enum SemanticDiagnosticKind {
         block_if_ty: semantic::TypeId,
         block_else_ty: semantic::TypeId,
     },
+    LogicalOperatorNotAllowedInIfLet,
     IncompatibleLoopBreakTypes {
         current_ty: semantic::TypeId,
         break_ty: semantic::TypeId,
