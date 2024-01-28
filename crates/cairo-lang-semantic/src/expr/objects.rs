@@ -126,6 +126,7 @@ pub enum Expr {
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
+    IfLet(ExprIfLet),
     Var(ExprVar),
     Literal(ExprLiteral),
     StringLiteral(ExprStringLiteral),
@@ -150,6 +151,7 @@ impl Expr {
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
+            Expr::IfLet(expr) => expr.ty,
             Expr::Var(expr) => expr.ty,
             Expr::Literal(expr) => expr.ty,
             Expr::StringLiteral(expr) => expr.ty,
@@ -174,6 +176,7 @@ impl Expr {
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
+            Expr::IfLet(expr) => expr.stable_ptr,
             Expr::Var(expr) => expr.stable_ptr,
             Expr::Literal(expr) => expr.stable_ptr,
             Expr::StringLiteral(expr) => expr.stable_ptr,
@@ -340,6 +343,18 @@ pub struct ExprMatch {
 pub struct ExprIf {
     pub condition: ExprId,
     pub if_block: ExprId,
+    pub else_block: Option<ExprId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprIfLet {
+    pub expr: ExprId,
+    pub if_arm: MatchArm,
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
