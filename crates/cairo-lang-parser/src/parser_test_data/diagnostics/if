@@ -44,3 +44,25 @@ error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
             ^**^
+
+//! > ==========================================================================
+
+//! > Test if-let missing pattern
+
+//! > test_comments
+// TODO(spapini): Improve diagnostics.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    if let = 5 {
+    }
+}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: pattern.
+ --> dummy_file.cairo:2:11
+    if let = 5 {
+          ^

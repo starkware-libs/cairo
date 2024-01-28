@@ -72,3 +72,147 @@ ExprBinary
                             │       ├── expr (kind: TokenLiteralNumber): '10'
                             │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
                             └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test if-let 
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    if let Some(x) = 2 {
+        3
+    } else if 4 == 5 {
+        6
+    } else if let None(y) = 8 {
+        9
+    }
+}
+
+//! > top_level_kind
+ExprIfLet
+
+//! > ignored_kinds
+ExprBinary
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIfLet
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternListOr)
+    │   └── item #0 (kind: PatternEnum)
+    │       ├── path (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │       └── pattern (kind: PatternEnumInnerPattern)
+    │           ├── lparen (kind: TokenLParen): '('
+    │           ├── pattern (kind: ExprPath)
+    │           │   └── item #0 (kind: PathSegmentSimple)
+    │           │       └── ident (kind: TokenIdentifier): 'x'
+    │           └── rparen (kind: TokenRParen): ')'
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenLiteralNumber): '2'
+    ├── if_block (kind: ExprBlock)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── statements (kind: StatementList)
+    │   │   └── child #0 (kind: StatementExpr)
+    │   │       ├── attributes (kind: AttributeList) []
+    │   │       ├── expr (kind: TokenLiteralNumber): '3'
+    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── else_clause (kind: ElseClause)
+        ├── else_kw (kind: TokenElse): 'else'
+        └── else_block_or_if (kind: ExprIf)
+            ├── if_kw (kind: TokenIf): 'if'
+            ├── condition (kind: ExprBinary) <ignored>
+            ├── if_block (kind: ExprBlock)
+            │   ├── lbrace (kind: TokenLBrace): '{'
+            │   ├── statements (kind: StatementList)
+            │   │   └── child #0 (kind: StatementExpr)
+            │   │       ├── attributes (kind: AttributeList) []
+            │   │       ├── expr (kind: TokenLiteralNumber): '6'
+            │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+            │   └── rbrace (kind: TokenRBrace): '}'
+            └── else_clause (kind: ElseClause)
+                ├── else_kw (kind: TokenElse): 'else'
+                └── else_block_or_if (kind: ExprIfLet)
+                    ├── if_kw (kind: TokenIf): 'if'
+                    ├── let_kw (kind: TokenLet): 'let'
+                    ├── pattern (kind: PatternListOr)
+                    │   └── item #0 (kind: PatternEnum)
+                    │       ├── path (kind: ExprPath)
+                    │       │   └── item #0 (kind: PathSegmentSimple)
+                    │       │       └── ident (kind: TokenIdentifier): 'None'
+                    │       └── pattern (kind: PatternEnumInnerPattern)
+                    │           ├── lparen (kind: TokenLParen): '('
+                    │           ├── pattern (kind: ExprPath)
+                    │           │   └── item #0 (kind: PathSegmentSimple)
+                    │           │       └── ident (kind: TokenIdentifier): 'y'
+                    │           └── rparen (kind: TokenRParen): ')'
+                    ├── eq (kind: TokenEq): '='
+                    ├── rhs (kind: TokenLiteralNumber): '8'
+                    ├── if_block (kind: ExprBlock)
+                    │   ├── lbrace (kind: TokenLBrace): '{'
+                    │   ├── statements (kind: StatementList)
+                    │   │   └── child #0 (kind: StatementExpr)
+                    │   │       ├── attributes (kind: AttributeList) []
+                    │   │       ├── expr (kind: TokenLiteralNumber): '9'
+                    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+                    │   └── rbrace (kind: TokenRBrace): '}'
+                    └── else_clause (kind: OptionElseClauseEmpty) []
+
+//! > ==========================================================================
+
+//! > Test if-let boolean opperators
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+/// TODO(Tomerstarkware): parse boolean expressions in if-let as separate expressions from the let expression.
+fn f() {
+    if let Some(x) = 2 && false {
+        3
+    }
+}
+
+//! > top_level_kind
+ExprIfLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIfLet
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternListOr)
+    │   └── item #0 (kind: PatternEnum)
+    │       ├── path (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │       └── pattern (kind: PatternEnumInnerPattern)
+    │           ├── lparen (kind: TokenLParen): '('
+    │           ├── pattern (kind: ExprPath)
+    │           │   └── item #0 (kind: PathSegmentSimple)
+    │           │       └── ident (kind: TokenIdentifier): 'x'
+    │           └── rparen (kind: TokenRParen): ')'
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: TokenLiteralNumber): '2'
+    │   ├── op (kind: TokenAndAnd): '&&'
+    │   └── rhs (kind: TokenFalse): 'false'
+    ├── if_block (kind: ExprBlock)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── statements (kind: StatementList)
+    │   │   └── child #0 (kind: StatementExpr)
+    │   │       ├── attributes (kind: AttributeList) []
+    │   │       ├── expr (kind: TokenLiteralNumber): '3'
+    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── else_clause (kind: OptionElseClauseEmpty) []
