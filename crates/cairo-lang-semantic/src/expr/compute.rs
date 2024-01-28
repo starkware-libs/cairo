@@ -371,6 +371,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
+        ast::Expr::IfLet(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
         ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
         ast::Expr::While(expr_while) => compute_expr_while_semantic(ctx, expr_while),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
@@ -1005,6 +1006,9 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
                 BlockOrIf::If(expr_if) => {
                     let else_if = compute_expr_if_semantic(ctx, &expr_if)?;
                     (Some(else_if.clone()), else_if.ty())
+                }
+                BlockOrIf::IfLet(_) => {
+                    return Err(ctx.diagnostics.report(syntax, Unsupported));
                 }
             }
         }
