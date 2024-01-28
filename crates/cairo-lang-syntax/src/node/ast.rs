@@ -208,6 +208,7 @@ pub enum Expr {
     Block(ExprBlock),
     Match(ExprMatch),
     If(ExprIf),
+    IfLet(ExprIfLet),
     Loop(ExprLoop),
     While(ExprWhile),
     ErrorPropagate(ExprErrorPropagate),
@@ -298,6 +299,11 @@ impl From<ExprMatchPtr> for ExprPtr {
 }
 impl From<ExprIfPtr> for ExprPtr {
     fn from(value: ExprIfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprIfLetPtr> for ExprPtr {
+    fn from(value: ExprIfLetPtr) -> Self {
         Self(value.0)
     }
 }
@@ -411,6 +417,11 @@ impl From<ExprIfGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprIfLetGreen> for ExprGreen {
+    fn from(value: ExprIfLetGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprLoopGreen> for ExprGreen {
     fn from(value: ExprLoopGreen) -> Self {
         Self(value.0)
@@ -485,6 +496,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprBlock => Expr::Block(ExprBlock::from_syntax_node(db, node)),
             SyntaxKind::ExprMatch => Expr::Match(ExprMatch::from_syntax_node(db, node)),
             SyntaxKind::ExprIf => Expr::If(ExprIf::from_syntax_node(db, node)),
+            SyntaxKind::ExprIfLet => Expr::IfLet(ExprIfLet::from_syntax_node(db, node)),
             SyntaxKind::ExprLoop => Expr::Loop(ExprLoop::from_syntax_node(db, node)),
             SyntaxKind::ExprWhile => Expr::While(ExprWhile::from_syntax_node(db, node)),
             SyntaxKind::ExprErrorPropagate => {
@@ -518,6 +530,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Block(x) => x.as_syntax_node(),
             Expr::Match(x) => x.as_syntax_node(),
             Expr::If(x) => x.as_syntax_node(),
+            Expr::IfLet(x) => x.as_syntax_node(),
             Expr::Loop(x) => x.as_syntax_node(),
             Expr::While(x) => x.as_syntax_node(),
             Expr::ErrorPropagate(x) => x.as_syntax_node(),
@@ -550,6 +563,7 @@ impl Expr {
             SyntaxKind::ExprBlock => true,
             SyntaxKind::ExprMatch => true,
             SyntaxKind::ExprIf => true,
+            SyntaxKind::ExprIfLet => true,
             SyntaxKind::ExprLoop => true,
             SyntaxKind::ExprWhile => true,
             SyntaxKind::ExprErrorPropagate => true,

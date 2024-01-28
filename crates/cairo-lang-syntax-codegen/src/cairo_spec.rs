@@ -30,6 +30,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("Block")
         .node("Match")
         .node("If")
+        .node("IfLet")
         .node("Loop")
         .node("While")
         .node("ErrorPropagate")

@@ -608,6 +608,9 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, builder),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
+        semantic::Expr::IfLet(_) => Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr().untyped(), Unsupported),
+        )),
         semantic::Expr::Loop(_) | semantic::Expr::While(_) => {
             lower_expr_loop(ctx, builder, expr_id)
         }
