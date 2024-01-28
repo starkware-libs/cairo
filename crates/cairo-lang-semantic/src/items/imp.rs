@@ -1467,9 +1467,8 @@ pub fn priv_impl_function_declaration_data(
 
     let generic_params_data = db.priv_impl_function_generic_params_data(impl_function_id)?;
     let generic_params = generic_params_data.generic_params;
-    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
-        ImplItemId::Function(impl_function_id),
-    ));
+    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Function(impl_function_id));
+    let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
@@ -1478,7 +1477,7 @@ pub fn priv_impl_function_declaration_data(
 
     let signature_syntax = declaration.signature(syntax_db);
 
-    let mut environment = Environment::default();
+    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
