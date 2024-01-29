@@ -1,5 +1,6 @@
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
+use num_traits::ToPrimitive;
 
 use super::boxing::box_ty;
 use super::enm::EnumType;
@@ -13,8 +14,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -172,7 +173,10 @@ impl ConcreteType for ConstConcreteType {
 /// A zero-input function that returns a box of the const value according to the generic arg type
 /// of the function.
 pub struct ConstAsBoxConcreteLibfunc {
+    /// The type of the actual saved constant.
     pub const_type: ConcreteTypeId,
+    /// The segment to have the constant in.
+    pub segment_id: u32,
     pub signature: LibfuncSignature,
 }
 
@@ -195,7 +199,12 @@ impl ConstAsBoxLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<ConstAsBoxConcreteLibfunc, SpecializationError> {
-        let ty = args_as_single_type(args)?;
+        let (ty, segment_id) = match args {
+            [GenericArg::Type(ty), GenericArg::Value(value)] => Ok((ty, value)),
+            [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        let segment_id = segment_id.to_u32().ok_or(SpecializationError::UnsupportedGenericArg)?;
         let type_info = context.get_type_info(ty.clone())?;
         if type_info.long_id.generic_id != ConstType::ID {
             return Err(SpecializationError::UnsupportedGenericArg);
@@ -207,6 +216,8 @@ impl ConstAsBoxLibfuncWrapped {
         let boxed_inner_ty = box_ty(context, inner_ty.clone())?;
 
         Ok(ConstAsBoxConcreteLibfunc {
+            const_type: ty.clone(),
+            segment_id,
             signature: LibfuncSignature::new_non_branch(
                 vec![],
                 vec![OutputVarInfo {
@@ -215,7 +226,6 @@ impl ConstAsBoxLibfuncWrapped {
                 }],
                 SierraApChange::Known { new_vars_only: false },
             ),
-            const_type: ty,
         })
     }
 }
