@@ -217,6 +217,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         INLINE_ATTR.into(),
         MUST_USE_ATTR.into(),
         UNSTABLE_ATTR.into(),
+        FEATURE_ATTR.into(),
         IMPLICIT_PRECEDENCE_ATTR.into(),
         FMT_SKIP_ATTR.into(),
         // TODO(orizi): Remove this once `starknet` is removed from corelib.

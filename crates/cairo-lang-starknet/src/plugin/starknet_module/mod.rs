@@ -3,11 +3,13 @@ use std::vec;
 use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
+    PluginResult,
 };
+use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -127,7 +129,7 @@ fn validate_module(
             remove_original_item: false,
         };
     };
-    let Some(storage_struct_ast) = body.items(db).elements(db).into_iter().find(|item| {
+    let Some(storage_struct_ast) = body.items_vec(db).into_iter().find(|item| {
         matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
     }) else {
         return PluginResult {
@@ -159,6 +161,7 @@ fn validate_module(
 pub(super) fn handle_module_by_storage(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> Option<PluginResult> {
     let (module_ast, module_kind) =
         grand_grand_parent_starknet_module(struct_ast.as_syntax_node(), db)?;
@@ -172,7 +175,7 @@ pub(super) fn handle_module_by_storage(
     let mut event_variants = vec![];
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
-    for item in body.items(db).elements(db) {
+    for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
         if let Some(variants) =
             get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
         {
@@ -202,10 +205,11 @@ pub(super) fn handle_module_by_storage(
             common_data,
             &body,
             &module_ast,
+            metadata,
             event_variants,
         ),
         StarknetModuleKind::Component => {
-            generate_component_specific_code(db, &mut diagnostics, common_data, &body)
+            generate_component_specific_code(db, &mut diagnostics, common_data, &body, metadata)
         }
     };
 

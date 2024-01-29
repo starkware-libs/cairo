@@ -96,12 +96,6 @@ impl StatementsLocations {
         &self,
         db: &dyn SierraGenGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        // The keys mapping function is the identity function, so no aggregation is done.
-        // TODO(Gil): Change to UnorderedHashMap::map once it is implemented.
-        self.locations.aggregate_by(
-            |k| *k,
-            |_, s2| containing_function_identifier(db, Some(*s2)),
-            &"".to_string(),
-        )
+        self.locations.map(|s| containing_function_identifier(db, Some(*s)))
     }
 }

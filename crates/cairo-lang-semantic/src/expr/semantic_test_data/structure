@@ -143,6 +143,7 @@ StructCtor(
                 ),
             ),
         ],
+        base_struct: None,
         ty: test::A,
     },
 )

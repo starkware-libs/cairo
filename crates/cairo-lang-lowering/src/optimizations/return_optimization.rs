@@ -141,18 +141,9 @@ impl ValueInfo {
             }
             ValueInfo::StructConstruct { var_infos } => {
                 let mut cancels_out = var_infos.len() == stmt.outputs.len();
-
-                let mut input_consumed = false;
-                let mut output_invalidated = false;
-                for (var_info, output) in var_infos.iter_mut().zip(stmt.outputs.iter()) {
-                    match var_info.apply_deconstruct(ctx, stmt) {
-                        OpResult::InputConsumed => {
-                            input_consumed = true;
-                        }
-                        OpResult::ValueInvalidated => {
-                            output_invalidated = true;
-                        }
-                        OpResult::NoChange => {}
+                for (var_info, output) in var_infos.iter().zip(stmt.outputs.iter()) {
+                    if !cancels_out {
+                        break;
                     }
 
                     match var_info {
@@ -164,18 +155,31 @@ impl ValueInfo {
                 }
 
                 if cancels_out {
-                    // If the StructDeconstruct cancels out the StructConstruct, then its ok
-                    // for StructConstruct inputs to be invalidated, otherwise we should return an
-                    // error.
+                    // If the StructDeconstruct cancels out the StructConstruct, then we don't need
+                    // to `apply_deconstruct` to the innner var infos.
                     *self = ValueInfo::Var(stmt.input);
-                    return OpResult::InputConsumed;
-                } else if output_invalidated {
-                    return OpResult::ValueInvalidated;
-                } else if input_consumed {
                     return OpResult::InputConsumed;
                 }
 
-                OpResult::NoChange
+                let mut input_consumed = false;
+                for var_info in var_infos.iter_mut() {
+                    match var_info.apply_deconstruct(ctx, stmt) {
+                        OpResult::InputConsumed => {
+                            input_consumed = true;
+                        }
+                        OpResult::ValueInvalidated => {
+                            // If one of the values is invalidated the optimization is no longer
+                            // applicable.
+                            return OpResult::ValueInvalidated;
+                        }
+                        OpResult::NoChange => {}
+                    }
+                }
+
+                match input_consumed {
+                    true => OpResult::InputConsumed,
+                    false => OpResult::NoChange,
+                }
             }
             ValueInfo::EnumConstruct { ref mut var_info, .. } => {
                 var_info.apply_deconstruct(ctx, stmt)
@@ -410,7 +414,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         }
 
         let input_info = self.get_var_info(input);
-        let mut opt_prev_info = None;
+        let mut opt_last_info = None;
         for (arm, info) in arms.iter().zip(infos) {
             let mut curr_info = info.clone();
             curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
@@ -419,18 +423,19 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 return AnalyzerInfo { opt_returned_vars: None };
             }
 
-            if let Some(prev_info) = &opt_prev_info {
+            if let Some(prev_info) = &opt_last_info {
                 if prev_info != &curr_info {
                     return AnalyzerInfo { opt_returned_vars: None };
                 }
             } else {
-                opt_prev_info = Some(curr_info);
+                opt_last_info = Some(curr_info);
             }
         }
-        let return_vars = opt_prev_info.unwrap().opt_returned_vars.unwrap();
-        self.fixes.push(FixInfo { block_id, return_vars });
 
-        AnalyzerInfo { opt_returned_vars: None }
+        let last_info = opt_last_info.unwrap();
+        let return_vars = last_info.opt_returned_vars.clone().unwrap();
+        self.fixes.push(FixInfo { block_id, return_vars });
+        last_info
     }
 
     fn info_from_return(
@@ -445,13 +450,5 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
             ),
         }
-    }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _data: &VarUsage,
-    ) -> Self::Info {
-        AnalyzerInfo { opt_returned_vars: None }
     }
 }

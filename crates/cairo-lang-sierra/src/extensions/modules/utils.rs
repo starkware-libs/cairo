@@ -52,7 +52,7 @@ impl Range {
     /// Creates a half-closed range i.e. `[lower, upper)`.
     pub fn half_open(lower: impl Into<BigInt>, upper: impl Into<BigInt>) -> Self {
         let result = Self { lower: lower.into(), upper: upper.into() };
-        assert!(result.lower <= result.upper, "Invalid range: {:?}", result);
+        assert!(result.lower < result.upper, "Invalid range: {:?}", result);
         result
     }
     /// Returns the [Range] bounds from the given type info.
@@ -99,10 +99,6 @@ impl Range {
     /// Returns the size of the range.
     pub fn size(&self) -> BigInt {
         &self.upper - &self.lower
-    }
-    /// Returns whether the range is empty.
-    pub fn is_empty(&self) -> bool {
-        self.upper == self.lower
     }
     /// Returns the intersection of `self` and `other`.
     ///

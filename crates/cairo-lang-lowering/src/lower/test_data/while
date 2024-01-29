@@ -111,12 +111,8 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  (v16: core::felt252) <- desnap(v2)
-  (v17: core::felt252, v18: @core::felt252) <- snapshot(v16)
-  (v25: core::felt252) <- desnap(v18)
 End:
-  Match(match core::felt252_is_zero(v25) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero(v28) => blk3,
   })
@@ -124,16 +120,32 @@ End:
 blk2:
 Statements:
   (v15: ()) <- struct_construct()
+<<<<<<< HEAD
   (v41: (core::felt252, ())) <- struct_construct(v1, v15)
   (v42: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v41)
+||||||| 1ab151873
+  (v42: (core::felt252, ())) <- struct_construct(v1, v15)
+  (v43: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v42)
+=======
+  (v42: (core::felt252, ())) <- struct_construct(v0, v15)
+  (v43: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v42)
+>>>>>>> origin/main
 End:
   Return(v52, v53, v42)
 
 blk3:
 Statements:
   (v8: core::felt252) <- 1u
+<<<<<<< HEAD
   (v24: core::felt252) <- core::felt252_sub(v1, v8)
   (v74: core::RangeCheck, v75: core::gas::GasBuiltin, v43: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v52, v53, v24)
+||||||| 1ab151873
+  (v24: core::felt252) <- core::felt252_sub(v1, v8)
+  (v75: core::RangeCheck, v76: core::gas::GasBuiltin, v44: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v53, v54, v24)
+=======
+  (v24: core::felt252) <- core::felt252_sub(v0, v8)
+  (v75: core::RangeCheck, v76: core::gas::GasBuiltin, v44: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v53, v54, v24)
+>>>>>>> origin/main
 End:
   Return(v74, v75, v43)
 

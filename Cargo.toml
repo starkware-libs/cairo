@@ -69,7 +69,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.5.0"
+version = "2.5.1"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -105,7 +105,6 @@ itertools = { version = "0.11.0", default-features = false }
 keccak = "0.1.4"
 lalrpop-util = { version = "0.20.0", features = ["lexer"] }
 log = "0.4"
-lsp = { version = "0.94", package = "lsp-types" }
 num-bigint = { version = "0.4", default-features = false }
 num-integer = "0.1"
 num-traits = { version = "0.2", default-features = false }

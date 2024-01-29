@@ -9,7 +9,7 @@ use ast::PathSegment;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
-    MemberId, TraitFunctionId, TraitId,
+    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -22,7 +22,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils as utils;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -159,7 +160,7 @@ impl<'ctx> ComputationContext<'ctx> {
         F: FnOnce(&mut Self) -> T,
     {
         // Push an environment to the stack.
-        let new_environment = Box::<Environment>::default();
+        let new_environment = Box::new(Environment::empty());
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 
@@ -208,7 +209,7 @@ pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
@@ -224,7 +225,9 @@ impl Environment {
         ast_param: &ast::Param,
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
-        if let Entry::Vacant(entry) = self.variables.entry(semantic_param.name.clone()) {
+        if let utils::ordered_hash_map::Entry::Vacant(entry) =
+            self.variables.entry(semantic_param.name.clone())
+        {
             entry.insert(Variable::Param(semantic_param));
             Ok(())
         } else {
@@ -232,6 +235,76 @@ impl Environment {
                 ast_param,
                 ParamNameRedefinition { function_title_id, param_name: semantic_param.name },
             ))
+        }
+    }
+
+    fn empty() -> Self {
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            allowed_features: Default::default(),
+        }
+    }
+
+    pub fn from_lookup_item_id(
+        db: &dyn SemanticGroup,
+        lookup_item_id: LookupItemId,
+        diagnostics: &mut SemanticDiagnostics,
+    ) -> Self {
+        let defs_db = db.upcast();
+        let semantic_db = db.upcast();
+        let allowed_features = match lookup_item_id {
+            LookupItemId::ModuleItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+            LookupItemId::TraitItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+            LookupItemId::ImplItem(id) => extract_allowed_features(
+                semantic_db,
+                &id.stable_location(defs_db).syntax_node(defs_db),
+                diagnostics,
+            ),
+        };
+
+        Self::from_element_id(db, lookup_item_id, allowed_features.into_iter().collect())
+    }
+
+    fn from_element_id(
+        db: &dyn SemanticGroup,
+        element_id: impl LanguageElementId,
+        mut allowed_features: UnorderedHashSet<SmolStr>,
+    ) -> Environment {
+        let defs_db = db.upcast();
+        let syntax_db = db.upcast();
+        let ignored_diagnostics = &mut SemanticDiagnostics::new(
+            element_id.module_file_id(defs_db).file_id(defs_db).unwrap(),
+        );
+        let mut curr_module_id = element_id.parent_module(defs_db);
+        loop {
+            let submodule_id = match curr_module_id {
+                ModuleId::CrateRoot(_) => break,
+                ModuleId::Submodule(id) => id,
+            };
+            let parent = submodule_id.parent_module(defs_db);
+            let module = &defs_db.module_submodules(parent).unwrap()[&submodule_id];
+            // TODO(orizi): Add parent module diagnostics.
+            for allowed_feature in extract_allowed_features(syntax_db, module, ignored_diagnostics)
+            {
+                allowed_features.insert(allowed_feature);
+            }
+            curr_module_id = parent;
+        }
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            allowed_features,
         }
     }
 }
@@ -843,7 +916,7 @@ fn compute_expr_match_semantic(
                         let variables = pattern.variables(&new_ctx.patterns);
                         for variable in variables {
                             match arm_patterns_variables.entry(variable.name.clone()) {
-                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                utils::unordered_hash_map::Entry::Occupied(entry) => {
                                     let get_location = || variable.stable_ptr.lookup(db.upcast());
                                     let var = entry.get();
                                     let expected_ty = var.ty;
@@ -859,7 +932,7 @@ fn compute_expr_match_semantic(
                                             .report(&get_location(), InconsistentBinding);
                                     }
                                 }
-                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                utils::unordered_hash_map::Entry::Vacant(entry) => {
                                     entry.insert(variable.var.clone());
                                 }
                             }
@@ -1596,78 +1669,126 @@ fn struct_ctor_expr(
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
-    for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
+    let mut base_struct = None;
+    for (index, arg) in ctor_syntax
+        .arguments(syntax_db)
+        .arguments(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .enumerate()
+    {
         // TODO: Extract to a function for results.
-        let arg = match arg {
-            ast::StructArg::StructArgSingle(arg) => arg,
-            ast::StructArg::StructArgTail(tail_expr) => {
-                ctx.diagnostics.report(&tail_expr, Unsupported);
-                continue;
-            }
-        };
-        let arg_identifier = arg.identifier(syntax_db);
-        let arg_name = arg_identifier.text(syntax_db);
+        match arg {
+            ast::StructArg::StructArgSingle(arg) => {
+                let arg_identifier = arg.identifier(syntax_db);
+                let arg_name = arg_identifier.text(syntax_db);
 
-        // Find struct member by name.
-        let member = if let Some(member) = members.get(&arg_name) {
-            member
-        } else {
-            ctx.diagnostics.report(&arg_identifier, UnknownMember);
-            continue;
-        };
-        check_struct_member_is_visible(
-            ctx,
-            member,
-            arg_identifier.stable_ptr().untyped(),
-            &arg_name,
-        );
-
-        // Extract expression.
-        let arg_expr = match arg.arg_expr(syntax_db) {
-            ast::OptionStructArgExpr::Empty(_) => {
-                let Ok(expr) =
-                    resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())
-                else {
-                    // Insert only the member id, for correct duplicate member reporting.
-                    if member_exprs.insert(member.id, None).is_some() {
-                        ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
-                    }
+                // Find struct member by name.
+                let Some(member) = members.get(&arg_name) else {
+                    ctx.diagnostics.report(&arg_identifier, UnknownMember);
                     continue;
                 };
-                ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
+                check_struct_member_is_visible(
+                    ctx,
+                    member,
+                    arg_identifier.stable_ptr().untyped(),
+                    &arg_name,
+                );
+
+                // Extract expression.
+                let arg_expr = match arg.arg_expr(syntax_db) {
+                    ast::OptionStructArgExpr::Empty(_) => {
+                        let Ok(expr) = resolve_variable_by_name(
+                            ctx,
+                            &arg_identifier,
+                            path.stable_ptr().into(),
+                        ) else {
+                            // Insert only the member id, for correct duplicate member reporting.
+                            if member_exprs.insert(member.id, None).is_some() {
+                                ctx.diagnostics
+                                    .report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+                            }
+                            continue;
+                        };
+                        ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
+                    }
+                    ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
+                        compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
+                    }
+                };
+
+                // Insert and check for duplicates.
+                if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
+                    ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+                }
+
+                // Check types.
+                let expected_ty = ctx.reduce_ty(member.ty);
+                let actual_ty = ctx.reduce_ty(arg_expr.ty());
+                if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
+                    if !member.ty.is_missing(db) {
+                        ctx.diagnostics
+                            .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
+                    }
+                    continue;
+                }
             }
-            ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
-                compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
+            ast::StructArg::StructArgTail(base_struct_syntax) => {
+                // TODO(TomerStarkware): remove tail expression from argument list.
+                if index
+                    != ctor_syntax
+                        .arguments(syntax_db)
+                        .arguments(syntax_db)
+                        .elements(syntax_db)
+                        .len()
+                        - 1
+                {
+                    ctx.diagnostics.report(&base_struct_syntax, StructBaseStructExpressionNotLast);
+                    continue;
+                }
+                let base_struct_expr =
+                    compute_expr_semantic(ctx, &base_struct_syntax.expression(syntax_db));
+                let base_struct_ty = ctx.reduce_ty(base_struct_expr.ty());
+                if ctx.resolver.inference().conform_ty(base_struct_ty, ty).is_err() {
+                    ctx.diagnostics.report(
+                        &base_struct_syntax,
+                        WrongArgumentType { expected_ty: ty, actual_ty: base_struct_ty },
+                    );
+                    continue;
+                }
+
+                base_struct = Some((base_struct_expr.id, base_struct_syntax));
             }
         };
-
-        // Insert and check for duplicates.
-        if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
-            ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
-        }
-
-        // Check types.
-        let expected_ty = ctx.reduce_ty(member.ty);
-        let actual_ty = ctx.reduce_ty(arg_expr.ty());
-        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-            if !member.ty.is_missing(db) {
-                ctx.diagnostics
-                    .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
-            }
-            continue;
-        }
     }
 
     // Report errors for missing members.
     for (member_name, member) in members.iter() {
         if !member_exprs.contains_key(&member.id) {
-            ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+            if base_struct.is_some() {
+                check_struct_member_is_visible(
+                    ctx,
+                    member,
+                    base_struct.clone().unwrap().1.stable_ptr().untyped(),
+                    member_name,
+                );
+            } else {
+                ctx.diagnostics
+                    .report(ctor_syntax, MissingMember { member_name: member_name.clone() });
+            }
         }
     }
-
+    if members.len() == member_exprs.len() {
+        if let Some((_, base_struct_syntax)) = base_struct {
+            return Err(ctx
+                .diagnostics
+                .report(&base_struct_syntax, StructBaseStructExpressionNoEffect));
+        }
+    }
     Ok(Expr::StructCtor(ExprStructCtor {
         concrete_struct_id,
         members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
+        base_struct: base_struct.map(|(x, _)| x),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
@@ -2246,20 +2367,7 @@ pub fn compute_statement_semantic(
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
     let mut features_to_remove = vec![];
-    for attr_syntax in syntax.query_attr(syntax_db, FEATURE_ATTR) {
-        let attr = attr_syntax.clone().structurize(syntax_db);
-        let feature_name = match &attr.args[..] {
-            [
-                AttributeArg {
-                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
-                    ..
-                },
-            ] => value.text(syntax_db),
-            _ => {
-                ctx.diagnostics.report(&attr_syntax, UnsupportedFeatureAttrArguments);
-                continue;
-            }
-        };
+    for feature_name in extract_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
         if ctx.environment.allowed_features.insert(feature_name.clone()) {
             features_to_remove.push(feature_name);
         }
@@ -2439,6 +2547,33 @@ pub fn compute_statement_semantic(
         ctx.environment.allowed_features.remove(&feature_name);
     }
     Ok(ctx.statements.alloc(statement))
+}
+
+/// Returns the allowed features of an object which supports attributes.
+fn extract_allowed_features(
+    db: &dyn SyntaxGroup,
+    syntax: &impl QueryAttrs,
+    diagnostics: &mut SemanticDiagnostics,
+) -> Vec<SmolStr> {
+    let mut features = vec![];
+    for attr_syntax in syntax.query_attr(db, FEATURE_ATTR) {
+        let attr = attr_syntax.structurize(db);
+        let feature_name = match &attr.args[..] {
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::String(value), .. },
+                    ..
+                },
+            ] => value.text(db),
+            _ => {
+                diagnostics
+                    .report_by_ptr(attr.args_stable_ptr.untyped(), UnsupportedFeatureAttrArguments);
+                continue;
+            }
+        };
+        features.push(feature_name);
+    }
+    features
 }
 
 /// Computes the semantic model of an expression and reports diaganostics if

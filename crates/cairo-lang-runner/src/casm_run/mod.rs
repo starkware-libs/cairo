@@ -839,7 +839,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, GET_BLOCK_HASH);
         // TODO(Arni, 28/5/2023): Replace the temporary return value with the required value.
-        //      One design suggestion - to preform a storage read. Have an arbitrary, hardcoded
+        //      One design suggestion - to perform a storage read. Have an arbitrary, hardcoded
         //      (For example, addr=1) contain the mapping from block number to block hash.
         fail_syscall!(b"GET_BLOCK_HASH_UNIMPLEMENTED");
     }

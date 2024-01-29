@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -44,6 +44,7 @@ use crate::ids::{
     SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
+use crate::lower::generators::StructDestructure;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
     MatchInfo, VarUsage, VariableId,
@@ -1281,10 +1282,10 @@ fn get_variant_to_arm_map<'a>(
             }
 
             match map.entry(enum_pattern.variant.clone()) {
-                std::collections::hash_map::Entry::Occupied(_) => {
+                Entry::Occupied(_) => {
                     ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
                 }
-                std::collections::hash_map::Entry::Vacant(entry) => {
+                Entry::Vacant(entry) => {
                     entry.insert(PatternPath { arm_index, pattern_index });
                 }
             };
@@ -1315,8 +1316,8 @@ fn insert_tuple_path_patterns(
     // if the path is the same length as the tuple's patterns, we have reached the end of the path
     if index == patterns.len() {
         match map.entry(path) {
-            std::collections::hash_map::Entry::Occupied(_) => {}
-            std::collections::hash_map::Entry::Vacant(entry) => {
+            Entry::Occupied(_) => {}
+            Entry::Vacant(entry) => {
                 entry.insert(pattern_path.clone());
             }
         };
@@ -2440,12 +2441,39 @@ fn lower_expr_struct_ctor(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_expr = UnorderedHashMap::<_, _>::from_iter(expr.members.iter().cloned());
+    let mut member_expr_usages =
+        UnorderedHashMap::<_, _>::from_iter(expr.members.iter().map(|(id, expr)| {
+            let usage = lower_expr_to_var_usage(ctx, builder, *expr);
+            (*id, usage)
+        }));
+    if members.len() != member_expr_usages.len() {
+        // Semantic model should have made sure base struct exist if some members are missing.
+        let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
+
+        for (base_member, (_, member)) in izip!(
+            StructDestructure {
+                input: base_struct_usage.var_id,
+                var_reqs: members
+                    .iter()
+                    .map(|(_, member)| VarRequest { ty: member.ty, location })
+                    .collect(),
+            }
+            .add(ctx, &mut builder.statements),
+            members.iter()
+        ) {
+            match member_expr_usages.entry(member.id) {
+                Entry::Occupied(_) => {}
+                Entry::Vacant(entry) => {
+                    entry.insert(Ok(VarUsage { var_id: base_member, location }));
+                }
+            }
+        }
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
+                .map(|(_, member)| member_expr_usages.remove(&member.id).unwrap())
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,

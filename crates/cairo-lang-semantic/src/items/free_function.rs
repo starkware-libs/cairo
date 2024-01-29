@@ -138,16 +138,15 @@ pub fn priv_free_function_declaration_data(
     // Generic params.
     let generic_params_data = db.free_function_generic_params_data(free_function_id)?;
     let generic_params = generic_params_data.generic_params;
-    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
-        ModuleItemId::FreeFunction(free_function_id),
-    ));
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id));
+    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
-    let mut environment = Environment::default();
+    let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(

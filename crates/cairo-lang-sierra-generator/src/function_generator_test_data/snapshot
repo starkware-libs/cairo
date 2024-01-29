@@ -6,7 +6,7 @@ test_function_generator
 //! > function
 fn foo(ref arr: Array<felt252>) {
     arr.append(5);
-    let _ = arr.span();
+    let _ = immovable(@arr);
     revoke_ap();
     arr.append(6);
 }
@@ -19,6 +19,9 @@ foo
 fn revoke_ap() -> felt252 {
     revoke_ap()
 }
+
+#[inline(never)]
+fn immovable<T>(t: T) -> T { t }
 
 //! > semantic_diagnostics
 
@@ -35,16 +38,18 @@ felt252_const<5>() -> ([3])
 store_temp<felt252>([3]) -> ([3])
 array_append<felt252>([0], [3]) -> ([1])
 store_local<Array<felt252>>([2], [1]) -> ([1])
-function_call<user@test::revoke_ap>() -> ([4])
-drop<felt252>([4]) -> ()
-snapshot_take<Array<felt252>>([1]) -> ([5], [6])
+snapshot_take<Array<felt252>>([1]) -> ([4], [5])
+store_temp<Snapshot<Array<felt252>>>([5]) -> ([5])
+function_call<user@test::immovable::<@core::array::Array::<core::felt252>>>([5]) -> ([6])
 drop<Snapshot<Array<felt252>>>([6]) -> ()
-felt252_const<6>() -> ([7])
-store_temp<felt252>([7]) -> ([7])
-array_append<felt252>([5], [7]) -> ([8])
-struct_construct<Unit>() -> ([9])
-store_temp<Array<felt252>>([8]) -> ([8])
-return([8], [9])
+function_call<user@test::revoke_ap>() -> ([7])
+drop<felt252>([7]) -> ()
+felt252_const<6>() -> ([8])
+store_temp<felt252>([8]) -> ([8])
+array_append<felt252>([4], [8]) -> ([9])
+struct_construct<Unit>() -> ([10])
+store_temp<Array<felt252>>([9]) -> ([9])
+return([9], [10])
 
 //! > ==========================================================================
 

@@ -43,11 +43,16 @@ pub trait Analyzer<'a> {
         statement_location: StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info;
+
+    /// Default `info_from_panic` implementation for post 'lower_panics' phases.
+    /// Earlier phases need to override this implementation.
     fn info_from_panic(
         &mut self,
         statement_location: StatementLocation,
         var: &VarUsage,
-    ) -> Self::Info;
+    ) -> Self::Info {
+        unreachable!("Panics should have been stripped in the `lower_panics` phase.");
+    }
 }
 
 /// Main analysis type that allows traversing the flow backwards.
