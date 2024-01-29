@@ -47,7 +47,9 @@ pub trait Analyzer<'a> {
         &mut self,
         statement_location: StatementLocation,
         var: &VarUsage,
-    ) -> Self::Info;
+    ) -> Self::Info {
+        unreachable!("Panics should have been stripped in a previous phase.");
+    }
 }
 
 /// Main analysis type that allows traversing the flow backwards.

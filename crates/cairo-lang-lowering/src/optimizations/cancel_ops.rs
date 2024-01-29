@@ -326,16 +326,6 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         );
         Self::Info { demand }
     }
-
-    fn info_from_panic(
-        &mut self,
-        statement_location: StatementLocation,
-        data: &VarUsage,
-    ) -> Self::Info {
-        let mut demand = CancelOpsDemand::default();
-        demand.variables_used(self, std::iter::once((&data.var_id, statement_location)));
-        Self::Info { demand }
-    }
 }
 
 pub struct CancelOpsRebuilder {

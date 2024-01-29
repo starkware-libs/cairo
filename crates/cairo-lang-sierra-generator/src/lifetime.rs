@@ -249,14 +249,6 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         );
         info
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _var: &VarUsage,
-    ) -> Self::Info {
-        unreachable!("Panics should have been stripped in a previous phase.")
-    }
 }
 impl<'a> VariableLifetimeContext<'a> {
     /// A wrapper for info.variables_introduced that adds demand for uninitialized locals.
