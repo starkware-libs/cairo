@@ -451,12 +451,4 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             ),
         }
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _data: &VarUsage,
-    ) -> Self::Info {
-        AnalyzerInfo { opt_returned_vars: None }
-    }
 }

@@ -178,12 +178,4 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| var_id), block_id);
         info
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _data: &VarUsage,
-    ) -> Self::Info {
-        unreachable!("Panics should have been stripped in a previous phase.");
-    }
 }
