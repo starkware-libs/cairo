@@ -1,4 +1,3 @@
-use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
@@ -9,7 +8,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
@@ -599,11 +598,11 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             // Update the excess for `branch_statement` using the minimum of the existing excess and
             // `actual_excess`.
             match excess.entry(branch_statement) {
-                hash_map::Entry::Occupied(mut entry) => {
+                Entry::Occupied(mut entry) => {
                     let current_value = entry.get();
                     entry.insert(CostType::min2(current_value, &actual_excess));
                 }
-                hash_map::Entry::Vacant(entry) => {
+                Entry::Vacant(entry) => {
                     entry.insert(actual_excess);
                 }
             }
