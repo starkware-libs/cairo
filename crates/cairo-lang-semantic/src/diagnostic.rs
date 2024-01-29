@@ -667,7 +667,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
-<<<<<<< HEAD
             SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
             }
@@ -679,8 +678,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                  coupons experimental feature in the crate config."
                     .into()
             }
-||||||| 1ab151873
-=======
             SemanticDiagnosticKind::StructBaseStructExpressionNotLast => {
                 "The base struct must always be the last argument.".into()
             }
@@ -689,7 +686,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                  specified."
                     .into()
             }
->>>>>>> origin/main
         }
     }
 

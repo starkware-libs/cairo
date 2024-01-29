@@ -36,12 +36,8 @@ mod issue4109;
 mod issue4314;
 mod issue4318;
 mod issue4380;
-<<<<<<< HEAD
-mod issue4937;
-||||||| 1ab151873
-=======
 mod issue4897;
->>>>>>> origin/main
+mod issue4937;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;

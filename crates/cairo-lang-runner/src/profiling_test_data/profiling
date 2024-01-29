@@ -300,20 +300,15 @@ Weight by user function (inc. generated):
 Weight by original user function:
   function test::main: 72
 Weight by Cairo function:
-<<<<<<< HEAD
   function lib.cairo::main: 72
-||||||| 1ab151873
-  function lib.cairo::main: 90
-=======
-  function lib.cairo::main: 90
 Weight by Sierra stack trace:
-  test::main: 90
-  test::main -> test::main[expr12]: 79
-  test::main -> test::main[expr12] -> test::main[expr12]: 66
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 53
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 40
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 27
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 14
+  test::main: 72
+  test::main -> test::main[expr12]: 61
+  test::main -> test::main[expr12] -> test::main[expr12]: 51
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 41
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 31
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 21
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 11
 
 //! > ==========================================================================
 
@@ -442,4 +437,3 @@ Weight by Sierra stack trace:
   test::main -> test::foo1: 9
   test::main -> test::foo1 -> test::foo2: 6
   test::main -> test::foo1 -> test::foo2 -> test::foo3: 2
->>>>>>> origin/main

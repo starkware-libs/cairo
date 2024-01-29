@@ -447,18 +447,8 @@ Statements:
   (v12: test::B) <- struct_construct(v0, v5)
   (v11: core::felt252) <- 5u
   (v13: test::A) <- struct_construct(v12, v11)
-<<<<<<< HEAD
-  (v14: core::integer::u32, v15: core::integer::u128) <- struct_destructure(v12)
-  (v28: (core::integer::u32, test::A, test::A)) <- struct_construct(v14, v13, v13)
+  (v28: (core::integer::u32, test::A, test::A)) <- struct_construct(v0, v13, v13)
   (v29: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Ok(v28)
-||||||| 1ab151873
-  (v14: core::integer::u32, v15: core::integer::u128) <- struct_destructure(v12)
-  (v29: (core::integer::u32, test::A, test::A)) <- struct_construct(v14, v13, v13)
-  (v30: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Ok(v29)
-=======
-  (v29: (core::integer::u32, test::A, test::A)) <- struct_construct(v0, v13, v13)
-  (v30: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Ok(v29)
->>>>>>> origin/main
 End:
   Return(v42, v43, v29)
 
@@ -892,29 +882,15 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v58: core::RangeCheck, v59: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v44, v45, v8)
-||||||| 1ab151873
-  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v45, v46, v8)
-=======
-  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v45, v46, v4)
->>>>>>> origin/main
+  (v58: core::RangeCheck, v59: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v44, v45, v4)
 End:
   Return(v58, v59, v33)
 
 blk3:
 Statements:
   (v15: ()) <- struct_construct()
-<<<<<<< HEAD
-  (v31: (core::integer::u8, ())) <- struct_construct(v8, v15)
+  (v31: (core::integer::u8, ())) <- struct_construct(v4, v15)
   (v32: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v31)
-||||||| 1ab151873
-  (v32: (core::integer::u8, ())) <- struct_construct(v8, v15)
-  (v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v32)
-=======
-  (v32: (core::integer::u8, ())) <- struct_construct(v4, v15)
-  (v33: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Ok(v32)
->>>>>>> origin/main
 End:
   Return(v44, v45, v32)
 
