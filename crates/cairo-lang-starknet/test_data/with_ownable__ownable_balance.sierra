@@ -859,9 +859,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownab
 branch_align() -> (); // 605
 struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>([18]) -> ([20], [21]); // 606
 drop<Unit>([21]) -> (); // 607
-struct_construct<Unit>() -> ([22]); // 608
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([7], [20]) -> ([23]); // 609
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([23], [22]) -> ([24]); // 610
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([7], [20]) -> ([22]); // 608
+struct_construct<Unit>() -> ([23]); // 609
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([22], [23]) -> ([24]); // 610
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([24]) -> ([25]); // 611
 store_temp<RangeCheck>([9]) -> ([9]); // 612
 store_temp<GasBuiltin>([15]) -> ([15]); // 613
@@ -969,9 +969,9 @@ struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::Compon
 drop<Unit>([18]) -> (); // 715
 struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::__member_module_balance::ContractMemberState, Unit>>([15]) -> ([19], [20]); // 716
 drop<Unit>([20]) -> (); // 717
-struct_construct<Unit>() -> ([21]); // 718
-struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([17], [19]) -> ([22]); // 719
-struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([22], [21]) -> ([23]); // 720
+struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>([17], [19]) -> ([21]); // 718
+struct_construct<Unit>() -> ([22]); // 719
+struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>([21], [22]) -> ([23]); // 720
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>([23]) -> ([24]); // 721
 store_temp<GasBuiltin>([12]) -> ([12]); // 722
 store_temp<System>([13]) -> ([13]); // 723
@@ -1192,9 +1192,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::
 branch_align() -> (); // 938
 struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>([17]) -> ([19], [20]); // 939
 drop<Unit>([20]) -> (); // 940
-struct_construct<Unit>() -> ([21]); // 941
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([19]) -> ([22]); // 942
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([22], [21]) -> ([23]); // 943
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([19]) -> ([21]); // 941
+struct_construct<Unit>() -> ([22]); // 942
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([21], [22]) -> ([23]); // 943
 enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([23]) -> ([24]); // 944
 store_temp<RangeCheck>([7]) -> ([7]); // 945
 store_temp<GasBuiltin>([14]) -> ([14]); // 946
@@ -1226,9 +1226,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::
 branch_align() -> (); // 972
 struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::__member_module_owner::ComponentMemberState, Unit>>([8]) -> ([10], [11]); // 973
 drop<Unit>([11]) -> (); // 974
-struct_construct<Unit>() -> ([12]); // 975
-struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([10]) -> ([13]); // 976
-struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([13], [12]) -> ([14]); // 977
+struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>([10]) -> ([12]); // 975
+struct_construct<Unit>() -> ([13]); // 976
+struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>([12], [13]) -> ([14]); // 977
 enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>([14]) -> ([15]); // 978
 store_temp<GasBuiltin>([5]) -> ([5]); // 979
 store_temp<System>([6]) -> ([6]); // 980

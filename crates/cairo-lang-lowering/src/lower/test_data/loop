@@ -447,8 +447,8 @@ End:
 blk1:
 Statements:
   (v4: core::integer::u32, v5: core::integer::u128) <- struct_destructure(v1)
-  (v12: test::B) <- struct_construct(v0, v5)
   (v11: core::felt252) <- 5u
+  (v12: test::B) <- struct_construct(v0, v5)
   (v13: test::A) <- struct_construct(v12, v11)
   (v29: (core::integer::u32, test::A, test::A)) <- struct_construct(v0, v13, v13)
   (v30: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Ok(v29)
