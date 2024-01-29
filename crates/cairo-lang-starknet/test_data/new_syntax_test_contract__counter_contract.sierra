@@ -1657,42 +1657,40 @@ store_temp<GasBuiltin>([10]) -> ([15]); // 1358
 store_temp<System>([11]) -> ([16]); // 1359
 store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([18]) -> ([17]); // 1360
 return([15], [16], [17]); // 1361
-drop<Array<felt252>>([1]) -> (); // 1362
-drop<Array<felt252>>([2]) -> (); // 1363
-enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>([0]) { }; // 1364
-struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>([0]) -> ([3]); // 1365
-rename<u128>([3]) -> ([4]); // 1366
-u128_to_felt252([4]) -> ([5]); // 1367
-array_append<felt252>([2], [5]) -> ([6]); // 1368
-struct_construct<Unit>() -> ([7]); // 1369
-store_temp<Array<felt252>>([1]) -> ([1]); // 1370
-store_temp<Array<felt252>>([6]) -> ([6]); // 1371
-return([1], [6], [7]); // 1372
-struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>([0]) -> ([3]); // 1373
-rename<u128>([3]) -> ([4]); // 1374
-u128_to_felt252([4]) -> ([5]); // 1375
-array_append<felt252>([2], [5]) -> ([6]); // 1376
-struct_construct<Unit>() -> ([7]); // 1377
-store_temp<Array<felt252>>([1]) -> ([1]); // 1378
-store_temp<Array<felt252>>([6]) -> ([6]); // 1379
-return([1], [6], [7]); // 1380
-drop<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>([0]) -> (); // 1381
-struct_construct<Unit>() -> ([3]); // 1382
-store_temp<Array<felt252>>([1]) -> ([1]); // 1383
-store_temp<Array<felt252>>([2]) -> ([2]); // 1384
-return([1], [2], [3]); // 1385
-contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1392([4]) }; // 1386
-branch_align() -> (); // 1387
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 1388
-store_temp<RangeCheck>([2]) -> ([2]); // 1389
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([5]); // 1390
-return([2], [5]); // 1391
-branch_align() -> (); // 1392
-struct_construct<Unit>() -> ([6]); // 1393
-enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([6]) -> ([7]); // 1394
-store_temp<RangeCheck>([4]) -> ([4]); // 1395
-store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([7]); // 1396
-return([4], [7]); // 1397
+enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>([0]) { }; // 1362
+struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>([0]) -> ([3]); // 1363
+rename<u128>([3]) -> ([4]); // 1364
+u128_to_felt252([4]) -> ([5]); // 1365
+array_append<felt252>([2], [5]) -> ([6]); // 1366
+struct_construct<Unit>() -> ([7]); // 1367
+store_temp<Array<felt252>>([1]) -> ([1]); // 1368
+store_temp<Array<felt252>>([6]) -> ([6]); // 1369
+return([1], [6], [7]); // 1370
+struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>([0]) -> ([3]); // 1371
+rename<u128>([3]) -> ([4]); // 1372
+u128_to_felt252([4]) -> ([5]); // 1373
+array_append<felt252>([2], [5]) -> ([6]); // 1374
+struct_construct<Unit>() -> ([7]); // 1375
+store_temp<Array<felt252>>([1]) -> ([1]); // 1376
+store_temp<Array<felt252>>([6]) -> ([6]); // 1377
+return([1], [6], [7]); // 1378
+drop<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>([0]) -> (); // 1379
+struct_construct<Unit>() -> ([3]); // 1380
+store_temp<Array<felt252>>([1]) -> ([1]); // 1381
+store_temp<Array<felt252>>([2]) -> ([2]); // 1382
+return([1], [2], [3]); // 1383
+contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 1390([4]) }; // 1384
+branch_align() -> (); // 1385
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]); // 1386
+store_temp<RangeCheck>([2]) -> ([2]); // 1387
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([5]) -> ([5]); // 1388
+return([2], [5]); // 1389
+branch_align() -> (); // 1390
+struct_construct<Unit>() -> ([6]); // 1391
+enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([6]) -> ([7]); // 1392
+store_temp<RangeCheck>([4]) -> ([4]); // 1393
+store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([7]); // 1394
+return([4], [7]); // 1395
 
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__get_counter@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__increase_counter@91([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -1726,7 +1724,7 @@ core::BoolSerde::deserialize@1295([0]: core::array::Span::<core::felt252>) -> (c
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into@1342([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased) -> (cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event);
 cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::write@1345([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageBaseAddress, [4]: cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data@1362([0]: cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data@1365([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data@1373([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEventIsEvent::append_keys_and_data@1381([0]: cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1386([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data@1363([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data@1371([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEventIsEvent::append_keys_and_data@1379([0]: cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+core::starknet::contract_address::Felt252TryIntoContractAddress::try_into@1384([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
