@@ -393,9 +393,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_star
 branch_align() -> (); // 247
 struct_deconstruct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>>([23]) -> ([25], [26]); // 248
 drop<Unit>([26]) -> (); // 249
-struct_construct<Unit>() -> ([27]); // 250
-struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([25]) -> ([28]); // 251
-struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>>([28], [27]) -> ([29]); // 252
+struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>([25]) -> ([27]); // 250
+struct_construct<Unit>() -> ([28]); // 251
+struct_construct<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>>([27], [28]) -> ([29]); // 252
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>, 0>([29]) -> ([30]); // 253
 store_temp<RangeCheck>([15]) -> ([15]); // 254
 store_temp<GasBuiltin>([20]) -> ([20]); // 255

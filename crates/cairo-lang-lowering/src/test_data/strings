@@ -196,11 +196,11 @@ Statements:
   (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 448378203247u
   (v2: core::integer::u32) <- 5u
-  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
   (v5: core::felt252) <- 35697342966884u
   (v6: core::integer::u32) <- 6u
-  (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
+  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
   (v9: core::byte_array::ByteArray, v10: @core::byte_array::ByteArray) <- snapshot(v3)
+  (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
   (v11: core::byte_array::ByteArray, v12: @core::byte_array::ByteArray) <- snapshot(v7)
   (v25: core::RangeCheck, v26: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- core::byte_array::ByteArrayImpl::concat(v21, v22, v10, v12)
 End:

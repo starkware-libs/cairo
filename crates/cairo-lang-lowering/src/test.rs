@@ -28,6 +28,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
+use crate::optimizations::split_structs::split_structs;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test::branch_inversion::branch_inversion;
@@ -163,6 +164,7 @@ fn test_function_lowering_phases(
     apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
     apply_stage("after_optimize_remappings2", &optimize_remappings);
     apply_stage("cancel_ops", &cancel_ops);
+    apply_stage("split_structs", &split_structs);
     apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
     apply_stage("after_optimize_remappings3", &optimize_remappings);
     apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
