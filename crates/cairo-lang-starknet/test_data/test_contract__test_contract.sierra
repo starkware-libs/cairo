@@ -1397,9 +1397,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contr
 branch_align() -> (); // 1143
 struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::__member_module_my_storage_var::ContractMemberState, Unit>>([9]) -> ([11], [12]); // 1144
 drop<Unit>([12]) -> (); // 1145
-struct_construct<Unit>() -> ([13]); // 1146
-struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([11], [5]) -> ([14]); // 1147
-struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, Unit>>([14], [13]) -> ([15]); // 1148
+struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([11], [5]) -> ([13]); // 1146
+struct_construct<Unit>() -> ([14]); // 1147
+struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, Unit>>([13], [14]) -> ([15]); // 1148
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, ())>, 0>([15]) -> ([16]); // 1149
 store_temp<GasBuiltin>([6]) -> ([6]); // 1150
 store_temp<System>([7]) -> ([7]); // 1151
