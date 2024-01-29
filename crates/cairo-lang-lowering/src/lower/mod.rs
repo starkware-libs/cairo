@@ -135,22 +135,11 @@ pub fn lower_function(
     let root_ok = {
         let maybe_sealed_block = lower_block(&mut ctx, builder, &semantic_block);
         maybe_sealed_block.and_then(|block_sealed| {
-            match block_sealed {
-                SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
-                    // Convert to a return.
-                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                    let var_usage = expr.unwrap_or_else(|| {
-                        generators::StructConstruct {
-                            inputs: vec![],
-                            ty: unit_ty(ctx.db.upcast()),
-                            location,
-                        }
-                        .add(&mut ctx, &mut builder.statements)
-                    });
-                    builder.ret(&mut ctx, var_usage, location)?;
-                }
-                SealedBlockBuilder::Ends(_) => {}
-            }
+            wrap_sealed_block_as_function(
+                &mut ctx,
+                block_sealed,
+                semantic_block.stable_ptr.untyped(),
+            )?;
             Ok(root_block_id)
         })
     };
@@ -294,22 +283,7 @@ pub fn lower_loop_function(
         };
 
         let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr)?;
-        match block_sealed {
-            SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
-                // Convert to a return.
-                let location = ctx.get_location(stable_ptr.untyped());
-                let var_usage = expr.unwrap_or_else(|| {
-                    generators::StructConstruct {
-                        inputs: vec![],
-                        ty: unit_ty(ctx.db.upcast()),
-                        location,
-                    }
-                    .add(&mut ctx, &mut builder.statements)
-                });
-                builder.ret(&mut ctx, var_usage, location)?;
-            }
-            SealedBlockBuilder::Ends(_) => {}
-        }
+        wrap_sealed_block_as_function(&mut ctx, block_sealed, stable_ptr.untyped())?;
 
         Ok(root_block_id)
     })();
@@ -324,6 +298,50 @@ pub fn lower_loop_function(
         signature: ctx.signature.clone(),
         parameters,
     })
+}
+
+fn wrap_sealed_block_as_function(
+    ctx: &mut LoweringContext<'_, '_>,
+    block_sealed: SealedBlockBuilder,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<()> {
+    let SealedBlockBuilder::GotoCallsite { mut builder, expr } = block_sealed else {
+        return Ok(());
+    };
+    let location = ctx.get_location(stable_ptr);
+    match &expr {
+        Some(expr) if ctx.variables[expr.var_id].ty == never_ty(ctx.db.upcast()) => {
+            // If the expression is of type never, then the block is unreachable, so add a match on
+            // never to make it a viable block end.
+            let semantic::TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
+                ctx.db.lookup_intern_type(ctx.variables[expr.var_id].ty)
+            else {
+                unreachable!("Never type must be a concrete enum.");
+            };
+            builder.unreachable_match(
+                ctx,
+                MatchInfo::Enum(MatchEnumInfo {
+                    concrete_enum_id,
+                    input: *expr,
+                    arms: vec![],
+                    location,
+                }),
+            );
+            Ok(())
+        }
+        _ => {
+            // Convert to a return.
+            let var_usage = expr.unwrap_or_else(|| {
+                generators::StructConstruct {
+                    inputs: vec![],
+                    ty: unit_ty(ctx.db.upcast()),
+                    location,
+                }
+                .add(ctx, &mut builder.statements)
+            });
+            builder.ret(ctx, var_usage, location)
+        }
+    }
 }
 
 /// Lowers a semantic block.

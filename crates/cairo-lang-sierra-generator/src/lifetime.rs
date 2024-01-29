@@ -11,7 +11,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use lowering::borrow_check::demand::DemandReporter;
+use lowering::borrow_check::demand::{AuxCombine, DemandReporter};
 use lowering::borrow_check::Demand;
 use lowering::{FlatLowered, VarUsage};
 
@@ -138,14 +138,43 @@ struct VariableLifetimeContext<'a> {
     res: VariableLifetimeResult,
 }
 
-pub type SierraDemand = Demand<SierraGenVar, UseLocation>;
+/// Can this state lead to any return.
+#[derive(Clone, Default)]
+enum ReturnState {
+    /// Some return statement is reachable.
+    #[default]
+    ReturnReachable,
+    /// No return statement is reachable.
+    /// This most likely means all flows from this state lead to a match on a never type.
+    ReturnUnreachable,
+}
+/// How to combine two return states in a flow divergence.
+impl AuxCombine for ReturnState {
+    fn merge<'a, I: Iterator<Item = &'a Self>>(iter: I) -> Self
+    where
+        Self: 'a,
+    {
+        if iter.into_iter().any(|aux| matches!(aux, ReturnState::ReturnReachable)) {
+            Self::ReturnReachable
+        } else {
+            Self::ReturnUnreachable
+        }
+    }
+}
 
-impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
+type SierraDemand = Demand<SierraGenVar, UseLocation, ReturnState>;
+
+impl<'a> DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'a> {
     type IntroducePosition = DropLocation;
     type UsePosition = UseLocation;
 
-    fn drop(&mut self, position: DropLocation, var: SierraGenVar) {
-        self.res.add_drop(var, position)
+    fn drop_aux(&mut self, position: DropLocation, var: SierraGenVar, aux: ReturnState) {
+        // No need for drops when no return statement is reachable, as this is what validates all
+        // variables are used. This specifically handles the case of matching on a never
+        // enum, so we won't try to drop variables containing builtins.
+        if matches!(aux, ReturnState::ReturnReachable) {
+            self.res.add_drop(var, position);
+        }
     }
 
     fn last_use(&mut self, use_location: UseLocation, _var: SierraGenVar) {
