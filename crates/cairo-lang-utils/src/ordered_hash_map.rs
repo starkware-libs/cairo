@@ -134,6 +134,17 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> OrderedHashMap<Key, Value, BH> {
         self.0.swap_remove(key)
     }
 
+    /// Scan through each key-value pair in the map and keep those where the
+    /// closure `keep` returns `true`.
+    ///
+    /// The elements are visited in order, and remaining elements keep their
+    /// order.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn retain(&mut self, keep: impl FnMut(&Key, &mut Value) -> bool) {
+        self.0.retain(keep);
+    }
+
     /// Returns true if the maps are equal, ignoring the order of the entries.
     pub fn eq_unordered(&self, other: &Self) -> bool
     where

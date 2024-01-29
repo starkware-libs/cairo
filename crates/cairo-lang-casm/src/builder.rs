@@ -4,13 +4,12 @@ pub use alloc::borrow::ToOwned;
 use alloc::{string::String, vec, vec::Vec};
 #[cfg(feature = "std")]
 pub use std::borrow::ToOwned;
-#[cfg(feature = "std")]
-use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
-#[cfg(not(feature = "std"))]
-use hashbrown::{hash_map::Entry, HashMap, HashSet};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
@@ -36,7 +35,7 @@ pub struct Var(usize);
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct State {
     /// The value per variable.
-    vars: HashMap<Var, CellExpression>,
+    vars: OrderedHashMap<Var, CellExpression>,
     /// The number of allocated variables from the beginning of the run.
     allocated: i16,
     /// The AP change since the beginning of the run.
@@ -119,9 +118,9 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
 /// assumes we are in a post validation of parameters stage.
 pub struct CasmBuilder {
     /// The state at a point of jumping into a label, per label.
-    label_state: HashMap<String, State>,
+    label_state: UnorderedHashMap<String, State>,
     /// The set of labels that were already read, so cannot be updated.
-    read_labels: HashSet<String>,
+    read_labels: UnorderedHashSet<String>,
     /// The state at the last added statement.
     main_state: State,
     /// The added statements.
@@ -150,7 +149,7 @@ impl CasmBuilder {
             self.label_state.insert("Fallthrough".to_owned(), self.main_state);
         }
         let mut instructions = vec![];
-        let mut branch_relocations = HashMap::<String, Vec<usize>>::default();
+        let mut branch_relocations = UnorderedHashMap::<String, Vec<usize>>::new();
         let mut offset = 0;
         for statement in self.statements {
             match statement {
@@ -180,12 +179,9 @@ impl CasmBuilder {
 
                             _ => unreachable!("Only jump or call statements should be here."),
                         },
-                        None => match branch_relocations.entry(label) {
-                            Entry::Occupied(mut e) => e.get_mut().push(instructions.len()),
-                            Entry::Vacant(e) => {
-                                e.insert(vec![instructions.len()]);
-                            }
-                        },
+                        None => {
+                            branch_relocations.entry(label).or_default().push(instructions.len())
+                        }
                     }
                     offset += inst.body.op_size();
                     instructions.push(inst);
@@ -215,8 +211,8 @@ impl CasmBuilder {
     }
 
     /// Computes the code offsets of all the labels.
-    fn compute_label_offsets(&self) -> HashMap<String, usize> {
-        let mut label_offsets = HashMap::<String, usize>::default();
+    fn compute_label_offsets(&self) -> UnorderedHashMap<String, usize> {
+        let mut label_offsets = UnorderedHashMap::new();
         let mut offset = 0;
         for statement in &self.statements {
             match statement {
@@ -504,9 +500,9 @@ impl CasmBuilder {
     pub fn call(&mut self, label: String) {
         self.main_state.validate_finality();
         // Vars to be passed to the called function state.
-        let mut function_vars: HashMap<Var, CellExpression> = HashMap::default();
+        let mut function_vars = OrderedHashMap::<Var, CellExpression>::new();
         // FP based vars which will remain in the current state.
-        let mut main_vars: HashMap<Var, CellExpression> = HashMap::default();
+        let mut main_vars = OrderedHashMap::<Var, CellExpression>::new();
         let ap_change = self.main_state.ap_change;
         let cell_to_var_flags = |cell: &CellRef| {
             if cell.register == Register::AP { (true, false) } else { (false, true) }

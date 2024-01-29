@@ -1,7 +1,5 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use itertools::{chain, izip};
 use thiserror::Error;
 
@@ -67,12 +65,12 @@ pub enum ProgramRegistryError {
     JumpOutOfRange(StatementIdx),
 }
 
-type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
-type LibfuncMap<TLibfunc> = HashMap<ConcreteLibfuncId, TLibfunc>;
-type FunctionMap = HashMap<FunctionId, Function>;
+type TypeMap<TType> = UnorderedHashMap<ConcreteTypeId, TType>;
+type LibfuncMap<TLibfunc> = UnorderedHashMap<ConcreteLibfuncId, TLibfunc>;
+type FunctionMap = UnorderedHashMap<FunctionId, Function>;
 /// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
 /// the concrete-id that points to it.
-type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
+type ConcreteTypeIdMap<'a> = UnorderedHashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
@@ -143,7 +141,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     /// Later compilation stages may perform more validations as well as repeat these validations.
     fn validate(&self, program: &Program) -> Result<(), Box<ProgramRegistryError>> {
         // Check that all the parameter and return types are storable.
-        for func in self.functions.values() {
+        for func in &program.funcs {
             for ty in chain!(func.signature.param_types.iter(), func.signature.ret_types.iter()) {
                 if !self.get_type(ty)?.info().storable {
                     return Err(Box::new(ProgramRegistryError::FunctionWithUnstorableType {
@@ -156,8 +154,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         // A branch map, mapping from a destination statement to the statement that jumps to it.
         // A branch is considered a branch only if it has more than one target.
         // Assuming branches into branch alignments only, this should be a bijection.
-        let mut branches: HashMap<StatementIdx, StatementIdx> =
-            HashMap::<StatementIdx, StatementIdx>::default();
+        let mut branches = UnorderedHashMap::<StatementIdx, StatementIdx>::new();
         for (i, statement) in program.statements.iter().enumerate() {
             self.validate_statement(program, StatementIdx(i), statement, &mut branches)?;
         }
@@ -170,7 +167,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         program: &Program,
         index: StatementIdx,
         statement: &Statement,
-        branches: &mut HashMap<StatementIdx, StatementIdx>,
+        branches: &mut UnorderedHashMap<StatementIdx, StatementIdx>,
     ) -> Result<(), Box<ProgramRegistryError>> {
         let Statement::Invocation(invocation) = statement else {
             return Ok(());
@@ -276,8 +273,8 @@ impl<TType: GenericType> TypeSpecializationContext
 fn get_concrete_types_maps<TType: GenericType>(
     program: &Program,
 ) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), Box<ProgramRegistryError>> {
-    let mut concrete_types = HashMap::new();
-    let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
+    let mut concrete_types = TypeMap::new();
+    let mut concrete_type_ids = ConcreteTypeIdMap::new();
     let declared_type_info = program
         .type_declarations
         .iter()
@@ -394,7 +391,7 @@ fn get_concrete_libfuncs<TType: GenericType, TLibfunc: GenericLibfunc>(
     program: &Program,
     context: &SpecializationContextForRegistry<'_, TType>,
 ) -> Result<LibfuncMap<TLibfunc::Concrete>, Box<ProgramRegistryError>> {
-    let mut concrete_libfuncs = HashMap::new();
+    let mut concrete_libfuncs = LibfuncMap::new();
     for declaration in &program.libfunc_declarations {
         let concrete_libfunc = TLibfunc::specialize_by_id(
             context,
