@@ -36,6 +36,7 @@ mod issue4109;
 mod issue4314;
 mod issue4318;
 mod issue4380;
+mod issue4897;
 mod issue4937;
 mod loop_only_change;
 mod inconsistent_gas;

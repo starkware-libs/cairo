@@ -367,6 +367,35 @@ Statements:
 End:
   Return(v8, v9, v5)
 
+//! > cancel_ops
+Parameters: v6: core::RangeCheck, v7: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v1: core::panics::PanicResult::<(core::never,)>) <- test::goo(v6, v7)
+End:
+  Match(match_enum(v1) {
+    PanicResult::Ok(v2) => blk2,
+    PanicResult::Err(v4) => blk3,
+  })
+
+blk1:
+Statements:
+  (v3: core::never) <- struct_destructure(v2)
+End:
+  Match(match_enum(v3) {
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk1, {})
+
+blk3:
+Statements:
+  (v5: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v4)
+End:
+  Return(v8, v9, v5)
+
 //! > after_reorder_statements3
 Parameters: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 blk0 (root):

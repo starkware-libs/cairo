@@ -1,18 +1,13 @@
 {
+  "extends": [
+    "@tsconfig/strictest/tsconfig.json",
+    "@tsconfig/node18/tsconfig.json",
+  ],
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es6",
     "outDir": "out",
-    "lib": ["es6"],
     "sourceMap": true,
     "rootDir": "src",
-    // Enable all strict type-checking options.
-    "strict": true,
-    // Additional checks.
-    "noUnusedLocals": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedParameters": true
   },
-  "exclude": ["node_modules", ".vscode-test"]
+  "exclude": ["node_modules", ".vscode-test"],
+  "include": ["src", "tests"],
 }

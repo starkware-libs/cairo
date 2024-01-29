@@ -75,13 +75,29 @@ pub struct CairoProgram {
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for instruction in &self.instructions {
-            writeln!(f, "{instruction};")?
-        }
-        for segment in self.consts_info.segments.values() {
-            writeln!(f, "ret;")?;
-            for value in &segment.values {
-                writeln!(f, "dw {};", value)?;
+        if std::env::var("PRINT_CASM_BYTECODE_OFFSETS").is_ok() {
+            let mut bytecode_offset = 0;
+            for instruction in &self.instructions {
+                writeln!(f, "{instruction}; // {bytecode_offset}")?;
+                bytecode_offset += instruction.body.op_size();
+            }
+            for segment in self.consts_info.segments.values() {
+                writeln!(f, "ret; // {bytecode_offset}")?;
+                bytecode_offset += 1;
+                for value in &segment.values {
+                    writeln!(f, "dw {value}; // {bytecode_offset}")?;
+                    bytecode_offset += 1;
+                }
+            }
+        } else {
+            for instruction in &self.instructions {
+                writeln!(f, "{instruction};")?;
+            }
+            for segment in self.consts_info.segments.values() {
+                writeln!(f, "ret;")?;
+                for value in &segment.values {
+                    writeln!(f, "dw {value};")?;
+                }
             }
         }
         Ok(())

@@ -6,10 +6,14 @@ use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
 #[cfg(feature = "std")]
+pub use std::collections::hash_map::Entry;
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
+#[cfg(not(feature = "std"))]
+pub use hashbrown::hash_map::Entry;
 #[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -120,13 +124,13 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
 
     #[cfg(feature = "std")]
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: Key) -> std::collections::hash_map::Entry<'_, Key, Value> {
+    pub fn entry(&mut self, key: Key) -> Entry<'_, Key, Value> {
         self.0.entry(key)
     }
 
     #[cfg(not(feature = "std"))]
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: Key) -> hashbrown::hash_map::Entry<'_, Key, Value, BH> {
+    pub fn entry(&mut self, key: Key) -> Entry<'_, Key, Value, BH> {
         self.0.entry(key)
     }
 
@@ -138,6 +142,31 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
         Q: Hash + Eq,
     {
         self.0.contains_key(key)
+    }
+
+    /// Maps the values of the map to new values using the given function.
+    pub fn map<TargetValue>(
+        &self,
+        mapper: impl Fn(&Value) -> TargetValue,
+    ) -> UnorderedHashMap<Key, TargetValue, BH>
+    where
+        Key: Clone,
+        BH: Clone,
+    {
+        self.0.iter().fold(
+            UnorderedHashMap::<_, _, _>::with_hasher(self.0.hasher().clone()),
+            |mut acc, (key, value)| {
+                match acc.entry(key.clone()) {
+                    Entry::Occupied(_) => {
+                        unreachable!("The original map should not contain duplicate keys.");
+                    }
+                    Entry::Vacant(vacant) => {
+                        vacant.insert(mapper(value));
+                    }
+                };
+                acc
+            },
+        )
     }
 
     /// Aggregates values of the map using the given functions.
@@ -156,23 +185,17 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     where
         BH: Clone,
     {
-        #[cfg(feature = "std")]
-        use std::collections::hash_map;
-
-        #[cfg(not(feature = "std"))]
-        use hashbrown::hash_map;
-
         self.0.iter().fold(
             UnorderedHashMap::<_, _, _>::with_hasher(self.0.hasher().clone()),
             |mut acc, (key, value)| {
                 let target_key = mapping_function(key);
                 match acc.entry(target_key) {
-                    hash_map::Entry::Occupied(mut occupied) => {
+                    Entry::Occupied(mut occupied) => {
                         let old_target_value = occupied.get_mut();
                         let new_target_value = reduce_function(old_target_value, value);
                         *old_target_value = new_target_value;
                     }
-                    hash_map::Entry::Vacant(vacant) => {
+                    Entry::Vacant(vacant) => {
                         let new_value = reduce_function(default_value, value);
                         vacant.insert(new_value);
                     }

@@ -10,7 +10,6 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
-import { ChildProcessWithoutNullStreams } from "child_process";
 
 let client: LanguageClient;
 
@@ -18,7 +17,7 @@ let client: LanguageClient;
 // assuming the workspace directory is inside the Cairo repository.
 function findDevLanguageServerAt(
   path: string,
-  depth: number
+  depth: number,
 ): string | undefined {
   if (depth == 0) {
     return undefined;
@@ -56,12 +55,12 @@ function isExecutable(path: string): boolean {
 function replacePathPlaceholders(path: string, root: string): string {
   return path
     .replace(/\${workspaceFolder}/g, root)
-    .replace(/\${userHome}/g, process.env.HOME ?? "");
+    .replace(/\${userHome}/g, process.env["HOME"] ?? "");
 }
 
 function findLanguageServerExecutable(
   config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ) {
   const root = rootPath(context);
   const configPath = config.get<string>("cairo1.languageServerPath");
@@ -78,8 +77,8 @@ function findLanguageServerExecutable(
 }
 
 async function findExecutableFromPathVar(name: string) {
-  const envPath = process.env.PATH || "";
-  const envExt = process.env.PATHEXT || "";
+  const envPath = process.env["PATH"] || "";
+  const envExt = process.env["PATHEXT"] || "";
   const pathDirs = envPath
     .replace(/["]+/g, "")
     .split(path.delimiter)
@@ -89,7 +88,7 @@ async function findExecutableFromPathVar(name: string) {
   pathDirs.map((d) =>
     extensions.map((ext) => {
       candidates.push(path.join(d, name + ext));
-    })
+    }),
   );
   const isExecutable = (path: string) =>
     fs.promises
@@ -98,7 +97,7 @@ async function findExecutableFromPathVar(name: string) {
       .catch(() => undefined);
   try {
     return await Promise.all(candidates.map(isExecutable)).then((values) =>
-      values.find((value) => !!value)
+      values.find((value) => !!value),
     );
   } catch (e) {
     return undefined;
@@ -110,9 +109,9 @@ async function findScarbExecutablePathInAsdfDir() {
     return undefined;
   }
 
-  let asdfDataDir = process.env.ASDF_DATA_DIR;
+  let asdfDataDir = process.env["ASDF_DATA_DIR"];
   if (!asdfDataDir) {
-    const home = process.env.HOME;
+    const home = process.env["HOME"];
     if (!home) {
       return undefined;
     }
@@ -130,7 +129,7 @@ async function findScarbExecutablePathInAsdfDir() {
 
 async function findScarbExecutablePath(
   config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ) {
   // Check config for scarb path.
   const root = rootPath(context);
@@ -161,7 +160,7 @@ function notifyScarbMissing(outputChannel: vscode.OutputChannel) {
 
 async function listScarbCommandsOutput(
   scarbPath: undefined | string,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ) {
   if (!scarbPath) {
     return undefined;
@@ -179,7 +178,7 @@ async function listScarbCommandsOutput(
 
 async function isScarbLsPresent(
   scarbPath: undefined | string,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ): Promise<boolean> {
   if (!scarbPath) {
     return false;
@@ -192,8 +191,8 @@ async function isScarbLsPresent(
     .filter((v) => !!v)
     .map((v) => JSON.parse(v))
     .some(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (commands: any) => !!commands["cairo-language-server"]
+      (commands: Record<string, unknown>) =>
+        !!commands["cairo-language-server"],
     );
 }
 
@@ -201,13 +200,13 @@ async function runStandaloneLs(
   scarbPath: undefined | string,
   outputChannel: vscode.OutputChannel,
   config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext
-): Promise<undefined | ChildProcessWithoutNullStreams> {
+  context: vscode.ExtensionContext,
+): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
   const executable = findLanguageServerExecutable(config, context);
   if (!executable) {
     outputChannel.appendLine(
       "Cairo language server was not found. Make sure cairo-lang-server is " +
-        "installed and that the configuration 'cairo1.languageServerPath' is correct."
+        "installed and that the configuration 'cairo1.languageServerPath' is correct.",
     );
     return;
   }
@@ -220,13 +219,13 @@ async function runStandaloneLs(
 async function runScarbLs(
   scarbPath: undefined | string,
   outputChannel: vscode.OutputChannel,
-  context: vscode.ExtensionContext
-): Promise<undefined | ChildProcessWithoutNullStreams> {
+  context: vscode.ExtensionContext,
+): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
   if (!scarbPath) {
     return;
   }
   outputChannel.appendLine(
-    "Cairo language server running from Scarb at: " + scarbPath
+    "Cairo language server running from Scarb at: " + scarbPath,
   );
   return child_process.spawn(scarbPath, ["cairo-language-server"], {
     cwd: rootPath(context),
@@ -242,7 +241,7 @@ async function getServerType(
   isScarbEnabled: boolean,
   scarbPath: string | undefined,
   configLanguageServerPath: string | undefined,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ) {
   if (!isScarbEnabled) return ServerType.Standalone;
   if (!(await isScarbProject()) && !!configLanguageServerPath) {
@@ -281,12 +280,12 @@ async function isScarbProject(): Promise<boolean> {
 async function setupLanguageServer(
   config: vscode.WorkspaceConfiguration,
   context: vscode.ExtensionContext,
-  outputChannel: vscode.OutputChannel
+  outputChannel: vscode.OutputChannel,
 ) {
   const isScarbEnabled = config.get<boolean>("cairo1.enableScarb") ?? false;
   const scarbPath = await findScarbExecutablePath(config, context);
   const configLanguageServerPath = config.get<string>(
-    "cairo1.languageServerPath"
+    "cairo1.languageServerPath",
   );
 
   if (!isScarbEnabled) {
@@ -297,12 +296,12 @@ async function setupLanguageServer(
     outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
   }
   const serverOptions: ServerOptions =
-    async (): Promise<ChildProcessWithoutNullStreams> => {
+    async (): Promise<child_process.ChildProcessWithoutNullStreams> => {
       const serverType = await getServerType(
         isScarbEnabled,
         scarbPath,
         configLanguageServerPath,
-        context
+        context,
       );
       let child;
       if (serverType === ServerType.Scarb) {
@@ -312,7 +311,7 @@ async function setupLanguageServer(
           scarbPath,
           outputChannel,
           config,
-          context
+          context,
         );
       }
       if (!child) {
@@ -328,7 +327,7 @@ async function setupLanguageServer(
           "Cairo language server exited with code " +
             code +
             " and signal" +
-            signal
+            signal,
         );
       });
 
@@ -347,52 +346,57 @@ async function setupLanguageServer(
     "cairoLanguageServer",
     "Cairo Language Server",
     serverOptions,
-    clientOptions
+    clientOptions,
   );
+
   client.registerFeature(new SemanticTokensFeature(client));
-  client.onReady().then(() => {
-    const myProvider = new (class
-      implements vscode.TextDocumentContentProvider
-    {
-      async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res: any = await client.sendRequest("vfs/provide", {
-          uri: uri.toString(),
-        });
-        return res.content;
+
+  const myProvider = new (class implements vscode.TextDocumentContentProvider {
+    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+      interface ProvideVirtualFileResponse {
+        content?: string;
       }
 
-      onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-      onDidChange = this.onDidChangeEmitter.event;
-    })();
-    client.onNotification("vfs/update", (param) => {
-      myProvider.onDidChangeEmitter.fire(param.uri);
-    });
-    vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
-
-    client.onNotification("scarb/could-not-find-scarb-executable", () =>
-      notifyScarbMissing(outputChannel)
-    );
-
-    client.onNotification("scarb/resolving-start", () => {
-      vscode.window.withProgress(
+      const res = await client.sendRequest<ProvideVirtualFileResponse>(
+        "vfs/provide",
         {
-          title: "Scarb is resolving the project...",
-          location: vscode.ProgressLocation.Notification,
-          cancellable: false,
+          uri: uri.toString(),
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        async (_progress, _token) => {
-          return new Promise((resolve) => {
-            client.onNotification("scarb/resolving-finish", () => {
-              resolve(null);
-            });
-          });
-        }
       );
-    });
+
+      return res.content ?? "";
+    }
+
+    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+    onDidChange = this.onDidChangeEmitter.event;
+  })();
+  client.onNotification("vfs/update", (param) => {
+    myProvider.onDidChangeEmitter.fire(param.uri);
   });
-  client.start();
+  vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+
+  client.onNotification("scarb/could-not-find-scarb-executable", () =>
+    notifyScarbMissing(outputChannel),
+  );
+
+  client.onNotification("scarb/resolving-start", () => {
+    vscode.window.withProgress(
+      {
+        title: "Scarb is resolving the project...",
+        location: vscode.ProgressLocation.Notification,
+        cancellable: false,
+      },
+      async () => {
+        return new Promise((resolve) => {
+          client.onNotification("scarb/resolving-finish", () => {
+            resolve(null);
+          });
+        });
+      },
+    );
+  });
+
+  await client.start();
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -404,7 +408,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await setupLanguageServer(config, context, outputChannel);
   } else {
     outputChannel.appendLine(
-      "Language server is not enabled. Use the cairo1.enableLanguageServer config"
+      "Language server is not enabled. Use the cairo1.enableLanguageServer config",
     );
   }
 }

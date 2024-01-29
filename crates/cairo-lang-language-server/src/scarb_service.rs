@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::CrateLongId;
-use lsp::Url;
 use scarb_metadata::Metadata;
+use tower_lsp::lsp_types::Url;
 
 use crate::NotificationService;
 

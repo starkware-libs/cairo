@@ -1,6 +1,6 @@
-use lsp::notification::Notification;
-use lsp::Url;
 use serde::{Deserialize, Serialize};
+use tower_lsp::lsp_types::notification::Notification;
+use tower_lsp::lsp_types::Url;
 
 #[derive(Debug)]
 pub enum UpdateVirtualFile {}
