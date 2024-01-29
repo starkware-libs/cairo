@@ -25,7 +25,7 @@ num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json = { workspace = true, default-features = true }
-sha3.workspace = true
+sha3 = { workspace = true, default-features = true }
 smol_str.workspace = true
 thiserror.workspace = true
 

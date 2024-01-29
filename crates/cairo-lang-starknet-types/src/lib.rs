@@ -9,7 +9,6 @@ pub mod allowed_libfuncs;
 pub mod casm_contract_class;
 pub mod compiler_version;
 pub mod contract_class;
-#[cfg(feature = "std")]
 pub mod keccak;
 
 #[cfg(feature = "std")]
