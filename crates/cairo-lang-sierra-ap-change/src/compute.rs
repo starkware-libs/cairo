@@ -1,5 +1,3 @@
-use std::collections::hash_map::Entry;
-
 use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -9,7 +7,7 @@ use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 
 use crate::ap_change_info::ApChangeInfo;
 use crate::core_libfunc_ap_change::{self, InvocationApChangeInfoProvider};
