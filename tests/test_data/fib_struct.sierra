@@ -8,8 +8,8 @@ libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc felt252_const<0> = felt252_const<0>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<examples::fib_struct::FibResult> = struct_construct<examples::fib_struct::FibResult>;
 libfunc store_temp<examples::fib_struct::FibResult> = store_temp<examples::fib_struct::FibResult>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
@@ -27,9 +27,9 @@ felt252_is_zero([3]) { fallthrough() 11([4]) }; // 2
 branch_align() -> (); // 3
 drop<felt252>([1]) -> (); // 4
 drop<felt252>([2]) -> (); // 5
-struct_construct<Unit>() -> ([5]); // 6
-felt252_const<0>() -> ([6]); // 7
-struct_construct<examples::fib_struct::FibResult>([0], [6], [5]) -> ([7]); // 8
+felt252_const<0>() -> ([5]); // 6
+struct_construct<Unit>() -> ([6]); // 7
+struct_construct<examples::fib_struct::FibResult>([0], [5], [6]) -> ([7]); // 8
 store_temp<examples::fib_struct::FibResult>([7]) -> ([7]); // 9
 return([7]); // 10
 branch_align() -> (); // 11
@@ -44,10 +44,10 @@ store_temp<felt252>([11]) -> ([11]); // 19
 function_call<user@examples::fib_struct::fib>([1], [9], [11]) -> ([12]); // 20
 struct_deconstruct<examples::fib_struct::FibResult>([12]) -> ([13], [14], [15]); // 21
 drop<Unit>([15]) -> (); // 22
-struct_construct<Unit>() -> ([16]); // 23
-felt252_const<1>() -> ([17]); // 24
-felt252_add([14], [17]) -> ([18]); // 25
-struct_construct<examples::fib_struct::FibResult>([13], [18], [16]) -> ([19]); // 26
+felt252_const<1>() -> ([16]); // 23
+felt252_add([14], [16]) -> ([17]); // 24
+struct_construct<Unit>() -> ([18]); // 25
+struct_construct<examples::fib_struct::FibResult>([13], [17], [18]) -> ([19]); // 26
 store_temp<examples::fib_struct::FibResult>([19]) -> ([19]); // 27
 return([19]); // 28
 
