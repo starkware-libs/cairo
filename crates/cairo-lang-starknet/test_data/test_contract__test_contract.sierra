@@ -1186,23 +1186,23 @@ struct_construct<Unit>() -> ([8]); // 931
 enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 932
 store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 933
 store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 934
-struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 935
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 936
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 945([12]) }; // 937
-branch_align() -> (); // 938
-unbox<felt252>([11]) -> ([13]); // 939
-rename<felt252>([13]) -> ([14]); // 940
-enum_init<core::option::Option::<core::felt252>, 0>([14]) -> ([15]); // 941
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 942
-store_temp<core::option::Option::<core::felt252>>([15]) -> ([15]); // 943
-return([10], [15]); // 944
-branch_align() -> (); // 945
-drop<Unit>([12]) -> (); // 946
-struct_construct<Unit>() -> ([16]); // 947
-enum_init<core::option::Option::<core::felt252>, 1>([16]) -> ([17]); // 948
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 949
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([10]) 944([11]) }; // 935
+branch_align() -> (); // 936
+unbox<felt252>([10]) -> ([12]); // 937
+rename<felt252>([12]) -> ([13]); // 938
+enum_init<core::option::Option::<core::felt252>, 0>([13]) -> ([14]); // 939
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([15]); // 940
+store_temp<core::array::Span::<core::felt252>>([15]) -> ([15]); // 941
+store_temp<core::option::Option::<core::felt252>>([14]) -> ([14]); // 942
+return([15], [14]); // 943
+branch_align() -> (); // 944
+drop<Unit>([11]) -> (); // 945
+struct_construct<Unit>() -> ([16]); // 946
+enum_init<core::option::Option::<core::felt252>, 1>([16]) -> ([17]); // 947
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([15]); // 948
+store_temp<core::array::Span::<core::felt252>>([15]) -> ([15]); // 949
 store_temp<core::option::Option::<core::felt252>>([17]) -> ([17]); // 950
-return([10], [17]); // 951
+return([15], [17]); // 951
 drop<felt252>([4]) -> (); // 952
 drop<felt252>([5]) -> (); // 953
 struct_deconstruct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([2]) -> ([6], [7]); // 954
@@ -1397,9 +1397,9 @@ enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contr
 branch_align() -> (); // 1143
 struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::__member_module_my_storage_var::ContractMemberState, Unit>>([9]) -> ([11], [12]); // 1144
 drop<Unit>([12]) -> (); // 1145
-struct_construct<Unit>() -> ([13]); // 1146
-struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([11], [5]) -> ([14]); // 1147
-struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, Unit>>([14], [13]) -> ([15]); // 1148
+struct_construct<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([11], [5]) -> ([13]); // 1146
+struct_construct<Unit>() -> ([14]); // 1147
+struct_construct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, Unit>>([13], [14]) -> ([15]); // 1148
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, ())>, 0>([15]) -> ([16]); // 1149
 store_temp<GasBuiltin>([6]) -> ([6]); // 1150
 store_temp<System>([7]) -> ([7]); // 1151
@@ -1482,36 +1482,36 @@ struct_construct<Unit>() -> ([8]); // 1227
 enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 1228
 store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 1229
 store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 1230
-struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 1231
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1232
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 1254([12]) }; // 1233
-branch_align() -> (); // 1234
-unbox<felt252>([11]) -> ([13]); // 1235
-rename<felt252>([13]) -> ([14]); // 1236
-store_temp<felt252>([14]) -> ([14]); // 1237
-felt252_is_zero([14]) { fallthrough() 1244([15]) }; // 1238
-branch_align() -> (); // 1239
-struct_construct<Unit>() -> ([16]); // 1240
-enum_init<core::bool, 1>([16]) -> ([17]); // 1241
-store_temp<core::bool>([17]) -> ([18]); // 1242
-jump() { 1249() }; // 1243
-branch_align() -> (); // 1244
-drop<NonZero<felt252>>([15]) -> (); // 1245
-struct_construct<Unit>() -> ([19]); // 1246
-enum_init<core::bool, 0>([19]) -> ([20]); // 1247
-store_temp<core::bool>([20]) -> ([18]); // 1248
-bool_not_impl([18]) -> ([21]); // 1249
-enum_init<core::option::Option::<core::bool>, 0>([21]) -> ([22]); // 1250
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1251
-store_temp<core::option::Option::<core::bool>>([22]) -> ([22]); // 1252
-return([10], [22]); // 1253
-branch_align() -> (); // 1254
-drop<Unit>([12]) -> (); // 1255
-struct_construct<Unit>() -> ([23]); // 1256
-enum_init<core::option::Option::<core::bool>, 1>([23]) -> ([24]); // 1257
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1258
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([10]) 1253([11]) }; // 1231
+branch_align() -> (); // 1232
+unbox<felt252>([10]) -> ([12]); // 1233
+rename<felt252>([12]) -> ([13]); // 1234
+store_temp<felt252>([13]) -> ([13]); // 1235
+felt252_is_zero([13]) { fallthrough() 1242([14]) }; // 1236
+branch_align() -> (); // 1237
+struct_construct<Unit>() -> ([15]); // 1238
+enum_init<core::bool, 1>([15]) -> ([16]); // 1239
+store_temp<core::bool>([16]) -> ([17]); // 1240
+jump() { 1247() }; // 1241
+branch_align() -> (); // 1242
+drop<NonZero<felt252>>([14]) -> (); // 1243
+struct_construct<Unit>() -> ([18]); // 1244
+enum_init<core::bool, 0>([18]) -> ([19]); // 1245
+store_temp<core::bool>([19]) -> ([17]); // 1246
+bool_not_impl([17]) -> ([20]); // 1247
+enum_init<core::option::Option::<core::bool>, 0>([20]) -> ([21]); // 1248
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([22]); // 1249
+store_temp<core::array::Span::<core::felt252>>([22]) -> ([22]); // 1250
+store_temp<core::option::Option::<core::bool>>([21]) -> ([21]); // 1251
+return([22], [21]); // 1252
+branch_align() -> (); // 1253
+drop<Unit>([11]) -> (); // 1254
+struct_construct<Unit>() -> ([23]); // 1255
+enum_init<core::option::Option::<core::bool>, 1>([23]) -> ([24]); // 1256
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([22]); // 1257
+store_temp<core::array::Span::<core::felt252>>([22]) -> ([22]); // 1258
 store_temp<core::option::Option::<core::bool>>([24]) -> ([24]); // 1259
-return([10], [24]); // 1260
+return([22], [24]); // 1260
 array_new<felt252>() -> ([5]); // 1261
 u128_to_felt252([4]) -> ([6]); // 1262
 array_append<felt252>([5], [6]) -> ([7]); // 1263
