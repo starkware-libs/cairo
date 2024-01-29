@@ -14,36 +14,39 @@ An enum is defined by the `enum` keyword.
 Here are a few examples of enum definitions:
 
 * An enum with only xref:unit-type.adoc[unit-type] variants:
-
-    ```rust
++
+[source,cairo]
+----
     enum Color {
         red: (),
         green: (),
         blue: (),
     }
-    ```
+----
 
 * An enum with only core type variants:
-
-    ```rust
++
+[source,cairo]
+----
     enum Status {
         /// Time passed since submission.
         Pending: u32,
         /// true for success, false for failure.
         Done: bool,
     }
-    ```
+----
 
 * An enum with members of other user-defined types:
-
-    ```rust
++
+[source,cairo]
+----
     enum Car {
         /// color
         Sedan: Color,
         /// color, number of doors
         Hatchback: (Color, u32),
     }
-    ```
+----
 
 == Usage
 
@@ -51,25 +54,27 @@ An enum is instantiated with the `EnumName::VariantName(value)` syntax, where `v
 the type of the variant `VariantName`.
 For example:
 
-```rust
+[source,cairo]
+----
 let red = Color::red(());
 let success = Status::Done(true);
 let red_sedan = Car::Sedan(Color::red(()));
 let blue_hatchback = Car::Hatchback((Color::blue(()), 5));
-```
+----
 
 To inspect an enum variable, it can be matched using the `match` keyword.
 A match expression must have an arm for each variant of the enum, that specifies the logic that
 should happen in the case the enum variable holds that variant.
 For example:
 
-```rust
+[source,cairo]
+----
 fn car_color(car: Car) -> Color {
     match car {
         Car::Sedan(color) => color,
         Car::Hatchback((color, _)) => color,
     }
 }
-```
+----
 
 For more details about match expressions, see xref:match-expressions.adoc[here].
