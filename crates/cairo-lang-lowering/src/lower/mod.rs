@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::vec;
 
 use block_builder::BlockBuilder;
@@ -2389,35 +2390,39 @@ fn lower_expr_struct_ctor(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_expr = UnorderedHashMap::<_, _>::from_iter(expr.members.iter().cloned());
-    let mut base_members_usages = if members.len() != member_expr.len() {
+    let mut member_expr_usages =
+        UnorderedHashMap::<_, _>::from_iter(expr.members.iter().map(|(id, expr)| {
+            let usage = lower_expr_to_var_usage(ctx, builder, *expr);
+            (*id, usage)
+        }));
+    if members.len() != member_expr_usages.len() {
         // Semantic model should have made sure base struct exist if some members are missing.
         let base_struct_usage = lower_expr_to_var_usage(ctx, builder, expr.base_struct.unwrap())?;
 
-        StructDestructure {
-            input: base_struct_usage.var_id,
-            var_reqs: members
-                .iter()
-                .map(|(_, member)| VarRequest { ty: member.ty, location })
-                .collect(),
+        for (base_member, (_, member)) in izip!(
+            StructDestructure {
+                input: base_struct_usage.var_id,
+                var_reqs: members
+                    .iter()
+                    .map(|(_, member)| VarRequest { ty: member.ty, location })
+                    .collect(),
+            }
+            .add(ctx, &mut builder.statements),
+            members.iter()
+        ) {
+            match member_expr_usages.entry(member.id) {
+                Entry::Occupied(_) => {}
+                Entry::Vacant(entry) => {
+                    entry.insert(Ok(VarUsage { var_id: base_member, location }));
+                }
+            }
         }
-        .add(ctx, &mut builder.statements)
-    } else {
-        vec![]
-    };
-    base_members_usages.reverse();
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| {
-                    if member_expr.contains_key(&member.id) {
-                        base_members_usages.pop();
-                        lower_expr_to_var_usage(ctx, builder, member_expr[&member.id])
-                    } else {
-                        Ok(VarUsage { var_id: base_members_usages.pop().unwrap(), location })
-                    }
-                })
+                .map(|(_, member)| member_expr_usages.remove(&member.id).unwrap())
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,
