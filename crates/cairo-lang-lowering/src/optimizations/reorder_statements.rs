@@ -188,12 +188,4 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
         info
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _data: &VarUsage,
-    ) -> Self::Info {
-        unreachable!("Panics should have been stripped in a previous phase.");
-    }
 }

@@ -194,14 +194,6 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         info
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _data: &VarUsage,
-    ) -> Self::Info {
-        unreachable!("Panic should have been lowered.")
-    }
 }
 
 impl<'a> DestructAdder<'a> {

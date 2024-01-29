@@ -255,14 +255,4 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Self::Info { candidate: None, demand }
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        data: &VarUsage,
-    ) -> Self::Info {
-        let mut demand = MatchOptimizerDemand::default();
-        demand.variables_used(self, std::iter::once((&data.var_id, ())));
-        Self::Info { candidate: None, demand }
-    }
 }

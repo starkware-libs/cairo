@@ -206,14 +206,6 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _var: &VarUsage,
-    ) -> Self::Info {
-        unreachable!("Panics should have been stripped in a previous phase.")
-    }
 }
 
 struct BranchInfo {
