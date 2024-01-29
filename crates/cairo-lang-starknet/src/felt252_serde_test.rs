@@ -5,11 +5,12 @@ use cairo_lang_sierra::extensions::GenericLibfunc;
 use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use cairo_lang_starknet_types::compiler_version;
+use cairo_lang_starknet_types::felt252_serde::{
+    sierra_from_felt252s, sierra_to_felt252s, Felt252Serde, SERDE_SUPPORTED_LONG_IDS,
+};
 use test_case::test_case;
 
-use super::{sierra_from_felt252s, sierra_to_felt252s, SERDE_SUPPORTED_LONG_IDS};
-use crate::compiler_version;
-use crate::felt252_serde::Felt252Serde;
 use crate::test_utils::{get_contract_file_name_from_path, get_example_file_path};
 
 #[test_case("test_contract::test_contract")]
@@ -44,7 +45,6 @@ fn test_felt252_serde(example_contract_path: &str) {
 }
 
 #[test]
-
 fn test_libfunc_serde() {
     let mut output = vec![];
     for libfunc_id in CoreLibfunc::supported_ids() {

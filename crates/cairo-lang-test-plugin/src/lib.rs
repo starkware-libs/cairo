@@ -15,7 +15,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
-use cairo_lang_starknet::casm_contract_class_from_contract_class::ENTRY_POINT_COST;
+use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };

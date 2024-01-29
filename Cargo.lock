@@ -915,16 +915,31 @@ dependencies = [
 name = "cairo-lang-starknet-types"
 version = "2.5.3"
 dependencies = [
+ "anyhow",
  "cairo-felt",
  "cairo-lang-casm",
+ "cairo-lang-diagnostics",
+ "cairo-lang-lowering",
+ "cairo-lang-semantic",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "convert_case",
  "hashbrown 0.14.3",
  "itertools 0.11.0",
  "num-bigint",
+ "num-integer",
+ "num-traits 0.2.17",
+ "once_cell",
+ "pretty_assertions",
  "serde",
  "serde_json",
+ "sha3",
+ "smol_str",
  "starknet-crypto",
+ "test-case",
+ "thiserror",
 ]
 
 [[package]]

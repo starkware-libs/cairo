@@ -15,23 +15,27 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_starknet_types::allowed_libfuncs::AllowedLibfuncsError;
+#[cfg(feature = "serde")]
+use cairo_lang_starknet_types::allowed_libfuncs::{
+    validate_compatible_sierra_version, ListSelector,
+};
 use cairo_lang_starknet_types::compiler_version::{self};
 use cairo_lang_starknet_types::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
+};
+use cairo_lang_starknet_types::felt252_serde::{
+    sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError,
 };
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
 use crate::abi_builder::AbiBuilder;
 use crate::aliased::Aliased;
-use crate::allowed_libfuncs::AllowedLibfuncsError;
-#[cfg(feature = "serde")]
-use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::contract::{
     find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
     ContractDeclaration,
 };
-use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
 

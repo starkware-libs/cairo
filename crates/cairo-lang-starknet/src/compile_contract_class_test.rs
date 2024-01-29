@@ -1,11 +1,13 @@
+use cairo_lang_starknet_types::allowed_libfuncs::{
+    validate_compatible_sierra_version, ListSelector,
+};
+use cairo_lang_starknet_types::felt252_serde::sierra_from_felt252s;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::compiler_version;
 use crate::contract_class::ContractClass;
-use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::{
     get_contract_file_name_from_path, get_example_file_path, get_test_contract,
 };
