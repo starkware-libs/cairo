@@ -1140,15 +1140,76 @@ End:
 
 blk6:
 Statements:
-  (v5: core::felt252) <- test::foo(v4)
 End:
-  Goto(blk5, {v5 -> v6})
+  Goto(blk9, {})
 
 blk7:
 Statements:
   (v8: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Goto(blk6, {v8 -> v4})
+
+blk8:
+Statements:
+End:
+  Goto(blk5, {v5 -> v6})
+
+blk9:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk8, {v9 -> v5})
+
+blk11:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk12,
+    IsZeroResult::NonZero(v10) => blk13,
+  })
+
+blk12:
+Statements:
+  (v11: core::felt252) <- 1u
+End:
+  Goto(blk16, {})
+
+blk13:
+Statements:
+  (v15: core::felt252) <- 1u
+End:
+  Goto(blk10, {v15 -> v9})
+
+blk14:
+Statements:
+End:
+  Goto(blk10, {v14 -> v9})
+
+blk15:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk16:
+Statements:
+  (v16: core::felt252) <- core::felt252_sub(v4, v11)
+End:
+  Goto(blk15, {v16 -> v12})
+
+blk17:
+Statements:
+End:
+  Goto(blk14, {v13 -> v14})
+
+blk18:
+Statements:
+  (v17: core::felt252) <- test::bar(v12)
+End:
+  Goto(blk17, {v17 -> v13})
 
 //! > lowering_diagnostics
 
@@ -1184,9 +1245,189 @@ End:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- test::foo(v0)
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
 End:
   Return(v1)
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk3, {v3 -> v2})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk5, {v4 -> v3})
+
+blk8:
+Statements:
+End:
+  Goto(blk10, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk7, {v5 -> v4})
+
+blk10:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk11:
+Statements:
+End:
+  Goto(blk9, {v6 -> v5})
+
+blk12:
+Statements:
+End:
+  Goto(blk14, {})
+
+blk13:
+Statements:
+End:
+  Goto(blk11, {v7 -> v6})
+
+blk14:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk15:
+Statements:
+End:
+  Goto(blk13, {v8 -> v7})
+
+blk16:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk17:
+Statements:
+End:
+  Goto(blk15, {v9 -> v8})
+
+blk18:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk19:
+Statements:
+End:
+  Goto(blk17, {v10 -> v9})
+
+blk20:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk21:
+Statements:
+End:
+  Goto(blk19, {v11 -> v10})
+
+blk22:
+Statements:
+End:
+  Goto(blk24, {})
+
+blk23:
+Statements:
+End:
+  Goto(blk21, {v12 -> v11})
+
+blk24:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk25:
+Statements:
+End:
+  Goto(blk23, {v13 -> v12})
+
+blk26:
+Statements:
+End:
+  Goto(blk28, {})
+
+blk27:
+Statements:
+End:
+  Goto(blk25, {v14 -> v13})
+
+blk28:
+Statements:
+End:
+  Goto(blk30, {})
+
+blk29:
+Statements:
+End:
+  Goto(blk27, {v15 -> v14})
+
+blk30:
+Statements:
+End:
+  Goto(blk32, {})
+
+blk31:
+Statements:
+End:
+  Goto(blk29, {v16 -> v15})
+
+blk32:
+Statements:
+End:
+  Goto(blk34, {})
+
+blk33:
+Statements:
+End:
+  Goto(blk31, {v17 -> v16})
+
+blk34:
+Statements:
+End:
+  Goto(blk36, {})
+
+blk35:
+Statements:
+End:
+  Goto(blk33, {v18 -> v17})
+
+blk36:
+Statements:
+  (v19: core::felt252) <- test::foo(v0)
+End:
+  Goto(blk35, {v19 -> v18})
 
 //! > lowering_diagnostics
 
@@ -1434,50 +1675,9 @@ End:
 
 blk2:
 Statements:
-End:
-  Goto(blk4, {})
-
-blk3:
-Statements:
+  (v2: core::felt252) <- test::baz(v0)
 End:
   Goto(blk1, {v2 -> v1})
-
-blk4:
-Statements:
-End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v3) => blk6,
-  })
-
-blk5:
-Statements:
-  (v4: core::felt252) <- 1u
-End:
-  Goto(blk9, {})
-
-blk6:
-Statements:
-  (v8: core::felt252) <- 1u
-End:
-  Goto(blk3, {v8 -> v2})
-
-blk7:
-Statements:
-End:
-  Goto(blk3, {v7 -> v2})
-
-blk8:
-Statements:
-  (v6: core::felt252) <- test::bar(v5)
-End:
-  Goto(blk7, {v6 -> v7})
-
-blk9:
-Statements:
-  (v9: core::felt252) <- core::felt252_sub(v0, v4)
-End:
-  Goto(blk8, {v9 -> v5})
 
 //! > lowering_diagnostics
 
@@ -1571,15 +1771,96 @@ End:
 
 blk8:
 Statements:
-  (v6: core::felt252) <- test::foo(v5)
 End:
-  Goto(blk7, {v6 -> v7})
+  Goto(blk11, {})
 
 blk9:
 Statements:
   (v9: core::felt252) <- core::felt252_sub(v0, v4)
 End:
   Goto(blk8, {v9 -> v5})
+
+blk10:
+Statements:
+End:
+  Goto(blk7, {v6 -> v7})
+
+blk11:
+Statements:
+End:
+  Goto(blk13, {})
+
+blk12:
+Statements:
+End:
+  Goto(blk10, {v10 -> v6})
+
+blk13:
+Statements:
+End:
+  Goto(blk15, {})
+
+blk14:
+Statements:
+End:
+  Goto(blk12, {v11 -> v10})
+
+blk15:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v5) {
+    IsZeroResult::Zero => blk16,
+    IsZeroResult::NonZero(v12) => blk17,
+  })
+
+blk16:
+Statements:
+  (v13: core::felt252) <- 1u
+End:
+  Goto(blk20, {})
+
+blk17:
+Statements:
+  (v17: core::felt252) <- 1u
+End:
+  Goto(blk14, {v17 -> v11})
+
+blk18:
+Statements:
+End:
+  Goto(blk14, {v16 -> v11})
+
+blk19:
+Statements:
+End:
+  Goto(blk22, {})
+
+blk20:
+Statements:
+  (v18: core::felt252) <- core::felt252_sub(v5, v13)
+End:
+  Goto(blk19, {v18 -> v14})
+
+blk21:
+Statements:
+End:
+  Goto(blk18, {v15 -> v16})
+
+blk22:
+Statements:
+End:
+  Goto(blk24, {})
+
+blk23:
+Statements:
+End:
+  Goto(blk21, {v19 -> v15})
+
+blk24:
+Statements:
+  (v20: core::felt252) <- test::baz(v14)
+End:
+  Goto(blk23, {v20 -> v19})
 
 //! > lowering_diagnostics
 

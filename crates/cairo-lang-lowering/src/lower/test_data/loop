@@ -697,9 +697,9 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr1]()
+  (v1: ()) <- struct_construct()
 End:
-  Return(v0)
+  Return(v1)
 
 
 Generated lowering for source location:
