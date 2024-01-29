@@ -27,18 +27,13 @@ use itertools::Itertools;
 pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashMap<Key, Value, BH>(HashMap<Key, Value, BH>);
+pub struct UnorderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
+    HashMap<Key, Value, BH>,
+);
 
 impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
     fn with_hasher(hash_builder: BH) -> Self {
         Self(HashMap::<Key, Value, BH>::with_hasher(hash_builder))
-    }
-}
-
-#[cfg(feature = "std")]
-impl<Key, Value> UnorderedHashMap<Key, Value> {
-    pub fn new() -> Self {
-        Self(HashMap::new())
     }
 }
 
@@ -276,8 +271,13 @@ where
 }
 
 impl<Key, Value, BH: Default> Default for UnorderedHashMap<Key, Value, BH> {
+    #[cfg(feature = "std")]
     fn default() -> Self {
         Self(Default::default())
+    }
+    #[cfg(not(feature = "std"))]
+    fn default() -> Self {
+        Self(HashMap::with_hasher(Default::default()))
     }
 }
 

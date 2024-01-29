@@ -21,27 +21,15 @@ struct XY {
     y: u32,
 }
 
-/// A utility function for this test module to create an empty hashmap based on the configuration
-/// (std/no-std)
-#[cfg(not(feature = "std"))]
-fn new_hashmap<K, V>() -> UnorderedHashMap<K, V, hashbrown::hash_map::DefaultHashBuilder> {
-    let hasher = hashbrown::hash_map::DefaultHashBuilder::default();
-    UnorderedHashMap::with_hasher(hasher)
-}
-#[cfg(feature = "std")]
-fn new_hashmap<K, V>() -> UnorderedHashMap<K, V> {
-    UnorderedHashMap::new()
-}
-
 #[test]
 fn test_map() {
-    let mut source = new_hashmap();
+    let mut source = UnorderedHashMap::<_, _>::default();
     source.insert(20, 1);
     source.insert(8, 3);
     source.insert(9, 5);
     source.insert(11, 5);
     let target = source.map(|x| x * 2);
-    let mut expected_target = new_hashmap();
+    let mut expected_target = UnorderedHashMap::default();
     expected_target.insert(11, 10);
     expected_target.insert(20, 2);
     expected_target.insert(9, 10);
@@ -52,13 +40,13 @@ fn test_map() {
 
 #[test]
 fn test_aggregate_by() {
-    let mut source = new_hashmap();
+    let mut source = UnorderedHashMap::<_, _>::default();
     source.insert(20, 1);
     source.insert(8, 3);
     source.insert(9, 5);
     source.insert(11, 5);
     let target = source.aggregate_by(|x| *x < 10, |x, y| x + y, &0);
-    let mut expected_target = new_hashmap();
+    let mut expected_target = UnorderedHashMap::default();
     expected_target.insert(true, 8);
     expected_target.insert(false, 6);
 
@@ -67,7 +55,7 @@ fn test_aggregate_by() {
 
 #[test]
 fn test_iter_sorted() {
-    let mut unordered = new_hashmap();
+    let mut unordered = UnorderedHashMap::<_, _>::default();
     unordered.insert(XY { x: 11, y: 0 }, 0);
     unordered.insert(XY { x: 11, y: 5 }, 0);
     unordered.insert(XY { x: 12, y: 2 }, 0);
@@ -83,7 +71,7 @@ fn test_iter_sorted() {
 
 #[test]
 fn test_into_iter_sorted() {
-    let mut unordered = new_hashmap();
+    let mut unordered = UnorderedHashMap::<_, _>::default();
     unordered.insert(XY { x: 11, y: 0 }, 0);
     unordered.insert(XY { x: 11, y: 5 }, 0);
     unordered.insert(XY { x: 12, y: 2 }, 0);
@@ -99,7 +87,7 @@ fn test_into_iter_sorted() {
 
 #[test]
 fn test_iter_sorted_by_key() {
-    let mut unordered = new_hashmap();
+    let mut unordered = UnorderedHashMap::<_, _>::default();
     unordered.insert(XY { x: 11, y: 0 }, 4); // sum = 15
     unordered.insert(XY { x: 11, y: 5 }, 7); // sum = 23
     unordered.insert(XY { x: 12, y: 2 }, 5); // sum = 19
@@ -116,7 +104,7 @@ fn test_iter_sorted_by_key() {
 
 #[test]
 fn test_into_iter_sorted_by_key() {
-    let mut unordered = new_hashmap();
+    let mut unordered = UnorderedHashMap::<_, _>::default();
     unordered.insert(XY { x: 11, y: 0 }, 4); // sum = 15
     unordered.insert(XY { x: 11, y: 5 }, 7); // sum = 23
     unordered.insert(XY { x: 12, y: 2 }, 5); // sum = 19
@@ -133,7 +121,7 @@ fn test_into_iter_sorted_by_key() {
 
 #[test]
 fn test_filter() {
-    let mut unordered = new_hashmap();
+    let mut unordered = UnorderedHashMap::<_, _>::default();
     unordered.insert(XY { x: 11, y: 0 }, 4);
     unordered.insert(XY { x: 11, y: 5 }, 7);
     unordered.insert(XY { x: 12, y: 2 }, 5);
@@ -142,7 +130,7 @@ fn test_filter() {
 
     let filtered = unordered.filter(|k, v| k.x != 11 && *v != 9);
 
-    let mut expected = new_hashmap();
+    let mut expected = UnorderedHashMap::default();
     expected.insert(XY { x: 12, y: 2 }, 5);
     expected.insert(XY { x: 10, y: 8 }, 3);
 

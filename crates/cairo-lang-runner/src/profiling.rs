@@ -172,7 +172,7 @@ impl ProfilingInfoProcessor {
                 .map(|concrete_libfunc| (concrete_libfunc.long_id.to_string().into(), 0))
                 .collect::<UnorderedHashMap<SmolStr, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
         let mut generic_libfuncs = if params.process_by_generic_libfunc {
@@ -182,7 +182,7 @@ impl ProfilingInfoProcessor {
                 .map(|generic_libfunc| (generic_libfunc.long_id.generic_id.0.clone(), 0))
                 .collect::<UnorderedHashMap<SmolStr, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
         let mut user_functions = if params.process_by_user_function {
@@ -193,10 +193,10 @@ impl ProfilingInfoProcessor {
                 .map(|(idx, _)| (idx, 0))
                 .collect::<UnorderedHashMap<usize, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
-        let mut cairo_functions = UnorderedHashMap::new();
+        let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         let mut return_weight = 0;
         let mut sierra_statements_weights = OrderedHashMap::default();
 

@@ -381,9 +381,9 @@ pub fn priv_trait_semantic_definition_data(
     // the item instead of all the module data.
     let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
-    let mut function_asts = OrderedHashMap::new();
-    let mut item_type_asts = OrderedHashMap::new();
-    let mut trait_item_names = OrderedHashSet::new();
+    let mut function_asts = OrderedHashMap::default();
+    let mut item_type_asts = OrderedHashMap::default();
+    let mut trait_item_names = OrderedHashSet::<_>::default();
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {

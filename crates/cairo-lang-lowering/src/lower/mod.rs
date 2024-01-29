@@ -2146,7 +2146,7 @@ fn lower_expr_match_felt252(
         ));
     }
     let mut max = 0;
-    let mut literals_to_arm_map = UnorderedHashMap::new();
+    let mut literals_to_arm_map = UnorderedHashMap::default();
     let mut otherwise_exist = false;
     for (arm_index, arm) in expr.arms.iter().enumerate() {
         for pattern in arm.patterns.iter() {

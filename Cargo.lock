@@ -435,7 +435,6 @@ version = "2.5.1"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
- "hashbrown 0.14.3",
  "indoc",
  "itertools 0.11.0",
  "num-bigint",
