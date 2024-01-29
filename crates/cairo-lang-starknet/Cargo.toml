@@ -13,9 +13,6 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
 cairo-lang-starknet-types= { path = "../cairo-lang-starknet-types", version = "2.5.3" }
 itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint = { workspace = true }
-num-traits = { workspace = true }
-starknet-crypto = { workspace = true }
-hashbrown = { workspace = true }
 
 # Optional std
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3", optional = true }
@@ -27,18 +24,14 @@ cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.5.3", option
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3", optional = true }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3", optional = true }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.5.3", optional = true }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.5.3", optional = true }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3", optional = true }
 once_cell = { workspace = true, optional = true }
-sha3 = { workspace = true, optional = true }
 smol_str = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 indent = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 const_format = { workspace = true, optional = true }
-convert_case = { workspace = true, optional = true }
 indoc = { workspace = true, optional = true }
-num-integer = { workspace = true, optional = true }
 
 # Optional serde
 serde = { workspace = true, optional = true }
@@ -59,9 +52,7 @@ default = ["std", "serde"]
 serde = ["dep:serde", "dep:serde_json", "cairo-lang-starknet-types/serde"]
 std = [
   # The ones used in no_std
-  "cairo-lang-casm/std",
   "cairo-lang-utils/std",
-  "num-traits/std",
   "num-bigint/std",
   # The ones used in serde
   "serde?/std",
@@ -76,16 +67,12 @@ std = [
   "dep:cairo-lang-semantic",
   "dep:cairo-lang-sierra",
   "dep:cairo-lang-sierra-generator",
-  "dep:cairo-lang-sierra-to-casm",
   "dep:cairo-lang-syntax",
   "dep:once_cell",
-  "dep:sha3",
   "dep:smol_str",
   "dep:thiserror",
   "dep:indent",
   "dep:anyhow",
   "dep:const_format",
-  "dep:convert_case",
   "dep:indoc",
-  "dep:num-integer",
 ]
