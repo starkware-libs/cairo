@@ -5814,66 +5814,62 @@ rename<Array<felt252>>([14]) -> ([10]); // 5250
 rename<Array<felt252>>([15]) -> ([11]); // 5251
 struct_construct<Unit>() -> ([17]); // 5252
 return([10], [11], [17]); // 5253
-drop<Array<felt252>>([1]) -> (); // 5254
-drop<Array<felt252>>([2]) -> (); // 5255
-enum_match<cairo_level_tests::components::ownable::ownable::Event>([0]) { }; // 5256
-drop<Array<felt252>>([1]) -> (); // 5257
-drop<Array<felt252>>([2]) -> (); // 5258
-enum_match<cairo_level_tests::components::mintable::mintable::Event>([0]) { }; // 5259
-dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([0], [3]); // 5260
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([4], [5], [6]); // 5261
-drop<ContractAddress>([5]) -> (); // 5262
-drop<core::integer::u256>([6]) -> (); // 5263
-store_temp<ContractAddress>([4]) -> ([4]); // 5264
-store_temp<Array<felt252>>([2]) -> ([2]); // 5265
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 5266
-drop<Unit>([8]) -> (); // 5267
-dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([0], [9]); // 5268
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([9]) -> ([10], [11], [12]); // 5269
-drop<ContractAddress>([10]) -> (); // 5270
-drop<core::integer::u256>([12]) -> (); // 5271
-store_temp<ContractAddress>([11]) -> ([11]); // 5272
-store_temp<Array<felt252>>([7]) -> ([7]); // 5273
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([11], [7]) -> ([13], [14]); // 5274
-drop<Unit>([14]) -> (); // 5275
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([15], [16], [17]); // 5276
-drop<ContractAddress>([15]) -> (); // 5277
-drop<ContractAddress>([16]) -> (); // 5278
-store_temp<core::integer::u256>([17]) -> ([17]); // 5279
-store_temp<Array<felt252>>([13]) -> ([13]); // 5280
-function_call<user@core::integer::u256Serde::serialize>([17], [13]) -> ([18], [19]); // 5281
-drop<Unit>([19]) -> (); // 5282
-struct_construct<Unit>() -> ([20]); // 5283
-store_temp<Array<felt252>>([1]) -> ([1]); // 5284
-store_temp<Array<felt252>>([18]) -> ([18]); // 5285
-return([1], [18], [20]); // 5286
-dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([0], [3]); // 5287
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([3]) -> ([4], [5], [6]); // 5288
-drop<ContractAddress>([5]) -> (); // 5289
-drop<core::integer::u256>([6]) -> (); // 5290
-store_temp<ContractAddress>([4]) -> ([4]); // 5291
-store_temp<Array<felt252>>([2]) -> ([2]); // 5292
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 5293
-drop<Unit>([8]) -> (); // 5294
-dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([0], [9]); // 5295
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([9]) -> ([10], [11], [12]); // 5296
-drop<ContractAddress>([10]) -> (); // 5297
-drop<core::integer::u256>([12]) -> (); // 5298
-store_temp<ContractAddress>([11]) -> ([11]); // 5299
-store_temp<Array<felt252>>([7]) -> ([7]); // 5300
-function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([11], [7]) -> ([13], [14]); // 5301
-drop<Unit>([14]) -> (); // 5302
-struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([15], [16], [17]); // 5303
-drop<ContractAddress>([15]) -> (); // 5304
-drop<ContractAddress>([16]) -> (); // 5305
-store_temp<core::integer::u256>([17]) -> ([17]); // 5306
-store_temp<Array<felt252>>([13]) -> ([13]); // 5307
-function_call<user@core::integer::u256Serde::serialize>([17], [13]) -> ([18], [19]); // 5308
-drop<Unit>([19]) -> (); // 5309
-struct_construct<Unit>() -> ([20]); // 5310
-store_temp<Array<felt252>>([1]) -> ([1]); // 5311
-store_temp<Array<felt252>>([18]) -> ([18]); // 5312
-return([1], [18], [20]); // 5313
+enum_match<cairo_level_tests::components::ownable::ownable::Event>([0]) { }; // 5254
+enum_match<cairo_level_tests::components::mintable::mintable::Event>([0]) { }; // 5255
+dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([0], [3]); // 5256
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([3]) -> ([4], [5], [6]); // 5257
+drop<ContractAddress>([5]) -> (); // 5258
+drop<core::integer::u256>([6]) -> (); // 5259
+store_temp<ContractAddress>([4]) -> ([4]); // 5260
+store_temp<Array<felt252>>([2]) -> ([2]); // 5261
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 5262
+drop<Unit>([8]) -> (); // 5263
+dup<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([0], [9]); // 5264
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([9]) -> ([10], [11], [12]); // 5265
+drop<ContractAddress>([10]) -> (); // 5266
+drop<core::integer::u256>([12]) -> (); // 5267
+store_temp<ContractAddress>([11]) -> ([11]); // 5268
+store_temp<Array<felt252>>([7]) -> ([7]); // 5269
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([11], [7]) -> ([13], [14]); // 5270
+drop<Unit>([14]) -> (); // 5271
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>([0]) -> ([15], [16], [17]); // 5272
+drop<ContractAddress>([15]) -> (); // 5273
+drop<ContractAddress>([16]) -> (); // 5274
+store_temp<core::integer::u256>([17]) -> ([17]); // 5275
+store_temp<Array<felt252>>([13]) -> ([13]); // 5276
+function_call<user@core::integer::u256Serde::serialize>([17], [13]) -> ([18], [19]); // 5277
+drop<Unit>([19]) -> (); // 5278
+struct_construct<Unit>() -> ([20]); // 5279
+store_temp<Array<felt252>>([1]) -> ([1]); // 5280
+store_temp<Array<felt252>>([18]) -> ([18]); // 5281
+return([1], [18], [20]); // 5282
+dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([0], [3]); // 5283
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([3]) -> ([4], [5], [6]); // 5284
+drop<ContractAddress>([5]) -> (); // 5285
+drop<core::integer::u256>([6]) -> (); // 5286
+store_temp<ContractAddress>([4]) -> ([4]); // 5287
+store_temp<Array<felt252>>([2]) -> ([2]); // 5288
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([4], [2]) -> ([7], [8]); // 5289
+drop<Unit>([8]) -> (); // 5290
+dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([0], [9]); // 5291
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([9]) -> ([10], [11], [12]); // 5292
+drop<ContractAddress>([10]) -> (); // 5293
+drop<core::integer::u256>([12]) -> (); // 5294
+store_temp<ContractAddress>([11]) -> ([11]); // 5295
+store_temp<Array<felt252>>([7]) -> ([7]); // 5296
+function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>([11], [7]) -> ([13], [14]); // 5297
+drop<Unit>([14]) -> (); // 5298
+struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>([0]) -> ([15], [16], [17]); // 5299
+drop<ContractAddress>([15]) -> (); // 5300
+drop<ContractAddress>([16]) -> (); // 5301
+store_temp<core::integer::u256>([17]) -> ([17]); // 5302
+store_temp<Array<felt252>>([13]) -> ([13]); // 5303
+function_call<user@core::integer::u256Serde::serialize>([17], [13]) -> ([18], [19]); // 5304
+drop<Unit>([19]) -> (); // 5305
+struct_construct<Unit>() -> ([20]); // 5306
+store_temp<Array<felt252>>([1]) -> ([1]); // 5307
+store_temp<Array<felt252>>([18]) -> ([18]); // 5308
+return([1], [18], [20]); // 5309
 
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::__wrapper__ImplGetSupply__get_total_supply_plus_1@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>@98([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -5982,6 +5978,6 @@ core::traits::TIntoT::<cairo_level_tests::contracts::mintable::mintable_erc20_ow
 cairo_level_tests::contracts::mintable::mintable_erc20_ownable::EventIsEvent::append_keys_and_data@5190([0]: cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
 cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data@5228([0]: cairo_level_tests::components::erc20::erc20::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
 cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data@5254([0]: cairo_level_tests::components::ownable::ownable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::components::mintable::mintable::EventIsEvent::append_keys_and_data@5257([0]: cairo_level_tests::components::mintable::mintable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::components::erc20::erc20::TransferEventIsEvent::append_keys_and_data@5260([0]: cairo_level_tests::components::erc20::erc20::TransferEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-cairo_level_tests::components::erc20::erc20::ApprovalEventIsEvent::append_keys_and_data@5287([0]: cairo_level_tests::components::erc20::erc20::ApprovalEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::components::mintable::mintable::EventIsEvent::append_keys_and_data@5255([0]: cairo_level_tests::components::mintable::mintable::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::components::erc20::erc20::TransferEventIsEvent::append_keys_and_data@5256([0]: cairo_level_tests::components::erc20::erc20::TransferEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
+cairo_level_tests::components::erc20::erc20::ApprovalEventIsEvent::append_keys_and_data@5283([0]: cairo_level_tests::components::erc20::erc20::ApprovalEvent, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
