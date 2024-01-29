@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -1232,10 +1232,10 @@ fn get_variant_to_arm_map<'a>(
             }
 
             match map.entry(enum_pattern.variant.clone()) {
-                std::collections::hash_map::Entry::Occupied(_) => {
+                Entry::Occupied(_) => {
                     ctx.diagnostics.report(pattern.stable_ptr().untyped(), UnreachableMatchArm);
                 }
-                std::collections::hash_map::Entry::Vacant(entry) => {
+                Entry::Vacant(entry) => {
                     entry.insert(PatternPath { arm_index, pattern_index });
                 }
             };
@@ -1266,8 +1266,8 @@ fn insert_tuple_path_patterns(
     // if the path is the same length as the tuple's patterns, we have reached the end of the path
     if index == patterns.len() {
         match map.entry(path) {
-            std::collections::hash_map::Entry::Occupied(_) => {}
-            std::collections::hash_map::Entry::Vacant(entry) => {
+            Entry::Occupied(_) => {}
+            Entry::Vacant(entry) => {
                 entry.insert(pattern_path.clone());
             }
         };

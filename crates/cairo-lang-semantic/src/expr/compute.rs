@@ -22,7 +22,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils as utils;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -222,7 +223,9 @@ impl Environment {
         ast_param: &ast::Param,
         function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
-        if let Entry::Vacant(entry) = self.variables.entry(semantic_param.name.clone()) {
+        if let utils::ordered_hash_map::Entry::Vacant(entry) =
+            self.variables.entry(semantic_param.name.clone())
+        {
             entry.insert(Variable::Param(semantic_param));
             Ok(())
         } else {
@@ -911,7 +914,7 @@ fn compute_expr_match_semantic(
                         let variables = pattern.variables(&new_ctx.patterns);
                         for variable in variables {
                             match arm_patterns_variables.entry(variable.name.clone()) {
-                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                utils::unordered_hash_map::Entry::Occupied(entry) => {
                                     let get_location = || variable.stable_ptr.lookup(db.upcast());
                                     let var = entry.get();
                                     let expected_ty = var.ty;
@@ -927,7 +930,7 @@ fn compute_expr_match_semantic(
                                             .report(&get_location(), InconsistentBinding);
                                     }
                                 }
-                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                utils::unordered_hash_map::Entry::Vacant(entry) => {
                                     entry.insert(variable.var.clone());
                                 }
                             }
