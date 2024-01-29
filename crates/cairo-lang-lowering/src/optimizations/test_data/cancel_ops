@@ -147,21 +147,18 @@ End:
 blk1:
 Statements:
   (v2: core::felt252) <- 0u
-  (v3: (core::felt252,)) <- struct_construct(v2)
 End:
-  Goto(blk3, {v3 -> v5})
+  Goto(blk3, {v2 -> v7})
 
 blk2:
 Statements:
-  (v4: (core::felt252,)) <- struct_construct(v0)
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v0 -> v7})
 
 blk3:
 Statements:
-  (v6: core::felt252) <- struct_destructure(v5)
 End:
-  Return(v6)
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -500,49 +497,107 @@ End:
 
 //! > ==========================================================================
 
-//! > Test variable renamed twice.
+//! > Test destructure after merge.
 
 //! > test_runner_name
 test_cancel_ops
 
 //! > function
-fn foo(a: (felt252, felt252)) -> (felt252, felt252) {
-  let (b, c) = a;
-  let a = (b, c);
-  let (d, e) = a;
-  use_tuple((d, e));
-  (e, d)
+fn foo(a: felt252) -> felt252 {
+   let tuple = match a {
+      0 => (1, (2, 3)),
+      _ => {
+        let tuple = (a, (2, 3));
+        use_tuple(tuple);
+        tuple
+      },
+   };
+   let (b, (c, d)) = tuple;
+   b + c + d
 }
 
 //! > function_name
 foo
 
 //! > module_code
-extern fn use_tuple(a: (felt252, felt252)) nopanic;
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > before
-Parameters: v0: (core::felt252, core::felt252)
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
-  (v3: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
-  (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v5)
-  () <- test::use_tuple(v6)
-  (v7: (core::felt252, core::felt252)) <- struct_construct(v5, v4)
 End:
-  Return(v7)
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 3u
+  (v5: (core::felt252, core::felt252)) <- struct_construct(v3, v4)
+  (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v5)
+End:
+  Goto(blk3, {v6 -> v11})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2u
+  (v8: core::felt252) <- 3u
+  (v9: (core::felt252, core::felt252)) <- struct_construct(v7, v8)
+  (v10: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v9)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v10)
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk3:
+Statements:
+  (v12: core::felt252, v13: (core::felt252, core::felt252)) <- struct_destructure(v11)
+  (v14: core::felt252, v15: core::felt252) <- struct_destructure(v13)
+  (v18: core::felt252) <- core::felt252_add(v12, v14)
+  (v19: core::felt252) <- core::felt252_add(v18, v15)
+End:
+  Return(v19)
 
 //! > after
-Parameters: v0: (core::felt252, core::felt252)
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
-  () <- test::use_tuple(v0)
-  (v7: (core::felt252, core::felt252)) <- struct_construct(v2, v1)
 End:
-  Return(v7)
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 3u
+End:
+  Goto(blk3, {v2 -> v20, v3 -> v24, v4 -> v25})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2u
+  (v8: core::felt252) <- 3u
+  (v9: (core::felt252, core::felt252)) <- struct_construct(v7, v8)
+  (v10: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v9)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v10)
+  (v22: core::felt252, v23: (core::felt252, core::felt252)) <- struct_destructure(v10)
+  (v26: core::felt252, v27: core::felt252) <- struct_destructure(v23)
+End:
+  Goto(blk3, {v22 -> v20, v26 -> v24, v27 -> v25})
+
+blk3:
+Statements:
+  (v18: core::felt252) <- core::felt252_add(v20, v24)
+  (v19: core::felt252) <- core::felt252_add(v18, v25)
+End:
+  Return(v19)

@@ -2,13 +2,19 @@
 #[path = "cancel_ops_test.rs"]
 mod test;
 
+use std::{iter, vec};
+
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{chain, izip, zip_eq, Itertools};
+use cairo_lang_utils::unordered_hash_map::{self, UnorderedHashMap};
+use id_arena::Arena;
+use itertools::{chain, zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::{
+    BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementStructDestructure,
+    VarRemapping, VarUsage, Variable, VariableId,
+};
 
 /// Cancels out a (StructConstruct, StructDestructure) and (Snap, Desnap) pair.
 ///
@@ -30,27 +36,206 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
         var_remapper: Default::default(),
         aliases: Default::default(),
         stmts_to_remove: vec![],
+        vars_to_split: Default::default(),
     };
+
     let mut analysis =
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
 
-    let CancelOpsContext { mut var_remapper, stmts_to_remove, .. } = analysis.analyzer;
+    let CancelOpsContext { mut var_remapper, mut stmts_to_remove, vars_to_split, .. } =
+        analysis.analyzer;
 
     // Remove no-longer needed statements.
-    // Note that dedup() is used since a statement might be marked for removal more then once.
-    for (block_id, stmt_id) in stmts_to_remove
-        .into_iter()
-        .sorted_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id))
-        .rev()
-        .dedup()
-    {
+    stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
+    for (block_id, stmt_id) in stmts_to_remove.into_iter().rev().dedup() {
         lowered.blocks[block_id].statements.remove(stmt_id);
     }
 
-    // Rebuild the blocks with the new variable names.
-    for block in lowered.blocks.iter_mut() {
+    rebuild_blocks(lowered, &mut var_remapper, vars_to_split);
+}
+
+/// Rebuilds the blocks.
+/// 'var_remapper' is used to remap the variables in the blocks.
+/// 'vars_to_split' maps from var_id to the variables that it should be split into,
+/// Note however that it does not contain the correct ids for the new variables,
+/// The new ids are allocated on the fly in the `split` mapping.
+fn rebuild_blocks(
+    lowered: &mut FlatLowered,
+    var_remapper: &mut CancelOpsRebuilder,
+    mut vars_to_split: UnorderedHashMap<VariableId, Vec<VariableId>>,
+) {
+    let mut split = UnorderedHashMap::<VariableId, Vec<VariableId>>::default();
+
+    let mut stack = vec![BlockId::root()];
+    let mut visited = vec![false; lowered.blocks.len()];
+    while let Some(block_id) = stack.pop() {
+        if visited[block_id.0] {
+            continue;
+        }
+        visited[block_id.0] = true;
+
+        let block = &mut lowered.blocks[block_id];
+        let old_statments = std::mem::take(&mut block.statements);
+
+        for stmt in old_statments.into_iter() {
+            match stmt {
+                Statement::StructDestructure(stmt) => {
+                    if let Some(output_split) = split.get(&stmt.input.var_id) {
+                        for (output, new_var) in zip_eq(stmt.outputs.iter(), output_split.to_vec())
+                        {
+                            if let Some(new_var_split) = split.get(&new_var) {
+                                split.insert(*output, new_var_split.to_vec());
+                            }
+                            assert!(var_remapper.renamed_vars.insert(*output, new_var).is_none())
+                        }
+                    } else {
+                        block.statements.push(Statement::StructDestructure(stmt));
+                    }
+                }
+                Statement::StructConstruct(stmt) if vars_to_split.contains_key(&stmt.output) => {
+                    split.insert(
+                        stmt.output,
+                        stmt.inputs.into_iter().map(|input| input.var_id).collect(),
+                    );
+                }
+                _ => {
+                    block.statements.push(stmt);
+                }
+            }
+        }
+
+        match &mut block.end {
+            FlatBlockEnd::Goto(block_id, remappings) => {
+                stack.push(*block_id);
+
+                let mut old_remappings = std::mem::take(remappings);
+
+                rebuild_remapping(
+                    &mut lowered.variables,
+                    &mut split,
+                    &mut vars_to_split,
+                    &mut block.statements,
+                    std::mem::take(&mut old_remappings.remapping).into_iter(),
+                    remappings,
+                );
+            }
+            FlatBlockEnd::Match { info } => {
+                stack.extend(info.arms().iter().map(|arm| arm.block_id));
+            }
+            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::NotSet => unreachable!(),
+        }
+
+        // Remap block variables.
         *block = var_remapper.rebuild_block(block);
+    }
+}
+
+fn rebuild_remapping(
+    variables: &mut Arena<Variable>,
+    split: &mut UnorderedHashMap<VariableId, Vec<VariableId>>,
+    vars_to_split: &mut UnorderedHashMap<VariableId, Vec<VariableId>>,
+    statements: &mut Vec<Statement>,
+    remappings: impl Iterator<Item = (VariableId, VarUsage)>,
+    new_remappings: &mut VarRemapping,
+) {
+    for (dst, src) in remappings {
+        // Check if we need create a split for 'dst'.
+        if let Some(orig_dst_vars) = vars_to_split.get(&dst) {
+            if let unordered_hash_map::Entry::Vacant(e) = split.entry(dst) {
+                e.insert(
+                    orig_dst_vars
+                        .clone()
+                        .into_iter()
+                        .map(|orig_dst| {
+                            let new_var = variables.alloc(variables[orig_dst].clone());
+                            if let Some(split) = vars_to_split.get(&orig_dst) {
+                                // Note that we can't use new_var=orig_dst in this case as
+                                // split[orig_dst] might already be defined.
+                                vars_to_split.insert(new_var, split.clone());
+                            }
+                            new_var
+                        })
+                        .collect_vec(),
+                );
+            }
+        }
+
+        eprintln!(
+            "{:?}: {:?} -> {:?}: {:?}",
+            src.var_id,
+            split.get(&src.var_id),
+            dst,
+            split.get(&dst)
+        );
+
+        match (split.get(&dst), split.get(&src.var_id)) {
+            (None, None) => {
+                new_remappings.insert(dst, src);
+            }
+            (Some(dst_vars), Some(src_vars)) => {
+                let src_vars = src_vars.clone();
+                let dst_vars = dst_vars.clone();
+
+                for (dst, inner_src) in zip_eq(dst_vars, src_vars) {
+                    rebuild_remapping(
+                        variables,
+                        split,
+                        vars_to_split,
+                        statements,
+                        iter::once((dst, VarUsage { var_id: inner_src, location: src.location })),
+                        new_remappings,
+                    );
+                }
+            }
+            (Some(dst_vars), None) => {
+                eprintln!("here: {:?}", dst_vars);
+                let mut src_vars = vec![];
+
+                for dst in dst_vars {
+                    src_vars.push(variables.alloc(variables[*dst].clone()));
+                }
+
+                statements.push(Statement::StructDestructure(StatementStructDestructure {
+                    input: src,
+                    outputs: src_vars.clone(),
+                }));
+
+                let dst_vars = dst_vars.clone();
+                split.insert(src.var_id, src_vars.clone());
+
+                rebuild_remapping(
+                    variables,
+                    split,
+                    vars_to_split,
+                    statements,
+                    zip_eq(
+                        dst_vars,
+                        src_vars
+                            .into_iter()
+                            .map(|var_id| VarUsage { var_id, location: src.location }),
+                    )
+                    .collect_vec()
+                    .into_iter(),
+                    new_remappings,
+                );
+            }
+            (None, Some(_src_vars)) => {
+                // let new_src = variables.alloc(variables[dst].clone());
+
+                // statements.push(Statement::StructConstruct(StatementStructConstruct {
+                //     inputs: src_vars
+                //         .iter()
+                //         .map(|var_id| VarUsage { var_id: *var_id, location: src.location })
+                //         .collect_vec(),
+                //     output: new_src,
+                // }));
+                // new_remappings.insert(*dst, VarUsage { var_id: new_src, location: src.location
+                // });
+                panic!("split {:?} to unsplittable {:?}", src, dst)
+            }
+        }
     }
 }
 
@@ -69,6 +254,11 @@ pub struct CancelOpsContext<'a> {
 
     /// Statements that can be be removed.
     stmts_to_remove: Vec<StatementLocation>,
+
+    /// Maps variables that should be split to a list of variables that it should be split into
+    /// note the that 'values' are not the correct ids for the new variables, the new ids are
+    /// going to be allocated in the forward pass in `rebuild_blocks`.
+    vars_to_split: UnorderedHashMap<VariableId, Vec<VariableId>>,
 }
 
 /// Similar to `mapping.get(var).or_default()` but but works for types that don't implement Default.
@@ -133,6 +323,58 @@ impl<'a> CancelOpsContext<'a> {
         self.use_sites.entry(var).or_default().push(use_site);
     }
 
+    /// check if a variable should be split.
+    fn check_split(
+        &self,
+        vars_to_split: &mut UnorderedHashMap<VariableId, Vec<VariableId>>,
+        new_aliases: &mut Vec<Vec<VariableId>>,
+        orig_var_id: &VariableId,
+        split: &[VarUsage],
+    ) -> bool {
+        let aliases = get_entry_as_slice(&self.aliases, orig_var_id).to_vec();
+
+        let mut can_split_variable = true;
+        let mut should_split = false;
+        for var_id in chain!(std::iter::once(orig_var_id), &aliases) {
+            let use_sites = get_entry_as_slice(&self.use_sites, var_id);
+
+            for location in use_sites {
+                let block = &self.lowered.blocks[location.0];
+                match (block.statements.get(location.1), &block.end) {
+                    (Some(Statement::StructDestructure(destructure_stmt)), _) => {
+                        for (output, alias_list) in
+                            zip_eq(&destructure_stmt.outputs, new_aliases.iter_mut())
+                        {
+                            alias_list.push(*output);
+                        }
+                        should_split = true;
+                    }
+                    (None, FlatBlockEnd::Goto(_, remappings)) => {
+                        for (dst, src) in remappings.iter() {
+                            if &src.var_id == var_id {
+                                should_split |=
+                                    self.check_split(vars_to_split, new_aliases, dst, split);
+                            }
+                        }
+                    }
+                    _ => {
+                        can_split_variable = false;
+                    }
+                }
+            }
+        }
+
+        if can_split_variable && should_split {
+            for var_id in chain!(std::iter::once(*orig_var_id), aliases) {
+                vars_to_split
+                    .insert(var_id, split.iter().map(|var_usage| var_usage.var_id).collect_vec());
+            }
+            true
+        } else {
+            false
+        }
+    }
+
     /// Handles a statement and returns true if it can be removed.
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
@@ -195,43 +437,29 @@ impl<'a> CancelOpsContext<'a> {
                 can_remove_struct_destructure
             }
             Statement::StructConstruct(stmt) => {
-                let mut can_remove_struct_construct = true;
-                let destructures =
-                    filter_use_sites(&self.use_sites, &self.aliases, &stmt.output, |location| {
-                        if let Some(Statement::StructDestructure(destructure_stmt)) =
-                            self.lowered.blocks[location.0].statements.get(location.1)
-                        {
-                            self.stmts_to_remove.push(*location);
-                            Some(destructure_stmt)
-                        } else {
-                            can_remove_struct_construct = false;
-                            None
-                        }
-                    });
+                let mut vars_to_split = std::mem::take(&mut self.vars_to_split);
 
-                if !(can_remove_struct_construct
-                    || stmt
-                        .inputs
-                        .iter()
-                        .all(|input| self.lowered.variables[input.var_id].duplicatable.is_ok()))
-                {
-                    // We can't remove any of the destructure statements.
-                    self.stmts_to_remove.truncate(self.stmts_to_remove.len() - destructures.len());
-                    return false;
-                }
+                let mut new_use_sites = vec![vec![]; stmt.inputs.len()];
 
-                // Mark the statements for removal and set the renaming for it outputs.
+                let can_remove_struct_construct = self.check_split(
+                    &mut vars_to_split,
+                    &mut new_use_sites,
+                    &stmt.output,
+                    &stmt.inputs[..],
+                );
+                self.vars_to_split = vars_to_split;
+
                 if can_remove_struct_construct {
-                    self.stmts_to_remove.push(statement_location);
-                }
+                    self.vars_to_split.insert(
+                        stmt.output,
+                        stmt.inputs.iter().map(|input| input.var_id).collect_vec(),
+                    );
 
-                for destructure_stmt in destructures {
-                    for (output, input) in
-                        izip!(destructure_stmt.outputs.iter(), stmt.inputs.iter())
-                    {
-                        self.rename_var(*output, input.var_id);
+                    for (input, new_alias) in zip_eq(stmt.inputs.iter(), new_use_sites) {
+                        self.aliases.entry(input.var_id).or_default().extend(new_alias);
                     }
                 }
+
                 can_remove_struct_construct
             }
             Statement::Snapshot(stmt) => {
@@ -337,6 +565,7 @@ impl Rebuilder for CancelOpsRebuilder {
             return var;
         };
         while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
+            assert_ne!(new_var_id, *new_id);
             new_var_id = *new_id;
         }
 
