@@ -509,3 +509,170 @@ store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<fel
 return([6]); // 8
 
 test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
+
+//! > ==========================================================================
+
+//! > const felt252 span
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::box::BoxTrait;
+mod value { extern type Const<T, const VALUE: T>; }
+mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>()
+ -> Box<(felt252, felt252, felt252, felt252)> nopanic;
+pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+
+fn foo() -> @Array<felt252> {
+    span_from_tuple(const_as_box::<
+        struct4::Const<
+            (felt252, felt252, felt252, felt252),
+            value::Const<felt252, 100>,
+            value::Const<felt252, 200>,
+            value::Const<felt252, 300>,
+            value::Const<felt252, 400>,
+        >,
+        0,
+    >().as_snapshot())
+}
+
+//! > casm
+call rel 8;
+[ap + 0] = [ap + -1] + 7, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 4, ap++;
+ret;
+ret;
+dw 100;
+dw 200;
+dw 300;
+dw 400;
+
+//! > sierra_code
+type Box<Tuple<felt252, felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0> = const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>;
+libfunc snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>> = snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc drop<Box<Tuple<felt252, felt252, felt252, felt252>>> = drop<Box<Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>> = box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>>;
+libfunc span_from_tuple<Tuple<felt252, felt252, felt252, felt252>> = span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>;
+libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
+
+const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>() -> ([0]); // 0
+snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>>([0]) -> ([1], [2]); // 1
+drop<Box<Tuple<felt252, felt252, felt252, felt252>>>([1]) -> (); // 2
+box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>>([2]) -> ([3]); // 3
+span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>([3]) -> ([4]); // 4
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([4]); // 5
+return([4]); // 6
+
+test::foo@0() -> (Snapshot<Array<felt252>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > ==========================================================================
+
+//! > const felt252 quad span
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::box::BoxTrait;
+mod value { extern type Const<T, const VALUE: T>; }
+mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
+type quad_felt252 = (felt252, felt252, felt252, felt252);
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>()
+ -> Box<(quad_felt252, quad_felt252, quad_felt252, quad_felt252)> nopanic;
+pub extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<quad_felt252> nopanic;
+
+type C100 = value::Const<felt252, 100>;
+type C200 = value::Const<felt252, 200>;
+type C300 = value::Const<felt252, 300>;
+type C400 = value::Const<felt252, 400>;
+
+fn foo() -> @Array<quad_felt252> {
+    span_from_tuple(const_as_box::<
+        struct4::Const<
+            (quad_felt252, quad_felt252, quad_felt252, quad_felt252),
+            struct4::Const<quad_felt252, C100, C200, C300, C400>,
+            struct4::Const<quad_felt252, C200, C300, C400, C100>,
+            struct4::Const<quad_felt252, C300, C400, C100, C200>,
+            struct4::Const<quad_felt252, C400, C100, C200, C300>,
+        >,
+        0,
+    >().as_snapshot())
+}
+
+//! > casm
+call rel 8;
+[ap + 0] = [ap + -1] + 7, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 16, ap++;
+ret;
+ret;
+dw 100;
+dw 200;
+dw 300;
+dw 400;
+dw 200;
+dw 300;
+dw 400;
+dw 100;
+dw 300;
+dw 400;
+dw 100;
+dw 200;
+dw 400;
+dw 100;
+dw 200;
+dw 300;
+
+//! > sierra_code
+type Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<Tuple<felt252, felt252, felt252, felt252>> = Array<Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>> = Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>> = Struct<ut@Tuple, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>> = Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0> = const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>;
+libfunc snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>> = snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>;
+libfunc drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>> = drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>;
+libfunc box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>> = store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>;
+
+const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>() -> ([0]); // 0
+snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>([0]) -> ([1], [2]); // 1
+drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>([1]) -> (); // 2
+box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([2]) -> ([3]); // 3
+span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([3]) -> ([4]); // 4
+store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>([4]) -> ([4]); // 5
+return([4]); // 6
+
+test::foo@0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
