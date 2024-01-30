@@ -17,12 +17,16 @@ use hashbrown::HashSet;
 pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashSet<Key, BH>(HashSet<Key, BH>);
+pub struct UnorderedHashSet<Key, BH = hashbrown::hash_map::DefaultHashBuilder>(HashSet<Key, BH>);
 
-#[cfg(feature = "std")]
-impl<K> UnorderedHashSet<K> {
-    pub fn new() -> Self {
-        Self(HashSet::new())
+impl<K, BH: Default> Default for UnorderedHashSet<K, BH> {
+    #[cfg(feature = "std")]
+    fn default() -> Self {
+        Self(Default::default())
+    }
+    #[cfg(not(feature = "std"))]
+    fn default() -> Self {
+        Self(HashSet::with_hasher(Default::default()))
     }
 }
 
@@ -92,12 +96,6 @@ impl<Key: Hash + Eq, BH: BuildHasher> UnorderedHashSet<Key, BH> {
         Key: Borrow<Q>,
     {
         self.0.contains(value)
-    }
-}
-
-impl<Key, BH: Default> Default for UnorderedHashSet<Key, BH> {
-    fn default() -> Self {
-        Self(Default::default())
     }
 }
 

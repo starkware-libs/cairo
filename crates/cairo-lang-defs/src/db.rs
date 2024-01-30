@@ -930,7 +930,7 @@ pub fn module_extern_function_by_id(
 
 pub fn module_ancestors(db: &dyn DefsGroup, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
     let mut current = module_id;
-    let mut ancestors = OrderedHashSet::new();
+    let mut ancestors = OrderedHashSet::default();
     while let ModuleId::Submodule(submodule_id) = current {
         let parent = submodule_id.parent_module(db);
         ancestors.insert(parent);

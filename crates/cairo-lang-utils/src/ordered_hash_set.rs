@@ -11,18 +11,18 @@ use itertools::zip_eq;
 pub struct OrderedHashSet<Key, BH = RandomState>(IndexSet<Key, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key, BH>(IndexSet<Key, BH>);
+pub struct OrderedHashSet<Key, BH = hashbrown::hash_map::DefaultHashBuilder>(IndexSet<Key, BH>);
 
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
-#[cfg(feature = "std")]
-impl<Key> OrderedHashSet<Key> {
-    /// Creates an empty `OrderedHashSet`.
-    ///
-    /// The hash set is initially created with a capacity of 0, so it will not allocate until it
-    /// is first inserted into.
-    pub fn new() -> Self {
-        Self(IndexSet::new())
+impl<Key, BH: Default> Default for OrderedHashSet<Key, BH> {
+    #[cfg(feature = "std")]
+    fn default() -> Self {
+        Self(Default::default())
+    }
+    #[cfg(not(feature = "std"))]
+    fn default() -> Self {
+        Self(IndexSet::with_hasher(Default::default()))
     }
 }
 
@@ -146,12 +146,6 @@ impl<Key: Eq, BH> PartialEq for OrderedHashSet<Key, BH> {
 }
 
 impl<Key: Eq, BH> Eq for OrderedHashSet<Key, BH> {}
-
-impl<Key, BH: Default> Default for OrderedHashSet<Key, BH> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
 
 impl<Key: Hash + Eq, BH: BuildHasher + Default> FromIterator<Key> for OrderedHashSet<Key, BH> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
