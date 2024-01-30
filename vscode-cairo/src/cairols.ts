@@ -6,6 +6,7 @@ import * as vscode from "vscode";
 import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semanticTokens";
 
 import * as lc from "vscode-languageclient/node";
+import { Context } from "./context";
 
 // Tries to find the development version of the language server executable,
 // assuming the workspace directory is inside the Cairo repository.
@@ -27,8 +28,8 @@ function findDevLanguageServerAt(
   return findDevLanguageServerAt(path + "/..", depth - 1);
 }
 
-function rootPath(context: vscode.ExtensionContext): string {
-  let rootPath = context.extensionPath;
+function rootPath(ctx: Context): string {
+  let rootPath = ctx.extension.extensionPath;
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (workspaceFolders) {
@@ -52,12 +53,9 @@ function replacePathPlaceholders(path: string, root: string): string {
     .replace(/\${userHome}/g, process.env["HOME"] ?? "");
 }
 
-function findLanguageServerExecutable(
-  config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext,
-) {
-  const root = rootPath(context);
-  const configPath = config.get<string>("cairo1.languageServerPath");
+function findLanguageServerExecutable(ctx: Context) {
+  const root = rootPath(ctx);
+  const configPath = ctx.config.get<string>("languageServerPath");
   if (configPath) {
     const serverPath = replacePathPlaceholders(configPath, root);
     if (!isExecutable(serverPath)) {
@@ -121,13 +119,10 @@ async function findScarbExecutablePathInAsdfDir() {
   }
 }
 
-async function findScarbExecutablePath(
-  config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext,
-) {
+async function findScarbExecutablePath(ctx: Context) {
   // Check config for scarb path.
-  const root = rootPath(context);
-  const configPath = config.get<string>("cairo1.scarbPath");
+  const root = rootPath(ctx);
+  const configPath = ctx.config.get<string>("scarbPath");
   if (configPath) {
     const scarbPath = replacePathPlaceholders(configPath, root);
     if (!isExecutable(scarbPath)) {
@@ -143,25 +138,25 @@ async function findScarbExecutablePath(
   return findScarbExecutablePathInAsdfDir();
 }
 
-function notifyScarbMissing(outputChannel: vscode.OutputChannel) {
+function notifyScarbMissing(ctx: Context) {
   const errorMessage =
     "This is a Scarb project, but could not find Scarb executable on this machine. " +
     "Please add Scarb to the PATH environmental variable or set the 'cairo1.scarbPath' configuration " +
     "parameter. Otherwise Cairo code analysis will not work.";
-  vscode.window.showWarningMessage(errorMessage);
-  outputChannel.appendLine(errorMessage);
+  void vscode.window.showWarningMessage(errorMessage);
+  ctx.log.error(errorMessage);
 }
 
 async function listScarbCommandsOutput(
   scarbPath: undefined | string,
-  context: vscode.ExtensionContext,
+  ctx: Context,
 ) {
   if (!scarbPath) {
     return undefined;
   }
   const child = child_process.spawn(scarbPath, ["--json", "commands"], {
     stdio: "pipe",
-    cwd: rootPath(context),
+    cwd: rootPath(ctx),
   });
   let stdout = "";
   for await (const chunk of child.stdout) {
@@ -172,12 +167,12 @@ async function listScarbCommandsOutput(
 
 async function isScarbLsPresent(
   scarbPath: undefined | string,
-  context: vscode.ExtensionContext,
+  ctx: Context,
 ): Promise<boolean> {
   if (!scarbPath) {
     return false;
   }
-  const scarbOutput = await listScarbCommandsOutput(scarbPath, context);
+  const scarbOutput = await listScarbCommandsOutput(scarbPath, ctx);
   if (!scarbOutput) return false;
   return scarbOutput
     .split("\n")
@@ -192,19 +187,17 @@ async function isScarbLsPresent(
 
 async function runStandaloneLs(
   scarbPath: undefined | string,
-  outputChannel: vscode.OutputChannel,
-  config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext,
+  ctx: Context,
 ): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
-  const executable = findLanguageServerExecutable(config, context);
+  const executable = findLanguageServerExecutable(ctx);
   if (!executable) {
-    outputChannel.appendLine(
-      "Cairo language server was not found. Make sure cairo-lang-server is " +
-        "installed and that the configuration 'cairo1.languageServerPath' is correct.",
+    ctx.log.error("could not find Cairo language server executable");
+    ctx.log.error(
+      "note: make sure CairoLS is installed and `cairo1.languageServerPath` points to it",
     );
     return;
   }
-  outputChannel.appendLine("Cairo language server running from: " + executable);
+  ctx.log.debug(`using CairoLS: ${executable}`);
   return child_process.spawn(executable, {
     env: { SCARB: scarbPath },
   });
@@ -212,17 +205,14 @@ async function runStandaloneLs(
 
 async function runScarbLs(
   scarbPath: undefined | string,
-  outputChannel: vscode.OutputChannel,
-  context: vscode.ExtensionContext,
+  ctx: Context,
 ): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
   if (!scarbPath) {
     return;
   }
-  outputChannel.appendLine(
-    "Cairo language server running from Scarb at: " + scarbPath,
-  );
+  ctx.log.debug(`using CairoLS: ${scarbPath} cairo-language-server`);
   return child_process.spawn(scarbPath, ["cairo-language-server"], {
-    cwd: rootPath(context),
+    cwd: rootPath(ctx),
   });
 }
 
@@ -235,14 +225,14 @@ async function getServerType(
   isScarbEnabled: boolean,
   scarbPath: string | undefined,
   configLanguageServerPath: string | undefined,
-  context: vscode.ExtensionContext,
+  ctx: Context,
 ) {
   if (!isScarbEnabled) return ServerType.Standalone;
   if (!(await isScarbProject()) && !!configLanguageServerPath) {
     // If Scarb manifest is missing, and Cairo-LS path is explicit.
     return ServerType.Standalone;
   }
-  if (await isScarbLsPresent(scarbPath, context)) return ServerType.Scarb;
+  if (await isScarbLsPresent(scarbPath, ctx)) return ServerType.Scarb;
   return ServerType.Standalone;
 }
 
@@ -272,22 +262,19 @@ async function isScarbProject(): Promise<boolean> {
 }
 
 export async function setupLanguageServer(
-  config: vscode.WorkspaceConfiguration,
-  context: vscode.ExtensionContext,
-  outputChannel: vscode.OutputChannel,
+  ctx: Context,
 ): Promise<lc.LanguageClient> {
-  const isScarbEnabled = config.get<boolean>("cairo1.enableScarb") ?? false;
-  const scarbPath = await findScarbExecutablePath(config, context);
-  const configLanguageServerPath = config.get<string>(
-    "cairo1.languageServerPath",
-  );
+  const isScarbEnabled = ctx.config.get<boolean>("enableScarb", false);
+  const scarbPath = await findScarbExecutablePath(ctx);
+  const configLanguageServerPath = ctx.config.get<string>("languageServerPath");
 
   if (!isScarbEnabled) {
-    outputChannel.appendLine("Use of Scarb is disabled as of configuration.");
+    ctx.log.warn("Scarb integration is disabled");
+    ctx.log.warn("note: set `cairo1.enableScarb` to `true` to enable it");
   } else if (!scarbPath) {
-    outputChannel.appendLine("Failed to find Scarb binary path.");
+    ctx.log.error("could not find Scarb executable on this machine");
   } else {
-    outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
+    ctx.log.debug(`using Scarb: ${scarbPath}`);
   }
   const serverOptions: lc.ServerOptions =
     async (): Promise<child_process.ChildProcessWithoutNullStreams> => {
@@ -295,33 +282,25 @@ export async function setupLanguageServer(
         isScarbEnabled,
         scarbPath,
         configLanguageServerPath,
-        context,
+        ctx,
       );
       let child;
       if (serverType === ServerType.Scarb) {
-        child = await runScarbLs(scarbPath, outputChannel, context);
+        child = await runScarbLs(scarbPath, ctx);
       } else {
-        child = await runStandaloneLs(
-          scarbPath,
-          outputChannel,
-          config,
-          context,
-        );
+        child = await runStandaloneLs(scarbPath, ctx);
       }
       if (!child) {
-        outputChannel.appendLine("Failed to start Cairo language server.");
+        ctx.log.error("failed to start Cairo language server");
         throw new Error("Failed to start Cairo language server.");
       }
       // Forward stderr to vscode logs.
       child.stderr.on("data", (data: Buffer) => {
-        outputChannel.appendLine("Server stderr> " + data.toString());
+        ctx.log.trace("Server stderr> " + data.toString());
       });
       child.on("exit", (code, signal) => {
-        outputChannel.appendLine(
-          "Cairo language server exited with code " +
-            code +
-            " and signal" +
-            signal,
+        ctx.log.debug(
+          `Cairo language server exited with code ${code} and signal ${signal}`,
         );
       });
 
@@ -370,7 +349,7 @@ export async function setupLanguageServer(
   vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
 
   client.onNotification("scarb/could-not-find-scarb-executable", () =>
-    notifyScarbMissing(outputChannel),
+    notifyScarbMissing(ctx),
   );
 
   client.onNotification("scarb/resolving-start", () => {

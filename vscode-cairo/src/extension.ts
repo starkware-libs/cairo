@@ -9,11 +9,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   const ctx = Context.create(extensionContext);
 
   if (ctx.config.get<boolean>("enableLanguageServer")) {
-    client = await setupLanguageServer(
-      vscode.workspace.getConfiguration(),
-      ctx.extension,
-      ctx.log,
-    );
+    client = await setupLanguageServer(ctx);
   } else {
     ctx.log.warn("language server is disabled");
     ctx.log.warn(
