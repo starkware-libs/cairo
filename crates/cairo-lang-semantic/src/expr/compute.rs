@@ -991,7 +991,12 @@ fn compute_expr_match_semantic(
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-    let condition = compute_bool_condition_semantic(ctx, &syntax.condition(syntax_db)).id;
+    let condition = match &syntax.condition(syntax_db) {
+        ast::Condition::Let(_) => return Err(ctx.diagnostics.report(syntax, Unsupported)),
+        ast::Condition::Expr(expr) => {
+            compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id
+        }
+    };
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {

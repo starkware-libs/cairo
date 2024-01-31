@@ -1596,25 +1596,51 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is `If`.
-    /// Expected pattern: `if <expr> <block> [else <block>]`.
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
-        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
-        let if_block = self.parse_block();
 
-        let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
+        let condition = if self.peek().kind == SyntaxKind::TerminalLet {
+            self.expect_let_condition_expr().into()
+        } else {
+            let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+            ConditionGreen::from(ConditionExpr::new_green(self.db, condition))
+        };
+
+        let if_block = self.parse_block();
+        let else_clause = if self.peek().kind == SyntaxKind::TerminalElse {
             let else_kw = self.take::<TerminalElse>();
             let else_block_or_if = if self.peek().kind == SyntaxKind::TerminalIf {
-                BlockOrIfGreen::from(self.expect_if_expr())
+                self.expect_if_expr().into()
             } else {
-                BlockOrIfGreen::from(self.parse_block())
+                self.parse_block().into()
             };
             ElseClause::new_green(self.db, else_kw, else_block_or_if).into()
         } else {
             OptionElseClauseEmpty::new_green(self.db).into()
         };
-
         ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
+    }
+
+    /// Expected pattern: `let <pattern> = <expr>`.
+    fn expect_let_condition_expr(&mut self) -> ConditionLetGreen {
+        let let_kw = self.take::<TerminalLet>();
+        let pattern_list = self
+        .parse_separated_list_inner::<Pattern, TerminalOr, PatternListOrElementOrSeparatorGreen>(
+            Self::try_parse_pattern,
+            is_of_kind!(eq),
+            "pattern",
+            Some(ParserDiagnosticKind::DisallowedTrailingSeparatorOr),
+        );
+
+        let pattern_list_green = if pattern_list.is_empty() {
+            self.create_and_report_missing::<PatternListOr>(ParserDiagnosticKind::MissingPatteren)
+        } else {
+            PatternListOr::new_green(self.db, pattern_list)
+        };
+        let eq = self.parse_token::<TerminalEq>();
+        let expr: ExprGreen = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+
+        ConditionLet::new_green(self.db, let_kw, pattern_list_green, eq, expr)
     }
 
     /// Assumes the current token is `Loop`.
