@@ -46,3 +46,9 @@ fn fib(a: Box::<felt252>, b: Box::<felt252>, n: Box::<felt252>) -> Box::<felt252
         },
     }
 }
+
+fn if_let_test() {
+    if let (x, y) = (x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x,y + y + y + y + y + y) {
+        println!("x is five!");
+    }
+}

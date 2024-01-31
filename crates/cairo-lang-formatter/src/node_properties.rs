@@ -244,21 +244,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
-                SyntaxKind::ExprBinary
-                | SyntaxKind::ExprErrorPropagate
-                | SyntaxKind::ExprFieldInitShorthand
-                | SyntaxKind::ExprFunctionCall
-                | SyntaxKind::ExprIf
-                | SyntaxKind::ExprList
-                | SyntaxKind::ExprMatch
-                | SyntaxKind::ExprMissing
-                | SyntaxKind::ExprParenthesized
-                | SyntaxKind::ExprPath
-                | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ArgListBraced
-                | SyntaxKind::ArgListBracketed
-                | SyntaxKind::ExprUnary => Some(2),
+                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
             },
