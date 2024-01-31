@@ -444,3 +444,35 @@ store_temp<u16>([3]) -> ([3]); // 2
 return([2], [3]); // 3
 
 test::foo@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, u16);
+
+//! > ==========================================================================
+
+//! > u32_wide_mul libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u32, b: u32) -> u64 {
+    integer::u32_wide_mul(a, b)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u32_wide_mul = u32_wide_mul;
+libfunc store_temp<u64> = store_temp<u64>;
+
+u32_wide_mul([0], [1]) -> ([2]); // 0
+store_temp<u64>([2]) -> ([2]); // 1
+return([2]); // 2
+
+test::foo@0([0]: u32, [1]: u32) -> (u64);
