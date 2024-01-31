@@ -497,3 +497,52 @@ blk3:
 Statements:
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test variable renamed twice.
+
+//! > test_runner_name
+test_cancel_ops
+
+//! > function
+fn foo(a: (felt252, felt252)) -> (felt252, felt252) {
+  let (b, c) = a;
+  let a = (b, c);
+  let (d, e) = a;
+  use_tuple((d, e));
+  (e, d)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple(a: (felt252, felt252)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::felt252, core::felt252)
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  (v3: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
+  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
+  (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v5)
+  () <- test::use_tuple(v6)
+  (v7: (core::felt252, core::felt252)) <- struct_construct(v5, v4)
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: (core::felt252, core::felt252)
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  () <- test::use_tuple(v0)
+  (v7: (core::felt252, core::felt252)) <- struct_construct(v2, v1)
+End:
+  Return(v7)
