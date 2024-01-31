@@ -41,6 +41,47 @@ End:
 
 //! > ==========================================================================
 
+//! > Test destruct folding.
+
+//! > test_runner_name
+test_cancel_ops
+
+//! > function
+fn foo(a: ((felt252, ), )) -> ((felt252, ), ) {
+   let (b, ) = a;
+   let (c, ) = b;
+   ((c,),)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: ((core::felt252,),)
+blk0 (root):
+Statements:
+  (v1: (core::felt252,)) <- struct_destructure(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: (core::felt252,)) <- struct_construct(v2)
+  (v4: ((core::felt252,),)) <- struct_construct(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: ((core::felt252,),)
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
 //! > Test destruct after merge (optimization not possible).
 
 //! > test_runner_name
