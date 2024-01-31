@@ -119,7 +119,9 @@ async function findScarbExecutablePathInAsdfDir() {
   }
 }
 
-async function findScarbExecutablePath(ctx: Context) {
+async function findScarbExecutablePath(
+  ctx: Context,
+): Promise<string | undefined> {
   // Check config for scarb path.
   const root = rootPath(ctx);
   const configPath = ctx.config.get<string>("scarbPath");
@@ -185,37 +187,6 @@ async function isScarbLsPresent(
     );
 }
 
-async function runStandaloneLs(
-  scarbPath: undefined | string,
-  ctx: Context,
-): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
-  const executable = findLanguageServerExecutable(ctx);
-  if (!executable) {
-    ctx.log.error("could not find Cairo language server executable");
-    ctx.log.error(
-      "note: make sure CairoLS is installed and `cairo1.languageServerPath` points to it",
-    );
-    return;
-  }
-  ctx.log.debug(`using CairoLS: ${executable}`);
-  return child_process.spawn(executable, {
-    env: { SCARB: scarbPath },
-  });
-}
-
-async function runScarbLs(
-  scarbPath: undefined | string,
-  ctx: Context,
-): Promise<undefined | child_process.ChildProcessWithoutNullStreams> {
-  if (!scarbPath) {
-    return;
-  }
-  ctx.log.debug(`using CairoLS: ${scarbPath} cairo-language-server`);
-  return child_process.spawn(scarbPath, ["cairo-language-server"], {
-    cwd: rootPath(ctx),
-  });
-}
-
 enum ServerType {
   Standalone,
   Scarb,
@@ -264,49 +235,7 @@ async function isScarbProject(): Promise<boolean> {
 export async function setupLanguageServer(
   ctx: Context,
 ): Promise<lc.LanguageClient> {
-  const isScarbEnabled = ctx.config.get<boolean>("enableScarb", false);
-  const scarbPath = await findScarbExecutablePath(ctx);
-  const configLanguageServerPath = ctx.config.get<string>("languageServerPath");
-
-  if (!isScarbEnabled) {
-    ctx.log.warn("Scarb integration is disabled");
-    ctx.log.warn("note: set `cairo1.enableScarb` to `true` to enable it");
-  } else if (!scarbPath) {
-    ctx.log.error("could not find Scarb executable on this machine");
-  } else {
-    ctx.log.debug(`using Scarb: ${scarbPath}`);
-  }
-  const serverOptions: lc.ServerOptions =
-    async (): Promise<child_process.ChildProcessWithoutNullStreams> => {
-      const serverType = await getServerType(
-        isScarbEnabled,
-        scarbPath,
-        configLanguageServerPath,
-        ctx,
-      );
-      let child;
-      if (serverType === ServerType.Scarb) {
-        child = await runScarbLs(scarbPath, ctx);
-      } else {
-        child = await runStandaloneLs(scarbPath, ctx);
-      }
-      if (!child) {
-        ctx.log.error("failed to start Cairo language server");
-        throw new Error("Failed to start Cairo language server.");
-      }
-      // Forward stderr to vscode logs.
-      child.stderr.on("data", (data: Buffer) => {
-        ctx.log.trace("Server stderr> " + data.toString());
-      });
-      child.on("exit", (code, signal) => {
-        ctx.log.debug(
-          `Cairo language server exited with code ${code} and signal ${signal}`,
-        );
-      });
-
-      // Create a resolved promise with the child process.
-      return child;
-    };
+  const serverOptions = await getServerOptions(ctx);
 
   const clientOptions: lc.LanguageClientOptions = {
     documentSelector: [
@@ -372,4 +301,61 @@ export async function setupLanguageServer(
   await client.start();
 
   return client;
+}
+
+async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
+  const isScarbEnabled = ctx.config.get<boolean>("enableScarb", false);
+  const scarbPath = await findScarbExecutablePath(ctx);
+  const configLanguageServerPath = ctx.config.get<string>("languageServerPath");
+
+  if (!isScarbEnabled) {
+    ctx.log.warn("Scarb integration is disabled");
+    ctx.log.warn("note: set `cairo1.enableScarb` to `true` to enable it");
+  } else if (scarbPath == undefined) {
+    ctx.log.error("could not find Scarb executable on this machine");
+  } else {
+    ctx.log.debug(`using Scarb: ${scarbPath}`);
+  }
+
+  const serverType = await getServerType(
+    isScarbEnabled,
+    scarbPath,
+    configLanguageServerPath,
+    ctx,
+  );
+
+  let serverExecutable: lc.Executable | undefined;
+  if (serverType === ServerType.Scarb) {
+    serverExecutable = { command: scarbPath!, args: ["cairo-language-server"] };
+  } else {
+    const command = findLanguageServerExecutable(ctx);
+    if (!command) {
+      ctx.log.error("could not find Cairo language server executable");
+      ctx.log.error(
+        "note: make sure CairoLS is installed and `cairo1.languageServerPath` points to it",
+      );
+    } else {
+      serverExecutable = { command };
+    }
+  }
+  if (serverExecutable == undefined) {
+    ctx.log.error("failed to start CairoLS");
+    throw new Error("failed to start CairoLS");
+  }
+  ctx.log.debug(
+    `using CairoLS: ${serverExecutable.command} ${serverExecutable.args?.join(" ") ?? ""}`.trimEnd(),
+  );
+
+  serverExecutable.options ??= {};
+  serverExecutable.options.cwd = rootPath(ctx);
+
+  // Pass path to Scarb to standalone CairoLS. This is not needed for Scarb's wrapper.
+  if (serverExecutable.command != scarbPath) {
+    serverExecutable.options.env["SCARB"] = scarbPath;
+  }
+
+  return {
+    run: serverExecutable,
+    debug: serverExecutable,
+  };
 }
