@@ -293,14 +293,15 @@ pub struct CancelOpsRebuilder {
 
 impl Rebuilder for CancelOpsRebuilder {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
-            return var;
-        };
+        let mut new_var_id = var;
         while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
+            assert_ne!(new_var_id, *new_id);
             new_var_id = *new_id;
         }
 
-        self.renamed_vars.insert(var, new_var_id);
+        if new_var_id != var {
+            self.renamed_vars.insert(var, new_var_id);
+        }
         new_var_id
     }
 
