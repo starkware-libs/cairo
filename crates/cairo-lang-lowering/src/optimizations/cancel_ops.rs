@@ -34,11 +34,16 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
 
-    let CancelOpsContext { mut var_remapper, mut stmts_to_remove, .. } = analysis.analyzer;
+    let CancelOpsContext { mut var_remapper, stmts_to_remove, .. } = analysis.analyzer;
 
     // Remove no-longer needed statements.
-    stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
-    for (block_id, stmt_id) in stmts_to_remove.into_iter().rev() {
+    // Note that dedup() is used since a statement might be marked for removal more then once.
+    for (block_id, stmt_id) in stmts_to_remove
+        .into_iter()
+        .sorted_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id))
+        .rev()
+        .dedup()
+    {
         lowered.blocks[block_id].statements.remove(stmt_id);
     }
 
@@ -77,12 +82,7 @@ fn get_use_sites<'a>(
 
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
-        assert!(
-            self.var_remapper.renamed_vars.insert(from, to).is_none(),
-            "Variable {:?} was already renamed",
-            from
-        );
-
+        self.var_remapper.renamed_vars.insert(from, to);
         // Move `from` used sites to `to` to allow the optimization to be applied to them.
         if let Some(from_use_sites) = self.use_sites.remove(&from) {
             self.use_sites.entry(to).or_default().extend(from_use_sites);
