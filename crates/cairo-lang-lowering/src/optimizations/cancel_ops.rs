@@ -27,25 +27,24 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
     let ctx = CancelOpsContext {
         lowered,
         use_sites: Default::default(),
-        renamed_vars: Default::default(),
+        var_remapper: Default::default(),
         stmts_to_remove: vec![],
     };
     let mut analysis =
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
-    let mut ctx = analysis.analyzer;
 
-    let mut rebuilder = CancelOpsRebuilder { renamed_vars: ctx.renamed_vars };
+    let CancelOpsContext { mut var_remapper, mut stmts_to_remove, .. } = analysis.analyzer;
 
     // Remove no-longer needed statements.
-    ctx.stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
-    for (block_id, stmt_id) in ctx.stmts_to_remove.into_iter().rev() {
+    stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
+    for (block_id, stmt_id) in stmts_to_remove.into_iter().rev() {
         lowered.blocks[block_id].statements.remove(stmt_id);
     }
 
     // Rebuild the blocks with the new variable names.
     for block in lowered.blocks.iter_mut() {
-        *block = rebuilder.rebuild_block(block);
+        *block = var_remapper.rebuild_block(block);
     }
 }
 
@@ -57,7 +56,7 @@ pub struct CancelOpsContext<'a> {
     use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+    var_remapper: CancelOpsRebuilder,
 
     /// Statements that can be be removed.
     stmts_to_remove: Vec<StatementLocation>,
@@ -79,7 +78,7 @@ fn get_use_sites<'a>(
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
         assert!(
-            self.renamed_vars.insert(from, to).is_none(),
+            self.var_remapper.renamed_vars.insert(from, to).is_none(),
             "Variable {:?} was already renamed",
             from
         );
@@ -119,7 +118,9 @@ impl<'a> CancelOpsContext<'a> {
                                         stmt.outputs.iter(),
                                         construct_stmt.inputs.iter(),
                                     )
-                                    .all(|(output, input)| output == &input.var_id) =>
+                                    .all(|(output, input)| {
+                                        output == &self.var_remapper.map_var_id(input.var_id)
+                                    }) =>
                             {
                                 self.stmts_to_remove.push(**location);
                                 Some(construct_stmt)
@@ -285,6 +286,7 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
     }
 }
 
+#[derive(Default)]
 pub struct CancelOpsRebuilder {
     renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 }
