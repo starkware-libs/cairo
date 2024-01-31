@@ -38,7 +38,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
 
     // Remove no-longer needed statements.
     stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
-    for (block_id, stmt_id) in stmts_to_remove.into_iter().rev() {
+    for (block_id, stmt_id) in stmts_to_remove.into_iter().rev().dedup() {
         lowered.blocks[block_id].statements.remove(stmt_id);
     }
 
@@ -77,12 +77,7 @@ fn get_use_sites<'a>(
 
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
-        assert!(
-            self.var_remapper.renamed_vars.insert(from, to).is_none(),
-            "Variable {:?} was already renamed",
-            from
-        );
-
+        self.var_remapper.renamed_vars.insert(from, to);
         // Move `from` used sites to `to` to allow the optimization to be applied to them.
         if let Some(from_use_sites) = self.use_sites.remove(&from) {
             self.use_sites.entry(to).or_default().extend(from_use_sites);
