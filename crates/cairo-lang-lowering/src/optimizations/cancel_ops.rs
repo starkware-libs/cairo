@@ -7,32 +7,8 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::borrow_check::demand::DemandReporter;
-use crate::borrow_check::Demand;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
-
-pub type CancelOpsDemand = Demand<VariableId, StatementLocation, ()>;
-
-/// Demand reporter for cancel ops.
-/// use sites are reported using `dup` and `last_use`.
-impl DemandReporter<VariableId> for CancelOpsContext<'_> {
-    type IntroducePosition = ();
-    type UsePosition = StatementLocation;
-
-    fn dup(
-        &mut self,
-        position: StatementLocation,
-        var: VariableId,
-        _next_usage_position: StatementLocation,
-    ) {
-        self.use_sites.entry(var).or_default().push(position);
-    }
-
-    fn last_use(&mut self, position: StatementLocation, var: VariableId) {
-        self.use_sites.entry(var).or_default().push(position);
-    }
-}
 
 /// Cancels out a (StructConstruct, StructDestructure) and (Snap, Desnap) pair.
 ///
@@ -100,10 +76,6 @@ fn get_use_sites<'a>(
     }
 }
 
-#[derive(Clone)]
-pub struct AnalysisInfo {
-    demand: CancelOpsDemand,
-}
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
         assert!(
@@ -116,6 +88,10 @@ impl<'a> CancelOpsContext<'a> {
         if let Some(from_use_sites) = self.use_sites.remove(&from) {
             self.use_sites.entry(to).or_default().extend(from_use_sites);
         }
+    }
+
+    fn add_use_site(&mut self, var: VariableId, use_site: StatementLocation) {
+        self.use_sites.entry(var).or_default().push(use_site);
     }
 
     /// Handles a statement and returns true if it can be removed.
@@ -260,58 +236,42 @@ impl<'a> CancelOpsContext<'a> {
 }
 
 impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
-    type Info = AnalysisInfo;
+    type Info = ();
 
     fn visit_stmt(
         &mut self,
-        info: &mut Self::Info,
+        _info: &mut Self::Info,
         statement_location: StatementLocation,
         stmt: &'a Statement,
     ) {
         if !self.handle_stmt(stmt, statement_location) {
-            info.demand.variables_introduced(self, &stmt.outputs(), ());
-            info.demand.variables_used(
-                self,
-                stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-            );
+            for input in stmt.inputs() {
+                self.add_use_site(input.var_id, statement_location);
+            }
         }
     }
 
     fn visit_goto(
         &mut self,
-        info: &mut Self::Info,
+        _info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.demand.apply_remapping(
-            self,
-            remapping.iter().map(|(dst, src)| (dst, (&src.var_id, statement_location))),
-        );
+        for src in remapping.values() {
+            self.add_use_site(src.var_id, statement_location);
+        }
     }
 
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
+        _infos: &[Self::Info],
     ) -> Self::Info {
-        let arm_demands = zip_eq(match_info.arms(), infos)
-            .map(|(arm, info)| {
-                let mut demand = info.demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ());
-
-                (demand, ())
-            })
-            .collect_vec();
-        let mut demand = CancelOpsDemand::merge_demands(&arm_demands, self);
-
-        demand.variables_used(
-            self,
-            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-        );
-
-        Self::Info { demand }
+        for var in match_info.inputs() {
+            self.add_use_site(var.var_id, statement_location);
+        }
     }
 
     fn info_from_return(
@@ -319,12 +279,9 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
-        let mut demand = CancelOpsDemand::default();
-        demand.variables_used(
-            self,
-            vars.iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-        );
-        Self::Info { demand }
+        for var in vars {
+            self.add_use_site(var.var_id, statement_location);
+        }
     }
 }
 
