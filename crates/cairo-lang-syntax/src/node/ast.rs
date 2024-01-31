@@ -3303,7 +3303,7 @@ impl ExprIf {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         if_kw: TerminalIfGreen,
-        condition: ExprGreen,
+        condition: ConditionGreen,
         if_block: ExprBlockGreen,
         else_clause: OptionElseClauseGreen,
     ) -> ExprIfGreen {
@@ -3319,8 +3319,8 @@ impl ExprIf {
     pub fn if_kw(&self, db: &dyn SyntaxGroup) -> TerminalIf {
         TerminalIf::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn condition(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
+        Condition::from_syntax_node(db, self.children[1].clone())
     }
     pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2].clone())
@@ -3351,7 +3351,7 @@ impl TypedSyntaxNode for ExprIf {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalIf::missing(db).0,
-                    Expr::missing(db).0,
+                    Condition::missing(db).0,
                     ExprBlock::missing(db).0,
                     OptionElseClause::missing(db).0,
                 ],
@@ -3376,6 +3376,231 @@ impl TypedSyntaxNode for ExprIf {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprIfPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum Condition {
+    Let(ConditionLet),
+    Expr(ConditionExpr),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionPtr(pub SyntaxStablePtrId);
+impl ConditionPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> Condition {
+        Condition::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ConditionLetPtr> for ConditionPtr {
+    fn from(value: ConditionLetPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ConditionExprPtr> for ConditionPtr {
+    fn from(value: ConditionExprPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ConditionLetGreen> for ConditionGreen {
+    fn from(value: ConditionLetGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ConditionExprGreen> for ConditionGreen {
+    fn from(value: ConditionExprGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionGreen(pub GreenId);
+impl TypedSyntaxNode for Condition {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = ConditionPtr;
+    type Green = ConditionGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ConditionLet => Condition::Let(ConditionLet::from_syntax_node(db, node)),
+            SyntaxKind::ConditionExpr => Condition::Expr(ConditionExpr::from_syntax_node(db, node)),
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Condition"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            Condition::Let(x) => x.as_syntax_node(),
+            Condition::Expr(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ConditionPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Condition {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ConditionLet => true,
+            SyntaxKind::ConditionExpr => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionLet {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ConditionLet {
+    pub const INDEX_LET_KW: usize = 0;
+    pub const INDEX_PATTERNS: usize = 1;
+    pub const INDEX_EQ: usize = 2;
+    pub const INDEX_EXPR: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        let_kw: TerminalLetGreen,
+        patterns: PatternListOrGreen,
+        eq: TerminalEqGreen,
+        expr: ExprGreen,
+    ) -> ConditionLetGreen {
+        let children: Vec<GreenId> = vec![let_kw.0, patterns.0, eq.0, expr.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ConditionLetGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ConditionLet,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl ConditionLet {
+    pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
+        TerminalLet::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
+        PatternListOr::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
+        TerminalEq::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionLetPtr(pub SyntaxStablePtrId);
+impl ConditionLetPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ConditionLet {
+        ConditionLet::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionLetGreen(pub GreenId);
+impl TypedSyntaxNode for ConditionLet {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionLet);
+    type StablePtr = ConditionLetPtr;
+    type Green = ConditionLetGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ConditionLetGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ConditionLet,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLet::missing(db).0,
+                    PatternListOr::missing(db).0,
+                    TerminalEq::missing(db).0,
+                    Expr::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ConditionLet,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ConditionLet
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ConditionLetPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionExpr {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl ConditionExpr {
+    pub const INDEX_EXPR: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, expr: ExprGreen) -> ConditionExprGreen {
+        let children: Vec<GreenId> = vec![expr.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ConditionExprGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ConditionExpr,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl ConditionExpr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionExprPtr(pub SyntaxStablePtrId);
+impl ConditionExprPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ConditionExpr {
+        ConditionExpr::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ConditionExprGreen(pub GreenId);
+impl TypedSyntaxNode for ConditionExpr {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionExpr);
+    type StablePtr = ConditionExprPtr;
+    type Green = ConditionExprGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ConditionExprGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::ConditionExpr,
+            details: GreenNodeDetails::Node {
+                children: vec![Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ConditionExpr,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ConditionExpr
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ConditionExprPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
