@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semanticTokens";
@@ -7,25 +6,39 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
+import {
+  checkTool,
+  findToolAtWithExtension,
+  findToolInAsdf,
+  findToolInPath,
+} from "./toolchain";
 
-// Tries to find the development version of the language server executable,
-// assuming the workspace directory is inside the Cairo repository.
-function findDevLanguageServerAt(
-  path: string,
-  depth: number,
-): string | undefined {
-  if (depth == 0) {
-    return undefined;
+/**
+ * Tries to find the development version of the language server executable,
+ * assuming the workspace directory is inside the Cairo repository.
+ *
+ * @remarks
+ *
+ * This function does not attempt to go further than 10 levels up the directory
+ * tree.
+ */
+async function findDevLanguageServerAt(
+  root: string,
+): Promise<string | undefined> {
+  for (let i = 0; i < 10; i++) {
+    for (const target of ["release, debug"]) {
+      const candidate = await findToolAtWithExtension(
+        path.join(root, "target", target, "cairo-language-server"),
+      );
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    root = path.basename(root);
   }
-  let candidate = path + "/target/release/cairo-language-server";
-  if (fs.existsSync(candidate)) {
-    return candidate;
-  }
-  candidate = path + "/target/debug/cairo-language-server";
-  if (fs.existsSync(candidate)) {
-    return candidate;
-  }
-  return findDevLanguageServerAt(path + "/..", depth - 1);
+
+  return undefined;
 }
 
 function rootPath(ctx: Context): string {
@@ -38,85 +51,22 @@ function rootPath(ctx: Context): string {
   return rootPath;
 }
 
-function isExecutable(path: string): boolean {
-  try {
-    fs.accessSync(path, fs.constants.X_OK);
-    return fs.statSync(path).isFile();
-  } catch (e) {
-    return false;
-  }
-}
-
 function replacePathPlaceholders(path: string, root: string): string {
   return path
     .replace(/\${workspaceFolder}/g, root)
     .replace(/\${userHome}/g, process.env["HOME"] ?? "");
 }
 
-function findLanguageServerExecutable(ctx: Context) {
+async function findLanguageServerExecutable(ctx: Context) {
   const root = rootPath(ctx);
   const configPath = ctx.config.get<string>("languageServerPath");
   if (configPath) {
     const serverPath = replacePathPlaceholders(configPath, root);
-    if (!isExecutable(serverPath)) {
-      return undefined;
-    }
-    return serverPath;
+    return await checkTool(serverPath);
   }
 
   // TODO(spapini): Use a bundled language server.
-  return findDevLanguageServerAt(root, 10);
-}
-
-async function findExecutableFromPathVar(name: string) {
-  const envPath = process.env["PATH"] || "";
-  const envExt = process.env["PATHEXT"] || "";
-  const pathDirs = envPath
-    .replace(/["]+/g, "")
-    .split(path.delimiter)
-    .filter(Boolean);
-  const extensions = envExt.split(";");
-  const candidates: string[] = [];
-  pathDirs.map((d) =>
-    extensions.map((ext) => {
-      candidates.push(path.join(d, name + ext));
-    }),
-  );
-  const isExecutable = (path: string) =>
-    fs.promises
-      .access(path, fs.constants.X_OK)
-      .then(() => path)
-      .catch(() => undefined);
-  try {
-    return await Promise.all(candidates.map(isExecutable)).then((values) =>
-      values.find((value) => !!value),
-    );
-  } catch (e) {
-    return undefined;
-  }
-}
-
-async function findScarbExecutablePathInAsdfDir() {
-  if (os.platform() === "win32") {
-    return undefined;
-  }
-
-  let asdfDataDir = process.env["ASDF_DATA_DIR"];
-  if (!asdfDataDir) {
-    const home = process.env["HOME"];
-    if (!home) {
-      return undefined;
-    }
-    asdfDataDir = path.join(home, ".asdf");
-  }
-  const scarbExecutablePath = path.join(asdfDataDir, "shims", "scarb");
-
-  try {
-    await fs.promises.access(scarbExecutablePath, fs.constants.X_OK);
-    return scarbExecutablePath;
-  } catch (e) {
-    return undefined;
-  }
+  return findDevLanguageServerAt(root);
 }
 
 async function findScarbExecutablePath(
@@ -127,17 +77,14 @@ async function findScarbExecutablePath(
   const configPath = ctx.config.get<string>("scarbPath");
   if (configPath) {
     const scarbPath = replacePathPlaceholders(configPath, root);
-    if (!isExecutable(scarbPath)) {
-      return undefined;
-    }
-    return scarbPath;
+    return await checkTool(scarbPath);
   }
 
   // Check PATH env var for scarb path.
-  const envPath = await findExecutableFromPathVar("scarb");
+  const envPath = await findToolInPath("scarb");
   if (envPath) return envPath;
 
-  return findScarbExecutablePathInAsdfDir();
+  return findToolInAsdf("scarb");
 }
 
 function notifyScarbMissing(ctx: Context) {
@@ -295,7 +242,7 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
   if (serverType === ServerType.Scarb) {
     serverExecutable = scarb!.languageServerExecutable();
   } else {
-    const command = findLanguageServerExecutable(ctx);
+    const command = await findLanguageServerExecutable(ctx);
     if (command) {
       serverExecutable = {
         command,
