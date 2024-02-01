@@ -8,7 +8,6 @@ description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.5.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
 cairo-lang-starknet-classes = { path = "../cairo-lang-starknet-classes", version = "2.5.3" }
 itertools = { workspace = true, features = ["use_alloc"] }

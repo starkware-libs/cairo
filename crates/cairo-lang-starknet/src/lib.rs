@@ -31,10 +31,10 @@ pub fn starknet_plugin_suite() -> PluginSuite {
     suite
 }
 
-// Those modules test logic defined in `cairo-lang-starknet-types`.
+// Those modules test logic defined in `cairo-lang-starknet-classes`.
 // Because those tests require `cairo_lang_starknet::test_utils`, which requires
 // `cairo_lang_starknet::test_utils`, it can only be tested here, and not in
-// `cairo-lang-starknet-types`.
+// `cairo-lang-starknet-classes`.
 #[cfg(all(test, feature = "serde"))]
 mod casm_contract_class_from_contract_class_test;
 #[cfg(all(test, feature = "serde"))]

@@ -19,9 +19,6 @@ sha3 = { workspace = true }
 # Optional std
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3", optional = true }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.5.3", optional = true }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.5.3", optional = true }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3", optional = true }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.3", optional = true }
 once_cell = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 convert_case = { workspace = true, optional = true }
