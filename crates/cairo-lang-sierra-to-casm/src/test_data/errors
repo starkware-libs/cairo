@@ -880,3 +880,78 @@ gas
 
 //! > error
 found an unexpected cycle during cost computation
+
+//! > ==========================================================================
+
+//! > Code size too large
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+store_temp<felt252>([1]) -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return ([1]);
+
+test_program@0([1]: felt252) -> (felt252);
+
+//! > max_bytecode_size
+2
+
+//! > error
+Code size limit exceeded.
+
+//! > ==========================================================================
+
+//! > Code size too large from consts
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
+type C0 = Const<felt252, 0>;
+type C1 = Const<felt252, 1>;
+
+libfunc usage0 = const_as_box<C0, 0>; // 1 for segment, 1 for data.
+libfunc usage1 = const_as_box<C1, 0>; // 0 for segment, 1 for data.
+
+return (); // 1 for return.
+
+foo@0() -> ();
+
+//! > max_bytecode_size
+3
+
+//! > error
+Code size limit exceeded.
+
+//! > ==========================================================================
+
+//! > Code size too large from consts multi segment
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
+type C = Const<felt252, 0>;
+
+libfunc usage0 = const_as_box<C, 0>; // 1 for segment, 1 for data.
+libfunc usage1 = const_as_box<C, 1>; // 1 for segment, 1 for data.
+
+return (); // 1 for return.
+
+foo@0() -> ();
+
+//! > max_bytecode_size
+4
+
+//! > error
+Code size limit exceeded.

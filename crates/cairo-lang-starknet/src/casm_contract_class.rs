@@ -392,10 +392,11 @@ impl CasmContractClass {
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
+        // TODO(orizi): Make `max_bytecode_size` be a command line argument.
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check: true },
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
         )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
