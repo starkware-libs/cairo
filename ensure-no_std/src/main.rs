@@ -21,6 +21,6 @@ static ALLOC: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 #[allow(unused_imports)]
 use cairo_lang_casm;
 #[allow(unused_imports)]
-use cairo_lang_starknet_types;
+use cairo_lang_starknet_classes;
 #[allow(unused_imports)]
 use cairo_lang_utils;

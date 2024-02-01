@@ -5,8 +5,8 @@ use cairo_lang_sierra::extensions::GenericLibfunc;
 use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
-use cairo_lang_starknet_types::compiler_version;
-use cairo_lang_starknet_types::felt252_serde::{
+use cairo_lang_starknet_classes::compiler_version;
+use cairo_lang_starknet_classes::felt252_serde::{
     sierra_from_felt252s, sierra_to_felt252s, Felt252Serde, SERDE_SUPPORTED_LONG_IDS,
 };
 use test_case::test_case;

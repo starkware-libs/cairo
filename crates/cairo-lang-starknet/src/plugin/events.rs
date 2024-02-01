@@ -1,6 +1,6 @@
 use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_starknet_types::abi::EventFieldKind;
+use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };

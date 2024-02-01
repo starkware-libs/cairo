@@ -1,5 +1,5 @@
 [package]
-name = "cairo-lang-starknet-types"
+name = "cairo-lang-starknet-classes"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true

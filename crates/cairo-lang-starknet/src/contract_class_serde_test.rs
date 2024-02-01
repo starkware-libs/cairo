@@ -1,4 +1,4 @@
-use cairo_lang_starknet_types::contract_class::{
+use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
 use indoc::indoc;

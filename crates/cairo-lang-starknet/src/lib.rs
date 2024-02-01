@@ -17,7 +17,7 @@ mod aliased;
 mod analyzer;
 
 // Rexports for more practicality downstream
-pub use cairo_lang_starknet_types::*;
+pub use cairo_lang_starknet_classes::*;
 
 /// Get the suite of plugins for compilation with StarkNet.
 pub fn starknet_plugin_suite() -> PluginSuite {

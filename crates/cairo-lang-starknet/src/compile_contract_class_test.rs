@@ -1,7 +1,7 @@
-use cairo_lang_starknet_types::allowed_libfuncs::{
+use cairo_lang_starknet_classes::allowed_libfuncs::{
     validate_compatible_sierra_version, ListSelector,
 };
-use cairo_lang_starknet_types::felt252_serde::sierra_from_felt252s;
+use cairo_lang_starknet_classes::felt252_serde::sierra_from_felt252s;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use pretty_assertions::assert_eq;
 use test_case::test_case;

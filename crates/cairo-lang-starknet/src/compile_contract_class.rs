@@ -15,16 +15,16 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
-use cairo_lang_starknet_types::allowed_libfuncs::AllowedLibfuncsError;
+use cairo_lang_starknet_classes::allowed_libfuncs::AllowedLibfuncsError;
 #[cfg(feature = "serde")]
-use cairo_lang_starknet_types::allowed_libfuncs::{
+use cairo_lang_starknet_classes::allowed_libfuncs::{
     validate_compatible_sierra_version, ListSelector,
 };
-use cairo_lang_starknet_types::compiler_version::{self};
-use cairo_lang_starknet_types::contract_class::{
+use cairo_lang_starknet_classes::compiler_version::{self};
+use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
-use cairo_lang_starknet_types::felt252_serde::sierra_to_felt252s;
+use cairo_lang_starknet_classes::felt252_serde::sierra_to_felt252s;
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
