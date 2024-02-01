@@ -31,6 +31,9 @@ struct Args {
     /// Sierra version to override to prior to compilation.
     #[arg(long)]
     override_version: Option<String>,
+    /// The max bytecode size.
+    #[arg(long, default_value_t = 180000)]
+    max_bytecode_size: usize,
 }
 
 /// Parses version id from string.
@@ -119,7 +122,8 @@ fn main() -> anyhow::Result<()> {
         })
         .progress_chars("#>-"),
     );
-    let config = RunConfig { list_selector, override_version };
+    let config =
+        RunConfig { list_selector, override_version, max_bytecode_size: args.max_bytecode_size };
     tested_classes.into_par_iter().for_each(|sierra_class| {
         bar.inc(1);
         match run_single(sierra_class, &config) {
@@ -176,6 +180,7 @@ fn main() -> anyhow::Result<()> {
 struct RunConfig {
     list_selector: ListSelector,
     override_version: Option<VersionId>,
+    max_bytecode_size: usize,
 }
 
 /// The result of a Sierra compilation run.
@@ -204,13 +209,16 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
     if let Err(err) = contract_class.validate_version_compatible(config.list_selector.clone()) {
         return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
     };
-    let compiled_contract_class =
-        match CasmContractClass::from_contract_class(contract_class, false) {
-            Ok(compiled_contract_class) => compiled_contract_class,
-            Err(err) => {
-                return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
-            }
-        };
+    let compiled_contract_class = match CasmContractClass::from_contract_class(
+        contract_class,
+        false,
+        config.max_bytecode_size,
+    ) {
+        Ok(compiled_contract_class) => compiled_contract_class,
+        Err(err) => {
+            return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
+        }
+    };
     let old = sierra_class.compiled_class_hash;
     let new = BigUintAsHex { value: compiled_contract_class.compiled_class_hash().to_biguint() };
     if old != new {
