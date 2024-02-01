@@ -191,7 +191,7 @@ impl SierraCasmRunner {
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check },
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
 
         // Find all contracts.

@@ -64,6 +64,8 @@ pub enum CompilationError {
     UnsupportedConstType,
     #[error("Const segments must appear in ascending order without holes.")]
     ConstSegmentsOutOfOrder,
+    #[error("Code size limit exceeded.")]
+    CodeSizeLimitExceeded,
 }
 
 /// Configuration for the Sierra to CASM compilation.
@@ -71,6 +73,8 @@ pub enum CompilationError {
 pub struct SierraToCasmConfig {
     /// Whether to check the gas usage of the program.
     pub gas_usage_check: bool,
+    /// CASM code size limit.
+    pub max_bytecode_size: usize,
 }
 
 /// The casm program representation.
@@ -182,7 +186,9 @@ impl ConstsInfo {
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
         type_sizes: &TypeSizeMap,
         libfunc_ids: impl Iterator<Item = &'a ConcreteLibfuncId>,
+        const_segments_max_size: usize,
     ) -> Result<Self, CompilationError> {
+        let mut segments_data_size = 0;
         let mut segments = OrderedHashMap::default();
         for id in libfunc_ids {
             if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
@@ -191,8 +197,12 @@ impl ConstsInfo {
                 let segment: &mut ConstSegment = segments.entry(as_box.segment_id).or_default();
                 let const_data =
                     extract_const_value(registry, type_sizes, &as_box.const_type).unwrap();
+                segments_data_size += const_data.len();
                 segment.const_offset.insert(as_box.const_type.clone(), segment.values.len());
                 segment.values.extend(const_data);
+                if segments_data_size + segments.len() > const_segments_max_size {
+                    return Err(CompilationError::CodeSizeLimitExceeded);
+                }
             }
         }
         // Check that the segments were declared in order and without holes.
@@ -343,6 +353,9 @@ pub fn compile(
         let statement_idx = StatementIdx(statement_id);
         statement_indices.push(instructions.len());
         statement_offsets.push(program_offset);
+        if program_offset > config.max_bytecode_size {
+            return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
+        }
         match statement {
             Statement::Return(ref_ids) => {
                 let (annotations, return_refs) = program_annotations
@@ -458,10 +471,15 @@ pub fn compile(
     // Push the final offset and index at the end of the vectors.
     statement_indices.push(instructions.len());
     statement_offsets.push(program_offset);
+    let const_segments_max_size = config
+        .max_bytecode_size
+        .checked_sub(program_offset)
+        .ok_or_else(|| Box::new(CompilationError::CodeSizeLimitExceeded))?;
     let consts_info = ConstsInfo::new(
         &registry,
         &type_sizes,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
+        const_segments_max_size,
     )?;
     relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
 
