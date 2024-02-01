@@ -62,7 +62,7 @@ impl TestRunner {
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
         let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
-        runner.run()
+        runner.run(self.compiler.db)
     }
 }
 
@@ -83,7 +83,7 @@ impl CompiledTestRunner {
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self) -> Result<Option<TestsSummary>> {
+    pub fn run(self, db: &RootDatabase) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -92,6 +92,7 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            db,
             compiled.named_tests,
             compiled.sierra_program,
             compiled.function_set_costs,
@@ -271,6 +272,7 @@ pub struct TestsSummary {
 
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
+    db: &RootDatabase,
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -376,6 +378,7 @@ pub fn run_tests(
             }
             if let Some(profiling_info) = profiling_info {
                 let profiling_processor = ProfilingInfoProcessor::new(
+                    db,
                     sierra_program.clone(),
                     statements_functions.clone(),
                 );
