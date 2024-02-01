@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Config } from "./config";
 
 export class Context {
   public static create(extensionContext: vscode.ExtensionContext): Context {
@@ -10,21 +11,10 @@ export class Context {
     return new Context(extensionContext, log);
   }
 
+  public readonly config: Config = new Config();
+
   private constructor(
     public readonly extension: vscode.ExtensionContext,
     public readonly log: vscode.LogOutputChannel,
   ) {}
-
-  /**
-   * Get Cairo extension-specific configuration.
-   *
-   * @remarks
-   * This is equivalent to calling:
-   * ```
-   * vscode.workspace.getConfiguration("cairo1")
-   * ```
-   */
-  public get config(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration("cairo1");
-  }
 }

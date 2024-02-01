@@ -8,7 +8,7 @@ let client: lc.LanguageClient | undefined;
 export async function activate(extensionContext: vscode.ExtensionContext) {
   const ctx = Context.create(extensionContext);
 
-  if (ctx.config.get<boolean>("enableLanguageServer")) {
+  if (ctx.config.get("enableLanguageServer")) {
     client = await setupLanguageServer(ctx);
   } else {
     ctx.log.warn("language server is disabled");
