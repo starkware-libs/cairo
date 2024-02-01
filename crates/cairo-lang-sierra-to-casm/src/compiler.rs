@@ -66,6 +66,13 @@ pub enum CompilationError {
     ConstSegmentsOutOfOrder,
 }
 
+/// Configuration for the Sierra to CASM compilation.
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub struct SierraToCasmConfig {
+    /// Whether to check the gas usage of the program.
+    pub gas_usage_check: bool,
+}
+
 /// The casm program representation.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgram {
@@ -300,10 +307,12 @@ pub fn check_basic_structure(
     }
 }
 
+/// Compiles `program`` from Sierra to casm using `metadata` for information regarding AP changes
+/// and gas usage, and config additional compilation flavours.
 pub fn compile(
     program: &Program,
     metadata: &Metadata,
-    gas_usage_check: bool,
+    config: SierraToCasmConfig,
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
@@ -323,7 +332,7 @@ pub fn compile(
         program.statements.len(),
         &program.funcs,
         metadata,
-        gas_usage_check,
+        config.gas_usage_check,
         &type_sizes,
     )
     .map_err(|err| Box::new(err.into()))?;

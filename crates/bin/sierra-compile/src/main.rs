@@ -2,6 +2,7 @@ use std::fs;
 
 use anyhow::Context;
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
@@ -31,12 +32,11 @@ fn main() -> anyhow::Result<()> {
         })
     };
 
-    let gas_usage_check = true;
     let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
         &program,
         &calc_metadata(&program, Default::default())
             .with_context(|| "Failed calculating Sierra variables.")?,
-        gas_usage_check,
+        SierraToCasmConfig { gas_usage_check: true },
     )
     .with_context(|| "Compilation failed.")?;
 
