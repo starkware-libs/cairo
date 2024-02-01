@@ -1,4 +1,3 @@
-import * as child_process from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -7,6 +6,7 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
+import { Scarb } from "./scarb";
 
 // Tries to find the development version of the language server executable,
 // assuming the workspace directory is inside the Cairo repository.
@@ -149,44 +149,6 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-async function listScarbCommandsOutput(
-  scarbPath: undefined | string,
-  ctx: Context,
-) {
-  if (!scarbPath) {
-    return undefined;
-  }
-  const child = child_process.spawn(scarbPath, ["--json", "commands"], {
-    stdio: "pipe",
-    cwd: rootPath(ctx),
-  });
-  let stdout = "";
-  for await (const chunk of child.stdout) {
-    stdout += chunk;
-  }
-  return stdout;
-}
-
-async function isScarbLsPresent(
-  scarbPath: undefined | string,
-  ctx: Context,
-): Promise<boolean> {
-  if (!scarbPath) {
-    return false;
-  }
-  const scarbOutput = await listScarbCommandsOutput(scarbPath, ctx);
-  if (!scarbOutput) return false;
-  return scarbOutput
-    .split("\n")
-    .map((v) => v.trim())
-    .filter((v) => !!v)
-    .map((v) => JSON.parse(v))
-    .some(
-      (commands: Record<string, unknown>) =>
-        !!commands["cairo-language-server"],
-    );
-}
-
 enum ServerType {
   Standalone,
   Scarb,
@@ -194,7 +156,7 @@ enum ServerType {
 
 async function getServerType(
   isScarbEnabled: boolean,
-  scarbPath: string | undefined,
+  scarb: Scarb | undefined,
   configLanguageServerPath: string | undefined,
   ctx: Context,
 ) {
@@ -203,7 +165,7 @@ async function getServerType(
     // If Scarb manifest is missing, and Cairo-LS path is explicit.
     return ServerType.Standalone;
   }
-  if (await isScarbLsPresent(scarbPath, ctx)) return ServerType.Scarb;
+  if (await scarb?.hasCairoLS(ctx)) return ServerType.Scarb;
   return ServerType.Standalone;
 }
 
@@ -317,20 +279,33 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     ctx.log.debug(`using Scarb: ${scarbPath}`);
   }
 
+  let scarb: Scarb | undefined;
+  if (isScarbEnabled && scarbPath != undefined) {
+    scarb = new Scarb(scarbPath, vscode.workspace.workspaceFolders?.[0]);
+  }
+
   const serverType = await getServerType(
     isScarbEnabled,
-    scarbPath,
+    scarb,
     configLanguageServerPath,
     ctx,
   );
 
   let serverExecutable: lc.Executable | undefined;
   if (serverType === ServerType.Scarb) {
-    serverExecutable = { command: scarbPath!, args: ["cairo-language-server"] };
+    serverExecutable = scarb!.languageServerExecutable();
   } else {
     const command = findLanguageServerExecutable(ctx);
     if (command) {
-      serverExecutable = { command };
+      serverExecutable = {
+        command,
+        options: {
+          cwd: rootPath(ctx),
+          env: {
+            SCARB: scarb?.path,
+          },
+        },
+      };
     } else {
       ctx.log.error("could not find Cairo language server executable");
       ctx.log.error(
@@ -345,14 +320,6 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
   ctx.log.debug(
     `using CairoLS: ${serverExecutable.command} ${serverExecutable.args?.join(" ") ?? ""}`.trimEnd(),
   );
-
-  serverExecutable.options ??= {};
-  serverExecutable.options.cwd = rootPath(ctx);
-
-  // Pass path to Scarb to standalone CairoLS. This is not needed for Scarb's wrapper.
-  if (serverExecutable.command != scarbPath) {
-    serverExecutable.options.env["SCARB"] = scarbPath;
-  }
 
   return {
     run: serverExecutable,
