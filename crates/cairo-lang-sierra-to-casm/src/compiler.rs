@@ -29,7 +29,7 @@ use crate::invocations::{
 };
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
-use crate::relocations::{relocate_instructions, CodeOffset, RelocationEntry};
+use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -161,15 +161,6 @@ pub struct SierraStatementDebugInfo {
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
-}
-
-/// The data of a single const in the const segment.
-#[derive(Debug, Eq, PartialEq, Default, Clone)]
-pub struct ConstAllocation {
-    /// The offset of the const within the constants segment.
-    pub offset: CodeOffset,
-    /// The values to be stored in the const segment.
-    pub values: Vec<BigInt>,
 }
 
 /// The information about the constants used in the program.
