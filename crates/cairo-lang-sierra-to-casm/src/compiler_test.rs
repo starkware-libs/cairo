@@ -5,6 +5,7 @@ use indoc::indoc;
 use pretty_assertions;
 use test_case::test_case;
 
+use super::SierraToCasmConfig;
 use crate::compiler::compile;
 use crate::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use crate::test_utils::{read_sierra_example_file, strip_comments_and_linebreaks};
@@ -759,17 +760,17 @@ indoc! {"
         dw 5;
     "};
     "Get builtin costs with a const segment.")]
-fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
+fn sierra_to_casm(sierra_code: &str, gas_usage_check: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
         compile(
             &program,
-            &if check_gas_usage {
+            &if gas_usage_check {
                 calc_metadata(&program, Default::default()).unwrap_or_default()
             } else {
                 calc_metadata_ap_change_only(&program).unwrap_or_default()
             },
-            check_gas_usage
+            SierraToCasmConfig { gas_usage_check }
         )
         .expect("Compilation failed.")
         .to_string(),
@@ -804,7 +805,7 @@ fn compiler_errors(
     };
 
     let error_str = match metadata {
-        Ok(metadata) => compile(&program, &metadata, false)
+        Ok(metadata) => compile(&program, &metadata, SierraToCasmConfig { gas_usage_check: false })
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         Err(err) => err.to_string(),
