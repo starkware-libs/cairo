@@ -207,7 +207,8 @@ fn run_e2e_test(
     };
     let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
-    let config = compiler::SierraToCasmConfig { gas_usage_check: true };
+    let config =
+        compiler::SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX };
     // Compile to casm.
     let casm =
         compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap().to_string();

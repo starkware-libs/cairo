@@ -770,7 +770,8 @@ fn sierra_to_casm(sierra_code: &str, gas_usage_check: bool, expected_casm: &str)
             } else {
                 calc_metadata_ap_change_only(&program).unwrap_or_default()
             },
-            SierraToCasmConfig { gas_usage_check }
+            // `max_bytecode_size` is a small value to ensure we can pass with small values.
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: 100 }
         )
         .expect("Compilation failed.")
         .to_string(),
@@ -803,11 +804,22 @@ fn compiler_errors(
             panic!("Invalid value for metadata argument: '{metadata}'.");
         }
     };
+    let max_bytecode_size = inputs
+        .get("max_bytecode_size")
+        .map(|x| {
+            x.parse::<usize>()
+                .unwrap_or_else(|_| panic!("Invalid value `{x}` for `max_bytecode_size`"))
+        })
+        .unwrap_or(usize::MAX);
 
     let error_str = match metadata {
-        Ok(metadata) => compile(&program, &metadata, SierraToCasmConfig { gas_usage_check: false })
-            .expect_err("Compilation is expected to fail.")
-            .to_string(),
+        Ok(metadata) => compile(
+            &program,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: false, max_bytecode_size },
+        )
+        .expect_err("Compilation is expected to fail.")
+        .to_string(),
         Err(err) => err.to_string(),
     };
     TestRunnerResult::success(OrderedHashMap::from([("error".into(), error_str)]))
