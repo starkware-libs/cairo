@@ -56,3 +56,19 @@ pub struct ContractEntryPoint {
     /// The idx of the user function declaration in the sierra program.
     pub function_idx: usize,
 }
+
+#[cfg(feature = "std")]
+impl ContractClass {
+    /// Extracts Sierra program from the ContractClass and populates it with debug info if
+    /// available.
+    pub fn extract_sierra_program(
+        &self,
+    ) -> Result<cairo_lang_sierra::program::Program, crate::felt252_serde::Felt252SerdeError> {
+        let (_, _, mut sierra_program) =
+            crate::felt252_serde::sierra_from_felt252s(&self.sierra_program)?;
+        if let Some(info) = &self.sierra_program_debug_info {
+            info.populate(&mut sierra_program);
+        }
+        Ok(sierra_program)
+    }
+}

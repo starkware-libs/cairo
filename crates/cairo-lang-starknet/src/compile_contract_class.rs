@@ -24,9 +24,7 @@ use cairo_lang_starknet_types::compiler_version::{self};
 use cairo_lang_starknet_types::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
-use cairo_lang_starknet_types::felt252_serde::{
-    sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError,
-};
+use cairo_lang_starknet_types::felt252_serde::sierra_to_felt252s;
 use itertools::{chain, Itertools};
 use thiserror::Error;
 
@@ -51,18 +49,6 @@ pub enum StarknetCompilationError {
     EntryPointError,
     #[error(transparent)]
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
-}
-
-/// Extracts Sierra program from the ContractClass and populates it with debug info if
-/// available.
-pub fn extract_sierra_program_from_contract_class(
-    contract_class: &ContractClass,
-) -> Result<cairo_lang_sierra::program::Program, Felt252SerdeError> {
-    let (_, _, mut sierra_program) = sierra_from_felt252s(&contract_class.sierra_program)?;
-    if let Some(info) = &contract_class.sierra_program_debug_info {
-        info.populate(&mut sierra_program);
-    }
-    Ok(sierra_program)
 }
 
 /// Compile the contract given by path.
