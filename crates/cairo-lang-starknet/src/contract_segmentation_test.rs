@@ -27,7 +27,10 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
                     cairo_lang_sierra_to_casm::compiler::compile(
                         &sierra_program,
                         &metadata,
-                        SierraToCasmConfig { gas_usage_check: false },
+                        SierraToCasmConfig {
+                            gas_usage_check: false,
+                            max_bytecode_size: usize::MAX,
+                        },
                     )
                     .ok()
                 });
