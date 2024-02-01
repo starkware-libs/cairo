@@ -25,7 +25,7 @@ fn test_casm_contract_from_contract_class_failure(example_contract_path: &str) {
 
     let add_pythonic_hints = false;
     assert_eq!(
-        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints),
+        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints, usize::MAX),
         Err(StarknetSierraCompilationError::ValueOutOfRange)
     );
 }
@@ -52,7 +52,8 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(example_contract_
     let example_file_name = get_contract_file_name_from_path(example_contract_path);
     let add_pythonic_hints = true;
     let casm_contract =
-        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints).unwrap();
+        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints, usize::MAX)
+            .unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(
