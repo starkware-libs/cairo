@@ -1,4 +1,5 @@
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -23,11 +24,10 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
             cairo_lang_sierra_to_casm::metadata::calc_metadata(&sierra_program, Default::default())
                 .ok()
                 .and_then(|metadata| {
-                    let gas_usage_check = false;
                     cairo_lang_sierra_to_casm::compiler::compile(
                         &sierra_program,
                         &metadata,
-                        gas_usage_check,
+                        SierraToCasmConfig { gas_usage_check: false },
                     )
                     .ok()
                 });
