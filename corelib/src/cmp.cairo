@@ -13,3 +13,11 @@ pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
     }
     b
 }
+
+#[must_use]
+pub fn min_max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> (T, T) {
+    if a > b {
+        return (b, a);
+    }
+    (a, b)
+}
