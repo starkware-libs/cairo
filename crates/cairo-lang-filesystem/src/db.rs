@@ -147,15 +147,12 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     db.set_cfg_set(Arc::new(CfgSet::new()));
 }
 
-pub fn init_dev_corelib_from_directory(
-    db: &mut (dyn FilesGroup + 'static),
-    core_lib_dir: Directory,
-) {
+pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
     let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
     db.set_crate_config(
         core_crate,
         Some(CrateConfiguration {
-            root: core_lib_dir,
+            root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
                 edition: Edition::V2023_11,
                 cfg_set: Default::default(),
@@ -163,10 +160,6 @@ pub fn init_dev_corelib_from_directory(
             },
         }),
     );
-}
-
-pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
-    init_dev_corelib_from_directory(db, Directory::Real(core_lib_dir));
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {
