@@ -11,8 +11,10 @@ use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::get_contracts_info;
+use cairo_lang_utils::arc_unwrap_or_clone;
 use clap::Parser;
 
 /// Command line args parser.
@@ -57,10 +59,11 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
-    let (sierra_program, statements_locations) = db
-        .get_sierra_program(main_crate_ids.clone())
-        .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?;
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = arc_unwrap_or_clone(
+        db.get_sierra_program(main_crate_ids.clone())
+            .to_option()
+            .with_context(|| "Compilation failed without any diagnostics.")?,
+    );
     let replacer = DebugReplacer { db };
     if args.available_gas.is_none() && sierra_program.requires_gas_counter() {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
@@ -89,7 +92,7 @@ fn main() -> anyhow::Result<()> {
         let profiling_info_processor = ProfilingInfoProcessor::new(
             Some(db),
             sierra_program,
-            statements_locations.get_statements_functions_map(db),
+            debug_info.statements_locations.get_statements_functions_map(db),
         );
         match result.profiling_info {
             Some(raw_profiling_info) => {
