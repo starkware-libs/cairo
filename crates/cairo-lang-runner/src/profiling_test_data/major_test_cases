@@ -73,7 +73,7 @@ Weight by generic libfunc:
 Weight by user function (inc. generated):
   function test::pow2_by_add_loop: 196014
   function test::pow2_14000: 12
-Weight by original user function:
+Weight by original user function (exc. generated):
   function test::pow2_by_add_loop: 196014
   function test::pow2_14000: 12
 Weight by Cairo function:
@@ -91,7 +91,7 @@ Weight by Sierra stack trace:
   test::pow2_14000 -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop: 195916
   test::pow2_14000 -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop: 195902
   test::pow2_14000 -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop -> test::pow2_by_add_loop: 195888
-Weight by Sierra stack trace:
+Weight by Cairo stack trace:
   test::pow2_14000: 196026
   test::pow2_14000 -> test::pow2_by_add_loop: 196014
   test::pow2_14000 -> test::pow2_by_add_loop -> test::pow2_by_add_loop: 196000
@@ -432,7 +432,7 @@ Weight by user function (inc. generated):
   function core::integer::Felt252TryIntoU32::try_into: 18
   function core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 12
   function test::test_contract::__validate__: 1
-Weight by original user function:
+Weight by original user function (exc. generated):
   function core::array::SpanFelt252Serde::deserialize: 82
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 71
   function core::Felt252Serde::deserialize: 60
@@ -488,7 +488,7 @@ Weight by Sierra stack trace:
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize -> core::integer::U32Sub::sub -> core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 6
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize -> core::integer::U32Sub::sub -> core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 6
   test::validate_call -> test::test_contract::__wrapper____validate__ -> test::test_contract::__validate__: 1
-Weight by Sierra stack trace:
+Weight by Cairo stack trace:
   test::validate_call: 463
   test::validate_call -> test::test_contract::__wrapper____validate__: 410
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 379
@@ -804,7 +804,7 @@ Weight by user function (inc. generated):
   function core::integer::Felt252TryIntoU32::try_into: 9
   function core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 6
   function test::test_contract::__validate__: 1
-Weight by original user function:
+Weight by original user function (exc. generated):
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 44
   function core::array::SpanFelt252Serde::deserialize: 41
   function core::Felt252Serde::deserialize: 30
@@ -851,7 +851,7 @@ Weight by Sierra stack trace:
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize -> core::integer::Felt252TryIntoU32::try_into: 9
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize -> core::integer::U32Sub::sub -> core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>: 6
   test::validate_call -> test::test_contract::__wrapper____validate__ -> test::test_contract::__validate__: 1
-Weight by Sierra stack trace:
+Weight by Cairo stack trace:
   test::validate_call: 268
   test::validate_call -> test::test_contract::__wrapper____validate__: 239
   test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 208
@@ -980,7 +980,7 @@ Weight by generic libfunc:
 Weight by user function (inc. generated):
   function core::ecdsa::check_ecdsa_signature: 170
   function test::ecdsa_call: 14
-Weight by original user function:
+Weight by original user function (exc. generated):
   function core::ecdsa::check_ecdsa_signature: 170
   function test::ecdsa_call: 14
 Weight by Cairo function:
@@ -998,7 +998,7 @@ Weight by Cairo function:
 Weight by Sierra stack trace:
   test::ecdsa_call: 184
   test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 170
-Weight by Sierra stack trace:
+Weight by Cairo stack trace:
   test::ecdsa_call: 184
   test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 170
 
@@ -1639,7 +1639,7 @@ Weight by user function (inc. generated):
   function test::erc_20::EventTransferIntoEvent::into: 6
   function core::integer::u256Serde::serialize: 5
   function core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall: 5
-Weight by original user function:
+Weight by original user function (exc. generated):
   function core::integer::Storeu256::read: 72
   function test::erc_20::__member_module_balances::InternalContractMemberStateImpl::address: 72
   function test::erc_20::StorageImpl::transfer_helper: 71
@@ -1753,7 +1753,7 @@ Weight by Sierra stack trace:
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> core::starknet::info::get_caller_address -> core::starknet::info::get_execution_info -> core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>>::unwrap_syscall: 5
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent> -> core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall: 5
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent> -> test::erc_20::EventIsEvent::append_keys_and_data -> test::erc_20::TransferIsEvent::append_keys_and_data -> core::integer::u256Serde::serialize: 5
-Weight by Sierra stack trace:
+Weight by Cairo stack trace:
   test::erc20_transfer: 796
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 765
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::IERC20Impl::transfer: 640
