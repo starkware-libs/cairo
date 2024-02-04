@@ -9,15 +9,20 @@ use cairo_lang_semantic::plugin::PluginSuite;
 
 pub mod abi;
 mod aliased;
-pub mod allowed_libfuncs;
 mod analyzer;
-pub mod casm_contract_class;
-pub mod compiler_version;
+pub mod compile;
 pub mod contract;
+<<<<<<< HEAD
 pub mod contract_class;
 mod contract_segmentation;
 mod felt252_serde;
 mod felt252_vec_compression;
+||||||| a48172481
+pub mod contract_class;
+mod felt252_serde;
+mod felt252_vec_compression;
+=======
+>>>>>>> origin/main
 pub mod inline_macros;
 pub mod plugin;
 

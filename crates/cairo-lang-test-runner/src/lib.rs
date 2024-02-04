@@ -12,11 +12,14 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_runner::casm_run::format_next_item;
-use cairo_lang_runner::profiling::{ProfilingInfo, ProfilingInfoProcessor};
+use cairo_lang_runner::profiling::{
+    ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
+};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -64,7 +67,7 @@ impl TestRunner {
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
         let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
-        runner.run()
+        runner.run(&self.compiler.db)
     }
 }
 
@@ -85,7 +88,7 @@ impl CompiledTestRunner {
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self) -> Result<Option<TestsSummary>> {
+    pub fn run(self, db: &RootDatabase) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -94,11 +97,12 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            if self.config.run_profiler == RunProfilerConfig::Cairo { Some(db) } else { None },
             compiled.named_tests,
             compiled.sierra_program,
             compiled.function_set_costs,
             compiled.contracts_info,
-            self.config.run_profiler,
+            self.config.run_profiler != RunProfilerConfig::None,
             compiled.statements_functions,
         )?;
 
@@ -147,14 +151,26 @@ fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
     format!("Panicked with {panic_values_string}.")
 }
 
+/// Whether to run the profiler, and what results to produce.
+/// With `None`, don't run the profiler.
+/// With `Sierra`, run the profiler and produce sierra profiling information.
+/// With `Cairo`, run the profiler and additionally produce cairo profiling information (e.g.
+///     filtering out generated functions).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RunProfilerConfig {
+    None,
+    Cairo,
+    Sierra,
+}
+
 /// Configuration of compiled tests runner.
 #[derive(Clone, Debug)]
 pub struct TestRunConfig {
     pub filter: String,
     pub include_ignored: bool,
     pub ignored: bool,
-    /// Whether to run the profiler.
-    pub run_profiler: bool,
+    /// Whether to run the profiler and how.
+    pub run_profiler: RunProfilerConfig,
 }
 
 /// The test cases compiler.
@@ -274,6 +290,7 @@ pub struct TestsSummary {
 
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
+    db: Option<&RootDatabase>,
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -301,93 +318,133 @@ pub fn run_tests(
         ignored: vec![],
         failed_run_results: vec![],
     }));
-    named_tests
-        .into_par_iter()
-        .map(|(name, test)| -> anyhow::Result<(String, Option<TestResult>)> {
-            if test.ignored {
-                return Ok((name, None));
-            }
-            let func = runner.find_function(name.as_str())?;
-            let result = runner
-                .run_function_with_starknet_context(
-                    func,
-                    &[],
-                    test.available_gas,
-                    Default::default(),
-                )
-                .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
-            Ok((
-                name,
-                Some(TestResult {
-                    status: match &result.value {
-                        RunResultValue::Success(_) => match test.expectation {
-                            TestExpectation::Success => TestStatus::Success,
-                            TestExpectation::Panics(_) => TestStatus::Fail(result.value),
-                        },
-                        RunResultValue::Panic(value) => match test.expectation {
-                            TestExpectation::Success => TestStatus::Fail(result.value),
-                            TestExpectation::Panics(panic_expectation) => match panic_expectation {
-                                PanicExpectation::Exact(expected) if value != &expected => {
-                                    TestStatus::Fail(result.value)
-                                }
-                                _ => TestStatus::Success,
-                            },
-                        },
+
+    // Run in parallel if possible. If running with db, parallelism is impossible.
+    if db.is_none() {
+        named_tests
+            .into_par_iter()
+            .map(|(name, test)| run_single_test(test, name, &runner))
+            .for_each(|res| {
+                update_summary(
+                    &wrapped_summary,
+                    res,
+                    None,
+                    &sierra_program,
+                    &statements_functions,
+                    &ProfilingInfoProcessorParams {
+                        process_by_original_user_function: false,
+                        process_by_cairo_function: false,
+                        ..ProfilingInfoProcessorParams::default()
                     },
-                    gas_usage: test
-                        .available_gas
-                        .zip(result.gas_counter)
-                        .map(|(before, after)| {
-                            before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
-                        })
-                        .or_else(|| {
-                            runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
-                        }),
-                    profiling_info: result.profiling_info,
-                }),
-            ))
-        })
-        .for_each(|r| {
-            let mut wrapped_summary = wrapped_summary.lock().unwrap();
-            if wrapped_summary.is_err() {
-                return;
-            }
-            let (name, status) = match r {
-                Ok((name, status)) => (name, status),
-                Err(err) => {
-                    *wrapped_summary = Err(err);
-                    return;
-                }
-            };
-            let summary = wrapped_summary.as_mut().unwrap();
-            let (res_type, status_str, gas_usage, profiling_info) = match status {
-                Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
-                    (&mut summary.passed, "ok".bright_green(), gas_usage, profiling_info)
-                }
-                Some(TestResult {
-                    status: TestStatus::Fail(run_result),
-                    gas_usage,
-                    profiling_info,
-                }) => {
-                    summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red(), gas_usage, profiling_info)
-                }
-                None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
-            };
-            if let Some(gas_usage) = gas_usage {
-                println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
-            } else {
-                println!("test {name} ... {status_str}");
-            }
-            if let Some(profiling_info) = profiling_info {
-                let profiling_processor = ProfilingInfoProcessor::new(
-                    sierra_program.clone(),
-                    statements_functions.clone(),
                 );
-                let processed_profiling_info = profiling_processor.process(&profiling_info);
-                println!("Profiling info:\n{processed_profiling_info}");
-            }
-            res_type.push(name);
-        });
+            });
+    } else {
+        eprintln!("Note: Tests don't run in parallel when running with a database.");
+        named_tests
+            .into_iter()
+            .map(move |(name, test)| run_single_test(test, name, &runner))
+            .for_each(|test_result| {
+                update_summary(
+                    &wrapped_summary,
+                    test_result,
+                    db.map(|db| db as &dyn SierraGenGroup),
+                    &sierra_program,
+                    &statements_functions,
+                    &ProfilingInfoProcessorParams::default(),
+                );
+            });
+    }
+
     wrapped_summary.into_inner().unwrap()
+}
+
+/// Runs a single test and returns a tuple of its name and result.
+fn run_single_test(
+    test: TestConfig,
+    name: String,
+    runner: &SierraCasmRunner,
+) -> anyhow::Result<(String, Option<TestResult>)> {
+    if test.ignored {
+        return Ok((name, None));
+    }
+    let func = runner.find_function(name.as_str())?;
+    let result = runner
+        .run_function_with_starknet_context(func, &[], test.available_gas, Default::default())
+        .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
+    Ok((
+        name,
+        Some(TestResult {
+            status: match &result.value {
+                RunResultValue::Success(_) => match test.expectation {
+                    TestExpectation::Success => TestStatus::Success,
+                    TestExpectation::Panics(_) => TestStatus::Fail(result.value),
+                },
+                RunResultValue::Panic(value) => match test.expectation {
+                    TestExpectation::Success => TestStatus::Fail(result.value),
+                    TestExpectation::Panics(panic_expectation) => match panic_expectation {
+                        PanicExpectation::Exact(expected) if value != &expected => {
+                            TestStatus::Fail(result.value)
+                        }
+                        _ => TestStatus::Success,
+                    },
+                },
+            },
+            gas_usage: test
+                .available_gas
+                .zip(result.gas_counter)
+                .map(|(before, after)| {
+                    before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
+                })
+                .or_else(|| {
+                    runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
+                }),
+            profiling_info: result.profiling_info,
+        }),
+    ))
+}
+
+/// Updates the test summary with the given test result.
+fn update_summary(
+    wrapped_summary: &Mutex<std::prelude::v1::Result<TestsSummary, anyhow::Error>>,
+    test_result: std::prelude::v1::Result<(String, Option<TestResult>), anyhow::Error>,
+    db: Option<&dyn SierraGenGroup>,
+    sierra_program: &Program,
+    statements_functions: &UnorderedHashMap<StatementIdx, String>,
+    profiling_params: &ProfilingInfoProcessorParams,
+) {
+    let mut wrapped_summary = wrapped_summary.lock().unwrap();
+    if wrapped_summary.is_err() {
+        return;
+    }
+    let (name, status) = match test_result {
+        Ok((name, status)) => (name, status),
+        Err(err) => {
+            *wrapped_summary = Err(err);
+            return;
+        }
+    };
+    let summary = wrapped_summary.as_mut().unwrap();
+    let (res_type, status_str, gas_usage, profiling_info) = match status {
+        Some(TestResult { status: TestStatus::Success, gas_usage, profiling_info }) => {
+            (&mut summary.passed, "ok".bright_green(), gas_usage, profiling_info)
+        }
+        Some(TestResult { status: TestStatus::Fail(run_result), gas_usage, profiling_info }) => {
+            summary.failed_run_results.push(run_result);
+            (&mut summary.failed, "fail".bright_red(), gas_usage, profiling_info)
+        }
+        None => (&mut summary.ignored, "ignored".bright_yellow(), None, None),
+    };
+    if let Some(gas_usage) = gas_usage {
+        println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
+    } else {
+        println!("test {name} ... {status_str}");
+    }
+    if let Some(profiling_info) = profiling_info {
+        let profiling_processor =
+            ProfilingInfoProcessor::new(db, sierra_program.clone(), statements_functions.clone());
+        let processed_profiling_info =
+            profiling_processor.process_ex(&profiling_info, profiling_params);
+        println!("Profiling info:\n{processed_profiling_info}");
+    }
+    res_type.push(name);
 }

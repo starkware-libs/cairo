@@ -4,35 +4,11 @@ mod test;
 
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{izip, zip_eq, Itertools};
+use itertools::{chain, izip, zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::borrow_check::demand::DemandReporter;
-use crate::borrow_check::Demand;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
-
-pub type CancelOpsDemand = Demand<VariableId, StatementLocation, ()>;
-
-/// Demand reporter for cancel ops.
-/// use sites are reported using `dup` and `last_use`.
-impl DemandReporter<VariableId> for CancelOpsContext<'_> {
-    type IntroducePosition = ();
-    type UsePosition = StatementLocation;
-
-    fn dup(
-        &mut self,
-        position: StatementLocation,
-        var: VariableId,
-        _next_usage_position: StatementLocation,
-    ) {
-        self.use_sites.entry(var).or_default().push(position);
-    }
-
-    fn last_use(&mut self, position: StatementLocation, var: VariableId) {
-        self.use_sites.entry(var).or_default().push(position);
-    }
-}
 
 /// Cancels out a (StructConstruct, StructDestructure) and (Snap, Desnap) pair.
 ///
@@ -51,25 +27,30 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
     let ctx = CancelOpsContext {
         lowered,
         use_sites: Default::default(),
-        renamed_vars: Default::default(),
+        var_remapper: Default::default(),
+        aliases: Default::default(),
         stmts_to_remove: vec![],
     };
     let mut analysis =
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
-    let mut ctx = analysis.analyzer;
 
-    let mut rebuilder = CancelOpsRebuilder { renamed_vars: ctx.renamed_vars };
+    let CancelOpsContext { mut var_remapper, stmts_to_remove, .. } = analysis.analyzer;
 
     // Remove no-longer needed statements.
-    ctx.stmts_to_remove.sort_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id));
-    for (block_id, stmt_id) in ctx.stmts_to_remove.into_iter().rev() {
+    // Note that dedup() is used since a statement might be marked for removal more then once.
+    for (block_id, stmt_id) in stmts_to_remove
+        .into_iter()
+        .sorted_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id))
+        .rev()
+        .dedup()
+    {
         lowered.blocks[block_id].statements.remove(stmt_id);
     }
 
     // Rebuild the blocks with the new variable names.
     for block in lowered.blocks.iter_mut() {
-        *block = rebuilder.rebuild_block(block);
+        *block = var_remapper.rebuild_block(block);
     }
 }
 
@@ -81,60 +62,97 @@ pub struct CancelOpsContext<'a> {
     use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
-    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+    var_remapper: CancelOpsRebuilder,
+
+    /// Keeps track of all the aliases created by the renaming.
+    aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
 
     /// Statements that can be be removed.
     stmts_to_remove: Vec<StatementLocation>,
 }
 
-/// Returns the use sites of a variable.
-///
-/// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
-fn get_use_sites<'a>(
-    use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
+/// Similar to `mapping.get(var).or_default()` but but works for types that don't implement Default.
+fn get_entry_as_slice<'a, T>(
+    mapping: &'a UnorderedHashMap<VariableId, Vec<T>>,
     var: &VariableId,
-) -> &'a [StatementLocation] {
-    match use_sites.get(var) {
-        Some(use_sites) => &use_sites[..],
+) -> &'a [T] {
+    match mapping.get(var) {
+        Some(entry) => &entry[..],
         None => &[],
     }
 }
 
-#[derive(Clone)]
-pub struct AnalysisInfo {
-    demand: CancelOpsDemand,
+/// Returns the use sites of a variable.
+///
+/// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
+fn filter_use_sites<'a, F, T>(
+    use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
+    var_aliases: &'a UnorderedHashMap<VariableId, Vec<VariableId>>,
+    orig_var_id: &VariableId,
+    mut f: F,
+) -> Vec<T>
+where
+    F: FnMut(&StatementLocation) -> Option<T>,
+{
+    let mut res = vec![];
+
+    let aliases = get_entry_as_slice(var_aliases, orig_var_id);
+
+    for var in chain!(std::iter::once(orig_var_id), aliases) {
+        let use_sites = get_entry_as_slice(use_sites, var);
+        for use_site in use_sites {
+            if let Some(filtered) = f(use_site) {
+                res.push(filtered);
+            }
+        }
+    }
+    res
 }
+
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
-        assert!(
-            self.renamed_vars.insert(from, to).is_none(),
-            "Variable {:?} was already renamed",
-            from
-        );
+        self.var_remapper.renamed_vars.insert(from, to);
 
-        // Move `from` used sites to `to` to allow the optimization to be applied to them.
-        if let Some(from_use_sites) = self.use_sites.remove(&from) {
-            self.use_sites.entry(to).or_default().extend(from_use_sites);
+        let mut aliases = Vec::from_iter(chain(
+            std::iter::once(from),
+            get_entry_as_slice(&self.aliases, &from).iter().copied(),
+        ));
+        // Optimize for the case where the alias list of `to` is empty.
+        match self.aliases.entry(to) {
+            std::collections::hash_map::Entry::Occupied(mut entry) => {
+                aliases.extend(entry.get().iter());
+                *entry.get_mut() = aliases;
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(aliases);
+            }
         }
+    }
+
+    fn add_use_site(&mut self, var: VariableId, use_site: StatementLocation) {
+        self.use_sites.entry(var).or_default().push(use_site);
     }
 
     /// Handles a statement and returns true if it can be removed.
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
             Statement::StructDestructure(stmt) => {
-                let mut use_sites = OrderedHashSet::<&StatementLocation>::default();
-
-                for output in stmt.outputs.iter() {
-                    let output_use_sites = get_use_sites(&self.use_sites, output);
-                    use_sites.extend(output_use_sites);
-                }
+                let mut visited_use_sites = OrderedHashSet::<StatementLocation>::default();
 
                 let mut can_remove_struct_destructure = true;
 
-                let constructs = use_sites
-                    .iter()
-                    .filter_map(|location| {
-                        match self.lowered.blocks[location.0].statements.get(location.1) {
+                let mut constructs = vec![];
+                for output in stmt.outputs.iter() {
+                    constructs.extend(filter_use_sites(
+                        &self.use_sites,
+                        &self.aliases,
+                        output,
+                        |location| match self.lowered.blocks[location.0].statements.get(location.1)
+                        {
+                            _ if !visited_use_sites.insert(*location) => {
+                                // Filter previously seen use sites.
+                                None
+                            }
                             Some(Statement::StructConstruct(construct_stmt))
                                 if stmt.outputs.len() == construct_stmt.inputs.len()
                                     && self.lowered.variables[stmt.input.var_id].ty
@@ -143,18 +161,20 @@ impl<'a> CancelOpsContext<'a> {
                                         stmt.outputs.iter(),
                                         construct_stmt.inputs.iter(),
                                     )
-                                    .all(|(output, input)| output == &input.var_id) =>
+                                    .all(|(output, input)| {
+                                        output == &self.var_remapper.map_var_id(input.var_id)
+                                    }) =>
                             {
-                                self.stmts_to_remove.push(**location);
+                                self.stmts_to_remove.push(*location);
                                 Some(construct_stmt)
                             }
                             _ => {
                                 can_remove_struct_destructure = false;
                                 None
                             }
-                        }
-                    })
-                    .collect_vec();
+                        },
+                    ));
+                }
 
                 if !(can_remove_struct_destructure
                     || self.lowered.variables[stmt.input.var_id].duplicatable.is_ok())
@@ -175,12 +195,9 @@ impl<'a> CancelOpsContext<'a> {
                 can_remove_struct_destructure
             }
             Statement::StructConstruct(stmt) => {
-                let use_sites = get_use_sites(&self.use_sites, &stmt.output);
-
                 let mut can_remove_struct_construct = true;
-                let destructures = use_sites
-                    .iter()
-                    .filter_map(|location| {
+                let destructures =
+                    filter_use_sites(&self.use_sites, &self.aliases, &stmt.output, |location| {
                         if let Some(Statement::StructDestructure(destructure_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
                         {
@@ -190,8 +207,7 @@ impl<'a> CancelOpsContext<'a> {
                             can_remove_struct_construct = false;
                             None
                         }
-                    })
-                    .collect_vec();
+                    });
 
                 if !(can_remove_struct_construct
                     || stmt
@@ -219,12 +235,13 @@ impl<'a> CancelOpsContext<'a> {
                 can_remove_struct_construct
             }
             Statement::Snapshot(stmt) => {
-                let use_sites = get_use_sites(&self.use_sites, &stmt.output_snapshot);
-
                 let mut can_remove_snap = true;
-                let desnaps = use_sites
-                    .iter()
-                    .filter_map(|location| {
+
+                let desnaps = filter_use_sites(
+                    &self.use_sites,
+                    &self.aliases,
+                    &stmt.output_snapshot,
+                    |location| {
                         if let Some(Statement::Desnap(desnap_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
                         {
@@ -234,8 +251,8 @@ impl<'a> CancelOpsContext<'a> {
                             can_remove_snap = false;
                             None
                         }
-                    })
-                    .collect_vec();
+                    },
+                );
 
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
@@ -260,58 +277,42 @@ impl<'a> CancelOpsContext<'a> {
 }
 
 impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
-    type Info = AnalysisInfo;
+    type Info = ();
 
     fn visit_stmt(
         &mut self,
-        info: &mut Self::Info,
+        _info: &mut Self::Info,
         statement_location: StatementLocation,
         stmt: &'a Statement,
     ) {
         if !self.handle_stmt(stmt, statement_location) {
-            info.demand.variables_introduced(self, &stmt.outputs(), ());
-            info.demand.variables_used(
-                self,
-                stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-            );
+            for input in stmt.inputs() {
+                self.add_use_site(input.var_id, statement_location);
+            }
         }
     }
 
     fn visit_goto(
         &mut self,
-        info: &mut Self::Info,
+        _info: &mut Self::Info,
         statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.demand.apply_remapping(
-            self,
-            remapping.iter().map(|(dst, src)| (dst, (&src.var_id, statement_location))),
-        );
+        for src in remapping.values() {
+            self.add_use_site(src.var_id, statement_location);
+        }
     }
 
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
         match_info: &'a MatchInfo,
-        infos: &[Self::Info],
+        _infos: &[Self::Info],
     ) -> Self::Info {
-        let arm_demands = zip_eq(match_info.arms(), infos)
-            .map(|(arm, info)| {
-                let mut demand = info.demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ());
-
-                (demand, ())
-            })
-            .collect_vec();
-        let mut demand = CancelOpsDemand::merge_demands(&arm_demands, self);
-
-        demand.variables_used(
-            self,
-            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-        );
-
-        Self::Info { demand }
+        for var in match_info.inputs() {
+            self.add_use_site(var.var_id, statement_location);
+        }
     }
 
     fn info_from_return(
@@ -319,15 +320,13 @@ impl<'a> Analyzer<'a> for CancelOpsContext<'a> {
         statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
-        let mut demand = CancelOpsDemand::default();
-        demand.variables_used(
-            self,
-            vars.iter().map(|VarUsage { var_id, .. }| (var_id, statement_location)),
-        );
-        Self::Info { demand }
+        for var in vars {
+            self.add_use_site(var.var_id, statement_location);
+        }
     }
 }
 
+#[derive(Default)]
 pub struct CancelOpsRebuilder {
     renamed_vars: UnorderedHashMap<VariableId, VariableId>,
 }

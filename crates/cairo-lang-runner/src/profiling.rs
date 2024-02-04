@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
+use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use smol_str::SmolStr;
@@ -45,7 +46,7 @@ pub struct ProcessedProfilingInfo {
     /// functions).
     pub user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
     /// Weight (in steps in the relevant run) of each original user function.
-    pub original_user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub original_user_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each Cairo function.
     pub cairo_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
@@ -133,7 +134,8 @@ impl Default for ProfilingInfoProcessorParams {
 }
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
-pub struct ProfilingInfoProcessor {
+pub struct ProfilingInfoProcessor<'a> {
+    db: Option<&'a dyn SierraGenGroup>,
     sierra_program: Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
@@ -141,12 +143,14 @@ pub struct ProfilingInfoProcessor {
     statements_functions: UnorderedHashMap<StatementIdx, String>,
     params: ProfilingInfoProcessorParams,
 }
-impl ProfilingInfoProcessor {
+impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
+        db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
         Self {
+            db,
             sierra_program,
             statements_functions,
             params: ProfilingInfoProcessorParams::default(),
@@ -172,7 +176,7 @@ impl ProfilingInfoProcessor {
                 .map(|concrete_libfunc| (concrete_libfunc.long_id.to_string().into(), 0))
                 .collect::<UnorderedHashMap<SmolStr, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
         let mut generic_libfuncs = if params.process_by_generic_libfunc {
@@ -182,7 +186,7 @@ impl ProfilingInfoProcessor {
                 .map(|generic_libfunc| (generic_libfunc.long_id.generic_id.0.clone(), 0))
                 .collect::<UnorderedHashMap<SmolStr, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
         let mut user_functions = if params.process_by_user_function {
@@ -193,10 +197,10 @@ impl ProfilingInfoProcessor {
                 .map(|(idx, _)| (idx, 0))
                 .collect::<UnorderedHashMap<usize, usize>>()
         } else {
-            UnorderedHashMap::new()
+            UnorderedHashMap::default()
         };
 
-        let mut cairo_functions = UnorderedHashMap::new();
+        let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         let mut return_weight = 0;
         let mut sierra_statements_weights = OrderedHashMap::default();
 
@@ -285,11 +289,15 @@ impl ProfilingInfoProcessor {
 
         let mut original_user_functions_weights = OrderedHashMap::default();
         if params.process_by_original_user_function {
+            let db =
+                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
             for (orig_name, weight) in user_functions
                 .aggregate_by(
-                    |idx| -> SmolStr {
-                        let full_name = self.sierra_program.funcs[*idx].id.to_string();
-                        full_name.split('[').next().unwrap().into()
+                    |idx| {
+                        let lowering_function_id = db.lookup_intern_sierra_function(
+                            self.sierra_program.funcs[*idx].id.clone(),
+                        );
+                        lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
                     &0,

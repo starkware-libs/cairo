@@ -1,4 +1,4 @@
-use core::{ec, ec::{EcPoint, EcPointTrait}};
+use core::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
 use core::option::OptionTrait;
 use core::math;
 use core::traits::{Into, TryInto};
@@ -38,23 +38,26 @@ pub fn check_ecdsa_signature(
     }
 
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
-    let public_key_point = match EcPointTrait::new_from_x(public_key) {
+    let public_key_point = match EcPointTrait::new_nz_from_x(public_key) {
         Option::Some(point) => point,
         Option::None => { return false; },
     };
 
     // Check that `r` is the x coordinate of a point on the curve and get such a point.
     // Note that this ensures that `r != 0`.
-    let signature_r_point = match EcPointTrait::new_from_x(signature_r) {
+    let signature_r_point = match EcPointTrait::new_nz_from_x(signature_r) {
         Option::Some(point) => point,
         Option::None => { return false; },
     };
 
     // Retrieve the generator point.
-    let gen_point = match EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
+    let gen_point = match EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
         Option::None => { return false; },
     };
+
+    // Initialize an EC state.
+    let init_ec = EcStateTrait::init();
 
     // To verify ECDSA, obtain:
     //   zG = z * G, where z is the message and G is a generator of the EC.
@@ -63,8 +66,11 @@ pub fn check_ecdsa_signature(
     // and check that:
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
-    let sR: EcPoint = signature_r_point.mul(signature_s);
-    let sR_x = match sR.try_into() {
+
+    // Calculate `sR.x`.
+    let mut sR_state = init_ec.clone();
+    sR_state.add_mul(signature_s, signature_r_point);
+    let sR_x = match sR_state.finalize_nz() {
         Option::Some(pt) => {
             let (x, _) = ec::ec_point_unwrap(pt);
             x
@@ -72,9 +78,23 @@ pub fn check_ecdsa_signature(
         Option::None => { return false; },
     };
 
-    let zG: EcPoint = gen_point.mul(message_hash);
-    let rQ: EcPoint = public_key_point.mul(signature_r);
-    match (zG + rQ).try_into() {
+    // Calculate a state with `z * G`.
+    let mut zG_state = init_ec.clone();
+    zG_state.add_mul(message_hash, gen_point);
+
+    // Calculate the point `r * Q`.
+    let mut rQ_state = init_ec;
+    rQ_state.add_mul(signature_r, public_key_point);
+    let rQ = match rQ_state.finalize_nz() {
+        Option::Some(pt) => pt,
+        // The zero case is not actually possible, as `signature_r` isn't 0.
+        Option::None => { return false; },
+    };
+
+    // Check the `(zG + rQ).x = sR.x` case.
+    let mut zG_plus_eQ_state = zG_state.clone();
+    zG_plus_eQ_state.add(rQ);
+    match zG_plus_eQ_state.finalize_nz() {
         Option::Some(pt) => {
             let (x, _) = ec::ec_point_unwrap(pt);
             if (x == sR_x) {
@@ -84,7 +104,10 @@ pub fn check_ecdsa_signature(
         Option::None => {},
     };
 
-    match (zG - rQ).try_into() {
+    // Check the `(zG - rQ).x = sR.x` case.
+    let mut zG_minus_eQ_state = zG_state;
+    zG_minus_eQ_state.sub(rQ);
+    match zG_minus_eQ_state.finalize_nz() {
         Option::Some(pt) => {
             let (x, _) = ec::ec_point_unwrap(pt);
             if (x == sR_x) {
