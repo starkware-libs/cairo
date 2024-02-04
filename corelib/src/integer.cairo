@@ -2754,3 +2754,106 @@ impl I128One of core::num::traits::One<i128> {
         !self.is_one()
     }
 }
+
+// OverflowingAdd implementations
+
+impl U8OverflowingAdd of core::num::traits::OverflowingAdd<u8> {
+    fn overflowing_add(self: u8, v: u8) -> (u8, bool) {
+        match u8_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U16OverflowingAdd of core::num::traits::OverflowingAdd<u16> {
+    fn overflowing_add(self: u16, v: u16) -> (u16, bool) {
+        match u16_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U32OverflowingAdd of core::num::traits::OverflowingAdd<u32> {
+    fn overflowing_add(self: u32, v: u32) -> (u32, bool) {
+        match u32_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U64OverflowingAdd of core::num::traits::OverflowingAdd<u64> {
+    fn overflowing_add(self: u64, v: u64) -> (u64, bool) {
+        match u64_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U128OverflowingAdd of core::num::traits::OverflowingAdd<u128> {
+    fn overflowing_add(self: u128, v: u128) -> (u128, bool) {
+        match u128_overflowing_add(self, v) {
+            Result::Ok(x) => (x, false),
+            Result::Err(x) => (x, true)
+        }
+    }
+}
+
+impl U256OverflowingAdd of core::num::traits::OverflowingAdd<u256> {
+    fn overflowing_add(self: u256, v: u256) -> (u256, bool) {
+        u256_overflowing_add(self, v)
+    }
+}
+
+impl I8OverflowingAdd of core::num::traits::OverflowingAdd<i8> {
+    fn overflowing_add(self: i8, v: i8) -> (i8, bool) {
+        match i8_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I16OverflowingAdd of core::num::traits::OverflowingAdd<i16> {
+    fn overflowing_add(self: i16, v: i16) -> (i16, bool) {
+        match i16_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I32OverflowingAdd of core::num::traits::OverflowingAdd<i32> {
+    fn overflowing_add(self: i32, v: i32) -> (i32, bool) {
+        match i32_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I64OverflowingAdd of core::num::traits::OverflowingAdd<i64> {
+    fn overflowing_add(self: i64, v: i64) -> (i64, bool) {
+        match i64_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
+
+impl I128OverflowingAdd of core::num::traits::OverflowingAdd<i128> {
+    fn overflowing_add(self: i128, v: i128) -> (i128, bool) {
+        match i128_overflowing_add_impl(self, v) {
+            SignedIntegerResult::InRange(x) => (x, false),
+            SignedIntegerResult::Underflow(x) => (x, true),
+            SignedIntegerResult::Overflow(x) => (x, true),
+        }
+    }
+}
