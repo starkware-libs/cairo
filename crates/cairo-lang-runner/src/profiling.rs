@@ -32,7 +32,8 @@ pub struct ProfilingInfo {
 pub struct ProcessedProfilingInfo {
     /// For each sierra statement: the number of steps in the trace that originated from it, and
     /// the relevant GenStatement.
-    pub sierra_statement_weights: OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
+    pub sierra_statement_weights:
+        Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>>,
 
     /// Weights per stack trace.
     pub stack_trace_weights: StackTraceWeights,
@@ -73,7 +74,7 @@ pub struct StackTraceWeights {
     /// The key is a function stack trace of an executed function. The stack trace is represented
     /// as a vector of the function names.
     /// The value is the weight of the stack trace.
-    pub sierra_stack_trace_weights: OrderedHashMap<Vec<String>, usize>,
+    pub sierra_stack_trace_weights: Option<OrderedHashMap<Vec<String>, usize>>,
     /// A map of weights of each stack trace, only for stack traces that are fully semantic
     /// (equivalent to Cairo traces). That is, none of the trace components is generated.
     /// This is a filtered map of `sierra_stack_trace_weights`.
@@ -81,9 +82,11 @@ pub struct StackTraceWeights {
 }
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Weight by sierra statement:")?;
-        for (statement_idx, (weight, gen_statement)) in self.sierra_statement_weights.iter() {
-            writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
+        if let Some(sierra_statement_weights) = &self.sierra_statement_weights {
+            writeln!(f, "Weight by sierra statement:")?;
+            for (statement_idx, (weight, gen_statement)) in sierra_statement_weights.iter() {
+                writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
+            }
         }
 
         if let Some(concrete_libfunc_weights) = &self.libfunc_weights.concrete_libfunc_weights {
@@ -134,10 +137,14 @@ impl Display for ProcessedProfilingInfo {
             }
         }
 
-        writeln!(f, "Weight by Sierra stack trace:")?;
-        for (stack_trace, weight) in self.stack_trace_weights.sierra_stack_trace_weights.iter() {
-            let stack_trace_str = stack_trace.join(" -> ");
-            writeln!(f, "  {stack_trace_str}: {weight}")?;
+        if let Some(sierra_stack_trace_weights) =
+            &self.stack_trace_weights.sierra_stack_trace_weights
+        {
+            writeln!(f, "Weight by Sierra stack trace:")?;
+            for (stack_trace, weight) in sierra_stack_trace_weights.iter() {
+                let stack_trace_str = stack_trace.join(" -> ");
+                writeln!(f, "  {stack_trace_str}: {weight}")?;
+            }
         }
 
         if let Some(cairo_stack_trace_weights) = &self.stack_trace_weights.cairo_stack_trace_weights
@@ -160,6 +167,8 @@ pub struct ProfilingInfoProcessorParams {
     /// sum of the weights per statement may be smaller than the sum of the weights per concrete
     /// libfunc, that may be smaller than the sum of the weights per generic libfunc.
     pub min_weight: usize,
+    /// Whether to process the profiling info by Sierra statement.
+    process_by_statement: bool,
     /// Whether to process the profiling info by concrete libfunc.
     pub process_by_concrete_libfunc: bool,
     /// Whether to process the profiling info by generic libfunc.
@@ -171,6 +180,9 @@ pub struct ProfilingInfoProcessorParams {
     /// Whether to process the profiling info by Cairo function (computed from the compiler
     /// StableLocation).
     pub process_by_cairo_function: bool,
+    /// Whether to process the profiling info by Sierra stack trace (including generated
+    /// functions in the traces).
+    pub process_by_stack_trace: bool,
     /// Whether to process the profiling info by Cairo stack trace (that is, no generated
     /// functions in the traces).
     pub process_by_cairo_stack_trace: bool,
@@ -179,11 +191,13 @@ impl Default for ProfilingInfoProcessorParams {
     fn default() -> Self {
         Self {
             min_weight: 1,
+            process_by_statement: true,
             process_by_concrete_libfunc: true,
             process_by_generic_libfunc: true,
             process_by_user_function: true,
             process_by_original_user_function: true,
             process_by_cairo_function: true,
+            process_by_stack_trace: true,
             process_by_cairo_stack_trace: true,
         }
     }
@@ -257,13 +271,19 @@ impl<'a> ProfilingInfoProcessor<'a> {
         &self,
         sierra_statement_weights_iter: std::vec::IntoIter<(&StatementIdx, &usize)>,
         params: &ProfilingInfoProcessorParams,
-    ) -> OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)> {
-        sierra_statement_weights_iter
-            .filter(|&(_, weight)| (*weight >= params.min_weight))
-            .map(|(statement_idx, weight)| {
-                (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
-            })
-            .collect()
+    ) -> Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>> {
+        if !params.process_by_statement {
+            return None;
+        }
+
+        Some(
+            sierra_statement_weights_iter
+                .filter(|&(_, weight)| (*weight >= params.min_weight))
+                .map(|(statement_idx, weight)| {
+                    (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
+                })
+                .collect(),
+        )
     }
 
     /// Process the weights per stack trace.
@@ -272,18 +292,23 @@ impl<'a> ProfilingInfoProcessor<'a> {
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
     ) -> StackTraceWeights {
-        let sierra_stack_trace_weights = raw_profiling_info
-            .stack_trace_weights
-            .iter_sorted_by_key(|(idx_stack_trace, weight)| {
-                (usize::MAX - **weight, (*idx_stack_trace).clone())
-            })
-            .map(|(idx_stack_trace, weight)| {
-                (
-                    index_stack_trace_to_name_stack_trace(&self.sierra_program, idx_stack_trace),
-                    *weight,
-                )
-            })
-            .collect();
+        let sierra_stack_trace_weights = params.process_by_stack_trace.then(|| {
+            raw_profiling_info
+                .stack_trace_weights
+                .iter_sorted_by_key(|(idx_stack_trace, weight)| {
+                    (usize::MAX - **weight, (*idx_stack_trace).clone())
+                })
+                .map(|(idx_stack_trace, weight)| {
+                    (
+                        index_stack_trace_to_name_stack_trace(
+                            &self.sierra_program,
+                            idx_stack_trace,
+                        ),
+                        *weight,
+                    )
+                })
+                .collect()
+        });
 
         let cairo_stack_trace_weights = params.process_by_cairo_stack_trace.then(|| {
             let db = self.db.expect("DB must be set with `process_by_cairo_stack_trace=true`.");
