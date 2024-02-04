@@ -3,10 +3,12 @@ use std::fs;
 use std::sync::Mutex;
 
 use anyhow::Context;
-use cairo_lang_starknet::casm_contract_class::{CasmContractClass, StarknetSierraCompilationError};
-use cairo_lang_starknet::compiler_version::VersionId;
-use cairo_lang_starknet::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
+use cairo_lang_starknet_classes::casm_contract_class::{
+    CasmContractClass, StarknetSierraCompilationError,
+};
+use cairo_lang_starknet_classes::compiler_version::VersionId;
+use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
