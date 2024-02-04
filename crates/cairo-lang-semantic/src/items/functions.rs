@@ -200,8 +200,12 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
+    pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
+        db.lookup_intern_function(*self)
+    }
+
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
-        db.lookup_intern_function(*self).function
+        self.lookup(db).function
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
