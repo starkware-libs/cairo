@@ -22,6 +22,7 @@ cargo publish --package cairo-lang-utils &&
     cargo publish --package cairo-lang-lowering &&
     cargo publish --package cairo-lang-sierra-generator &&
     cargo publish --package cairo-lang-compiler &&
+    cargo publish --package cairo-lang-starknet-classes &&
     cargo publish --package cairo-lang-starknet &&
     cargo publish --package cairo-lang-runner &&
     cargo publish --package cairo-lang-test-plugin &&
