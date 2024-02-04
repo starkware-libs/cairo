@@ -247,6 +247,15 @@ impl FunctionLongId {
             FunctionLongId::Generated(generated) => generated.name(db),
         }
     }
+    /// Returns the full path of the relevant semantic function:
+    /// - If the function itself is semantic (non generated), its own full path.
+    /// - If the function is generated, then its (semantic) parent's full path.
+    pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
+        match self {
+            FunctionLongId::Semantic(id) => id.full_name(db.upcast()),
+            FunctionLongId::Generated(generated) => generated.parent.full_path(db.upcast()),
+        }
+    }
 }
 impl FunctionId {
     pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
@@ -260,6 +269,9 @@ impl FunctionId {
     }
     pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
         self.lookup(db).name(db)
+    }
+    pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
+        self.lookup(db).semantic_full_path(db)
     }
 }
 pub trait SemanticFunctionIdEx {
