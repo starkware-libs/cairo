@@ -4,8 +4,28 @@ use std::path::PathBuf;
 
 use anyhow::Ok;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_test_runner::{TestRunConfig, TestRunner};
-use clap::Parser;
+use cairo_lang_test_runner::{self, TestRunConfig, TestRunner};
+use clap::{Parser, ValueEnum};
+use serde::Serialize;
+
+/// The clap-arg equivalent of [cairo_lang_test_runner::RunProfilerConfig].
+#[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "kebab-case")]
+enum RunProfilerConfig {
+    #[default]
+    None,
+    Cairo,
+    Sierra,
+}
+impl Into<cairo_lang_test_runner::RunProfilerConfig> for RunProfilerConfig {
+    fn into(self) -> cairo_lang_test_runner::RunProfilerConfig {
+        match self {
+            RunProfilerConfig::None => cairo_lang_test_runner::RunProfilerConfig::None,
+            RunProfilerConfig::Cairo => cairo_lang_test_runner::RunProfilerConfig::Cairo,
+            RunProfilerConfig::Sierra => cairo_lang_test_runner::RunProfilerConfig::Sierra,
+        }
+    }
+}
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -32,9 +52,10 @@ struct Args {
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
-    /// Whether to run the profiler.
-    #[arg(long, default_value_t = false)]
-    run_profiler: bool,
+    /// Whether to run the profiler, and what results to produce. See
+    /// [cairo_lang_test_runner::RunProfilerConfig]
+    #[clap(short, long, default_value_t, value_enum)]
+    run_profiler: RunProfilerConfig,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -47,7 +68,7 @@ fn main() -> anyhow::Result<()> {
         filter: args.filter,
         ignored: args.ignored,
         include_ignored: args.include_ignored,
-        run_profiler: args.run_profiler,
+        run_profiler: args.run_profiler.into(),
     };
 
     let runner = TestRunner::new(&args.path, args.starknet, args.allow_warnings, config)?;

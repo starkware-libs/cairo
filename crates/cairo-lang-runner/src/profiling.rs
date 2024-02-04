@@ -135,7 +135,7 @@ impl Default for ProfilingInfoProcessorParams {
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
-    db: &'a dyn SierraGenGroup,
+    db: Option<&'a dyn SierraGenGroup>,
     sierra_program: Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
@@ -145,7 +145,7 @@ pub struct ProfilingInfoProcessor<'a> {
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
-        db: &'a dyn SierraGenGroup,
+        db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
@@ -289,13 +289,15 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         let mut original_user_functions_weights = OrderedHashMap::default();
         if params.process_by_original_user_function {
+            let db =
+                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
             for (orig_name, weight) in user_functions
                 .aggregate_by(
                     |idx| {
-                        let lowering_function_id = self.db.lookup_intern_sierra_function(
+                        let lowering_function_id = db.lookup_intern_sierra_function(
                             self.sierra_program.funcs[*idx].id.clone(),
                         );
-                        lowering_function_id.semantic_full_path(self.db.upcast())
+                        lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
                     &0,
@@ -339,6 +341,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         ProcessedProfilingInfo {
             sierra_statements_weights,
             stack_trace_weights,
+            // TODO(yg): separate PR: these should be none if the relevant flag is false.
             generic_libfuncs_weights: Some(generic_libfuncs_weights),
             concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
             user_functions_weights: Some(user_functions_weights),

@@ -971,6 +971,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-runner",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-test-plugin",
@@ -1045,6 +1046,7 @@ dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-test-runner",
  "clap",
+ "serde",
 ]
 
 [[package]]
