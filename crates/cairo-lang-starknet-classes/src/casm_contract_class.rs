@@ -74,6 +74,10 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
+    #[error("Dupicate entry point selector {selector}.")]
+    DuplicateEntryPointSelector { selector: BigUint },
+    #[error("Dupicate entry point function index {index}.")]
+    DuplicateEntryPointSierraFunction { index: usize },
     #[error("Out of range value in serialization.")]
     ValueOutOfRange,
     #[error(
@@ -310,6 +314,8 @@ impl CasmContractClass {
             }
         };
 
+        let mut all_selectors = UnorderedHashSet::<BigUint>::default();
+        let mut all_function_ids = UnorderedHashSet::<usize>::default();
         for entry_points in [
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,
@@ -317,9 +323,23 @@ impl CasmContractClass {
         ] {
             // TODO(orizi): Use `is_sorted` when it becomes stable.
             if (1..entry_points.len())
-                .any(|i| entry_points[i - 1].selector > entry_points[i].selector)
+                .any(|i| entry_points[i - 1].selector >= entry_points[i].selector)
             {
                 return Err(StarknetSierraCompilationError::EntryPointsOutOfOrder);
+            }
+            for entry_point in entry_points {
+                if !all_selectors.insert(entry_point.selector.clone()) {
+                    return Err(StarknetSierraCompilationError::DuplicateEntryPointSelector {
+                        selector: entry_point.selector.clone(),
+                    });
+                }
+                if !all_function_ids.insert(entry_point.function_idx) {
+                    return Err(
+                        StarknetSierraCompilationError::DuplicateEntryPointSierraFunction {
+                            index: entry_point.function_idx,
+                        },
+                    );
+                }
             }
         }
 
