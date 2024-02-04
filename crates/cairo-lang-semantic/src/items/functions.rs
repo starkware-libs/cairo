@@ -242,21 +242,9 @@ impl FunctionId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
     }
-<<<<<<< HEAD
 
-    pub fn fullname(&self, db: &dyn SemanticGroup) -> SmolStr {
-        let ConcreteFunction { generic_function, generic_args } = self.get_concrete(db);
-        let generic_fn_format = generic_function.format(db);
-        if generic_args.is_empty() {
-            generic_fn_format.into()
-        } else {
-            format!(
-                "{}::<{}>",
-                generic_fn_format,
-                generic_args.iter().map(|arg| arg.format(db)).join(", ")
-            )
-            .into()
-        }
+    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
+        self.get_concrete(db).full_name(db)
     }
 
     /// Returns true if the function does not depend on any generics.
@@ -268,13 +256,6 @@ impl FunctionId {
                 .iter()
                 .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
-||||||| a48172481
-=======
-
-    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
-        self.get_concrete(db).full_name(db)
-    }
->>>>>>> origin/main
 }
 
 /// A generic function of a concrete impl.

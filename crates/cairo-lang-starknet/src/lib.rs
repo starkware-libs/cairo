@@ -12,21 +12,8 @@ mod aliased;
 mod analyzer;
 pub mod compile;
 pub mod contract;
-<<<<<<< HEAD
-pub mod contract_class;
-mod contract_segmentation;
-mod felt252_serde;
-mod felt252_vec_compression;
-||||||| a48172481
-pub mod contract_class;
-mod felt252_serde;
-mod felt252_vec_compression;
-=======
->>>>>>> origin/main
 pub mod inline_macros;
 pub mod plugin;
-
-pub use contract_segmentation::NestedIntList;
 
 /// Get the suite of plugins for compilation with StarkNet.
 pub fn starknet_plugin_suite() -> PluginSuite {

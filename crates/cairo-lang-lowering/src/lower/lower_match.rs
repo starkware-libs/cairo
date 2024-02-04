@@ -573,6 +573,7 @@ pub fn lower_expr_match(
         let call_result = generators::Call {
             function: convert_function.lowered(ctx.db),
             inputs: vec![match_input],
+            coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location,
@@ -951,6 +952,7 @@ fn lower_expr_felt252_arm(
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![match_input, lowered_arm_val],
+            coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location,

@@ -35,18 +35,10 @@ use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-<<<<<<< HEAD:crates/cairo-lang-starknet/src/casm_contract_class.rs
 use crate::compiler_version::{
     current_compiler_version_id, current_sierra_version_id, VersionId,
     CONTRACT_SEGMENTATION_MINOR_VERSION,
 };
-use crate::contract::starknet_keccak;
-||||||| a48172481:crates/cairo-lang-starknet/src/casm_contract_class.rs
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
-use crate::contract::starknet_keccak;
-=======
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
->>>>>>> origin/main:crates/cairo-lang-starknet-classes/src/casm_contract_class.rs
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
     compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
