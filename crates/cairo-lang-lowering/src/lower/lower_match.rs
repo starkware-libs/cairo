@@ -411,48 +411,54 @@ fn lower_tuple_match_arm(
                 }),
             ))
         })?;
-    let pattern = &arms[pattern_path.arm_index].patterns[pattern_path.pattern_index.unwrap()];
-    let pattern = ctx.function_body.patterns[*pattern].clone();
-    let patterns = try_extract_matches!(&pattern, semantic::Pattern::Tuple).ok_or_else(|| {
-        LoweringFlowError::Failed(ctx.diagnostics.report(
-            pattern.stable_ptr().untyped(),
-            MatchError(MatchError {
-                kind: match_type,
-                error: MatchDiagnostic::UnsupportedMatchArmNotATuple,
-            }),
-        ))
-    })?;
-    let lowering_inner_pattern_result = patterns
-        .field_patterns
-        .iter()
-        .enumerate()
-        .map(|(index, pattern)| {
-            let pattern = &ctx.function_body.patterns[*pattern];
-            match pattern {
-                Pattern::EnumVariant(PatternEnumVariant {
-                    inner_pattern: Some(inner_pattern),
-                    ..
-                }) => {
-                    let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
-                    let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
+    let pattern = pattern_path.pattern_index.map(|pattern_index| {
+        ctx.function_body.patterns[arms[pattern_path.arm_index].patterns[pattern_index]].clone()
+    });
 
-                    let variant_expr = LoweredExpr::AtVariable(VarUsage {
-                        var_id: match_tuple_ctx.current_var_ids[index],
-                        location: pattern_location,
-                    });
+    let lowering_inner_pattern_result = match pattern {
+        Some(semantic::Pattern::Tuple(patterns)) => patterns
+            .field_patterns
+            .iter()
+            .enumerate()
+            .map(|(index, pattern)| {
+                let pattern = &ctx.function_body.patterns[*pattern];
+                match pattern {
+                    Pattern::EnumVariant(PatternEnumVariant {
+                        inner_pattern: Some(inner_pattern),
+                        ..
+                    }) => {
+                        let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
+                        let pattern_location =
+                            ctx.get_location(inner_pattern.stable_ptr().untyped());
 
-                    lower_single_pattern(ctx, &mut builder, inner_pattern, variant_expr)
+                        let variant_expr = LoweredExpr::AtVariable(VarUsage {
+                            var_id: match_tuple_ctx.current_var_ids[index],
+                            location: pattern_location,
+                        });
+
+                        lower_single_pattern(ctx, &mut builder, inner_pattern, variant_expr)
+                    }
+                    Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
+                    | Pattern::Otherwise(_) => Ok(()),
+                    _ => unreachable!(
+                        "function `get_variant_to_arm_map` should have reported every other \
+                         pattern type"
+                    ),
                 }
-                Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
-                | Pattern::Otherwise(_) => Ok(()),
-                _ => unreachable!(
-                    "function `get_variant_to_arm_map` should have reported every other pattern \
-                     type"
-                ),
-            }
-        })
-        .collect::<LoweringResult<Vec<_>>>()
-        .map(|_| ());
+            })
+            .collect::<LoweringResult<Vec<_>>>()
+            .map(|_| ()),
+        Some(semantic::Pattern::Otherwise(_)) | None => Ok(()),
+        _ => {
+            return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                pattern.unwrap().stable_ptr().untyped(),
+                MatchError(MatchError {
+                    kind: match_type,
+                    error: MatchDiagnostic::UnsupportedMatchArmNotATuple,
+                }),
+            )));
+        }
+    };
     leaves_builders.push(MatchLeafBuilder {
         builder,
         arm_index: pattern_path.arm_index,
