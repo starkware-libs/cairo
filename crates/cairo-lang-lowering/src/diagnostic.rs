@@ -54,30 +54,57 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
                 "Cannot desnap a non copyable type.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchedType(matched_type) =>
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnsupportedMatchedType(matched_type)
+            } =>
                 format!("Unsupported matched type. Type: `{}`.", matched_type),
-            LoweringDiagnosticKind::UnsupportedMatchedValueTuple => "Unsupported matched value. \
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::UnsupportedMatchedType(matched_type)
+            } =>
+                format!("Unsupported type in if-let. Type: `{}`.", matched_type),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnsupportedMatchedValueTuple
+            } => "Unsupported matched value. \
                 Currently, match on tuples only supports enums as tuple members."
                 .into(),
-            LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
-                "Unsupported match arm - not a variant.".into()
-            }
-            LoweringDiagnosticKind::UnsupportedMatchArmNotALiteral => {
+            LoweringDiagnosticKind::MatchError {
+                    kind:MatchKind::IfLet, error: MatchDiagnostic::UnsupportedMatchedValueTuple
+                } => "Unsupported value in if-let. \
+                    Currently, if-let on tuples only supports enums as tuple members."
+                    .into(),
+            LoweringDiagnosticKind::MatchError {
+                    kind: _, error: MatchDiagnostic::UnsupportedMatchArmNotAVariant
+            } => "Unsupported pattern - not a variant.".into(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnsupportedMatchArmNotALiteral
+            } => {
                 "Unsupported match arm - not a literal.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchArmNonSequential => {
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::UnsupportedMatchArmNotALiteral
+            } => unreachable!(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnsupportedMatchArmNonSequential
+            } => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchArmOrNotSupported => {
-                "Unsupported match arm - or pattern is not supported in this context".into()
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::UnsupportedMatchArmNonSequential
+            } => unreachable!(),
+            LoweringDiagnosticKind::MatchError {
+                kind:_, error: MatchDiagnostic::UnsupportedMatchArmNotATuple
+            } => {
+                "Unsupported pattern - not a tuple.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchArmNotATuple => {
-                "Unsupported match arm - not a tuple.".into()
-            }
-            LoweringDiagnosticKind::NonExhaustiveMatchFelt252 => {
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::NonExhaustiveMatchFelt252
+            } => {
                 "Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`)."
                     .into()
             }
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::NonExhaustiveMatchFelt252
+            } => unreachable!(),
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
@@ -97,8 +124,24 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
             }
-            LoweringDiagnosticKind::MissingMatchArm(variant) => format!("Missing match arm: `{}` not covered.", variant),
-            LoweringDiagnosticKind::UnreachableMatchArm => "Unreachable pattern arm.".into(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::MissingMatchArm(variant)
+            } => format!("Missing match arm: `{}` not covered.", variant),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::MissingMatchArm(_)
+            } => unreachable!(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnreachableMatchArm
+            } => "Unreachable pattern arm.".into(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::UnreachableMatchArm
+            } => "Unreachable else clause.".into(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::Match, error: MatchDiagnostic::UnsupportedNumericInLetCondition
+            } => unreachable!(),
+            LoweringDiagnosticKind::MatchError {
+                kind:MatchKind::IfLet, error: MatchDiagnostic::UnsupportedNumericInLetCondition
+            } => "Numeric values are not supported in if-let.".into(),
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
         }
     }
@@ -127,22 +170,36 @@ pub enum LoweringDiagnosticKind {
     Unreachable { last_statement_ptr: SyntaxStablePtrId },
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
+    MatchError { kind: MatchKind, error: MatchDiagnostic },
     DesnappingANonCopyableType { inference_error: InferenceError },
-    UnsupportedMatchedType(String),
-    UnsupportedMatchedValueTuple,
-    MissingMatchArm(String),
-    UnreachableMatchArm,
     UnexpectedError,
-    UnsupportedMatchArmNotAVariant,
-    UnsupportedMatchArmNotALiteral,
-    UnsupportedMatchArmNotATuple,
-    UnsupportedMatchArmNonSequential,
-    UnsupportedMatchArmOrNotSupported,
-    NonExhaustiveMatchFelt252,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
     UnsupportedPattern,
     Unsupported,
+}
+
+/// The type of branch construct the error occured in.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum MatchKind {
+    IfLet,
+    Match,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MatchDiagnostic {
+    UnsupportedMatchedType(String),
+    UnsupportedMatchedValueTuple,
+    UnsupportedMatchArmNotAVariant,
+    UnsupportedMatchArmNotATuple,
+
+    UnreachableMatchArm,
+    MissingMatchArm(String),
+
+    UnsupportedMatchArmNotALiteral,
+    UnsupportedMatchArmNonSequential,
+    NonExhaustiveMatchFelt252,
+    UnsupportedNumericInLetCondition,
 }
