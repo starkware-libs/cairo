@@ -65,6 +65,10 @@ Weight by Sierra stack trace:
   test::main: 34
   test::main -> test::match_long: 11
   test::main -> test::match_short: 6
+Weight by Sierra stack trace:
+  test::main: 34
+  test::main -> test::match_long: 11
+  test::main -> test::match_short: 6
 
 //! > ==========================================================================
 
@@ -185,6 +189,11 @@ Weight by Sierra stack trace:
   test::main -> test::foo: 99
   test::main -> test::foo -> core::integer::U8Add::add: 42
   test::main -> test::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+Weight by Sierra stack trace:
+  test::main: 132
+  test::main -> test::foo: 99
+  test::main -> test::foo -> core::integer::U8Add::add: 42
+  test::main -> test::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
 
 //! > ==========================================================================
 
@@ -228,6 +237,8 @@ Weight by original user function:
   function test::test_pedersen: 15
 Weight by Cairo function:
   function lib.cairo::test_pedersen: 15
+Weight by Sierra stack trace:
+  test::test_pedersen: 15
 Weight by Sierra stack trace:
   test::test_pedersen: 15
 
@@ -314,6 +325,8 @@ Weight by Sierra stack trace:
   test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 40
   test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 27
   test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 14
+Weight by Sierra stack trace:
+  test::main: 90
 
 //! > ==========================================================================
 
@@ -379,6 +392,10 @@ Weight by Sierra stack trace:
   test::main: 11
   test::main -> test::foo1: 9
   test::main -> test::foo1 -> test::foo2: 6
+Weight by Sierra stack trace:
+  test::main: 11
+  test::main -> test::foo1: 9
+  test::main -> test::foo1 -> test::foo2: 6
 
 //! > ==========================================================================
 
@@ -437,6 +454,11 @@ Weight by Cairo function:
   function lib.cairo::foo1: 3
   function lib.cairo::foo3: 2
   function lib.cairo::main: 2
+Weight by Sierra stack trace:
+  test::main: 11
+  test::main -> test::foo1: 9
+  test::main -> test::foo1 -> test::foo2: 6
+  test::main -> test::foo1 -> test::foo2 -> test::foo3: 2
 Weight by Sierra stack trace:
   test::main: 11
   test::main -> test::foo1: 9
