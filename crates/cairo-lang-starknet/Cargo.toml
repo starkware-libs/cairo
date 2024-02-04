@@ -20,6 +20,7 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.5.3" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.5.3" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.5.3" }
+cairo-lang-starknet-classes = { path = "../cairo-lang-starknet-classes", version = "2.5.3" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", features = ["serde"] }
 const_format.workspace = true
@@ -32,7 +33,6 @@ num-traits = { workspace = true, default-features = true }
 once_cell.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
-sha3.workspace = true
 smol_str.workspace = true
 starknet-crypto.workspace = true
 thiserror.workspace = true

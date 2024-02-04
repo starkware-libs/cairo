@@ -7,11 +7,11 @@ use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
+use cairo_lang_starknet_classes::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
-use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use crate::contract_class::compile_contract_in_prepared_db;
 use crate::starknet_plugin_suite;
 
