@@ -13,7 +13,7 @@ regex = "1"
 
 [dependencies]
 anyhow.workspace = true
-cairo-felt.workspace = true
+cairo-felt = { workspace = true, default-features = true }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", features = ["serde", "schemars"] }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
@@ -24,8 +24,8 @@ num-bigint = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
-serde_json.workspace = true
-sha3.workspace = true
+serde_json = { workspace = true, default-features = true }
+sha3 = { workspace = true, default-features = true }
 smol_str.workspace = true
 thiserror.workspace = true
 

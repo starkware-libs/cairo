@@ -25,7 +25,7 @@ log.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
 serde = { workspace = true, default-features = true }
-serde_json.workspace = true
+serde_json = { workspace = true, default-features = true }
 tokio.workspace = true
 tower-lsp.workspace = true
 

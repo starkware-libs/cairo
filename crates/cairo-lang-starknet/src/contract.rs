@@ -20,20 +20,20 @@ use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+#[cfg(feature = "serde")]
 use cairo_lang_utils::ordered_hash_map::{
-    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
+    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
 use itertools::chain;
-use num_bigint::BigUint;
-use serde::{Deserialize, Serialize};
-use sha3::{Digest, Keccak256};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
-use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
+use crate::compile_contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 
@@ -51,17 +51,6 @@ impl ContractDeclaration {
     pub fn module_id(&self) -> ModuleId {
         ModuleId::Submodule(self.submodule_id)
     }
-}
-
-/// A variant of eth-keccak that computes a value that fits in a Starknet field element.
-pub fn starknet_keccak(data: &[u8]) -> BigUint {
-    let mut hasher = Keccak256::new();
-    hasher.update(data);
-    let mut result = hasher.finalize();
-
-    // Truncate result to 250 bits.
-    *result.first_mut().unwrap() &= 3;
-    BigUint::from_bytes_be(&result)
 }
 
 /// Returns the contract declaration of a given module if it is a contract module.
@@ -284,20 +273,27 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
     /// Sierra functions of the external functions.
-    #[serde(
-        serialize_with = "serialize_ordered_hashmap_vec",
-        deserialize_with = "deserialize_ordered_hashmap_vec"
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            serialize_with = "serialize_ordered_hashmap_vec",
+            deserialize_with = "deserialize_ordered_hashmap_vec"
+        )
     )]
     pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
-    #[serde(
-        serialize_with = "serialize_ordered_hashmap_vec",
-        deserialize_with = "deserialize_ordered_hashmap_vec"
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            serialize_with = "serialize_ordered_hashmap_vec",
+            deserialize_with = "deserialize_ordered_hashmap_vec"
+        )
     )]
     pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }

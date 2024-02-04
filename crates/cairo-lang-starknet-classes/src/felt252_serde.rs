@@ -29,12 +29,8 @@ use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::compiler_version::VersionId;
-use crate::contract::starknet_keccak;
 use crate::felt252_vec_compression::{compress, decompress};
-
-#[cfg(test)]
-#[path = "felt252_serde_test.rs"]
-mod test;
+use crate::keccak::starknet_keccak;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum Felt252SerdeError {
@@ -92,7 +88,7 @@ pub fn sierra_from_felt252s(
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
-trait Felt252Serde: Sized {
+pub trait Felt252Serde: Sized {
     fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError>;
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError>;
 }
@@ -179,7 +175,7 @@ impl Felt252Serde for StatementIdx {
 // Impls for generic ids.
 const SHORT_STRING_BOUND: usize = 31;
 /// A set of all the supported long generic ids.
-static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
+pub static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
     OrderedHashSet::from_iter([
         StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
         ContractAddressTryFromFelt252Libfunc::STR_ID,

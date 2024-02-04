@@ -7,18 +7,17 @@
 
 use cairo_lang_semantic::plugin::PluginSuite;
 
-pub mod abi;
-mod aliased;
-pub mod allowed_libfuncs;
-mod analyzer;
-pub mod casm_contract_class;
-pub mod compiler_version;
+pub mod abi_builder;
+pub mod compile_contract_class;
 pub mod contract;
-pub mod contract_class;
-mod felt252_serde;
-mod felt252_vec_compression;
 pub mod inline_macros;
 pub mod plugin;
+
+mod aliased;
+mod analyzer;
+
+// Rexports for more practicality downstream
+pub use cairo_lang_starknet_classes::*;
 
 /// Get the suite of plugins for compilation with StarkNet.
 pub fn starknet_plugin_suite() -> PluginSuite {
@@ -31,6 +30,17 @@ pub fn starknet_plugin_suite() -> PluginSuite {
         .add_analyzer_plugin::<analyzer::ABIAnalyzer>();
     suite
 }
+
+// Those modules test logic defined in `cairo-lang-starknet-classes`.
+// Because those tests require `cairo_lang_starknet::test_utils`, which requires
+// `cairo_lang_starknet::test_utils`, it can only be tested here, and not in
+// `cairo-lang-starknet-classes`.
+#[cfg(all(test, feature = "serde"))]
+mod casm_contract_class_from_contract_class_test;
+#[cfg(all(test, feature = "serde"))]
+mod contract_class_serde_test;
+#[cfg(test)]
+mod felt252_serde_test;
 
 #[cfg(test)]
 mod test_utils;

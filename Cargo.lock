@@ -874,7 +874,6 @@ version = "2.5.3"
 dependencies = [
  "anyhow",
  "cairo-felt",
- "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -884,15 +883,38 @@ dependencies = [
  "cairo-lang-semantic",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
- "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const_format",
- "convert_case",
  "env_logger",
  "indent",
  "indoc",
+ "itertools 0.11.0",
+ "num-bigint",
+ "once_cell",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "smol_str",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-starknet-classes"
+version = "2.5.3"
+dependencies = [
+ "cairo-felt",
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
+ "convert_case",
+ "hashbrown 0.14.3",
  "itertools 0.11.0",
  "num-bigint",
  "num-integer",
@@ -905,7 +927,6 @@ dependencies = [
  "smol_str",
  "starknet-crypto",
  "test-case",
- "test-log",
  "thiserror",
 ]
 

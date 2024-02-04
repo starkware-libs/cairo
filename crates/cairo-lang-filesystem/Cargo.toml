@@ -16,7 +16,7 @@ smol_str.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, default-features = true }
 test-log.workspace = true
 
 [package.metadata.cargo-machete]

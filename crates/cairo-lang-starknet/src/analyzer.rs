@@ -7,7 +7,7 @@ use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
-use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
+use crate::abi_builder::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::EMBEDDABLE_ATTR;
 
