@@ -87,7 +87,7 @@ fn main() -> anyhow::Result<()> {
 
     if args.run_profiler {
         let profiling_info_processor = ProfilingInfoProcessor::new(
-            db,
+            Some(db),
             sierra_program,
             statements_locations.get_statements_functions_map(db),
         );
