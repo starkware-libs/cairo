@@ -476,7 +476,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::ModuleItem::Use(us) => {
-                    let path_leaves = get_all_path_leafs(db.upcast(), us.use_path(syntax_db));
+                    let path_leaves = get_all_path_leaves(db.upcast(), us.use_path(syntax_db));
                     for path_leaf in path_leaves {
                         let path_leaf_id =
                             db.intern_use(UseLongId(module_file_id, path_leaf.stable_ptr()));
@@ -672,14 +672,14 @@ fn validate_attributes(
 }
 
 /// Returns all the path leaves under a given use path.
-pub fn get_all_path_leafs(db: &dyn SyntaxGroup, use_path: ast::UsePath) -> Vec<ast::UsePathLeaf> {
+pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_path: ast::UsePath) -> Vec<ast::UsePathLeaf> {
     let mut res = vec![];
-    get_all_path_leafs_inner(db, use_path, &mut res);
+    get_all_path_leaves_inner(db, use_path, &mut res);
     res
 }
 
 /// Finds all the path leaves under a given use path and adds them to the given vector.
-fn get_all_path_leafs_inner(
+fn get_all_path_leaves_inner(
     db: &dyn SyntaxGroup,
     use_path: ast::UsePath,
     res: &mut Vec<ast::UsePathLeaf>,
@@ -688,10 +688,10 @@ fn get_all_path_leafs_inner(
         ast::UsePath::Leaf(use_path) => {
             res.push(use_path);
         }
-        ast::UsePath::Single(use_path) => get_all_path_leafs_inner(db, use_path.use_path(db), res),
+        ast::UsePath::Single(use_path) => get_all_path_leaves_inner(db, use_path.use_path(db), res),
         ast::UsePath::Multi(use_path) => {
             for use_path in use_path.use_paths(db).elements(db) {
-                get_all_path_leafs_inner(db, use_path, res);
+                get_all_path_leaves_inner(db, use_path, res);
             }
         }
     }
