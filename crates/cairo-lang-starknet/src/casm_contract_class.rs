@@ -25,6 +25,8 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_starknet_classes::allowed_libfuncs::AllowedLibfuncsError;
+use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -38,9 +40,7 @@ use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
 use thiserror::Error;
 
-use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
-use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 

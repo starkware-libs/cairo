@@ -885,6 +885,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -901,9 +902,25 @@ dependencies = [
  "pretty_assertions",
  "serde",
  "serde_json",
- "sha3",
  "smol_str",
  "starknet-crypto",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-starknet-classes"
+version = "2.5.3"
+dependencies = [
+ "cairo-lang-sierra",
+ "env_logger",
+ "num-bigint",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha3",
+ "smol_str",
  "test-case",
  "test-log",
  "thiserror",
@@ -2895,6 +2912,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "clap",
 ]
 
@@ -2957,6 +2975,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-sierra",
  "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
  "serde",
@@ -2979,6 +2998,7 @@ version = "2.5.3"
 dependencies = [
  "anyhow",
  "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
  "indicatif",

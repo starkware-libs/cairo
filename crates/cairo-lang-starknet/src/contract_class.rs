@@ -14,6 +14,9 @@ use cairo_lang_sierra as sierra;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_starknet_classes::allowed_libfuncs::{
+    lookup_allowed_libfuncs_list, AllowedLibfuncsError, ListSelector,
+};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
@@ -22,9 +25,6 @@ use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::aliased::Aliased;
-use crate::allowed_libfuncs::{
-    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
-};
 use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
@@ -76,6 +76,27 @@ impl ContractClass {
                 self.entry_points_by_type.constructor.len(),
             );
         }
+    }
+
+    /// Checks that all the used libfuncs in the contract class are allowed in the contract class
+    /// sierra version.
+    pub fn validate_version_compatible(
+        self: &ContractClass,
+        list_selector: ListSelector,
+    ) -> Result<(), AllowedLibfuncsError> {
+        let list_name = list_selector.to_string();
+        let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
+        let (_, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
+            .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
+        for libfunc in sierra_program.libfunc_declarations.iter() {
+            if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
+                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
+                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
+                    allowed_libfuncs_list_name: list_name,
+                });
+            }
+        }
+        Ok(())
     }
 }
 
@@ -297,8 +318,7 @@ pub fn starknet_compile(
         contract_path.as_deref(),
         if let Some(config) = config { config } else { CompilerConfig::default() },
     )?;
-    validate_compatible_sierra_version(
-        &contract,
+    contract.validate_version_compatible(
         if let Some(allowed_libfuncs_list) = allowed_libfuncs_list {
             allowed_libfuncs_list
         } else {

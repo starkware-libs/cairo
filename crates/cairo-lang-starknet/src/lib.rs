@@ -9,7 +9,6 @@ use cairo_lang_semantic::plugin::PluginSuite;
 
 pub mod abi;
 mod aliased;
-pub mod allowed_libfuncs;
 mod analyzer;
 pub mod casm_contract_class;
 pub mod compiler_version;

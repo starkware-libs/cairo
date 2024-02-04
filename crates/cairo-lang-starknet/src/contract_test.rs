@@ -4,9 +4,7 @@ use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
-use crate::contract::{
-    find_contracts, get_contract_internal_module_abi_functions, starknet_keccak,
-};
+use crate::contract::{find_contracts, get_contract_internal_module_abi_functions};
 use crate::plugin::consts::EXTERNAL_MODULE;
 use crate::starknet_plugin_suite;
 
@@ -54,12 +52,4 @@ fn test_contract_resolving() {
     // Assert no semantic diagnostics
     get_crate_semantic_diagnostics(db, crate_id)
         .expect_with_db(db, "Unexpected semantic diagnostics");
-}
-
-#[test]
-fn test_starknet_keccak() {
-    assert_eq!(
-        format!("0x{:x}", starknet_keccak("__execute__".as_bytes())),
-        "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad",
-    )
 }
