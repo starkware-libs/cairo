@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{izip, zip_eq, Itertools};
+use itertools::{chain, izip, zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
@@ -28,6 +28,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
         lowered,
         use_sites: Default::default(),
         var_remapper: Default::default(),
+        aliases: Default::default(),
         stmts_to_remove: vec![],
     };
     let mut analysis =
@@ -63,29 +64,68 @@ pub struct CancelOpsContext<'a> {
     /// Maps a variable to the variable that it was renamed to.
     var_remapper: CancelOpsRebuilder,
 
+    /// Keeps track of all the aliases created by the renaming.
+    aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
+
     /// Statements that can be be removed.
     stmts_to_remove: Vec<StatementLocation>,
+}
+
+/// Similar to `mapping.get(var).or_default()` but but works for types that don't implement Default.
+fn get_entry_as_slice<'a, T>(
+    mapping: &'a UnorderedHashMap<VariableId, Vec<T>>,
+    var: &VariableId,
+) -> &'a [T] {
+    match mapping.get(var) {
+        Some(entry) => &entry[..],
+        None => &[],
+    }
 }
 
 /// Returns the use sites of a variable.
 ///
 /// Takes 'use_sites' map rather than `CancelOpsContext` to avoid borrowing the entire context.
-fn get_use_sites<'a>(
+fn filter_use_sites<'a, F, T>(
     use_sites: &'a UnorderedHashMap<VariableId, Vec<StatementLocation>>,
-    var: &VariableId,
-) -> &'a [StatementLocation] {
-    match use_sites.get(var) {
-        Some(use_sites) => &use_sites[..],
-        None => &[],
+    var_aliases: &'a UnorderedHashMap<VariableId, Vec<VariableId>>,
+    orig_var_id: &VariableId,
+    mut f: F,
+) -> Vec<T>
+where
+    F: FnMut(&StatementLocation) -> Option<T>,
+{
+    let mut res = vec![];
+
+    let aliases = get_entry_as_slice(var_aliases, orig_var_id);
+
+    for var in chain!(std::iter::once(orig_var_id), aliases) {
+        let use_sites = get_entry_as_slice(use_sites, var);
+        for use_site in use_sites {
+            if let Some(filtered) = f(use_site) {
+                res.push(filtered);
+            }
+        }
     }
+    res
 }
 
 impl<'a> CancelOpsContext<'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
         self.var_remapper.renamed_vars.insert(from, to);
-        // Move `from` used sites to `to` to allow the optimization to be applied to them.
-        if let Some(from_use_sites) = self.use_sites.remove(&from) {
-            self.use_sites.entry(to).or_default().extend(from_use_sites);
+
+        let mut aliases = Vec::from_iter(chain(
+            std::iter::once(from),
+            get_entry_as_slice(&self.aliases, &from).iter().copied(),
+        ));
+        // Optimize for the case where the alias list of `to` is empty.
+        match self.aliases.entry(to) {
+            std::collections::hash_map::Entry::Occupied(mut entry) => {
+                aliases.extend(entry.get().iter());
+                *entry.get_mut() = aliases;
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(aliases);
+            }
         }
     }
 
@@ -97,19 +137,22 @@ impl<'a> CancelOpsContext<'a> {
     fn handle_stmt(&mut self, stmt: &'a Statement, statement_location: StatementLocation) -> bool {
         match stmt {
             Statement::StructDestructure(stmt) => {
-                let mut use_sites = OrderedHashSet::<&StatementLocation>::default();
-
-                for output in stmt.outputs.iter() {
-                    let output_use_sites = get_use_sites(&self.use_sites, output);
-                    use_sites.extend(output_use_sites);
-                }
+                let mut visited_use_sites = OrderedHashSet::<StatementLocation>::default();
 
                 let mut can_remove_struct_destructure = true;
 
-                let constructs = use_sites
-                    .iter()
-                    .filter_map(|location| {
-                        match self.lowered.blocks[location.0].statements.get(location.1) {
+                let mut constructs = vec![];
+                for output in stmt.outputs.iter() {
+                    constructs.extend(filter_use_sites(
+                        &self.use_sites,
+                        &self.aliases,
+                        output,
+                        |location| match self.lowered.blocks[location.0].statements.get(location.1)
+                        {
+                            _ if !visited_use_sites.insert(*location) => {
+                                // Filter previosuly seen use sites.
+                                None
+                            }
                             Some(Statement::StructConstruct(construct_stmt))
                                 if stmt.outputs.len() == construct_stmt.inputs.len()
                                     && self.lowered.variables[stmt.input.var_id].ty
@@ -122,16 +165,16 @@ impl<'a> CancelOpsContext<'a> {
                                         output == &self.var_remapper.map_var_id(input.var_id)
                                     }) =>
                             {
-                                self.stmts_to_remove.push(**location);
+                                self.stmts_to_remove.push(*location);
                                 Some(construct_stmt)
                             }
                             _ => {
                                 can_remove_struct_destructure = false;
                                 None
                             }
-                        }
-                    })
-                    .collect_vec();
+                        },
+                    ));
+                }
 
                 if !(can_remove_struct_destructure
                     || self.lowered.variables[stmt.input.var_id].duplicatable.is_ok())
@@ -152,12 +195,9 @@ impl<'a> CancelOpsContext<'a> {
                 can_remove_struct_destructure
             }
             Statement::StructConstruct(stmt) => {
-                let use_sites = get_use_sites(&self.use_sites, &stmt.output);
-
                 let mut can_remove_struct_construct = true;
-                let destructures = use_sites
-                    .iter()
-                    .filter_map(|location| {
+                let destructures =
+                    filter_use_sites(&self.use_sites, &self.aliases, &stmt.output, |location| {
                         if let Some(Statement::StructDestructure(destructure_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
                         {
@@ -167,8 +207,7 @@ impl<'a> CancelOpsContext<'a> {
                             can_remove_struct_construct = false;
                             None
                         }
-                    })
-                    .collect_vec();
+                    });
 
                 if !(can_remove_struct_construct
                     || stmt
@@ -196,12 +235,13 @@ impl<'a> CancelOpsContext<'a> {
                 can_remove_struct_construct
             }
             Statement::Snapshot(stmt) => {
-                let use_sites = get_use_sites(&self.use_sites, &stmt.output_snapshot);
-
                 let mut can_remove_snap = true;
-                let desnaps = use_sites
-                    .iter()
-                    .filter_map(|location| {
+
+                let desnaps = filter_use_sites(
+                    &self.use_sites,
+                    &self.aliases,
+                    &stmt.output_snapshot,
+                    |location| {
                         if let Some(Statement::Desnap(desnap_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
                         {
@@ -211,8 +251,8 @@ impl<'a> CancelOpsContext<'a> {
                             can_remove_snap = false;
                             None
                         }
-                    })
-                    .collect_vec();
+                    },
+                );
 
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
