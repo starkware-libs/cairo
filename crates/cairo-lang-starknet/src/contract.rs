@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
-use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
+use crate::compile::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 

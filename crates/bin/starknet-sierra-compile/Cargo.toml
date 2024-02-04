@@ -13,6 +13,5 @@ serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 
 cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.5.3" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.3" }
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.3" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.5.3", features = ["serde"] }
