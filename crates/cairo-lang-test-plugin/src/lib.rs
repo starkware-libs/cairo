@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::{Context, Result};
 use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
@@ -14,12 +16,14 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
+use cairo_lang_utils::arc_unwrap_or_clone;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
@@ -82,8 +86,8 @@ pub fn compile_test_prepared_db(
             })
             .collect();
     let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let (sierra_program, statements_locations) = db
-        .get_sierra_program_for_functions(
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = arc_unwrap_or_clone(
+        db.get_sierra_program_for_functions(
             chain!(
                 all_entry_points.into_iter(),
                 all_tests.iter().flat_map(|(func_id, _cfg)| {
@@ -93,10 +97,11 @@ pub fn compile_test_prepared_db(
             .collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?;
+        .with_context(|| "Compilation failed without any diagnostics.")?,
+    );
     let replacer = DebugReplacer { db };
     let sierra_program = replacer.apply(&sierra_program);
-    let statements_functions = statements_locations.get_statements_functions_map(db);
+    let statements_functions = debug_info.statements_locations.get_statements_functions_map(db);
 
     let named_tests = all_tests
         .into_iter()

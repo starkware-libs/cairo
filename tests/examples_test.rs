@@ -14,10 +14,11 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runner::{token_gas_cost, Arg, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{arc_unwrap_or_clone, extract_matches, Upcast};
 use itertools::Itertools;
 use rstest::{fixture, rstest};
 
@@ -81,8 +82,9 @@ fn checked_compile_to_sierra(
             }
         }
     }
-    let (sierra_program, _statements_locations) =
-        db.get_sierra_program_for_functions(requested_function_ids).unwrap();
+    // Try to move the program out of the Arc if it is not cached in Salsa, or just clone it.
+    let SierraProgramWithDebug { program: sierra_program, .. } =
+        arc_unwrap_or_clone(db.get_sierra_program_for_functions(requested_function_ids).unwrap());
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 

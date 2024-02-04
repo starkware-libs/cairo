@@ -1034,6 +1034,7 @@ dependencies = [
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",
+ "cairo-lang-utils",
  "clap",
 ]
 

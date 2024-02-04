@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{arc_unwrap_or_clone, try_extract_matches};
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
@@ -10,6 +12,7 @@ use test_case::test_case;
 use test_log::test;
 
 use crate::db::SierraGenGroup;
+use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::test_utils::{checked_compile_to_sierra, setup_db_and_get_crate_id};
 
@@ -132,8 +135,9 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
             .unwrap(),
     )
     .unwrap();
-    let (program, _statements_locations) =
-        db.get_sierra_program_for_functions(vec![func_id]).unwrap();
+    // Try to move the program out of the Arc if it is not cached in Salsa, or just clone it.
+    let SierraProgramWithDebug { program, .. } =
+        arc_unwrap_or_clone(db.get_sierra_program_for_functions(vec![func_id]).unwrap());
     assert_eq!(
         replace_sierra_ids_in_program(&db, &program)
             .funcs
