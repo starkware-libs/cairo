@@ -5,5 +5,14 @@
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
 
+pub mod abi;
 pub mod allowed_libfuncs;
+pub mod casm_contract_class;
+pub mod compiler_version;
+pub mod contract_class;
+mod felt252_serde;
+mod felt252_vec_compression;
 pub mod keccak;
+
+#[cfg(test)]
+mod test_utils;

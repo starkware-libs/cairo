@@ -5,7 +5,7 @@ use anyhow::Context;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::CompilerConfig;
-use cairo_lang_starknet::contract_class::starknet_compile;
+use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
 

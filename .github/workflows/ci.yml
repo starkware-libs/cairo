@@ -48,6 +48,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-sierra-generator
           - test --profile=ci-dev -p cairo-lang-sierra-to-casm
           - test --profile=ci-dev -p cairo-lang-sierra-type-size
+          - test --profile=ci-dev -p cairo-lang-starknet-classes
           - test --profile=ci-dev -p cairo-lang-starknet
           - test --profile=ci-dev -p cairo-lang-syntax
           - test --profile=ci-dev -p cairo-lang-syntax-codegen
