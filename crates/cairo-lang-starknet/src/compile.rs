@@ -10,116 +10,27 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_sierra as sierra;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
-use cairo_lang_starknet_classes::allowed_libfuncs::{
-    lookup_allowed_libfuncs_list, AllowedLibfuncsError, ListSelector,
+use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
+use cairo_lang_starknet_classes::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use itertools::{chain, Itertools};
-use num_bigint::BigUint;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-use crate::abi::{AbiBuilder, Contract};
+use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
-use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
     ContractDeclaration,
 };
-use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::starknet_plugin_suite;
 
 #[cfg(test)]
-#[path = "contract_class_test.rs"]
+#[path = "compile_test.rs"]
 mod test;
-
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum StarknetCompilationError {
-    #[error("Invalid entry point.")]
-    EntryPointError,
-    #[error(transparent)]
-    AllowedLibfuncsError(#[from] AllowedLibfuncsError),
-}
-
-/// Represents a contract in the Starknet network.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ContractClass {
-    pub sierra_program: Vec<BigUintAsHex>,
-    pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
-    pub contract_class_version: String,
-    pub entry_points_by_type: ContractEntryPoints,
-    pub abi: Option<Contract>,
-}
-impl ContractClass {
-    /// Extracts Sierra program from the ContractClass and populates it with debug info if
-    /// available.
-    pub fn extract_sierra_program(&self) -> Result<sierra::program::Program, Felt252SerdeError> {
-        let (_, _, mut sierra_program) = sierra_from_felt252s(&self.sierra_program)?;
-        if let Some(info) = &self.sierra_program_debug_info {
-            info.populate(&mut sierra_program);
-        }
-        Ok(sierra_program)
-    }
-
-    /// Sanity checks the contract class.
-    /// Currently only checks that if ABI exists, its counts match the entry points counts.
-    pub fn sanity_check(&self) {
-        if let Some(abi) = &self.abi {
-            abi.sanity_check(
-                self.entry_points_by_type.external.len(),
-                self.entry_points_by_type.l1_handler.len(),
-                self.entry_points_by_type.constructor.len(),
-            );
-        }
-    }
-
-    /// Checks that all the used libfuncs in the contract class are allowed in the contract class
-    /// sierra version.
-    pub fn validate_version_compatible(
-        self: &ContractClass,
-        list_selector: ListSelector,
-    ) -> Result<(), AllowedLibfuncsError> {
-        let list_name = list_selector.to_string();
-        let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-        let (_, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
-            .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-        for libfunc in sierra_program.libfunc_declarations.iter() {
-            if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
-                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                    allowed_libfuncs_list_name: list_name,
-                });
-            }
-        }
-        Ok(())
-    }
-}
-
-const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
-
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ContractEntryPoints {
-    #[serde(rename = "EXTERNAL")]
-    pub external: Vec<ContractEntryPoint>,
-    #[serde(rename = "L1_HANDLER")]
-    pub l1_handler: Vec<ContractEntryPoint>,
-    #[serde(rename = "CONSTRUCTOR")]
-    pub constructor: Vec<ContractEntryPoint>,
-}
-
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ContractEntryPoint {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub selector: BigUint,
-    /// The idx of the user function declaration in the sierra program.
-    pub function_idx: usize,
-}
 
 /// Compile the contract given by path.
 /// Errors if there is ambiguity.
@@ -233,25 +144,17 @@ fn compile_contract_with_prepared_and_checked_db(
         // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
-    let contract_class = ContractClass {
-        sierra_program: sierra_to_felt252s(
-            compiler_version::current_sierra_version_id(),
-            compiler_version::current_compiler_version_id(),
-            &sierra_program,
-        )?,
-        sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
-            &sierra_program,
-        )),
-        contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
+    let contract_class = ContractClass::new(
+        &sierra_program,
         entry_points_by_type,
-        abi: Some(
+        Some(
             AbiBuilder::from_submodule(db, contract.submodule_id, Default::default())
                 .ok()
                 .with_context(|| "Unexpected error while generating ABI.")?
                 .finalize()
                 .with_context(|| "Could not create ABI from contract submodule")?,
         ),
-    };
+    )?;
     contract_class.sanity_check();
     Ok(contract_class)
 }
