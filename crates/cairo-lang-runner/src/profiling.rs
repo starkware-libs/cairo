@@ -245,8 +245,8 @@ impl ProfilingInfoProcessor {
             }
         }
 
-        let mut concrete_libfuncs_weights = OrderedHashMap::default();
-        if params.process_by_concrete_libfunc {
+        let concrete_libfuncs_weights = if params.process_by_concrete_libfunc {
+            let mut concrete_libfuncs_weights = OrderedHashMap::default();
             for (concrete_name, weight) in
                 concrete_libfuncs.iter_sorted_by_key(|(concrete_name, weight)| {
                     (usize::MAX - **weight, (*concrete_name).clone())
@@ -256,10 +256,13 @@ impl ProfilingInfoProcessor {
                     concrete_libfuncs_weights.insert(concrete_name.clone(), *weight);
                 }
             }
-        }
+            Some(concrete_libfuncs_weights)
+        } else {
+            None
+        };
 
-        let mut generic_libfuncs_weights = OrderedHashMap::default();
-        if params.process_by_generic_libfunc {
+        let generic_libfuncs_weights = if params.process_by_generic_libfunc {
+            let mut generic_libfuncs_weights = OrderedHashMap::default();
             for (generic_name, weight) in
                 generic_libfuncs.iter_sorted_by_key(|(generic_name, weight)| {
                     (usize::MAX - **weight, (*generic_name).clone())
@@ -269,10 +272,13 @@ impl ProfilingInfoProcessor {
                     generic_libfuncs_weights.insert(generic_name.clone(), *weight);
                 }
             }
-        }
+            Some(generic_libfuncs_weights)
+        } else {
+            None
+        };
 
-        let mut user_functions_weights = OrderedHashMap::default();
-        if params.process_by_user_function {
+        let user_functions_weights = if params.process_by_user_function {
+            let mut user_functions_weights = OrderedHashMap::default();
             for (idx, weight) in user_functions.iter_sorted_by_key(|(idx, weight)| {
                 (usize::MAX - **weight, self.sierra_program.funcs[**idx].id.to_string())
             }) {
@@ -281,10 +287,13 @@ impl ProfilingInfoProcessor {
                     user_functions_weights.insert(func.id.to_string().into(), *weight);
                 }
             }
-        }
+            Some(user_functions_weights)
+        } else {
+            None
+        };
 
-        let mut original_user_functions_weights = OrderedHashMap::default();
-        if params.process_by_original_user_function {
+        let original_user_functions_weights = if params.process_by_original_user_function {
+            let mut original_user_functions_weights = OrderedHashMap::default();
             for (orig_name, weight) in user_functions
                 .aggregate_by(
                     |idx| -> SmolStr {
@@ -302,10 +311,13 @@ impl ProfilingInfoProcessor {
                     original_user_functions_weights.insert(orig_name.clone(), *weight);
                 }
             }
-        }
+            Some(original_user_functions_weights)
+        } else {
+            None
+        };
 
-        let mut cairo_functions_weights = OrderedHashMap::default();
-        if params.process_by_cairo_function {
+        let cairo_functions_weights = if params.process_by_cairo_function {
+            let mut cairo_functions_weights = OrderedHashMap::default();
             for (function_identifier, weight) in
                 cairo_functions.iter_sorted_by_key(|(function_identifier, weight)| {
                     (usize::MAX - **weight, (*function_identifier).clone())
@@ -315,7 +327,10 @@ impl ProfilingInfoProcessor {
                     cairo_functions_weights.insert(function_identifier.clone(), *weight);
                 }
             }
-        }
+            Some(cairo_functions_weights)
+        } else {
+            None
+        };
 
         let stack_trace_weights = raw_profiling_info
             .stack_trace_weights
@@ -333,11 +348,11 @@ impl ProfilingInfoProcessor {
         ProcessedProfilingInfo {
             sierra_statements_weights,
             stack_trace_weights,
-            generic_libfuncs_weights: Some(generic_libfuncs_weights),
-            concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
-            user_functions_weights: Some(user_functions_weights),
-            original_user_functions_weights: Some(original_user_functions_weights),
-            cairo_functions_weights: Some(cairo_functions_weights),
+            concrete_libfuncs_weights,
+            generic_libfuncs_weights,
+            user_functions_weights,
+            original_user_functions_weights,
+            cairo_functions_weights,
             return_weight,
         }
     }
