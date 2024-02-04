@@ -102,6 +102,7 @@ fn extract_concrete_enum_tuple(
                     }),
                 )));
             };
+            //
             let concrete_variants = ctx
                 .db
                 .concrete_enum_variants(concrete_enum_id)
