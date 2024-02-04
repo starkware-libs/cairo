@@ -50,10 +50,19 @@ impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
 }
 
 // EC state.
-
-// TODO(lior): Allow explicit clone() for EcState, since we don't allow implicit dup (Copy).
 #[derive(Drop)]
 pub extern type EcState;
+
+mod internal {
+    impl EcStateCopy of Copy<super::EcState>;
+    pub impl EcStateClone of Clone<super::EcState> {
+        #[inline(always)]
+        fn clone(self: @super::EcState) -> super::EcState {
+            *self
+        }
+    }
+}
+impl EcStateClone = internal::EcStateClone;
 
 /// Initializes an EC computation with the zero point.
 extern fn ec_state_init() -> EcState nopanic;
@@ -72,23 +81,32 @@ extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic
 pub impl EcStateImpl of EcStateTrait {
     /// Initializes an EC computation with the zero point.
     #[must_use]
-    fn init() -> EcState {
+    fn init() -> EcState nopanic {
         ec_state_init()
     }
     /// Adds a point to the computation.
     #[inline(always)]
-    fn add(ref self: EcState, p: NonZeroEcPoint) {
+    fn add(ref self: EcState, p: NonZeroEcPoint) nopanic {
         ec_state_add(ref self, :p);
+    }
+    /// Subs a point to the computation.
+    #[inline(always)]
+    fn sub(ref self: EcState, p: NonZeroEcPoint) {
+        // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
+        let p: EcPoint = p.into();
+        let p_neg = ec_neg(p);
+        let p_neg_nz = p_neg.try_into().unwrap();
+        ec_state_add(ref self, p_neg_nz);
     }
     /// Adds the product p * scalar to the state.
     #[inline(always)]
-    fn add_mul(ref self: EcState, scalar: felt252, p: NonZeroEcPoint) {
+    fn add_mul(ref self: EcState, scalar: felt252, p: NonZeroEcPoint) nopanic {
         ec_state_add_mul(ref self, :scalar, :p);
     }
     /// Finalizes the EC computation and returns the result (returns `None` if the result is the
     /// zero point).
     #[inline(always)]
-    fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> {
+    fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> nopanic {
         ec_state_try_finalize_nz(self)
     }
     /// Finalizes the EC computation and returns the result.
@@ -106,12 +124,22 @@ pub impl EcPointImpl of EcPointTrait {
     /// Creates a new EC point from its (x, y) coordinates.
     #[inline(always)]
     fn new(x: felt252, y: felt252) -> Option<EcPoint> {
-        Option::Some(ec_point_try_new_nz(:x, :y)?.into())
+        Option::Some(EcPointTrait::new_nz(:x, :y)?.into())
+    }
+    /// Creates a new NonZero EC point from its (x, y) coordinates.
+    #[inline(always)]
+    fn new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> {
+        ec_point_try_new_nz(:x, :y)
     }
     /// Creates a new EC point from its x coordinate.
     #[inline(always)]
     fn new_from_x(x: felt252) -> Option<EcPoint> {
-        Option::Some(ec_point_from_x_nz(:x)?.into())
+        Option::Some(EcPointTrait::new_nz_from_x(:x)?.into())
+    }
+    /// Creates a new NonZero EC point from its x coordinate.
+    #[inline(always)]
+    fn new_nz_from_x(x: felt252) -> Option<NonZeroEcPoint> {
+        ec_point_from_x_nz(:x)
     }
     /// Returns the coordinates of the EC point.
     #[inline(always)]
