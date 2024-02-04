@@ -3,12 +3,10 @@ use std::fs;
 use std::sync::Mutex;
 
 use anyhow::Context;
-use cairo_lang_starknet::allowed_libfuncs::{
-    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
-};
 use cairo_lang_starknet::casm_contract_class::{CasmContractClass, StarknetSierraCompilationError};
 use cairo_lang_starknet::compiler_version::VersionId;
 use cairo_lang_starknet::contract_class::{ContractClass, ContractEntryPoints};
+use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
@@ -201,9 +199,7 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         abi: None,
     };
     let class_hash = sierra_class.class_hash;
-    if let Err(err) =
-        validate_compatible_sierra_version(&contract_class, config.list_selector.clone())
-    {
+    if let Err(err) = contract_class.validate_version_compatible(config.list_selector.clone()) {
         return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
     };
     let compiled_contract_class =

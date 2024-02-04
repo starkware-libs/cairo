@@ -1,10 +1,10 @@
+use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::compiler_version;
 use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
@@ -101,7 +101,7 @@ fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
 // Helper function for the common parts `test_compile_path_*`.
 fn test_compile_path_aux(example_file_name: &str, contract: &ContractClass) {
     let list_selector = ListSelector::ListName("all".to_string());
-    validate_compatible_sierra_version(contract, list_selector).unwrap();
+    contract.validate_version_compatible(list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.contract_class.json").as_str()),
