@@ -330,6 +330,7 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
         add_pythonic_hints: bool,
+        max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
@@ -392,11 +393,10 @@ impl CasmContractClass {
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
-        // TODO(orizi): Make `max_bytecode_size` be a command line argument.
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
         )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
