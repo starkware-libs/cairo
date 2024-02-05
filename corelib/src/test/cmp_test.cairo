@@ -33,16 +33,16 @@ fn test_max_u8() {
 
 #[test]
 fn test_min_max_u8() {
-    assert_eq(@min_max(0_u8, 1_u8), @(0_u8, 1_u8), '1 > 0');
-    assert_eq(@min_max(5_u8, 7_u8), @(5_u8, 7_u8), '7 > 5');
-    assert_eq(@min_max(255_u8, 128_u8), @(128_u8, 255_u8), '255 > 128');
-    assert_eq(@min_max(10_u8, 10_u8), @(10_u8, 10_u8), '10 == 10');
-    assert_eq(@min_max(0_u8, 0_u8), @(0_u8, 0_u8), '0 == 0');
-    assert_eq(@min_max(255_u8, 255_u8), @(255_u8, 255_u8), '255 == 255');
-    assert_eq(@min_max(100_u8, 200_u8), @(100_u8, 200_u8), '200 > 100');
-    assert_eq(@min_max(1_u8, 2_u8), @(1_u8, 2_u8), '2 > 1');
-    assert_eq(@min_max(120_u8, 130_u8), @(120_u8, 130_u8), '130 > 120');
-    assert_eq(@min_max(200_u8, 150_u8), @(150_u8, 200_u8), '200 > 150');
+    assert_eq(min_max(0_u8, 1_u8), (0_u8, 1_u8), '1 > 0');
+    assert_eq(min_max(5_u8, 7_u8), (5_u8, 7_u8), '7 > 5');
+    assert_eq(min_max(255_u8, 128_u8), (128_u8, 255_u8), '255 > 128');
+    assert_eq(min_max(10_u8, 10_u8), (10_u8, 10_u8), '10 == 10');
+    assert_eq(min_max(0_u8, 0_u8), (0_u8, 0_u8), '0 == 0');
+    assert_eq(min_max(255_u8, 255_u8), (255_u8, 255_u8), '255 == 255');
+    assert_eq(min_max(100_u8, 200_u8), (100_u8, 200_u8), '200 > 100');
+    assert_eq(min_max(1_u8, 2_u8), (1_u8, 2_u8), '2 > 1');
+    assert_eq(min_max(120_u8, 130_u8), (120_u8, 130_u8), '130 > 120');
+    assert_eq(min_max(200_u8, 150_u8), (150_u8, 200_u8), '200 > 150');
 }
 
 #[test]
