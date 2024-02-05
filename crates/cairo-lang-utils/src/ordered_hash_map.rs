@@ -11,12 +11,18 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key, Value, BH = RandomState>(IndexMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct OrderedHashMap<Key, Value, BH>(IndexMap<Key, Value, BH>);
+pub struct OrderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
+    IndexMap<Key, Value, BH>,
+);
 
-#[cfg(feature = "std")]
-impl<K, V> OrderedHashMap<K, V> {
-    pub fn new() -> Self {
-        Self(IndexMap::new())
+impl<Key, Value, BH: Default> Default for OrderedHashMap<Key, Value, BH> {
+    #[cfg(feature = "std")]
+    fn default() -> Self {
+        Self(Default::default())
+    }
+    #[cfg(not(feature = "std"))]
+    fn default() -> Self {
+        Self(IndexMap::with_hasher(Default::default()))
     }
 }
 
@@ -134,6 +140,17 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> OrderedHashMap<Key, Value, BH> {
         self.0.swap_remove(key)
     }
 
+    /// Scan through each key-value pair in the map and keep those where the
+    /// closure `keep` returns `true`.
+    ///
+    /// The elements are visited in order, and remaining elements keep their
+    /// order.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn retain(&mut self, keep: impl FnMut(&Key, &mut Value) -> bool) {
+        self.0.retain(keep);
+    }
+
     /// Returns true if the maps are equal, ignoring the order of the entries.
     pub fn eq_unordered(&self, other: &Self) -> bool
     where
@@ -193,12 +210,6 @@ impl<Key: Eq, Value: Eq, BH> PartialEq for OrderedHashMap<Key, Value, BH> {
 }
 
 impl<Key: Hash + Eq, Value: Eq, BH: BuildHasher> Eq for OrderedHashMap<Key, Value, BH> {}
-
-impl<Key, Value, BH: Default> Default for OrderedHashMap<Key, Value, BH> {
-    fn default() -> Self {
-        Self(IndexMap::default())
-    }
-}
 
 impl<Key: Hash + Eq, Value, BH: BuildHasher + Default> FromIterator<(Key, Value)>
     for OrderedHashMap<Key, Value, BH>

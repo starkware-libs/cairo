@@ -76,7 +76,7 @@ pub fn analyze_ap_changes(
         .cloned()
         .collect();
 
-    let mut need_ap_alignment = OrderedHashSet::new();
+    let mut need_ap_alignment = OrderedHashSet::default();
     if !root_info.known_ap_change {
         // Add 'locals' to the set a variable that is not ap based.
         ctx.non_ap_based.extend(locals.iter().cloned());

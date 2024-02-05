@@ -223,7 +223,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::ExprPath => Some(3),
                 _ => None,
             },
-            Some(SyntaxKind::ExprIf) => match self.kind(db) {
+            Some(SyntaxKind::ExprWhile) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprErrorPropagate
@@ -240,6 +240,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListBraced
                 | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(2),
+                _ => None,
+            },
+            Some(SyntaxKind::ExprIf) => match self.kind(db) {
+                SyntaxKind::ExprBlock => Some(1),
+                SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
             },

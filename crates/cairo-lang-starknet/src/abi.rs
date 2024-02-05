@@ -16,14 +16,17 @@ use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
     TypeId, TypeLongId,
 };
+use cairo_lang_starknet_classes::abi::{
+    Constructor, Contract, Enum, EnumVariant, Event, EventField, EventFieldKind, EventKind,
+    Function, Imp, Input, Interface, Item, L1Handler, Output, StateMutability, Struct,
+    StructMember,
+};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
-use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use thiserror::Error;
 
@@ -34,92 +37,11 @@ use crate::plugin::consts::{
     EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
     L1_HANDLER_ATTR,
 };
-use crate::plugin::events::{EventData, EventFieldKind};
+use crate::plugin::events::EventData;
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
 mod test;
-
-/// Contract ABI.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct Contract {
-    // TODO(spapini): Add storage variables.
-    items: OrderedHashSet<Item>,
-}
-impl Contract {
-    pub fn json(&self) -> String {
-        serde_json::to_string_pretty(&self).unwrap()
-    }
-
-    /// Validates the ABI entry points counts match the expected counts.
-    pub fn sanity_check(
-        &self,
-        expected_external_count: usize,
-        expected_l1_handler_count: usize,
-        expected_constructor_count: usize,
-    ) {
-        let trait_fn_count: UnorderedHashMap<_, _> = self
-            .items
-            .iter()
-            .filter_map(|item| {
-                let Item::Interface(imp) = item else {
-                    return None;
-                };
-                Some((imp.name.clone(), imp.items.len()))
-            })
-            .collect();
-        let mut external_count = 0;
-        let mut l1_handler_count = 0;
-        let mut constructor_count = 0;
-        for item in &self.items {
-            match item {
-                Item::Function(_) => external_count += 1,
-                Item::L1Handler(_) => l1_handler_count += 1,
-                Item::Constructor(_) => constructor_count += 1,
-                Item::Impl(imp) => {
-                    external_count += trait_fn_count.get(&imp.interface_name).unwrap_or_else(|| {
-                        panic!("Interface `{}` not found in ABI.", imp.interface_name)
-                    })
-                }
-                _ => {}
-            }
-        }
-        assert_eq!(external_count, expected_external_count);
-        assert_eq!(l1_handler_count, expected_l1_handler_count);
-        assert_eq!(constructor_count, expected_constructor_count);
-    }
-
-    /// Inserts an item to the set of items.
-    /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
-    /// item already existed.
-    /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
-    /// specifies whether duplication is OK or not.
-    /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
-    fn insert_item(&mut self, item: Item, prevent_dups: Option<Source>) -> Result<(), ABIError> {
-        let item_description = item.description();
-        let already_existed = !self.items.insert(item);
-        if already_existed {
-            if let Some(source) = prevent_dups {
-                return Err(ABIError::InvalidDuplicatedItem {
-                    description: item_description,
-                    source_ptr: source,
-                });
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl IntoIterator for Contract {
-    type Item = Item;
-    type IntoIter = <OrderedHashSet<Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.items.into_iter()
-    }
-}
 
 /// Event information.
 enum EventInfo {
@@ -144,8 +66,9 @@ pub struct AbiBuilder<'a> {
     /// Whether the contract is an account contract.
     account_contract: bool,
 
+    // TODO(spapini): Add storage variables.
     /// The constructed ABI.
-    abi: Contract,
+    abi_items: OrderedHashSet<Item>,
 
     /// List of type that were included abi.
     /// Used to avoid redundancy.
@@ -180,7 +103,7 @@ impl<'a> AbiBuilder<'a> {
                 CONTRACT_ATTR,
                 CONTRACT_ATTR_ACCOUNT_ARG,
             )?,
-            abi: Contract::default(),
+            abi_items: Default::default(),
             types: HashSet::new(),
             event_info: HashMap::new(),
             entry_point_names: HashSet::new(),
@@ -194,7 +117,11 @@ impl<'a> AbiBuilder<'a> {
 
     /// Returns the finalized ABI.
     pub fn finalize(self) -> Result<Contract, ABIError> {
-        if let Some(err) = self.errors.into_iter().next() { Err(err) } else { Ok(self.abi) }
+        if let Some(err) = self.errors.into_iter().next() {
+            Err(err)
+        } else {
+            Ok(Contract::from_items(self.abi_items))
+        }
     }
 
     /// Returns the errors accumulated by the builder.
@@ -799,7 +726,38 @@ impl<'a> AbiBuilder<'a> {
             self.add_entry_point_name(name, source)?;
         }
 
-        self.abi.insert_item(item, prevent_dups.then_some(source))
+        self.insert_abi_item(item, prevent_dups.then_some(source))
+    }
+
+    /// Inserts an item to the set of items.
+    /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
+    /// item already existed.
+    /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
+    /// specifies whether duplication is OK or not.
+    /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
+    fn insert_abi_item(
+        &mut self,
+        item: Item,
+        prevent_dups: Option<Source>,
+    ) -> Result<(), ABIError> {
+        let description = match &item {
+            Item::Function(item) => format!("Function '{}'", item.name),
+            Item::Constructor(item) => format!("Constructor '{}'", item.name),
+            Item::L1Handler(item) => format!("L1 Handler '{}'", item.name),
+            Item::Event(item) => format!("Event '{}'", item.name),
+            Item::Struct(item) => format!("Struct '{}'", item.name),
+            Item::Enum(item) => format!("Enum '{}'", item.name),
+            Item::Interface(item) => format!("Interface '{}'", item.name),
+            Item::Impl(item) => format!("Impl '{}'", item.name),
+        };
+        let already_existed = !self.abi_items.insert(item);
+        if already_existed {
+            if let Some(source) = prevent_dups {
+                return Err(ABIError::InvalidDuplicatedItem { description, source_ptr: source });
+            }
+        }
+
+        Ok(())
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
@@ -973,163 +931,4 @@ impl Source {
             Source::Trait(id) => id.untyped_stable_ptr(db.upcast()),
         }
     }
-}
-
-/// Enum of contract item ABIs.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-#[serde(tag = "type")]
-pub enum Item {
-    #[serde(rename = "function")]
-    Function(Function),
-    #[serde(rename = "constructor")]
-    Constructor(Constructor),
-    #[serde(rename = "l1_handler")]
-    L1Handler(L1Handler),
-    #[serde(rename = "event")]
-    Event(Event),
-    #[serde(rename = "struct")]
-    Struct(Struct),
-    #[serde(rename = "enum")]
-    Enum(Enum),
-    #[serde(rename = "interface")]
-    Interface(Interface),
-    #[serde(rename = "impl")]
-    Impl(Imp),
-}
-impl Item {
-    fn description(&self) -> String {
-        match self {
-            Item::Function(item) => format!("Function '{}'", item.name),
-            Item::Constructor(item) => format!("Constructor '{}'", item.name),
-            Item::L1Handler(item) => format!("L1 Handler '{}'", item.name),
-            Item::Event(item) => format!("Event '{}'", item.name),
-            Item::Struct(item) => format!("Struct '{}'", item.name),
-            Item::Enum(item) => format!("Enum '{}'", item.name),
-            Item::Interface(item) => format!("Interface '{}'", item.name),
-            Item::Impl(item) => format!("Impl '{}'", item.name),
-        }
-    }
-}
-
-/// Contract interface ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Interface {
-    pub name: String,
-    pub items: Vec<Item>,
-}
-
-/// Contract impl ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Imp {
-    pub name: String,
-    pub interface_name: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub enum StateMutability {
-    #[serde(rename = "external")]
-    External,
-    #[serde(rename = "view")]
-    View,
-}
-
-/// Contract function ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Function {
-    pub name: String,
-    pub inputs: Vec<Input>,
-
-    // TODO(ilya): Should the output be a vector or a single type?
-    pub outputs: Vec<Output>,
-    pub state_mutability: StateMutability,
-}
-
-/// Contract constructor ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Constructor {
-    pub name: String,
-    pub inputs: Vec<Input>,
-}
-
-/// Contract L1 handler ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct L1Handler {
-    pub name: String,
-    pub inputs: Vec<Input>,
-
-    // TODO(ilya): Should the output be a vector or a single type?
-    pub outputs: Vec<Output>,
-    pub state_mutability: StateMutability,
-}
-
-/// Contract event.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Event {
-    pub name: String,
-    #[serde(flatten)]
-    pub kind: EventKind,
-}
-
-/// Contract event kind.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-#[serde(tag = "kind")]
-pub enum EventKind {
-    #[serde(rename = "struct")]
-    Struct { members: Vec<EventField> },
-    #[serde(rename = "enum")]
-    Enum { variants: Vec<EventField> },
-}
-
-/// Contract event field (member/variant).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct EventField {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub ty: String,
-    pub kind: EventFieldKind,
-}
-
-/// Function input ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Input {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub ty: String,
-}
-
-/// Function Output ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Output {
-    #[serde(rename = "type")]
-    pub ty: String,
-}
-
-/// Struct ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Struct {
-    pub name: String,
-    pub members: Vec<StructMember>,
-}
-
-/// Struct member.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct StructMember {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub ty: String,
-}
-
-/// Enum ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct Enum {
-    pub name: String,
-    pub variants: Vec<EnumVariant>,
-}
-
-/// Enum variant.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct EnumVariant {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub ty: String,
 }

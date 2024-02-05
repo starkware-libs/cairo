@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "casm_contract_class_test.rs"]
-mod test;
-
 use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
@@ -43,12 +39,16 @@ use crate::compiler_version::{
     current_compiler_version_id, current_sierra_version_id, VersionId,
     CONTRACT_SEGMENTATION_MINOR_VERSION,
 };
-use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
     compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
 };
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
+use crate::keccak::starknet_keccak;
+
+#[cfg(test)]
+#[path = "casm_contract_class_test.rs"]
+mod test;
 
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;

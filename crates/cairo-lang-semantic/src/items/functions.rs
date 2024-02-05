@@ -243,19 +243,8 @@ impl FunctionId {
         format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
     }
 
-    pub fn fullname(&self, db: &dyn SemanticGroup) -> SmolStr {
-        let ConcreteFunction { generic_function, generic_args } = self.get_concrete(db);
-        let generic_fn_format = generic_function.format(db);
-        if generic_args.is_empty() {
-            generic_fn_format.into()
-        } else {
-            format!(
-                "{}::<{}>",
-                generic_fn_format,
-                generic_args.iter().map(|arg| arg.format(db)).join(", ")
-            )
-            .into()
-        }
+    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
+        self.get_concrete(db).full_name(db)
     }
 
     /// Returns true if the function does not depend on any generics.
@@ -550,6 +539,21 @@ impl ConcreteFunction {
             generic_function,
             generic_args: self.generic_args.clone(),
         })))
+    }
+    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
+        let maybe_generic_part = if !self.generic_args.is_empty() {
+            let mut generics = String::new();
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    generics.push_str(", ");
+                }
+                generics.push_str(&arg.format(db));
+            }
+            format!("::<{generics}>")
+        } else {
+            "".to_string()
+        };
+        format!("{}{maybe_generic_part}", self.generic_function.format(db.upcast()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {

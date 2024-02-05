@@ -7,9 +7,6 @@ use serde::Deserialize;
 use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::contract_class::ContractClass;
-use crate::felt252_serde::sierra_from_felt252s;
-
 #[cfg(test)]
 #[path = "allowed_libfuncs_test.rs"]
 mod test;
@@ -127,25 +124,4 @@ pub fn lookup_allowed_libfuncs_list(
     allowed_libfuncs.map_err(|_| AllowedLibfuncsError::DeserializationError {
         allowed_libfuncs_list_file: list_name,
     })
-}
-
-/// Checks that all the used libfuncs in the contract class are allowed in the contract class
-/// sierra version.
-pub fn validate_compatible_sierra_version(
-    contract: &ContractClass,
-    list_selector: ListSelector,
-) -> Result<(), AllowedLibfuncsError> {
-    let list_name = list_selector.to_string();
-    let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-    let (_, _, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
-        .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-    for libfunc in sierra_program.libfunc_declarations.iter() {
-        if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
-            return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                allowed_libfuncs_list_name: list_name,
-            });
-        }
-    }
-    Ok(())
 }

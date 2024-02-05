@@ -26,7 +26,7 @@ fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<Vec<SyntaxNode>> 
     let mut res = Vec::new();
 
     let mut offset = node.offset();
-    let mut key_map = UnorderedHashMap::<_, usize>::new();
+    let mut key_map = UnorderedHashMap::<_, usize>::default();
     for green_id in node.green_node(db).children() {
         let green = db.lookup_intern_green(*green_id);
         let width = green.width();

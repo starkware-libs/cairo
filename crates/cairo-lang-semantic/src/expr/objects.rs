@@ -342,13 +342,20 @@ pub struct ExprMatch {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
-    pub condition: ExprId,
+    pub condition: Condition,
     pub if_block: ExprId,
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub enum Condition {
+    BoolExpr(ExprId),
+    Let(ExprId, Vec<PatternId>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]

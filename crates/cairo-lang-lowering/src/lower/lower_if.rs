@@ -9,6 +9,7 @@ use semantic::{ExprFunctionCallArg, MatchArmSelector};
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::lowered_expr_to_block_scope_end;
+use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::{
@@ -64,9 +65,17 @@ pub fn lower_expr_if(
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
-    match analyze_condition(ctx, expr.condition) {
-        IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, builder, expr),
-        IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq(ctx, builder, expr, expr_a, expr_b),
+    let semantic::Condition::BoolExpr(expr_condition) = expr.condition else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), Unsupported),
+        ));
+    };
+
+    match analyze_condition(ctx, expr_condition) {
+        IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, builder, expr, expr_condition),
+        IfCondition::Eq(expr_a, expr_b) => {
+            lower_expr_if_eq(ctx, builder, expr, expr_condition, expr_a, expr_b)
+        }
     }
 }
 
@@ -75,10 +84,12 @@ pub fn lower_expr_if_bool(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
+    condition: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
+
     // The condition cannot be unit.
-    let condition = lower_expr_to_var_usage(ctx, builder, expr.condition)?;
+    let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
     let semantic_db = ctx.db.upcast();
     let unit_ty = corelib::unit_ty(semantic_db);
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
@@ -128,6 +139,7 @@ pub fn lower_expr_if_eq(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     expr: &semantic::ExprIf,
+    condition: semantic::ExprId,
     expr_a: semantic::ExprId,
     expr_b: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
@@ -150,8 +162,7 @@ pub fn lower_expr_if_eq(
             coupon_input: None,
             extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
-            location: ctx
-                .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
+            location: ctx.get_location(ctx.function_body.exprs[condition].stable_ptr().untyped()),
         }
         .add(ctx, &mut builder.statements);
         call_result.returns.into_iter().next().unwrap()

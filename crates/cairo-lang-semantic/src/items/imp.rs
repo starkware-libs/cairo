@@ -564,9 +564,9 @@ pub fn priv_impl_definition_data(
 
     // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
 
-    let mut function_asts = OrderedHashMap::new();
-    let mut item_type_asts = OrderedHashMap::new();
-    let mut impl_item_names = OrderedHashSet::new();
+    let mut function_asts = OrderedHashMap::default();
+    let mut item_type_asts = OrderedHashMap::default();
+    let mut impl_item_names = OrderedHashSet::<_>::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {

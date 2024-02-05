@@ -29,8 +29,8 @@ use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::compiler_version::VersionId;
-use crate::contract::starknet_keccak;
 use crate::felt252_vec_compression::{compress, decompress};
+use crate::keccak::starknet_keccak;
 
 #[cfg(test)]
 #[path = "felt252_serde_test.rs"]

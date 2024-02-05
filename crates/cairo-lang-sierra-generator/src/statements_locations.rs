@@ -79,7 +79,7 @@ pub struct StatementsLocations {
 impl StatementsLocations {
     /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
     pub fn from_locations_vec(locations_vec: &[Option<StableLocation>]) -> Self {
-        let mut locations = UnorderedHashMap::new();
+        let mut locations = UnorderedHashMap::default();
         for (idx, location) in locations_vec.iter().enumerate() {
             if let Some(location) = location {
                 locations.insert(StatementIdx(idx), *location);
