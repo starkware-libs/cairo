@@ -782,6 +782,109 @@ Error from program registry: Error during type specialization
 
 //! > ==========================================================================
 
+//! > Zero const NonZero u128 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type NonZero<u128> = NonZero<u128>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstNzZeroU128 = Const<NonZero<u128>, ConstZeroU128>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization
+
+//! > ==========================================================================
+
+//! > Zero const NonZero u256 type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@u256, u128, u128>;
+type NonZero<u256> = NonZero<u256>;
+type ConstZeroU128 = Const<u128, 0>;
+type ConstZeroU256 = Const<u256, ConstZeroU128, ConstZeroU128>;
+type ConstNzZeroU256 = Const<NonZero<u256>, ConstZeroU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization
+
+//! > ==========================================================================
+
+//! > const NonZero enum type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type Const<Unit> = Const<Unit>;
+type E = Enum<ut@E, Unit, Unit>;
+type NonZero<E> = NonZero<E>;
+type ConstE = Const<E, 0, Const<Unit>>;
+type ConstNzE = Const<NonZero<E>, ConstE>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization
+
+//! > ==========================================================================
+
+//! > const NonZero empty struct type.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type Unit = Struct<ut@Unit>;
+type NonZero<Unit> = NonZero<Unit>;
+type ConstUnit = Const<Unit>;
+type ConstNzUnit = Const<NonZero<Unit>, ConstUnit>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization
+
+//! > ==========================================================================
+
+//! > const NonZero non-flat structure.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type u128 = u128;
+type u256 = Struct<ut@u256, u128, u128>;
+type wrapped_u256 = Struct<ut@wrapped_u256, u256>;
+type NonZero<u256> = NonZero<u256>;
+type ConstU128 = Const<u128, 1>;
+type ConstU256 = Const<u256, ConstU128, ConstU128>;
+type ConstWrappedU256 = Const<wrapped_u256, ConstU256>;
+type ConstNzWrappedU256 = Const<NonZero<wrapped_u256>, ConstWrappedU256>;
+return ();
+
+foo@0() -> ();
+
+//! > error
+Error from program registry: Error during type specialization
+
+//! > ==========================================================================
+
 //! > Const segments with hole.
 
 //! > test_runner_name
