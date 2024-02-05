@@ -82,7 +82,7 @@ pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config
                 root,
                 settings: CrateSettings {
                     edition: crates_config.edition,
-                    cfg_set: Default::default(),
+                    cfg_set: crates_config.cfg_set.clone(),
                     experimental_features: crates_config.experimental_features.clone(),
                 },
             }),
