@@ -345,6 +345,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Const(libfunc) => match libfunc {
             ConstConcreteLibfunc::AsBox(_) => vec![ApChange::Known(3)],
+            ConstConcreteLibfunc::AsImmediate(_) => vec![ApChange::Known(0)],
         },
         Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(_) => vec![ApChange::Known(0)],
