@@ -260,6 +260,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             },
         },
         type_sizes: &type_sizes,
+        const_data_values: &|_| panic!("const_data_values not implemented for tests."),
     };
 
     let args: Vec<ReferenceValue> = zip_eq(refs, libfunc.param_signatures())
