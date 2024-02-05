@@ -2,6 +2,7 @@ import { spawn } from "child_process";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 import type { Context } from "./context";
+import { checkTool, findToolInAsdf, findToolInPath } from "./toolchain";
 
 let globalExecId = 0;
 
@@ -17,6 +18,51 @@ export class Scarb {
      */
     public readonly workspaceFolder?: vscode.WorkspaceFolder | undefined,
   ) {}
+
+  /**
+   * Tries to find Scarb on the host in context of the given workspace folder.
+   */
+  public static async find(
+    workspaceFolder: vscode.WorkspaceFolder | undefined,
+    ctx: Context,
+  ): Promise<Scarb> {
+    const path = await findPath();
+    return new Scarb(path, workspaceFolder);
+
+    async function findPath(): Promise<string> {
+      // TODO(mkaput): Config should probably be scoped to workspace folder.
+      // Check config for scarb path.
+      let configPath = ctx.config.get("scarbPath");
+      if (configPath) {
+        configPath = await checkTool(configPath);
+        if (configPath) {
+          ctx.log.debug(`using Scarb from config: ${configPath}`);
+          return configPath;
+        } else {
+          throw new Error(
+            `configured Scarb path does not exist: ${configPath}`,
+          );
+        }
+      }
+
+      // Check PATH env var for scarb path.
+      const envPath = await findToolInPath("scarb");
+      if (envPath) {
+        ctx.log.debug(`using Scarb from PATH: ${envPath}`);
+        return envPath;
+      }
+
+      // Check if scarb is installed via asdf. Usually it's already in PATH,
+      // but some users happened not to have it there.
+      const asdfPath = await findToolInAsdf("scarb");
+      if (asdfPath) {
+        ctx.log.debug(`using Scarb from asdf: ${asdfPath}`);
+        return asdfPath;
+      }
+
+      throw new Error("could not find Scarb executable on this machine");
+    }
+  }
 
   public languageServerExecutable(): lc.Executable {
     const exec: lc.Executable = {

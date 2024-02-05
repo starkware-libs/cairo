@@ -6,12 +6,7 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
-import {
-  checkTool,
-  findToolAtWithExtension,
-  findToolInAsdf,
-  findToolInPath,
-} from "./toolchain";
+import { checkTool, findToolAtWithExtension } from "./toolchain";
 
 /**
  * Tries to find the development version of the language server executable,
@@ -60,22 +55,6 @@ async function findLanguageServerExecutable(ctx: Context) {
   // TODO(spapini): Use a bundled language server.
   const root = rootPath(ctx);
   return findDevLanguageServerAt(root);
-}
-
-async function findScarbExecutablePath(
-  ctx: Context,
-): Promise<string | undefined> {
-  // Check config for scarb path.
-  const configPath = ctx.config.get("scarbPath");
-  if (configPath) {
-    return await checkTool(configPath);
-  }
-
-  // Check PATH env var for scarb path.
-  const envPath = await findToolInPath("scarb");
-  if (envPath) return envPath;
-
-  return findToolInAsdf("scarb");
 }
 
 function notifyScarbMissing(ctx: Context) {
@@ -204,22 +183,23 @@ export async function setupLanguageServer(
 }
 
 async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
+  // TODO(mkaput): Support multi-root workspaces.
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
   const isScarbEnabled = ctx.config.get("enableScarb", false);
-  const scarbPath = await findScarbExecutablePath(ctx);
   const configLanguageServerPath = ctx.config.get("languageServerPath");
 
+  let scarb: Scarb | undefined;
   if (!isScarbEnabled) {
     ctx.log.warn("Scarb integration is disabled");
     ctx.log.warn("note: set `cairo1.enableScarb` to `true` to enable it");
-  } else if (scarbPath == undefined) {
-    ctx.log.error("could not find Scarb executable on this machine");
   } else {
-    ctx.log.debug(`using Scarb: ${scarbPath}`);
-  }
-
-  let scarb: Scarb | undefined;
-  if (isScarbEnabled && scarbPath != undefined) {
-    scarb = new Scarb(scarbPath, vscode.workspace.workspaceFolders?.[0]);
+    try {
+      scarb = await Scarb.find(workspaceFolder, ctx);
+    } catch (e) {
+      ctx.log.error(`${e}`);
+      ctx.log.error("note: Scarb integration is disabled due to this error");
+    }
   }
 
   const serverType = await getServerType(
