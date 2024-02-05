@@ -1,9 +1,11 @@
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
-use num_traits::ToPrimitive;
+use num_traits::{ToPrimitive, Zero};
 
 use super::boxing::box_ty;
 use super::enm::EnumType;
+use super::int::unsigned128::Uint128Type;
+use super::non_zero::NonZeroType;
 use super::structure::StructType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
@@ -14,10 +16,10 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError,
+    args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a constant value, hardcoded in the program segment.
@@ -69,6 +71,8 @@ fn validate_const_data(
         validate_const_struct_data(context, &inner_type_info, inner_data)?;
     } else if inner_type_info.long_id.generic_id == EnumType::ID {
         validate_const_enum_data(context, &inner_type_info, inner_data)?;
+    } else if inner_type_info.long_id.generic_id == NonZeroType::ID {
+        validate_const_nz_data(context, &inner_type_info, inner_data)?;
     } else {
         let type_range = Range::from_type_info(&inner_type_info)?;
         let [GenericArg::Value(value)] = inner_data else {
@@ -138,6 +142,58 @@ fn validate_const_enum_data(
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     Ok(())
+}
+
+/// Given a const type representing a NonZero, validates that the inner data is a const type
+/// matching the inner type, where the given value isn't fully 0.
+/// Example usages:
+/// `Const<NonZero<u32>, Const<u32, 1>>`
+/// `Const<NonZero<u256>, Const<u256, ...>>`
+fn validate_const_nz_data(
+    context: &dyn TypeSpecializationContext,
+    inner_type_info: &TypeInfo,
+    inner_data: &[GenericArg],
+) -> Result<(), SpecializationError> {
+    let wrapped_ty_from_nz = args_as_single_type(&inner_type_info.long_id.generic_args)?;
+    let inner_const_type_id = args_as_single_type(inner_data)?;
+    let (wrapped_ty_from_const, inner_const_data) =
+        extract_const_info(context, &inner_const_type_id)?;
+    if wrapped_ty_from_const != wrapped_ty_from_nz {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+
+    // Check the direct value case.
+    if matches!(inner_const_data.as_slice(), [GenericArg::Value(value)] if !value.is_zero()) {
+        // Validate that the inner type is a valid integer type, by calling `from_type_info`.
+        Range::from_type_info(&context.get_type_info(wrapped_ty_from_nz)?)?;
+        return Ok(());
+    }
+    let struct_generic_args =
+        extract_type_generic_args::<StructType>(context, &wrapped_ty_from_nz)?;
+    if !matches!(
+        struct_generic_args.first(),
+        Some(GenericArg::UserType(ut))
+        if (inner_const_data.len() == 2 && *ut == UserTypeId::from_string("core::integer::u256"))
+        || (inner_const_data.len() == 4 && *ut == UserTypeId::from_string("core::integer::u512"))
+    ) {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    // Validating one of the inner values for the types in non-zero, as well that all the inner
+    // types are consts of `u128`.
+    let mut is_non_zero = false;
+    for const_u128_arg in inner_const_data {
+        let const_u128_ty = try_extract_matches!(const_u128_arg, GenericArg::Type)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let (u128_ty, const_data) = extract_const_info(context, &const_u128_ty)?;
+        extract_type_generic_args::<Uint128Type>(context, &u128_ty)?;
+        let [GenericArg::Value(const_data)] = const_data.as_slice() else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        is_non_zero |= !const_data.is_zero();
+    }
+
+    if is_non_zero { Ok(()) } else { Err(SpecializationError::UnsupportedGenericArg) }
 }
 
 /// Validates the type is a `Const` type, and extracts the inner type and the rest of the generic
