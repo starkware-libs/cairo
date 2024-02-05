@@ -17,7 +17,7 @@ use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_sierra_to_casm::compiler::CompilationError;
+use cairo_lang_sierra_to_casm::compiler::{CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
@@ -392,9 +392,11 @@ impl CasmContractClass {
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
-        let gas_usage_check = true;
-        let cairo_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
+        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
+            &program,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: true },
+        )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
         let bytecode = bytecode

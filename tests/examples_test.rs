@@ -15,6 +15,7 @@ use cairo_lang_runner::{token_gas_cost, Arg, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::{extract_matches, Upcast};
@@ -145,7 +146,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::match_or("match_or", false)]
 fn cairo_to_casm(
     #[case] name: &str,
-    #[case] enable_gas_checks: bool,
+    #[case] gas_usage_check: bool,
     example_dir_data: &ExampleDirData,
 ) {
     let program = checked_compile_to_sierra(name, example_dir_data, false);
@@ -154,12 +155,12 @@ fn cairo_to_casm(
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &if enable_gas_checks {
+            &if gas_usage_check {
                 calc_metadata(&program, Default::default()).unwrap()
             } else {
                 calc_metadata_ap_change_only(&program).unwrap()
             },
-            enable_gas_checks,
+            SierraToCasmConfig { gas_usage_check },
         )
         .unwrap()
         .to_string(),
@@ -177,7 +178,7 @@ fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData)
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &calc_metadata(&program, Default::default()).unwrap(),
-            true,
+            SierraToCasmConfig { gas_usage_check: true },
         )
         .unwrap()
         .to_string(),
