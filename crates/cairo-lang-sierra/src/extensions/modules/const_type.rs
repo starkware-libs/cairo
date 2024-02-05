@@ -9,8 +9,8 @@ use super::structure::StructType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
-    SpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -227,6 +227,13 @@ impl ConcreteType for ConstConcreteType {
     }
 }
 
+define_libfunc_hierarchy! {
+    pub enum ConstLibfunc {
+        AsBox(ConstAsBoxLibfunc),
+        AsImmediate(ConstAsImmediateLibfunc),
+    }, ConstConcreteLibfunc
+}
+
 /// A zero-input function that returns a box of the const value according to the generic arg type
 /// of the function.
 pub struct ConstAsBoxConcreteLibfunc {
@@ -243,14 +250,9 @@ impl SignatureBasedConcreteLibfunc for ConstAsBoxConcreteLibfunc {
     }
 }
 
-define_libfunc_hierarchy! {
-    pub enum ConstLibfunc {
-        AsBox(ConstAsBoxLibfuncWrapped),
-    }, ConstConcreteLibfunc
-}
 #[derive(Default)]
-pub struct ConstAsBoxLibfuncWrapped {}
-impl ConstAsBoxLibfuncWrapped {
+pub struct ConstAsBoxLibfunc {}
+impl ConstAsBoxLibfunc {
     fn specialize_concrete_lib_func(
         &self,
         context: &dyn SignatureSpecializationContext,
@@ -287,9 +289,75 @@ impl ConstAsBoxLibfuncWrapped {
     }
 }
 
-impl NamedLibfunc for ConstAsBoxLibfuncWrapped {
+impl NamedLibfunc for ConstAsBoxLibfunc {
     type Concrete = ConstAsBoxConcreteLibfunc;
     const STR_ID: &'static str = "const_as_box";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(self.specialize_concrete_lib_func(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        self.specialize_concrete_lib_func(context.upcast(), args)
+    }
+}
+
+/// Libfunc for returning a compilation time constant as an immediate.
+pub struct ConstAsImmediateConcreteLibfunc {
+    /// The type of the returned constant.
+    pub const_type: ConcreteTypeId,
+    pub signature: LibfuncSignature,
+}
+
+impl SignatureBasedConcreteLibfunc for ConstAsImmediateConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+#[derive(Default)]
+pub struct ConstAsImmediateLibfunc {}
+impl ConstAsImmediateLibfunc {
+    fn specialize_concrete_lib_func(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<ConstAsImmediateConcreteLibfunc, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let type_info = context.get_type_info(ty.clone())?;
+        if type_info.long_id.generic_id != ConstType::ID {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        let generic_args = context.get_type_info(ty.clone())?.long_id.generic_args;
+        let Some(GenericArg::Type(inner_ty)) = generic_args.first() else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
+
+        Ok(ConstAsImmediateConcreteLibfunc {
+            const_type: ty.clone(),
+            signature: LibfuncSignature::new_non_branch(
+                vec![],
+                vec![OutputVarInfo {
+                    ty: inner_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
+                }],
+                SierraApChange::Known { new_vars_only: false },
+            ),
+        })
+    }
+}
+
+impl NamedLibfunc for ConstAsImmediateLibfunc {
+    type Concrete = ConstAsImmediateConcreteLibfunc;
+    const STR_ID: &'static str = "const_as_immediate";
 
     fn specialize_signature(
         &self,

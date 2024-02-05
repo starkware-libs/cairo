@@ -416,7 +416,13 @@ pub fn compile(
                 })?;
                 invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
                 let compiled_invocation = compile_invocation(
-                    ProgramInfo { metadata, type_sizes: &type_sizes },
+                    ProgramInfo {
+                        metadata,
+                        type_sizes: &type_sizes,
+                        const_data_values: &|ty| {
+                            extract_const_value(&registry, &type_sizes, ty).unwrap()
+                        },
+                    },
                     invocation,
                     libfunc,
                     statement_idx,
