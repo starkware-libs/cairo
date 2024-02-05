@@ -464,6 +464,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "salsa",
+ "smol_str",
  "thiserror",
 ]
 
@@ -874,7 +875,6 @@ version = "2.5.3"
 dependencies = [
  "anyhow",
  "cairo-felt",
- "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -884,14 +884,38 @@ dependencies = [
  "cairo-lang-semantic",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
- "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const_format",
- "convert_case",
  "env_logger",
  "indent",
+ "indoc",
+ "itertools 0.11.0",
+ "once_cell",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "smol_str",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-starknet-classes"
+version = "2.5.3"
+dependencies = [
+ "cairo-felt",
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
+ "convert_case",
+ "env_logger",
  "indoc",
  "itertools 0.11.0",
  "num-bigint",
@@ -952,6 +976,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "indoc",
@@ -971,6 +996,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-runner",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-test-plugin",
@@ -1034,6 +1060,7 @@ dependencies = [
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",
+ "cairo-lang-utils",
  "clap",
 ]
 
@@ -1045,6 +1072,7 @@ dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-test-runner",
  "clap",
+ "serde",
 ]
 
 [[package]]
@@ -2895,6 +2923,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "clap",
 ]
 
@@ -2956,7 +2985,7 @@ version = "2.5.3"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
- "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
  "serde",
@@ -2968,7 +2997,7 @@ name = "starknet-sierra-extract-code"
 version = "2.5.3"
 dependencies = [
  "anyhow",
- "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "clap",
  "serde_json",
 ]
@@ -2978,7 +3007,7 @@ name = "starknet-sierra-upgrade-validate"
 version = "2.5.3"
 dependencies = [
  "anyhow",
- "cairo-lang-starknet",
+ "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
  "indicatif",

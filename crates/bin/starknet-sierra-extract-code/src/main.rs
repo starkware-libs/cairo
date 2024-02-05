@@ -1,7 +1,7 @@
 use std::fs;
 
 use anyhow::Context;
-use cairo_lang_starknet::contract_class::ContractClass;
+use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
 /// Command line args parser.

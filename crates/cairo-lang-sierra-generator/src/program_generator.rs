@@ -160,10 +160,20 @@ fn collect_used_types(
         .collect()
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SierraProgramWithDebug {
+    pub program: cairo_lang_sierra::program::Program,
+    pub debug_info: SierraProgramDebugInfo,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SierraProgramDebugInfo {
+    pub statements_locations: StatementsLocations,
+}
+
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
-) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)> {
+) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
@@ -210,10 +220,12 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
-    Ok((
-        Arc::new(program),
-        Arc::new(StatementsLocations::from_locations_vec(&statements_locations)),
-    ))
+    Ok(Arc::new(SierraProgramWithDebug {
+        program,
+        debug_info: SierraProgramDebugInfo {
+            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+        },
+    }))
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -243,7 +255,7 @@ fn try_get_function_with_body_id(
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-) -> Maybe<(Arc<cairo_lang_sierra::program::Program>, Arc<StatementsLocations>)> {
+) -> Maybe<Arc<SierraProgramWithDebug>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {

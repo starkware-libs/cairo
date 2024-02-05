@@ -16,7 +16,7 @@ mod lifetime;
 mod local_variables;
 mod next_statement_index_fetch;
 pub mod pre_sierra;
-mod program_generator;
+pub mod program_generator;
 pub mod replace_ids;
 mod resolve_labels;
 mod specialization_context;
