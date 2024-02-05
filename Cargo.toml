@@ -48,6 +48,7 @@ members = [
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
     "crates/cairo-lang-starknet",
+    "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-syntax-codegen",
     "crates/cairo-lang-test-plugin",

@@ -2,10 +2,12 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::arc_unwrap_or_clone;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::ProfilingInfoProcessor;
@@ -40,10 +42,10 @@ pub fn test_profiling(
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 
     // Compile to Sierra.
-    let (sierra_program, statements_locations) =
-        db.get_sierra_program(vec![test_module.crate_id]).unwrap();
+    let SierraProgramWithDebug { program: sierra_program, debug_info } =
+        arc_unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).unwrap());
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
-    let statements_functions = statements_locations.get_statements_functions_map(&db);
+    let statements_functions = debug_info.statements_locations.get_statements_functions_map(&db);
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
         Some(Default::default()),
@@ -55,7 +57,8 @@ pub fn test_profiling(
     let result = runner
         .run_function_with_starknet_context(func, &[], Some(u32::MAX as usize), Default::default())
         .unwrap();
-    let profiling_processor = ProfilingInfoProcessor::new(sierra_program, statements_functions);
+    let profiling_processor =
+        ProfilingInfoProcessor::new(Some(&db), sierra_program, statements_functions);
     let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
 
     if inputs.contains_key("max_stack_trace_depth") {

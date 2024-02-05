@@ -200,8 +200,12 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
 semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
+    pub fn lookup(&self, db: &dyn SemanticGroup) -> FunctionLongId {
+        db.lookup_intern_function(*self)
+    }
+
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
-        db.lookup_intern_function(*self).function
+        self.lookup(db).function
     }
 
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
@@ -211,6 +215,10 @@ impl FunctionId {
 
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
+    }
+
+    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
+        self.get_concrete(db).full_name(db)
     }
 }
 
@@ -495,6 +503,21 @@ impl ConcreteFunction {
             generic_function,
             generic_args: self.generic_args.clone(),
         })))
+    }
+    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
+        let maybe_generic_part = if !self.generic_args.is_empty() {
+            let mut generics = String::new();
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    generics.push_str(", ");
+                }
+                generics.push_str(&arg.format(db));
+            }
+            format!("::<{generics}>")
+        } else {
+            "".to_string()
+        };
+        format!("{}{maybe_generic_part}", self.generic_function.format(db.upcast()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {

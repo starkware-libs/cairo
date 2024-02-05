@@ -1,6 +1,6 @@
 use std::vec;
 
-use cairo_lang_defs::db::get_all_path_leafs;
+use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
@@ -244,7 +244,7 @@ fn maybe_add_extra_use(
 ) {
     if let Some(ident) = match item {
         ast::ModuleItem::Use(item) => {
-            let leaves = get_all_path_leafs(db, item.use_path(db));
+            let leaves = get_all_path_leaves(db, item.use_path(db));
             for leaf in leaves {
                 extra_uses
                     .entry(leaf.stable_ptr().identifier(db))

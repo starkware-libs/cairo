@@ -7,12 +7,13 @@ use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
+use cairo_lang_starknet_classes::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
+use cairo_lang_starknet_classes::contract_class::ContractClass;
 use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
-use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
-use crate::contract_class::compile_contract_in_prepared_db;
+use crate::compile::compile_contract_in_prepared_db;
 use crate::starknet_plugin_suite;
 
 /// Returns a path to example contract that matches `name`.
@@ -53,7 +54,7 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
 });
 
 /// Returns the compiled test contract from the contracts crate, with replaced ids.
-pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
+pub fn get_test_contract(example_file_name: &str) -> ContractClass {
     let locked_db = test_lock(&SHARED_DB_WITH_CONTRACTS);
     let db = locked_db.snapshot();
     drop(locked_db);
@@ -84,9 +85,4 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
         },
     )
     .expect("compile_path failed")
-}
-
-/// Converts a Cairo path of a contract (e.g. `a::b::c`) to a file name with underscores (a_b_c).
-pub fn get_contract_file_name_from_path(path: &str) -> String {
-    path.replace("::", "__")
 }

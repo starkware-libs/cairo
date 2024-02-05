@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
+use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use smol_str::SmolStr;
@@ -45,7 +46,7 @@ pub struct ProcessedProfilingInfo {
     /// functions).
     pub user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
     /// Weight (in steps in the relevant run) of each original user function.
-    pub original_user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    pub original_user_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of each Cairo function.
     pub cairo_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
@@ -133,7 +134,8 @@ impl Default for ProfilingInfoProcessorParams {
 }
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
-pub struct ProfilingInfoProcessor {
+pub struct ProfilingInfoProcessor<'a> {
+    db: Option<&'a dyn SierraGenGroup>,
     sierra_program: Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
@@ -141,12 +143,14 @@ pub struct ProfilingInfoProcessor {
     statements_functions: UnorderedHashMap<StatementIdx, String>,
     params: ProfilingInfoProcessorParams,
 }
-impl ProfilingInfoProcessor {
+impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
+        db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
         Self {
+            db,
             sierra_program,
             statements_functions,
             params: ProfilingInfoProcessorParams::default(),
@@ -245,8 +249,8 @@ impl ProfilingInfoProcessor {
             }
         }
 
-        let mut concrete_libfuncs_weights = OrderedHashMap::default();
-        if params.process_by_concrete_libfunc {
+        let concrete_libfuncs_weights = params.process_by_concrete_libfunc.then(|| {
+            let mut concrete_libfuncs_weights = OrderedHashMap::default();
             for (concrete_name, weight) in
                 concrete_libfuncs.iter_sorted_by_key(|(concrete_name, weight)| {
                     (usize::MAX - **weight, (*concrete_name).clone())
@@ -256,10 +260,11 @@ impl ProfilingInfoProcessor {
                     concrete_libfuncs_weights.insert(concrete_name.clone(), *weight);
                 }
             }
-        }
+            concrete_libfuncs_weights
+        });
 
-        let mut generic_libfuncs_weights = OrderedHashMap::default();
-        if params.process_by_generic_libfunc {
+        let generic_libfuncs_weights = params.process_by_generic_libfunc.then(|| {
+            let mut generic_libfuncs_weights = OrderedHashMap::default();
             for (generic_name, weight) in
                 generic_libfuncs.iter_sorted_by_key(|(generic_name, weight)| {
                     (usize::MAX - **weight, (*generic_name).clone())
@@ -269,10 +274,11 @@ impl ProfilingInfoProcessor {
                     generic_libfuncs_weights.insert(generic_name.clone(), *weight);
                 }
             }
-        }
+            generic_libfuncs_weights
+        });
 
-        let mut user_functions_weights = OrderedHashMap::default();
-        if params.process_by_user_function {
+        let user_functions_weights = params.process_by_user_function.then(|| {
+            let mut user_functions_weights = OrderedHashMap::default();
             for (idx, weight) in user_functions.iter_sorted_by_key(|(idx, weight)| {
                 (usize::MAX - **weight, self.sierra_program.funcs[**idx].id.to_string())
             }) {
@@ -281,15 +287,20 @@ impl ProfilingInfoProcessor {
                     user_functions_weights.insert(func.id.to_string().into(), *weight);
                 }
             }
-        }
+            user_functions_weights
+        });
 
-        let mut original_user_functions_weights = OrderedHashMap::default();
-        if params.process_by_original_user_function {
+        let original_user_functions_weights = params.process_by_original_user_function.then(|| {
+            let db: &dyn SierraGenGroup =
+                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
+            let mut original_user_functions_weights = OrderedHashMap::default();
             for (orig_name, weight) in user_functions
                 .aggregate_by(
-                    |idx| -> SmolStr {
-                        let full_name = self.sierra_program.funcs[*idx].id.to_string();
-                        full_name.split('[').next().unwrap().into()
+                    |idx| {
+                        let lowering_function_id = db.lookup_intern_sierra_function(
+                            self.sierra_program.funcs[*idx].id.clone(),
+                        );
+                        lowering_function_id.semantic_full_path(db.upcast())
                     },
                     |x, y| x + y,
                     &0,
@@ -302,10 +313,11 @@ impl ProfilingInfoProcessor {
                     original_user_functions_weights.insert(orig_name.clone(), *weight);
                 }
             }
-        }
+            original_user_functions_weights
+        });
 
-        let mut cairo_functions_weights = OrderedHashMap::default();
-        if params.process_by_cairo_function {
+        let cairo_functions_weights = params.process_by_cairo_function.then(|| {
+            let mut cairo_functions_weights = OrderedHashMap::default();
             for (function_identifier, weight) in
                 cairo_functions.iter_sorted_by_key(|(function_identifier, weight)| {
                     (usize::MAX - **weight, (*function_identifier).clone())
@@ -315,7 +327,8 @@ impl ProfilingInfoProcessor {
                     cairo_functions_weights.insert(function_identifier.clone(), *weight);
                 }
             }
-        }
+            cairo_functions_weights
+        });
 
         let stack_trace_weights = raw_profiling_info
             .stack_trace_weights
@@ -333,11 +346,11 @@ impl ProfilingInfoProcessor {
         ProcessedProfilingInfo {
             sierra_statements_weights,
             stack_trace_weights,
-            generic_libfuncs_weights: Some(generic_libfuncs_weights),
-            concrete_libfuncs_weights: Some(concrete_libfuncs_weights),
-            user_functions_weights: Some(user_functions_weights),
-            original_user_functions_weights: Some(original_user_functions_weights),
-            cairo_functions_weights: Some(cairo_functions_weights),
+            concrete_libfuncs_weights,
+            generic_libfuncs_weights,
+            user_functions_weights,
+            original_user_functions_weights,
+            cairo_functions_weights,
             return_weight,
         }
     }
