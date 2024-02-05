@@ -1,9 +1,10 @@
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
-use num_traits::ToPrimitive;
+use num_traits::{ToPrimitive, Zero};
 
 use super::boxing::box_ty;
 use super::enm::EnumType;
+use super::non_zero::NonZeroType;
 use super::structure::StructType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
@@ -14,8 +15,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError,
+    args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -32,13 +33,8 @@ impl NamedType for ConstType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let mut args_iter = args.iter();
-        let first_arg = args_iter.next().ok_or(SpecializationError::WrongNumberOfGenericArgs)?;
-        let inner_ty = try_extract_matches!(first_arg, GenericArg::Type)
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        // Extract the rest of the arguments as the inner data.
-        let inner_data = args_iter.cloned().collect::<Vec<_>>();
-        validate_const_data(context, inner_ty, &inner_data)?;
+        let (inner_ty, inner_data) = inner_type_and_data(args)?;
+        validate_const_data(context, inner_ty, inner_data)?;
         let info = TypeInfo {
             long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
             storable: false,
@@ -46,7 +42,7 @@ impl NamedType for ConstType {
             droppable: false,
             zero_sized: false,
         };
-        Ok(ConstConcreteType { info, inner_ty: inner_ty.clone(), inner_data })
+        Ok(ConstConcreteType { info, inner_ty: inner_ty.clone(), inner_data: inner_data.to_vec() })
     }
 }
 
@@ -74,6 +70,8 @@ fn validate_const_data(
         validate_const_struct_data(context, &inner_type_info, inner_data)?;
     } else if inner_type_info.long_id.generic_id == EnumType::ID {
         validate_const_enum_data(context, &inner_type_info, inner_data)?;
+    } else if inner_type_info.long_id.generic_id == NonZeroType::ID {
+        validate_const_nz_data(context, &inner_type_info, inner_data)?;
     } else {
         let type_range = Range::from_type_info(&inner_type_info)?;
         let [GenericArg::Value(value)] = inner_data else {
@@ -108,17 +106,10 @@ fn validate_const_struct_data(
         };
 
         // Validate that the const_arg_ty is a `Const` representing the same type as struct_arg_ty.
-        let const_arg_type_info = context.get_type_info(const_arg_ty.clone())?;
-        if const_arg_type_info.long_id.generic_id != ConstType::ID {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-        let Some(GenericArg::Type(const_arg_inner_ty)) =
-            const_arg_type_info.long_id.generic_args.first()
-        else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-        // Validate that the const_arg_inner_ty is the same as the corresponding struct_arg_ty.
-        if struct_arg_ty != const_arg_inner_ty {
+        if !matches!(
+            get_const_args(context, const_arg_ty.clone())?.first(),
+            Some(GenericArg::Type(const_arg_inner_ty)) if struct_arg_ty == const_arg_inner_ty,
+        ) {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
     }
@@ -147,21 +138,87 @@ fn validate_const_enum_data(
         return Err(SpecializationError::UnsupportedGenericArg);
     };
 
-    // Validate that `variant_const_type_id` is a const type.
-    let variant_const_info = context.get_type_info(variant_const_type_id.clone())?;
-    if variant_const_info.long_id.generic_id != ConstType::ID {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    }
-
     // Validate that the type of the const is the same as the corresponding variant data
     // type.
-    if variant_const_info.long_id.generic_args.first()
-        != Some(&GenericArg::Type(variant_data_ty.clone()))
-    {
+    if !matches!(
+        get_const_args(context, variant_const_type_id.clone())?.first(),
+        Some(GenericArg::Type(const_arg_inner_ty)) if variant_data_ty == const_arg_inner_ty,
+    ) {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
-
     Ok(())
+}
+
+/// Given a const type representing a NonZero, validates that the inner data is a const type
+/// matching the inner type, where the given value isn't fully 0.
+fn validate_const_nz_data(
+    context: &dyn TypeSpecializationContext,
+    inner_type_info: &TypeInfo,
+    inner_data: &[GenericArg],
+) -> Result<(), SpecializationError> {
+    let nz_wrapped_ty = args_as_single_type(&inner_type_info.long_id.generic_args)?;
+    // Assert that the inner data is a const type
+    let inner_const_type_id = args_as_single_type(inner_data)?;
+    let const_args = get_const_args(context, inner_const_type_id)?;
+    let (const_wrapped_ty, inner_data) = inner_type_and_data(&const_args)?;
+    if *const_wrapped_ty != nz_wrapped_ty {
+        // Mismatch between the inner type of the NonZero and the inner type of the const.
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    let inner_type_info = context.get_type_info(nz_wrapped_ty)?;
+    if [EnumType::ID, NonZeroType::ID].contains(&inner_type_info.long_id.generic_id) {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    } else if inner_type_info.long_id.generic_id == StructType::ID && !inner_data.is_empty() {
+        // This allows support for NonZero for u256, u512, etc.
+        // In general - any flat structure containing only numeric types.
+        let mut is_non_zero = false;
+        for const_arg in inner_data {
+            // Both the struct_arg and the const_arg must be types.
+            let GenericArg::Type(const_arg_ty) = const_arg else {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            };
+            // Supporting only flat structs for non zero.
+            if let [GenericArg::Type(_), GenericArg::Value(value)] =
+                get_const_args(context, const_arg_ty.clone())?.as_slice()
+            {
+                is_non_zero |= !value.is_zero();
+            } else {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            };
+        }
+        if !is_non_zero {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+    } else if !matches!(inner_data, [GenericArg::Value(value)] if !value.is_zero()) {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    Ok(())
+}
+
+/// Extracts the inner type and data from the generic arguments.
+fn inner_type_and_data(
+    args: &[GenericArg],
+) -> Result<(&ConcreteTypeId, &[GenericArg]), SpecializationError> {
+    let (first_arg, inner_data) =
+        args.split_first().ok_or(SpecializationError::WrongNumberOfGenericArgs)?;
+    Ok((
+        try_extract_matches!(first_arg, GenericArg::Type)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?,
+        inner_data,
+    ))
+}
+
+/// Given a const type, returns the args for it.
+/// Validates the type is a const type.
+fn get_const_args(
+    context: &dyn TypeSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<Vec<GenericArg>, SpecializationError> {
+    let type_info = context.get_type_info(ty.clone())?;
+    if type_info.long_id.generic_id != ConstType::ID {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    Ok(type_info.long_id.generic_args)
 }
 
 impl ConcreteType for ConstConcreteType {
