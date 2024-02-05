@@ -20,6 +20,7 @@ use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
+use num_bigint::BigInt;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -610,6 +611,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Returns the given a const type returns a vector of cells value representing it.
+    pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
 
 /// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
