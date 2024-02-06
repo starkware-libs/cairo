@@ -1,11 +1,10 @@
-import * as fs from "fs";
-import * as path from "path";
 import * as vscode from "vscode";
 import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semanticTokens";
 
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
+import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
 
 export interface LanguageServerExecutableProvider {
@@ -19,31 +18,6 @@ function notifyScarbMissing(ctx: Context) {
     "parameter. Otherwise Cairo code analysis will not work.";
   void vscode.window.showWarningMessage(errorMessage);
   ctx.log.error(errorMessage);
-}
-
-async function isScarbProjectAt(path: string, depth: number): Promise<boolean> {
-  if (depth == 0) return false;
-  const isFile = await fs.promises
-    .access(path + "/Scarb.toml", fs.constants.F_OK)
-    .then(() => true)
-    .catch(() => false);
-  if (isFile) return true;
-  return isScarbProjectAt(path + "/..", depth - 1);
-}
-
-async function isScarbProject(): Promise<boolean> {
-  const depth = 20;
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (
-    !!workspaceFolders?.[0] &&
-    (await isScarbProjectAt(path.dirname(workspaceFolders[0].uri.path), depth))
-  )
-    return true;
-  const editor = vscode.window.activeTextEditor;
-  return (
-    !!editor &&
-    (await isScarbProjectAt(path.dirname(editor.document.uri.path), depth))
-  );
 }
 
 export async function setupLanguageServer(
