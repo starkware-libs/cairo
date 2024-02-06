@@ -211,11 +211,16 @@ impl BlockUsages {
                 }
             }
             Expr::If(expr) => {
-                match expr.condition {
+                match &expr.condition {
                     semantic::Condition::BoolExpr(expr) => {
-                        self.handle_expr(function_body, expr, current);
+                        self.handle_expr(function_body, *expr, current);
                     }
-                    semantic::Condition::Let(_, _) => {}
+                    semantic::Condition::Let(expr, patterns) => {
+                        self.handle_expr(function_body, *expr, current);
+                        for pattern in patterns {
+                            Self::handle_pattern(&function_body.patterns, *pattern, current);
+                        }
+                    }
                 }
 
                 self.handle_expr(function_body, expr.if_block, current);
