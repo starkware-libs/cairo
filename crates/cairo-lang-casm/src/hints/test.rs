@@ -9,7 +9,6 @@ use crate::res;
 fn test_alloc_segment_format() {
     let dst = CellRef { register: Register::AP, offset: 5 };
     let hint = CoreHint::AllocSegment { dst };
-
     assert_eq!(hint.get_pythonic_hint(), "memory[ap + 5] = segments.add()");
 }
 
