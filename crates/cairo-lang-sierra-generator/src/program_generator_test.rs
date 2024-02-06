@@ -2,15 +2,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
-<<<<<<< HEAD
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::try_extract_matches;
-||||||| 96a3bc6a9
-use cairo_lang_utils::try_extract_matches;
-=======
 use cairo_lang_utils::{arc_unwrap_or_clone, try_extract_matches};
->>>>>>> origin/main
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
