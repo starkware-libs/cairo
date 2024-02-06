@@ -1,12 +1,13 @@
 import { spawn } from "child_process";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
+import type { LanguageServerExecutableProvider } from "./cairols";
 import type { Context } from "./context";
 import { checkTool, findToolInAsdf, findToolInPath } from "./toolchain";
 
 let globalExecId = 0;
 
-export class Scarb {
+export class Scarb implements LanguageServerExecutableProvider {
   public constructor(
     /**
      * The path to the Scarb binary on the local filesystem.
