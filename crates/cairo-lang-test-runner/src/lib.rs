@@ -67,7 +67,7 @@ impl TestRunner {
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
         let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
-        runner.run(&self.compiler.db)
+        runner.run(Some(&self.compiler.db))
     }
 }
 
@@ -88,7 +88,7 @@ impl CompiledTestRunner {
     }
 
     /// Execute preconfigured test execution.
-    pub fn run(self, db: &RootDatabase) -> Result<Option<TestsSummary>> {
+    pub fn run(self, db: Option<&RootDatabase>) -> Result<Option<TestsSummary>> {
         let (compiled, filtered_out) = filter_test_cases(
             self.compiled,
             self.config.include_ignored,
@@ -97,7 +97,7 @@ impl CompiledTestRunner {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            if self.config.run_profiler == RunProfilerConfig::Cairo { Some(db) } else { None },
+            if self.config.run_profiler == RunProfilerConfig::Cairo { db } else { None },
             compiled.named_tests,
             compiled.sierra_program,
             compiled.function_set_costs,

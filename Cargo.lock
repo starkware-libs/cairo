@@ -464,6 +464,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "salsa",
+ "smol_str",
  "thiserror",
 ]
 
@@ -1061,6 +1062,7 @@ dependencies = [
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",
+ "cairo-lang-utils",
  "clap",
 ]
 

@@ -443,7 +443,7 @@ impl Backend {
             path.pop();
             // Check for a cairo project file.
             if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-                update_crate_roots_from_project_config(db, config);
+                update_crate_roots_from_project_config(db, &config);
                 return;
             };
         }

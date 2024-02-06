@@ -1,4 +1,4 @@
-use core::cmp::{max, min};
+use core::cmp::{max, min, minmax};
 use core::test::test_utils::{assert_eq, assert_ne};
 
 // Integer tests
@@ -29,6 +29,20 @@ fn test_max_u8() {
     assert_eq(@max(1_u8, 2_u8), @2_u8, '2 > 1');
     assert_eq(@max(120_u8, 130_u8), @130_u8, '130 > 120');
     assert_eq(@max(200_u8, 150_u8), @200_u8, '200 > 150');
+}
+
+#[test]
+fn test_minmax_u8() {
+    assert!(minmax(0_u8, 1_u8) == (0_u8, 1_u8), "1 > 0");
+    assert!(minmax(5_u8, 7_u8) == (5_u8, 7_u8), "7 > 5");
+    assert!(minmax(255_u8, 128_u8) == (128_u8, 255_u8), "255 > 128");
+    assert!(minmax(10_u8, 10_u8) == (10_u8, 10_u8), "10 == 10");
+    assert!(minmax(0_u8, 0_u8) == (0_u8, 0_u8), "0 == 0");
+    assert!(minmax(255_u8, 255_u8) == (255_u8, 255_u8), "255 == 255");
+    assert!(minmax(100_u8, 200_u8) == (100_u8, 200_u8), "200 > 100");
+    assert!(minmax(1_u8, 2_u8) == (1_u8, 2_u8), "2 > 1");
+    assert!(minmax(120_u8, 130_u8) == (120_u8, 130_u8), "130 > 120");
+    assert!(minmax(200_u8, 150_u8) == (150_u8, 200_u8), "200 > 150");
 }
 
 #[test]
