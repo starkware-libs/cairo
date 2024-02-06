@@ -4,6 +4,7 @@
 /// * `b` - Second comparable value
 /// # Returns
 /// * `result` - The smallest of the two values
+#[must_use]
 pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
     if a > b {
         b
@@ -27,7 +28,7 @@ pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
     }
 }
 
-/// Minumum and maximum of the two values.
+/// Minimum and maximum of the two values.
 /// # Arguments
 /// * `a` - first comparable value
 /// * `b` - Second comparable value
