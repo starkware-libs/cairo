@@ -3,10 +3,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{CrateConfiguration, CrateSettings, FilesGroupEx};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
+use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -66,28 +67,32 @@ pub fn setup_single_file_project(
 }
 
 /// Updates the crate roots from a ProjectConfig object.
-pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
-    let crates_config = config.content.crates_config;
-    for (crate_name, directory_path) in config.content.crate_roots {
-        let crates_config = crates_config.get(&crate_name);
-        let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
+pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: &ProjectConfig) {
+    for (crate_name, directory_path) in config.content.crate_roots.iter() {
         let mut path = PathBuf::from(&directory_path);
         if path.is_relative() {
-            path = PathBuf::from(&config.base_path).join(path);
+            path = config.base_path.clone().join(path);
         }
         let root = Directory::Real(path);
-        db.set_crate_config(
-            crate_id,
-            Some(CrateConfiguration {
-                root,
-                settings: CrateSettings {
-                    edition: crates_config.edition,
-                    cfg_set: Default::default(),
-                    experimental_features: crates_config.experimental_features.clone(),
-                },
-            }),
-        );
+        update_crate_root(db, config, crate_name.clone(), root);
     }
+}
+
+/// Updates a single crate root from a ProjectConfig.
+/// If the crate defines settings in the config, it will be used.
+/// Crate is identified by name and the root directory.
+pub fn update_crate_root(
+    db: &mut dyn SemanticGroup,
+    config: &ProjectConfig,
+    crate_name: SmolStr,
+    root: Directory,
+) {
+    let crate_settings = config.content.crates_config.get(&crate_name);
+    let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
+    db.set_crate_config(
+        crate_id,
+        Some(CrateConfiguration { root, settings: crate_settings.clone() }),
+    );
 }
 
 /// Setup the 'db' to compile the project in the given path.
@@ -101,7 +106,7 @@ pub fn setup_project(
         match ProjectConfig::from_directory(path) {
             Ok(config) => {
                 let main_crate_ids = get_main_crate_ids_from_project(db, &config);
-                update_crate_roots_from_project_config(db, config);
+                update_crate_roots_from_project_config(db, &config);
                 Ok(main_crate_ids)
             }
             _ => Err(ProjectError::LoadProjectError),
