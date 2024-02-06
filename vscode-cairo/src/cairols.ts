@@ -6,56 +6,7 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
-import { checkTool, findToolAtWithExtension } from "./toolchain";
-
-/**
- * Tries to find the development version of the language server executable,
- * assuming the workspace directory is inside the Cairo repository.
- *
- * @remarks
- *
- * This function does not attempt to go further than 10 levels up the directory
- * tree.
- */
-async function findDevLanguageServerAt(
-  root: string,
-): Promise<string | undefined> {
-  for (let i = 0; i < 10; i++) {
-    for (const target of ["release, debug"]) {
-      const candidate = await findToolAtWithExtension(
-        path.join(root, "target", target, "cairo-language-server"),
-      );
-      if (candidate) {
-        return candidate;
-      }
-    }
-
-    root = path.basename(root);
-  }
-
-  return undefined;
-}
-
-function rootPath(ctx: Context): string {
-  let rootPath = ctx.extension.extensionPath;
-
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (workspaceFolders) {
-    rootPath = workspaceFolders[0]?.uri.path || rootPath;
-  }
-  return rootPath;
-}
-
-async function findLanguageServerExecutable(ctx: Context) {
-  const configPath = ctx.config.get("languageServerPath");
-  if (configPath) {
-    return await checkTool(configPath);
-  }
-
-  // TODO(spapini): Use a bundled language server.
-  const root = rootPath(ctx);
-  return findDevLanguageServerAt(root);
-}
+import { StandaloneLS } from "./standalonels";
 
 function notifyScarbMissing(ctx: Context) {
   const errorMessage =
@@ -213,22 +164,11 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
   if (serverType === ServerType.Scarb) {
     serverExecutable = scarb!.languageServerExecutable();
   } else {
-    const command = await findLanguageServerExecutable(ctx);
-    if (command) {
-      serverExecutable = {
-        command,
-        options: {
-          cwd: rootPath(ctx),
-          env: {
-            SCARB: scarb?.path,
-          },
-        },
-      };
-    } else {
-      ctx.log.error("could not find Cairo language server executable");
-      ctx.log.error(
-        "note: make sure CairoLS is installed and `cairo1.languageServerPath` points to it",
-      );
+    try {
+      const ls = await StandaloneLS.find(workspaceFolder, scarb, ctx);
+      serverExecutable = ls.languageServerExecutable();
+    } catch (e) {
+      ctx.log.error(`${e}`);
     }
   }
   if (serverExecutable == undefined) {
