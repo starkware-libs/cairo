@@ -1653,10 +1653,15 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is `While`.
-    /// Expected pattern: `while <expr> <block>`.
+    /// Expected pattern: `while <condition> <block>`.
     fn expect_while_expr(&mut self) -> ExprWhileGreen {
         let while_kw = self.take::<TerminalWhile>();
-        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let condition = if self.peek().kind == SyntaxKind::TerminalLet {
+            self.expect_let_condition_expr().into()
+        } else {
+            let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+            ConditionGreen::from(ConditionExpr::new_green(self.db, condition))
+        };
         let body = self.parse_block();
 
         ExprWhile::new_green(self.db, while_kw, condition, body)

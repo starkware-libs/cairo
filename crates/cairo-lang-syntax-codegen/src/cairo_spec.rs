@@ -189,7 +189,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("ExprWhile")
         .node("while_kw", "TerminalWhile")
-        .node("condition", "Expr")
+        .node("condition", "Condition")
         .node("body", "ExprBlock")
     )
     .add_struct(StructBuilder::new("ElseClause")
