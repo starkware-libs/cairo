@@ -3760,7 +3760,7 @@ impl ExprWhile {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         while_kw: TerminalWhileGreen,
-        condition: ExprGreen,
+        condition: ConditionGreen,
         body: ExprBlockGreen,
     ) -> ExprWhileGreen {
         let children: Vec<GreenId> = vec![while_kw.0, condition.0, body.0];
@@ -3775,8 +3775,8 @@ impl ExprWhile {
     pub fn while_kw(&self, db: &dyn SyntaxGroup) -> TerminalWhile {
         TerminalWhile::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn condition(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
+        Condition::from_syntax_node(db, self.children[1].clone())
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2].clone())
@@ -3804,7 +3804,7 @@ impl TypedSyntaxNode for ExprWhile {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalWhile::missing(db).0,
-                    Expr::missing(db).0,
+                    Condition::missing(db).0,
                     ExprBlock::missing(db).0,
                 ],
                 width: TextWidth::default(),
