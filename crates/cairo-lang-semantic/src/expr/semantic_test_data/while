@@ -1,0 +1,79 @@
+//! > Test while let
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+let a = MyEnum::A(9);
+
+//! > expr_code
+while let MyEnum::A(_x) | MyEnum::B(_x) = a {
+    break;
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_semantics
+While(
+    ExprWhile {
+        condition: Let(
+            Var(
+                LocalVarId(test::a),
+            ),
+            [
+                EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum,
+                            id: VariantId(test::A),
+                            ty: core::felt252,
+                            idx: 0,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                _x,
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+                EnumVariant(
+                    PatternEnumVariant {
+                        variant: ConcreteVariant {
+                            concrete_enum_id: test::MyEnum,
+                            id: VariantId(test::B),
+                            ty: core::felt252,
+                            idx: 1,
+                        },
+                        inner_pattern: Some(
+                            Variable(
+                                _x,
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+            ],
+        ),
+        body: Block(
+            ExprBlock {
+                statements: [
+                    Break(
+                        StatementBreak {
+                            expr_option: None,
+                        },
+                    ),
+                ],
+                tail: None,
+                ty: (),
+            },
+        ),
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

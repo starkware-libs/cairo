@@ -181,7 +181,17 @@ impl BlockUsages {
             }
             Expr::While(expr) => {
                 let mut usage = Default::default();
-                self.handle_expr(function_body, expr.condition, &mut usage);
+                match &expr.condition {
+                    semantic::Condition::BoolExpr(expr) => {
+                        self.handle_expr(function_body, *expr, &mut usage);
+                    }
+                    semantic::Condition::Let(expr, pattterns) => {
+                        self.handle_expr(function_body, *expr, &mut usage);
+                        for pattern in pattterns {
+                            Self::handle_pattern(&function_body.patterns, *pattern, &mut usage);
+                        }
+                    }
+                }
                 self.handle_expr(function_body, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
