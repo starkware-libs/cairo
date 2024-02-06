@@ -8,6 +8,10 @@ import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { StandaloneLS } from "./standalonels";
 
+export interface LanguageServerExecutableProvider {
+  languageServerExecutable(): lc.Executable;
+}
+
 function notifyScarbMissing(ctx: Context) {
   const errorMessage =
     "This is a Scarb project, but could not find Scarb executable on this machine. " +
@@ -15,26 +19,6 @@ function notifyScarbMissing(ctx: Context) {
     "parameter. Otherwise Cairo code analysis will not work.";
   void vscode.window.showWarningMessage(errorMessage);
   ctx.log.error(errorMessage);
-}
-
-enum ServerType {
-  Standalone,
-  Scarb,
-}
-
-async function getServerType(
-  isScarbEnabled: boolean,
-  scarb: Scarb | undefined,
-  configLanguageServerPath: string | undefined,
-  ctx: Context,
-) {
-  if (!isScarbEnabled) return ServerType.Standalone;
-  if (!(await isScarbProject()) && !!configLanguageServerPath) {
-    // If Scarb manifest is missing, and Cairo-LS path is explicit.
-    return ServerType.Standalone;
-  }
-  if (await scarb?.hasCairoLS(ctx)) return ServerType.Scarb;
-  return ServerType.Standalone;
 }
 
 async function isScarbProjectAt(path: string, depth: number): Promise<boolean> {
@@ -138,8 +122,6 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 
   const isScarbEnabled = ctx.config.get("enableScarb", false);
-  const configLanguageServerPath = ctx.config.get("languageServerPath");
-
   let scarb: Scarb | undefined;
   if (!isScarbEnabled) {
     ctx.log.warn("Scarb integration is disabled");
@@ -153,24 +135,18 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     }
   }
 
-  const serverType = await getServerType(
-    isScarbEnabled,
-    scarb,
-    configLanguageServerPath,
-    ctx,
-  );
-
-  let serverExecutable: lc.Executable | undefined;
-  if (serverType === ServerType.Scarb) {
-    serverExecutable = scarb!.languageServerExecutable();
-  } else {
-    try {
-      const ls = await StandaloneLS.find(workspaceFolder, scarb, ctx);
-      serverExecutable = ls.languageServerExecutable();
-    } catch (e) {
-      ctx.log.error(`${e}`);
-    }
+  let serverExecutableProvider: LanguageServerExecutableProvider | undefined;
+  try {
+    serverExecutableProvider = await determineLanguageServerExecutableProvider(
+      workspaceFolder,
+      scarb,
+      ctx,
+    );
+  } catch (e) {
+    ctx.log.error(`${e}`);
   }
+
+  const serverExecutable = serverExecutableProvider?.languageServerExecutable();
   if (serverExecutable == undefined) {
     ctx.log.error("failed to start CairoLS");
     throw new Error("failed to start CairoLS");
@@ -183,4 +159,29 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     run: serverExecutable,
     debug: serverExecutable,
   };
+}
+
+async function determineLanguageServerExecutableProvider(
+  workspaceFolder: vscode.WorkspaceFolder | undefined,
+  scarb: Scarb | undefined,
+  ctx: Context,
+): Promise<LanguageServerExecutableProvider> {
+  const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
+
+  // If Scarb is missing or is disabled, always fallback to standalone CairoLS.
+  if (!scarb) {
+    return await standalone();
+  }
+
+  // If Scarb manifest is missing, and standalone CairoLS path is explicit.
+  if (!(await isScarbProject()) && ctx.config.has("languageServerPath")) {
+    return await standalone();
+  }
+
+  // Otherwise, always prefer Scarb CairoLS.
+  if (await scarb.hasCairoLS(ctx)) {
+    return scarb;
+  }
+
+  return await standalone();
 }

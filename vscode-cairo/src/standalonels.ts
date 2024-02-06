@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
+import type { LanguageServerExecutableProvider } from "./cairols";
 import type { Context } from "./context";
 import type { Scarb } from "./scarb";
 import { checkTool, findToolAtWithExtension } from "./toolchain";
 
-export class StandaloneLS {
+export class StandaloneLS implements LanguageServerExecutableProvider {
   public constructor(
     public readonly path: string,
     public readonly workspaceFolder?: vscode.WorkspaceFolder | undefined,
