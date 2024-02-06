@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
@@ -23,6 +25,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
@@ -74,6 +77,10 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
+    #[error("Duplicate entry point selector {selector}.")]
+    DuplicateEntryPointSelector { selector: BigUint },
+    #[error("Duplicate entry point function index {index}.")]
+    DuplicateEntryPointSierraFunction { index: usize },
     #[error("Out of range value in serialization.")]
     ValueOutOfRange,
     #[error(
@@ -315,20 +322,40 @@ impl CasmContractClass {
             &contract_class.entry_points_by_type.external,
             &contract_class.entry_points_by_type.l1_handler,
         ] {
-            // TODO(orizi): Use `is_sorted` when it becomes stable.
-            if (1..entry_points.len())
-                .any(|i| entry_points[i - 1].selector > entry_points[i].selector)
-            {
-                return Err(StarknetSierraCompilationError::EntryPointsOutOfOrder);
+            for (prev, next) in entry_points.iter().tuple_windows() {
+                match prev.selector.cmp(&next.selector) {
+                    Ordering::Less => {}
+                    Ordering::Equal => {
+                        return Err(StarknetSierraCompilationError::DuplicateEntryPointSelector {
+                            selector: prev.selector.clone(),
+                        });
+                    }
+                    Ordering::Greater => {
+                        return Err(StarknetSierraCompilationError::EntryPointsOutOfOrder);
+                    }
+                }
             }
         }
 
-        let entrypoint_ids = chain!(
+        let entrypoint_function_indices = chain!(
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,
             &contract_class.entry_points_by_type.l1_handler,
         )
-        .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
+        .map(|entrypoint| entrypoint.function_idx);
+        // Count the number of times each function is used as an entry point.
+        let mut function_idx_usages = UnorderedHashMap::<usize, usize>::default();
+        for index in entrypoint_function_indices.clone() {
+            let usages = function_idx_usages.entry(index).or_default();
+            *usages += 1;
+            const MAX_SIERRA_FUNCTION_USAGES: usize = 2;
+            if *usages > MAX_SIERRA_FUNCTION_USAGES {
+                return Err(StarknetSierraCompilationError::DuplicateEntryPointSierraFunction {
+                    index,
+                });
+            }
+        }
+        let entrypoint_ids = entrypoint_function_indices.map(|idx| program.funcs[idx].id.clone());
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
         //   version 2.
         assert_eq!(sierra_version.major, 1);

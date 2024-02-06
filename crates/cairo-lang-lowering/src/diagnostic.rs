@@ -103,36 +103,67 @@ impl DiagnosticEntry for LoweringDiagnostic {
 
 impl MatchError {
     fn format(&self) -> String {
-        match &self.error {
-            MatchDiagnostic::UnsupportedMatchedType(matched_type) => {
+        match (&self.error, &self.kind) {
+            (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::Match) => {
                 format!("Unsupported matched type. Type: `{}`.", matched_type)
             }
-            MatchDiagnostic::UnsupportedMatchedValueTuple => "Unsupported matched value. \
-                                                              Currently, match on tuples only \
-                                                              supports enums as tuple members."
-                .into(),
-            MatchDiagnostic::UnsupportedMatchArmNotAVariant => {
+            (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::IfLet) => {
+                format!("Unsupported type in if-let. Type: `{}`.", matched_type)
+            }
+            (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::Match) => {
+                "Unsupported matched value. Currently, match on tuples only supports enums as \
+                 tuple members."
+                    .into()
+            }
+            (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::IfLet) => {
+                "Unsupported value in if-let. Currently, if-let on tuples only supports enums as \
+                 tuple members."
+                    .into()
+            }
+            (MatchDiagnostic::UnsupportedMatchArmNotAVariant, _) => {
                 "Unsupported pattern - not a variant.".into()
             }
-            MatchDiagnostic::UnsupportedMatchArmNotALiteral => {
-                "Unsupported match arm - not a literal.".into()
-            }
-            MatchDiagnostic::UnsupportedMatchArmNonSequential => {
-                "Unsupported match - numbers must be sequential starting from 0.".into()
-            }
-            MatchDiagnostic::UnsupportedMatchArmNotATuple => {
+            (MatchDiagnostic::UnsupportedMatchArmNotATuple, _) => {
                 "Unsupported pattern - not a tuple.".into()
             }
-            MatchDiagnostic::NonExhaustiveMatchFelt252 => "Match is non exhaustive - match over a \
-                                                           numerical value must have a wildcard \
-                                                           card pattern (`_`)."
-                .into(),
-            MatchDiagnostic::MissingMatchArm(variant) => {
+
+            (MatchDiagnostic::UnsupportedMatchArmNotALiteral, MatchKind::Match) => {
+                "Unsupported match arm - not a literal.".into()
+            }
+            (MatchDiagnostic::UnsupportedMatchArmNonSequential, MatchKind::Match) => {
+                "Unsupported match - numbers must be sequential starting from 0.".into()
+            }
+            (MatchDiagnostic::NonExhaustiveMatchFelt252, MatchKind::Match) => {
+                "Match is non exhaustive - match over a numerical value must have a wildcard card \
+                 pattern (`_`)."
+                    .into()
+            }
+
+            (
+                MatchDiagnostic::UnsupportedMatchArmNotALiteral
+                | MatchDiagnostic::UnsupportedMatchArmNonSequential
+                | MatchDiagnostic::NonExhaustiveMatchFelt252,
+                MatchKind::IfLet,
+            ) => unreachable!("Numeric values are not supported in if-let conditions."),
+
+            (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
                 format!("Missing match arm: `{}` not covered.", variant)
             }
-            MatchDiagnostic::UnreachableMatchArm => "Unreachable pattern arm.".into(),
-            MatchDiagnostic::UnsupportedNumericInLetCondition => {
-                "Numeric values are not supported in if-let.".into()
+            (MatchDiagnostic::MissingMatchArm(_), MatchKind::IfLet) => {
+                unreachable!("If-let is not required to be exhaustive.")
+            }
+
+            (MatchDiagnostic::UnreachableMatchArm, MatchKind::Match) => {
+                "Unreachable pattern arm.".into()
+            }
+            (MatchDiagnostic::UnreachableMatchArm, MatchKind::IfLet) => {
+                "Unreachable else clause.".into()
+            }
+            (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::Match) => {
+                unreachable!("Numeric values are supported in match conditions.")
+            }
+            (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::IfLet) => {
+                "Numeric values are not supported in if-let conditions.".into()
             }
         }
     }
