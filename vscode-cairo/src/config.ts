@@ -29,6 +29,11 @@ export class Config {
       return value;
     }
   }
+
+  public has(prop: keyof ConfigProps): boolean {
+    const config = vscode.workspace.getConfiguration(Config.ROOT);
+    return config.has(prop);
+  }
 }
 
 function isPropWithPlaceholders(prop: keyof ConfigProps): boolean {
