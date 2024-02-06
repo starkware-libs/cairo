@@ -1494,3 +1494,105 @@ error: Unsupported matched type. Type: `core::integer::u256`.
 
 //! > lowering_flat
 Parameters:
+
+//! > ==========================================================================
+
+//! > Test match ints optimization.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+    match 5_u32 {
+        0 => 1,
+        1 => 2,
+        2 => 3,
+        3 => 4,
+        4 => 5,
+        5 => 6,
+        6 => 7,
+        _ => 8
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v18: core::RangeCheck
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 5u
+End:
+  Match(match core::integer::downcast::<core::integer::u32, core::internal::BoundedInt::<0, 6>>(v18, v0) {
+    Option::Some(v19, v1) => blk1,
+    Option::None(v20) => blk9,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk2,
+    1(v3) => blk3,
+    2(v4) => blk4,
+    3(v5) => blk5,
+    4(v6) => blk6,
+    5(v7) => blk7,
+    6(v8) => blk8,
+  })
+
+blk2:
+Statements:
+  (v9: core::felt252) <- 1u
+End:
+  Return(v19, v9)
+
+blk3:
+Statements:
+  (v10: core::felt252) <- 2u
+End:
+  Return(v19, v10)
+
+blk4:
+Statements:
+  (v11: core::felt252) <- 3u
+End:
+  Return(v19, v11)
+
+blk5:
+Statements:
+  (v12: core::felt252) <- 4u
+End:
+  Return(v19, v12)
+
+blk6:
+Statements:
+  (v13: core::felt252) <- 5u
+End:
+  Return(v19, v13)
+
+blk7:
+Statements:
+  (v14: core::felt252) <- 6u
+End:
+  Return(v19, v14)
+
+blk8:
+Statements:
+  (v15: core::felt252) <- 7u
+End:
+  Return(v19, v15)
+
+blk9:
+Statements:
+  (v16: core::felt252) <- 8u
+End:
+  Return(v20, v16)
