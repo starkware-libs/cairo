@@ -182,14 +182,14 @@ label_test::foo::0:
 alloc_local<felt252>() -> ([1])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
-function_call<user@test::revoke_ap>() -> ([0])
-store_local<felt252>([1], [0]) -> ([0])
-dup<felt252>([0]) -> ([2], [3])
+function_call<user@test::revoke_ap>() -> ([2])
+dup<felt252>([2]) -> ([0], [3])
 drop<felt252>([3]) -> ()
+store_local<felt252>([1], [0]) -> ([0])
 function_call<user@test::revoke_ap>() -> ([4])
 drop<felt252>([4]) -> ()
-store_temp<felt252>([2]) -> ([2])
-return([2])
+store_temp<felt252>([0]) -> ([0])
+return([0])
 
 //! > ==========================================================================
 

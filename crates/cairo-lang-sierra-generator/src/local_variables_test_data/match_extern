@@ -7,12 +7,77 @@ check_find_local_variables
 foo
 
 //! > function_code
+fn foo(x: u8) -> felt252 {
+    let y = core::integer::u8_to_felt252(x);
+    revoke_ap();
+    // y is not revoked, since it's the same as x, which is local.
+    let x2 = y + y;
+
+    match felt252_is_zero(x2) {
+        IsZeroResult::Zero => 1,
+        IsZeroResult::NonZero(y) => {
+            revoke_ap();
+            // x2 is revoked, since y is identical to x2.
+            y.into()
+        },
+    }
+}
+
+//! > module_code
+use zeroable::IsZeroResult;
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > lowering_format
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- core::integer::u8_to_felt252(v0)
+  (v2: core::felt252) <- test::revoke_ap()
+  (v9: core::felt252) <- core::felt252_add(v1, v1)
+End:
+  Match(match core::felt252_is_zero(v9) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 1u
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::felt252) <- test::revoke_ap()
+  (v10: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v4)
+End:
+  Return(v10)
+
+//! > local_variables
+v4
+
+//! > ==========================================================================
+
+//! > Match extern - bad revoke
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     match felt252_is_zero(x) {
         IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
-            // y is not revoked, since it's the same as x, which is local.
+            // y is revoked, but it shouldn't, since it's the same as x, which is local.
+            // TODO(Gil): This is because the call to felt252_is_zero revokes, see 
+            // local_variables::analyze_branch.
             y.into()
         },
     }
@@ -79,7 +144,7 @@ End:
   Return(v14)
 
 //! > local_variables
-v13
+v7, v1
 
 //! > ==========================================================================
 
