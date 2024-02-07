@@ -32,13 +32,8 @@ impl NamedType for ConstType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let mut args_iter = args.iter();
-        let first_arg = args_iter.next().ok_or(SpecializationError::WrongNumberOfGenericArgs)?;
-        let inner_ty = try_extract_matches!(first_arg, GenericArg::Type)
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        // Extract the rest of the arguments as the inner data.
-        let inner_data = args_iter.cloned().collect::<Vec<_>>();
-        validate_const_data(context, inner_ty, &inner_data)?;
+        let (inner_ty, inner_data) = inner_type_and_data(args)?;
+        validate_const_data(context, inner_ty, inner_data)?;
         let info = TypeInfo {
             long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
             storable: false,
@@ -46,7 +41,7 @@ impl NamedType for ConstType {
             droppable: false,
             zero_sized: false,
         };
-        Ok(ConstConcreteType { info, inner_ty: inner_ty.clone(), inner_data })
+        Ok(ConstConcreteType { info, inner_ty: inner_ty.clone(), inner_data: inner_data.to_vec() })
     }
 }
 
@@ -108,19 +103,7 @@ fn validate_const_struct_data(
         };
 
         // Validate that the const_arg_ty is a `Const` representing the same type as struct_arg_ty.
-        let const_arg_type_info = context.get_type_info(const_arg_ty.clone())?;
-        if const_arg_type_info.long_id.generic_id != ConstType::ID {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-        let Some(GenericArg::Type(const_arg_inner_ty)) =
-            const_arg_type_info.long_id.generic_args.first()
-        else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-        // Validate that the const_arg_inner_ty is the same as the corresponding struct_arg_ty.
-        if struct_arg_ty != const_arg_inner_ty {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        validate_const_ty(context, const_arg_ty, struct_arg_ty)?;
     }
     Ok(())
 }
@@ -147,27 +130,52 @@ fn validate_const_enum_data(
         return Err(SpecializationError::UnsupportedGenericArg);
     };
 
-    // Validate that `variant_const_type_id` is a const type.
-    let variant_const_info = context.get_type_info(variant_const_type_id.clone())?;
-    if variant_const_info.long_id.generic_id != ConstType::ID {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    }
-
     // Validate that the type of the const is the same as the corresponding variant data
     // type.
-    if variant_const_info.long_id.generic_args.first()
-        != Some(&GenericArg::Type(variant_data_ty.clone()))
-    {
+    validate_const_ty(context, variant_const_type_id, variant_data_ty)?;
+    Ok(())
+}
+
+/// Given a `const_ty` and `expected_type` validates `const_ty` is a `Const` type and its inner type
+/// is `expected_type`.
+fn validate_const_ty(
+    context: &dyn TypeSpecializationContext,
+    const_ty: &ConcreteTypeId,
+    expected_type: &ConcreteTypeId,
+) -> Result<(), SpecializationError> {
+    let type_info = context.get_type_info(const_ty.clone())?;
+    if type_info.long_id.generic_id != ConstType::ID {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
-
+    if inner_type_and_data(&type_info.long_id.generic_args)?.0 != expected_type {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
     Ok(())
+}
+
+/// Given a `args` extracts the first generic arg as type, and returns a slice pointing to the rest.
+fn inner_type_and_data(
+    args: &[GenericArg],
+) -> Result<(&ConcreteTypeId, &[GenericArg]), SpecializationError> {
+    let (first_arg, inner_data) =
+        args.split_first().ok_or(SpecializationError::WrongNumberOfGenericArgs)?;
+    Ok((
+        try_extract_matches!(first_arg, GenericArg::Type)
+            .ok_or(SpecializationError::UnsupportedGenericArg)?,
+        inner_data,
+    ))
 }
 
 impl ConcreteType for ConstConcreteType {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
+}
+
+define_libfunc_hierarchy! {
+    pub enum ConstLibfunc {
+        AsBox(ConstAsBoxLibfunc),
+    }, ConstConcreteLibfunc
 }
 
 /// A zero-input function that returns a box of the const value according to the generic arg type
@@ -186,14 +194,9 @@ impl SignatureBasedConcreteLibfunc for ConstAsBoxConcreteLibfunc {
     }
 }
 
-define_libfunc_hierarchy! {
-    pub enum ConstLibfunc {
-        AsBox(ConstAsBoxLibfuncWrapped),
-    }, ConstConcreteLibfunc
-}
 #[derive(Default)]
-pub struct ConstAsBoxLibfuncWrapped {}
-impl ConstAsBoxLibfuncWrapped {
+pub struct ConstAsBoxLibfunc {}
+impl ConstAsBoxLibfunc {
     fn specialize_concrete_lib_func(
         &self,
         context: &dyn SignatureSpecializationContext,
@@ -230,7 +233,7 @@ impl ConstAsBoxLibfuncWrapped {
     }
 }
 
-impl NamedLibfunc for ConstAsBoxLibfuncWrapped {
+impl NamedLibfunc for ConstAsBoxLibfunc {
     type Concrete = ConstAsBoxConcreteLibfunc;
     const STR_ID: &'static str = "const_as_box";
 
