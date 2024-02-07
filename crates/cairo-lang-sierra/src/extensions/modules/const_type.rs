@@ -107,7 +107,9 @@ fn validate_const_struct_data(
         };
 
         // Validate that the const_arg_ty is a `Const` representing the same type as struct_arg_ty.
-        validate_const_ty(context, const_arg_ty, struct_arg_ty)?;
+        if extract_const_info(context, const_arg_ty)?.0 != *struct_arg_ty {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
     }
     Ok(())
 }
@@ -136,7 +138,9 @@ fn validate_const_enum_data(
 
     // Validate that the type of the const is the same as the corresponding variant data
     // type.
-    validate_const_ty(context, variant_const_type_id, variant_data_ty)?;
+    if extract_const_info(context, variant_const_type_id)?.0 != *variant_data_ty {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
     Ok(())
 }
 
@@ -152,24 +156,19 @@ fn validate_const_nz_data(
 ) -> Result<(), SpecializationError> {
     let wrapped_ty_from_nz = args_as_single_type(&inner_type_info.long_id.generic_args)?;
     let inner_const_type_id = args_as_single_type(inner_data)?;
-    let inner_const_type_generic_args =
-        validate_and_extract_type_generic_args(context, &inner_const_type_id, ConstType::ID)?;
-    let Some((GenericArg::Type(wrapped_ty_from_const), inner_const_data)) =
-        inner_const_type_generic_args.as_slice().split_first()
-    else {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    };
-    if *wrapped_ty_from_const != wrapped_ty_from_nz {
+    let (wrapped_ty_from_const, inner_const_data) =
+        extract_const_info(context, &inner_const_type_id)?;
+    if wrapped_ty_from_const != wrapped_ty_from_nz {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     // Checking the direct value case.
-    if matches!(inner_const_data, [GenericArg::Value(value)] if !value.is_zero()) {
+    if matches!(inner_const_data.as_slice(), [GenericArg::Value(value)] if !value.is_zero()) {
         // Validating the inner type is a valid Range.
         Range::from_type_info(&context.get_type_info(wrapped_ty_from_nz)?)?;
         return Ok(());
     }
     let struct_generic_args =
-        validate_and_extract_type_generic_args(context, &wrapped_ty_from_nz, StructType::ID)?;
+        extract_type_generic_args::<StructType>(context, &wrapped_ty_from_nz)?;
     if !matches!(
         struct_generic_args.first(),
         Some(GenericArg::UserType(ut))
@@ -184,17 +183,11 @@ fn validate_const_nz_data(
     for const_u128_arg in inner_const_data {
         let const_u128_ty = try_extract_matches!(const_u128_arg, GenericArg::Type)
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let const_u128_args =
-            validate_and_extract_type_generic_args(context, const_u128_ty, ConstType::ID)?;
-        let (u128_ty, const_data) = const_u128_args
-            .into_iter()
-            .collect_tuple()
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let u128_ty = try_extract_matches!(u128_ty, GenericArg::Type)
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        validate_and_extract_type_generic_args(context, &u128_ty, Uint128Type::ID)?;
-        let const_data = try_extract_matches!(const_data, GenericArg::Value)
-            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let (u128_ty, const_data) = extract_const_info(context, &const_u128_ty)?;
+        extract_type_generic_args::<Uint128Type>(context, &u128_ty)?;
+        let [GenericArg::Value(const_data)] = const_data.as_slice() else {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        };
 
         is_non_zero |= !const_data.is_zero();
     }
@@ -202,28 +195,26 @@ fn validate_const_nz_data(
     if is_non_zero { Ok(()) } else { Err(SpecializationError::UnsupportedGenericArg) }
 }
 
-/// Given a `const_ty` and `expected_type` validates `const_ty` is a `Const` type and its inner type
-/// is `expected_type`.
-fn validate_const_ty(
+/// Extracts the inner type and the rest of the generic args of `const_ty`.
+fn extract_const_info(
     context: &dyn TypeSpecializationContext,
     const_ty: &ConcreteTypeId,
-    expected_type: &ConcreteTypeId,
-) -> Result<(), SpecializationError> {
-    let generic_args = validate_and_extract_type_generic_args(context, const_ty, ConstType::ID)?;
-    if inner_type_and_data(&generic_args)?.0 != expected_type {
-        return Err(SpecializationError::UnsupportedGenericArg);
+) -> Result<(ConcreteTypeId, <Vec<GenericArg> as IntoIterator>::IntoIter), SpecializationError> {
+    let mut generic_args = extract_type_generic_args::<ConstType>(context, const_ty)?.into_iter();
+    if let Some(GenericArg::Type(inner_ty)) = generic_args.next() {
+        Ok((inner_ty, generic_args))
+    } else {
+        Err(SpecializationError::UnsupportedGenericArg)
     }
-    Ok(())
 }
 
-/// Validates the `ty` the concrete type of `generic` and returns its generic args.
-fn validate_and_extract_type_generic_args(
+/// Extracts the generic args of `ty`, additionally validates it is of generic type `T`.
+fn extract_type_generic_args<T: NamedType>(
     context: &dyn TypeSpecializationContext,
     ty: &ConcreteTypeId,
-    generic: GenericTypeId,
 ) -> Result<Vec<GenericArg>, SpecializationError> {
     let long_id = context.get_type_info(ty.clone())?.long_id;
-    if long_id.generic_id != generic {
+    if long_id.generic_id != T::ID {
         Err(SpecializationError::UnsupportedGenericArg)
     } else {
         Ok(long_id.generic_args)
@@ -280,24 +271,18 @@ impl ConstAsBoxLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<ConstAsBoxConcreteLibfunc, SpecializationError> {
-        let (ty, segment_id) = match args {
+        let (const_type, segment_id) = match args {
             [GenericArg::Type(ty), GenericArg::Value(value)] => Ok((ty, value)),
             [_, _] => Err(SpecializationError::UnsupportedGenericArg),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
         let segment_id = segment_id.to_u32().ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let type_info = context.get_type_info(ty.clone())?;
-        if type_info.long_id.generic_id != ConstType::ID {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-        let generic_args = context.get_type_info(ty.clone())?.long_id.generic_args;
-        let Some(GenericArg::Type(inner_ty)) = generic_args.first() else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-        let boxed_inner_ty = box_ty(context, inner_ty.clone())?;
+        let (inner_ty, _) =
+            extract_const_info(context.as_type_specialization_context(), const_type)?;
+        let boxed_inner_ty = box_ty(context, inner_ty)?;
 
         Ok(ConstAsBoxConcreteLibfunc {
-            const_type: ty.clone(),
+            const_type: const_type.clone(),
             segment_id,
             signature: LibfuncSignature::new_non_branch(
                 vec![],
@@ -353,22 +338,14 @@ impl ConstAsImmediateLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<ConstAsImmediateConcreteLibfunc, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        let generic_args = validate_and_extract_type_generic_args(
-            context.as_type_specialization_context(),
-            &ty,
-            ConstType::ID,
-        )?;
-        let Some(GenericArg::Type(inner_ty)) = generic_args.first() else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-
+        let const_type = args_as_single_type(args)?;
+        let (ty, _) = extract_const_info(context.as_type_specialization_context(), &const_type)?;
         Ok(ConstAsImmediateConcreteLibfunc {
-            const_type: ty.clone(),
+            const_type,
             signature: LibfuncSignature::new_non_branch(
                 vec![],
                 vec![OutputVarInfo {
-                    ty: inner_ty.clone(),
+                    ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
                 }],
                 SierraApChange::Known { new_vars_only: true },
