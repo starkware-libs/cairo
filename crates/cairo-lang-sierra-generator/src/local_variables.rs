@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_sierra::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, ParamSignature,
 };
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -184,7 +184,12 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         {
             let mut info = info.clone()?;
             info.demand.variables_introduced(self, &arm.var_ids, ());
-            let branch_info = self.analyze_branch(&branch_signature, &inputs, &arm.var_ids);
+            let branch_info = self.analyze_branch(
+                &branch_signature,
+                &inputs,
+                &arm.var_ids,
+                &libfunc_signature.param_signatures,
+            );
             self.revoke_if_needed(&mut info, branch_info);
             known_ap_change &= info.known_ap_change;
             arm_demands.push((info.demand, ()));
@@ -264,8 +269,12 @@ impl<'a> FindLocalsContext<'a> {
             "Unexpected branches in '{}'.",
             DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
         );
-
-        self.analyze_branch(&libfunc_signature.branch_signatures[0], input_vars, output_vars)
+        self.analyze_branch(
+            &libfunc_signature.branch_signatures[0],
+            input_vars,
+            output_vars,
+            &libfunc_signature.param_signatures,
+        )
     }
 
     fn analyze_branch(
@@ -273,12 +282,21 @@ impl<'a> FindLocalsContext<'a> {
         branch_signature: &BranchSignature,
         input_vars: &[VarUsage],
         output_vars: &[VariableId],
+        params_signatures: &[ParamSignature],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
                 OutputVarReferenceInfo::SameAsParam { param_idx } => {
-                    self.aliases.insert(*var, input_vars[param_idx].var_id);
+                    // TODO(Gil): Maintain the input variable state (const, add const, deferred or
+                    // stored, similar to the `store_variables` algorithm) and don't alias only if
+                    // the libfunc does not accept this type.
+                    if params_signatures[param_idx].allow_const
+                        && params_signatures[param_idx].allow_add_const
+                        && params_signatures[param_idx].allow_deferred
+                    {
+                        self.aliases.insert(*var, input_vars[param_idx].var_id);
+                    }
                 }
                 OutputVarReferenceInfo::PartialParam { param_idx } => {
                     self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);

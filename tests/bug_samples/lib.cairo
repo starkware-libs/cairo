@@ -1,5 +1,6 @@
 mod ecdsa_completeness;
 mod indirect_impl_alias;
+mod revoked_locals;
 mod issue2114;
 mod issue2147;
 mod issue2152;
@@ -43,3 +44,5 @@ mod partial_param_local;
 mod loop_break_in_match;
 mod generic_cycles;
 mod zero_sized_locals;
+
+

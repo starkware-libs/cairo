@@ -12,7 +12,9 @@ fn foo(x: felt252) -> felt252 {
         IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
-            // y is not revoked, since it's the same as x, which is local.
+            // y is revoked, but it shouldn't, since it's the same as x, which is local.
+            // TODO(Gil): This is because the call to felt252_is_zero revokes, see 
+            // local_variables::analyze_branch.
             y.into()
         },
     }
@@ -79,7 +81,7 @@ End:
   Return(v14)
 
 //! > local_variables
-v13
+v7, v1
 
 //! > ==========================================================================
 
