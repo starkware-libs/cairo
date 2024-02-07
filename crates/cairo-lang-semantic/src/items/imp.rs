@@ -1062,12 +1062,12 @@ pub fn infer_impl_by_self(
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
     let (concrete_trait_id, n_snapshots) = ctx.resolver.inference().infer_concrete_trait_by_self(
-            trait_function_id,
-            self_ty,
-            &lookup_context,
-            Some(stable_ptr),
-            |_| {},
-        )?;
+        trait_function_id,
+        self_ty,
+        &lookup_context,
+        Some(stable_ptr),
+        |_| {},
+    )?;
 
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),

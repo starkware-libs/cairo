@@ -1900,9 +1900,8 @@ pub fn execute_core_hint(
         CoreHint::AssertLeFindSmallArcs { a, b, range_check_ptr } => {
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
-            let mut lengths_and_indices = [(a_val.clone(), 0),
-                (b_val.clone() - a_val, 1),
-                (Felt252::from(-1) - b_val, 2)];
+            let mut lengths_and_indices =
+                [(a_val.clone(), 0), (b_val.clone() - a_val, 1), (Felt252::from(-1) - b_val, 2)];
             lengths_and_indices.sort();
             exec_scopes
                 .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
