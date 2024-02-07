@@ -28,7 +28,7 @@ num-traits = { workspace = true, default-features = true }
 once_cell.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
-toml = { optional = true }
+toml = { workspace = true, optional = true }
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
