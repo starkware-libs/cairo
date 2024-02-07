@@ -2,7 +2,7 @@ use core::{
     integer,
     integer::{
         BoundedInt, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_sqrt, u256_wide_mul, u32_sqrt,
-        u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
+        u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt, U512TryIntoU256
     }
 };
 use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
@@ -793,6 +793,22 @@ fn test_u512_safe_div_rem_by_u256() {
         'large div failed'
     );
     assert(r == 0x1e0eb905027d0150d2618bbd71844d50, 'large rem failed');
+}
+
+#[test]
+fn test_u512_try_into_u256() {
+    let num = u512 { limb0: 0xdeadbeef, limb1: 0, limb2: 0, limb3: 0 };
+    let num_u256: u256 = num.try_into().unwrap();
+    assert_eq(num_u256, 0xdeadbeef_u256, 'u512 -> u256');
+
+    let num = u512 {
+        limb0: 0x33233223222222122112111111011001,
+        limb1: 0x54455445544554454444443443343333,
+        limb2: 0x21222222322332333333433443444444,
+        limb3: 0x1001101111112112,
+    };
+    let option: Option<u256> = num.try_into();
+    assert(option.is_none(), 'u512 -/-> u256');
 }
 
 #[test]
