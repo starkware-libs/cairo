@@ -2198,9 +2198,7 @@ pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
 where
     T: Iterator<Item = Felt252> + Clone,
 {
-    let Some(first_felt) = values.next() else {
-        return None;
-    };
+    let first_felt = values.next()?;
 
     if first_felt == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
         if let Some(string) = try_format_string(values) {
