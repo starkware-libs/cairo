@@ -1092,7 +1092,11 @@ fn compute_expr_while_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let condition = compute_bool_condition_semantic(ctx, &syntax.condition(syntax_db)).id;
+    let ast::Condition::Expr(condion_syntax) = syntax.condition(syntax_db) else {
+        return Err(ctx.diagnostics.report(syntax, Unsupported));
+    };
+
+    let condition = compute_bool_condition_semantic(ctx, &condion_syntax.expr(syntax_db)).id;
     let (body, _loop_ctx) =
         compute_loop_body_semantic(ctx, syntax.body(syntax_db), LoopContext::While);
     Ok(Expr::While(ExprWhile {
