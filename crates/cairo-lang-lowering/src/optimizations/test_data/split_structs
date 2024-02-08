@@ -1,0 +1,401 @@
+//! > Test struct folding.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let b = (a,);
+   let c = (b,);
+   let (d,)  = c;
+   let (e,)  = d;
+   e
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252,)) <- struct_construct(v0)
+  (v2: ((core::felt252,),)) <- struct_construct(v1)
+  (v3: (core::felt252,)) <- struct_destructure(v2)
+  (v4: core::felt252) <- struct_destructure(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test destruct after merge
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let (b,) = match a {
+      0 => (0,),
+      _ => (a,),
+   };
+   b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 0u
+  (v3: (core::felt252,)) <- struct_construct(v2)
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk2:
+Statements:
+  (v4: (core::felt252,)) <- struct_construct(v0)
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- struct_destructure(v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 0u
+End:
+  Goto(blk3, {v2 -> v7})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test use in one arm 
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let arr = array![10, 11, 12];
+
+   let c = (a, arr);
+   if a == 0 {
+     let (a, _arr) = c;
+     return a;
+   } else {
+      cosume(c);
+      return 1;
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn cosume(arg: (felt252, Array<felt252>)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10u
+  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v2)
+  (v5: core::felt252) <- 11u
+  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v5)
+  (v8: core::felt252) <- 12u
+  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v8)
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v14) => blk2,
+  })
+
+blk1:
+Statements:
+  (v12: core::felt252, v13: core::array::Array::<core::felt252>) <- struct_destructure(v11)
+End:
+  Return(v12)
+
+blk2:
+Statements:
+  () <- test::cosume(v11)
+  (v15: core::felt252) <- 1u
+End:
+  Return(v15)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 10u
+  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v2)
+  (v5: core::felt252) <- 11u
+  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v5)
+  (v8: core::felt252) <- 12u
+  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v8)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v14) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v0)
+
+blk2:
+Statements:
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
+  () <- test::cosume(v11)
+  (v15: core::felt252) <- 1u
+End:
+  Return(v15)
+
+//! > ==========================================================================
+
+//! > Test destructure after merge.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   let tuple = match a {
+      0 => (1, (2, 3)),
+      _ => {
+        let tuple = (a, (2, a));
+        use_tuple(tuple);
+        tuple
+      },
+   };
+   let (b, (c, d)) = tuple;
+   b + c + d
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 3u
+  (v5: (core::felt252, core::felt252)) <- struct_construct(v3, v4)
+  (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v5)
+End:
+  Goto(blk3, {v6 -> v10})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2u
+  (v8: (core::felt252, core::felt252)) <- struct_construct(v7, v0)
+  (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v8)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v9)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk3:
+Statements:
+  (v11: core::felt252, v12: (core::felt252, core::felt252)) <- struct_destructure(v10)
+  (v13: core::felt252, v14: core::felt252) <- struct_destructure(v12)
+  (v17: core::felt252) <- core::felt252_add(v11, v13)
+  (v18: core::felt252) <- core::felt252_add(v17, v14)
+End:
+  Return(v18)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- 2u
+  (v4: core::felt252) <- 3u
+End:
+  Goto(blk3, {v2 -> v19, v3 -> v21, v4 -> v22})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 2u
+  (v8: (core::felt252, core::felt252)) <- struct_construct(v7, v0)
+  (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v8)
+  () <- test::use_tuple::<(core::felt252, core::felt252)>(v9)
+End:
+  Goto(blk3, {v0 -> v19, v7 -> v21, v0 -> v22})
+
+blk3:
+Statements:
+  (v17: core::felt252) <- core::felt252_add(v19, v21)
+  (v18: core::felt252) <- core::felt252_add(v17, v22)
+End:
+  Return(v18)
+
+//! > ==========================================================================
+
+//! > Test construct after destruct.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> (felt252, felt252) {
+   let b = (a, a);
+   let tuple = match a {
+      0 => {
+        b
+      },
+      _ =>  {
+        let (c, _) = b;
+        (c, c)
+      },
+   };
+  tuple
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v6})
+
+blk2:
+Statements:
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v1)
+  (v5: (core::felt252, core::felt252)) <- struct_construct(v3, v3)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7, v0 -> v8})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v7, v0 -> v8})
+
+blk3:
+Statements:
+  (v6: (core::felt252, core::felt252)) <- struct_construct(v7, v8)
+End:
+  Return(v6)
