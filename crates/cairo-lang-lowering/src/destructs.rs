@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use itertools::{zip_eq, Itertools};
+use itertools::{chain, zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::{TypeId, TypeLongId};
 
@@ -270,8 +270,6 @@ pub fn add_destructs(
         .base_semantic_function(db)
         .untyped_stable_ptr(db.upcast());
     for destruction in analysis.analyzer.destructions {
-        let location = variables.get_location(stable_ptr);
-        let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
         match destruction {
             DestructionEntry::Plain(PlainDestructionEntry {
                 position: (block_id, insert_index),
@@ -287,13 +285,17 @@ pub fn add_destructs(
                         generic_args: vec![],
                     },
                 });
+
+                let location = lowered.variables[var_id].location;
+                let output_var =
+                    variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
                 lowered.blocks[block_id].statements.insert(
                     insert_index,
                     Statement::Call(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![VarUsage { var_id, location }],
                         outputs: vec![output_var],
-                        location: lowered.variables[var_id].location,
+                        location,
                     }),
                 )
             }
@@ -315,18 +317,25 @@ pub fn add_destructs(
                     PanicLocation::PanicVar {
                         panic_var,
                         statement_location: (block_id, insert_index),
-                    } => lowered.blocks[block_id].statements.insert(
-                        insert_index,
-                        Statement::Call(StatementCall {
-                            function: semantic_function.lowered(db),
-                            inputs: vec![panic_var, var_id]
-                                .into_iter()
-                                .map(|var_id| VarUsage { var_id, location })
-                                .collect(),
-                            outputs: vec![panic_var, output_var],
-                            location: lowered.variables[panic_var].location,
-                        }),
-                    ),
+                    } => {
+                        let location = lowered.variables[panic_var].location;
+                        let new_panic_var = variables
+                            .new_var(VarRequest { ty: lowered.variables[panic_var].ty, location });
+                        let output_var =
+                            variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+                        lowered.blocks[block_id].statements.insert(
+                            insert_index,
+                            Statement::Call(StatementCall {
+                                function: semantic_function.lowered(db),
+                                inputs: vec![panic_var, var_id]
+                                    .into_iter()
+                                    .map(|var_id| VarUsage { var_id, location })
+                                    .collect(),
+                                outputs: vec![new_panic_var, output_var],
+                                location,
+                            }),
+                        )
+                    }
                     PanicLocation::PanicTuple {
                         tuple_var,
                         statement_location: (block_id, insert_index),
@@ -340,6 +349,9 @@ pub fn add_destructs(
                             .copied()
                             .map(|ty| variables.new_var(VarRequest { ty, location }))
                             .collect::<Vec<_>>();
+
+                        let panic_var = vars[0];
+                        let new_panic_var = variables.new_var(VarRequest { ty: tys[0], location });
                         let output_var =
                             variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
                         let statements = vec![
@@ -350,17 +362,19 @@ pub fn add_destructs(
                             Statement::Call(StatementCall {
                                 function: semantic_function.lowered(db),
                                 inputs: vec![
-                                    VarUsage { var_id: vars[0], location },
+                                    VarUsage { var_id: panic_var, location },
                                     VarUsage { var_id, location },
                                 ],
-                                outputs: vec![vars[0], output_var],
+                                outputs: vec![new_panic_var, output_var],
                                 location: lowered.variables[tuple_var].location,
                             }),
                             Statement::StructConstruct(StatementStructConstruct {
-                                inputs: vars
-                                    .into_iter()
-                                    .map(|var_id| VarUsage { var_id, location })
-                                    .collect(),
+                                inputs: chain!(
+                                    std::iter::once(new_panic_var),
+                                    vars.into_iter().next()
+                                )
+                                .map(|var_id| VarUsage { var_id, location })
+                                .collect(),
                                 output: tuple_var,
                             }),
                         ];
