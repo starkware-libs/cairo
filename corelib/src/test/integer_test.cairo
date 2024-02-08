@@ -799,7 +799,7 @@ fn test_u512_safe_div_rem_by_u256() {
 fn test_u512_try_into_u256() {
     let num = u512 { limb0: 0xdeadbeef, limb1: 0, limb2: 0, limb3: 0 };
     let num_u256: u256 = num.try_into().unwrap();
-    assert_eq(num_u256, 0xdeadbeef_u256, 'u512 -> u256');
+    assert_eq(@num_u256, @0xdeadbeef_u256, 'u512 -> u256');
 
     let num = u512 {
         limb0: 0x33233223222222122112111111011001,
