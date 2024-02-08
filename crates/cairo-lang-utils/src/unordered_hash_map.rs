@@ -2,6 +2,8 @@
 #[path = "unordered_hash_map_test.rs"]
 mod test;
 
+#[cfg(not(feature = "std"))]
+use alloc::vec;
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
@@ -11,6 +13,8 @@ pub use std::collections::hash_map::Entry;
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(feature = "std")]
+use std::vec;
 
 #[cfg(not(feature = "std"))]
 pub use hashbrown::hash_map::Entry;
@@ -229,9 +233,8 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     /// the order of the output OrderedHashMap is undefined (nondeterministic).
     /// This can be used to convert an unordered map to an ordered map (mostly when the unordered
     /// map was used for intermediate processing).
-    pub fn iter_sorted_by_key<TargetKey, F>(&self, f: F) -> impl Iterator<Item = (&Key, &Value)>
+    pub fn iter_sorted_by_key<TargetKey, F>(&self, f: F) -> vec::IntoIter<(&Key, &Value)>
     where
-        Key: Ord,
         TargetKey: Ord,
         F: FnMut(&(&Key, &Value)) -> TargetKey,
     {
@@ -239,7 +242,7 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     }
 
     /// A consuming version of `iter_sorted_by_key`.
-    pub fn into_iter_sorted_by_key<TargetKey, F>(self, f: F) -> impl Iterator<Item = (Key, Value)>
+    pub fn into_iter_sorted_by_key<TargetKey, F>(self, f: F) -> vec::IntoIter<(Key, Value)>
     where
         TargetKey: Ord,
         F: FnMut(&(Key, Value)) -> TargetKey,
