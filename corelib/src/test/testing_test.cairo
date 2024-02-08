@@ -41,46 +41,46 @@ fn test_assert_ne_no_description() {
 
 #[test]
 fn test_assert_lt_with_description() {
-    assert_lt!(1, 2, "Description");
+    assert_lt!(1_u256, 2_u256, "Description");
 }
 
 #[test]
 fn test_assert_lt_no_description() {
-    assert_lt!(1, 2);
+    assert_lt!(1_u256, 2_u256);
 }
 
 #[test]
 fn test_assert_le_with_description() {
-    assert_le!(1, 2, "Description");
-    assert_le!(1, 1, "Description");
+    assert_le!(1_u256, 2_u256, "Description");
+    assert_le!(1_u256, 1_u256, "Description");
 }
 
 #[test]
 fn test_assert_le_no_description() {
-    assert_le!(1, 2);
-    assert_le!(1, 1);
+    assert_le!(1_u256, 2_u256);
+    assert_le!(1_u256, 1_u256);
 }
 
 #[test]
 fn test_assert_gt_with_description() {
-    assert_gt!(2, 1, "Description");
+    assert_gt!(2_u256, 1_u256, "Description");
 }
 
 #[test]
 fn test_assert_gt_no_description() {
-    assert_gt!(2, 1);
+    assert_gt!(2_u256, 1_u256);
 }
 
 #[test]
 fn test_assert_ge_with_description() {
-    assert_ge!(2, 1, "Description");
-    assert_ge!(2, 2, "Description");
+    assert_ge!(2_u256, 1_u256, "Description");
+    assert_ge!(2_u256, 2_u256, "Description");
 }
 
 #[test]
 fn test_assert_ge_no_description() {
-    assert_ge!(2, 1);
-    assert_ge!(2, 2);
+    assert_ge!(2_u256, 1_u256);
+    assert_ge!(2_u256, 2_u256);
 }
 
 #[test]

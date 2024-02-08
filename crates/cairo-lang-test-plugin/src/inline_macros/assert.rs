@@ -85,7 +85,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
+                    if !($lhs_value$ {operator} $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
