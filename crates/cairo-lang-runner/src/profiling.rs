@@ -16,7 +16,7 @@ mod test;
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
     /// The number of steps in the trace that originated from each sierra statement.
-    pub sierra_statements_weights: UnorderedHashMap<StatementIdx, usize>,
+    pub sierra_statement_weights: UnorderedHashMap<StatementIdx, usize>,
 
     /// A map of weights of each stack trace.
     /// The key is a function stack trace of an executed function. The stack trace is represented
@@ -31,75 +31,94 @@ pub struct ProfilingInfo {
 pub struct ProcessedProfilingInfo {
     /// For each sierra statement: the number of steps in the trace that originated from it, and
     /// the relevant GenStatement.
-    pub sierra_statements_weights:
-        OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
+    pub sierra_statement_weights: OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>,
+
     /// A map of weights of each stack trace.
     /// The key is a function stack trace of an executed function. The stack trace is represented
     /// as a vector of the function names.
     /// The value is the weight of the stack trace.
     pub stack_trace_weights: OrderedHashMap<Vec<String>, usize>,
 
-    /// Weight (in steps in the relevant run) of each concrete libfunc.
-    pub concrete_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of each generic libfunc.
-    pub generic_libfuncs_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of each user function (including generated
-    /// functions).
-    pub user_functions_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of each original user function.
-    pub original_user_functions_weights: Option<OrderedHashMap<String, usize>>,
+    /// Weights per libfunc.
+    pub libfunc_weights: LibfuncWeights,
+
+    /// Weights per user function.
+    pub user_function_weights: UserFunctionWeights,
+
     /// Weight (in steps in the relevant run) of each Cairo function.
-    pub cairo_functions_weights: Option<OrderedHashMap<String, usize>>,
+    pub cairo_function_weights: Option<OrderedHashMap<String, usize>>,
+}
+/// Weights per libfunc.
+#[derive(Default)]
+pub struct LibfuncWeights {
+    /// Weight (in steps in the relevant run) of each concrete libfunc.
+    pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each generic libfunc.
+    pub generic_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
     pub return_weight: Option<usize>,
+}
+
+/// Weights per user function.
+#[derive(Default)]
+pub struct UserFunctionWeights {
+    /// Weight (in steps in the relevant run) of each user function (including generated
+    /// functions).
+    pub user_function_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each original user function.
+    pub original_user_function_weights: Option<OrderedHashMap<String, usize>>,
 }
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Weight by sierra statement:")?;
-        for (statement_idx, (weight, gen_statement)) in self.sierra_statements_weights.iter() {
+        for (statement_idx, (weight, gen_statement)) in self.sierra_statement_weights.iter() {
             writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
         }
-        if let Some(concrete_libfuncs_weights) = &self.concrete_libfuncs_weights {
+
+        if let Some(concrete_libfunc_weights) = &self.libfunc_weights.concrete_libfunc_weights {
             writeln!(f, "Weight by concrete libfunc:")?;
-            for (concrete_name, weight) in concrete_libfuncs_weights.iter() {
+            for (concrete_name, weight) in concrete_libfunc_weights.iter() {
                 writeln!(f, "  libfunc {concrete_name}: {weight}")?;
             }
             writeln!(
                 f,
                 "  return: {}",
-                self.return_weight.expect(
-                    "return_weight should have a value if concrete_libfuncs_weights has a value"
+                self.libfunc_weights.return_weight.expect(
+                    "return_weight should have a value if concrete_libfunc_weights has a value"
                 )
             )?;
         }
-        if let Some(generic_libfuncs_weights) = &self.generic_libfuncs_weights {
+        if let Some(generic_libfunc_weights) = &self.libfunc_weights.generic_libfunc_weights {
             writeln!(f, "Weight by generic libfunc:")?;
-            for (generic_name, weight) in generic_libfuncs_weights.iter() {
+            for (generic_name, weight) in generic_libfunc_weights.iter() {
                 writeln!(f, "  libfunc {generic_name}: {weight}")?;
             }
             writeln!(
                 f,
                 "  return: {}",
-                self.return_weight.expect(
-                    "return_weight should have a value if generic_libfuncs_weights has a value"
+                self.libfunc_weights.return_weight.expect(
+                    "return_weight should have a value if generic_libfunc_weights has a value"
                 )
             )?;
         }
-        if let Some(user_functions_weights) = &self.user_functions_weights {
+
+        if let Some(user_function_weights) = &self.user_function_weights.user_function_weights {
             writeln!(f, "Weight by user function (inc. generated):")?;
-            for (name, weight) in user_functions_weights.iter() {
+            for (name, weight) in user_function_weights.iter() {
                 writeln!(f, "  function {name}: {weight}")?;
             }
         }
-        if let Some(original_user_functions_weights) = &self.original_user_functions_weights {
+        if let Some(original_user_function_weights) =
+            &self.user_function_weights.original_user_function_weights
+        {
             writeln!(f, "Weight by original user function:")?;
-            for (name, weight) in original_user_functions_weights.iter() {
+            for (name, weight) in original_user_function_weights.iter() {
                 writeln!(f, "  function {name}: {weight}")?;
             }
         }
-        if let Some(cairo_functions_weights) = &self.cairo_functions_weights {
+        if let Some(cairo_function_weights) = &self.cairo_function_weights {
             writeln!(f, "Weight by Cairo function:")?;
-            for (function_identifier, weight) in cairo_functions_weights.iter() {
+            for (function_identifier, weight) in cairo_function_weights.iter() {
                 writeln!(f, "  function {function_identifier}: {weight}")?;
             }
         }
@@ -182,153 +201,53 @@ impl<'a> ProfilingInfoProcessor<'a> {
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
     ) -> ProcessedProfilingInfo {
-        let mut user_functions = if params.process_by_user_function {
-            self.sierra_program
-                .funcs
-                .iter()
-                .enumerate()
-                .map(|(idx, _)| (idx, 0))
-                .collect::<UnorderedHashMap<usize, usize>>()
-        } else {
-            UnorderedHashMap::default()
-        };
+        let sierra_statement_weights_iter = raw_profiling_info
+            .sierra_statement_weights
+            .iter_sorted_by_key(|(pc, count)| (usize::MAX - **count, **pc));
 
-        let mut cairo_functions = UnorderedHashMap::<_, _>::default();
-        let mut return_weight = 0;
-        let mut sierra_statements_weights = OrderedHashMap::default();
-        let mut libfuncs_weights = UnorderedHashMap::<ConcreteLibfuncId, usize>::default();
+        let sierra_statement_weights =
+            self.process_sierra_statement_weights(sierra_statement_weights_iter.clone(), params);
 
-        for (statement_idx, weight) in raw_profiling_info
-            .sierra_statements_weights
-            .iter_sorted_by_key(|(pc, count)| (usize::MAX - **count, **pc))
-        {
-            let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
-                panic!("Failed fetching statement index {}", statement_idx.0);
-            };
-            if params.process_by_concrete_libfunc || params.process_by_generic_libfunc {
-                match gen_statement {
-                    GenStatement::Invocation(invocation) => {
-                        *(libfuncs_weights.entry(invocation.libfunc_id.clone()).or_insert(0)) +=
-                            weight;
-                    }
-                    GenStatement::Return(_) => {
-                        return_weight += weight;
-                    }
-                }
-            }
+        let stack_trace_weights = self.process_stack_trace_weights(raw_profiling_info);
 
-            if params.process_by_user_function {
-                let function_idx: usize =
-                    user_function_idx_by_sierra_statement_idx(&self.sierra_program, statement_idx);
-                *(user_functions.get_mut(&function_idx).unwrap()) += weight;
-            }
+        let libfunc_weights =
+            self.process_libfunc_weights(sierra_statement_weights_iter.clone(), params);
 
-            if params.process_by_cairo_function {
-                // TODO(Gil): Fill all the `Unknown functions` in the cairo functions
-                // profiling.
-                let function_identifier = self
-                    .statements_functions
-                    .get(statement_idx)
-                    .unwrap_or(&"unknown".to_string())
-                    .clone();
-                *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
-            }
-            if *weight >= params.min_weight {
-                sierra_statements_weights.insert(*statement_idx, (*weight, gen_statement.clone()));
-            }
+        let user_function_weights =
+            self.process_user_function_weights(sierra_statement_weights_iter.clone(), params);
+
+        let cairo_function_weights =
+            self.process_cairo_function_weights(sierra_statement_weights_iter, params);
+
+        ProcessedProfilingInfo {
+            sierra_statement_weights,
+            stack_trace_weights,
+            libfunc_weights,
+            user_function_weights,
+            cairo_function_weights,
         }
+    }
 
-        let concrete_libfuncs_weights = params.process_by_concrete_libfunc.then(|| {
-            let mut concrete_libfuncs_weights = OrderedHashMap::default();
-            for (libfunc_id, weight) in
-                libfuncs_weights.iter_sorted_by_key(|(libfunc_id, weight)| {
-                    (usize::MAX - **weight, (*libfunc_id).to_string())
-                })
-            {
-                if *weight >= params.min_weight {
-                    concrete_libfuncs_weights.insert(libfunc_id.to_string().into(), *weight);
-                }
-            }
-            concrete_libfuncs_weights
-        });
+    /// Process the weights per Sierra statement.
+    fn process_sierra_statement_weights(
+        &self,
+        sierra_statement_weights_iter: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        params: &ProfilingInfoProcessorParams,
+    ) -> OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)> {
+        sierra_statement_weights_iter
+            .filter(|&(_, weight)| (*weight >= params.min_weight))
+            .map(|(statement_idx, weight)| {
+                (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
+            })
+            .collect()
+    }
 
-        let generic_libfuncs_weights = params.process_by_generic_libfunc.then(|| {
-            let db: &dyn SierraGenGroup =
-                self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
-            let mut generic_libfuncs_weights = OrderedHashMap::default();
-            for (generic_name, weight) in libfuncs_weights
-                .aggregate_by(
-                    |k| -> SmolStr {
-                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
-                    },
-                    |v1: &usize, v2| v1 + v2,
-                    &0,
-                )
-                .iter_sorted_by_key(|(generic_name, weight)| {
-                    (usize::MAX - **weight, (*generic_name).clone())
-                })
-            {
-                if *weight >= params.min_weight {
-                    generic_libfuncs_weights.insert(generic_name.clone(), *weight);
-                }
-            }
-            generic_libfuncs_weights
-        });
-
-        let user_functions_weights = params.process_by_user_function.then(|| {
-            let mut user_functions_weights = OrderedHashMap::default();
-            for (idx, weight) in user_functions.iter_sorted_by_key(|(idx, weight)| {
-                (usize::MAX - **weight, self.sierra_program.funcs[**idx].id.to_string())
-            }) {
-                if *weight >= params.min_weight {
-                    let func = &self.sierra_program.funcs[*idx];
-                    user_functions_weights.insert(func.id.to_string().into(), *weight);
-                }
-            }
-            user_functions_weights
-        });
-
-        let original_user_functions_weights = params.process_by_original_user_function.then(|| {
-            let db: &dyn SierraGenGroup =
-                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
-            let mut original_user_functions_weights = OrderedHashMap::default();
-            for (orig_name, weight) in user_functions
-                .aggregate_by(
-                    |idx| {
-                        let lowering_function_id = db.lookup_intern_sierra_function(
-                            self.sierra_program.funcs[*idx].id.clone(),
-                        );
-                        lowering_function_id.semantic_full_path(db.upcast())
-                    },
-                    |x, y| x + y,
-                    &0,
-                )
-                .iter_sorted_by_key(|(orig_name, weight)| {
-                    (usize::MAX - **weight, (*orig_name).clone())
-                })
-            {
-                if *weight >= params.min_weight {
-                    original_user_functions_weights.insert(orig_name.clone(), *weight);
-                }
-            }
-            original_user_functions_weights
-        });
-
-        let cairo_functions_weights = params.process_by_cairo_function.then(|| {
-            let mut cairo_functions_weights = OrderedHashMap::default();
-            for (function_identifier, weight) in
-                cairo_functions.iter_sorted_by_key(|(function_identifier, weight)| {
-                    (usize::MAX - **weight, (*function_identifier).clone())
-                })
-            {
-                if *weight >= params.min_weight {
-                    cairo_functions_weights.insert(function_identifier.clone(), *weight);
-                }
-            }
-            cairo_functions_weights
-        });
-
-        let stack_trace_weights = raw_profiling_info
+    /// Process the weights per Sierra stack trace.
+    fn process_stack_trace_weights(
+        &self,
+        raw_profiling_info: &ProfilingInfo,
+    ) -> OrderedHashMap<Vec<String>, usize> {
+        raw_profiling_info
             .stack_trace_weights
             .iter_sorted_by_key(|(idx_stack_trace, weight)| {
                 (usize::MAX - **weight, (*idx_stack_trace).clone())
@@ -339,18 +258,168 @@ impl<'a> ProfilingInfoProcessor<'a> {
                     *weight,
                 )
             })
-            .collect();
+            .collect()
+    }
 
-        ProcessedProfilingInfo {
-            sierra_statements_weights,
-            stack_trace_weights,
-            concrete_libfuncs_weights,
-            generic_libfuncs_weights,
-            user_functions_weights,
-            original_user_functions_weights,
-            cairo_functions_weights,
-            return_weight,
+    /// Process the weights per libfunc.
+    fn process_libfunc_weights(
+        &self,
+        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        params: &ProfilingInfoProcessorParams,
+    ) -> LibfuncWeights {
+        if !params.process_by_concrete_libfunc && !params.process_by_generic_libfunc {
+            return LibfuncWeights::default();
         }
+
+        let mut return_weight = 0;
+        let mut libfunc_weights = UnorderedHashMap::<ConcreteLibfuncId, usize>::default();
+        for (statement_idx, weight) in sierra_statement_weights {
+            match self.statement_idx_to_gen_statement(statement_idx) {
+                GenStatement::Invocation(invocation) => {
+                    *(libfunc_weights.entry(invocation.libfunc_id.clone()).or_insert(0)) += weight;
+                }
+                GenStatement::Return(_) => {
+                    return_weight += weight;
+                }
+            }
+        }
+
+        let generic_libfunc_weights = params.process_by_generic_libfunc.then(|| {
+            let db: &dyn SierraGenGroup =
+                self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
+            libfunc_weights
+                .aggregate_by(
+                    |k| -> SmolStr {
+                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
+                    },
+                    |v1: &usize, v2| v1 + v2,
+                    &0,
+                )
+                .filter(|_, weight| *weight >= params.min_weight)
+                .iter_sorted_by_key(|(generic_name, weight)| {
+                    (usize::MAX - **weight, (*generic_name).clone())
+                })
+                .map(|(generic_name, weight)| (generic_name.clone(), *weight))
+                .collect()
+        });
+
+        // This is done second as .filter() is consuming and to avoid cloning.
+        let concrete_libfunc_weights = params.process_by_concrete_libfunc.then(|| {
+            libfunc_weights
+                .filter(|_, weight| *weight >= params.min_weight)
+                .iter_sorted_by_key(|(libfunc_id, weight)| {
+                    (usize::MAX - **weight, (*libfunc_id).to_string())
+                })
+                .map(|(libfunc_id, weight)| (SmolStr::from(libfunc_id.to_string()), *weight))
+                .collect()
+        });
+
+        LibfuncWeights {
+            concrete_libfunc_weights,
+            generic_libfunc_weights,
+            return_weight: Some(return_weight),
+        }
+    }
+
+    /// Process the weights per user function.
+    fn process_user_function_weights(
+        &self,
+        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        params: &ProfilingInfoProcessorParams,
+    ) -> UserFunctionWeights {
+        if !params.process_by_user_function && !params.process_by_original_user_function {
+            return UserFunctionWeights::default();
+        }
+
+        let mut user_functions = UnorderedHashMap::<usize, usize>::default();
+        for (statement_idx, weight) in sierra_statement_weights {
+            let function_idx: usize =
+                user_function_idx_by_sierra_statement_idx(&self.sierra_program, *statement_idx);
+            *(user_functions.entry(function_idx).or_insert(0)) += weight;
+        }
+
+        let original_user_function_weights = params.process_by_original_user_function.then(|| {
+            let db: &dyn SierraGenGroup =
+                self.db.expect("DB must be set with `process_by_original_user_function=true`.");
+            user_functions
+                .aggregate_by(
+                    |idx| {
+                        let lowering_function_id = db.lookup_intern_sierra_function(
+                            self.sierra_program.funcs[*idx].id.clone(),
+                        );
+                        lowering_function_id.semantic_full_path(db.upcast())
+                    },
+                    |x, y| x + y,
+                    &0,
+                )
+                .filter(|_, weight| *weight >= params.min_weight)
+                .iter_sorted_by_key(|(orig_name, weight)| {
+                    (usize::MAX - **weight, (*orig_name).clone())
+                })
+                .map(|(orig_name, weight)| (orig_name.clone(), *weight))
+                .collect()
+        });
+
+        // This is done second as .filter() is consuming and to avoid cloning.
+        let user_function_weights = params.process_by_user_function.then(|| {
+            user_functions
+                .filter(|_, weight| *weight >= params.min_weight)
+                .iter_sorted_by_key(|(idx, weight)| {
+                    (usize::MAX - **weight, self.sierra_program.funcs[**idx].id.to_string())
+                })
+                .map(|(idx, weight)| {
+                    let func: &cairo_lang_sierra::program::GenFunction<StatementIdx> =
+                        &self.sierra_program.funcs[*idx];
+                    (func.id.to_string().into(), *weight)
+                })
+                .collect()
+        });
+
+        UserFunctionWeights { user_function_weights, original_user_function_weights }
+    }
+
+    /// Process the weights per Cairo function.
+    fn process_cairo_function_weights(
+        &self,
+        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        params: &ProfilingInfoProcessorParams,
+    ) -> Option<OrderedHashMap<String, usize>> {
+        if !params.process_by_cairo_function {
+            return None;
+        }
+
+        let mut cairo_functions = UnorderedHashMap::<_, _>::default();
+        for (statement_idx, weight) in sierra_statement_weights {
+            // TODO(Gil): Fill all the `Unknown functions` in the cairo functions profiling.
+            let function_identifier = self
+                .statements_functions
+                .get(statement_idx)
+                .unwrap_or(&"unknown".to_string())
+                .clone();
+            *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
+        }
+
+        Some(
+            cairo_functions
+                .filter(|_, weight| *weight >= params.min_weight)
+                .iter_sorted_by_key(|(function_identifier, weight)| {
+                    (usize::MAX - **weight, (*function_identifier).clone())
+                })
+                .map(|(function_identifier, weight)| (function_identifier.clone(), *weight))
+                .collect(),
+        )
+    }
+
+    /// Translates the given Sierra statement index into the actual statement.
+    fn statement_idx_to_gen_statement(
+        &self,
+        statement_idx: &StatementIdx,
+    ) -> GenStatement<StatementIdx> {
+        self.sierra_program
+            .statements
+            .get(statement_idx.0)
+            .unwrap_or_else(|| panic!("Failed fetching statement index {}", statement_idx.0))
+            .clone()
     }
 }
 
@@ -361,7 +430,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 /// function's entry point is 0.
 pub fn user_function_idx_by_sierra_statement_idx(
     sierra_program: &Program,
-    statement_idx: &StatementIdx,
+    statement_idx: StatementIdx,
 ) -> usize {
     // The `-1` here can't cause an underflow as the first function's entry point is
     // always 0, so it is always on the left side of the partition, and thus the
