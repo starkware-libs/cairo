@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -50,7 +51,7 @@ pub struct ProcessedProfilingInfo {
     /// Weight (in steps in the relevant run) of each Cairo function.
     pub cairo_functions_weights: Option<OrderedHashMap<String, usize>>,
     /// Weight (in steps in the relevant run) of return statements.
-    pub return_weight: usize,
+    pub return_weight: Option<usize>,
 }
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -63,14 +64,26 @@ impl Display for ProcessedProfilingInfo {
             for (concrete_name, weight) in concrete_libfuncs_weights.iter() {
                 writeln!(f, "  libfunc {concrete_name}: {weight}")?;
             }
-            writeln!(f, "  return: {}", self.return_weight)?;
+            writeln!(
+                f,
+                "  return: {}",
+                self.return_weight.expect(
+                    "return_weight should have a value if concrete_libfuncs_weights has a value"
+                )
+            )?;
         }
         if let Some(generic_libfuncs_weights) = &self.generic_libfuncs_weights {
             writeln!(f, "Weight by generic libfunc:")?;
             for (generic_name, weight) in generic_libfuncs_weights.iter() {
                 writeln!(f, "  libfunc {generic_name}: {weight}")?;
             }
-            writeln!(f, "  return: {}", self.return_weight)?;
+            writeln!(
+                f,
+                "  return: {}",
+                self.return_weight.expect(
+                    "return_weight should have a value if generic_libfuncs_weights has a value"
+                )
+            )?;
         }
         if let Some(user_functions_weights) = &self.user_functions_weights {
             writeln!(f, "Weight by user function (inc. generated):")?;
@@ -169,26 +182,6 @@ impl<'a> ProfilingInfoProcessor<'a> {
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
     ) -> ProcessedProfilingInfo {
-        let mut concrete_libfuncs = if params.process_by_concrete_libfunc {
-            self.sierra_program
-                .libfunc_declarations
-                .iter()
-                .map(|concrete_libfunc| (concrete_libfunc.long_id.to_string().into(), 0))
-                .collect::<UnorderedHashMap<SmolStr, usize>>()
-        } else {
-            UnorderedHashMap::default()
-        };
-
-        let mut generic_libfuncs = if params.process_by_generic_libfunc {
-            self.sierra_program
-                .libfunc_declarations
-                .iter()
-                .map(|generic_libfunc| (generic_libfunc.long_id.generic_id.0.clone(), 0))
-                .collect::<UnorderedHashMap<SmolStr, usize>>()
-        } else {
-            UnorderedHashMap::default()
-        };
-
         let mut user_functions = if params.process_by_user_function {
             self.sierra_program
                 .funcs
@@ -203,6 +196,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         let mut return_weight = 0;
         let mut sierra_statements_weights = OrderedHashMap::default();
+        let mut libfuncs_weights = UnorderedHashMap::<ConcreteLibfuncId, usize>::default();
 
         for (statement_idx, weight) in raw_profiling_info
             .sierra_statements_weights
@@ -211,20 +205,15 @@ impl<'a> ProfilingInfoProcessor<'a> {
             let Some(gen_statement) = self.sierra_program.statements.get(statement_idx.0) else {
                 panic!("Failed fetching statement index {}", statement_idx.0);
             };
-            match gen_statement {
-                GenStatement::Invocation(invocation) => {
-                    let concrete_name: SmolStr = format!("{}", invocation.libfunc_id).into();
-                    if params.process_by_concrete_libfunc {
-                        *(concrete_libfuncs.get_mut(&concrete_name).unwrap()) += weight;
+            if params.process_by_concrete_libfunc || params.process_by_generic_libfunc {
+                match gen_statement {
+                    GenStatement::Invocation(invocation) => {
+                        *(libfuncs_weights.entry(invocation.libfunc_id.clone()).or_insert(0)) +=
+                            weight;
                     }
-
-                    if params.process_by_generic_libfunc {
-                        let generic_name = concrete_name_to_generic_name(concrete_name);
-                        *(generic_libfuncs.get_mut(&generic_name).unwrap()) += weight;
+                    GenStatement::Return(_) => {
+                        return_weight += weight;
                     }
-                }
-                GenStatement::Return(_) => {
-                    return_weight += weight;
                 }
             }
 
@@ -251,22 +240,31 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         let concrete_libfuncs_weights = params.process_by_concrete_libfunc.then(|| {
             let mut concrete_libfuncs_weights = OrderedHashMap::default();
-            for (concrete_name, weight) in
-                concrete_libfuncs.iter_sorted_by_key(|(concrete_name, weight)| {
-                    (usize::MAX - **weight, (*concrete_name).clone())
+            for (libfunc_id, weight) in
+                libfuncs_weights.iter_sorted_by_key(|(libfunc_id, weight)| {
+                    (usize::MAX - **weight, (*libfunc_id).to_string())
                 })
             {
                 if *weight >= params.min_weight {
-                    concrete_libfuncs_weights.insert(concrete_name.clone(), *weight);
+                    concrete_libfuncs_weights.insert(libfunc_id.to_string().into(), *weight);
                 }
             }
             concrete_libfuncs_weights
         });
 
         let generic_libfuncs_weights = params.process_by_generic_libfunc.then(|| {
+            let db: &dyn SierraGenGroup =
+                self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
             let mut generic_libfuncs_weights = OrderedHashMap::default();
-            for (generic_name, weight) in
-                generic_libfuncs.iter_sorted_by_key(|(generic_name, weight)| {
+            for (generic_name, weight) in libfuncs_weights
+                .aggregate_by(
+                    |k| -> SmolStr {
+                        db.lookup_intern_concrete_lib_func(k.clone()).generic_id.to_string().into()
+                    },
+                    |v1: &usize, v2| v1 + v2,
+                    &0,
+                )
+                .iter_sorted_by_key(|(generic_name, weight)| {
                     (usize::MAX - **weight, (*generic_name).clone())
                 })
             {
@@ -351,7 +349,13 @@ impl<'a> ProfilingInfoProcessor<'a> {
             user_functions_weights,
             original_user_functions_weights,
             cairo_functions_weights,
-            return_weight,
+            return_weight: if params.process_by_concrete_libfunc
+                || params.process_by_generic_libfunc
+            {
+                Some(return_weight)
+            } else {
+                None
+            },
         }
     }
 }
@@ -380,13 +384,4 @@ fn index_stack_trace_to_name_stack_trace(
     idx_stack_trace: &[usize],
 ) -> Vec<String> {
     idx_stack_trace.iter().map(|idx| sierra_program.funcs[*idx].id.to_string()).collect()
-}
-
-/// Extracts the generic libfunc name of the given concrete libfunc name.
-fn concrete_name_to_generic_name(concrete_name: SmolStr) -> SmolStr {
-    // TODO(yuval): This depends on the format of a concrete libfunc name. Fix to be more resilient
-    // by getting the long ID from the short ID and from there get the generic name. This can be
-    // done either using a DB, or with a sierra program registry, if it's extended to have this
-    // mapping.
-    concrete_name.split('<').next().unwrap().into()
 }
