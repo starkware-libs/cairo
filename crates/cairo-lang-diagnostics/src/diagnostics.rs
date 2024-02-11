@@ -160,12 +160,6 @@ pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
     pub subtrees: Vec<Diagnostics<TEntry>>,
 }
 impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
-    /// Creates a new builder with the given diagnostics.
-    pub fn init(diagnostics: Diagnostics<TEntry>) -> Self {
-        let mut new_self = Self::default();
-        new_self.extend(diagnostics);
-        new_self
-    }
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         if diagnostic.severity() == Severity::Error {
             self.error_count += 1;
@@ -181,7 +175,13 @@ impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
         Diagnostics(self.into())
     }
 }
-
+impl<TEntry: DiagnosticEntry> From<Diagnostics<TEntry>> for DiagnosticsBuilder<TEntry> {
+    fn from(diagnostics: Diagnostics<TEntry>) -> Self {
+        let mut new_self = Self::default();
+        new_self.extend(diagnostics);
+        new_self
+    }
+}
 impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
     fn default() -> Self {
         Self { leaves: Default::default(), subtrees: Default::default(), error_count: 0 }
