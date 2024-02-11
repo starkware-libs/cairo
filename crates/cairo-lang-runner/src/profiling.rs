@@ -27,8 +27,111 @@ pub struct ProfilingInfo {
     pub stack_trace_weights: UnorderedHashMap<Vec<usize>, usize>,
 }
 
-// Full profiling info of a single run. This is the processed info which went through additional
-// processing after collecting the raw data during the run itself.
+/// Weights per libfunc.
+#[derive(Default)]
+pub struct LibfuncWeights {
+    /// Weight (in steps in the relevant run) of each concrete libfunc.
+    pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each generic libfunc.
+    pub generic_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of return statements.
+    pub return_weight: Option<usize>,
+}
+impl Display for LibfuncWeights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(concrete_libfunc_weights) = &self.concrete_libfunc_weights {
+            writeln!(f, "Weight by concrete libfunc:")?;
+            for (concrete_name, weight) in concrete_libfunc_weights.iter() {
+                writeln!(f, "  libfunc {concrete_name}: {weight}")?;
+            }
+            writeln!(
+                f,
+                "  return: {}",
+                self.return_weight.expect(
+                    "return_weight should have a value if concrete_libfunc_weights has a value"
+                )
+            )?;
+        }
+        if let Some(generic_libfunc_weights) = &self.generic_libfunc_weights {
+            writeln!(f, "Weight by generic libfunc:")?;
+            for (generic_name, weight) in generic_libfunc_weights.iter() {
+                writeln!(f, "  libfunc {generic_name}: {weight}")?;
+            }
+            writeln!(
+                f,
+                "  return: {}",
+                self.return_weight.expect(
+                    "return_weight should have a value if generic_libfunc_weights has a value"
+                )
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Weights per user function.
+#[derive(Default)]
+pub struct UserFunctionWeights {
+    /// Weight (in steps in the relevant run) of each user function (including generated
+    /// functions).
+    pub user_function_weights: Option<OrderedHashMap<SmolStr, usize>>,
+    /// Weight (in steps in the relevant run) of each original user function.
+    pub original_user_function_weights: Option<OrderedHashMap<String, usize>>,
+}
+impl Display for UserFunctionWeights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(user_function_weights) = &self.user_function_weights {
+            writeln!(f, "Weight by user function (inc. generated):")?;
+            for (name, weight) in user_function_weights.iter() {
+                writeln!(f, "  function {name}: {weight}")?;
+            }
+        }
+        if let Some(original_user_function_weights) = &self.original_user_function_weights {
+            writeln!(f, "Weight by original user function (exc. generated):")?;
+            for (name, weight) in original_user_function_weights.iter() {
+                writeln!(f, "  function {name}: {weight}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Weights per stack trace.
+#[derive(Default)]
+pub struct StackTraceWeights {
+    /// A map of weights of each Sierra stack trace.
+    /// The key is a function stack trace of an executed function. The stack trace is represented
+    /// as a vector of the function names.
+    /// The value is the weight of the stack trace.
+    pub sierra_stack_trace_weights: Option<OrderedHashMap<Vec<String>, usize>>,
+    /// A map of weights of each stack trace, only for stack traces that are fully semantic
+    /// (equivalent to Cairo traces). That is, none of the trace components is generated.
+    /// This is a filtered map of `sierra_stack_trace_weights`.
+    pub cairo_stack_trace_weights: Option<OrderedHashMap<Vec<String>, usize>>,
+}
+impl Display for StackTraceWeights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(sierra_stack_trace_weights) = &self.sierra_stack_trace_weights {
+            writeln!(f, "Weight by Sierra stack trace:")?;
+            for (stack_trace, weight) in sierra_stack_trace_weights.iter() {
+                let stack_trace_str = stack_trace.join(" -> ");
+                writeln!(f, "  {stack_trace_str}: {weight}")?;
+            }
+        }
+
+        if let Some(cairo_stack_trace_weights) = &self.cairo_stack_trace_weights {
+            writeln!(f, "Weight by Cairo stack trace:")?;
+            for (stack_trace, weight) in cairo_stack_trace_weights.iter() {
+                let stack_trace_str = stack_trace.join(" -> ");
+                writeln!(f, "  {stack_trace_str}: {weight}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Full profiling info of a single run. This is the processed info which went through additional
+/// processing after collecting the raw data during the run itself.
 pub struct ProcessedProfilingInfo {
     /// For each sierra statement: the number of steps in the trace that originated from it, and
     /// the relevant GenStatement.
@@ -47,39 +150,6 @@ pub struct ProcessedProfilingInfo {
     /// Weight (in steps in the relevant run) of each Cairo function.
     pub cairo_function_weights: Option<OrderedHashMap<String, usize>>,
 }
-/// Weights per libfunc.
-#[derive(Default)]
-pub struct LibfuncWeights {
-    /// Weight (in steps in the relevant run) of each concrete libfunc.
-    pub concrete_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of each generic libfunc.
-    pub generic_libfunc_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of return statements.
-    pub return_weight: Option<usize>,
-}
-
-/// Weights per user function.
-#[derive(Default)]
-pub struct UserFunctionWeights {
-    /// Weight (in steps in the relevant run) of each user function (including generated
-    /// functions).
-    pub user_function_weights: Option<OrderedHashMap<SmolStr, usize>>,
-    /// Weight (in steps in the relevant run) of each original user function.
-    pub original_user_function_weights: Option<OrderedHashMap<String, usize>>,
-}
-/// Weights per stack trace.
-#[derive(Default)]
-pub struct StackTraceWeights {
-    /// A map of weights of each Sierra stack trace.
-    /// The key is a function stack trace of an executed function. The stack trace is represented
-    /// as a vector of the function names.
-    /// The value is the weight of the stack trace.
-    pub sierra_stack_trace_weights: Option<OrderedHashMap<Vec<String>, usize>>,
-    /// A map of weights of each stack trace, only for stack traces that are fully semantic
-    /// (equivalent to Cairo traces). That is, none of the trace components is generated.
-    /// This is a filtered map of `sierra_stack_trace_weights`.
-    pub cairo_stack_trace_weights: Option<OrderedHashMap<Vec<String>, usize>>,
-}
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(sierra_statement_weights) = &self.sierra_statement_weights {
@@ -89,47 +159,12 @@ impl Display for ProcessedProfilingInfo {
             }
         }
 
-        if let Some(concrete_libfunc_weights) = &self.libfunc_weights.concrete_libfunc_weights {
-            writeln!(f, "Weight by concrete libfunc:")?;
-            for (concrete_name, weight) in concrete_libfunc_weights.iter() {
-                writeln!(f, "  libfunc {concrete_name}: {weight}")?;
-            }
-            writeln!(
-                f,
-                "  return: {}",
-                self.libfunc_weights.return_weight.expect(
-                    "return_weight should have a value if concrete_libfunc_weights has a value"
-                )
-            )?;
-        }
-        if let Some(generic_libfunc_weights) = &self.libfunc_weights.generic_libfunc_weights {
-            writeln!(f, "Weight by generic libfunc:")?;
-            for (generic_name, weight) in generic_libfunc_weights.iter() {
-                writeln!(f, "  libfunc {generic_name}: {weight}")?;
-            }
-            writeln!(
-                f,
-                "  return: {}",
-                self.libfunc_weights.return_weight.expect(
-                    "return_weight should have a value if generic_libfunc_weights has a value"
-                )
-            )?;
-        }
+        // libfunc weights.
+        self.libfunc_weights.fmt(f)?;
 
-        if let Some(user_function_weights) = &self.user_function_weights.user_function_weights {
-            writeln!(f, "Weight by user function (inc. generated):")?;
-            for (name, weight) in user_function_weights.iter() {
-                writeln!(f, "  function {name}: {weight}")?;
-            }
-        }
-        if let Some(original_user_function_weights) =
-            &self.user_function_weights.original_user_function_weights
-        {
-            writeln!(f, "Weight by original user function (exc. generated):")?;
-            for (name, weight) in original_user_function_weights.iter() {
-                writeln!(f, "  function {name}: {weight}")?;
-            }
-        }
+        // user functions.
+        self.user_function_weights.fmt(f)?;
+
         if let Some(cairo_function_weights) = &self.cairo_function_weights {
             writeln!(f, "Weight by Cairo function:")?;
             for (function_identifier, weight) in cairo_function_weights.iter() {
@@ -137,24 +172,7 @@ impl Display for ProcessedProfilingInfo {
             }
         }
 
-        if let Some(sierra_stack_trace_weights) =
-            &self.stack_trace_weights.sierra_stack_trace_weights
-        {
-            writeln!(f, "Weight by Sierra stack trace:")?;
-            for (stack_trace, weight) in sierra_stack_trace_weights.iter() {
-                let stack_trace_str = stack_trace.join(" -> ");
-                writeln!(f, "  {stack_trace_str}: {weight}")?;
-            }
-        }
-
-        if let Some(cairo_stack_trace_weights) = &self.stack_trace_weights.cairo_stack_trace_weights
-        {
-            writeln!(f, "Weight by Cairo stack trace:")?;
-            for (stack_trace, weight) in cairo_stack_trace_weights.iter() {
-                let stack_trace_str = stack_trace.join(" -> ");
-                writeln!(f, "  {stack_trace_str}: {weight}")?;
-            }
-        }
+        self.stack_trace_weights.fmt(f)?;
 
         Ok(())
     }
