@@ -428,6 +428,10 @@ pub fn priv_impl_declaration_data_inner(
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
+    /// The diagnostics here are "flat" - that is, only the diagnostics found on the impl level
+    /// itself, and don't include the diagnostics of its items. The reason it's this way is that
+    /// computing the items' diagnostics require a query about their impl, forming a cycle of
+    /// queries. Adding the items' diagnostics only after the whole computation breaks this cycle.
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeId, ast::ItemTypeAlias>>,
@@ -446,7 +450,8 @@ pub fn impl_semantic_definition_diagnostics(
         return Diagnostics::default();
     };
 
-    // TODO(yuval): move these into priv_impl_definition_data.
+    // The diagnostics from `priv_impl_definition_data` are only the diagnostics from the impl
+    // level. They should be enriched with the items' diagnostics.
     diagnostics.extend(data.diagnostics);
     for impl_function_id in data.function_asts.keys() {
         diagnostics.extend(db.impl_function_declaration_diagnostics(*impl_function_id));
