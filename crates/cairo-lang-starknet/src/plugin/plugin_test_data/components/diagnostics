@@ -85,6 +85,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -194,6 +195,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -303,6 +305,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -410,6 +413,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -517,6 +521,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -624,6 +629,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -731,6 +737,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -830,6 +837,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -945,6 +953,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -1096,6 +1105,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
@@ -1205,6 +1215,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
+    #[inline(never)]
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {

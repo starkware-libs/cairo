@@ -293,6 +293,11 @@ fn handle_enum(
         );
         event_into_impls.push(into_impl);
     }
+    let maybe_inline_never_attr = if variants.is_empty() || false {
+        RewriteNode::text("#[inline(never)]\n    ")
+    } else {
+        RewriteNode::text("")
+    };
     let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
     let deserialize_flat_variants =
@@ -305,7 +310,7 @@ fn handle_enum(
         &formatdoc!(
             "
             impl $enum_name$IsEvent of {EVENT_TRAIT}<$enum_name$> {{
-                fn append_keys_and_data(
+                $maybe_inline_never_attr$fn append_keys_and_data(
                     self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
                 ) {{
                     match self {{$append_variants$
@@ -331,6 +336,7 @@ fn handle_enum(
                 "event_into_impls".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: Some(event_into_impls) }),
             ),
+            ("maybe_inline_never_attr".to_string(), maybe_inline_never_attr),
         ]
         .into(),
     );
