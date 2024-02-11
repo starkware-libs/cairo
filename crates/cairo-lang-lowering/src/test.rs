@@ -226,7 +226,7 @@ a = a * 3
 ^*******^"}
     );
 
-    let mut builder = DiagnosticsBuilder::new();
+    let mut builder = DiagnosticsBuilder::default();
 
     builder.add(LoweringDiagnostic {
         location,
