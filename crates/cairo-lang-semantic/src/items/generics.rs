@@ -3,8 +3,8 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericItemId, GenericKind, GenericParamId, GenericParamLongId, LanguageElementId,
-    LookupItemId, ModuleFileId, TraitId,
+    GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
+    LanguageElementId, LookupItemId, ModuleFileId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -385,7 +385,9 @@ fn semantic_from_generic_param_ast(
         ast::GenericParam::Const(syntax) => {
             if !matches!(
                 parent_item_id,
-                GenericItemId::ExternFunc(_) | GenericItemId::ExternType(_)
+                GenericItemId::ModuleItem(
+                    GenericModuleItemId::ExternFunc(_) | GenericModuleItemId::ExternType(_)
+                )
             ) {
                 diagnostics
                     .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
@@ -406,7 +408,7 @@ fn semantic_from_generic_param_ast(
                 diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsNotEnabled);
             }
 
-            if !matches!(parent_item_id, GenericItemId::Impl(_)) {
+            if !matches!(parent_item_id, GenericItemId::ModuleItem(GenericModuleItemId::Impl(_))) {
                 diagnostics.report(param_syntax, SemanticDiagnosticKind::NegativeImplsOnlyOnImpls);
             }
 
