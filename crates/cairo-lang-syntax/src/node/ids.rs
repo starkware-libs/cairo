@@ -6,6 +6,7 @@ use cairo_lang_utils::define_short_id;
 
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
+use super::kind::SyntaxKind;
 use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
@@ -64,5 +65,12 @@ impl SyntaxStablePtrId {
             ptr = ptr.parent(db);
         }
         ptr
+    }
+    /// Returns the kind of this stable pointer.
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
+        let SyntaxStablePtr::Child { kind, .. } = db.lookup_intern_stable_ptr(*self) else {
+            panic!()
+        };
+        kind
     }
 }
