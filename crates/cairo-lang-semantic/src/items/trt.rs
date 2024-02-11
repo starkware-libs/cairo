@@ -171,15 +171,7 @@ pub fn trait_semantic_declaration_diagnostics(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    let mut diagnostics = DiagnosticsBuilder::default();
-
-    let Ok(data) = db.priv_trait_semantic_declaration_data(trait_id) else {
-        return Diagnostics::default();
-    };
-
-    diagnostics.extend(data.diagnostics);
-
-    diagnostics.build()
+    db.priv_trait_declaration_data(trait_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
@@ -219,18 +211,18 @@ pub fn trait_generic_params_data(
 
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.attributes)
+    Ok(db.priv_trait_declaration_data(trait_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
 pub fn trait_resolver_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.resolver_data)
+    Ok(db.priv_trait_declaration_data(trait_id)?.resolver_data)
 }
 
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_declaration_data].
-pub fn priv_trait_semantic_declaration_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_declaration_data].
+pub fn priv_trait_declaration_data(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Maybe<TraitDeclarationData> {
@@ -290,11 +282,11 @@ pub fn trait_semantic_definition_diagnostics(
 ) -> Diagnostics<SemanticDiagnostic> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
-    let Ok(data) = db.priv_trait_semantic_definition_data(trait_id) else {
+    let Ok(data) = db.priv_trait_definition_data(trait_id) else {
         return Diagnostics::default();
     };
 
-    // TODO(yuval): move these into priv_trait_semantic_definition_data.
+    // TODO(yuval): move these into priv_trait_definition_data.
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
@@ -322,7 +314,7 @@ pub fn trait_functions(
     trait_id: TraitId,
 ) -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>> {
     Ok(db
-        .priv_trait_semantic_definition_data(trait_id)?
+        .priv_trait_definition_data(trait_id)?
         .function_asts
         .keys()
         .map(|function_id| {
@@ -347,7 +339,7 @@ pub fn trait_types(
     trait_id: TraitId,
 ) -> Maybe<OrderedHashMap<SmolStr, TraitTypeId>> {
     Ok(db
-        .priv_trait_semantic_definition_data(trait_id)?
+        .priv_trait_definition_data(trait_id)?
         .item_type_asts
         .keys()
         .map(|type_id| {
@@ -368,8 +360,8 @@ pub fn trait_type_by_name(
 
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_definition_data].
-pub fn priv_trait_semantic_definition_data(
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
+pub fn priv_trait_definition_data(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Maybe<TraitDefinitionData> {
@@ -487,7 +479,7 @@ pub fn priv_trait_type_generic_params_data(
     let module_file_id = trait_type_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_type_id.trait_id(db.upcast());
-    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let data = db.priv_trait_definition_data(trait_id)?;
     let trait_type_ast = &data.item_type_asts[&trait_type_id];
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::TraitItem(TraitItemId::Type(trait_type_id)));
@@ -533,7 +525,7 @@ pub fn priv_trait_type_data(
     let module_file_id = trait_type_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_type_id.trait_id(db.upcast());
-    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let data = db.priv_trait_definition_data(trait_id)?;
     let type_syntax = &data.item_type_asts[&trait_type_id];
 
     let type_generic_params_data = db.priv_trait_type_generic_params_data(trait_type_id)?;
@@ -597,7 +589,7 @@ pub fn priv_trait_function_generic_params_data(
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(db.upcast());
-    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::TraitItem(
@@ -677,7 +669,7 @@ pub fn priv_trait_function_declaration_data(
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(db.upcast());
-    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
     let function_generic_params_data =
@@ -830,7 +822,7 @@ pub fn priv_trait_function_body_data(
     let module_file_id = trait_function_id.module_file_id(defs_db);
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(defs_db);
-    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
     // Compute declaration semantic.
     let trait_function_declaration_data =
