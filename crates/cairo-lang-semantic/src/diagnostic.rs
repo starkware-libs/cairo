@@ -622,7 +622,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Negative impls are not enabled in the current crate.".into()
             }
             SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
-                "Negative impls supported only on impls.".into()
+                "Negative impls supported only in impl definitions.".into()
             }
             SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
