@@ -103,7 +103,9 @@ fn validate_const_struct_data(
         };
 
         // Validate that the const_arg_ty is a `Const` representing the same type as struct_arg_ty.
-        validate_const_ty(context, const_arg_ty, struct_arg_ty)?;
+        if extract_const_info(context, const_arg_ty)?.0 != *struct_arg_ty {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
     }
     Ok(())
 }
@@ -132,25 +134,37 @@ fn validate_const_enum_data(
 
     // Validate that the type of the const is the same as the corresponding variant data
     // type.
-    validate_const_ty(context, variant_const_type_id, variant_data_ty)?;
+    if extract_const_info(context, variant_const_type_id)?.0 != *variant_data_ty {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
     Ok(())
 }
 
-/// Given a `const_ty` and `expected_type` validates `const_ty` is a `Const` type and its inner type
-/// is `expected_type`.
-fn validate_const_ty(
+/// Validates the type is a `Const` type, and extracts the inner type and the rest of the generic
+/// args of `const_ty`.
+fn extract_const_info(
     context: &dyn TypeSpecializationContext,
     const_ty: &ConcreteTypeId,
-    expected_type: &ConcreteTypeId,
-) -> Result<(), SpecializationError> {
-    let type_info = context.get_type_info(const_ty.clone())?;
-    if type_info.long_id.generic_id != ConstType::ID {
-        return Err(SpecializationError::UnsupportedGenericArg);
+) -> Result<(ConcreteTypeId, <Vec<GenericArg> as IntoIterator>::IntoIter), SpecializationError> {
+    let mut generic_args = extract_type_generic_args::<ConstType>(context, const_ty)?.into_iter();
+    if let Some(GenericArg::Type(inner_ty)) = generic_args.next() {
+        Ok((inner_ty, generic_args))
+    } else {
+        Err(SpecializationError::UnsupportedGenericArg)
     }
-    if inner_type_and_data(&type_info.long_id.generic_args)?.0 != expected_type {
-        return Err(SpecializationError::UnsupportedGenericArg);
+}
+
+/// Extracts the generic args of `ty`, additionally validates it is of generic type `T`.
+fn extract_type_generic_args<T: NamedType>(
+    context: &dyn TypeSpecializationContext,
+    ty: &ConcreteTypeId,
+) -> Result<Vec<GenericArg>, SpecializationError> {
+    let long_id = context.get_type_info(ty.clone())?.long_id;
+    if long_id.generic_id != T::ID {
+        Err(SpecializationError::UnsupportedGenericArg)
+    } else {
+        Ok(long_id.generic_args)
     }
-    Ok(())
 }
 
 /// Given a `args` extracts the first generic arg as type, and returns a slice pointing to the rest.
@@ -202,24 +216,18 @@ impl ConstAsBoxLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<ConstAsBoxConcreteLibfunc, SpecializationError> {
-        let (ty, segment_id) = match args {
+        let (const_type, segment_id) = match args {
             [GenericArg::Type(ty), GenericArg::Value(value)] => Ok((ty, value)),
             [_, _] => Err(SpecializationError::UnsupportedGenericArg),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
         let segment_id = segment_id.to_u32().ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let type_info = context.get_type_info(ty.clone())?;
-        if type_info.long_id.generic_id != ConstType::ID {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-        let generic_args = context.get_type_info(ty.clone())?.long_id.generic_args;
-        let Some(GenericArg::Type(inner_ty)) = generic_args.first() else {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        };
-        let boxed_inner_ty = box_ty(context, inner_ty.clone())?;
+        let (inner_ty, _) =
+            extract_const_info(context.as_type_specialization_context(), const_type)?;
+        let boxed_inner_ty = box_ty(context, inner_ty)?;
 
         Ok(ConstAsBoxConcreteLibfunc {
-            const_type: ty.clone(),
+            const_type: const_type.clone(),
             segment_id,
             signature: LibfuncSignature::new_non_branch(
                 vec![],
