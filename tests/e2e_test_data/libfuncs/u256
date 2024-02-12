@@ -415,45 +415,45 @@ jmp rel 3;
 [fp + -3] = [ap + -4] + [ap + -6];
 jmp rel 57;
 [ap + 0] = [fp + -7] + 9, ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = [ap + -43], ap++;
-[ap + 0] = [ap + -25], ap++;
-[ap + 0] = [ap + -27], ap++;
+[ap + 0] = [ap + -45], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [ap + -39], ap++;
+[ap + 0] = [ap + -41], ap++;
 call rel 72;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = [ap + -66], ap++;
-[ap + 0] = [ap + -49], ap++;
-[ap + 0] = [ap + -51], ap++;
+[ap + 0] = [ap + -67], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [ap + -59], ap++;
+[ap + 0] = [ap + -61], ap++;
 call rel 66;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [ap + -87], ap++;
-[ap + 0] = [ap + -73], ap++;
-[ap + 0] = [ap + -75], ap++;
+[ap + 0] = [ap + -88], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [ap + -79], ap++;
+[ap + 0] = [ap + -81], ap++;
 call rel 60;
-[ap + 0] = [fp + -4], ap++;
 [ap + 0] = [ap + -110], ap++;
-[ap + 0] = [ap + -97], ap++;
+[ap + 0] = [fp + -5], ap++;
 [ap + 0] = [ap + -99], ap++;
+[ap + 0] = [ap + -101], ap++;
 call rel 54;
+[ap + 0] = [fp + -4], ap++;
 [ap + 0] = [ap + -132], ap++;
-[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [ap + -119], ap++;
 [ap + 0] = [ap + -121], ap++;
-[ap + 0] = [ap + -123], ap++;
 call rel 48;
-[ap + 0] = [ap + -154], ap++;
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [ap + -145], ap++;
-[ap + 0] = [ap + -147], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -153], ap++;
+[ap + 0] = [ap + -139], ap++;
+[ap + 0] = [ap + -141], ap++;
 call rel 42;
-[ap + 0] = [ap + -177], ap++;
-[ap + 0] = [fp + -5], ap++;
-[ap + 0] = [ap + -169], ap++;
-[ap + 0] = [ap + -171], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -176], ap++;
+[ap + 0] = [ap + -159], ap++;
+[ap + 0] = [ap + -161], ap++;
 call rel 36;
-[ap + 0] = [ap + -199], ap++;
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [ap + -193], ap++;
-[ap + 0] = [ap + -195], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -197], ap++;
+[ap + 0] = [ap + -179], ap++;
+[ap + 0] = [ap + -181], ap++;
 call rel 30;
 [ap + 0] = 0, ap++;
 [ap + 0] = [ap + -222], ap++;
@@ -462,14 +462,14 @@ ret;
 ap += 164;
 [ap + 0] = [fp + -7] + 7, ap++;
 [ap + 0] = [ap + -179], ap++;
-[ap + 0] = [ap + -176], ap++;
-[ap + 0] = [ap + -173], ap++;
-[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -178], ap++;
+[ap + 0] = [ap + -174], ap++;
+[ap + 0] = [fp + -6], ap++;
 call rel 15;
 [ap + 0] = [ap + -201], ap++;
-[ap + 0] = [ap + -200], ap++;
-[ap + 0] = [ap + -196], ap++;
-[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [ap + -198], ap++;
+[ap + 0] = [ap + -195], ap++;
+[ap + 0] = [fp + -4], ap++;
 call rel 9;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
@@ -532,40 +532,40 @@ libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
 u256_guarantee_inv_mod_n([0], [1], [2]) { fallthrough([3], [4], [5], [6], [7], [8], [9], [10], [11], [12]) 30([13], [14], [15]) }; // 0
 branch_align() -> (); // 1
 store_temp<RangeCheck>([3]) -> ([3]); // 2
-store_temp<U128MulGuarantee>([12]) -> ([12]); // 3
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([3], [12]) -> ([16], [17]); // 4
+store_temp<U128MulGuarantee>([5]) -> ([5]); // 3
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([3], [5]) -> ([16], [17]); // 4
 drop<Unit>([17]) -> (); // 5
-store_temp<U128MulGuarantee>([11]) -> ([11]); // 6
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([16], [11]) -> ([18], [19]); // 7
+store_temp<U128MulGuarantee>([6]) -> ([6]); // 6
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([16], [6]) -> ([18], [19]); // 7
 drop<Unit>([19]) -> (); // 8
-store_temp<U128MulGuarantee>([10]) -> ([10]); // 9
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([18], [10]) -> ([20], [21]); // 10
+store_temp<U128MulGuarantee>([7]) -> ([7]); // 9
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([18], [7]) -> ([20], [21]); // 10
 drop<Unit>([21]) -> (); // 11
-store_temp<U128MulGuarantee>([9]) -> ([9]); // 12
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([20], [9]) -> ([22], [23]); // 13
+store_temp<U128MulGuarantee>([8]) -> ([8]); // 12
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([20], [8]) -> ([22], [23]); // 13
 drop<Unit>([23]) -> (); // 14
-store_temp<U128MulGuarantee>([8]) -> ([8]); // 15
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([22], [8]) -> ([24], [25]); // 16
+store_temp<U128MulGuarantee>([9]) -> ([9]); // 15
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([22], [9]) -> ([24], [25]); // 16
 drop<Unit>([25]) -> (); // 17
-store_temp<U128MulGuarantee>([7]) -> ([7]); // 18
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([24], [7]) -> ([26], [27]); // 19
+store_temp<U128MulGuarantee>([10]) -> ([10]); // 18
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([24], [10]) -> ([26], [27]); // 19
 drop<Unit>([27]) -> (); // 20
-store_temp<U128MulGuarantee>([6]) -> ([6]); // 21
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([26], [6]) -> ([28], [29]); // 22
+store_temp<U128MulGuarantee>([11]) -> ([11]); // 21
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([26], [11]) -> ([28], [29]); // 22
 drop<Unit>([29]) -> (); // 23
-store_temp<U128MulGuarantee>([5]) -> ([5]); // 24
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([28], [5]) -> ([30], [31]); // 25
+store_temp<U128MulGuarantee>([12]) -> ([12]); // 24
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([28], [12]) -> ([30], [31]); // 25
 drop<Unit>([31]) -> (); // 26
 enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 0>([4]) -> ([32]); // 27
 store_temp<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>([32]) -> ([32]); // 28
 return([30], [32]); // 29
 branch_align() -> (); // 30
 store_temp<RangeCheck>([13]) -> ([13]); // 31
-store_temp<U128MulGuarantee>([15]) -> ([15]); // 32
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([13], [15]) -> ([33], [34]); // 33
+store_temp<U128MulGuarantee>([14]) -> ([14]); // 32
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([13], [14]) -> ([33], [34]); // 33
 drop<Unit>([34]) -> (); // 34
-store_temp<U128MulGuarantee>([14]) -> ([14]); // 35
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([33], [14]) -> ([35], [36]); // 36
+store_temp<U128MulGuarantee>([15]) -> ([15]); // 35
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([33], [15]) -> ([35], [36]); // 36
 drop<Unit>([36]) -> (); // 37
 struct_construct<Unit>() -> ([37]); // 38
 enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 1>([37]) -> ([38]); // 39
