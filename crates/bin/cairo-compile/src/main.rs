@@ -7,12 +7,12 @@ use cairo_lang_compiler::{compile_cairo_project_at_path, CompilerConfig};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project to Sierra.
+/// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile
+    /// The Cairo project path.
     path: PathBuf,
     /// Whether path is a single file.
     #[arg(short, long)]

@@ -17,12 +17,12 @@ use cairo_lang_starknet::contract::get_contracts_info;
 use cairo_lang_utils::arc_unwrap_or_clone;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project and runs the function `main`.
+/// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile and run.
+    /// The Cairo project path to compile and run.
     path: PathBuf,
     /// Whether path is a single file.
     #[arg(short, long)]

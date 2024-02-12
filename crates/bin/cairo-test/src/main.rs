@@ -27,12 +27,12 @@ impl From<RunProfilerConfigArg> for RunProfilerConfig {
     }
 }
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project and runs all the functions marked as `#[test]`.
+/// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The path to compile and run its tests.
+    /// The Cairo project path to compile and run its tests.
     path: PathBuf,
     /// Whether path is a single file.
     #[arg(short, long)]

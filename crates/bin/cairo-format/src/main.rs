@@ -18,8 +18,8 @@ fn eprintln_if_verbose(s: &str, verbose: bool) {
     }
 }
 
-/// Sierra to casm compiler.
-/// Exits with 0/1 if the compilation fails.
+/// Formats a file or directory with the Cairo formatter.
+/// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
