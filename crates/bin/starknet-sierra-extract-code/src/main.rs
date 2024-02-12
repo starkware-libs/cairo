@@ -4,12 +4,12 @@ use anyhow::Context;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Extracts sierra code from a contract class file.
+/// Exits with 0/1 if the extraction succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile
+    /// The path of the file with the contract class.
     file: String,
     /// The output file name (default: stdout).
     output: Option<String>,
