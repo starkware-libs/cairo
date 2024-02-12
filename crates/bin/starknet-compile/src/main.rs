@@ -9,8 +9,8 @@ use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project containing a contract.
+/// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {

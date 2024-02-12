@@ -4,8 +4,8 @@ use anyhow::Context;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles a Cairo project containing a contract into Sierra.
+/// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
