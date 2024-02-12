@@ -268,6 +268,10 @@ pub fn priv_trait_declaration_data(
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct TraitDefinitionData {
+    /// The diagnostics here are "flat" - that is, only the diagnostics found on the trait level
+    /// itself, and don't include the diagnostics of its items. The reason it's this way is that
+    /// computing the items' diagnostics require a query about their trait, forming a cycle of
+    /// queries. Adding the items' diagnostics only after the whole computation breaks this cycle.
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
     item_type_asts: OrderedHashMap<TraitTypeId, ast::TraitItemType>,
@@ -286,7 +290,8 @@ pub fn trait_semantic_definition_diagnostics(
         return Diagnostics::default();
     };
 
-    // TODO(yuval): move these into priv_trait_definition_data.
+    // The diagnostics from `priv_trait_definition_data` are only the diagnostics from the trait
+    // level. They should be enriched with the items' diagnostics.
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
         diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
