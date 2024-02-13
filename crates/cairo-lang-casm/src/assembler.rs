@@ -2,6 +2,7 @@
 use alloc::vec::Vec;
 
 use num_bigint::{BigInt, ToBigInt};
+use serde::{Deserialize, Serialize};
 
 use crate::hints::Hint;
 use crate::instructions::{Instruction, InstructionBody};
@@ -76,6 +77,7 @@ pub struct InstructionRepr {
 }
 
 /// An assembled representation of a cairo program.
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AssembledCairoProgram {
     /// The bytecode of the program.
     pub bytecode: Vec<BigInt>,
