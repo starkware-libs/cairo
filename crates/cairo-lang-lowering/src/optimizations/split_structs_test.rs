@@ -5,27 +5,27 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use super::split_structs;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
-use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    return_optimizer,
+    test_split_structs,
     "src/optimizations/test_data",
     {
-        return_optimization: "return_optimization"
+        split_structs: "split_structs",
     },
-    test_return_optimizer
+    test_split_structs
 );
 
-fn test_return_optimizer(
+fn test_split_structs(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
@@ -40,6 +40,13 @@ fn test_return_optimizer(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
+    if !semantic_diagnostics.is_empty() {
+        return TestRunnerResult::success(OrderedHashMap::from([(
+            "semantic_diagnostics".into(),
+            semantic_diagnostics,
+        )]));
+    }
+
     let mut before =
         db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
@@ -51,7 +58,7 @@ fn test_return_optimizer(
     reorder_statements(db, &mut before);
 
     let mut after = before.clone();
-    return_optimization(db, &mut after);
+    split_structs(&mut after);
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

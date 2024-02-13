@@ -361,8 +361,8 @@ fn get_recursive_module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    let mut diagnostics = DiagnosticsBuilder::default();
-    diagnostics.extend(db.module_semantic_diagnostics(module_id).unwrap());
+    let mut diagnostics: DiagnosticsBuilder<_> =
+        db.module_semantic_diagnostics(module_id).unwrap().into();
     for submodule_id in db.module_submodules_ids(module_id).unwrap().iter() {
         if is_submodule_inline(db, *submodule_id) {
             diagnostics.extend(get_recursive_module_semantic_diagnostics(

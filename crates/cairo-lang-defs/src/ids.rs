@@ -227,6 +227,7 @@ macro_rules! define_language_element_id_as_enum {
         $(
             impl OptionFrom<$enum_name> for $variant_ty {
                 fn option_from(other: $enum_name) -> Option<Self> {
+                    #[allow(irrefutable_let_patterns)]
                     if let $enum_name::$variant(id) = other {
                         Some(id)
                     } else {
@@ -634,12 +635,10 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     }
 }
 
-// TODO(yuval): make this hierarchical: module/trait/impl and then subitems. Add
-// ImplItem(ImplTypeId) and TraitItem(ImplTypeId).
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// The ID of an item with generic parameters.
-    pub enum GenericItemId {
+    /// The ID of a module item with generic parameters.
+    pub enum GenericModuleItemId {
         FreeFunc(FreeFunctionId),
         ExternFunc(ExternFunctionId),
         TraitFunc(TraitFunctionId),
@@ -651,7 +650,30 @@ define_language_element_id_as_enum! {
         ExternType(ExternTypeId),
         TypeAlias(ModuleTypeAliasId),
         ImplAlias(ImplAliasId),
-        TraitType(TraitTypeId),
+    }
+}
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// The ID of a trait item with generic parameters.
+    pub enum GenericTraitItemId {
+        Type(TraitTypeId),
+    }
+}
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// The ID of a impl item with generic parameters.
+    pub enum GenericImplItemId {
+        Type(ImplTypeId),
+    }
+}
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// The ID of an item with generic parameters.
+    pub enum GenericItemId {
+        ModuleItem(GenericModuleItemId),
+        TraitItem(GenericTraitItemId),
+        ImplItem(GenericImplItemId),
     }
 }
 impl GenericItemId {
@@ -674,75 +696,95 @@ impl GenericItemId {
                 };
                 match kind {
                     SyntaxKind::FunctionWithBody => {
-                        let SyntaxStablePtr::Child { parent: parent2, .. } =
-                            db.lookup_intern_stable_ptr(parent1)
-                        else {
-                            panic!()
-                        };
-
-                        match db.lookup_intern_stable_ptr(parent2) {
-                            SyntaxStablePtr::Root(_, _) => GenericItemId::FreeFunc(
-                                db.intern_free_function(FreeFunctionLongId(
-                                    module_file,
-                                    ast::FunctionWithBodyPtr(parent0),
-                                )),
-                            ),
-                            SyntaxStablePtr::Child { kind, .. } => match kind {
-                                SyntaxKind::ModuleBody => GenericItemId::FreeFunc(
+                        // `FunctionWithBody` must be at least 2 levels below the root, and thus
+                        // `parent1.parent()` is safe.
+                        match db.lookup_intern_stable_ptr(parent1.parent(db.upcast())) {
+                            SyntaxStablePtr::Root(_, _) => {
+                                GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     db.intern_free_function(FreeFunctionLongId(
                                         module_file,
                                         ast::FunctionWithBodyPtr(parent0),
                                     )),
-                                ),
-                                SyntaxKind::ImplBody => GenericItemId::ImplFunc(
-                                    db.intern_impl_function(ImplFunctionLongId(
-                                        module_file,
-                                        ast::FunctionWithBodyPtr(parent0),
-                                    )),
-                                ),
+                                ))
+                            }
+                            SyntaxStablePtr::Child { kind, .. } => match kind {
+                                SyntaxKind::ModuleBody => {
+                                    GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
+                                        db.intern_free_function(FreeFunctionLongId(
+                                            module_file,
+                                            ast::FunctionWithBodyPtr(parent0),
+                                        )),
+                                    ))
+                                }
+                                SyntaxKind::ImplBody => {
+                                    GenericItemId::ModuleItem(GenericModuleItemId::ImplFunc(
+                                        db.intern_impl_function(ImplFunctionLongId(
+                                            module_file,
+                                            ast::FunctionWithBodyPtr(parent0),
+                                        )),
+                                    ))
+                                }
                                 _ => panic!(),
                             },
                         }
                     }
-                    SyntaxKind::ItemExternFunction => {
-                        GenericItemId::ExternFunc(db.intern_extern_function(ExternFunctionLongId(
-                            module_file,
-                            ast::ItemExternFunctionPtr(parent0),
-                        )))
-                    }
-                    SyntaxKind::TraitItemFunction => {
-                        GenericItemId::TraitFunc(db.intern_trait_function(TraitFunctionLongId(
-                            module_file,
-                            ast::TraitItemFunctionPtr(parent0),
+                    SyntaxKind::ItemExternFunction => GenericItemId::ModuleItem(
+                        GenericModuleItemId::ExternFunc(db.intern_extern_function(
+                            ExternFunctionLongId(module_file, ast::ItemExternFunctionPtr(parent0)),
+                        )),
+                    ),
+                    SyntaxKind::TraitItemFunction => GenericItemId::ModuleItem(
+                        GenericModuleItemId::TraitFunc(db.intern_trait_function(
+                            TraitFunctionLongId(module_file, ast::TraitItemFunctionPtr(parent0)),
+                        )),
+                    ),
+                    _ => panic!(),
+                }
+            }
+            SyntaxKind::ItemImpl => GenericItemId::ModuleItem(GenericModuleItemId::Impl(
+                db.intern_impl(ImplDefLongId(module_file, ast::ItemImplPtr(stable_ptr))),
+            )),
+            SyntaxKind::ItemTrait => GenericItemId::ModuleItem(GenericModuleItemId::Trait(
+                db.intern_trait(TraitLongId(module_file, ast::ItemTraitPtr(stable_ptr))),
+            )),
+            SyntaxKind::ItemStruct => GenericItemId::ModuleItem(GenericModuleItemId::Struct(
+                db.intern_struct(StructLongId(module_file, ast::ItemStructPtr(stable_ptr))),
+            )),
+            SyntaxKind::ItemEnum => GenericItemId::ModuleItem(GenericModuleItemId::Enum(
+                db.intern_enum(EnumLongId(module_file, ast::ItemEnumPtr(stable_ptr))),
+            )),
+            SyntaxKind::ItemExternType => {
+                GenericItemId::ModuleItem(GenericModuleItemId::ExternType(db.intern_extern_type(
+                    ExternTypeLongId(module_file, ast::ItemExternTypePtr(stable_ptr)),
+                )))
+            }
+            SyntaxKind::ItemTypeAlias => {
+                // `ItemTypeAlias` must be at least 2 levels below the root, and thus
+                // `parent0.kind()` is safe.
+                match parent0.kind(db.upcast()) {
+                    SyntaxKind::ModuleItemList => GenericItemId::ModuleItem(
+                        GenericModuleItemId::TypeAlias(db.intern_module_type_alias(
+                            ModuleTypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+                        )),
+                    ),
+                    SyntaxKind::ImplItemList => {
+                        GenericItemId::ImplItem(GenericImplItemId::Type(db.intern_impl_type(
+                            ImplTypeLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
                         )))
                     }
                     _ => panic!(),
                 }
             }
-            SyntaxKind::ItemImpl => GenericItemId::Impl(
-                db.intern_impl(ImplDefLongId(module_file, ast::ItemImplPtr(stable_ptr))),
-            ),
-            SyntaxKind::ItemTrait => GenericItemId::Trait(
-                db.intern_trait(TraitLongId(module_file, ast::ItemTraitPtr(stable_ptr))),
-            ),
-            SyntaxKind::ItemStruct => GenericItemId::Struct(
-                db.intern_struct(StructLongId(module_file, ast::ItemStructPtr(stable_ptr))),
-            ),
-            SyntaxKind::ItemEnum => GenericItemId::Enum(
-                db.intern_enum(EnumLongId(module_file, ast::ItemEnumPtr(stable_ptr))),
-            ),
-            SyntaxKind::ItemExternType => GenericItemId::ExternType(db.intern_extern_type(
-                ExternTypeLongId(module_file, ast::ItemExternTypePtr(stable_ptr)),
-            )),
-            SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_module_type_alias(
-                ModuleTypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
-            )),
-            SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
-                ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
-            )),
-            SyntaxKind::TraitItemType => GenericItemId::TraitType(db.intern_trait_type(
-                TraitTypeLongId(module_file, ast::TraitItemTypePtr(stable_ptr)),
-            )),
+            SyntaxKind::ItemImplAlias => {
+                GenericItemId::ModuleItem(GenericModuleItemId::ImplAlias(db.intern_impl_alias(
+                    ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
+                )))
+            }
+            SyntaxKind::TraitItemType => {
+                GenericItemId::TraitItem(GenericTraitItemId::Type(db.intern_trait_type(
+                    TraitTypeLongId(module_file, ast::TraitItemTypePtr(stable_ptr)),
+                )))
+            }
             _ => panic!(),
         }
     }
@@ -844,20 +886,41 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
 impl From<GenericItemId> for LookupItemId {
     fn from(item: GenericItemId) -> Self {
         match item {
-            GenericItemId::FreeFunc(id) => LookupItemId::ModuleItem(ModuleItemId::FreeFunction(id)),
-            GenericItemId::ExternFunc(id) => {
-                LookupItemId::ModuleItem(ModuleItemId::ExternFunction(id))
-            }
-            GenericItemId::TraitFunc(id) => LookupItemId::TraitItem(TraitItemId::Function(id)),
-            GenericItemId::ImplFunc(id) => LookupItemId::ImplItem(ImplItemId::Function(id)),
-            GenericItemId::Trait(id) => LookupItemId::ModuleItem(ModuleItemId::Trait(id)),
-            GenericItemId::Impl(id) => LookupItemId::ModuleItem(ModuleItemId::Impl(id)),
-            GenericItemId::Struct(id) => LookupItemId::ModuleItem(ModuleItemId::Struct(id)),
-            GenericItemId::Enum(id) => LookupItemId::ModuleItem(ModuleItemId::Enum(id)),
-            GenericItemId::ExternType(id) => LookupItemId::ModuleItem(ModuleItemId::ExternType(id)),
-            GenericItemId::TypeAlias(id) => LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id)),
-            GenericItemId::ImplAlias(id) => LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id)),
-            GenericItemId::TraitType(id) => LookupItemId::TraitItem(TraitItemId::Type(id)),
+            GenericItemId::ModuleItem(module_item) => match module_item {
+                GenericModuleItemId::FreeFunc(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::FreeFunction(id))
+                }
+                GenericModuleItemId::ExternFunc(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::ExternFunction(id))
+                }
+                GenericModuleItemId::TraitFunc(id) => {
+                    LookupItemId::TraitItem(TraitItemId::Function(id))
+                }
+                GenericModuleItemId::ImplFunc(id) => {
+                    LookupItemId::ImplItem(ImplItemId::Function(id))
+                }
+                GenericModuleItemId::Trait(id) => LookupItemId::ModuleItem(ModuleItemId::Trait(id)),
+                GenericModuleItemId::Impl(id) => LookupItemId::ModuleItem(ModuleItemId::Impl(id)),
+                GenericModuleItemId::Struct(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::Struct(id))
+                }
+                GenericModuleItemId::Enum(id) => LookupItemId::ModuleItem(ModuleItemId::Enum(id)),
+                GenericModuleItemId::ExternType(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::ExternType(id))
+                }
+                GenericModuleItemId::TypeAlias(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id))
+                }
+                GenericModuleItemId::ImplAlias(id) => {
+                    LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id))
+                }
+            },
+            GenericItemId::TraitItem(trait_item) => match trait_item {
+                GenericTraitItemId::Type(id) => LookupItemId::TraitItem(TraitItemId::Type(id)),
+            },
+            GenericItemId::ImplItem(impl_item) => match impl_item {
+                GenericImplItemId::Type(id) => LookupItemId::ImplItem(ImplItemId::Type(id)),
+            },
         }
     }
 }
