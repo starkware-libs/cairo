@@ -251,13 +251,34 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     }
 
     /// Creates a new map with only the elements from the original map for which the given predicate
-    /// returns `true`.
+    /// returns `true`. Consuming.
     pub fn filter<P>(self, mut p: P) -> Self
     where
         BH: Default,
         P: FnMut(&Key, &Value) -> bool,
     {
         Self(self.0.into_iter().filter(|(key, value)| p(key, value)).collect())
+    }
+
+    /// Non consuming version of `filter`. Only clones the filtered entries. Requires `Key` and
+    /// `Value` to implement `Clone`.
+    pub fn filter_cloned<P>(&self, mut p: P) -> Self
+    where
+        BH: Default,
+        P: FnMut(&Key, &Value) -> bool,
+        Key: Clone,
+        Value: Clone,
+    {
+        Self(
+            self.0
+                .iter()
+                .filter_map(
+                    |(key, value)| {
+                        if p(key, value) { Some((key.clone(), value.clone())) } else { None }
+                    },
+                )
+                .collect(),
+        )
     }
 }
 

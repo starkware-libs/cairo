@@ -170,7 +170,13 @@ pub fn lower_while_loop(
     loop_expr: semantic::ExprWhile,
     loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
-    let condition = lower_expr_to_var_usage(ctx, builder, loop_expr.condition)?;
+    let semantic::Condition::BoolExpr(semantic_condition) = loop_expr.condition else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics
+                .report(loop_expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
+        ));
+    };
+    let condition = lower_expr_to_var_usage(ctx, builder, semantic_condition)?;
     let semantic_db = ctx.db.upcast();
     let unit_ty = corelib::unit_ty(semantic_db);
     let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
