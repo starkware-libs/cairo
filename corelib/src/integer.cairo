@@ -1373,7 +1373,7 @@ extern fn u512_safe_divmod_by_u256(
     U128MulGuarantee
 ) implicits(RangeCheck) nopanic;
 
-pub(crate) impl U512TryIntoU256 of TryInto<u512, u256> {
+impl U512TryIntoU256 of TryInto<u512, u256> {
     fn try_into(self: u512) -> Option<u256> {
         if self.limb2 != 0 || self.limb3 != 0 {
             Option::None

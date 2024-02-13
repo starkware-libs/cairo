@@ -797,18 +797,10 @@ fn test_u512_safe_div_rem_by_u256() {
 
 #[test]
 fn test_u512_try_into_u256() {
-    let num = u512 { limb0: 0xdeadbeef, limb1: 0, limb2: 0, limb3: 0 };
-    let num_u256: u256 = num.try_into().unwrap();
-    assert_eq(@num_u256, @0xdeadbeef_u256, 'u512 -> u256');
-
-    let num = u512 {
-        limb0: 0x33233223222222122112111111011001,
-        limb1: 0x54455445544554454444443443343333,
-        limb2: 0x21222222322332333333433443444444,
-        limb3: 0x1001101111112112,
-    };
-    let option: Option<u256> = num.try_into();
-    assert(option.is_none(), 'u512 -/-> u256');
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }.try_into() == Option::Some(0x200000000000000000000000000000001_u256));
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }.try_into() == Option::<u256>::None);
 }
 
 #[test]
