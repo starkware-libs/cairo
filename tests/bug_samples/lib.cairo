@@ -39,12 +39,8 @@ mod issue4314;
 mod issue4318;
 mod issue4380;
 mod issue4897;
-<<<<<<< HEAD
 mod issue4937;
-||||||| 60340c801
-=======
 mod loop_break_in_match;
->>>>>>> origin/main
 mod loop_only_change;
 mod partial_param_local;
 mod revoked_locals;
