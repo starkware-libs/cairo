@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use num_bigint::BigInt;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -34,8 +35,8 @@ pub enum ExtensionError {
     #[error("Could not specialize type")]
     TypeSpecialization { type_id: GenericTypeId, error: SpecializationError },
     #[error(
-        "Could not specialize libfunc `{libfunc_id}` with generic_args: {generic_args:?}. Error: \
-         {error}."
+        "Could not specialize libfunc `{libfunc_id}` with generic_args: [{}]. Error: {error}.",
+        generic_args.iter().map(|arg| arg.to_string()).join(", ")
     )]
     LibfuncSpecialization {
         libfunc_id: GenericLibfuncId,
