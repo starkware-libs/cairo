@@ -2,7 +2,7 @@ use core::{
     integer,
     integer::{
         BoundedInt, u128_sqrt, u128_wrapping_sub, u16_sqrt, u256_sqrt, u256_wide_mul, u32_sqrt,
-        u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt, U512TryIntoU256
+        u512_safe_div_rem_by_u256, u512, u64_sqrt, u8_sqrt
     }
 };
 use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
@@ -797,7 +797,10 @@ fn test_u512_safe_div_rem_by_u256() {
 
 #[test]
 fn test_u512_try_into_u256() {
-    assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }.try_into() == Option::Some(0x200000000000000000000000000000001_u256));
+    assert!(
+        u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
+            .try_into() == Option::Some(0x200000000000000000000000000000001_u256)
+    );
     assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
     assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
     assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }.try_into() == Option::<u256>::None);
