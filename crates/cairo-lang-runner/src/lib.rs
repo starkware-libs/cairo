@@ -330,7 +330,7 @@ impl SierraCasmRunner {
         // Note the header and footer (CASM instructions added for running the program by the
         // runner). The header is not counted, and the footer is, but then the relevant
         // entry is removed.
-        let mut sierra_statements_weights = UnorderedHashMap::default();
+        let mut sierra_statement_weights = UnorderedHashMap::default();
         for step in trace.iter() {
             // Skip the header.
             if step.pc < real_pc_0 {
@@ -353,10 +353,10 @@ impl SierraCasmRunner {
             let sierra_statement_idx = self.sierra_statement_index_by_pc(real_pc);
             let user_function_idx = user_function_idx_by_sierra_statement_idx(
                 &self.sierra_program,
-                &sierra_statement_idx,
+                sierra_statement_idx,
             );
 
-            *sierra_statements_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+            *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
 
             let Some(gen_statement) = self.sierra_program.statements.get(sierra_statement_idx.0)
             else {
@@ -399,9 +399,9 @@ impl SierraCasmRunner {
         }
 
         // Remove the footer.
-        sierra_statements_weights.remove(&StatementIdx(sierra_len));
+        sierra_statement_weights.remove(&StatementIdx(sierra_len));
 
-        ProfilingInfo { sierra_statements_weights, stack_trace_weights }
+        ProfilingInfo { sierra_statement_weights, stack_trace_weights }
     }
 
     fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {

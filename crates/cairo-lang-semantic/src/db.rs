@@ -344,11 +344,12 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_resolver_data)]
     fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
     /// Private query to compute declaration data about a trait.
-    #[salsa::invoke(items::trt::priv_trait_semantic_declaration_data)]
-    fn priv_trait_semantic_declaration_data(
+    #[salsa::invoke(items::trt::priv_trait_declaration_data)]
+    fn priv_trait_declaration_data(
         &self,
         trait_id: TraitId,
     ) -> Maybe<items::trt::TraitDeclarationData>;
+
     /// Returns the semantic definition diagnostics of a trait.
     #[salsa::invoke(items::trt::trait_semantic_definition_diagnostics)]
     fn trait_semantic_definition_diagnostics(
@@ -376,8 +377,8 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_type_by_name)]
     fn trait_type_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitTypeId>>;
     /// Private query to compute definition data about a trait.
-    #[salsa::invoke(items::trt::priv_trait_semantic_definition_data)]
-    fn priv_trait_semantic_definition_data(
+    #[salsa::invoke(items::trt::priv_trait_definition_data)]
+    fn priv_trait_definition_data(
         &self,
         trait_id: TraitId,
     ) -> Maybe<items::trt::TraitDefinitionData>;

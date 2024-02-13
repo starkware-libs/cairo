@@ -397,11 +397,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    fn push_values(
-        &mut self,
-        state: &mut VariablesState,
-        push_values: &Vec<pre_sierra::PushValue>,
-    ) {
+    fn push_values(&mut self, state: &mut VariablesState, push_values: &[pre_sierra::PushValue]) {
         if push_values.is_empty() {
             return;
         }
