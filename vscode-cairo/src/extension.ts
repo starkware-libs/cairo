@@ -1,19 +1,19 @@
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 import { setupLanguageServer } from "./cairols";
+import { Context } from "./context";
 
 let client: lc.LanguageClient | undefined;
 
-export async function activate(context: vscode.ExtensionContext) {
-  const config = vscode.workspace.getConfiguration();
-  const outputChannel = vscode.window.createOutputChannel("Cairo extension");
-  context.subscriptions.push(outputChannel);
+export async function activate(extensionContext: vscode.ExtensionContext) {
+  const ctx = Context.create(extensionContext);
 
-  if (config.get<boolean>("cairo1.enableLanguageServer")) {
-    client = await setupLanguageServer(config, context, outputChannel);
+  if (ctx.config.get("enableLanguageServer")) {
+    client = await setupLanguageServer(ctx);
   } else {
-    outputChannel.appendLine(
-      "Language server is not enabled. Use the cairo1.enableLanguageServer config",
+    ctx.log.warn("language server is disabled");
+    ctx.log.warn(
+      "note: set `cairo1.enableLanguageServer` to `true` to enable it",
     );
   }
 }

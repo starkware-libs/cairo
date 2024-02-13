@@ -52,6 +52,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::logging::init_logging;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
@@ -79,7 +80,10 @@ pub mod vfs;
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
-pub async fn serve_language_service() {
+#[tokio::main]
+pub async fn start() {
+    init_logging(log::LevelFilter::Warn);
+
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
     let db = configured_db();

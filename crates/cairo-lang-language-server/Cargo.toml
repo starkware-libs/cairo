@@ -20,7 +20,7 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.5.3" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", features = ["env_logger"] }
 log.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
