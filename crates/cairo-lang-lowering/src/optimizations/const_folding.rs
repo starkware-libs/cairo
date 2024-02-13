@@ -11,8 +11,8 @@ use num_traits::Zero;
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement, StatementCall,
-    StatementDesnap, StatementLiteral, StatementSnapshot, VarUsage,
+    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementDesnap, StatementLiteral, StatementSnapshot, VarUsage,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -40,7 +40,15 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]),
     ));
 
-    for block in lowered.blocks.iter_mut() {
+    let mut stack = vec![BlockId::root()];
+    let mut visited = vec![false; lowered.blocks.len()];
+    while let Some(block_id) = stack.pop() {
+        if visited[block_id.0] {
+            continue;
+        }
+        visited[block_id.0] = true;
+
+        let block = &mut lowered.blocks[block_id];
         for stmt in block.statements.iter_mut() {
             match stmt {
                 Statement::Literal(StatementLiteral { value, output }) => {
@@ -86,23 +94,39 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             }
         }
 
+        let maybe_replace_input = |input: &mut VarUsage| {
+            if let Some(VarInfo::Var(new_var)) = var_info.get(&input.var_id) {
+                *input = *new_var;
+            }
+        };
+
+        let maybe_replace_inputs = |inputs: &mut [VarUsage]| {
+            for input in inputs.iter_mut() {
+                maybe_replace_input(input);
+            }
+        };
+
         match &mut block.end {
-            FlatBlockEnd::Return(ref mut inputs)
-            | FlatBlockEnd::Match {
-                info: MatchInfo::Extern(MatchExternInfo { ref mut inputs, .. }),
-            } => {
-                for input in inputs.iter_mut() {
-                    if let Some(VarInfo::Var(new_var)) = var_info.get(&input.var_id) {
-                        *input = *new_var;
+            FlatBlockEnd::Goto(block_id, _remappings) => {
+                stack.push(*block_id);
+            }
+            FlatBlockEnd::Match { info } => {
+                stack.extend(info.arms().iter().map(|arm| arm.block_id));
+
+                match info {
+                    MatchInfo::Extern(MatchExternInfo { ref mut inputs, .. }) => {
+                        maybe_replace_inputs(inputs);
                     }
-                }
+                    MatchInfo::Enum(MatchEnumInfo { ref mut input, .. })
+                    | MatchInfo::Value(MatchEnumValue { ref mut input, .. }) => {
+                        maybe_replace_input(input);
+                    }
+                };
             }
-            FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { ref mut input, .. }) } => {
-                if let Some(VarInfo::Var(new_var)) = var_info.get(&input.var_id) {
-                    *input = *new_var;
-                }
+            FlatBlockEnd::Return(ref mut inputs) => {
+                maybe_replace_inputs(inputs);
             }
-            _ => {}
+            FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         };
     }
 }

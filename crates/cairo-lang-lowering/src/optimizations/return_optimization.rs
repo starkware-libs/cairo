@@ -82,6 +82,8 @@ pub enum ValueInfo {
     Interchangeable(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
+        /// The type of the struct.
+        ty: semantic::TypeId,
         /// The inputs to the StructConstruct statement.
         var_infos: Vec<ValueInfo>,
     },
@@ -112,7 +114,7 @@ impl ValueInfo {
     {
         match self {
             ValueInfo::Var(var_usage) => *self = f(var_usage),
-            ValueInfo::StructConstruct { ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
                 for var_info in var_infos.iter_mut() {
                     var_info.apply(f);
                 }
@@ -139,8 +141,9 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { var_infos } => {
-                let mut cancels_out = var_infos.len() == stmt.outputs.len();
+            ValueInfo::StructConstruct { ty, var_infos } => {
+                let mut cancels_out = ty == &ctx.lowered.variables[stmt.input.var_id].ty
+                    && var_infos.len() == stmt.outputs.len();
                 for (var_info, output) in var_infos.iter().zip(stmt.outputs.iter()) {
                     if !cancels_out {
                         break;
@@ -199,7 +202,7 @@ impl ValueInfo {
                     OpResult::NoChange
                 }
             }
-            ValueInfo::StructConstruct { ref mut var_infos } => {
+            ValueInfo::StructConstruct { ty: _, ref mut var_infos } => {
                 let mut input_consumed = false;
                 for var_info in var_infos.iter_mut() {
                     match var_info.apply_match_arm(input, arm) {
@@ -360,6 +363,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 info.replace(
                     *output,
                     ValueInfo::StructConstruct {
+                        ty: self.lowered.variables[*output].ty,
                         var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
                     },
                 );

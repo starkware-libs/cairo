@@ -218,12 +218,32 @@
   "Creates an equality assertion with macro": {
     "prefix": "assert_eq!",
     "body": ["assert_eq!($1, $2);"],
-    "description": "Creates an inline macro for asserting equality."
+    "description": "Creates an inline macro for asserting equality"
   },
-  "Creates an not equality assertion with macro": {
+  "Creates an not-equality assertion with macro": {
     "prefix": "assert_ne!",
     "body": ["assert_ne!($1, $2);"],
     "description": "Creates an inline macro for asserting non-equality"
+  },
+  "Creates a less-than comparison assertion with macro": {
+    "prefix": "assert_lt!",
+    "body": ["assert_lt!($1, $2);"],
+    "description": "Creates an inline macro for asserting less-than"
+  },
+  "Creates a less-than-or-equal comparison assertion with macro": {
+    "prefix": "assert_le!",
+    "body": ["assert_le!($1, $2);"],
+    "description": "Creates an inline macro for asserting less-than-or-equal"
+  },
+  "Creates a greater-than comparison assertion with macro": {
+    "prefix": "assert_gt!",
+    "body": ["assert_gt!($1, $2);"],
+    "description": "Creates an inline macro for asserting greater-than"
+  },
+  "Creates a greater-than-or-equal comparison assertion with macro": {
+    "prefix": "assert_ge!",
+    "body": ["assert_ge!($1, $2);"],
+    "description": "Creates an inline macro for asserting greater-than-or-equal"
   },
   "Creates panic": {
     "prefix": "panic!",
