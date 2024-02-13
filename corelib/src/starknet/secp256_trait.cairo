@@ -88,7 +88,7 @@ pub fn recover_public_key<
 >(
     msg_hash: u256, signature: Signature
 ) -> Option<Secp256Point> {
-    let Signature{r, s, y_parity } = signature;
+    let Signature { r, s, y_parity } = signature;
     let r_point = Secp256Impl::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
         .unwrap_syscall()?;
     let generator_point = Secp256Impl::get_generator_point();

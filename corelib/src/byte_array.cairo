@@ -224,7 +224,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     fn append_word_rev(ref self: ByteArray, word: felt252, len: usize) {
         let mut index = 0;
 
-        let u256{low, high } = word.into();
+        let u256 { low, high } = word.into();
         let low_part_limit = min(len, BYTES_IN_U128);
         loop {
             if index == low_part_limit {
@@ -280,7 +280,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     // responsibility.
     #[inline]
     fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: usize) {
-        let u256{low, high } = word.into();
+        let u256 { low, high } = word.into();
 
         let (low_quotient, low_remainder) = u128_safe_divmod(
             low, one_shift_left_bytes_u128(split_index).try_into().unwrap()
@@ -301,7 +301,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     // responsibility.
     #[inline]
     fn append_split_index_16(ref self: ByteArray, word: felt252) {
-        let u256{low, high } = word.into();
+        let u256 { low, high } = word.into();
         self.append_split(high.into(), low.into());
     }
 
@@ -314,7 +314,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     // responsibility.
     #[inline]
     fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: usize) {
-        let u256{low, high } = word.into();
+        let u256 { low, high } = word.into();
 
         let (high_quotient, high_remainder) = u128_safe_divmod(
             high, one_shift_left_bytes_u128(split_index - BYTES_IN_U128).try_into().unwrap()
