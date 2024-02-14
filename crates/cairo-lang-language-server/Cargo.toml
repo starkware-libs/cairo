@@ -8,35 +8,6 @@ description = "Cairo language server."
 
 [dependencies]
 anyhow.workspace = true
-<<<<<<< HEAD
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.3" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.3" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.5.3" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "2.5.3" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.5.3" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.5.3" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "2.5.3" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.5.3" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3" }
-cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3", features = ["env_logger"] }
-||||||| 2789b60a1
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.3" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.3" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.5.3" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "2.5.3" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.5.3" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.5.3" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "2.5.3" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.3" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.5.3" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.3" }
-cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.3" }
-=======
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.4" }
@@ -49,8 +20,7 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.5.4" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.5.4" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.5.4" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.4" }
->>>>>>> origin/dev-v2.5.4
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.4", features = ["env_logger"] }
 log.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
