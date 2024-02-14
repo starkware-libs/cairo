@@ -420,6 +420,7 @@ pub fn core_libfunc_cost(
         },
         Const(libfunc) => match libfunc {
             ConstConcreteLibfunc::AsBox(_) => vec![ConstCost::steps(3).into()],
+            ConstConcreteLibfunc::AsImmediate(_) => vec![ConstCost::steps(0).into()],
         },
         Coupon(libfunc) => match libfunc {
             CouponConcreteLibfunc::Buy(libfunc) => {
