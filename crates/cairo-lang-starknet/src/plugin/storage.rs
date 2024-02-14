@@ -366,9 +366,9 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
         StarknetModuleKind::Contract => {
             format!(
                 "
-    use $member_module_path$::Internal{member_state_name}Trait as \
+    pub use $member_module_path$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
-    mod $member_module_path$ {{$extra_uses$
+    pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
         pub struct {member_state_name} {{}}
         pub trait Internal{member_state_name}Trait {{
@@ -436,7 +436,7 @@ fn handle_legacy_mapping_storage_member(
         StarknetModuleKind::Contract => {
             format!(
                 "
-    use $member_module_path$::Internal{member_state_name}Trait as \
+    pub use $member_module_path$::Internal{member_state_name}Trait as \
                  $storage_member_name${member_state_name}Trait;
     pub mod $member_module_path$ {{$extra_uses$
         #[derive(Copy, Drop)]
