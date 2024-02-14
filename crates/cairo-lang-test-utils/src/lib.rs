@@ -46,9 +46,7 @@ pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
     diagnostics: &str,
 ) -> Option<String> {
-    let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
-        return None;
-    };
+    let expect_diagnostics = args.get("expect_diagnostics")?;
     if expect_diagnostics == "*" {
         return None;
     }

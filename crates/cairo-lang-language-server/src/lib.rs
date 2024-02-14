@@ -696,10 +696,7 @@ impl LanguageServer for Backend {
             let mut position = text_document_position.position;
             position.character = position.character.saturating_sub(1);
 
-            let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file_id, position)
-            else {
-                return None;
-            };
+            let (mut node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
 
             // Find module.
             let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
@@ -803,13 +800,8 @@ impl LanguageServer for Backend {
             eprintln!("Hover {file_uri}");
             let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file_id, position)
-            else {
-                return None;
-            };
-            let Some(lookup_item_id) = lookup_items.into_iter().next() else {
-                return None;
-            };
+            let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
+            let lookup_item_id = lookup_items.into_iter().next()?;
             let function_id = match lookup_item_id {
                 LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
                     FunctionWithBodyId::Free(free_function_id)
@@ -848,9 +840,7 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document_position_params.text_document.uri;
             let file = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
-            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
-                return None;
-            };
+            let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
             if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
                 return None;
             }
