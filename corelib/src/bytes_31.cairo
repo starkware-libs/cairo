@@ -19,7 +19,7 @@ pub impl Bytes31Impl of Bytes31Trait {
     // Gets the byte at the given index (LSB's index is 0), assuming that
     // `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
     fn at(self: @bytes31, index: usize) -> u8 {
-        let u256{low, high } = (*self).into();
+        let u256 { low, high } = (*self).into();
         let res_u128 = if index < BYTES_IN_U128 {
             (low / one_shift_left_bytes_u128(index)) % POW_2_8
         } else {
@@ -104,7 +104,7 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
         return (word, 0);
     }
 
-    let u256{low, high } = word.into();
+    let u256 { low, high } = word.into();
 
     if index == BYTES_IN_U128 {
         return (low.into(), high.into());

@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime};
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
+use cairo_lang_defs::db::{get_all_path_leaves, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
@@ -1153,7 +1153,7 @@ fn lookup_item_from_ast(
             // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
             // items.
             let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            let path_leaves = get_all_path_leafs(db.upcast(), item_use.use_path(syntax_db));
+            let path_leaves = get_all_path_leaves(db.upcast(), item_use.use_path(syntax_db));
             let mut res = Vec::new();
             for path_leaf in path_leaves {
                 let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
