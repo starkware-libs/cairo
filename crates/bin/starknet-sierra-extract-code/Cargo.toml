@@ -11,3 +11,9 @@ anyhow.workspace = true
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.3" }
 clap.workspace = true
 serde_json.workspace = true
+<<<<<<< HEAD
+||||||| 2789b60a1
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.3" }
+=======
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.4" }
+>>>>>>> origin/dev-v2.5.4

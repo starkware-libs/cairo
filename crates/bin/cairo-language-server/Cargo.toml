@@ -7,4 +7,22 @@ license-file.workspace = true
 description = "Language server executable for the Cairo programming language"
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-language-server = { path = "../../cairo-lang-language-server", version = "2.5.3" }
+||||||| 2789b60a1
+tokio.workspace = true
+log.workspace = true
+
+cairo-lang-language-server = { path = "../../cairo-lang-language-server", version = "2.5.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.5.3", features = [
+    "env_logger",
+] }
+=======
+tokio.workspace = true
+log.workspace = true
+
+cairo-lang-language-server = { path = "../../cairo-lang-language-server", version = "2.5.4" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.5.4", features = [
+    "env_logger",
+] }
+>>>>>>> origin/dev-v2.5.4
