@@ -35,12 +35,17 @@ use self::lower_match::lower_expr_match;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
+use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction, LocationId,
     SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
+use crate::lower::lower_match::{
+    lower_concrete_enum_match, lower_expr_match_tuple, lower_optimized_extern_match,
+    MatchArmWrapper, TupleInfo,
+};
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
@@ -170,11 +175,18 @@ pub fn lower_while_loop(
     loop_expr: semantic::ExprWhile,
     loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
-    let semantic::Condition::BoolExpr(semantic_condition) = loop_expr.condition else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics
-                .report(loop_expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
-        ));
+    let semantic_condition = match &loop_expr.condition {
+        semantic::Condition::BoolExpr(semantic_condition) => *semantic_condition,
+        semantic::Condition::Let(match_expr, patterns) => {
+            return lower_expr_while_let(
+                ctx,
+                builder,
+                &loop_expr,
+                *match_expr,
+                patterns,
+                MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
+            );
+        }
     };
     let condition = lower_expr_to_var_usage(ctx, builder, semantic_condition)?;
     let semantic_db = ctx.db.upcast();
@@ -235,6 +247,68 @@ pub fn lower_while_loop(
         location: while_location,
     });
     builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], while_location)
+}
+
+/// Lowers an expression of type if where the condition is of type [semantic::Condition::Let].
+pub fn lower_expr_while_let(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    loop_expr: &semantic::ExprWhile,
+    matched_expr: semantic::ExprId,
+    patterns: &[semantic::PatternId],
+    match_type: MatchKind,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a match expression: {:?}", loop_expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(loop_expr.stable_ptr.untyped());
+    let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
+
+    let matched_expr = ctx.function_body.exprs[matched_expr].clone();
+    let ty = matched_expr.ty();
+
+    if ty == ctx.db.core_felt252_ty()
+        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
+    {
+        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+            loop_expr.stable_ptr.untyped(),
+            LoweringDiagnosticKind::MatchError(MatchError {
+                kind: match_type,
+                error: MatchDiagnostic::UnsupportedNumericInLetCondition,
+            }),
+        )));
+    }
+
+    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+
+    let arms = vec![
+        MatchArmWrapper { patterns: patterns.into(), expr: Some(loop_expr.body) },
+        MatchArmWrapper { patterns: vec![], expr: None },
+    ];
+
+    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
+        return lower_expr_match_tuple(
+            ctx,
+            builder,
+            lowered_expr,
+            &matched_expr,
+            &TupleInfo { types, n_snapshots },
+            &arms,
+            match_type,
+        );
+    }
+
+    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
+        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, match_type);
+    }
+
+    lower_concrete_enum_match(
+        ctx,
+        builder,
+        &matched_expr,
+        lowered_expr,
+        &arms,
+        location,
+        match_type,
+    )
 }
 
 /// Lowers a loop inner function into [FlatLowered].

@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::{
     DiagnosticsBuilder,
 };
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
@@ -110,6 +111,9 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::IfLet) => {
                 format!("Unsupported type in if-let. Type: `{}`.", matched_type)
             }
+            (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::WhileLet(_, _)) => {
+                format!("Unsupported type in while-let. Type: `{}`.", matched_type)
+            }
             (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::Match) => {
                 "Unsupported matched value. Currently, match on tuples only supports enums as \
                  tuple members."
@@ -118,6 +122,11 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::IfLet) => {
                 "Unsupported value in if-let. Currently, if-let on tuples only supports enums as \
                  tuple members."
+                    .into()
+            }
+            (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::WhileLet(_, _)) => {
+                "Unsupported value in while-let. Currently, while-let on tuples only supports \
+                 enums as tuple members."
                     .into()
             }
             (MatchDiagnostic::UnsupportedMatchArmNotAVariant, _) => {
@@ -143,14 +152,17 @@ impl MatchError {
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
                 | MatchDiagnostic::UnsupportedMatchArmNonSequential
                 | MatchDiagnostic::NonExhaustiveMatchFelt252,
-                MatchKind::IfLet,
-            ) => unreachable!("Numeric values are not supported in if-let conditions."),
+                MatchKind::IfLet | MatchKind::WhileLet(_, _),
+            ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
 
             (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
                 format!("Missing match arm: `{}` not covered.", variant)
             }
             (MatchDiagnostic::MissingMatchArm(_), MatchKind::IfLet) => {
                 unreachable!("If-let is not required to be exhaustive.")
+            }
+            (MatchDiagnostic::MissingMatchArm(_), MatchKind::WhileLet(_, _)) => {
+                unreachable!("While-let is not required to be exhaustive.")
             }
 
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::Match) => {
@@ -159,11 +171,17 @@ impl MatchError {
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::IfLet) => {
                 "Unreachable else clause.".into()
             }
+            (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
+                unreachable!("While-let is does not have two arms.")
+            }
             (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::Match) => {
                 unreachable!("Numeric values are supported in match conditions.")
             }
             (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::IfLet) => {
                 "Numeric values are not supported in if-let conditions.".into()
+            }
+            (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::WhileLet(_, _)) => {
+                "Numeric values are not supported in while-let conditions.".into()
             }
         }
     }
@@ -196,8 +214,9 @@ pub struct MatchError {
 /// The type of branch construct the error occurred in.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum MatchKind {
-    IfLet,
     Match,
+    IfLet,
+    WhileLet(semantic::ExprId, SyntaxStablePtrId),
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
