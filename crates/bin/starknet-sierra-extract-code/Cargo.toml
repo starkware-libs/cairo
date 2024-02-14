@@ -8,6 +8,12 @@ description = "Compiler executable for printing Starknet Sierra json included co
 
 [dependencies]
 anyhow.workspace = true
+<<<<<<< HEAD
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.6.0-rc.0" }
+||||||| 65da2b480
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.3" }
+=======
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.4" }
+>>>>>>> origin/main
 clap.workspace = true
 serde_json.workspace = true

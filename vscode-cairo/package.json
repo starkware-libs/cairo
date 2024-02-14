@@ -2,7 +2,13 @@
   "name": "cairo1",
   "displayName": "Cairo 1.0",
   "description": "Support Cairo syntax",
+<<<<<<< HEAD
   "version": "2.6.0-rc.0",
+||||||| 65da2b480
+  "version": "2.5.3",
+=======
+  "version": "2.5.4",
+>>>>>>> origin/main
   "categories": [
     "Programming Languages"
   ],

@@ -363,6 +363,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::LogicalOperatorNotAllowedInIfLet => {
                 "Logical operator not allowed in if-let.".into()
             }
+            SemanticDiagnosticKind::LogicalOperatorNotAllowedInWhileLet => {
+                "Logical operator not allowed in while-let.".into()
+            }
             SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
                 format!(
                     r#"Loop has incompatible return types: "{}" and "{}""#,
@@ -854,6 +857,7 @@ pub enum SemanticDiagnosticKind {
         block_else_ty: semantic::TypeId,
     },
     LogicalOperatorNotAllowedInIfLet,
+    LogicalOperatorNotAllowedInWhileLet,
     IncompatibleLoopBreakTypes {
         current_ty: semantic::TypeId,
         break_ty: semantic::TypeId,

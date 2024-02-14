@@ -9,7 +9,7 @@ fn to_string(self: Tag) {
 }
 
 fn build(self: Tag) {
-    let Tag{children: opt_children } = self;
+    let Tag { children: opt_children } = self;
 
     let mut children = opt_children.unwrap();
 

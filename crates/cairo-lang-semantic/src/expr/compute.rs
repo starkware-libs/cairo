@@ -885,8 +885,9 @@ impl FlowMergeTypeHelper {
 fn compute_arm_semantic(
     ctx: &mut ComputationContext<'_>,
     expr: &Expr,
-    arm_expr_syntax: &ast::Expr,
+    arm_expr_syntax: ast::Expr,
     patterns_syntax: &PatternListOr,
+    is_loop_arm: bool,
 ) -> (Vec<PatternAndId>, ExprAndId) {
     let db = ctx.db;
     let syntax_db = db.upcast();
@@ -949,7 +950,16 @@ fn compute_arm_semantic(
                 new_ctx.semantic_defs.insert(var_def.id(), var_def);
             }
         }
-        let arm_expr = compute_expr_semantic(new_ctx, arm_expr_syntax);
+        let arm_expr = if is_loop_arm {
+            let ast::Expr::Block(arm_expr_syntax) = arm_expr_syntax else {
+                unreachable!("Expected a block expression for a loop arm.");
+            };
+            let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, LoopContext::While);
+            let expr = new_ctx.exprs[id].clone();
+            ExprAndId { expr, id }
+        } else {
+            compute_expr_semantic(new_ctx, &arm_expr_syntax)
+        };
         (patterns, arm_expr)
     })
 }
@@ -973,8 +983,9 @@ fn compute_expr_match_semantic(
             compute_arm_semantic(
                 ctx,
                 &expr,
-                &syntax_arm.expression(syntax_db),
+                syntax_arm.expression(syntax_db),
                 &syntax_arm.patterns(syntax_db),
+                false,
             )
         })
         .collect();
@@ -1020,8 +1031,9 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
             let (patterns, if_block) = compute_arm_semantic(
                 ctx,
                 &expr,
-                &ast::Expr::Block(syntax.if_block(syntax_db)),
+                ast::Expr::Block(syntax.if_block(syntax_db)),
                 &condition.patterns(syntax_db),
+                false,
             );
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), if_block)
         }
@@ -1094,13 +1106,33 @@ fn compute_expr_while_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let ast::Condition::Expr(condion_syntax) = syntax.condition(syntax_db) else {
-        return Err(ctx.diagnostics.report(syntax, Unsupported));
+    let (condition, body) = match &syntax.condition(syntax_db) {
+        ast::Condition::Let(condition) => {
+            let expr = compute_expr_semantic(ctx, &condition.expr(syntax_db));
+            if let Expr::LogicalOperator(_) = expr.expr {
+                ctx.diagnostics
+                    .report(&condition.expr(syntax_db), LogicalOperatorNotAllowedInWhileLet);
+            }
+
+            let (patterns, body) = compute_arm_semantic(
+                ctx,
+                &expr,
+                ast::Expr::Block(syntax.body(syntax_db)),
+                &condition.patterns(syntax_db),
+                true,
+            );
+            (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), body.id)
+        }
+        ast::Condition::Expr(expr) => {
+            let (body, _loop_ctx) =
+                compute_loop_body_semantic(ctx, syntax.body(syntax_db), LoopContext::While);
+            (
+                Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
+                body,
+            )
+        }
     };
 
-    let condition = compute_bool_condition_semantic(ctx, &condion_syntax.expr(syntax_db)).id;
-    let (body, _loop_ctx) =
-        compute_loop_body_semantic(ctx, syntax.body(syntax_db), LoopContext::While);
     Ok(Expr::While(ExprWhile {
         condition,
         body,

@@ -22,8 +22,8 @@ use super::context::{
     LoweringFlowError, LoweringResult,
 };
 use super::{
-    alloc_empty_block, generators, lower_expr_literal, lower_tail_expr,
-    lowered_expr_to_block_scope_end,
+    alloc_empty_block, call_loop_func, generators, lower_expr_block, lower_expr_literal,
+    lower_tail_expr, lowered_expr_to_block_scope_end,
 };
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
@@ -650,7 +650,8 @@ pub(crate) fn lower_expr_match_tuple(
         arms: vec![],
         location,
     });
-    let sealed_blocks = group_match_arms(ctx, empty_match_info, location, arms, arms_vec)?;
+    let sealed_blocks =
+        group_match_arms(ctx, empty_match_info, location, arms, arms_vec, match_type)?;
 
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -830,8 +831,14 @@ pub(crate) fn lower_concrete_enum_match(
         location,
     });
 
-    let sealed_blocks =
-        group_match_arms(ctx, empty_match_info, location, arms, varinats_block_builders)?;
+    let sealed_blocks = group_match_arms(
+        ctx,
+        empty_match_info,
+        location,
+        arms,
+        varinats_block_builders,
+        match_type,
+    )?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
@@ -956,8 +963,14 @@ pub(crate) fn lower_optimized_extern_match(
         arms: vec![],
         location,
     });
-    let sealed_blocks =
-        group_match_arms(ctx, empty_match_info, location, match_arms, varinats_block_builders)?;
+    let sealed_blocks = group_match_arms(
+        ctx,
+        empty_match_info,
+        location,
+        match_arms,
+        varinats_block_builders,
+        match_type,
+    )?;
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
@@ -987,6 +1000,7 @@ fn group_match_arms(
     location: LocationId,
     arms: &[MatchArmWrapper],
     varinats_block_builders: Vec<MatchLeafBuilder>,
+    kind: MatchKind,
 ) -> LoweringResult<Vec<SealedBlockBuilder>> {
     varinats_block_builders
         .into_iter()
@@ -1001,15 +1015,38 @@ fn group_match_arms(
 
             // If the arm has only one pattern, there is no need to create a parent scope.
             if lowering_inner_pattern_results_and_subscopes.len() == 1 {
-                let (lowering_inner_pattern_result, subscope) =
+                let (lowering_inner_pattern_result, mut subscope) =
                     lowering_inner_pattern_results_and_subscopes.pop().unwrap();
 
                 return match lowering_inner_pattern_result {
                     Ok(_) => {
                         // Lower the arm expression.
-                        match arm.expr {
-                            Some(expr) => lower_tail_expr(ctx, subscope, expr),
-                            None => lowered_expr_to_block_scope_end(
+                        match (arm.expr, kind) {
+                            (Some(expr), MatchKind::IfLet | MatchKind::Match) => {
+                                lower_tail_expr(ctx, subscope, expr)
+                            }
+                            (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
+                                let semantic::Expr::Block(expr) =
+                                    ctx.function_body.exprs[expr].clone()
+                                else {
+                                    unreachable!("While Let expression should be a block");
+                                };
+                                let block_expr = (|| {
+                                    lower_expr_block(ctx, &mut subscope, &expr)?;
+                                    // Add recursive call.
+                                    let signature = ctx.signature.clone();
+                                    call_loop_func(
+                                        ctx,
+                                        signature,
+                                        &mut subscope,
+                                        loop_expr_id,
+                                        stable_ptr,
+                                    )
+                                })();
+
+                                lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
+                            }
+                            (None, _) => lowered_expr_to_block_scope_end(
                                 ctx,
                                 subscope,
                                 Ok(LoweredExpr::Tuple { exprs: vec![], location }),
@@ -1059,9 +1096,30 @@ fn group_match_arms(
                 sealed_blocks,
                 location,
             )?;
-            match arm.expr {
-                Some(expr) => lower_tail_expr(ctx, outer_subscope, expr),
-                None => lowered_expr_to_block_scope_end(
+            match (arm.expr, kind) {
+                (Some(expr), MatchKind::IfLet | MatchKind::Match) => {
+                    lower_tail_expr(ctx, outer_subscope, expr)
+                }
+                (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
+                    let semantic::Expr::Block(expr) = ctx.function_body.exprs[expr].clone() else {
+                        unreachable!("WhileLet expression should be a block");
+                    };
+                    let block_expr = (|| {
+                        lower_expr_block(ctx, &mut outer_subscope, &expr)?;
+                        // Add recursive call.
+                        let signature = ctx.signature.clone();
+                        call_loop_func(
+                            ctx,
+                            signature,
+                            &mut outer_subscope,
+                            loop_expr_id,
+                            stable_ptr,
+                        )
+                    })();
+
+                    lowered_expr_to_block_scope_end(ctx, outer_subscope, block_expr)
+                }
+                (None, _) => lowered_expr_to_block_scope_end(
                     ctx,
                     outer_subscope,
                     Ok(LoweredExpr::Tuple { exprs: vec![], location }),
@@ -1380,6 +1438,7 @@ fn lower_expr_match_felt252(
             location,
             &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
             arms_vec,
+            MatchKind::Match,
         )?;
 
         return builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
@@ -1442,6 +1501,7 @@ fn lower_expr_match_felt252(
         location,
         &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
         arms_vec,
+        MatchKind::Match,
     )?;
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }

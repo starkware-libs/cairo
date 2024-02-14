@@ -1,6 +1,12 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+<<<<<<< HEAD
   "compiler_version": "2.6.0",
+||||||| 65da2b480
+  "compiler_version": "2.5.3",
+=======
+  "compiler_version": "2.5.4",
+>>>>>>> origin/main
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",

@@ -253,7 +253,7 @@ pub struct ExprLoop {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprWhile {
-    pub condition: ExprId,
+    pub condition: Condition,
     pub body: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]

@@ -85,7 +85,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 {{
                     {maybe_assign_lhs}
                     {maybe_assign_rhs}
-                    if !(@$lhs_value$ {operator} @$rhs_value$) {{
+                    if !($lhs_value$ {operator} $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
@@ -206,4 +206,32 @@ define_compare_assert_macro!(
     AssertNeMacro,
     "assert_ne",
     "!="
+);
+
+define_compare_assert_macro!(
+    /// Macro for less-than assertion.
+    AssertLtMacro,
+    "assert_lt",
+    "<"
+);
+
+define_compare_assert_macro!(
+    /// Macro for less-than-or-equal assertion.
+    AssertLeMacro,
+    "assert_le",
+    "<="
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than assertion.
+    AssertGtMacro,
+    "assert_gt",
+    ">"
+);
+
+define_compare_assert_macro!(
+    /// Macro for greater-than-or-equal assertion.
+    AssertGeMacro,
+    "assert_ge",
+    ">="
 );

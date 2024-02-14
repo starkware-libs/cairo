@@ -164,8 +164,8 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use __member_module_normal_member1::InternalContractMemberStateTrait as normal_member1ContractMemberStateTrait;
-    mod __member_module_normal_member1 {
+    pub use __member_module_normal_member1::InternalContractMemberStateTrait as normal_member1ContractMemberStateTrait;
+    pub mod __member_module_normal_member1 {
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
@@ -202,8 +202,8 @@ contract:
             }
         }
     }
-    use __member_module_normal_member2::InternalContractMemberStateTrait as normal_member2ContractMemberStateTrait;
-    mod __member_module_normal_member2 {
+    pub use __member_module_normal_member2::InternalContractMemberStateTrait as normal_member2ContractMemberStateTrait;
+    pub mod __member_module_normal_member2 {
         use super::Event;
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}

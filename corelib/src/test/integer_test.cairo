@@ -796,6 +796,17 @@ fn test_u512_safe_div_rem_by_u256() {
 }
 
 #[test]
+fn test_u512_try_into_u256() {
+    assert!(
+        u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
+            .try_into() == Option::Some(0x200000000000000000000000000000001_u256)
+    );
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
+    assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 4 }.try_into() == Option::<u256>::None);
+}
+
+#[test]
 fn test_min() {
     let min_u8: u8 = BoundedInt::min();
     let min_u16: u16 = BoundedInt::min();
