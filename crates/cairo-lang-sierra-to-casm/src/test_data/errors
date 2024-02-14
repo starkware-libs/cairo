@@ -65,7 +65,7 @@ store_temp_felt252([1]) -> ([1]);
 test_program@0([1]: felt252) -> ();
 
 //! > error
-Error from program registry: Could not find the requested libfunc
+Error from program registry: Could not find requested libfunc `store_temp_felt252`.
 
 //! > ==========================================================================
 
@@ -81,7 +81,7 @@ libfunc store_temp_felt252 = store_temp<felt252>;
 libfunc store_temp_felt252 = store_temp<felt252>;
 
 //! > error
-Error from program registry: Used the same concrete libfunc id twice
+Error from program registry: Used concrete libfunc id `store_temp_felt252` twice.
 
 //! > ==========================================================================
 
@@ -165,7 +165,7 @@ return();
 foo@0([0]: BadType) -> ();
 
 //! > error
-Error from program registry: Could not find the requested type
+Error from program registry: Could not find requested type `BadType`.
 
 //! > ==========================================================================
 
@@ -192,7 +192,7 @@ type NonZeroFelt252 = NonZero<felt252>;
 type felt252 = felt252;
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `NonZeroFelt252`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -611,7 +611,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during libfunc specialization
+Error from program registry: Error during libfunc specialization of store_temp_felt252: Could not specialize libfunc `store_temp` with generic_args: [UninitializedFelt252]. Error: Provided generic argument is unsupported.
 
 //! > ==========================================================================
 
@@ -671,7 +671,7 @@ return ();
 foo@0([1]: UninitializedFelt252) -> ();
 
 //! > error
-Error from program registry: Function parameter type must be storable
+Error from program registry: Function `foo`'s parameter type `UninitializedFelt252` is not storable.
 
 //! > ==========================================================================
 
@@ -689,7 +689,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<u8, 5, 3>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -707,7 +707,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<u8, 256>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -725,7 +725,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `ECPoint`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -750,7 +750,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<Tuple<felt252, felt252>, Const<felt252, 5>>`: Could not specialize type
 
 //! > ==========================================================================
 
@@ -778,7 +778,7 @@ return ();
 foo@0() -> ();
 
 //! > error
-Error from program registry: Error during type specialization
+Error from program registry: Error during type specialization of `Const<Tuple<u8, u8>, Const<felt252, 5>, Const<felt252, 5>>`: Could not specialize type
 
 //! > ==========================================================================
 
