@@ -83,8 +83,9 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252, v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
-  (v3: core::felt252) <- test::sub_three(v1)
+  (v6: core::felt252) <- 3u
+  (v8: core::felt252) <- core::felt252_sub(v1, v6)
   (v4: ()) <- struct_construct()
-  (v5: test::MyStruct) <- struct_construct(v3, v2)
+  (v5: test::MyStruct) <- struct_construct(v8, v2)
 End:
   Return(v5, v4)

@@ -12,13 +12,13 @@ use crate::ids::{FunctionId, FunctionLongId};
 pub struct OptimizationConfig {
     /// A list of functions that can be moved during the reorder_statements optimization.
     pub moveable_functions: Vec<String>,
+    /// Whether to inline small functions heuristically during the inline_functions optimization.
+    pub apply_inline_heuristics: bool,
 }
 
 impl OptimizationConfig {
-    /// A configuration where the list of movable functions is empty.
-    /// Used to make tests easier to write.
-    pub fn no_movable_functions() -> Self {
-        Self { moveable_functions: vec![] }
+    pub fn new(moveable_functions: Vec<String>, apply_inline_heuristics: bool) -> Self {
+        Self { moveable_functions, apply_inline_heuristics }
     }
 }
 

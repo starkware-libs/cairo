@@ -318,7 +318,10 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
         moveable_functions.push(format!("integer::{}_wide_mul", ty));
     }
 
-    db.set_optimization_config(Arc::new(OptimizationConfig { moveable_functions }));
+    db.set_optimization_config(Arc::new(OptimizationConfig {
+        moveable_functions,
+        apply_inline_heuristics: true,
+    }));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

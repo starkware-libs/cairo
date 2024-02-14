@@ -62,11 +62,6 @@ fn bar(a: @Array::<felt252>, b: @felt252) {
 Parameters: v0: @test::A
 blk0 (root):
 Statements:
-  (v1: @core::array::Array::<core::felt252>, v2: @core::felt252) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt252>, v4: @core::felt252) <- struct_destructure(v0)
-  (v5: ()) <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt252>, v7: @core::felt252) <- struct_destructure(v0)
-  (v8: ()) <- test::bar(v6, v7)
 End:
   Return(v0)
 
@@ -111,29 +106,6 @@ fn bar2(c: @felt252, d: @Array::<felt252>) {
 Parameters: v0: @test::A
 blk0 (root):
 Statements:
-End:
-  Match(match_enum(v0) {
-    A::A(v1) => blk1,
-    A::B(v2) => blk2,
-    A::C(v3) => blk3,
-  })
-
-blk1:
-Statements:
-  (v6: ()) <- test::bar0(v1)
-End:
-  Return(v0)
-
-blk2:
-Statements:
-  (v7: ()) <- test::bar1(v2)
-End:
-  Return(v0)
-
-blk3:
-Statements:
-  (v4: @core::felt252, v5: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v8: ()) <- test::bar2(v4, v5)
 End:
   Return(v0)
 

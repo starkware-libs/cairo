@@ -89,9 +89,18 @@ fn gather_inlining_info(
 }
 
 // A heuristic to decide if a function should be inlined.
-fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block = lowered.blocks.root_block()?;
-
+    let optimization_config = db.optimization_config();
+    // The inline heuristics optimization flag only applies to non-trivial small functions.
+    // Functions which contains only a call or a literal are always inlined.
+    if optimization_config.apply_inline_heuristics {
+        let num_of_statements: usize =
+            lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
+        if num_of_statements < 7 {
+            return Ok(true);
+        }
+    }
     Ok(match &root_block.end {
         FlatBlockEnd::Return(_) => {
             // Inline a function that only calls another function or returns a literal.
