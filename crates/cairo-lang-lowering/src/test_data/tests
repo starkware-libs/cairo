@@ -344,9 +344,11 @@ fn bar(ref a: felt252, ref b: felt252) -> felt252  {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252, v3: core::felt252, v1: core::felt252) <- test::bar(v0, v0)
+  (v4: core::felt252) <- 0u
+  (v5: core::felt252) <- 1u
+  (v7: core::felt252) <- core::felt252_add(v4, v5)
 End:
-  Return(v1)
+  Return(v7)
 
 //! > ==========================================================================
 

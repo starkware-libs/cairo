@@ -315,7 +315,6 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             ApChange::FunctionCall(id) => func_ap_change(id).map(|x| 2 + x),
         }
     }
-
     /// Returns the locals size for a statement.
     fn get_statement_locals(&self, idx: StatementIdx) -> usize {
         self.locals_size.get(&idx).cloned().unwrap_or_default()
