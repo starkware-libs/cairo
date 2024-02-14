@@ -28,6 +28,6 @@ fn main() {
 fn foo(a: MyEnum) -> felt252 {
     match a {
         MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
-        MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => (x + t).into(),
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
     }
 }
