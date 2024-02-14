@@ -37,6 +37,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 #[derive(Clone, Debug)]
 enum ApTrackingBase {
     FunctionStart(FunctionId),
+    #[allow(dead_code)]
     EnableStatement(StatementIdx),
 }
 

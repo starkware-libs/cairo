@@ -36,7 +36,7 @@ where
     BH: BuildHasher,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.0.eq(&other.0)
+        self.0 == other.0
     }
 }
 
