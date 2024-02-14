@@ -1784,7 +1784,7 @@ impl U8IntoU256 of Into<u8, u256> {
 
 impl U256TryIntoU8 of TryInto<u256, u8> {
     fn try_into(self: u256) -> Option<u8> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1802,7 +1802,7 @@ impl U16IntoU256 of Into<u16, u256> {
 
 impl U256TryIntoU16 of TryInto<u256, u16> {
     fn try_into(self: u256) -> Option<u16> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1820,7 +1820,7 @@ impl U32IntoU256 of Into<u32, u256> {
 
 impl U256TryIntoU32 of TryInto<u256, u32> {
     fn try_into(self: u256) -> Option<u32> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1838,7 +1838,7 @@ impl U64IntoU256 of Into<u64, u256> {
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
     fn try_into(self: u256) -> Option<u64> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
@@ -1856,7 +1856,7 @@ impl U128IntoU256 of Into<u128, u256> {
 
 impl U256TryIntoU128 of TryInto<u256, u128> {
     fn try_into(self: u256) -> Option<u128> {
-        let u256{low: low, high: high } = self;
+        let u256 { low, high } = self;
 
         if high != 0 {
             return Option::None;
