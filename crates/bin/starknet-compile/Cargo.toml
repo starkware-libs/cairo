@@ -10,16 +10,6 @@ description = "Compiler executable for the Cairo programming language with the S
 anyhow.workspace = true
 clap.workspace = true
 
-<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.6.0-rc.0" }
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.6.0-rc.0" }
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.6.0-rc.0" }
-||||||| 65da2b480
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.5.3" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.3" }
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.3" }
-=======
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.5.4" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.5.4" }
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "2.5.4" }
->>>>>>> origin/main
