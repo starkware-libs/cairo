@@ -72,6 +72,7 @@ cairo_lang_test_utils::test_file_test!(
         operator: "operator",
         structure: "structure",
         tuple: "tuple",
+        while_: "while",
     },
     test_expr_semantics
 );

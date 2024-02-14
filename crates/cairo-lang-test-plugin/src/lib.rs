@@ -186,6 +186,10 @@ pub fn test_plugin_suite() -> PluginSuite {
     suite
         .add_plugin::<TestPlugin>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
-        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>();
+        .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertLtMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertLeMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertGtMacro>()
+        .add_inline_macro_plugin::<inline_macros::assert::AssertGeMacro>();
     suite
 }

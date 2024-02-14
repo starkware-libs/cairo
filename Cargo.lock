@@ -1048,9 +1048,6 @@ name = "cairo-language-server"
 version = "2.6.0-rc.0"
 dependencies = [
  "cairo-lang-language-server",
- "cairo-lang-utils",
- "log",
- "tokio",
 ]
 
 [[package]]

@@ -531,8 +531,8 @@ pub enum Event {}
         unsafe_new_contract_state()
     }
     
-    use __member_module_value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
-    mod __member_module_value {
+    pub use __member_module_value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
+    pub mod __member_module_value {
         #[derive(Copy, Drop)]
         pub struct ContractMemberState {}
         pub trait InternalContractMemberStateTrait {
