@@ -205,8 +205,7 @@ pub struct Variable {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
     // Values.
-    // TODO(spapini): Consts.
-    Literal(StatementLiteral),
+    Const(StatementConst),
 
     // Flow control.
     Call(StatementCall),
@@ -224,7 +223,7 @@ pub enum Statement {
 impl Statement {
     pub fn inputs(&self) -> Vec<VarUsage> {
         match &self {
-            Statement::Literal(_stmt) => vec![],
+            Statement::Const(_stmt) => vec![],
             Statement::Call(stmt) => stmt.all_inputs(),
             Statement::StructConstruct(stmt) => stmt.inputs.clone(),
             Statement::StructDestructure(stmt) => vec![stmt.input],
@@ -235,7 +234,7 @@ impl Statement {
     }
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
-            Statement::Literal(stmt) => vec![stmt.output],
+            Statement::Const(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
@@ -247,7 +246,7 @@ impl Statement {
     pub fn location(&self) -> Option<LocationId> {
         // TODO(Gil): Add location to all statements.
         match &self {
-            Statement::Literal(_) => None,
+            Statement::Const(_) => None,
             Statement::Call(stmt) => Some(stmt.location),
             Statement::StructConstruct(_) => None,
             Statement::StructDestructure(stmt) => Some(stmt.input.location),
@@ -258,13 +257,19 @@ impl Statement {
     }
 }
 
-/// A statement that binds a literal value to a variable.
+/// A statement that binds a const value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementLiteral {
-    /// The value of the literal.
-    pub value: BigInt,
+pub struct StatementConst {
+    /// The value of the const.
+    pub value: ConstValue,
     /// The variable to bind the value to.
     pub output: VariableId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ConstValue {
+    Int(BigInt),
+    Struct(Vec<(semantic::TypeId, ConstValue)>),
 }
 
 /// A statement that calls a user function.

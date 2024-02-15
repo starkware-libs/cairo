@@ -95,7 +95,7 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
     Ok(match &root_block.end {
         FlatBlockEnd::Return(_) => {
             // Inline a function that only calls another function or returns a literal.
-            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
+            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Const(_)])
         }
         FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } | FlatBlockEnd::Panic(_) => false,
         FlatBlockEnd::NotSet => {

@@ -6,13 +6,13 @@ use itertools::Itertools;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, MatchExternInfo, Statement, StatementCall, StatementLiteral,
-    StatementStructDestructure, VariableId,
+    BlockId, MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
+    VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
-    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    VarRemapping, VarUsage, Variable,
+    ConstValue, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue,
+    MatchInfo, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
+    StatementStructConstruct, VarRemapping, VarUsage, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -181,7 +181,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         }
         write!(f, ") <- ")?;
         match self {
-            Statement::Literal(stmt) => stmt.fmt(f, ctx),
+            Statement::Const(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
@@ -202,13 +202,33 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        _ctx: &LoweredFormatter<'_>,
-    ) -> std::fmt::Result {
-        write!(f, "{}u", self.value)
+impl DebugWithDb<LoweredFormatter<'_>> for StatementConst {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        self.value.fmt(f, ctx)
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        match self {
+            ConstValue::Int(value) => write!(f, "{}u", value),
+            ConstValue::Struct(inner) => {
+                write!(f, "{{")?;
+                let mut inner = inner.iter().peekable();
+                while let Some((ty, value)) = inner.next() {
+                    write!(f, " ")?;
+                    value.fmt(f, ctx)?;
+                    write!(f, ": ")?;
+                    ty.fmt(f, ctx.db.elongate())?;
+                    if inner.peek().is_some() {
+                        write!(f, ",")?;
+                    } else {
+                        write!(f, " ")?;
+                    }
+                }
+                write!(f, "}}")
+            }
+        }
     }
 }
 
