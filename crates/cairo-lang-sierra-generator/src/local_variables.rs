@@ -355,7 +355,7 @@ impl<'a> FindLocalsContext<'a> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
-            lowering::Statement::Literal(statement_literal) => {
+            lowering::Statement::Const(statement_literal) => {
                 self.constants.insert(statement_literal.output);
                 BranchInfo { known_ap_change: true }
             }

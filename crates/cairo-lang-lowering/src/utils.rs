@@ -2,7 +2,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
+    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -24,7 +24,7 @@ pub trait RebuilderEx: Rebuilder {
     /// Rebuilds the statement with renamed var and block ids.
     fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
         let mut statement = match statement {
-            Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
+            Statement::Const(stmt) => Statement::Const(StatementConst {
                 value: stmt.value.clone(),
                 output: self.map_var_id(stmt.output),
             }),

@@ -52,7 +52,7 @@ pub fn concretize_lowered(
                 }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
-                | Statement::Literal(_)
+                | Statement::Const(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_) => {}
             }
