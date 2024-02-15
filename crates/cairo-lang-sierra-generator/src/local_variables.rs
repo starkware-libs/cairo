@@ -93,7 +93,7 @@ pub fn analyze_ap_changes(
             let introduced_vars = callers[0].1.keys().cloned().collect_vec();
             info.demand.variables_introduced(&mut ctx, &introduced_vars, ());
             for var in info.demand.vars.keys() {
-                if ctx.might_be_revoked(&peeled_used_after_revoke, ctx.peel_aliases(var)) {
+                if ctx.might_be_revoked(&peeled_used_after_revoke, var) {
                     need_ap_alignment.insert(*var);
                 }
             }
