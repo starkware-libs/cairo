@@ -11,6 +11,7 @@ fn foo() {
     let _b = 0x10000000000000000_u64;
     let _c = 0x100000000000000000000000000000000_u128;
     let _d = 0x800000000000011000000000000000000000000000000000000000000000001;
+    let _e: NonZero<felt252> = 0;
 }
 
 //! > function_name
@@ -49,13 +50,18 @@ error: The value does not fit within the range of type core::felt252.
     let _d = 0x800000000000011000000000000000000000000000000000000000000000001;
              ^***************************************************************^
 
+error: The value does not fit within the range of type core::zeroable::NonZero::<core::felt252>.
+ --> lib.cairo:8:32
+    let _e: NonZero<felt252> = 0;
+                               ^
+
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
-  (v6: ()) <- struct_construct()
+  (v7: ()) <- struct_construct()
 End:
-  Return(v6)
+  Return(v7)
 
 //! > semantic_diagnostics
 

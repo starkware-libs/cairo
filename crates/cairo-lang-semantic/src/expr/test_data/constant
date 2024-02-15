@@ -41,6 +41,8 @@ const MY_CONST: MissingType = {
 
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
 
+const ZERO_NON_ZERO: NonZero<u8> = 0;
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -76,6 +78,11 @@ error: Only literal constants are currently supported.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
+
+error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
+ --> lib.cairo:8:36
+const ZERO_NON_ZERO: NonZero<u8> = 0;
+                                   ^
 
 //! > ==========================================================================
 

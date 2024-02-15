@@ -153,6 +153,7 @@ test_expr_diagnostics
 {
     let _a = 123_felt252;
     let _a = 123_u128;
+    let _b = 123_bool;
     let _b = 123_NonZero;
     let _b = 123_u129;
 }
@@ -164,15 +165,20 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unknown type.
+error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:8:14
+    let _b = 123_NonZero;
+             ^*********^
+
+error: Unknown type.
+ --> lib.cairo:9:14
     let _b = 123_u129;
              ^******^
 
-error: Mismatched types. The type `core::zeroable::NonZero` cannot be created from a numeric literal.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:7:14
-    let _b = 123_NonZero;
-             ^*********^
+    let _b = 123_bool;
+             ^******^
 
 //! > ==========================================================================
 

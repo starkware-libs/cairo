@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use num_bigint::BigInt;
-use num_traits::{Num, Signed, ToPrimitive};
+use num_traits::{Num, Signed, ToPrimitive, Zero};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -22,7 +22,7 @@ use crate::items::trt::{
 use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve::ResolvedGenericItem;
-use crate::types::ConcreteEnumLongId;
+use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId};
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId,
     ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId,
@@ -684,6 +684,13 @@ pub fn validate_literal(
     ty: TypeId,
     value: BigInt,
 ) -> Result<(), LiteralError> {
+    if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
+        return if value.is_zero() {
+            Err(LiteralError::OutOfRange(ty))
+        } else {
+            validate_literal(db, nz_wrapped_ty, value)
+        };
+    }
     let is_out_of_range = if ty == core_felt252_ty(db) {
         value.abs()
             > BigInt::from_str_radix(
@@ -717,4 +724,14 @@ pub fn validate_literal(
         return Err(LiteralError::InvalidTypeForLiteral(ty));
     };
     if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
+}
+
+/// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.
+pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeId> {
+    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } =
+        db.lookup_intern_concrete_extern_type(extern_ty);
+    let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
+    (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
 }
