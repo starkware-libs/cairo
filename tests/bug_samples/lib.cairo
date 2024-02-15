@@ -1,4 +1,5 @@
 mod ecdsa_completeness;
+mod enable_ap_tracking_aliasing;
 mod generic_cycles;
 mod inconsistent_gas;
 mod indirect_impl_alias;
