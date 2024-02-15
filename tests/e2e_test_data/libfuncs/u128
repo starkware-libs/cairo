@@ -411,9 +411,11 @@ test::foo: OrderedHashMap({Const: 500})
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u128, 12> = Const<u128, 12> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 11> = Const<u128, 11> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc u128_const<11> = u128_const<11>;
-libfunc u128_const<12> = u128_const<12>;
+libfunc const_as_immediate<Const<u128, 11>> = const_as_immediate<Const<u128, 11>>;
+libfunc const_as_immediate<Const<u128, 12>> = const_as_immediate<Const<u128, 12>>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc u128_eq = u128_eq;
 libfunc branch_align = branch_align;
@@ -422,8 +424,8 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-u128_const<11>() -> ([0]); // 0
-u128_const<12>() -> ([1]); // 1
+const_as_immediate<Const<u128, 11>>() -> ([0]); // 0
+const_as_immediate<Const<u128, 12>>() -> ([1]); // 1
 store_temp<u128>([0]) -> ([0]); // 2
 u128_eq([0], [1]) { fallthrough() 9() }; // 3
 branch_align() -> (); // 4

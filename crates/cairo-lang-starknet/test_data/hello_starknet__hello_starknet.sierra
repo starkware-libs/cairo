@@ -6,9 +6,12 @@ type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, ze
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@[455598176897554951975518433047350165683642644060968901071973598007398862489], Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 155785504323917466144735657540098748279> = Const<felt252, 155785504323917466144735657540098748279> [storable: false, drop: false, dup: false, zero_sized: false];
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::integer::u32, core::integer::u32> = Enum<ut@[1629091876327773862048300698043080611324585833601991920779013171513039670889], u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 7269940625183576940180048306939577043858226> = Const<felt252, 7269940625183576940180048306939577043858226> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>> = Enum<ut@[524003219444735287687030798827450068479256419439950915710756081966976676008], u32, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<u32, 0> = Const<u32, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState = Struct<ut@[899850927368171171110342079628889872086124955335950415857236765303567628464]> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -16,6 +19,8 @@ type Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__membe
 type core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, ())> = Enum<ut@[191115560399885190452685958928692854846054686840088326376539649784245643373], Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<u32> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u32> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@[1659953998214361493297819749706350407888426802510745378863793391306403973050], Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -25,6 +30,7 @@ type core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> = Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u32> = Enum<ut@[727243179027163408116787192686988269448412519740002160658269785215786215756], u32, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -55,7 +61,7 @@ libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
 libfunc drop<u32> = drop<u32>;
 libfunc array_new<felt252> = array_new<felt252>;
-libfunc felt252_const<7733229381460288120802334208475838166080759535023995805565484692595> = felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>;
+libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
@@ -77,9 +83,9 @@ libfunc drop<Array<felt252>> = drop<Array<felt252>>;
 libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
 libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
-libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc drop<Unit> = drop<Unit>;
-libfunc felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913> = felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>;
+libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
 libfunc snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState> = snapshot_take<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>;
 libfunc drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState> = drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>;
@@ -105,12 +111,12 @@ libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::hel
 libfunc drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState> = drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>;
 libfunc storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401> = storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>;
 libfunc storage_address_from_base = storage_address_from_base;
-libfunc u32_const<0> = u32_const<0>;
+libfunc const_as_immediate<Const<u32, 0>> = const_as_immediate<Const<u32, 0>>;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 libfunc storage_read_syscall = storage_read_syscall;
 libfunc enum_init<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>>;
-libfunc felt252_const<7269940625183576940180048306939577043858226> = felt252_const<7269940625183576940180048306939577043858226>;
+libfunc const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>> = const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1> = enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u32,)>> = store_temp<core::panics::PanicResult::<(core::integer::u32,)>>;
 libfunc enum_init<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::integer::u32, core::array::Array::<core::felt252>>, 1>;
@@ -119,7 +125,7 @@ libfunc u32_overflowing_add = u32_overflowing_add;
 libfunc enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0> = enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0>;
 libfunc store_temp<core::result::Result::<core::integer::u32, core::integer::u32>> = store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>;
 libfunc enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1> = enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>;
-libfunc felt252_const<155785504323917466144735657540098748279> = felt252_const<155785504323917466144735657540098748279>;
+libfunc const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>> = const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>;
 libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>> = function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>;
 libfunc storage_write_syscall = storage_write_syscall;
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>;
@@ -176,7 +182,7 @@ drop<Snapshot<Array<felt252>>>([25]) -> (); // 29
 drop<Box<felt252>>([26]) -> (); // 30
 drop<u32>([23]) -> (); // 31
 array_new<felt252>() -> ([28]); // 32
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([29]); // 33
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([29]); // 33
 store_temp<felt252>([29]) -> ([29]); // 34
 array_append<felt252>([28], [29]) -> ([30]); // 35
 struct_construct<core::panics::Panic>() -> ([31]); // 36
@@ -225,7 +231,7 @@ return([41], [42], [43], [53]); // 78
 branch_align() -> (); // 79
 drop<u32>([23]) -> (); // 80
 array_new<felt252>() -> ([54]); // 81
-felt252_const<375233589013918064796019>() -> ([55]); // 82
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([55]); // 82
 store_temp<felt252>([55]) -> ([55]); // 83
 array_append<felt252>([54], [55]) -> ([56]); // 84
 struct_construct<core::panics::Panic>() -> ([57]); // 85
@@ -247,7 +253,7 @@ drop<Snapshot<Array<felt252>>>([13]) -> (); // 100
 store_temp<RangeCheck>([4]) -> ([60]); // 101
 disable_ap_tracking() -> (); // 102
 array_new<felt252>() -> ([61]); // 103
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([62]); // 104
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([62]); // 104
 store_temp<felt252>([62]) -> ([62]); // 105
 array_append<felt252>([61], [62]) -> ([63]); // 106
 struct_construct<core::panics::Panic>() -> ([64]); // 107
@@ -261,7 +267,7 @@ return([60], [5], [2], [66]); // 114
 branch_align() -> (); // 115
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 116
 array_new<felt252>() -> ([67]); // 117
-felt252_const<375233589013918064796019>() -> ([68]); // 118
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([68]); // 118
 store_temp<felt252>([68]) -> ([68]); // 119
 array_append<felt252>([67], [68]) -> ([69]); // 120
 struct_construct<core::panics::Panic>() -> ([70]); // 121
@@ -282,7 +288,7 @@ branch_align() -> (); // 135
 drop<Snapshot<Array<felt252>>>([9]) -> (); // 136
 drop<Box<felt252>>([10]) -> (); // 137
 array_new<felt252>() -> ([12]); // 138
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([13]); // 139
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([13]); // 139
 store_temp<felt252>([13]) -> ([13]); // 140
 array_append<felt252>([12], [13]) -> ([14]); // 141
 struct_construct<core::panics::Panic>() -> ([15]); // 142
@@ -332,7 +338,7 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([27], [28], [29], [42]); // 186
 branch_align() -> (); // 187
 array_new<felt252>() -> ([43]); // 188
-felt252_const<375233589013918064796019>() -> ([44]); // 189
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([44]); // 189
 store_temp<felt252>([44]) -> ([44]); // 190
 array_append<felt252>([43], [44]) -> ([45]); // 191
 struct_construct<core::panics::Panic>() -> ([46]); // 192
@@ -346,7 +352,7 @@ return([21], [22], [2], [48]); // 199
 branch_align() -> (); // 200
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 201
 array_new<felt252>() -> ([49]); // 202
-felt252_const<375233589013918064796019>() -> ([50]); // 203
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([50]); // 203
 store_temp<felt252>([50]) -> ([50]); // 204
 array_append<felt252>([49], [50]) -> ([51]); // 205
 struct_construct<core::panics::Panic>() -> ([52]); // 206
@@ -435,7 +441,7 @@ return([5], [6], [7], [8]); // 288
 drop<cairo_level_tests::contracts::hello_starknet::hello_starknet::__member_module_balance::ContractMemberState>([3]) -> (); // 289
 storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 290
 storage_address_from_base([4]) -> ([5]); // 291
-u32_const<0>() -> ([6]); // 292
+const_as_immediate<Const<u32, 0>>() -> ([6]); // 292
 store_temp<u32>([6]) -> ([6]); // 293
 store_temp<StorageAddress>([5]) -> ([5]); // 294
 storage_read_syscall([1], [2], [6], [5]) { fallthrough([7], [8], [9]) 324([10], [11], [12]) }; // 295
@@ -456,7 +462,7 @@ jump() { 330() }; // 309
 branch_align() -> (); // 310
 drop<Unit>([16]) -> (); // 311
 array_new<felt252>() -> ([22]); // 312
-felt252_const<7269940625183576940180048306939577043858226>() -> ([23]); // 313
+const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>>() -> ([23]); // 313
 store_temp<felt252>([23]) -> ([23]); // 314
 array_append<felt252>([22], [23]) -> ([24]); // 315
 struct_construct<core::panics::Panic>() -> ([25]); // 316
@@ -489,7 +495,7 @@ branch_align() -> (); // 342
 enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>([6]) -> ([10]); // 343
 store_temp<RangeCheck>([5]) -> ([8]); // 344
 store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([10]) -> ([9]); // 345
-felt252_const<155785504323917466144735657540098748279>() -> ([11]); // 346
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([11]); // 346
 store_temp<felt252>([11]) -> ([11]); // 347
 function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>([9], [11]) -> ([12]); // 348
 store_temp<RangeCheck>([8]) -> ([8]); // 349
@@ -498,7 +504,7 @@ return([8], [12]); // 351
 storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([4]); // 352
 u32_to_felt252([3]) -> ([5]); // 353
 storage_address_from_base([4]) -> ([6]); // 354
-u32_const<0>() -> ([7]); // 355
+const_as_immediate<Const<u32, 0>>() -> ([7]); // 355
 store_temp<u32>([7]) -> ([7]); // 356
 store_temp<StorageAddress>([6]) -> ([6]); // 357
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([8], [9]) 366([10], [11], [12]) }; // 358

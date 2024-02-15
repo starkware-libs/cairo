@@ -1,21 +1,21 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_sierra::extensions::const_type::{ConstAsImmediateLibfunc, ConstType};
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::{
-    ExtensionError, GenericLibfuncEx, NamedType, SpecializationError,
+    ExtensionError, GenericLibfuncEx, NamedLibfunc, NamedType, SpecializationError,
 };
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
-use cairo_lang_sierra::program;
+use cairo_lang_sierra::program::{self, GenericArg};
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
-use semantic::corelib::get_const_libfunc_name_by_type;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
-use crate::db::SierraGenGroup;
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -66,7 +66,7 @@ pub fn get_libfunc_id_with_generic_arg(
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(name),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(ty)],
+        generic_args: vec![GenericArg::Type(ty)],
     })
 }
 
@@ -100,11 +100,8 @@ pub fn struct_deconstruct_libfunc_id(
     let long_id = &db.get_type_info(ty.clone())?.long_id;
     let is_snapshot = long_id.generic_id == SnapshotType::id();
     Ok(if is_snapshot {
-        let concrete_enum_type = extract_matches!(
-            &long_id.generic_args[0],
-            cairo_lang_sierra::program::GenericArg::Type
-        )
-        .clone();
+        let concrete_enum_type =
+            extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
         get_libfunc_id_with_generic_arg(db, "struct_snapshot_deconstruct", concrete_enum_type)
     } else {
         get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
@@ -118,10 +115,7 @@ pub fn enum_init_libfunc_id(
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("enum_init"),
-        generic_args: vec![
-            cairo_lang_sierra::program::GenericArg::Type(ty),
-            cairo_lang_sierra::program::GenericArg::Value(variant_idx.into()),
-        ],
+        generic_args: vec![GenericArg::Type(ty), GenericArg::Value(variant_idx.into())],
     })
 }
 
@@ -132,7 +126,7 @@ pub fn snapshot_take_libfunc_id(
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("snapshot_take"),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(ty)],
+        generic_args: vec![GenericArg::Type(ty)],
     })
 }
 
@@ -143,7 +137,7 @@ pub fn rename_libfunc_id(
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("rename"),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(ty)],
+        generic_args: vec![GenericArg::Type(ty)],
     })
 }
 
@@ -162,11 +156,21 @@ pub fn const_libfunc_id_by_type(
     ty: semantic::TypeId,
     value: BigInt,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    let const_ty = db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
+        cairo_lang_sierra::program::ConcreteTypeLongId {
+            generic_id: ConstType::ID,
+            generic_args: vec![
+                GenericArg::Type(db.get_concrete_type_id(ty).unwrap()),
+                GenericArg::Value(value),
+            ],
+        }
+        .into(),
+    ));
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
-            get_const_libfunc_name_by_type(db.upcast(), ty),
+            ConstAsImmediateLibfunc::STR_ID,
         ),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::Value(value)],
+        generic_args: vec![GenericArg::Type(const_ty)],
     })
 }
 
@@ -177,11 +181,8 @@ pub fn match_enum_libfunc_id(
     let long_id = &db.get_type_info(ty.clone())?.long_id;
     let is_snapshot = long_id.generic_id == SnapshotType::id();
     Ok(if is_snapshot {
-        let concrete_enum_type = extract_matches!(
-            &long_id.generic_args[0],
-            cairo_lang_sierra::program::GenericArg::Type
-        )
-        .clone();
+        let concrete_enum_type =
+            extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
         get_libfunc_id_with_generic_arg(db, "enum_snapshot_match", concrete_enum_type)
     } else {
         get_libfunc_id_with_generic_arg(db, "enum_match", ty)
@@ -286,9 +287,7 @@ pub fn function_call_libfunc_id(
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("function_call"),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::UserFunc(
-            db.intern_sierra_function(func),
-        )],
+        generic_args: vec![GenericArg::UserFunc(db.intern_sierra_function(func))],
     })
 }
 
@@ -300,9 +299,7 @@ pub fn coupon_call_libfunc_id(
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("coupon_call"),
-        generic_args: vec![cairo_lang_sierra::program::GenericArg::UserFunc(
-            db.intern_sierra_function(func),
-        )],
+        generic_args: vec![GenericArg::UserFunc(db.intern_sierra_function(func))],
     })
 }
 
@@ -310,7 +307,7 @@ pub fn coupon_call_libfunc_id(
 pub fn generic_libfunc_id(
     db: &dyn SierraGenGroup,
     extern_id: defs::ids::ExternFunctionId,
-    generic_args: Vec<cairo_lang_sierra::program::GenericArg>,
+    generic_args: Vec<GenericArg>,
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string(extern_id.name(db.upcast())),
@@ -345,12 +342,10 @@ pub fn get_concrete_libfunc_id(
         generic_args.push(match generic_arg {
             semantic::GenericArgumentId::Type(ty) => {
                 // TODO(lior): How should the following unwrap() be handled?
-                cairo_lang_sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
             }
             semantic::GenericArgumentId::Literal(literal_id) => {
-                cairo_lang_sierra::program::GenericArg::Value(
-                    db.lookup_intern_literal(*literal_id).value,
-                )
+                GenericArg::Value(db.lookup_intern_literal(*literal_id).value)
             }
             semantic::GenericArgumentId::Impl(_) => {
                 panic!("Extern function with impl generics are not supported.")

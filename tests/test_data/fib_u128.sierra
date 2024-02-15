@@ -1,15 +1,19 @@
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 39878429859763533771555484554338820190071> = Const<felt252, 39878429859763533771555484554338820190071> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 39878429859757942499084499860145094553463> = Const<felt252, 39878429859757942499084499860145094553463> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<u128> = Struct<ut@Tuple, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc u128_const<0> = u128_const<0>;
+libfunc const_as_immediate<Const<u128, 0>> = const_as_immediate<Const<u128, 0>>;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_eq = u128_eq;
 libfunc branch_align = branch_align;
@@ -17,7 +21,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc function_call<user@core::integer::U128Add::add> = function_call<user@core::integer::U128Add::add>;
 libfunc enum_match<core::panics::PanicResult::<(core::integer::u128,)>> = enum_match<core::panics::PanicResult::<(core::integer::u128,)>>;
-libfunc u128_const<1> = u128_const<1>;
+libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
 libfunc function_call<user@core::integer::U128Sub::sub> = function_call<user@core::integer::U128Sub::sub>;
 libfunc struct_deconstruct<Tuple<u128>> = struct_deconstruct<Tuple<u128>>;
 libfunc function_call<user@examples::fib_u128::fib> = function_call<user@examples::fib_u128::fib>;
@@ -32,11 +36,11 @@ libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u12
 libfunc store_temp<core::result::Result::<core::integer::u128, core::integer::u128>> = store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
-libfunc felt252_const<39878429859757942499084499860145094553463> = felt252_const<39878429859757942499084499860145094553463>;
+libfunc const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>> = const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>> = function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
-libfunc felt252_const<39878429859763533771555484554338820190071> = felt252_const<39878429859763533771555484554338820190071>;
+libfunc const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>> = const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>>;
 libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u128>> = enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc array_new<felt252> = array_new<felt252>;
@@ -45,7 +49,7 @@ libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::P
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> (); // 0
-u128_const<0>() -> ([4]); // 1
+const_as_immediate<Const<u128, 0>>() -> ([4]); // 1
 dup<u128>([3]) -> ([3], [5]); // 2
 u128_eq([5], [4]) { fallthrough() 41() }; // 3
 branch_align() -> (); // 4
@@ -56,7 +60,7 @@ store_temp<u128>([6]) -> ([6]); // 8
 function_call<user@core::integer::U128Add::add>([0], [1], [6]) -> ([7], [8]); // 9
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([8]) { fallthrough([9]) 34([10]) }; // 10
 branch_align() -> (); // 11
-u128_const<1>() -> ([11]); // 12
+const_as_immediate<Const<u128, 1>>() -> ([11]); // 12
 store_temp<RangeCheck>([7]) -> ([7]); // 13
 store_temp<u128>([3]) -> ([3]); // 14
 store_temp<u128>([11]) -> ([11]); // 15
@@ -103,7 +107,7 @@ branch_align() -> (); // 55
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([10]); // 56
 store_temp<RangeCheck>([5]) -> ([8]); // 57
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10]) -> ([9]); // 58
-felt252_const<39878429859757942499084499860145094553463>() -> ([11]); // 59
+const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>>() -> ([11]); // 59
 store_temp<felt252>([11]) -> ([11]); // 60
 function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>([9], [11]) -> ([12]); // 61
 store_temp<RangeCheck>([8]) -> ([8]); // 62
@@ -119,7 +123,7 @@ branch_align() -> (); // 71
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([10]); // 72
 store_temp<RangeCheck>([5]) -> ([8]); // 73
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10]) -> ([9]); // 74
-felt252_const<39878429859763533771555484554338820190071>() -> ([11]); // 75
+const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>>() -> ([11]); // 75
 store_temp<felt252>([11]) -> ([11]); // 76
 function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>([9], [11]) -> ([12]); // 77
 store_temp<RangeCheck>([8]) -> ([8]); // 78
