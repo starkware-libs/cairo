@@ -23,10 +23,10 @@ cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "2.5.4"
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.5.4", features = ["env_logger"] }
 log.workspace = true
 salsa.workspace = true
-scarb-metadata.workspace = true
+scarb-metadata = "1"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 tokio.workspace = true
-tower-lsp.workspace = true
+tower-lsp = "0.20.0"
 
 [dev-dependencies]
