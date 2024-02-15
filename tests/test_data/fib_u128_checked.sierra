@@ -1,4 +1,5 @@
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -18,7 +19,7 @@ libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc function_call<user@core::integer::u128_checked_add> = function_call<user@core::integer::u128_checked_add>;
 libfunc enum_match<core::option::Option::<core::integer::u128>> = enum_match<core::option::Option::<core::integer::u128>>;
-libfunc u128_const<1> = u128_const<1>;
+libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
 libfunc function_call<user@core::integer::u128_checked_sub> = function_call<user@core::integer::u128_checked_sub>;
 libfunc function_call<user@examples::fib_u128_checked::fib> = function_call<user@examples::fib_u128_checked::fib>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<core::option::Option::<core::integer::u128>, 1>;
@@ -46,7 +47,7 @@ store_temp<u128>([8]) -> ([8]); // 16
 function_call<user@core::integer::u128_checked_add>([0], [1], [8]) -> ([9], [10]); // 17
 enum_match<core::option::Option::<core::integer::u128>>([10]) { fallthrough([11]) 40([12]) }; // 18
 branch_align() -> (); // 19
-u128_const<1>() -> ([13]); // 20
+const_as_immediate<Const<u128, 1>>() -> ([13]); // 20
 store_temp<RangeCheck>([9]) -> ([9]); // 21
 store_temp<u128>([3]) -> ([3]); // 22
 store_temp<u128>([13]) -> ([13]); // 23

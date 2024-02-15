@@ -628,37 +628,6 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
-/// Returns the name of the libfunc that creates a constant of type `ty`;
-pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
-    if ty == core_felt252_ty(db) {
-        "felt252_const".into()
-    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
-        "u8_const".into()
-    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
-        "u16_const".into()
-    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
-        "u32_const".into()
-    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
-        "u64_const".into()
-    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
-        "u128_const".into()
-    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
-        "i8_const".into()
-    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
-        "i16_const".into()
-    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
-        "i32_const".into()
-    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
-        "i64_const".into()
-    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
-        "i128_const".into()
-    } else if ty == get_core_ty_by_name(db, "bytes31".into(), vec![]) {
-        "bytes31_const".into()
-    } else {
-        panic!("No const libfunc for type {}.", ty.format(db))
-    }
-}
-
 /// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
 pub fn get_convert_to_felt252_libfunc_name_by_type(
     db: &dyn SemanticGroup,

@@ -1,14 +1,24 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1562289135345261248104517711435216905273039781098090849547999316252638820403> = Const<felt252, 1562289135345261248104517711435216905273039781098090849547999316252638820403> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1136007654036593840550225178021426725990135865455490550301357317755621024689> = Const<felt252, 1136007654036593840550225178021426725990135865455490550301357317755621024689> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1184098697392303947366893970066105115055525377648474241630611550646211146443> = Const<felt252, 1184098697392303947366893970066105115055525377648474241630611550646211146443> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 479078749750237601567185152641671238301710808297595380691273447192239808975> = Const<felt252, 479078749750237601567185152641671238301710808297595380691273447192239808975> [storable: false, drop: false, dup: false, zero_sized: false];
 type Box<core::starknet::info::v2::ExecutionInfo> = Box<core::starknet::info::v2::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::result::Result::<core::box::Box::<core::starknet::info::v2::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@[450414084234761711845349855430839784931369788210255124891804828605909834090], Box<core::starknet::info::v2::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 802923932379249060478396516088274507280253357766502127308257678452511330952> = Const<felt252, 802923932379249060478396516088274507280253357766502127308257678452511330952> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 150722313041843684930524381123110965919492695976792436030565542314950087507> = Const<felt252, 150722313041843684930524381123110965919492695976792436030565542314950087507> [storable: false, drop: false, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@[625340018035033268061024322321985773993398956645615401429157824148096863952], core::array::Span::<core::felt252>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 1640441651509910426183479391964138154030994375088991895596645095089031101722> = Const<felt252, 1640441651509910426183479391964138154030994375088991895596645095089031101722> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1902383044851096362944606727304160131544728910> = Const<felt252, 1902383044851096362944606727304160131544728910> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@[255862409632268709382876667385135391700507824083520182711692061443766480604], felt252, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 1749165063169615148890104124711417950509560691> = Const<felt252, 1749165063169615148890104124711417950509560691> [storable: false, drop: false, dup: false, zero_sized: false];
 type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>> = Enum<ut@[1066622978309758327526672597483202623059871376667747795906567598633136308279], ContractAddress, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<u32, 0> = Const<u32, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
@@ -27,10 +37,14 @@ type Tuple<Box<core::starknet::info::v2::ExecutionInfo>> = Struct<ut@[1325343513
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::box::Box::<core::starknet::info::v2::ExecutionInfo>,)> = Enum<ut@[1261927754835514914776054027365235561646535770460075557734124965374903769288], Tuple<Box<core::starknet::info::v2::ExecutionInfo>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<u128, 4294967296> = Const<u128, 4294967296> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState = Struct<ut@[100966411835069658490891798308509601034614659758948371104122490934210467421]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())> = Enum<ut@[981593320705770534798195346490721151835339965221255128589227414188376241933], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 131930903298366587672081961760732987202149934256979> = Const<felt252, 131930903298366587672081961760732987202149934256979> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 435285461855291105107993099906934166952343452266605277236313> = Const<felt252, 435285461855291105107993099906934166952343452266605277236313> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::starknet::eth_address::EthAddress = Struct<ut@[1419112166713589647553078383662074811959269827268228095533398309649743955461], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet = Struct<ut@[1379949929603052168535686289300270048384728816133613999424659757414432053683], core::starknet::eth_address::EthAddress> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet = Struct<ut@[1145025410662323122318000779287686133541046515156942176173172390879672442712], ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -39,35 +53,48 @@ type cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated
 type cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled = Struct<ut@[203962619917338642138823237021389407734662280052786691648057560240065427095], ContractAddress, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::Event = Enum<ut@[619095693945526375175592214129440871851523040844130623286439549427355614760], cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@[455598176897554951975518433047350165683642644060968901071973598007398862489], Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher = Struct<ut@[597507419822331146862144842591627240995589624078334672606783142618466982381], ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 8024456162111895508134220083409193625115250751146126158458242352452> = Const<felt252, 8024456162111895508134220083409193625115250751146126158458242352452> [storable: false, drop: false, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState = Struct<ut@[922618962215645733761364371569980831797229580020396818923336444492910843292]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())> = Enum<ut@[64883143497638158082544686873383377631844371927824994758071670830117289247], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 7863694625996581757838692818417470702703443> = Const<felt252, 7863694625996581757838692818417470702703443> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 5649753149270704239157030308953> = Const<felt252, 5649753149270704239157030308953> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 2054155436302874063144879540528839771367000972005206782634847091967300> = Const<felt252, 2054155436302874063144879540528839771367000972005206782634847091967300> [storable: false, drop: false, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState = Struct<ut@[71388189776827616281175507994170328162308811853724769773082026444486074069]> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, ())> = Enum<ut@[1183223065722887822918039220335273220278059998536491910289273019503738215619], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 2013105824254760083698114694758106795707028307> = Const<felt252, 2013105824254760083698114694758106795707028307> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<felt252> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@[28492023476188870970024821741919305102523279873289445804499878455420379737], Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<ContractAddress> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)> = Enum<ut@[1755495716650718146618285999245067208715119157433192891177430770370212750677], Tuple<ContractAddress>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u256> = Enum<ut@[523703995564884992331731899845619438921868538240978529314873467267171327154], core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@[1730591083647345995550560488717538099208395506321115194079300232838727341527], ContractAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> = Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913> [storable: false, drop: false, dup: false, zero_sized: false];
 type cairo_level_tests::contracts::token_bridge::token_bridge::ContractState = Struct<ut@[781233942909679793303062245275356660335615348637642097709023472292933656408], cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState, cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())> = Enum<ut@[744256717674666719412122963298687331393978831256833870064248251563697002207], Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::option::Option::<core::starknet::eth_address::EthAddress> = Enum<ut@[1041380713995109073193357785424402913334657540506511497447002411869299412344], core::starknet::eth_address::EthAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1537150982373836411973> = Const<felt252, 1537150982373836411973> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: false, zero_sized: false];
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> = Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> [storable: false, drop: false, dup: false, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
@@ -79,7 +106,7 @@ libfunc array_snapshot_pop_front<felt252> = array_snapshot_pop_front<felt252>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
 libfunc array_new<felt252> = array_new<felt252>;
-libfunc felt252_const<7733229381460288120802334208475838166080759535023995805565484692595> = felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>;
+libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
@@ -91,7 +118,7 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc withdraw_gas_all = withdraw_gas_all;
-libfunc felt252_const<2> = felt252_const<2>;
+libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 libfunc snapshot_take<felt252> = snapshot_take<felt252>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
@@ -102,9 +129,9 @@ libfunc drop<Array<felt252>> = drop<Array<felt252>>;
 libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
 libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
-libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
-libfunc felt252_const<1537150982373836411973> = felt252_const<1537150982373836411973>;
+libfunc const_as_immediate<Const<felt252, 1537150982373836411973>> = const_as_immediate<Const<felt252, 1537150982373836411973>>;
 libfunc store_temp<core::array::Span::<core::felt252>> = store_temp<core::array::Span::<core::felt252>>;
 libfunc function_call<user@core::starknet::eth_address::EthAddressSerde::deserialize> = function_call<user@core::starknet::eth_address::EthAddressSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::starknet::eth_address::EthAddress>> = enum_match<core::option::Option::<core::starknet::eth_address::EthAddress>>;
@@ -117,7 +144,7 @@ libfunc store_temp<core::starknet::eth_address::EthAddress> = store_temp<core::s
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge>;
 libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>;
 libfunc drop<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>> = drop<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>>;
-libfunc felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913> = felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>;
+libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
 libfunc function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize> = function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>> = enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc drop<ContractAddress> = drop<ContractAddress>;
@@ -128,11 +155,11 @@ libfunc enum_match<core::option::Option::<core::integer::u256>> = enum_match<cor
 libfunc drop<core::integer::u256> = drop<core::integer::u256>;
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw>;
-libfunc felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914> = felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914>;
+libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>;
 libfunc function_call<user@core::Felt252Serde::deserialize> = function_call<user@core::Felt252Serde::deserialize>;
 libfunc enum_match<core::option::Option::<core::felt252>> = enum_match<core::option::Option::<core::felt252>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::handle_deposit> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::handle_deposit>;
-libfunc felt252_const<485748461484230571791265682659113160264223489397539653310998840191492915> = felt252_const<485748461484230571791265682659113160264223489397539653310998840191492915>;
+libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::constructor> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::constructor>;
 libfunc rename<felt252> = rename<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -164,7 +191,7 @@ libfunc enum_match<core::bool> = enum_match<core::bool>;
 libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>;
 libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>;
 libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>;
-libfunc felt252_const<2013105824254760083698114694758106795707028307> = felt252_const<2013105824254760083698114694758106795707028307>;
+libfunc const_as_immediate<Const<felt252, 2013105824254760083698114694758106795707028307>> = const_as_immediate<Const<felt252, 2013105824254760083698114694758106795707028307>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>;
 libfunc dup<core::starknet::eth_address::EthAddress> = dup<core::starknet::eth_address::EthAddress>;
@@ -175,8 +202,8 @@ libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::tok
 libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>>;
-libfunc felt252_const<2054155436302874063144879540528839771367000972005206782634847091967300> = felt252_const<2054155436302874063144879540528839771367000972005206782634847091967300>;
-libfunc felt252_const<5649753149270704239157030308953> = felt252_const<5649753149270704239157030308953>;
+libfunc const_as_immediate<Const<felt252, 2054155436302874063144879540528839771367000972005206782634847091967300>> = const_as_immediate<Const<felt252, 2054155436302874063144879540528839771367000972005206782634847091967300>>;
+libfunc const_as_immediate<Const<felt252, 5649753149270704239157030308953>> = const_as_immediate<Const<felt252, 5649753149270704239157030308953>>;
 libfunc drop<Tuple<ContractAddress>> = drop<Tuple<ContractAddress>>;
 libfunc drop<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState> = drop<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>;
 libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
@@ -186,14 +213,14 @@ libfunc enum_init<core::option::Option::<core::starknet::contract_address::Contr
 libfunc snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState> = snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::read>;
 libfunc dup<ContractAddress> = dup<ContractAddress>;
-libfunc felt252_const<7863694625996581757838692818417470702703443> = felt252_const<7863694625996581757838692818417470702703443>;
+libfunc const_as_immediate<Const<felt252, 7863694625996581757838692818417470702703443>> = const_as_immediate<Const<felt252, 7863694625996581757838692818417470702703443>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::InternalContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState, Unit>>;
 libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet> = struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>>;
-libfunc felt252_const<8024456162111895508134220083409193625115250751146126158458242352452> = felt252_const<8024456162111895508134220083409193625115250751146126158458242352452>;
+libfunc const_as_immediate<Const<felt252, 8024456162111895508134220083409193625115250751146126158458242352452>> = const_as_immediate<Const<felt252, 8024456162111895508134220083409193625115250751146126158458242352452>>;
 libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>> = store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>;
@@ -217,7 +244,7 @@ libfunc dup<core::integer::u256> = dup<core::integer::u256>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_burn> = function_call<user@cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_burn>;
 libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
 libfunc drop<Tuple<Unit>> = drop<Tuple<Unit>>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc struct_deconstruct<core::integer::u256> = struct_deconstruct<core::integer::u256>;
 libfunc u128_to_felt252 = u128_to_felt252;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge>;
@@ -237,8 +264,8 @@ libfunc struct_construct<cairo_level_tests::contracts::token_bridge::token_bridg
 libfunc enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 3> = enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 3>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>>;
-libfunc felt252_const<435285461855291105107993099906934166952343452266605277236313> = felt252_const<435285461855291105107993099906934166952343452266605277236313>;
-libfunc felt252_const<131930903298366587672081961760732987202149934256979> = felt252_const<131930903298366587672081961760732987202149934256979>;
+libfunc const_as_immediate<Const<felt252, 435285461855291105107993099906934166952343452266605277236313>> = const_as_immediate<Const<felt252, 435285461855291105107993099906934166952343452266605277236313>>;
+libfunc const_as_immediate<Const<felt252, 131930903298366587672081961760732987202149934256979>> = const_as_immediate<Const<felt252, 131930903298366587672081961760732987202149934256979>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::InternalContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>> = struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>;
@@ -246,8 +273,8 @@ libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 0>;
 libfunc dup<felt252> = dup<felt252>;
 libfunc function_call<user@core::integer::u256_from_felt252> = function_call<user@core::integer::u256_from_felt252>;
-libfunc u128_const<0> = u128_const<0>;
-libfunc u128_const<4294967296> = u128_const<4294967296>;
+libfunc const_as_immediate<Const<u128, 0>> = const_as_immediate<Const<u128, 0>>;
+libfunc const_as_immediate<Const<u128, 4294967296>> = const_as_immediate<Const<u128, 4294967296>>;
 libfunc function_call<user@core::integer::U256PartialOrd::lt> = function_call<user@core::integer::U256PartialOrd::lt>;
 libfunc struct_construct<core::starknet::eth_address::EthAddress> = struct_construct<core::starknet::eth_address::EthAddress>;
 libfunc enum_init<core::option::Option::<core::starknet::eth_address::EthAddress>, 0> = enum_init<core::option::Option::<core::starknet::eth_address::EthAddress>, 0>;
@@ -264,14 +291,14 @@ libfunc store_temp<core::panics::PanicResult::<(core::starknet::contract_address
 libfunc enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1> = enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>;
 libfunc storage_base_address_const<1029731857676939251764310060221759735616133968799083538322288083634503518595> = storage_base_address_const<1029731857676939251764310060221759735616133968799083538322288083634503518595>;
 libfunc storage_address_from_base = storage_address_from_base;
-libfunc u32_const<0> = u32_const<0>;
+libfunc const_as_immediate<Const<u32, 0>> = const_as_immediate<Const<u32, 0>>;
 libfunc store_temp<u32> = store_temp<u32>;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 libfunc storage_read_syscall = storage_read_syscall;
 libfunc function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into> = function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>;
 libfunc enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>;
-libfunc felt252_const<1749165063169615148890104124711417950509560691> = felt252_const<1749165063169615148890104124711417950509560691>;
+libfunc const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>> = const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>;
 libfunc enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 1>;
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>;
 libfunc storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039> = storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039>;
@@ -302,13 +329,13 @@ libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<co
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<core::option::Option::<core::integer::u128>, 1>;
 libfunc dup<Tuple<ContractAddress>> = dup<Tuple<ContractAddress>>;
-libfunc felt252_const<1902383044851096362944606727304160131544728910> = felt252_const<1902383044851096362944606727304160131544728910>;
+libfunc const_as_immediate<Const<felt252, 1902383044851096362944606727304160131544728910>> = const_as_immediate<Const<felt252, 1902383044851096362944606727304160131544728910>>;
 libfunc snapshot_take<ContractAddress> = snapshot_take<ContractAddress>;
 libfunc function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize> = function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>;
 libfunc snapshot_take<core::integer::u256> = snapshot_take<core::integer::u256>;
 libfunc function_call<user@core::integer::u256Serde::serialize> = function_call<user@core::integer::u256Serde::serialize>;
 libfunc struct_deconstruct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher> = struct_deconstruct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>;
-libfunc felt252_const<1640441651509910426183479391964138154030994375088991895596645095089031101722> = felt252_const<1640441651509910426183479391964138154030994375088991895596645095089031101722>;
+libfunc const_as_immediate<Const<felt252, 1640441651509910426183479391964138154030994375088991895596645095089031101722>> = const_as_immediate<Const<felt252, 1640441651509910426183479391964138154030994375088991895596645095089031101722>>;
 libfunc call_contract_syscall = call_contract_syscall;
 libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
@@ -322,12 +349,12 @@ libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 libfunc dup<Tuple<felt252>> = dup<Tuple<felt252>>;
 libfunc drop<Tuple<felt252>> = drop<Tuple<felt252>>;
-libfunc felt252_const<150722313041843684930524381123110965919492695976792436030565542314950087507> = felt252_const<150722313041843684930524381123110965919492695976792436030565542314950087507>;
+libfunc const_as_immediate<Const<felt252, 150722313041843684930524381123110965919492695976792436030565542314950087507>> = const_as_immediate<Const<felt252, 150722313041843684930524381123110965919492695976792436030565542314950087507>>;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 0> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>;
 libfunc enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into>;
-libfunc felt252_const<802923932379249060478396516088274507280253357766502127308257678452511330952> = felt252_const<802923932379249060478396516088274507280253357766502127308257678452511330952>;
+libfunc const_as_immediate<Const<felt252, 802923932379249060478396516088274507280253357766502127308257678452511330952>> = const_as_immediate<Const<felt252, 802923932379249060478396516088274507280253357766502127308257678452511330952>>;
 libfunc function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into> = function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into>;
 libfunc struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>> = struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 0> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState, ())>, 0>;
@@ -347,14 +374,14 @@ libfunc enum_match<core::result::Result::<core::felt252, core::array::Array::<co
 libfunc struct_construct<Tuple<felt252>> = struct_construct<Tuple<felt252>>;
 libfunc enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 0> = enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 0>;
 libfunc enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event> = enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event>;
-libfunc felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975> = felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975>;
+libfunc const_as_immediate<Const<felt252, 479078749750237601567185152641671238301710808297595380691273447192239808975>> = const_as_immediate<Const<felt252, 479078749750237601567185152641671238301710808297595380691273447192239808975>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>;
 libfunc rename<Array<felt252>> = rename<Array<felt252>>;
-libfunc felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443> = felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>;
+libfunc const_as_immediate<Const<felt252, 1184098697392303947366893970066105115055525377648474241630611550646211146443>> = const_as_immediate<Const<felt252, 1184098697392303947366893970066105115055525377648474241630611550646211146443>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data>;
-libfunc felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689> = felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>;
+libfunc const_as_immediate<Const<felt252, 1136007654036593840550225178021426725990135865455490550301357317755621024689>> = const_as_immediate<Const<felt252, 1136007654036593840550225178021426725990135865455490550301357317755621024689>>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>;
-libfunc felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403> = felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>;
+libfunc const_as_immediate<Const<felt252, 1562289135345261248104517711435216905273039781098090849547999316252638820403>> = const_as_immediate<Const<felt252, 1562289135345261248104517711435216905273039781098090849547999316252638820403>>;
 libfunc store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled> = store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>;
 libfunc function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data>;
 libfunc enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 1> = enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 1>;
@@ -384,7 +411,7 @@ branch_align() -> (); // 6
 drop<Snapshot<Array<felt252>>>([9]) -> (); // 7
 drop<Box<felt252>>([10]) -> (); // 8
 array_new<felt252>() -> ([12]); // 9
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([13]); // 10
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([13]); // 10
 store_temp<felt252>([13]) -> ([13]); // 11
 array_append<felt252>([12], [13]) -> ([14]); // 12
 struct_construct<core::panics::Panic>() -> ([15]); // 13
@@ -402,7 +429,7 @@ store_temp<BuiltinCosts>([18]) -> ([18]); // 24
 withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 45([21], [22]) }; // 25
 branch_align() -> (); // 26
 array_new<felt252>() -> ([23]); // 27
-felt252_const<2>() -> ([24]); // 28
+const_as_immediate<Const<felt252, 2>>() -> ([24]); // 28
 snapshot_take<felt252>([24]) -> ([25], [26]); // 29
 drop<felt252>([25]) -> (); // 30
 store_temp<felt252>([26]) -> ([26]); // 31
@@ -421,7 +448,7 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([19], [20], [2], [33]); // 44
 branch_align() -> (); // 45
 array_new<felt252>() -> ([34]); // 46
-felt252_const<375233589013918064796019>() -> ([35]); // 47
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([35]); // 47
 store_temp<felt252>([35]) -> ([35]); // 48
 array_append<felt252>([34], [35]) -> ([36]); // 49
 struct_construct<core::panics::Panic>() -> ([37]); // 50
@@ -435,7 +462,7 @@ return([21], [22], [2], [39]); // 57
 branch_align() -> (); // 58
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 59
 array_new<felt252>() -> ([40]); // 60
-felt252_const<375233589013918064796019>() -> ([41]); // 61
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([41]); // 61
 store_temp<felt252>([41]) -> ([41]); // 62
 array_append<felt252>([40], [41]) -> ([42]); // 63
 struct_construct<core::panics::Panic>() -> ([43]); // 64
@@ -456,7 +483,7 @@ branch_align() -> (); // 78
 drop<Snapshot<Array<felt252>>>([9]) -> (); // 79
 drop<Box<felt252>>([10]) -> (); // 80
 array_new<felt252>() -> ([12]); // 81
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([13]); // 82
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([13]); // 82
 store_temp<felt252>([13]) -> ([13]); // 83
 array_append<felt252>([12], [13]) -> ([14]); // 84
 struct_construct<core::panics::Panic>() -> ([15]); // 85
@@ -474,7 +501,7 @@ store_temp<BuiltinCosts>([18]) -> ([18]); // 96
 withdraw_gas_all([4], [5], [18]) { fallthrough([19], [20]) 117([21], [22]) }; // 97
 branch_align() -> (); // 98
 array_new<felt252>() -> ([23]); // 99
-felt252_const<1537150982373836411973>() -> ([24]); // 100
+const_as_immediate<Const<felt252, 1537150982373836411973>>() -> ([24]); // 100
 snapshot_take<felt252>([24]) -> ([25], [26]); // 101
 drop<felt252>([25]) -> (); // 102
 store_temp<felt252>([26]) -> ([26]); // 103
@@ -493,7 +520,7 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([19], [20], [2], [33]); // 116
 branch_align() -> (); // 117
 array_new<felt252>() -> ([34]); // 118
-felt252_const<375233589013918064796019>() -> ([35]); // 119
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([35]); // 119
 store_temp<felt252>([35]) -> ([35]); // 120
 array_append<felt252>([34], [35]) -> ([36]); // 121
 struct_construct<core::panics::Panic>() -> ([37]); // 122
@@ -507,7 +534,7 @@ return([21], [22], [2], [39]); // 129
 branch_align() -> (); // 130
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 131
 array_new<felt252>() -> ([40]); // 132
-felt252_const<375233589013918064796019>() -> ([41]); // 133
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([41]); // 133
 store_temp<felt252>([41]) -> ([41]); // 134
 array_append<felt252>([40], [41]) -> ([42]); // 135
 struct_construct<core::panics::Panic>() -> ([43]); // 136
@@ -533,7 +560,7 @@ drop<Snapshot<Array<felt252>>>([14]) -> (); // 155
 drop<Box<felt252>>([15]) -> (); // 156
 drop<core::starknet::eth_address::EthAddress>([11]) -> (); // 157
 array_new<felt252>() -> ([17]); // 158
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 159
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([18]); // 159
 store_temp<felt252>([18]) -> ([18]); // 160
 array_append<felt252>([17], [18]) -> ([19]); // 161
 struct_construct<core::panics::Panic>() -> ([20]); // 162
@@ -583,7 +610,7 @@ return([32], [33], [34], [44]); // 205
 branch_align() -> (); // 206
 drop<core::starknet::eth_address::EthAddress>([11]) -> (); // 207
 array_new<felt252>() -> ([45]); // 208
-felt252_const<375233589013918064796019>() -> ([46]); // 209
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([46]); // 209
 store_temp<felt252>([46]) -> ([46]); // 210
 array_append<felt252>([45], [46]) -> ([47]); // 211
 struct_construct<core::panics::Panic>() -> ([48]); // 212
@@ -598,7 +625,7 @@ branch_align() -> (); // 220
 drop<Unit>([12]) -> (); // 221
 drop<core::array::Span::<core::felt252>>([9]) -> (); // 222
 array_new<felt252>() -> ([51]); // 223
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([52]); // 224
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([52]); // 224
 store_temp<felt252>([52]) -> ([52]); // 225
 array_append<felt252>([51], [52]) -> ([53]); // 226
 struct_construct<core::panics::Panic>() -> ([54]); // 227
@@ -612,7 +639,7 @@ return([8], [5], [2], [56]); // 234
 branch_align() -> (); // 235
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 236
 array_new<felt252>() -> ([57]); // 237
-felt252_const<375233589013918064796019>() -> ([58]); // 238
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([58]); // 238
 store_temp<felt252>([58]) -> ([58]); // 239
 array_append<felt252>([57], [58]) -> ([59]); // 240
 struct_construct<core::panics::Panic>() -> ([60]); // 241
@@ -638,7 +665,7 @@ drop<Snapshot<Array<felt252>>>([14]) -> (); // 260
 drop<Box<felt252>>([15]) -> (); // 261
 drop<ContractAddress>([11]) -> (); // 262
 array_new<felt252>() -> ([17]); // 263
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 264
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([18]); // 264
 store_temp<felt252>([18]) -> ([18]); // 265
 array_append<felt252>([17], [18]) -> ([19]); // 266
 struct_construct<core::panics::Panic>() -> ([20]); // 267
@@ -688,7 +715,7 @@ return([32], [33], [34], [44]); // 310
 branch_align() -> (); // 311
 drop<ContractAddress>([11]) -> (); // 312
 array_new<felt252>() -> ([45]); // 313
-felt252_const<375233589013918064796019>() -> ([46]); // 314
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([46]); // 314
 store_temp<felt252>([46]) -> ([46]); // 315
 array_append<felt252>([45], [46]) -> ([47]); // 316
 struct_construct<core::panics::Panic>() -> ([48]); // 317
@@ -703,7 +730,7 @@ branch_align() -> (); // 325
 drop<Unit>([12]) -> (); // 326
 drop<core::array::Span::<core::felt252>>([9]) -> (); // 327
 array_new<felt252>() -> ([51]); // 328
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([52]); // 329
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([52]); // 329
 store_temp<felt252>([52]) -> ([52]); // 330
 array_append<felt252>([51], [52]) -> ([53]); // 331
 struct_construct<core::panics::Panic>() -> ([54]); // 332
@@ -717,7 +744,7 @@ return([8], [5], [2], [56]); // 339
 branch_align() -> (); // 340
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 341
 array_new<felt252>() -> ([57]); // 342
-felt252_const<375233589013918064796019>() -> ([58]); // 343
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([58]); // 343
 store_temp<felt252>([58]) -> ([58]); // 344
 array_append<felt252>([57], [58]) -> ([59]); // 345
 struct_construct<core::panics::Panic>() -> ([60]); // 346
@@ -749,7 +776,7 @@ drop<Box<felt252>>([20]) -> (); // 371
 drop<core::integer::u256>([16]) -> (); // 372
 drop<core::starknet::eth_address::EthAddress>([11]) -> (); // 373
 array_new<felt252>() -> ([22]); // 374
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([23]); // 375
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([23]); // 375
 store_temp<felt252>([23]) -> ([23]); // 376
 array_append<felt252>([22], [23]) -> ([24]); // 377
 struct_construct<core::panics::Panic>() -> ([25]); // 378
@@ -801,7 +828,7 @@ branch_align() -> (); // 423
 drop<core::integer::u256>([16]) -> (); // 424
 drop<core::starknet::eth_address::EthAddress>([11]) -> (); // 425
 array_new<felt252>() -> ([50]); // 426
-felt252_const<375233589013918064796019>() -> ([51]); // 427
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([51]); // 427
 store_temp<felt252>([51]) -> ([51]); // 428
 array_append<felt252>([50], [51]) -> ([52]); // 429
 struct_construct<core::panics::Panic>() -> ([53]); // 430
@@ -817,7 +844,7 @@ drop<Unit>([17]) -> (); // 439
 drop<core::array::Span::<core::felt252>>([14]) -> (); // 440
 drop<core::starknet::eth_address::EthAddress>([11]) -> (); // 441
 array_new<felt252>() -> ([56]); // 442
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914>() -> ([57]); // 443
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([57]); // 443
 store_temp<felt252>([57]) -> ([57]); // 444
 array_append<felt252>([56], [57]) -> ([58]); // 445
 struct_construct<core::panics::Panic>() -> ([59]); // 446
@@ -832,7 +859,7 @@ branch_align() -> (); // 454
 drop<Unit>([12]) -> (); // 455
 drop<core::array::Span::<core::felt252>>([9]) -> (); // 456
 array_new<felt252>() -> ([62]); // 457
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([63]); // 458
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([63]); // 458
 store_temp<felt252>([63]) -> ([63]); // 459
 array_append<felt252>([62], [63]) -> ([64]); // 460
 struct_construct<core::panics::Panic>() -> ([65]); // 461
@@ -846,7 +873,7 @@ return([8], [5], [2], [67]); // 468
 branch_align() -> (); // 469
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 470
 array_new<felt252>() -> ([68]); // 471
-felt252_const<375233589013918064796019>() -> ([69]); // 472
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([69]); // 472
 store_temp<felt252>([69]) -> ([69]); // 473
 array_append<felt252>([68], [69]) -> ([70]); // 474
 struct_construct<core::panics::Panic>() -> ([71]); // 475
@@ -884,7 +911,7 @@ drop<core::integer::u256>([20]) -> (); // 506
 drop<ContractAddress>([15]) -> (); // 507
 drop<felt252>([10]) -> (); // 508
 array_new<felt252>() -> ([26]); // 509
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([27]); // 510
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([27]); // 510
 store_temp<felt252>([27]) -> ([27]); // 511
 array_append<felt252>([26], [27]) -> ([28]); // 512
 struct_construct<core::panics::Panic>() -> ([29]); // 513
@@ -938,7 +965,7 @@ drop<core::integer::u256>([20]) -> (); // 560
 drop<ContractAddress>([15]) -> (); // 561
 drop<felt252>([10]) -> (); // 562
 array_new<felt252>() -> ([54]); // 563
-felt252_const<375233589013918064796019>() -> ([55]); // 564
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([55]); // 564
 store_temp<felt252>([55]) -> ([55]); // 565
 array_append<felt252>([54], [55]) -> ([56]); // 566
 struct_construct<core::panics::Panic>() -> ([57]); // 567
@@ -955,7 +982,7 @@ drop<core::array::Span::<core::felt252>>([18]) -> (); // 577
 drop<ContractAddress>([15]) -> (); // 578
 drop<felt252>([10]) -> (); // 579
 array_new<felt252>() -> ([60]); // 580
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492915>() -> ([61]); // 581
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>() -> ([61]); // 581
 store_temp<felt252>([61]) -> ([61]); // 582
 array_append<felt252>([60], [61]) -> ([62]); // 583
 struct_construct<core::panics::Panic>() -> ([63]); // 584
@@ -971,7 +998,7 @@ drop<Unit>([16]) -> (); // 593
 drop<felt252>([10]) -> (); // 594
 drop<core::array::Span::<core::felt252>>([13]) -> (); // 595
 array_new<felt252>() -> ([66]); // 596
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492914>() -> ([67]); // 597
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([67]); // 597
 store_temp<felt252>([67]) -> ([67]); // 598
 array_append<felt252>([66], [67]) -> ([68]); // 599
 struct_construct<core::panics::Panic>() -> ([69]); // 600
@@ -986,7 +1013,7 @@ branch_align() -> (); // 608
 drop<Unit>([11]) -> (); // 609
 drop<core::array::Span::<core::felt252>>([8]) -> (); // 610
 array_new<felt252>() -> ([72]); // 611
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([73]); // 612
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([73]); // 612
 store_temp<felt252>([73]) -> ([73]); // 613
 array_append<felt252>([72], [73]) -> ([74]); // 614
 struct_construct<core::panics::Panic>() -> ([75]); // 615
@@ -1000,7 +1027,7 @@ return([4], [5], [2], [77]); // 622
 branch_align() -> (); // 623
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 624
 array_new<felt252>() -> ([78]); // 625
-felt252_const<375233589013918064796019>() -> ([79]); // 626
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([79]); // 626
 store_temp<felt252>([79]) -> ([79]); // 627
 array_append<felt252>([78], [79]) -> ([80]); // 628
 struct_construct<core::panics::Panic>() -> ([81]); // 629
@@ -1026,7 +1053,7 @@ drop<Snapshot<Array<felt252>>>([14]) -> (); // 648
 drop<Box<felt252>>([15]) -> (); // 649
 drop<ContractAddress>([11]) -> (); // 650
 array_new<felt252>() -> ([17]); // 651
-felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 652
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([18]); // 652
 store_temp<felt252>([18]) -> ([18]); // 653
 array_append<felt252>([17], [18]) -> ([19]); // 654
 struct_construct<core::panics::Panic>() -> ([20]); // 655
@@ -1076,7 +1103,7 @@ return([24], [32], [33], [43]); // 698
 branch_align() -> (); // 699
 drop<ContractAddress>([11]) -> (); // 700
 array_new<felt252>() -> ([44]); // 701
-felt252_const<375233589013918064796019>() -> ([45]); // 702
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([45]); // 702
 store_temp<felt252>([45]) -> ([45]); // 703
 array_append<felt252>([44], [45]) -> ([46]); // 704
 struct_construct<core::panics::Panic>() -> ([47]); // 705
@@ -1091,7 +1118,7 @@ branch_align() -> (); // 713
 drop<Unit>([12]) -> (); // 714
 drop<core::array::Span::<core::felt252>>([9]) -> (); // 715
 array_new<felt252>() -> ([50]); // 716
-felt252_const<485748461484230571791265682659113160264223489397539653310998840191492913>() -> ([51]); // 717
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([51]); // 717
 store_temp<felt252>([51]) -> ([51]); // 718
 array_append<felt252>([50], [51]) -> ([52]); // 719
 struct_construct<core::panics::Panic>() -> ([53]); // 720
@@ -1105,7 +1132,7 @@ return([8], [5], [2], [55]); // 727
 branch_align() -> (); // 728
 drop<core::array::Span::<core::felt252>>([3]) -> (); // 729
 array_new<felt252>() -> ([56]); // 730
-felt252_const<375233589013918064796019>() -> ([57]); // 731
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([57]); // 731
 store_temp<felt252>([57]) -> ([57]); // 732
 array_append<felt252>([56], [57]) -> ([58]); // 733
 struct_construct<core::panics::Panic>() -> ([59]); // 734
@@ -1192,7 +1219,7 @@ drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l
 drop<core::starknet::eth_address::EthAddress>([36]) -> (); // 815
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([27]) -> (); // 816
 array_new<felt252>() -> ([49]); // 817
-felt252_const<2013105824254760083698114694758106795707028307>() -> ([50]); // 818
+const_as_immediate<Const<felt252, 2013105824254760083698114694758106795707028307>>() -> ([50]); // 818
 store_temp<felt252>([50]) -> ([50]); // 819
 array_append<felt252>([49], [50]) -> ([51]); // 820
 struct_construct<core::panics::Panic>() -> ([52]); // 821
@@ -1244,7 +1271,7 @@ drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([27]) -> (); // 867
 drop<core::starknet::eth_address::EthAddress>([4]) -> (); // 868
 array_new<felt252>() -> ([70]); // 869
-felt252_const<2054155436302874063144879540528839771367000972005206782634847091967300>() -> ([71]); // 870
+const_as_immediate<Const<felt252, 2054155436302874063144879540528839771367000972005206782634847091967300>>() -> ([71]); // 870
 store_temp<felt252>([71]) -> ([71]); // 871
 array_append<felt252>([70], [71]) -> ([72]); // 872
 struct_construct<core::panics::Panic>() -> ([73]); // 873
@@ -1273,7 +1300,7 @@ drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_g
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 896
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 897
 array_new<felt252>() -> ([77]); // 898
-felt252_const<5649753149270704239157030308953>() -> ([78]); // 899
+const_as_immediate<Const<felt252, 5649753149270704239157030308953>>() -> ([78]); // 899
 store_temp<felt252>([78]) -> ([78]); // 900
 array_append<felt252>([77], [78]) -> ([79]); // 901
 struct_construct<core::panics::Panic>() -> ([80]); // 902
@@ -1384,7 +1411,7 @@ drop<ContractAddress>([4]) -> (); // 1006
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1007
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([27]) -> (); // 1008
 array_new<felt252>() -> ([49]); // 1009
-felt252_const<7863694625996581757838692818417470702703443>() -> ([50]); // 1010
+const_as_immediate<Const<felt252, 7863694625996581757838692818417470702703443>>() -> ([50]); // 1010
 store_temp<felt252>([50]) -> ([50]); // 1011
 array_append<felt252>([49], [50]) -> ([51]); // 1012
 struct_construct<core::panics::Panic>() -> ([52]); // 1013
@@ -1434,7 +1461,7 @@ drop<ContractAddress>([4]) -> (); // 1056
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([11]) -> (); // 1057
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([27]) -> (); // 1058
 array_new<felt252>() -> ([69]); // 1059
-felt252_const<8024456162111895508134220083409193625115250751146126158458242352452>() -> ([70]); // 1060
+const_as_immediate<Const<felt252, 8024456162111895508134220083409193625115250751146126158458242352452>>() -> ([70]); // 1060
 store_temp<felt252>([70]) -> ([70]); // 1061
 array_append<felt252>([69], [70]) -> ([71]); // 1062
 struct_construct<core::panics::Panic>() -> ([72]); // 1063
@@ -1463,7 +1490,7 @@ drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([13]) -> (); // 1086
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([12]) -> (); // 1087
 array_new<felt252>() -> ([76]); // 1088
-felt252_const<5649753149270704239157030308953>() -> ([77]); // 1089
+const_as_immediate<Const<felt252, 5649753149270704239157030308953>>() -> ([77]); // 1089
 store_temp<felt252>([77]) -> ([77]); // 1090
 array_append<felt252>([76], [77]) -> ([78]); // 1091
 struct_construct<core::panics::Panic>() -> ([79]); // 1092
@@ -1603,7 +1630,7 @@ enum_match<core::panics::PanicResult::<((),)>>([26]) { fallthrough([27]) 1303([2
 branch_align() -> (); // 1226
 drop<Tuple<Unit>>([27]) -> (); // 1227
 array_new<felt252>() -> ([29]); // 1228
-felt252_const<0>() -> ([30]); // 1229
+const_as_immediate<Const<felt252, 0>>() -> ([30]); // 1229
 store_temp<felt252>([30]) -> ([30]); // 1230
 array_append<felt252>([29], [30]) -> ([31]); // 1231
 dup<core::starknet::eth_address::EthAddress>([4]) -> ([4], [32]); // 1232
@@ -1809,7 +1836,7 @@ drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([10]) -> (); // 1432
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([7]) -> (); // 1433
 array_new<felt252>() -> ([45]); // 1434
-felt252_const<435285461855291105107993099906934166952343452266605277236313>() -> ([46]); // 1435
+const_as_immediate<Const<felt252, 435285461855291105107993099906934166952343452266605277236313>>() -> ([46]); // 1435
 store_temp<felt252>([46]) -> ([46]); // 1436
 array_append<felt252>([45], [46]) -> ([47]); // 1437
 struct_construct<core::panics::Panic>() -> ([48]); // 1438
@@ -1854,7 +1881,7 @@ drop<Unit>([13]) -> (); // 1476
 drop<ContractAddress>([3]) -> (); // 1477
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>([2]) -> (); // 1478
 array_new<felt252>() -> ([15]); // 1479
-felt252_const<131930903298366587672081961760732987202149934256979>() -> ([16]); // 1480
+const_as_immediate<Const<felt252, 131930903298366587672081961760732987202149934256979>>() -> ([16]); // 1480
 store_temp<felt252>([16]) -> ([16]); // 1481
 array_append<felt252>([15], [16]) -> ([17]); // 1482
 struct_construct<core::panics::Panic>() -> ([18]); // 1483
@@ -1895,8 +1922,8 @@ store_temp<RangeCheck>([0]) -> ([0]); // 1517
 dup<felt252>([1]) -> ([1], [2]); // 1518
 store_temp<felt252>([2]) -> ([2]); // 1519
 function_call<user@core::integer::u256_from_felt252>([0], [2]) -> ([3], [4]); // 1520
-u128_const<0>() -> ([5]); // 1521
-u128_const<4294967296>() -> ([6]); // 1522
+const_as_immediate<Const<u128, 0>>() -> ([5]); // 1521
+const_as_immediate<Const<u128, 4294967296>>() -> ([6]); // 1522
 struct_construct<core::integer::u256>([5], [6]) -> ([7]); // 1523
 store_temp<core::integer::u256>([7]) -> ([7]); // 1524
 function_call<user@core::integer::U256PartialOrd::lt>([3], [4], [7]) -> ([8], [9]); // 1525
@@ -1943,7 +1970,7 @@ return([2], [3], [16]); // 1565
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_governor::ContractMemberState>([3]) -> (); // 1566
 storage_base_address_const<1029731857676939251764310060221759735616133968799083538322288083634503518595>() -> ([4]); // 1567
 storage_address_from_base([4]) -> ([5]); // 1568
-u32_const<0>() -> ([6]); // 1569
+const_as_immediate<Const<u32, 0>>() -> ([6]); // 1569
 store_temp<u32>([6]) -> ([6]); // 1570
 store_temp<StorageAddress>([5]) -> ([5]); // 1571
 storage_read_syscall([1], [2], [6], [5]) { fallthrough([7], [8], [9]) 1601([10], [11], [12]) }; // 1572
@@ -1964,7 +1991,7 @@ jump() { 1607() }; // 1586
 branch_align() -> (); // 1587
 drop<Unit>([16]) -> (); // 1588
 array_new<felt252>() -> ([22]); // 1589
-felt252_const<1749165063169615148890104124711417950509560691>() -> ([23]); // 1590
+const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([23]); // 1590
 store_temp<felt252>([23]) -> ([23]); // 1591
 array_append<felt252>([22], [23]) -> ([24]); // 1592
 struct_construct<core::panics::Panic>() -> ([25]); // 1593
@@ -1990,7 +2017,7 @@ return([18], [19], [20], [29]); // 1612
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l1_bridge::ContractMemberState>([2]) -> (); // 1613
 storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039>() -> ([3]); // 1614
 storage_address_from_base([3]) -> ([4]); // 1615
-u32_const<0>() -> ([5]); // 1616
+const_as_immediate<Const<u32, 0>>() -> ([5]); // 1616
 store_temp<u32>([5]) -> ([5]); // 1617
 store_temp<StorageAddress>([4]) -> ([4]); // 1618
 storage_read_syscall([0], [1], [5], [4]) { fallthrough([6], [7], [8]) 1626([9], [10], [11]) }; // 1619
@@ -2015,7 +2042,7 @@ store_temp<felt252>([1]) -> ([1]); // 1637
 return([1]); // 1638
 storage_base_address_const<354355705540345788209863448842999827334924475425635711747130948498534937039>() -> ([4]); // 1639
 storage_address_from_base([4]) -> ([5]); // 1640
-u32_const<0>() -> ([6]); // 1641
+const_as_immediate<Const<u32, 0>>() -> ([6]); // 1641
 store_temp<u32>([6]) -> ([6]); // 1642
 store_temp<StorageAddress>([5]) -> ([5]); // 1643
 storage_write_syscall([0], [1], [6], [5], [3]) { fallthrough([7], [8]) 1652([9], [10], [11]) }; // 1644
@@ -2098,7 +2125,7 @@ return([25], [26], [35]); // 1720
 drop<cairo_level_tests::contracts::token_bridge::token_bridge::__member_module_l2_token::ContractMemberState>([3]) -> (); // 1721
 storage_base_address_const<841860433736651593546282235841978572674005179665527839815333381321756641199>() -> ([4]); // 1722
 storage_address_from_base([4]) -> ([5]); // 1723
-u32_const<0>() -> ([6]); // 1724
+const_as_immediate<Const<u32, 0>>() -> ([6]); // 1724
 store_temp<u32>([6]) -> ([6]); // 1725
 store_temp<StorageAddress>([5]) -> ([5]); // 1726
 storage_read_syscall([1], [2], [6], [5]) { fallthrough([7], [8], [9]) 1756([10], [11], [12]) }; // 1727
@@ -2119,7 +2146,7 @@ jump() { 1762() }; // 1741
 branch_align() -> (); // 1742
 drop<Unit>([16]) -> (); // 1743
 array_new<felt252>() -> ([22]); // 1744
-felt252_const<1749165063169615148890104124711417950509560691>() -> ([23]); // 1745
+const_as_immediate<Const<felt252, 1749165063169615148890104124711417950509560691>>() -> ([23]); // 1745
 store_temp<felt252>([23]) -> ([23]); // 1746
 array_append<felt252>([22], [23]) -> ([24]); // 1747
 struct_construct<core::panics::Panic>() -> ([25]); // 1748
@@ -2145,7 +2172,7 @@ return([18], [19], [20], [29]); // 1767
 storage_base_address_const<841860433736651593546282235841978572674005179665527839815333381321756641199>() -> ([4]); // 1768
 contract_address_to_felt252([3]) -> ([5]); // 1769
 storage_address_from_base([4]) -> ([6]); // 1770
-u32_const<0>() -> ([7]); // 1771
+const_as_immediate<Const<u32, 0>>() -> ([7]); // 1771
 store_temp<u32>([7]) -> ([7]); // 1772
 store_temp<StorageAddress>([6]) -> ([6]); // 1773
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([8], [9]) 1782([10], [11], [12]) }; // 1774
@@ -2269,7 +2296,7 @@ branch_align() -> (); // 1891
 drop<Unit>([23]) -> (); // 1892
 drop<Tuple<ContractAddress>>([11]) -> (); // 1893
 array_new<felt252>() -> ([25]); // 1894
-felt252_const<1902383044851096362944606727304160131544728910>() -> ([26]); // 1895
+const_as_immediate<Const<felt252, 1902383044851096362944606727304160131544728910>>() -> ([26]); // 1895
 store_temp<felt252>([26]) -> ([26]); // 1896
 array_append<felt252>([25], [26]) -> ([27]); // 1897
 struct_construct<core::panics::Panic>() -> ([28]); // 1898
@@ -2309,7 +2336,7 @@ store_temp<Array<felt252>>([8]) -> ([8]); // 1931
 function_call<user@core::integer::u256Serde::serialize>([11], [8]) -> ([12], [13]); // 1932
 drop<Unit>([13]) -> (); // 1933
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>([2]) -> ([14]); // 1934
-felt252_const<1640441651509910426183479391964138154030994375088991895596645095089031101722>() -> ([15]); // 1935
+const_as_immediate<Const<felt252, 1640441651509910426183479391964138154030994375088991895596645095089031101722>>() -> ([15]); // 1935
 snapshot_take<Array<felt252>>([12]) -> ([16], [17]); // 1936
 drop<Array<felt252>>([16]) -> (); // 1937
 struct_construct<core::array::Span::<core::felt252>>([17]) -> ([18]); // 1938
@@ -2371,7 +2398,7 @@ branch_align() -> (); // 1993
 drop<Unit>([20]) -> (); // 1994
 drop<Tuple<felt252>>([9]) -> (); // 1995
 array_new<felt252>() -> ([22]); // 1996
-felt252_const<150722313041843684930524381123110965919492695976792436030565542314950087507>() -> ([23]); // 1997
+const_as_immediate<Const<felt252, 150722313041843684930524381123110965919492695976792436030565542314950087507>>() -> ([23]); // 1997
 store_temp<felt252>([23]) -> ([23]); // 1998
 array_append<felt252>([22], [23]) -> ([24]); // 1999
 struct_construct<core::panics::Panic>() -> ([25]); // 2000
@@ -2467,7 +2494,7 @@ store_temp<Array<felt252>>([8]) -> ([8]); // 2089
 function_call<user@core::integer::u256Serde::serialize>([11], [8]) -> ([12], [13]); // 2090
 drop<Unit>([13]) -> (); // 2091
 struct_deconstruct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>([2]) -> ([14]); // 2092
-felt252_const<802923932379249060478396516088274507280253357766502127308257678452511330952>() -> ([15]); // 2093
+const_as_immediate<Const<felt252, 802923932379249060478396516088274507280253357766502127308257678452511330952>>() -> ([15]); // 2093
 snapshot_take<Array<felt252>>([12]) -> ([16], [17]); // 2094
 drop<Array<felt252>>([16]) -> (); // 2095
 struct_construct<core::array::Span::<core::felt252>>([17]) -> ([18]); // 2096
@@ -2551,7 +2578,7 @@ return([25], [26], [35]); // 2173
 storage_base_address_const<1029731857676939251764310060221759735616133968799083538322288083634503518595>() -> ([4]); // 2174
 contract_address_to_felt252([3]) -> ([5]); // 2175
 storage_address_from_base([4]) -> ([6]); // 2176
-u32_const<0>() -> ([7]); // 2177
+const_as_immediate<Const<u32, 0>>() -> ([7]); // 2177
 store_temp<u32>([7]) -> ([7]); // 2178
 store_temp<StorageAddress>([6]) -> ([6]); // 2179
 storage_write_syscall([0], [1], [7], [6], [5]) { fallthrough([8], [9]) 2188([10], [11], [12]) }; // 2180
@@ -2586,7 +2613,7 @@ store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_brid
 return([15], [16], [25]); // 2209
 u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 2217([4], [5], [6]) }; // 2210
 branch_align() -> (); // 2211
-u128_const<0>() -> ([7]); // 2212
+const_as_immediate<Const<u128, 0>>() -> ([7]); // 2212
 struct_construct<core::integer::u256>([3], [7]) -> ([8]); // 2213
 store_temp<RangeCheck>([2]) -> ([2]); // 2214
 store_temp<core::integer::u256>([8]) -> ([8]); // 2215
@@ -2698,7 +2725,7 @@ store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([1])
 return([1]); // 2321
 enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event>([0]) { fallthrough([3]) 2335([4]) 2347([5]) 2359([6]) }; // 2322
 branch_align() -> (); // 2323
-felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975>() -> ([7]); // 2324
+const_as_immediate<Const<felt252, 479078749750237601567185152641671238301710808297595380691273447192239808975>>() -> ([7]); // 2324
 store_temp<felt252>([7]) -> ([7]); // 2325
 array_append<felt252>([1], [7]) -> ([8]); // 2326
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>([3]) -> ([3]); // 2327
@@ -2710,7 +2737,7 @@ rename<Array<felt252>>([9]) -> ([12]); // 2332
 rename<Array<felt252>>([10]) -> ([13]); // 2333
 jump() { 2370() }; // 2334
 branch_align() -> (); // 2335
-felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>() -> ([14]); // 2336
+const_as_immediate<Const<felt252, 1184098697392303947366893970066105115055525377648474241630611550646211146443>>() -> ([14]); // 2336
 store_temp<felt252>([14]) -> ([14]); // 2337
 array_append<felt252>([1], [14]) -> ([15]); // 2338
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>([4]) -> ([4]); // 2339
@@ -2722,7 +2749,7 @@ rename<Array<felt252>>([16]) -> ([12]); // 2344
 rename<Array<felt252>>([17]) -> ([13]); // 2345
 jump() { 2370() }; // 2346
 branch_align() -> (); // 2347
-felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>() -> ([19]); // 2348
+const_as_immediate<Const<felt252, 1136007654036593840550225178021426725990135865455490550301357317755621024689>>() -> ([19]); // 2348
 store_temp<felt252>([19]) -> ([19]); // 2349
 array_append<felt252>([1], [19]) -> ([20]); // 2350
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>([5]) -> ([5]); // 2351
@@ -2734,7 +2761,7 @@ rename<Array<felt252>>([21]) -> ([12]); // 2356
 rename<Array<felt252>>([22]) -> ([13]); // 2357
 jump() { 2370() }; // 2358
 branch_align() -> (); // 2359
-felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>() -> ([24]); // 2360
+const_as_immediate<Const<felt252, 1562289135345261248104517711435216905273039781098090849547999316252638820403>>() -> ([24]); // 2360
 store_temp<felt252>([24]) -> ([24]); // 2361
 array_append<felt252>([1], [24]) -> ([25]); // 2362
 store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>([6]) -> ([6]); // 2363

@@ -131,12 +131,14 @@ test::foo: OrderedHashMap({Poseidon: 4, Const: 4100})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::poseidon::HashState = Struct<ut@core::poseidon::HashState, felt252, felt252, felt252, core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
@@ -152,12 +154,12 @@ libfunc store_temp<core::poseidon::HashState> = store_temp<core::poseidon::HashS
 libfunc jump = jump;
 libfunc hades_permutation = hades_permutation;
 libfunc struct_deconstruct<core::poseidon::HashState> = struct_deconstruct<core::poseidon::HashState>;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc drop<felt252> = drop<felt252>;
 
-felt252_const<0>() -> ([4]); // 0
-felt252_const<0>() -> ([5]); // 1
-felt252_const<0>() -> ([6]); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 0
+const_as_immediate<Const<felt252, 0>>() -> ([5]); // 1
+const_as_immediate<Const<felt252, 0>>() -> ([6]); // 2
 struct_construct<Unit>() -> ([7]); // 3
 enum_init<core::bool, 0>([7]) -> ([8]); // 4
 store_temp<core::bool>([8]) -> ([8]); // 5
@@ -231,7 +233,7 @@ struct_deconstruct<core::poseidon::HashState>([56]) -> ([65], [66], [67], [68]);
 enum_match<core::bool>([68]) { fallthrough([69]) 85([70]) }; // 73
 branch_align() -> (); // 74
 drop<Unit>([69]) -> (); // 75
-felt252_const<1>() -> ([71]); // 76
+const_as_immediate<Const<felt252, 1>>() -> ([71]); // 76
 felt252_add([65], [71]) -> ([72]); // 77
 store_temp<felt252>([72]) -> ([72]); // 78
 hades_permutation([55], [72], [66], [67]) -> ([73], [74], [75], [76]); // 79
@@ -242,7 +244,7 @@ store_temp<felt252>([74]) -> ([74]); // 83
 return([73], [74]); // 84
 branch_align() -> (); // 85
 drop<Unit>([70]) -> (); // 86
-felt252_const<1>() -> ([77]); // 87
+const_as_immediate<Const<felt252, 1>>() -> ([77]); // 87
 felt252_add([66], [77]) -> ([78]); // 88
 store_temp<felt252>([78]) -> ([78]); // 89
 hades_permutation([55], [65], [78], [67]) -> ([79], [80], [81], [82]); // 90
