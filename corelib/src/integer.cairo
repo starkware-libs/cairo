@@ -2746,7 +2746,6 @@ impl I128One of core::num::traits::One<i128> {
 }
 
 // OverflowingAdd implementations
-
 impl U8OverflowingAdd of core::num::traits::OverflowingAdd<u8> {
     fn overflowing_add(self: u8, v: u8) -> (u8, bool) {
         match u8_overflowing_add(self, v) {
