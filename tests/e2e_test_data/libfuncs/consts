@@ -6,11 +6,11 @@ SmallE2ETestRunner
 //! > cairo
 extern type Const<T, const VALUE: T>;
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
-extern fn const_as_immediate<T>() -> felt252 nopanic;
 
 type C = Const<felt252, 100>;
+const V: felt252 = 100;
 
-fn bar() -> felt252 { const_as_immediate::<C>() }
+fn bar() -> felt252 { V }
 fn foo() -> Box<felt252> { const_as_box::<C, 0>() }
 
 //! > casm
@@ -57,8 +57,9 @@ extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u8> nopanic;
 extern fn const_as_immediate<T>() -> u8 nopanic;
 
 type C = Const<u8, 100>;
+const V: u8 = 100;
 
-fn bar() -> u8 { const_as_immediate::<C>() }
+fn bar() -> u8 { V }
 fn foo() -> Box<u8> { const_as_box::<C, 0>() }
 
 //! > casm
@@ -151,11 +152,11 @@ SmallE2ETestRunner
 mod value { extern type Const<T, const VALUE: T>; }
 mod struct2 { extern type Const<T, C0, C1>; }
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u256> nopanic;
-extern fn const_as_immediate<T>() -> u256 nopanic;
 
 type C = struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>;
+const V: u256 = 0x2000000000000000000000000000000010;
 
-fn bar() -> u256 { const_as_immediate::<C>() }
+fn bar() -> u256 { V }
 fn foo() -> Box<u256> { const_as_box::<C, 0>() }
 
 //! > casm
