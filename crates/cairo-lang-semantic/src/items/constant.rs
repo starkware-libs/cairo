@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ConstantId, LanguageElementId, LookupItemId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use id_arena::Arena;
 
 use crate::corelib::validate_literal;
 use crate::db::SemanticGroup;
@@ -16,12 +17,17 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{Expr, SemanticDiagnostic};
+use crate::{Expr, ExprId, SemanticDiagnostic, TypeId};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Constant {
-    pub value: Expr,
+    /// The actual id of the const expression value.
+    pub value: ExprId,
+    /// The type of the constant.
+    pub ty: TypeId,
+    /// The arena of all the expressions for the const calculation.
+    pub exprs: Arc<Arena<Expr>>,
 }
 
 /// Information about a constant definition.
@@ -65,37 +71,54 @@ pub fn priv_constant_semantic_data(
     if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), const_type) {
         err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());
     }
-
-    // Check that the expression is a literal.
-    if let Some(literal_value) = match &value.expr {
-        Expr::Literal(expr) => Some(expr.value.clone()),
-        Expr::FunctionCall(expr) => try_extract_minus_literal(db, &ctx.exprs, expr),
-        _ => None,
-    } {
-        if let Err(err) = validate_literal(db, const_type, literal_value) {
-            ctx.diagnostics.report(
-                &const_ast.value(syntax_db),
-                crate::diagnostic::SemanticDiagnosticKind::LiteralError(err),
-            );
-        }
-    } else {
-        ctx.diagnostics.report(
-            &const_ast.value(syntax_db),
-            crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
-        );
-    }
-
-    let constant = Constant { value: value.expr };
-
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
         inference_err
             .report(ctx.diagnostics, stable_ptr.unwrap_or(const_ast.stable_ptr().untyped()));
     }
-    let constant = ctx.resolver.inference().rewrite(constant).no_err();
+
+    // Check that the expression is a valid constant.
+    validate_constant_expr(db, &mut ctx.resolver, &ctx.exprs, value.id, ctx.diagnostics);
 
     let resolver_data = Arc::new(ctx.resolver.data);
+    let constant = Constant { value: value.id, ty: const_type, exprs: Arc::new(ctx.exprs) };
     Ok(ConstantData { diagnostics: diagnostics.build(), constant: Ok(constant), resolver_data })
+}
+
+/// Validates that the given expression is a valid constant.
+fn validate_constant_expr(
+    db: &dyn SemanticGroup,
+    resolver: &mut Resolver<'_>,
+    exprs: &Arena<Expr>,
+    expr_id: ExprId,
+    diagnostics: &mut SemanticDiagnostics,
+) {
+    let expr = &exprs[expr_id];
+    let report_err = |diagnostics: &mut SemanticDiagnostics, err| {
+        diagnostics.report_by_ptr(expr.stable_ptr().untyped(), err);
+    };
+    let mut handle_literal = |diagnostics, value| {
+        let ty = resolver.inference().rewrite(expr.ty()).no_err();
+        if let Err(err) = validate_literal(db, ty, value) {
+            report_err(diagnostics, crate::diagnostic::SemanticDiagnosticKind::LiteralError(err));
+        }
+    };
+    match &expr {
+        Expr::Literal(expr) => handle_literal(diagnostics, expr.value.clone()),
+        Expr::FunctionCall(expr) => {
+            if let Some(value) = try_extract_minus_literal(db, exprs, expr) {
+                handle_literal(diagnostics, value);
+            } else {
+                report_err(
+                    diagnostics,
+                    crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
+                );
+            }
+        }
+        _ => {
+            report_err(diagnostics, crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants)
+        }
+    }
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].

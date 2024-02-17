@@ -671,7 +671,7 @@ impl LiteralError {
                 ty.format(db.upcast())
             ),
             Self::InvalidTypeForLiteral(ty) => {
-                format!("A literal of type {} cannot be created.", ty.format(db.upcast()))
+                format!("A numeric literal of type {} cannot be created.", ty.format(db.upcast()))
             }
         }
     }

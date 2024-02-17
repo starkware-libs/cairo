@@ -1033,13 +1033,13 @@ impl<'db> Resolver<'db> {
                         else {
                             return Err(diagnostics.report(path, UnknownLiteral));
                         };
-
+                        let constant = self.db.constant_semantic_data(constant_id)?;
                         let crate::Expr::Literal(const_expr_literal) =
-                            self.db.constant_semantic_data(constant_id)?.value
+                            &constant.exprs[constant.value]
                         else {
                             return Err(diagnostics.report(path, UnknownLiteral));
                         };
-                        const_expr_literal.value
+                        const_expr_literal.value.clone()
                     }
                     // TODO(yuval): support string const generic arguments?
                     Expr::Unary(unary) => {

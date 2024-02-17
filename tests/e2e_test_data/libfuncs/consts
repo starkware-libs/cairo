@@ -102,11 +102,11 @@ SmallE2ETestRunner
 //! > cairo
 extern type Const<T, const VALUE: T>;
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<i16> nopanic;
-extern fn const_as_immediate<T>() -> i16 nopanic;
 
 type C = Const<i16, -1000>;
+const V: i16 = -1000;
 
-fn bar() -> i16 { const_as_immediate::<C>() }
+fn bar() -> i16 { V }
 fn foo() -> Box<i16> { const_as_box::<C, 0>() }
 
 //! > casm
