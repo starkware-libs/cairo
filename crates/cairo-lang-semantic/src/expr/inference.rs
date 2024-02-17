@@ -25,7 +25,6 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
-use crate::items::constant::Constant;
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
