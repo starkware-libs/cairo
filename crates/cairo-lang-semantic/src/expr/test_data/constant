@@ -101,12 +101,12 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error: A literal of type core::bool cannot be created.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^
 
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error: A numeric literal of type core::bool cannot be created.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^
@@ -182,12 +182,12 @@ error: The value does not fit within the range of type core::integer::i8.
 const A: i8 = -0x81;
               ^***^
 
-error: The value does not fit within the range of type core::integer::u8.
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
  --> lib.cairo:2:15
 const B: u8 = -1;
               ^^
 
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
+error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:2:15
 const B: u8 = -1;
               ^^

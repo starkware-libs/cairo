@@ -2195,7 +2195,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     match resolved_item {
         ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
             constant_id,
-            ty: db.constant_semantic_data(constant_id)?.value.ty(),
+            ty: db.constant_semantic_data(constant_id)?.ty,
             stable_ptr: path.stable_ptr().into(),
         })),
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
