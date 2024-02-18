@@ -192,6 +192,7 @@ Statements:
   (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v5)
   (v8: core::felt252) <- 12u
   (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v8)
+  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
@@ -205,7 +206,6 @@ End:
 
 blk2:
 Statements:
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v21)
   () <- test::cosume(v11)
   (v15: core::felt252) <- 1u
 End:
@@ -399,3 +399,93 @@ Statements:
   (v6: (core::felt252, core::felt252)) <- struct_construct(v7, v8)
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > Test split var used in two arms (Optimization does not apply.)
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) {
+   let b = (a, a);
+   match a {
+      0 => {
+        let (_, _) = b;
+        use_tuple(b);
+      },
+      _ =>  {
+        let (_, _) = b;
+        use_tuple(b);
+      },
+   };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: (core::felt252, core::felt252)) <- struct_construct(v0, v0)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  () <- test::use_tuple::<core::felt252>(v1)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
