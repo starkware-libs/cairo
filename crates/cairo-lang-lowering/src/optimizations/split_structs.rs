@@ -4,8 +4,8 @@ mod test;
 
 use std::vec;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 
@@ -29,9 +29,25 @@ pub fn split_structs(lowered: &mut FlatLowered) {
     rebuild_blocks(lowered, split);
 }
 
+/// Information about a split variable.
+struct SplitInfo {
+    /// The block_id where the variable was defined.
+    block_id: BlockId,
+    /// The variables resulting from the split.
+    vars: Vec<VariableId>,
+}
+
+type SplitMapping = UnorderedHashMap<VariableId, SplitInfo>;
+
+/// Keeps track of the variables that were reconstructed.
+/// If the value is None the variable was reconstructed at the first usage.
+/// If the value is Some(Block_id) then the variable needs to be reconstructed at the end of
+/// `block_id`
+type ReconstructionMapping = OrderedHashMap<VariableId, Option<BlockId>>;
+
 /// Returns a mapping from variables that should be split to the variables resulting from the split.
-fn get_var_split(lowered: &mut FlatLowered) -> UnorderedHashMap<VariableId, Vec<VariableId>> {
-    let mut split = UnorderedHashMap::<VariableId, Vec<VariableId>>::default();
+fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
+    let mut split = UnorderedHashMap::<VariableId, SplitInfo>::default();
 
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
@@ -45,9 +61,17 @@ fn get_var_split(lowered: &mut FlatLowered) -> UnorderedHashMap<VariableId, Vec<
 
         for stmt in block.statements.iter() {
             if let Statement::StructConstruct(stmt) = stmt {
-                split
-                    .entry(stmt.output)
-                    .or_insert_with(|| stmt.inputs.iter().map(|input| input.var_id).collect_vec());
+                assert!(
+                    split
+                        .insert(
+                            stmt.output,
+                            SplitInfo {
+                                block_id,
+                                vars: stmt.inputs.iter().map(|input| input.var_id).collect_vec(),
+                            },
+                        )
+                        .is_none()
+                );
             }
         }
 
@@ -56,7 +80,13 @@ fn get_var_split(lowered: &mut FlatLowered) -> UnorderedHashMap<VariableId, Vec<
                 stack.push(*block_id);
 
                 for (dst, src) in remappings.iter() {
-                    split_remapping(&mut split, &mut lowered.variables, *dst, src.var_id);
+                    split_remapping(
+                        *block_id,
+                        &mut split,
+                        &mut lowered.variables,
+                        *dst,
+                        src.var_id,
+                    );
                 }
             }
             FlatBlockEnd::Match { info } => {
@@ -78,7 +108,8 @@ fn get_var_split(lowered: &mut FlatLowered) -> UnorderedHashMap<VariableId, Vec<
 /// The function will create new variables and set:
 ///     split('dst') = (v100, v101) and split(`v101`) = (v102, v103, v104).
 fn split_remapping(
-    split: &mut UnorderedHashMap<id_arena::Id<Variable>, Vec<id_arena::Id<Variable>>>,
+    target_block_id: BlockId,
+    split: &mut SplitMapping,
     variables: &mut Arena<Variable>,
     dst: VariableId,
     src: VariableId,
@@ -89,7 +120,7 @@ fn split_remapping(
         if split.contains_key(&dst) {
             continue;
         }
-        if let Some(src_vars) = split.get(&src) {
+        if let Some(SplitInfo { block_id: _, vars: src_vars }) = split.get(&src) {
             let mut dst_vars = vec![];
             for split_src in src_vars {
                 let new_var = variables.alloc(variables[*split_src].clone());
@@ -98,17 +129,17 @@ fn split_remapping(
                 dst_vars.push(new_var);
             }
 
-            split.insert(dst, dst_vars);
+            split.insert(dst, SplitInfo { block_id: target_block_id, vars: dst_vars });
         }
     }
 }
 
 /// Rebuilds the blocks, with the splitting.
-fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId, Vec<VariableId>>) {
+fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
     let mut var_remapper = VarRename::default();
 
-    // variables that were unsplit as they were needed.
-    let mut unsplit = UnorderedHashSet::<VariableId>::default();
+    // Variables that were reconstructed as they were needed.
+    let mut reconstructed = ReconstructionMapping::default();
 
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
@@ -120,6 +151,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId,
 
         let block = &mut lowered.blocks[block_id];
         let old_statements = std::mem::take(&mut block.statements);
+        let statements = &mut block.statements;
 
         for stmt in old_statements.into_iter() {
             match stmt {
@@ -127,12 +159,13 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId,
                     if let Some(output_split) =
                         split.get(&var_remapper.map_var_id(stmt.input.var_id))
                     {
-                        for (output, new_var) in zip_eq(stmt.outputs.iter(), output_split.to_vec())
+                        for (output, new_var) in
+                            zip_eq(stmt.outputs.iter(), output_split.vars.to_vec())
                         {
                             assert!(var_remapper.renamed_vars.insert(*output, new_var).is_none())
                         }
                     } else {
-                        block.statements.push(Statement::StructDestructure(stmt));
+                        statements.push(Statement::StructDestructure(stmt));
                     }
                 }
                 Statement::StructConstruct(stmt)
@@ -142,16 +175,18 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId,
                 }
                 _ => {
                     for input in stmt.inputs() {
-                        unsplit_var(
+                        check_if_var_needs_reconstruction(
                             &mut var_remapper,
-                            &mut unsplit,
+                            &mut reconstructed,
                             &split,
-                            &mut block.statements,
                             &input.var_id,
+                            block_id,
+                            statements,
                             input.location,
                         );
                     }
-                    block.statements.push(stmt);
+
+                    statements.push(stmt);
                 }
             }
         }
@@ -175,24 +210,26 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId,
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
 
                 for input in info.inputs() {
-                    unsplit_var(
+                    check_if_var_needs_reconstruction(
                         &mut var_remapper,
-                        &mut unsplit,
+                        &mut reconstructed,
                         &split,
-                        &mut block.statements,
                         &input.var_id,
+                        block_id,
+                        statements,
                         input.location,
                     );
                 }
             }
             FlatBlockEnd::Return(vars) => {
                 for var in vars {
-                    unsplit_var(
+                    check_if_var_needs_reconstruction(
                         &mut var_remapper,
-                        &mut unsplit,
+                        &mut reconstructed,
                         &split,
-                        &mut block.statements,
                         &var.var_id,
+                        block_id,
+                        statements,
                         var.location,
                     );
                 }
@@ -203,46 +240,88 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId,
         // Remap block variables.
         *block = var_remapper.rebuild_block(block);
     }
+
+    // Add all the end of block reconstructions.
+    for (var_id, opt_block_id) in reconstructed.iter() {
+        if let Some(block_id) = opt_block_id {
+            let split_vars =
+                split.get(var_id).expect("Should be check in `check_if_var_needs_reconstruction`.");
+            lowered.blocks[*block_id].statements.push(Statement::StructConstruct(
+                StatementStructConstruct {
+                    inputs: split_vars
+                        .vars
+                        .iter()
+                        .map(|var_id| VarUsage {
+                            var_id: var_remapper.map_var_id(*var_id),
+                            location: lowered.variables[*var_id].location,
+                        })
+                        .collect_vec(),
+                    output: *var_id,
+                },
+            ));
+        }
+    }
 }
 
-/// Given 'var_id' check if `var_remapper.map_var_id(*var_id)` was split and if
-/// so constructs it recursively by adding struct_construct statements to 'statements'.
-fn unsplit_var(
+/// Given 'var_id' check if `var_remapper.map_var_id(*var_id)` was split and not reconstructed yet,
+/// if this is the case, marks the variable for reconstruction.
+fn check_if_var_needs_reconstruction(
     var_remapper: &mut VarRename,
-    unsplit: &mut UnorderedHashSet<VariableId>,
-    split: &UnorderedHashMap<VariableId, Vec<VariableId>>,
-    statements: &mut Vec<Statement>,
+    reconstructed: &mut ReconstructionMapping,
+    split: &SplitMapping,
     var_id: &VariableId,
+    block_id: BlockId,
+    statements: &mut Vec<Statement>,
     location: LocationId,
 ) {
     let var_id = var_remapper.map_var_id(*var_id);
-    if unsplit.contains(&var_id) {
+    if reconstructed.contains_key(&var_id) {
         return;
     }
 
-    let Some(split_vars) = split.get(&var_id) else {
+    let Some(split_info) = split.get(&var_id) else {
         return;
     };
 
-    for var in split_vars {
-        unsplit_var(var_remapper, unsplit, split, statements, var, location);
+    for var in &split_info.vars {
+        check_if_var_needs_reconstruction(
+            var_remapper,
+            reconstructed,
+            split,
+            var,
+            block_id,
+            statements,
+            location,
+        );
     }
 
-    statements.push(Statement::StructConstruct(StatementStructConstruct {
-        inputs: split_vars
-            .iter()
-            .map(|var_id| VarUsage { var_id: *var_id, location })
-            .collect_vec(),
-        output: var_id,
-    }));
+    // If the variable was defined in the same block then we can reconstruct it before the first
+    // usage. If not we need to reconstruct it at the end of the of the original block as it
+    // might be used by more then one of the children.
+    let opt_block_id = if block_id == split_info.block_id {
+        statements.push(Statement::StructConstruct(StatementStructConstruct {
+            inputs: split_info
+                .vars
+                .iter()
+                .map(|var_id| VarUsage { var_id: var_remapper.map_var_id(*var_id), location })
+                .collect_vec(),
+            output: var_id,
+        }));
+
+        None
+    } else {
+        Some(split_info.block_id)
+    };
+
+    reconstructed.insert(var_id, opt_block_id);
 }
 
-/// Given an iterator over the original remmaping, rebuilds the remapping with the given
+/// Given an iterator over the original remapping, rebuilds the remapping with the given
 /// splitting of variables.
 fn rebuild_remapping(
     variables: &mut Arena<Variable>,
     var_remapper: &mut VarRename,
-    split: &UnorderedHashMap<VariableId, Vec<VariableId>>,
+    split: &SplitMapping,
     statements: &mut Vec<Statement>,
     remappings: impl DoubleEndedIterator<Item = (VariableId, VarUsage)>,
     new_remappings: &mut VarRemapping,
@@ -255,19 +334,20 @@ fn rebuild_remapping(
             (None, None) => {
                 new_remappings.insert(dst, VarUsage { var_id: src, location: orig_src.location });
             }
-            (Some(dst_vars), Some(src_vars)) => {
+            (Some(dst_split), Some(src_split)) => {
                 stack.extend(zip_eq(
-                    dst_vars.iter().cloned().rev(),
-                    src_vars
+                    dst_split.vars.iter().cloned().rev(),
+                    src_split
+                        .vars
                         .iter()
                         .map(|var_id| VarUsage { var_id: *var_id, location: orig_src.location })
                         .rev(),
                 ));
             }
-            (Some(dst_vars), None) => {
+            (Some(dst_split), None) => {
                 let mut src_vars = vec![];
 
-                for dst in dst_vars {
+                for dst in &dst_split.vars {
                     src_vars.push(variables.alloc(variables[*dst].clone()));
                 }
 
@@ -277,7 +357,7 @@ fn rebuild_remapping(
                 }));
 
                 stack.extend(zip_eq(
-                    dst_vars.iter().cloned().rev(),
+                    dst_split.vars.iter().cloned().rev(),
                     src_vars
                         .into_iter()
                         .map(|var_id| VarUsage { var_id, location: orig_src.location })
@@ -285,7 +365,7 @@ fn rebuild_remapping(
                 ));
             }
             (None, Some(_src_vars)) => {
-                unreachable!("a split variable should not be mapped to an unsplit one.")
+                unreachable!("A split variable should not be mapped to an reconstructed one.")
             }
         }
     }
