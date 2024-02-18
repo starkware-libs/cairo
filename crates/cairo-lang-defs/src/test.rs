@@ -18,7 +18,8 @@ use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup};
 use crate::ids::{
-    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, SubmoduleLongId,
+    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    SubmoduleLongId,
 };
 use crate::plugin::{
     GeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,

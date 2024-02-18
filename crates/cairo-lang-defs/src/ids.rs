@@ -53,71 +53,89 @@ pub trait LanguageElementId {
 
     fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation;
 }
-pub trait TopLevelLanguageElementId: LanguageElementId {
+
+pub trait NamedLanguageElementLongId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+}
+pub trait NamedLanguageElementId: LanguageElementId {
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+}
+pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 
-/// Utility macro for defining an id for a language element.
-/// Defines a long id representing some element by a module_id and a stable pointer.
-/// Also defines a short id to be used for interning of the long id.
-/// Also requires the lookup function name for the lookup of the long id from the short id,
-/// as defined in DefsGroup.
-/// Gets an optional parameter `name`. If specified, implements the Named trait using a key_field
-/// with this name. See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
-macro_rules! define_language_element_id {
-    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(, $name:ident)?) => {
-        define_language_element_id_partial!($short_id, $long_id, $ast_ty, $lookup $(, $name)?);
-        impl_top_level_language_element_id!($short_id, $lookup $(, $name)?);
+/// Utility macro for defining an id for a top level language element.
+/// 1. Defines a long id representing some element by a module_id and a stable pointer.
+/// 2. Defines a short id to be used for interning of the long id.
+/// 3. Requires the lookup function name for the lookup of the long id from the short id, as defined
+///    in DefsGroup.
+/// 4. Implements `NamedLanguageElementId` using a key_field. See the documentation of
+///    'define_short_id' and `stable_ptr.rs` for more details.
+macro_rules! define_top_level_language_element_id {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident) => {
+        define_named_language_element_id!($short_id, $long_id, $ast_ty, $lookup);
+        impl TopLevelLanguageElementId for $short_id {}
     };
 }
 
-/// Utility macro for *partially* defining an id for a language element.
-/// This is used by `define_language_element_id` (see its documentation), but doesn't implement
-/// TopLevelLanguageElementId for the type.
+/// Utility macro for defining an id for a language element, with a name but without full path.
+/// This is used by `define_top_level_language_element_id` (see its documentation), but doesn't
+/// implement TopLevelLanguageElementId for the type.
 ///
-/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
-/// TopLevelLanguageElementId for the type.
-macro_rules! define_language_element_id_partial {
-    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident)?) => {
+/// Note: prefer to use `define_top_level_language_element_id`, unless you need to overwrite the
+/// behavior of `TopLevelLanguageElementId` for the type.
+macro_rules! define_named_language_element_id {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident) => {
+        define_language_element_id_basic!($short_id, $long_id, $ast_ty, $lookup);
+        impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'a>>
+            cairo_lang_debug::DebugWithDb<T> for $long_id
+        {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
+                let db: &(dyn DefsGroup + 'a) = db.upcast();
+                let $long_id(module_file_id, _stable_ptr) = self;
+                write!(
+                    f,
+                    "{}({}::{})",
+                    stringify!($short_id),
+                    module_file_id.0.full_path(db),
+                    self.name(db)
+                )
+            }
+        }
+        impl NamedLanguageElementLongId for $long_id {
+            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+                let syntax_db = db.upcast();
+                let terminal_green = self.1.name_green(syntax_db);
+                terminal_green.identifier(syntax_db)
+            }
+        }
+        impl NamedLanguageElementId for $short_id {
+            fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+                db.$lookup(*self).name(db)
+            }
+        }
+    };
+}
+
+/// Utility macro for defining an id for a language element, without a name and full path.
+/// This is used by `define_named_language_element_id` (see its documentation), but doesn't
+/// implement NamedLanguageElementId for the type.
+///
+/// Use for language elements that are not top level and don't have a name.
+macro_rules! define_language_element_id_basic {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
-        $(
-            impl $long_id {
-                pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
-                    let syntax_db = db.upcast();
-                    let terminal_green = self.1.name_green(syntax_db);
-                    terminal_green.identifier(syntax_db)
-                }
-            }
-            impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'a>> cairo_lang_debug::DebugWithDb<T>
-                for $long_id
-            {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                    let db: &(dyn DefsGroup + 'a) = db.upcast();
-                    let $long_id(module_file_id, _stable_ptr) = self;
-                    write!(
-                        f,
-                        "{}({}::{})",
-                        stringify!($short_id),
-                        module_file_id.0.full_path(db),
-                        self.$name(db)
-                    )
-                }
-            }
-        )?
         define_short_id!($short_id, $long_id, DefsGroup, $lookup);
         impl $short_id {
-            pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
-                db.$lookup(self).1
+            pub fn stable_ptr(
+                &self,
+                db: &dyn DefsGroup,
+            ) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
+                db.$lookup(*self).1
             }
-            $(
-                pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
-                    db.$lookup(*self).$name(db)
-                }
-            )?
         }
         impl LanguageElementId for $short_id {
             fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
@@ -131,22 +149,6 @@ macro_rules! define_language_element_id_partial {
                 StableLocation::new(stable_ptr.untyped())
             }
         }
-    };
-}
-
-/// A macro to implement TopLevelLanguageElementId for a type. Used by define_language_element_id.
-///
-/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
-/// TopLevelLanguageElementId for the type.
-macro_rules! impl_top_level_language_element_id {
-    ($short_id:ident, $lookup:ident $(,$name:ident)?) => {
-        $(
-            impl TopLevelLanguageElementId for $short_id {
-                fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
-                    db.$lookup(*self).name(db)
-                }
-            }
-        )?
     };
 }
 
@@ -245,7 +247,7 @@ macro_rules! toplevel_enum {
             $($variant:ident ($variant_ty:ty),)*
         }
     ) => {
-        impl TopLevelLanguageElementId for $enum_name {
+        impl NamedLanguageElementId for $enum_name {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 match self {
                     $(
@@ -254,7 +256,7 @@ macro_rules! toplevel_enum {
                 }
             }
         }
-
+        impl TopLevelLanguageElementId for $enum_name {}
     }
 }
 
@@ -314,12 +316,11 @@ define_language_element_id_as_enum! {
         ExternFunction(ExternFunctionId),
     }
 }
-define_language_element_id!(
+define_top_level_language_element_id!(
     SubmoduleId,
     SubmoduleLongId,
     ast::ItemModule,
-    lookup_intern_submodule,
-    name
+    lookup_intern_submodule
 );
 impl UnstableSalsaId for SubmoduleId {
     fn get_internal_id(&self) -> &salsa::InternId {
@@ -327,20 +328,18 @@ impl UnstableSalsaId for SubmoduleId {
     }
 }
 
-define_language_element_id!(
+define_top_level_language_element_id!(
     ConstantId,
     ConstantLongId,
     ast::ItemConstant,
-    lookup_intern_constant,
-    name
+    lookup_intern_constant
 );
-define_language_element_id!(UseId, UseLongId, ast::UsePathLeaf, lookup_intern_use, name);
-define_language_element_id!(
+define_top_level_language_element_id!(UseId, UseLongId, ast::UsePathLeaf, lookup_intern_use);
+define_top_level_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
     ast::FunctionWithBody,
-    lookup_intern_free_function,
-    name
+    lookup_intern_free_function
 );
 
 impl UnstableSalsaId for FreeFunctionId {
@@ -350,15 +349,14 @@ impl UnstableSalsaId for FreeFunctionId {
 }
 
 // --- Impls ---
-define_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, lookup_intern_impl, name);
+define_top_level_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, lookup_intern_impl);
 
 // --- Impl type items ---
-define_language_element_id_partial!(
+define_named_language_element_id!(
     ImplTypeId,
     ImplTypeLongId,
     ast::ItemTypeAlias,
-    lookup_intern_impl_type,
-    name
+    lookup_intern_impl_type
 );
 impl ImplTypeId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
@@ -373,19 +371,14 @@ impl TopLevelLanguageElementId for ImplTypeId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
     }
-
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        db.lookup_intern_impl_type(*self).name(db)
-    }
 }
 
 // --- Impl functions ---
-define_language_element_id_partial!(
+define_named_language_element_id!(
     ImplFunctionId,
     ImplFunctionLongId,
     ast::FunctionWithBody,
-    lookup_intern_impl_function,
-    name
+    lookup_intern_impl_function
 );
 impl ImplFunctionId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
@@ -405,82 +398,58 @@ impl TopLevelLanguageElementId for ImplFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
-
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        db.lookup_intern_impl_function(*self).name(db)
-    }
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Represents a function that has a body.
     pub enum FunctionWithBodyId {
         Free(FreeFunctionId),
         Impl(ImplFunctionId),
     }
 }
-impl FunctionWithBodyId {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        match self {
-            FunctionWithBodyId::Free(free_function) => free_function.name(db),
-            FunctionWithBodyId::Impl(impl_function) => impl_function.name(db),
-        }
-    }
-}
 
-impl TopLevelLanguageElementId for FunctionWithBodyId {
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        match self {
-            FunctionWithBodyId::Free(free_function_id) => {
-                db.lookup_intern_free_function(*free_function_id).name(db)
-            }
-            FunctionWithBodyId::Impl(impl_function_id) => {
-                db.lookup_intern_impl_function(*impl_function_id).name(db)
-            }
-        }
-    }
-}
-
-define_language_element_id!(
+define_top_level_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
     ast::ItemExternFunction,
-    lookup_intern_extern_function,
-    name
+    lookup_intern_extern_function
 );
-define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct, name);
-define_language_element_id!(EnumId, EnumLongId, ast::ItemEnum, lookup_intern_enum, name);
-define_language_element_id!(
+define_top_level_language_element_id!(
+    StructId,
+    StructLongId,
+    ast::ItemStruct,
+    lookup_intern_struct
+);
+define_top_level_language_element_id!(EnumId, EnumLongId, ast::ItemEnum, lookup_intern_enum);
+define_top_level_language_element_id!(
     ModuleTypeAliasId,
     ModuleTypeAliasLongId,
     ast::ItemTypeAlias,
-    lookup_intern_module_type_alias,
-    name
+    lookup_intern_module_type_alias
 );
-define_language_element_id!(
+define_top_level_language_element_id!(
     ImplAliasId,
     ImplAliasLongId,
     ast::ItemImplAlias,
-    lookup_intern_impl_alias,
-    name
+    lookup_intern_impl_alias
 );
-define_language_element_id!(
+define_top_level_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
     ast::ItemExternType,
-    lookup_intern_extern_type,
-    name
+    lookup_intern_extern_type
 );
 
 // --- Trait ---
-define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
+define_top_level_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait);
 
 // --- Trait type items ---
-define_language_element_id_partial!(
+define_named_language_element_id!(
     TraitTypeId,
     TraitTypeLongId,
     ast::TraitItemType,
-    lookup_intern_trait_type,
-    name
+    lookup_intern_trait_type
 );
 impl TraitTypeId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
@@ -494,19 +463,14 @@ impl TopLevelLanguageElementId for TraitTypeId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).name(db), self.name(db))
     }
-
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        db.lookup_intern_trait_type(*self).name(db)
-    }
 }
 
 // --- Trait functions ---
-define_language_element_id_partial!(
+define_named_language_element_id!(
     TraitFunctionId,
     TraitFunctionLongId,
     ast::TraitItemFunction,
-    lookup_intern_trait_function,
-    name
+    lookup_intern_trait_function
 );
 impl TraitFunctionId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
@@ -520,16 +484,17 @@ impl TopLevelLanguageElementId for TraitFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).name(db), self.name(db))
     }
-
-    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        db.lookup_intern_trait_function(*self).name(db)
-    }
 }
 
 // --- Struct items ---
 // TODO(spapini): Override full_path for to include parents, for better debug.
-define_language_element_id!(MemberId, MemberLongId, ast::Member, lookup_intern_member, name);
-define_language_element_id!(VariantId, VariantLongId, ast::Variant, lookup_intern_variant, name);
+define_top_level_language_element_id!(MemberId, MemberLongId, ast::Member, lookup_intern_member);
+define_top_level_language_element_id!(
+    VariantId,
+    VariantLongId,
+    ast::Variant,
+    lookup_intern_variant
+);
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
@@ -541,8 +506,8 @@ define_language_element_id_as_enum! {
 }
 
 // TODO(spapini): Override full_path for to include parents, for better debug.
-define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param, name);
-define_language_element_id!(
+define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param);
+define_language_element_id_basic!(
     GenericParamId,
     GenericParamLongId,
     ast::GenericParam,
@@ -810,7 +775,7 @@ impl std::fmt::Display for GenericKind {
 
 // TODO(spapini): change this to a binding inside a pattern.
 // TODO(spapini): Override full_path to include parents, for better debug.
-define_language_element_id!(
+define_language_element_id_basic!(
     LocalVarId,
     LocalVarLongId,
     ast::TerminalIdentifier,

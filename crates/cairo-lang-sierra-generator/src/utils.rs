@@ -9,6 +9,7 @@ use cairo_lang_sierra::extensions::{
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_utils::extract_matches;
+use defs::ids::NamedLanguageElementId;
 use num_bigint::BigInt;
 use semantic::corelib::get_const_libfunc_name_by_type;
 use semantic::items::functions::GenericFunctionId;
