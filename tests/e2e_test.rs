@@ -29,7 +29,7 @@ use once_cell::sync::Lazy;
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 static SHARED_DB_WITH_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
+    db.set_optimization_config(Arc::new(OptimizationConfig::new(vec![])));
     Mutex::new(db)
 });
 static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
@@ -37,7 +37,7 @@ static SHARED_DB_NO_GAS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
-    db.set_optimization_config(Arc::new(OptimizationConfig::no_movable_functions()));
+    db.set_optimization_config(Arc::new(OptimizationConfig::new(vec![])));
     Mutex::new(db)
 });
 

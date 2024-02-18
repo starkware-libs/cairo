@@ -51,6 +51,7 @@ struct A {
     a: Array::<felt252>,
     b: felt252,
 }
+#[inline(never)]
 fn bar(a: @Array::<felt252>, b: @felt252) {
 }
 
@@ -96,10 +97,13 @@ enum A {
     B: felt252,
     C: (felt252, Array::<felt252>),
 }
+#[inline(never)]
 fn bar0(a: @Array::<felt252>) {
 }
+#[inline(never)]
 fn bar1(b: @felt252) {
 }
+#[inline(never)]
 fn bar2(c: @felt252, d: @Array::<felt252>) {
 }
 
