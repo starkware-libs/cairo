@@ -115,9 +115,9 @@ impl MyImpl of MyTrait {
 Parameters:
 blk0 (root):
 Statements:
-  (v1: ()) <- test::MyImpl::foo()
+  (v2: ()) <- struct_construct()
 End:
-  Return(v1)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -139,6 +139,7 @@ trait MyTrait<T> {
   fn bar(x: T);
 }
 impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
+  #[inline(never)]
   fn bar(x: T){}
 }
 

@@ -70,6 +70,7 @@ struct MyStruct {
     arr: Array<felt252>
 }
 
+#[inline(never)]
 fn sub_three(value: felt252) -> felt252 {
   value - 3
 }
