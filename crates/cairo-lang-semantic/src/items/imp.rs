@@ -206,16 +206,6 @@ pub struct ImplDeclarationData {
     resolver_data: Arc<ResolverData>,
 }
 
-impl ImplDeclarationData {
-    /// Returns Maybe::Err if a cycle is detected here.
-    // TODO(orizi): Remove this function when cycle validation is not required through a type's
-    // field.
-    pub fn check_no_cycle(&self) -> Maybe<()> {
-        self.concrete_trait?;
-        Ok(())
-    }
-}
-
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
@@ -270,6 +260,15 @@ pub fn impl_def_resolver_data(
     Ok(db.priv_impl_declaration_data(impl_def_id)?.resolver_data)
 }
 
+/// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_resolver_data].
+pub fn impl_def_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_def_id: &ImplDefId,
+) -> Maybe<Arc<ResolverData>> {
+    impl_def_resolver_data(db, *impl_def_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait(
     db: &dyn SemanticGroup,
@@ -278,15 +277,13 @@ pub fn impl_def_concrete_trait(
     db.priv_impl_declaration_data(impl_def_id)?.concrete_trait
 }
 
-/// Cycle handling for [crate::db::SemanticGroup::impl_def_concrete_trait].
+/// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait_cycle(
-    _db: &dyn SemanticGroup,
+    db: &dyn SemanticGroup,
     _cycle: &[String],
-    _impl_def_id: &ImplDefId,
+    impl_def_id: &ImplDefId,
 ) -> Maybe<ConcreteTraitId> {
-    // The diagnostics will be reported from the calling function, specifically from
-    // `priv_impl_declaration_data_inner`.
-    Err(skip_diagnostic())
+    impl_def_concrete_trait(db, *impl_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
@@ -295,6 +292,15 @@ pub fn impl_def_attributes(
     impl_def_id: ImplDefId,
 ) -> Maybe<Vec<Attribute>> {
     Ok(db.priv_impl_declaration_data(impl_def_id)?.attributes)
+}
+
+/// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_attributes].
+pub fn impl_def_attributes_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_def_id: &ImplDefId,
+) -> Maybe<Vec<Attribute>> {
+    impl_def_attributes(db, *impl_def_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_trait].

@@ -128,9 +128,27 @@ pub fn use_semantic_diagnostics(
     db.priv_use_semantic_data(use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
+/// Trivial cycle handler for [crate::db::SemanticGroup::use_semantic_diagnostics].
+pub fn use_semantic_diagnostics_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    use_id: &UseId,
+) -> Diagnostics<SemanticDiagnostic> {
+    use_semantic_diagnostics(db, *use_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_use_semantic_data(use_id)?.resolver_data)
+}
+
+/// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
+pub fn use_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    use_id: &UseId,
+) -> Maybe<Arc<ResolverData>> {
+    use_resolver_data(db, *use_id)
 }
 
 pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
