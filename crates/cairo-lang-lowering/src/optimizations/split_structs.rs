@@ -104,10 +104,7 @@ fn split_remapping(
 }
 
 /// Rebuilds the blocks, with the splitting.
-fn rebuild_blocks(
-    lowered: &mut FlatLowered,
-    mut split: UnorderedHashMap<VariableId, Vec<VariableId>>,
-) {
+fn rebuild_blocks(lowered: &mut FlatLowered, split: UnorderedHashMap<VariableId, Vec<VariableId>>) {
     let mut var_remapper = VarRename::default();
 
     // variables that were unsplit as they were needed.
@@ -127,23 +124,21 @@ fn rebuild_blocks(
         for stmt in old_statements.into_iter() {
             match stmt {
                 Statement::StructDestructure(stmt) => {
-                    if let Some(output_split) = split.get(&stmt.input.var_id) {
+                    if let Some(output_split) =
+                        split.get(&var_remapper.map_var_id(stmt.input.var_id))
+                    {
                         for (output, new_var) in zip_eq(stmt.outputs.iter(), output_split.to_vec())
                         {
-                            if let Some(new_var_split) = split.get(&new_var) {
-                                split.insert(*output, new_var_split.to_vec());
-                            }
                             assert!(var_remapper.renamed_vars.insert(*output, new_var).is_none())
                         }
                     } else {
                         block.statements.push(Statement::StructDestructure(stmt));
                     }
                 }
-                Statement::StructConstruct(stmt) if split.contains_key(&stmt.output) => {
-                    split.insert(
-                        stmt.output,
-                        stmt.inputs.into_iter().map(|input| input.var_id).collect(),
-                    );
+                Statement::StructConstruct(stmt)
+                    if split.contains_key(&var_remapper.map_var_id(stmt.output)) =>
+                {
+                    // Remove StructConstruct statement.
                 }
                 _ => {
                     for input in stmt.inputs() {
@@ -169,6 +164,7 @@ fn rebuild_blocks(
 
                 rebuild_remapping(
                     &mut lowered.variables,
+                    &mut var_remapper,
                     &split,
                     &mut block.statements,
                     std::mem::take(&mut old_remappings.remapping).into_iter(),
@@ -245,23 +241,26 @@ fn unsplit_var(
 /// splitting of variables.
 fn rebuild_remapping(
     variables: &mut Arena<Variable>,
+    var_remapper: &mut VarRename,
     split: &UnorderedHashMap<VariableId, Vec<VariableId>>,
     statements: &mut Vec<Statement>,
     remappings: impl DoubleEndedIterator<Item = (VariableId, VarUsage)>,
     new_remappings: &mut VarRemapping,
 ) {
     let mut stack = remappings.rev().collect_vec();
-    while let Some((dst, src)) = stack.pop() {
-        match (split.get(&dst), split.get(&src.var_id)) {
+    while let Some((orig_dst, orig_src)) = stack.pop() {
+        let dst = var_remapper.map_var_id(orig_dst);
+        let src = var_remapper.map_var_id(orig_src.var_id);
+        match (split.get(&dst), split.get(&src)) {
             (None, None) => {
-                new_remappings.insert(dst, src);
+                new_remappings.insert(dst, VarUsage { var_id: src, location: orig_src.location });
             }
             (Some(dst_vars), Some(src_vars)) => {
                 stack.extend(zip_eq(
                     dst_vars.iter().cloned().rev(),
                     src_vars
                         .iter()
-                        .map(|var_id| VarUsage { var_id: *var_id, location: src.location })
+                        .map(|var_id| VarUsage { var_id: *var_id, location: orig_src.location })
                         .rev(),
                 ));
             }
@@ -273,7 +272,7 @@ fn rebuild_remapping(
                 }
 
                 statements.push(Statement::StructDestructure(StatementStructDestructure {
-                    input: src,
+                    input: VarUsage { var_id: src, location: orig_src.location },
                     outputs: src_vars.clone(),
                 }));
 
@@ -281,7 +280,7 @@ fn rebuild_remapping(
                     dst_vars.iter().cloned().rev(),
                     src_vars
                         .into_iter()
-                        .map(|var_id| VarUsage { var_id, location: src.location })
+                        .map(|var_id| VarUsage { var_id, location: orig_src.location })
                         .rev(),
                 ));
             }
