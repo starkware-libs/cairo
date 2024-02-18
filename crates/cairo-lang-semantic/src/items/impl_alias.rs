@@ -27,15 +27,6 @@ pub struct ImplAliasData {
     attributes: Vec<Attribute>,
     resolver_data: Arc<ResolverData>,
 }
-impl ImplAliasData {
-    /// Returns Maybe::Err if a cycle is detected here.
-    // TODO(orizi): Remove this function when cycle validation is not required through a type's
-    // field.
-    pub fn check_no_cycle(&self) -> Maybe<()> {
-        self.resolved_impl?;
-        Ok(())
-    }
-}
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
 pub fn priv_impl_alias_semantic_data(
@@ -134,6 +125,16 @@ pub fn impl_alias_resolved_impl(
     db.priv_impl_alias_semantic_data(impl_alias_id)?.resolved_impl
 }
 
+/// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolved_impl].
+pub fn impl_alias_resolved_impl_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_alias_id: &ImplAliasId,
+) -> Maybe<ImplId> {
+    // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
+    impl_alias_resolved_impl(db, *impl_alias_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_generic_params].
 pub fn impl_alias_generic_params(
     db: &dyn SemanticGroup,
@@ -176,6 +177,16 @@ pub fn impl_alias_resolver_data(
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolver_data)
+}
+
+/// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolver_data].
+pub fn impl_alias_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_alias_id: &ImplAliasId,
+) -> Maybe<Arc<ResolverData>> {
+    // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
+    impl_alias_resolver_data(db, *impl_alias_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_attributes].
