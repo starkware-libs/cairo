@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
+use id_arena::Arena;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use semantic::corelib::{
@@ -741,10 +742,22 @@ fn lower_expr_literal_helper(
     value: &BigInt,
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
+    let value = value_as_const_value(ctx, stable_ptr, ty, value);
+    let location = ctx.get_location(stable_ptr);
+    Ok(LoweredExpr::AtVariable(
+        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
+    ))
+}
+
+fn value_as_const_value(
+    ctx: &mut LoweringContext<'_, '_>,
+    stable_ptr: SyntaxStablePtrId,
+    ty: semantic::TypeId,
+    value: &BigInt,
+) -> ConstValue {
     if let Err(err) = validate_literal(ctx.db.upcast(), ty, value.clone()) {
         ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err));
     }
-    let location = ctx.get_location(stable_ptr);
     let get_basic_const_value = |ty| {
         let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
 
@@ -762,14 +775,11 @@ fn lower_expr_literal_helper(
         }
     };
 
-    let value = if let Some(inner) = try_extract_nz_wrapped_type(ctx.db.upcast(), ty) {
+    if let Some(inner) = try_extract_nz_wrapped_type(ctx.db.upcast(), ty) {
         ConstValue::NonZero(inner, Box::new(get_basic_const_value(inner)))
     } else {
         get_basic_const_value(ty)
-    };
-    Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
-    ))
+    }
 }
 
 fn lower_expr_string_literal(
@@ -922,15 +932,47 @@ fn lower_expr_constant(
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
     let constant =
         &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?;
-    let value = match &constant.exprs[constant.value] {
-        semantic::Expr::FunctionCall(expr) => {
-            try_extract_minus_literal(ctx.db.upcast(), &constant.exprs, expr)
-                .expect("Only supported function call in const is minus.")
-        }
-        semantic::Expr::Literal(expr) => expr.value.clone(),
-        _ => panic!("Only literal constants are supported."),
-    };
-    lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &value, builder)
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let (ty, value) = lower_expr_constant_helper(ctx, &constant.exprs, constant.value);
+    Ok(LoweredExpr::AtVariable(
+        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
+    ))
+}
+
+/// Helper function to recursively create a lowered constant.
+fn lower_expr_constant_helper(
+    ctx: &mut LoweringContext<'_, '_>,
+    exprs: &Arena<semantic::Expr>,
+    expr_id: semantic::ExprId,
+) -> (semantic::TypeId, ConstValue) {
+    let expr = &exprs[expr_id];
+    let ty = expr.ty();
+    (
+        ty,
+        match expr {
+            semantic::Expr::FunctionCall(expr) => {
+                let value = try_extract_minus_literal(ctx.db.upcast(), exprs, expr)
+                    .expect("Only supported function call in const is minus.");
+                value_as_const_value(ctx, expr.stable_ptr.untyped(), ty, &value)
+            }
+            semantic::Expr::Literal(expr) => {
+                value_as_const_value(ctx, expr.stable_ptr.untyped(), ty, &expr.value)
+            }
+            semantic::Expr::Tuple(expr) => ConstValue::Struct(
+                expr.items
+                    .iter()
+                    .map(|expr_id| lower_expr_constant_helper(ctx, exprs, *expr_id))
+                    .collect(),
+            ),
+            semantic::Expr::StructCtor(expr) => ConstValue::Struct(
+                expr.members
+                    .iter()
+                    .map(|(_, expr_id)| lower_expr_constant_helper(ctx, exprs, *expr_id))
+                    .collect(),
+            ),
+            _ => panic!("Only literal constants are supported."),
+        },
+    )
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
