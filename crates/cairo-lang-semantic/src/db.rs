@@ -122,8 +122,10 @@ pub trait SemanticGroup:
     fn priv_use_semantic_data(&self, use_id: UseId) -> Maybe<items::us::UseData>;
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
+    #[salsa::cycle(items::us::use_semantic_diagnostics_cycle)]
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
     #[salsa::invoke(items::us::use_resolver_data)]
+    #[salsa::cycle(items::us::use_resolver_data_cycle)]
     fn use_resolver_data(&self, use_id: UseId) -> Maybe<Arc<ResolverData>>;
 
     // Module.
@@ -248,12 +250,14 @@ pub trait SemanticGroup:
     // ===========
     /// Returns the semantic diagnostics of a type alias.
     #[salsa::invoke(items::module_type_alias::module_type_alias_semantic_diagnostics)]
+    #[salsa::cycle(items::module_type_alias::module_type_alias_semantic_diagnostics_cycle)]
     fn module_type_alias_semantic_diagnostics(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the resolved type of a type alias.
     #[salsa::invoke(items::module_type_alias::module_type_alias_resolved_type)]
+    #[salsa::cycle(items::module_type_alias::module_type_alias_resolved_type_cycle)]
     fn module_type_alias_resolved_type(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
@@ -266,6 +270,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::module_type_alias::module_type_alias_resolver_data)]
+    #[salsa::cycle(items::module_type_alias::module_type_alias_resolver_data_cycle)]
     fn module_type_alias_resolver_data(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
@@ -528,6 +533,7 @@ pub trait SemanticGroup:
     // =======
     /// Returns the semantic declaration diagnostics of an impl.
     #[salsa::invoke(items::imp::impl_semantic_declaration_diagnostics)]
+    #[salsa::cycle(items::imp::impl_semantic_declaration_diagnostics_cycle)]
     fn impl_semantic_declaration_diagnostics(
         &self,
         impl_def_id: ImplDefId,
@@ -540,6 +546,7 @@ pub trait SemanticGroup:
     fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution resolved_items of an impl.
     #[salsa::invoke(items::imp::impl_def_resolver_data)]
+    #[salsa::cycle(items::imp::impl_def_resolver_data_cycle)]
     fn impl_def_resolver_data(&self, impl_def_id: ImplDefId) -> Maybe<Arc<ResolverData>>;
     /// Returns the concrete trait that is implemented by the impl.
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
@@ -547,6 +554,7 @@ pub trait SemanticGroup:
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
     /// Returns the attributes attached to the impl.
     #[salsa::invoke(items::imp::impl_def_attributes)]
+    #[salsa::cycle(items::imp::impl_def_attributes_cycle)]
     fn impl_def_attributes(&self, impl_def_id: ImplDefId) -> Maybe<Vec<Attribute>>;
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]

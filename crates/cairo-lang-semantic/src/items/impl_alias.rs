@@ -27,15 +27,6 @@ pub struct ImplAliasData {
     attributes: Vec<Attribute>,
     resolver_data: Arc<ResolverData>,
 }
-impl ImplAliasData {
-    /// Returns Maybe::Err if a cycle is detected here.
-    // TODO(orizi): Remove this function when cycle validation is not required through a type's
-    // field.
-    pub fn check_no_cycle(&self) -> Maybe<()> {
-        self.resolved_impl?;
-        Ok(())
-    }
-}
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
 pub fn priv_impl_alias_semantic_data(

@@ -34,12 +34,30 @@ pub fn module_type_alias_semantic_diagnostics(
         .unwrap_or_default()
 }
 
+/// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_semantic_diagnostics].
+pub fn module_type_alias_semantic_diagnostics_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    module_type_alias_id: &ModuleTypeAliasId,
+) -> Diagnostics<SemanticDiagnostic> {
+    module_type_alias_semantic_diagnostics(db, *module_type_alias_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_resolved_type].
 pub fn module_type_alias_resolved_type(
     db: &dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<TypeId> {
     db.priv_module_type_alias_semantic_data(module_type_alias_id)?.type_alias_data.resolved_type
+}
+
+/// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolved_type].
+pub fn module_type_alias_resolved_type_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    module_type_alias_id: &ModuleTypeAliasId,
+) -> Maybe<TypeId> {
+    module_type_alias_resolved_type(db, *module_type_alias_id)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_generic_params].
@@ -56,6 +74,15 @@ pub fn module_type_alias_resolver_data(
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_module_type_alias_semantic_data(module_type_alias_id)?.type_alias_data.resolver_data)
+}
+
+/// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolver_data].
+pub fn module_type_alias_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    module_type_alias_id: &ModuleTypeAliasId,
+) -> Maybe<Arc<ResolverData>> {
+    module_type_alias_resolver_data(db, *module_type_alias_id)
 }
 
 // --- Computation ---
