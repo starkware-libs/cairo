@@ -637,13 +637,6 @@ impl<'db> Resolver<'db> {
                 )?)
             }
             ResolvedGenericItem::GenericTypeAlias(module_type_alias_id) => {
-                // Check for cycles in this type alias definition.
-                // TODO(orizi): Handle this without using `priv_module_type_alias_semantic_data`.
-                self.db
-                    .priv_module_type_alias_semantic_data(module_type_alias_id)?
-                    .type_alias_data
-                    .check_no_cycle()?;
-
                 let ty = self.db.module_type_alias_resolved_type(module_type_alias_id)?;
                 let generic_params =
                     self.db.module_type_alias_generic_params(module_type_alias_id)?;
@@ -659,10 +652,6 @@ impl<'db> Resolver<'db> {
                 ResolvedConcreteItem::Type(ty)
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
-                // Check for cycles in this type alias definition.
-                // TODO(orizi): Handle this without using `priv_impl_alias_semantic_data`.
-                self.db.priv_impl_alias_semantic_data(impl_alias_id)?.check_no_cycle()?;
-
                 let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
                 let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
                 let generic_args = self.resolve_generic_args(
@@ -824,10 +813,6 @@ impl<'db> Resolver<'db> {
         impl_def_id: ImplDefId,
         generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteImplId> {
-        // Check for cycles in this type alias definition.
-        // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
-        self.db.priv_impl_declaration_data(impl_def_id)?.check_no_cycle()?;
-
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params = self
             .db

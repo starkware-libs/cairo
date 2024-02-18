@@ -25,15 +25,6 @@ pub struct TypeAliasData {
     pub attributes: Vec<Attribute>,
     pub resolver_data: Arc<ResolverData>,
 }
-impl TypeAliasData {
-    /// Returns Maybe::Err if a cycle is detected here.
-    // TODO(orizi): Remove this function when cycle validation is not required through a type's
-    // field.
-    pub fn check_no_cycle(&self) -> Maybe<()> {
-        self.resolved_type?;
-        Ok(())
-    }
-}
 
 /// Computes data about the generic parameters of a type-alias item.
 pub fn type_alias_generic_params_data_helper(
