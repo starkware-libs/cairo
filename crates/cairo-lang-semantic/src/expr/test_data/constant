@@ -64,7 +64,7 @@ error: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^*************************^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:1:31
 const MY_CONST: MissingType = {
                               ^
@@ -74,7 +74,7 @@ error: Function call is not supported outside of functions.
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^

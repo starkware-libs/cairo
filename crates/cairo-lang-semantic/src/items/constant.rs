@@ -17,7 +17,7 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{Expr, ExprId, SemanticDiagnostic, TypeId};
+use crate::{Expr, ExprId, ExprStructCtor, ExprTuple, SemanticDiagnostic, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -76,6 +76,9 @@ pub fn priv_constant_semantic_data(
         inference_err
             .report(ctx.diagnostics, stable_ptr.unwrap_or(const_ast.stable_ptr().untyped()));
     }
+    for (_, expr) in ctx.exprs.iter_mut() {
+        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
+    }
 
     // Check that the expression is a valid constant.
     validate_constant_expr(db, &mut ctx.resolver, &ctx.exprs, value.id, ctx.diagnostics);
@@ -111,12 +114,24 @@ fn validate_constant_expr(
             } else {
                 report_err(
                     diagnostics,
-                    crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
+                    crate::diagnostic::SemanticDiagnosticKind::UnsupportedConstant,
                 );
             }
         }
+        Expr::Tuple(ExprTuple { items, .. }) => {
+            items.iter().for_each(|expr_id| {
+                validate_constant_expr(db, resolver, exprs, *expr_id, diagnostics)
+            });
+        }
+        Expr::StructCtor(ExprStructCtor { members, base_struct: None, .. }) => {
+            members.iter().for_each(|(_, expr_id)| {
+                validate_constant_expr(db, resolver, exprs, *expr_id, diagnostics)
+            });
+        }
+        // TODO(orizi): Handle `Expr::EnumVariantCtor`.
+        // TODO(orizi): Handle `Expr::Constant`.
         _ => {
-            report_err(diagnostics, crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants)
+            report_err(diagnostics, crate::diagnostic::SemanticDiagnosticKind::UnsupportedConstant)
         }
     }
 }

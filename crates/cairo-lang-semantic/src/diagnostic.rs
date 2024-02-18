@@ -531,8 +531,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
             }
-            SemanticDiagnosticKind::OnlyLiteralConstants => {
-                "Only literal constants are currently supported.".into()
+            SemanticDiagnosticKind::UnsupportedConstant => {
+                "This expression is not supported as constant.".into()
             }
             SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
                 "Extern items with impl generics are not supported".into()
@@ -967,7 +967,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedOutsideOfFunction {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
-    OnlyLiteralConstants,
+    UnsupportedConstant,
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
     TraitMismatch {

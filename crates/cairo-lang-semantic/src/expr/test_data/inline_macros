@@ -37,7 +37,7 @@ error: Plugin diagnostic: Unsupported expression in consteval_int macro
 const a: felt252 = consteval_int!(func_call(24));
                                   ^***********^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:1:20
 const a: felt252 = consteval_int!(func_call(24));
                    ^***************************^
@@ -47,7 +47,7 @@ error: Plugin diagnostic: Unsupported expression in consteval_int macro
 const b: felt252 = consteval_int!('some string');
                                   ^***********^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:3:20
 const b: felt252 = consteval_int!('some string');
                    ^***************************^
@@ -57,7 +57,7 @@ error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
 const c: felt252 = consteval_int!(*24);
                                   ^*^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:5:20
 const c: felt252 = consteval_int!(*24);
                    ^*****************^
@@ -67,7 +67,7 @@ error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
 const d: felt252 = consteval_int!(~24);
                                   ^*^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:7:20
 const d: felt252 = consteval_int!(~24);
                    ^*****************^
@@ -77,7 +77,7 @@ error: Plugin diagnostic: Unsupported binary operator in consteval_int macro
 const e: felt252 = consteval_int!(234 < 5);
                                   ^*****^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:9:20
 const e: felt252 = consteval_int!(234 < 5);
                    ^*********************^
@@ -87,7 +87,7 @@ error: Plugin diagnostic: Macro `consteval_int` does not support this bracket ty
 const e: felt252 = consteval_int![4 + 5];
                                  ^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:11:20
 const e: felt252 = consteval_int![4 + 5];
                    ^*******************^
@@ -97,7 +97,7 @@ error: Plugin diagnostic: Macro `consteval_int` does not support this bracket ty
 const f: felt252 = consteval_int!{4 + 5};
                                  ^
 
-error: Only literal constants are currently supported.
+error: This expression is not supported as constant.
  --> lib.cairo:13:20
 const f: felt252 = consteval_int!{4 + 5};
                    ^*******************^
