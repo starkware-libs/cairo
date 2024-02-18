@@ -14,14 +14,14 @@ use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
 
 use super::imp::{ImplHead, ImplId};
+use super::resolve_trait_path;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::literals::LiteralId;
 use crate::lookup_item::LookupItemEx;
-use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
+use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::{resolve_type, TypeHead};
 use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
@@ -320,15 +320,7 @@ pub fn generic_impl_param_trait(
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    try_extract_matches!(
-        resolver.resolve_generic_path_with_args(
-            &mut diagnostics,
-            &trait_path_syntax,
-            NotFoundItemType::Trait,
-        )?,
-        ResolvedGenericItem::Trait
-    )
-    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
