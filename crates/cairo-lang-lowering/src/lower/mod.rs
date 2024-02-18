@@ -970,6 +970,10 @@ fn lower_expr_constant_helper(
                     .map(|(_, expr_id)| lower_expr_constant_helper(ctx, exprs, *expr_id))
                     .collect(),
             ),
+            semantic::Expr::EnumVariantCtor(expr) => ConstValue::Enum(
+                expr.variant.clone(),
+                Box::new(lower_expr_constant_helper(ctx, exprs, expr.value_expr).1),
+            ),
             _ => panic!("Only literal constants are supported."),
         },
     )

@@ -228,6 +228,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
                 }
                 write!(f, "}}")
             }
+            ConstValue::Enum(variant, inner) => {
+                variant.fmt(f, ctx)?;
+                write!(f, "(")?;
+                inner.fmt(f, ctx)?;
+                write!(f, ")")
+            }
             ConstValue::NonZero(_, value) => value.fmt(f, ctx),
         }
     }

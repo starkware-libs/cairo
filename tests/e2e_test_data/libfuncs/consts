@@ -366,7 +366,6 @@ mod value { extern type Const<T, const VALUE: T>; }
 mod struct0 { extern type Const<T>; }
 mod struct2 { extern type Const<T, C0, C1>; }
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<ThreeOptionsPair> nopanic;
-extern fn const_as_immediate<T>() -> ThreeOptionsPair nopanic;
 
 enum ThreeOptions {
     A: felt252,
@@ -383,9 +382,13 @@ type C = struct2::Const<
     enum_value::Const<ThreeOptions, 0, value::Const<felt252, 1337>>,
     enum_value::Const<ThreeOptions, 2, struct0::Const<()>>,
 >;
+const V: ThreeOptionsPair = ThreeOptionsPair {
+    a: ThreeOptions::A(1337),
+    b: ThreeOptions::C,
+};
 
 
-fn bar() -> ThreeOptionsPair { const_as_immediate::<C>() }
+fn bar() -> ThreeOptionsPair { V }
 fn foo() -> Box<ThreeOptionsPair> { const_as_box::<C, 0>() }
 
 //! > casm
