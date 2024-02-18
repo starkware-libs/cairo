@@ -41,7 +41,7 @@ Statements:
 End:
   Match(match test::extern_get_bool() {
     bool::False => blk3,
-    bool::True => blk5,
+    bool::True => blk7,
   })
 
 blk3:
@@ -51,11 +51,27 @@ End:
 
 blk4:
 Statements:
-  (v14: core::bool) <- test::get_bool()
 End:
-  Return(v14)
+  Match(match test::extern_get_bool() {
+    bool::False => blk5,
+    bool::True => blk6,
+  })
 
 blk5:
+Statements:
+  (v18: ()) <- struct_construct()
+  (v19: core::bool) <- bool::False(v18)
+End:
+  Return(v19)
+
+blk6:
+Statements:
+  (v21: ()) <- struct_construct()
+  (v22: core::bool) <- bool::True(v21)
+End:
+  Return(v22)
+
+blk7:
 Statements:
   (v12: ()) <- struct_construct()
   (v13: core::bool) <- bool::True(v12)
