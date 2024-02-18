@@ -11,8 +11,9 @@ use num_traits::Zero;
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, StatementDesnap, StatementLiteral, StatementSnapshot, VarUsage,
+    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
+    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementSnapshot,
+    VarUsage,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -51,7 +52,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         let block = &mut lowered.blocks[block_id];
         for stmt in block.statements.iter_mut() {
             match stmt {
-                Statement::Literal(StatementLiteral { value, output }) => {
+                Statement::Const(StatementConst { value: ConstValue::Int(value), output }) => {
                     var_info.insert(*output, VarInfo::Literal(value.clone()));
                 }
                 Statement::Snapshot(StatementSnapshot {

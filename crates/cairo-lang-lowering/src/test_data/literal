@@ -171,9 +171,7 @@ Statements:
   (v8: core::integer::i32) <- 9u
   (v9: core::integer::i64) <- 10u
   (v10: core::integer::i128) <- 11u
-  (v11: core::integer::u128) <- 12u
-  (v12: core::integer::u128) <- 0u
-  (v13: core::integer::u256) <- struct_construct(v11, v12)
-  (v14: (core::felt252, core::integer::u8, core::integer::u16, core::integer::u32, core::integer::u64, core::integer::u128, core::integer::i8, core::integer::i16, core::integer::i32, core::integer::i64, core::integer::i128, core::integer::u256)) <- struct_construct(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v13)
+  (v11: core::integer::u256) <- { 12u: core::integer::u128, 0u: core::integer::u128 }
+  (v12: (core::felt252, core::integer::u8, core::integer::u16, core::integer::u32, core::integer::u64, core::integer::u128, core::integer::i8, core::integer::i16, core::integer::i32, core::integer::i64, core::integer::i128, core::integer::u256)) <- struct_construct(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
 End:
-  Return(v14)
+  Return(v12)

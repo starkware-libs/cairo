@@ -5,17 +5,16 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_utils::extract_matches;
 use itertools::chain;
-use num_bigint::BigInt;
 
 use super::context::VarRequest;
 use super::VariableId;
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
-    Statement, StatementCall, StatementLiteral, StatementStructConstruct,
-    StatementStructDestructure, VarUsage,
+    Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
+    VarUsage,
 };
-use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
+use crate::{ConstValue, StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
 #[derive(Clone, Default)]
 pub struct StatementsBuilder {
@@ -28,20 +27,20 @@ impl StatementsBuilder {
     }
 }
 
-/// Generator for [StatementLiteral].
-pub struct Literal {
-    pub value: BigInt,
+/// Generator for [StatementConst].
+pub struct Const {
+    pub value: ConstValue,
     pub location: LocationId,
     pub ty: semantic::TypeId,
 }
-impl Literal {
+impl Const {
     pub fn add(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
-        builder.push_statement(Statement::Literal(StatementLiteral { value: self.value, output }));
+        builder.push_statement(Statement::Const(StatementConst { value: self.value, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }

@@ -831,7 +831,6 @@ dependencies = [
  "indoc",
  "itertools 0.11.0",
  "log",
- "num-bigint",
  "once_cell",
  "pretty_assertions",
  "salsa",

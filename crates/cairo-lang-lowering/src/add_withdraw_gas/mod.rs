@@ -10,8 +10,8 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementLiteral, StatementStructConstruct, VarUsage,
+    BlockId, ConstValue, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo,
+    MatchInfo, Statement, StatementCall, StatementConst, StatementStructConstruct, VarUsage,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -135,8 +135,8 @@ fn create_panic_block(
                 outputs: vec![new_array_var],
                 location,
             }),
-            Statement::Literal(StatementLiteral {
-                value: BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
+            Statement::Const(StatementConst {
+                value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes())),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {

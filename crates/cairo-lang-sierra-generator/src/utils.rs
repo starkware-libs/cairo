@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::{
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, GenericArg};
 use cairo_lang_utils::extract_matches;
-use num_bigint::BigInt;
+use lowering::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -154,24 +154,39 @@ fn get_libfunc_id_without_generics(
 pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
     ty: semantic::TypeId,
-    value: BigInt,
+    value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    let const_ty = db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
-        cairo_lang_sierra::program::ConcreteTypeLongId {
-            generic_id: ConstType::ID,
-            generic_args: vec![
-                GenericArg::Type(db.get_concrete_type_id(ty).unwrap()),
-                GenericArg::Value(value),
-            ],
-        }
-        .into(),
-    ));
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
             ConstAsImmediateLibfunc::STR_ID,
         ),
-        generic_args: vec![GenericArg::Type(const_ty)],
+        generic_args: vec![GenericArg::Type(const_type_id(db, ty, value))],
     })
+}
+
+/// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] for the given `ty` and `value`.
+fn const_type_id(
+    db: &dyn SierraGenGroup,
+    ty: semantic::TypeId,
+    value: &ConstValue,
+) -> cairo_lang_sierra::ids::ConcreteTypeId {
+    let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
+    db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
+        cairo_lang_sierra::program::ConcreteTypeLongId {
+            generic_id: ConstType::ID,
+            generic_args: match value {
+                ConstValue::Int(v) => vec![first_arg, GenericArg::Value(v.clone())],
+                ConstValue::Struct(tys) => {
+                    let mut args = vec![first_arg];
+                    for (ty, value) in tys {
+                        args.push(GenericArg::Type(const_type_id(db, *ty, value)));
+                    }
+                    args
+                }
+            },
+        }
+        .into(),
+    ))
 }
 
 pub fn match_enum_libfunc_id(

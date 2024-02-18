@@ -47,7 +47,8 @@ use crate::lower::lower_match::{
     MatchArmWrapper, TupleInfo,
 };
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
+    BlockId, ConstValue, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -746,33 +747,18 @@ fn lower_expr_literal_helper(
     let location = ctx.get_location(stable_ptr);
     let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
 
-    if ty == u256_ty {
+    let value = if ty != u256_ty {
+        ConstValue::Int(value.clone())
+    } else {
         let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
-
         let mask128 = BigInt::from(u128::MAX);
         let low = value & mask128;
         let high = value >> 128;
-        let u256 = vec![low, high];
-
-        return Ok(LoweredExpr::AtVariable(
-            generators::StructConstruct {
-                inputs: u256
-                    .into_iter()
-                    .map(|value| {
-                        generators::Literal { value, ty: u128_ty, location }
-                            .add(ctx, &mut builder.statements)
-                    })
-                    .collect(),
-                ty: u256_ty,
-                location,
-            }
-            .add(ctx, &mut builder.statements),
-        ));
-    }
+        ConstValue::Struct(vec![(u128_ty, ConstValue::Int(low)), (u128_ty, ConstValue::Int(high))])
+    };
 
     Ok(LoweredExpr::AtVariable(
-        generators::Literal { value: value.clone(), ty, location }
-            .add(ctx, &mut builder.statements),
+        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
     ))
 }
 
@@ -867,8 +853,8 @@ fn add_chunks_to_data_array<'a>(
     let chunks = expr.value.as_bytes().chunks_exact(31);
     let remainder = chunks.remainder();
     for chunk in chunks {
-        let chunk_usage = generators::Literal {
-            value: BigInt::from_bytes_be(Sign::Plus, chunk),
+        let chunk_usage = generators::Const {
+            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk)),
             ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
@@ -901,16 +887,16 @@ fn add_pending_word(
     let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
     let felt252_ty = core_felt252_ty(ctx.db.upcast());
 
-    let pending_word_usage = generators::Literal {
-        value: BigInt::from_bytes_be(Sign::Plus, pending_word_bytes),
+    let pending_word_usage = generators::Const {
+        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes)),
         ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
 
     let pending_word_len = expr.value.len() % 31;
-    let pending_word_len_usage = generators::Literal {
-        value: pending_word_len.into(),
+    let pending_word_len_usage = generators::Const {
+        value: ConstValue::Int(pending_word_len.into()),
         ty: u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
