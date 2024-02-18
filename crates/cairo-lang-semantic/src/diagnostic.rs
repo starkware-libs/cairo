@@ -130,6 +130,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
                 "Member specified more than once.".into()
             }
+            SemanticDiagnosticKind::ConstCycle => {
+                "Cycle detected while resolving 'const' items.".into()
+            }
             SemanticDiagnosticKind::UseCycle => {
                 "Cycle detected while resolving 'use' items.".into()
             }
@@ -751,6 +754,7 @@ pub enum SemanticDiagnosticKind {
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,
     StructBaseStructExpressionNoEffect,
+    ConstCycle,
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,

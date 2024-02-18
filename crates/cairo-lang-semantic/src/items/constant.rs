@@ -8,7 +8,7 @@ use id_arena::Arena;
 
 use crate::corelib::validate_literal;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
@@ -88,6 +88,24 @@ pub fn priv_constant_semantic_data(
     Ok(ConstantData { diagnostics: diagnostics.build(), constant: Ok(constant), resolver_data })
 }
 
+/// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
+pub fn priv_constant_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<ConstantData> {
+    let module_file_id = const_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let const_ast = db.module_constant_by_id(*const_id)?.to_maybe()?;
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(*const_id));
+    let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
+    Ok(ConstantData {
+        constant: Err(diagnostics.report(&const_ast, SemanticDiagnosticKind::ConstCycle)),
+        diagnostics: diagnostics.build(),
+        resolver_data: Arc::new(Resolver::new(db, module_file_id, inference_id).data),
+    })
+}
+
 /// Validates that the given expression is a valid constant.
 fn validate_constant_expr(
     db: &dyn SemanticGroup,
@@ -107,6 +125,7 @@ fn validate_constant_expr(
         }
     };
     match &expr {
+        Expr::Constant(_) => {}
         Expr::Literal(expr) => handle_literal(diagnostics, expr.value.clone()),
         Expr::FunctionCall(expr) => {
             if let Some(value) = try_extract_minus_literal(db, exprs, expr) {
@@ -151,10 +170,28 @@ pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> M
     db.priv_constant_semantic_data(const_id)?.constant
 }
 
+/// Cycle handling for [SemanticGroup::constant_semantic_data].
+pub fn constant_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<Constant> {
+    constant_semantic_data(db, *const_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].
 pub fn constant_resolver_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_constant_semantic_data(const_id)?.resolver_data)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::constant_resolver_data].
+pub fn constant_resolver_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    const_id: &ConstantId,
+) -> Maybe<Arc<ResolverData>> {
+    constant_resolver_data(db, *const_id)
 }

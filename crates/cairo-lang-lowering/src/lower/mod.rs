@@ -950,6 +950,12 @@ fn lower_expr_constant_helper(
     (
         ty,
         match expr {
+            semantic::Expr::Constant(expr) => {
+                let constant = &ctx.db.constant_semantic_data(expr.constant_id).expect(
+                    "Would have failed at semantic on type mismatch if constant didn't exist.",
+                );
+                lower_expr_constant_helper(ctx, &constant.exprs, constant.value).1
+            }
             semantic::Expr::FunctionCall(expr) => {
                 let value = try_extract_minus_literal(ctx.db.upcast(), exprs, expr)
                     .expect("Only supported function call in const is minus.");
@@ -974,7 +980,7 @@ fn lower_expr_constant_helper(
                 expr.variant.clone(),
                 Box::new(lower_expr_constant_helper(ctx, exprs, expr.value_expr).1),
             ),
-            _ => panic!("Only literal constants are supported."),
+            _ => panic!("Unexpected constant {:?}.", expr),
         },
     )
 }

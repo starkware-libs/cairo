@@ -6,6 +6,7 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo() {
     let _x = MY_CONST + my_module::CONST_IN_MODULE;
+    let (_y, _z) = FELT_TUPLE;
 }
 
 //! > function_name
@@ -13,6 +14,10 @@ foo
 
 //! > module_code
 const MY_CONST: felt252 = 0x1234;
+
+const FELT_TUPLE: (felt252, felt252) = (1, 2);
+
+const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
 
 mod my_module {
     const CONST_IN_MODULE: felt252 = 1;
@@ -196,3 +201,25 @@ error: The value does not fit within the range of type core::integer::i16.
  --> lib.cairo:3:16
 const C: i16 = -0x8001;
                ^*****^
+
+//! > ==========================================================================
+
+//! > Const reference to itself.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const A: i8 = A;
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'const' items.
+ --> lib.cairo:1:1
+const A: i8 = A;
+^**************^
