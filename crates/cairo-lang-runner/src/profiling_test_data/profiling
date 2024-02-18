@@ -11,64 +11,24 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 35: 5 (enum_match<test::MyEnumLong>([0]) { fallthrough([1]) 39([2]) 42([3]) })
-  statement 2: 2 (store_temp<test::MyEnumShort>([1]) -> ([1]))
-  statement 7: 2 (store_temp<test::MyEnumShort>([4]) -> ([4]))
-  statement 12: 2 (store_temp<test::MyEnumLong>([7]) -> ([7]))
-  statement 17: 2 (store_temp<test::MyEnumLong>([10]) -> ([10]))
-  statement 22: 2 (store_temp<test::MyEnumLong>([13]) -> ([13]))
-  statement 28: 2 (enum_match<test::MyEnumShort>([0]) { fallthrough([1]) 32([2]) })
-  statement 3: 1 (function_call<user@test::match_short>([1]) -> ([2]))
-  statement 8: 1 (function_call<user@test::match_short>([4]) -> ([5]))
-  statement 13: 1 (function_call<user@test::match_long>([7]) -> ([8]))
-  statement 18: 1 (function_call<user@test::match_long>([10]) -> ([11]))
-  statement 23: 1 (function_call<user@test::match_long>([13]) -> ([14]))
-  statement 26: 1 (store_temp<felt252>([15]) -> ([15]))
-  statement 27: 1 (return([15]))
-  statement 30: 1 (store_temp<felt252>([1]) -> ([1]))
-  statement 31: 1 (return([1]))
-  statement 33: 1 (store_temp<felt252>([2]) -> ([2]))
-  statement 34: 1 (return([2]))
-  statement 37: 1 (store_temp<felt252>([1]) -> ([1]))
-  statement 38: 1 (return([1]))
-  statement 40: 1 (store_temp<felt252>([2]) -> ([2]))
-  statement 41: 1 (return([2]))
-  statement 43: 1 (store_temp<felt252>([3]) -> ([3]))
-  statement 44: 1 (return([3]))
+  statement 1: 1 (store_temp<felt252>([0]) -> ([0]))
+  statement 2: 1 (return([0]))
 Weight by concrete libfunc:
-  libfunc store_temp<felt252>: 6
-  libfunc store_temp<test::MyEnumLong>: 6
-  libfunc enum_match<test::MyEnumLong>: 5
-  libfunc store_temp<test::MyEnumShort>: 4
-  libfunc function_call<user@test::match_long>: 3
-  libfunc enum_match<test::MyEnumShort>: 2
-  libfunc function_call<user@test::match_short>: 2
-  return: 6
+  libfunc store_temp<felt252>: 1
+  return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 16
-  libfunc enum_match: 7
-  libfunc function_call: 5
-  return: 6
+  libfunc store_temp: 1
+  return: 1
 Weight by user function (inc. generated):
-  function test::main: 17
-  function test::match_long: 11
-  function test::match_short: 6
+  function test::main: 2
 Weight by original user function (exc. generated):
-  function test::main: 17
-  function test::match_long: 11
-  function test::match_short: 6
+  function test::main: 2
 Weight by Cairo function:
-  function lib.cairo::main: 17
-  function lib.cairo::match_long: 11
-  function lib.cairo::match_short: 6
+  function lib.cairo::main: 2
 Weight by Sierra stack trace:
-  test::main: 34
-  test::main -> test::match_long: 11
-  test::main -> test::match_short: 6
+  test::main: 2
 Weight by Cairo stack trace:
-  test::main: 34
-  test::main -> test::match_long: 11
-  test::main -> test::match_short: 6
+  test::main: 2
 
 //! > ==========================================================================
 
@@ -85,115 +45,63 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 105: 12 (store_temp<core::panics::PanicResult::<(core::felt252,)>>([28]) -> ([28]))
-  statement 112: 8 (u8_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 118([5], [6]) })
-  statement 68: 7 (enum_match<test::MyEnum>([1]) { fallthrough([2]) 74([3]) 81([4]) 87([5]) })
-  statement 126: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([12]) -> ([12]))
-  statement 133: 6 (store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([5]) -> ([5]))
-  statement 5: 4 (store_temp<test::MyEnum>([4]) -> ([4]))
-  statement 15: 4 (store_temp<test::MyEnum>([12]) -> ([12]))
-  statement 26: 4 (store_temp<test::MyEnum>([21]) -> ([21]))
-  statement 37: 4 (store_temp<test::MyEnum>([30]) -> ([30]))
-  statement 104: 4 (store_temp<RangeCheck>([11]) -> ([11]))
-  statement 106: 4 (return([11], [28]))
-  statement 116: 4 (store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([7]) -> ([9]))
-  statement 46: 3 (store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37]))
-  statement 78: 2 (store_temp<RangeCheck>([0]) -> ([11]))
-  statement 79: 2 (store_temp<felt252>([8]) -> ([12]))
-  statement 80: 2 (jump() { 102() })
-  statement 92: 2 (store_temp<RangeCheck>([0]) -> ([0]))
-  statement 93: 2 (store_temp<u8>([16]) -> ([16]))
-  statement 94: 2 (store_temp<u8>([17]) -> ([17]))
-  statement 95: 2 (function_call<user@core::integer::U8Add::add>([0], [16], [17]) -> ([21], [22]))
-  statement 96: 2 (enum_match<core::panics::PanicResult::<(core::integer::u8,)>>([22]) { fallthrough([23]) 107([24]) })
-  statement 100: 2 (store_temp<RangeCheck>([21]) -> ([11]))
-  statement 101: 2 (store_temp<felt252>([26]) -> ([12]))
-  statement 115: 2 (store_temp<RangeCheck>([3]) -> ([8]))
-  statement 117: 2 (jump() { 122() })
-  statement 123: 2 (store_temp<felt252>([11]) -> ([11]))
-  statement 124: 2 (function_call<user@core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>>([9], [11]) -> ([12]))
-  statement 125: 2 (store_temp<RangeCheck>([8]) -> ([8]))
-  statement 127: 2 (return([8], [12]))
-  statement 128: 2 (enum_match<core::result::Result::<core::integer::u8, core::integer::u8>>([0]) { fallthrough([2]) 135([3]) })
-  statement 129: 2 (branch_align() -> ())
-  statement 134: 2 (return([5]))
-  statement 4: 1 (store_temp<RangeCheck>([0]) -> ([0]))
-  statement 6: 1 (function_call<user@test::foo>([0], [4]) -> ([5], [6]))
-  statement 7: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([6]) { fallthrough([7]) 63([8]) })
-  statement 14: 1 (store_temp<RangeCheck>([5]) -> ([5]))
-  statement 16: 1 (function_call<user@test::foo>([5], [12]) -> ([13], [14]))
-  statement 17: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([14]) { fallthrough([15]) 58([16]) })
-  statement 25: 1 (store_temp<RangeCheck>([13]) -> ([13]))
-  statement 27: 1 (function_call<user@test::foo>([13], [21]) -> ([22], [23]))
-  statement 28: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([23]) { fallthrough([24]) 53([25]) })
-  statement 36: 1 (store_temp<RangeCheck>([22]) -> ([22]))
-  statement 38: 1 (function_call<user@test::foo>([22], [30]) -> ([31], [32]))
-  statement 39: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([32]) { fallthrough([33]) 48([34]) })
-  statement 45: 1 (store_temp<RangeCheck>([31]) -> ([31]))
-  statement 47: 1 (return([31], [37]))
-  statement 69: 1 (branch_align() -> ())
-  statement 72: 1 (store_temp<felt252>([7]) -> ([8]))
-  statement 73: 1 (jump() { 78() })
-  statement 74: 1 (branch_align() -> ())
-  statement 77: 1 (store_temp<felt252>([9]) -> ([8]))
-  statement 84: 1 (store_temp<u8>([13]) -> ([16]))
-  statement 85: 1 (store_temp<u8>([15]) -> ([17]))
-  statement 86: 1 (jump() { 92() })
-  statement 90: 1 (store_temp<u8>([18]) -> ([16]))
-  statement 91: 1 (store_temp<u8>([20]) -> ([17]))
+  statement 18: 4 (store_temp<test::MyEnum>([4]) -> ([4]))
+  statement 19: 4 (store_temp<test::MyEnum>([8]) -> ([8]))
+  statement 20: 4 (store_temp<test::MyEnum>([13]) -> ([13]))
+  statement 21: 4 (store_temp<test::MyEnum>([18]) -> ([18]))
+  statement 89: 4 (u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) 135([70], [71]) })
+  statement 113: 4 (u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) 123([88], [89]) })
+  statement 121: 3 (store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93]))
+  statement 46: 2 (enum_match<test::MyEnum>([8]) { fallthrough([37]) 50([38]) 54([39]) 60([40]) })
+  statement 70: 2 (enum_match<test::MyEnum>([13]) { fallthrough([55]) 74([56]) 78([57]) 84([58]) })
+  statement 94: 2 (enum_match<test::MyEnum>([18]) { fallthrough([73]) 98([74]) 102([75]) 108([76]) })
+  statement 22: 1 (enum_match<test::MyEnum>([4]) { fallthrough([19]) 26([20]) 30([21]) 36([22]) })
+  statement 23: 1 (branch_align() -> ())
+  statement 25: 1 (jump() { 28() })
+  statement 28: 1 (store_temp<RangeCheck>([0]) -> ([23]))
+  statement 29: 1 (jump() { 46() })
+  statement 50: 1 (branch_align() -> ())
+  statement 52: 1 (store_temp<RangeCheck>([23]) -> ([41]))
+  statement 53: 1 (jump() { 70() })
+  statement 81: 1 (store_temp<u8>([60]) -> ([63]))
+  statement 82: 1 (store_temp<u8>([62]) -> ([64]))
+  statement 83: 1 (jump() { 89() })
+  statement 93: 1 (store_temp<RangeCheck>([68]) -> ([59]))
+  statement 111: 1 (store_temp<u8>([83]) -> ([81]))
+  statement 112: 1 (store_temp<u8>([85]) -> ([82]))
+  statement 114: 1 (branch_align() -> ())
+  statement 117: 1 (store_temp<RangeCheck>([86]) -> ([77]))
+  statement 122: 1 (return([77], [93]))
 Weight by concrete libfunc:
-  libfunc store_temp<RangeCheck>: 19
   libfunc store_temp<test::MyEnum>: 16
-  libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>>: 12
-  libfunc store_temp<core::panics::PanicResult::<(core::integer::u8,)>>: 12
-  libfunc store_temp<felt252>: 8
-  libfunc store_temp<u8>: 8
   libfunc u8_overflowing_add: 8
   libfunc enum_match<test::MyEnum>: 7
-  libfunc jump: 6
-  libfunc branch_align: 4
-  libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>>: 4
-  libfunc function_call<user@test::foo>: 4
-  libfunc store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>: 4
+  libfunc jump: 4
+  libfunc store_temp<RangeCheck>: 4
+  libfunc store_temp<u8>: 4
+  libfunc branch_align: 3
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
-  libfunc enum_match<core::panics::PanicResult::<(core::integer::u8,)>>: 2
-  libfunc enum_match<core::result::Result::<core::integer::u8, core::integer::u8>>: 2
-  libfunc function_call<user@core::integer::U8Add::add>: 2
-  libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>>: 2
-  return: 9
+  return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 82
-  libfunc enum_match: 15
-  libfunc function_call: 8
+  libfunc store_temp: 27
   libfunc u8_overflowing_add: 8
-  libfunc jump: 6
-  libfunc branch_align: 4
-  return: 9
+  libfunc enum_match: 7
+  libfunc jump: 4
+  libfunc branch_align: 3
+  return: 1
 Weight by user function (inc. generated):
-  function test::foo: 57
-  function test::main: 33
-  function core::integer::U8Add::add: 30
-  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+  function test::main: 50
 Weight by original user function (exc. generated):
-  function test::foo: 57
-  function test::main: 33
-  function core::integer::U8Add::add: 30
-  function core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+  function test::main: 50
 Weight by Cairo function:
-  function lib.cairo::foo: 57
-  function lib.cairo::main: 33
-  function integer.cairo::U8Add::add: 30
-  function result.cairo::ResultTraitImpl::expect: 12
+  function lib.cairo::foo: 30
+  function lib.cairo::main: 10
+  function integer.cairo::U8Add::add: 9
+  function unknown: 1
 Weight by Sierra stack trace:
-  test::main: 132
-  test::main -> test::foo: 99
-  test::main -> test::foo -> core::integer::U8Add::add: 42
-  test::main -> test::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+  test::main: 50
 Weight by Cairo stack trace:
-  test::main: 132
-  test::main -> test::foo: 99
-  test::main -> test::foo -> core::integer::U8Add::add: 42
-  test::main -> test::foo -> core::integer::U8Add::add -> core::result::ResultTraitImpl::<core::integer::u8, core::integer::u8>::expect::<core::integer::u8Drop>: 12
+  test::main: 50
 
 //! > ==========================================================================
 
@@ -352,45 +260,21 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 10: 2 (function_call<user@test::foo3>() -> ([0]))
-  statement 13: 2 (return([1]))
-  statement 15: 2 (return([0]))
-  statement 0: 1 (function_call<user@test::foo1>() -> ([0]))
-  statement 3: 1 (return([1]))
-  statement 4: 1 (function_call<user@test::foo2>() -> ([0]))
-  statement 6: 1 (function_call<user@test::foo2>() -> ([1]))
-  statement 9: 1 (return([2]))
+  statement 1: 1 (return([0]))
 Weight by concrete libfunc:
-  libfunc function_call<user@test::foo2>: 2
-  libfunc function_call<user@test::foo3>: 2
-  libfunc function_call<user@test::foo1>: 1
-  return: 6
+  return: 1
 Weight by generic libfunc:
-  libfunc function_call: 5
-  return: 6
+  return: 1
 Weight by user function (inc. generated):
-  function test::foo2: 4
-  function test::foo1: 3
-  function test::foo3: 2
-  function test::main: 2
+  function test::main: 1
 Weight by original user function (exc. generated):
-  function test::foo2: 4
-  function test::foo1: 3
-  function test::foo3: 2
-  function test::main: 2
+  function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::foo2: 4
-  function lib.cairo::foo1: 3
-  function lib.cairo::foo3: 2
-  function lib.cairo::main: 2
+  function lib.cairo::main: 1
 Weight by Sierra stack trace:
-  test::main: 11
-  test::main -> test::foo1: 9
-  test::main -> test::foo1 -> test::foo2: 6
+  test::main: 1
 Weight by Cairo stack trace:
-  test::main: 11
-  test::main -> test::foo1: 9
-  test::main -> test::foo1 -> test::foo2: 6
+  test::main: 1
 
 //! > ==========================================================================
 
@@ -418,47 +302,21 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 10: 2 (function_call<user@test::foo3>() -> ([0]))
-  statement 13: 2 (return([1]))
-  statement 15: 2 (return([0]))
-  statement 0: 1 (function_call<user@test::foo1>() -> ([0]))
-  statement 3: 1 (return([1]))
-  statement 4: 1 (function_call<user@test::foo2>() -> ([0]))
-  statement 6: 1 (function_call<user@test::foo2>() -> ([1]))
-  statement 9: 1 (return([2]))
+  statement 1: 1 (return([0]))
 Weight by concrete libfunc:
-  libfunc function_call<user@test::foo2>: 2
-  libfunc function_call<user@test::foo3>: 2
-  libfunc function_call<user@test::foo1>: 1
-  return: 6
+  return: 1
 Weight by generic libfunc:
-  libfunc function_call: 5
-  return: 6
+  return: 1
 Weight by user function (inc. generated):
-  function test::foo2: 4
-  function test::foo1: 3
-  function test::foo3: 2
-  function test::main: 2
+  function test::main: 1
 Weight by original user function (exc. generated):
-  function test::foo2: 4
-  function test::foo1: 3
-  function test::foo3: 2
-  function test::main: 2
+  function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::foo2: 4
-  function lib.cairo::foo1: 3
-  function lib.cairo::foo3: 2
-  function lib.cairo::main: 2
+  function lib.cairo::main: 1
 Weight by Sierra stack trace:
-  test::main: 11
-  test::main -> test::foo1: 9
-  test::main -> test::foo1 -> test::foo2: 6
-  test::main -> test::foo1 -> test::foo2 -> test::foo3: 2
+  test::main: 1
 Weight by Cairo stack trace:
-  test::main: 11
-  test::main -> test::foo1: 9
-  test::main -> test::foo1 -> test::foo2: 6
-  test::main -> test::foo1 -> test::foo2 -> test::foo3: 2
+  test::main: 1
 
 //! > ==========================================================================
 
@@ -486,36 +344,18 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 0: 1 (function_call<user@test::foo1>() -> ([0]))
-  statement 3: 1 (return([1]))
-  statement 4: 1 (function_call<user@test::foo3>() -> ([0]))
-  statement 7: 1 (return([1]))
-  statement 13: 1 (return([0]))
+  statement 1: 1 (return([0]))
 Weight by concrete libfunc:
-  libfunc function_call<user@test::foo1>: 1
-  libfunc function_call<user@test::foo3>: 1
-  return: 3
+  return: 1
 Weight by generic libfunc:
-  libfunc function_call: 2
-  return: 3
+  return: 1
 Weight by user function (inc. generated):
-  function test::foo1: 2
-  function test::main: 2
-  function test::foo3: 1
+  function test::main: 1
 Weight by original user function (exc. generated):
-  function test::foo1: 2
-  function test::main: 2
-  function test::foo3: 1
+  function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::main: 2
-  function lib.cairo::foo1: 1
-  function lib.cairo::foo2: 1
-  function lib.cairo::foo3: 1
+  function lib.cairo::main: 1
 Weight by Sierra stack trace:
-  test::main: 5
-  test::main -> test::foo1: 3
-  test::main -> test::foo1 -> test::foo3: 1
+  test::main: 1
 Weight by Cairo stack trace:
-  test::main: 5
-  test::main -> test::foo1: 3
-  test::main -> test::foo1 -> test::foo3: 1
+  test::main: 1

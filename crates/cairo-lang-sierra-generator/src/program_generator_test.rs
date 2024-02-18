@@ -55,11 +55,17 @@ fn test_program_generator(
 #[test_case("f6", &["test::f6"]; "self loop")]
 fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
     let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
+        #[inline(never)]
         fn f1() { f2(); f3(); }
+        #[inline(never)]
         fn f2() { f3(); f4(); f5(); }
+        #[inline(never)]
         fn f3() { f5(); }
+        #[inline(never)]
         fn f4() { f5(); f6(); }
+        #[inline(never)]
         fn f5() { f6(); }
+        #[inline(never)]
         fn f6() { f6(); }
     "});
     let func_id = ConcreteFunctionWithBodyId::from_no_generics_free(

@@ -18,6 +18,7 @@ fn get_val() -> (u32, (), u32) {
   (13, (), 17)
 }
 
+#[inline(never)]
 fn test_func(a: u32, b: u32) {}
 
 //! > semantic_diagnostics
@@ -97,6 +98,7 @@ fn get_val() -> Array<felt252>{
   ArrayTrait::new()
 }
 
+#[inline(never)]
 fn test_func(a: Span<felt252>) {}
 
 //! > semantic_diagnostics
