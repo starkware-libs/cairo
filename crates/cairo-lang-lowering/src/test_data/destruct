@@ -107,6 +107,7 @@ fn foo(a: A, b: B){
 foo
 
 //! > module_code
+#[inline(never)]
 fn may_panic() {
   panic_with_felt252('123');
 }

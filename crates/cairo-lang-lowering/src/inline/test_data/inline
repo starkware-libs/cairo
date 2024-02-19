@@ -990,6 +990,7 @@ End:
 
 blk12:
 Statements:
+<<<<<<< HEAD
   (v26: ()) <- struct_construct()
   (v27: core::bool) <- bool::True(v26)
 End:
@@ -1021,6 +1022,13 @@ blk16:
 Statements:
   (v32: (core::integer::u128,)) <- struct_construct(v31)
   (v33: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v32)
+=======
+End:
+  Goto(blk14, {})
+
+blk13:
+Statements:
+>>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 End:
   Goto(blk14, {v33 -> v11})
 
@@ -1035,6 +1043,96 @@ Statements:
   (v35: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v30)
 End:
   Goto(blk14, {v35 -> v11})
+
+blk14:
+Statements:
+End:
+  Match(match core::integer::u128_overflowing_add(v1, v3) {
+    Result::Ok(v20) => blk15,
+    Result::Err(v21) => blk16,
+  })
+
+blk15:
+Statements:
+  (v22: core::result::Result::<core::integer::u128, core::integer::u128>) <- Result::Ok(v20)
+End:
+  Goto(blk17, {v22 -> v23})
+
+blk16:
+Statements:
+  (v24: core::result::Result::<core::integer::u128, core::integer::u128>) <- Result::Err(v21)
+End:
+  Goto(blk17, {v24 -> v23})
+
+blk17:
+Statements:
+  (v25: core::felt252) <- 39878429859757942499084499860145094553463u
+End:
+  Goto(blk19, {})
+
+blk18:
+Statements:
+End:
+  Goto(blk13, {v26 -> v19})
+
+blk19:
+Statements:
+End:
+  Match(match_enum(v23) {
+    Result::Ok(v27) => blk20,
+    Result::Err(v28) => blk21,
+  })
+
+blk20:
+Statements:
+End:
+  Goto(blk22, {v27 -> v29})
+
+blk21:
+Statements:
+End:
+  Goto(blk24, {})
+
+blk22:
+Statements:
+End:
+  Goto(blk18, {v29 -> v26})
+
+blk23:
+Statements:
+End:
+  Match(match_enum(v30) {
+  })
+
+blk24:
+Statements:
+End:
+  Goto(blk26, {})
+
+blk25:
+Statements:
+End:
+  Goto(blk28, {})
+
+blk26:
+Statements:
+  (v36: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk25, {v36 -> v31})
+
+blk27:
+Statements:
+  (v34: core::panics::Panic) <- struct_construct()
+  (v35: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v34, v32)
+End:
+  Panic(v35)
+
+blk28:
+Statements:
+  (v37: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v31, v25)
+  (v38: ()) <- struct_construct()
+End:
+  Goto(blk27, {v37 -> v32, v38 -> v33})
 
 //! > lowering_diagnostics
 

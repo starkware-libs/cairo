@@ -21,6 +21,7 @@ fn foo(ref a: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[inline(never)]
 fn bar(ref a: felt252, b: bool) {
 }
 

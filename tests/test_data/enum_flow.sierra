@@ -1,6 +1,7 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+<<<<<<< HEAD
 
 libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<examples::enum_flow::MyEnumShort, 0> = enum_init<examples::enum_flow::MyEnumShort, 0>;
@@ -18,11 +19,17 @@ libfunc enum_init<examples::enum_flow::MyEnumLong, 1> = enum_init<examples::enum
 libfunc felt252_const<22> = felt252_const<22>;
 libfunc enum_init<examples::enum_flow::MyEnumLong, 2> = enum_init<examples::enum_flow::MyEnumLong, 2>;
 libfunc felt252_const<300> = felt252_const<300>;
+=======
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 300>> = const_as_immediate<Const<felt252, 300>>;
+>>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc enum_match<examples::enum_flow::MyEnumShort> = enum_match<examples::enum_flow::MyEnumShort>;
 libfunc branch_align = branch_align;
 libfunc enum_match<examples::enum_flow::MyEnumLong> = enum_match<examples::enum_flow::MyEnumLong>;
 
+<<<<<<< HEAD
 felt252_const<10>() -> ([0]); // 0
 enum_init<examples::enum_flow::MyEnumShort, 0>([0]) -> ([1]); // 1
 store_temp<examples::enum_flow::MyEnumShort>([1]) -> ([1]); // 2
@@ -68,7 +75,29 @@ return([2]); // 41
 branch_align() -> (); // 42
 store_temp<felt252>([3]) -> ([3]); // 43
 return([3]); // 44
+=======
+const_as_immediate<Const<felt252, 300>>() -> ([0]); // 0
+store_temp<felt252>([0]) -> ([0]); // 1
+return([0]); // 2
+enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) 7([2]) }; // 3
+branch_align() -> (); // 4
+store_temp<felt252>([1]) -> ([1]); // 5
+return([1]); // 6
+branch_align() -> (); // 7
+store_temp<felt252>([2]) -> ([2]); // 8
+return([2]); // 9
+enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) 14([2]) 17([3]) }; // 10
+branch_align() -> (); // 11
+store_temp<felt252>([1]) -> ([1]); // 12
+return([1]); // 13
+branch_align() -> (); // 14
+store_temp<felt252>([2]) -> ([2]); // 15
+return([2]); // 16
+branch_align() -> (); // 17
+store_temp<felt252>([3]) -> ([3]); // 18
+return([3]); // 19
+>>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 
 examples::enum_flow::main@0() -> (felt252);
-examples::enum_flow::match_short@28([0]: examples::enum_flow::MyEnumShort) -> (felt252);
-examples::enum_flow::match_long@35([0]: examples::enum_flow::MyEnumLong) -> (felt252);
+examples::enum_flow::match_short@3([0]: examples::enum_flow::MyEnumShort) -> (felt252);
+examples::enum_flow::match_long@10([0]: examples::enum_flow::MyEnumLong) -> (felt252);

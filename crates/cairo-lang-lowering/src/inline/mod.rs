@@ -89,8 +89,15 @@ fn gather_inlining_info(
 }
 
 // A heuristic to decide if a function should be inlined.
-fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block = lowered.blocks.root_block()?;
+    // The inline heuristics optimization flag only applies to non-trivial small functions.
+    // Functions which contains only a call or a literal are always inlined.
+    let num_of_statements: usize =
+        lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
+    if num_of_statements < inline_small_functions_threshold(db) {
+        return Ok(true);
+    }
 
     Ok(match &root_block.end {
         FlatBlockEnd::Return(_) => {
@@ -410,4 +417,10 @@ pub fn apply_inlining(
         *flat_lowered = new_flat_lowered;
     }
     Ok(())
+}
+
+/// Returns the threshold, in number of lowering statements, below which a function is marked as
+/// `should_inline`.
+fn inline_small_functions_threshold(db: &dyn LoweringGroup) -> usize {
+    db.optimization_config().inline_small_functions_threshold
 }

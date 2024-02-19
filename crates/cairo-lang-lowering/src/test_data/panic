@@ -51,6 +51,7 @@ fn foo(ref x: felt252, ref a: bool) -> felt252 {
 foo
 
 //! > module_code
+#[inline(never)]
 fn bar(ref a: bool) -> felt252 {
   let mut data = array![];
   data.append(1);
