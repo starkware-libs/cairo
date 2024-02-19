@@ -28,6 +28,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
+use crate::optimizations::split_structs::split_structs;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
@@ -389,6 +390,7 @@ fn concrete_function_with_body_lowered(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+
     optimize_remappings(&mut lowered);
     // The call to `reorder_statements` before and after `branch_inversion` is intentional.
     // See description of `branch_inversion` for more details.
@@ -400,6 +402,7 @@ fn concrete_function_with_body_lowered(
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     cancel_ops(&mut lowered);
+    split_structs(&mut lowered);
     reorder_statements(db, &mut lowered);
     // `reorder_statements` may have caused some remappings to be redundant, so they need to be
     // removed.
