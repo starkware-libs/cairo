@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

@@ -6,8 +6,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeId, ImplTypeLongId, LanguageElementId,
-    LookupItemId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitTypeId,
+    LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,

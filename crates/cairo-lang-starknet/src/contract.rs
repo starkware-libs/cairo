@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
     FileIndex, FreeFunctionId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, SubmoduleId,
+    ModuleItemId, NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;

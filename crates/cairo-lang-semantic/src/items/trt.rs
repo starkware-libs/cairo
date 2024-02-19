@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId,
-    TraitFunctionId, TraitFunctionLongId, TraitId, TraitItemId, TraitTypeId, TraitTypeLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
+    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitFunctionLongId,
+    TraitId, TraitItemId, TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};

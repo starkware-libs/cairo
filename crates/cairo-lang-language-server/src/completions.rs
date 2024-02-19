@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, TopLevelLanguageElementId, TraitFunctionId,
+    ModuleItemId, NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;

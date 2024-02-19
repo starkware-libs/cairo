@@ -1,6 +1,7 @@
 use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
