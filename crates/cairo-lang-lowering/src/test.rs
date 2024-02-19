@@ -160,13 +160,16 @@ fn test_function_lowering_phases(
     apply_stage("after_branch_inversion", &|lowered| branch_inversion(&db, lowered));
     apply_stage("after_reorder_statements2", &|lowered| reorder_statements(&db, lowered));
     apply_stage("const_folding", &|lowered| const_folding(&db, lowered));
-    apply_stage("after_optimize_matches", &optimize_matches);
-    apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
-    apply_stage("after_optimize_remappings2", &optimize_remappings);
-    apply_stage("cancel_ops", &cancel_ops);
+    apply_stage("after_optimize_matches1", &optimize_matches);
     apply_stage("split_structs", &split_structs);
     apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
+    apply_stage("after_optimize_remappings2", &optimize_remappings);
+    apply_stage("after_optimize_matches2", &optimize_matches);
+    apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
     apply_stage("after_optimize_remappings3", &optimize_remappings);
+    apply_stage("cancel_ops", &cancel_ops);
+    apply_stage("after_reorder_statements4", &|lowered| reorder_statements(&db, lowered));
+    apply_stage("after_optimize_remappings4", &optimize_remappings);
     apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();

@@ -3219,21 +3219,21 @@ store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([18]); // 2776
 function_call<user@cairo_level_tests::contracts::erc20::erc_20::__member_module_allowances::InternalContractMemberStateImpl::read>([0], [1], [2], [3], [15], [18]) -> ([19], [20], [21], [22], [23]); // 2777
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 2859([25]) }; // 2778
 branch_align() -> (); // 2779
-struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]); // 2780
-u128_const<340282366920938463463374607431768211455>() -> ([27]); // 2781
-struct_deconstruct<core::integer::u256>([26]) -> ([28], [29]); // 2782
+u128_const<340282366920938463463374607431768211455>() -> ([26]); // 2780
+struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([27]); // 2781
+struct_deconstruct<core::integer::u256>([27]) -> ([28], [29]); // 2782
 dup<u128>([28]) -> ([28], [30]); // 2783
-dup<u128>([27]) -> ([27], [31]); // 2784
+dup<u128>([26]) -> ([26], [31]); // 2784
 u128_eq([30], [31]) { fallthrough() 2792() }; // 2785
 branch_align() -> (); // 2786
-drop<u128>([27]) -> (); // 2787
+drop<u128>([26]) -> (); // 2787
 struct_construct<Unit>() -> ([32]); // 2788
 enum_init<core::bool, 0>([32]) -> ([33]); // 2789
 store_temp<core::bool>([33]) -> ([34]); // 2790
 jump() { 2805() }; // 2791
 branch_align() -> (); // 2792
 dup<u128>([29]) -> ([29], [35]); // 2793
-u128_eq([35], [27]) { fallthrough() 2800() }; // 2794
+u128_eq([35], [26]) { fallthrough() 2800() }; // 2794
 branch_align() -> (); // 2795
 struct_construct<Unit>() -> ([36]); // 2796
 enum_init<core::bool, 0>([36]) -> ([37]); // 2797
