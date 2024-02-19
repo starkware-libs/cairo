@@ -74,10 +74,12 @@ fn foo() {
     bar(0, __coupon__: c0);
 }
 
+#[inline(never)]
 fn buy_coupons() -> (bar::<u8>::Coupon, bar::<u8>::Coupon) {
     (coupon_buy(), coupon_buy())
 }
 
+#[inline(never)]
 fn bar<T, +Drop<T>>(x: T) -> felt252 {
     10
 }
@@ -328,10 +330,12 @@ extern fn coupon_refund<T>(c: T) nopanic;
 impl CouponRecursiveBuyDrop of Drop<recursive_buy::<u8>::Coupon>;
 impl CouponRecursiveRefundDrop of Drop<recursive_refund::<u8>::Coupon>;
 
+#[inline(never)]
 fn recursive_buy<T>() {
     coupon_buy::<recursive_buy::<u8>::Coupon>();
 }
 
+#[inline(never)]
 fn recursive_refund<T>(c: recursive_refund::<u8>::Coupon) {
     coupon_refund(c);
 }

@@ -267,10 +267,12 @@ struct MyStruct2 {
     value: felt252,
 }
 
+#[inline(never)]
 fn get_value_1(strct: MyStruct1) -> felt252{
     strct.strct.value
 }
 
+#[inline(never)]
 fn get_value_2(strct: MyStruct2) -> felt252{
     strct.value
 }
