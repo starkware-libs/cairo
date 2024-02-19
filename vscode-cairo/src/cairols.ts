@@ -129,10 +129,14 @@ async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
     `using CairoLS: ${serverExecutable.command} ${serverExecutable.args?.join(" ") ?? ""}`.trimEnd(),
   );
 
-  return {
-    run: serverExecutable,
-    debug: serverExecutable,
-  };
+  const run = serverExecutable;
+
+  const debug = structuredClone(serverExecutable);
+  debug.options ??= {};
+  debug.options.env ??= {};
+  debug.options.env["CAIRO_LS_LOG"] = "cairo_lang_language_server=debug";
+
+  return { run, debug };
 }
 
 async function determineLanguageServerExecutableProvider(
