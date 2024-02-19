@@ -782,6 +782,16 @@ test_function_lowering
 //! > function
 fn foo(a: myEnum) -> felt252 {
     loop {
+        // Some statements to prevent the loop function from being inlined.
+        let mut x = 0;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
         if let _ = a {
             break 2;
         }
@@ -792,6 +802,7 @@ fn foo(a: myEnum) -> felt252 {
 foo
 
 //! > module_code
+#[derive(Drop, Copy)]
 enum myEnum {
     A: felt252,
     B: felt252,
@@ -805,6 +816,6 @@ enum myEnum {
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- test::foo[expr5](v0)
+  (v1: core::felt252) <- test::foo[expr30](v0)
 End:
   Return(v1)

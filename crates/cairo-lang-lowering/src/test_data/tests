@@ -331,6 +331,7 @@ fn foo(mut a : felt252) -> felt252 {
 foo
 
 //! > module_code
+#[inline(never)]
 fn bar(ref a: felt252, ref b: felt252) -> felt252  {
   a = 0;
   b = 1;
