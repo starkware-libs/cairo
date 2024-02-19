@@ -270,6 +270,7 @@ pub struct StatementConst {
 pub enum ConstValue {
     Int(BigInt),
     Struct(Vec<(semantic::TypeId, ConstValue)>),
+    NonZero(semantic::TypeId, Box<ConstValue>),
 }
 
 /// A statement that calls a user function.

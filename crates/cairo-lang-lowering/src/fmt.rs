@@ -228,6 +228,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
                 }
                 write!(f, "}}")
             }
+            ConstValue::NonZero(_, value) => value.fmt(f, ctx),
         }
     }
 }

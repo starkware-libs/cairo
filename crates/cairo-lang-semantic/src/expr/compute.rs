@@ -1889,6 +1889,13 @@ fn new_literal_expr(
     stable_ptr: ExprPtr,
 ) -> Maybe<ExprLiteral> {
     let ty = if let Some(ty_str) = ty {
+        // Requires specific blocking as `NonZero` now has NumericLiteral support.
+        if ty_str == "NonZero" {
+            return Err(ctx.diagnostics.report_by_ptr(
+                stable_ptr.untyped(),
+                SemanticDiagnosticKind::WrongNumberOfArguments { expected: 1, actual: 0 },
+            ));
+        }
         try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
             .map_err(|err| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), err))?
     } else {

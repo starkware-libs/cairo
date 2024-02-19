@@ -183,6 +183,9 @@ fn const_type_id(
                     }
                     args
                 }
+                ConstValue::NonZero(ty, value) => {
+                    vec![first_arg, GenericArg::Type(const_type_id(db, *ty, value))]
+                }
             },
         }
         .into(),

@@ -12,7 +12,7 @@ use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
-    never_ty, unit_ty, validate_literal,
+    never_ty, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
@@ -745,18 +745,28 @@ fn lower_expr_literal_helper(
         ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err));
     }
     let location = ctx.get_location(stable_ptr);
-    let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
+    let get_basic_const_value = |ty| {
+        let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
 
-    let value = if ty != u256_ty {
-        ConstValue::Int(value.clone())
-    } else {
-        let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
-        let mask128 = BigInt::from(u128::MAX);
-        let low = value & mask128;
-        let high = value >> 128;
-        ConstValue::Struct(vec![(u128_ty, ConstValue::Int(low)), (u128_ty, ConstValue::Int(high))])
+        if ty != u256_ty {
+            ConstValue::Int(value.clone())
+        } else {
+            let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
+            let mask128 = BigInt::from(u128::MAX);
+            let low = value & mask128;
+            let high = value >> 128;
+            ConstValue::Struct(vec![
+                (u128_ty, ConstValue::Int(low)),
+                (u128_ty, ConstValue::Int(high)),
+            ])
+        }
     };
 
+    let value = if let Some(inner) = try_extract_nz_wrapped_type(ctx.db.upcast(), ty) {
+        ConstValue::NonZero(inner, Box::new(get_basic_const_value(inner)))
+    } else {
+        get_basic_const_value(ty)
+    };
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
     ))
