@@ -3965,21 +3965,21 @@ store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([18]); // 3436
 function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>([0], [1], [2], [3], [15], [18]) -> ([19], [20], [21], [22], [23]); // 3437
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 3519([25]) }; // 3438
 branch_align() -> (); // 3439
-struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]); // 3440
-u128_const<340282366920938463463374607431768211455>() -> ([27]); // 3441
-struct_deconstruct<core::integer::u256>([26]) -> ([28], [29]); // 3442
+u128_const<340282366920938463463374607431768211455>() -> ([26]); // 3440
+struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([27]); // 3441
+struct_deconstruct<core::integer::u256>([27]) -> ([28], [29]); // 3442
 dup<u128>([28]) -> ([28], [30]); // 3443
-dup<u128>([27]) -> ([27], [31]); // 3444
+dup<u128>([26]) -> ([26], [31]); // 3444
 u128_eq([30], [31]) { fallthrough() 3452() }; // 3445
 branch_align() -> (); // 3446
-drop<u128>([27]) -> (); // 3447
+drop<u128>([26]) -> (); // 3447
 struct_construct<Unit>() -> ([32]); // 3448
 enum_init<core::bool, 0>([32]) -> ([33]); // 3449
 store_temp<core::bool>([33]) -> ([34]); // 3450
 jump() { 3465() }; // 3451
 branch_align() -> (); // 3452
 dup<u128>([29]) -> ([29], [35]); // 3453
-u128_eq([35], [27]) { fallthrough() 3460() }; // 3454
+u128_eq([35], [26]) { fallthrough() 3460() }; // 3454
 branch_align() -> (); // 3455
 struct_construct<Unit>() -> ([36]); // 3456
 enum_init<core::bool, 0>([36]) -> ([37]); // 3457

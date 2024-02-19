@@ -399,6 +399,10 @@ fn concrete_function_with_body_lowered(
     reorder_statements(db, &mut lowered);
     const_folding(db, &mut lowered);
     optimize_matches(&mut lowered);
+    split_structs(&mut lowered);
+    optimize_remappings(&mut lowered);
+    reorder_statements(db, &mut lowered);
+    optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     cancel_ops(&mut lowered);

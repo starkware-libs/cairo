@@ -3761,15 +3761,15 @@ function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_l
 enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, ())>>([78]) { fallthrough([79]) 3248([80]) }; // 3210
 branch_align() -> (); // 3211
 contract_address_const<0>() -> ([81]); // 3212
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([82]); // 3213
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([83]); // 3214
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([84]); // 3215
-struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([85]); // 3216
-struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>([53]) -> ([86], [87]); // 3217
-drop<Unit>([87]) -> (); // 3218
-struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, Unit>>([79]) -> ([88], [89]); // 3219
-drop<Unit>([89]) -> (); // 3220
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([82], [83], [84], [86], [88], [85]) -> ([90]); // 3221
+struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState, Unit>>([53]) -> ([82], [83]); // 3213
+drop<Unit>([83]) -> (); // 3214
+struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState, Unit>>([79]) -> ([84], [85]); // 3215
+drop<Unit>([85]) -> (); // 3216
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>() -> ([86]); // 3217
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>() -> ([87]); // 3218
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>() -> ([88]); // 3219
+struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([89]); // 3220
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>([86], [87], [88], [82], [84], [89]) -> ([90]); // 3221
 struct_construct<cairo_level_tests::components::erc20::erc20::TransferEvent>([81], [5], [6]) -> ([91]); // 3222
 store_temp<GasBuiltin>([75]) -> ([75]); // 3223
 store_temp<System>([77]) -> ([77]); // 3224
@@ -4568,21 +4568,21 @@ store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([18]); // 4016
 function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>([0], [1], [2], [3], [15], [18]) -> ([19], [20], [21], [22], [23]); // 4017
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 4099([25]) }; // 4018
 branch_align() -> (); // 4019
-struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]); // 4020
-u128_const<340282366920938463463374607431768211455>() -> ([27]); // 4021
-struct_deconstruct<core::integer::u256>([26]) -> ([28], [29]); // 4022
+u128_const<340282366920938463463374607431768211455>() -> ([26]); // 4020
+struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([27]); // 4021
+struct_deconstruct<core::integer::u256>([27]) -> ([28], [29]); // 4022
 dup<u128>([28]) -> ([28], [30]); // 4023
-dup<u128>([27]) -> ([27], [31]); // 4024
+dup<u128>([26]) -> ([26], [31]); // 4024
 u128_eq([30], [31]) { fallthrough() 4032() }; // 4025
 branch_align() -> (); // 4026
-drop<u128>([27]) -> (); // 4027
+drop<u128>([26]) -> (); // 4027
 struct_construct<Unit>() -> ([32]); // 4028
 enum_init<core::bool, 0>([32]) -> ([33]); // 4029
 store_temp<core::bool>([33]) -> ([34]); // 4030
 jump() { 4045() }; // 4031
 branch_align() -> (); // 4032
 dup<u128>([29]) -> ([29], [35]); // 4033
-u128_eq([35], [27]) { fallthrough() 4040() }; // 4034
+u128_eq([35], [26]) { fallthrough() 4040() }; // 4034
 branch_align() -> (); // 4035
 struct_construct<Unit>() -> ([36]); // 4036
 enum_init<core::bool, 0>([36]) -> ([37]); // 4037
