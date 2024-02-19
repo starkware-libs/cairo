@@ -203,13 +203,14 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
         }
 
         match &mut block.end {
-            FlatBlockEnd::Goto(block_id, remappings) => {
-                stack.push(*block_id);
+            FlatBlockEnd::Goto(target_block_id, remappings) => {
+                stack.push(*target_block_id);
 
                 let mut old_remappings = std::mem::take(remappings);
 
                 ctx.rebuild_remapping(
                     &split,
+                    block_id,
                     &mut block.statements,
                     std::mem::take(&mut old_remappings.remapping).into_iter(),
                     remappings,
@@ -321,6 +322,7 @@ impl SplitStructsContext<'_> {
     fn rebuild_remapping(
         &mut self,
         split: &SplitMapping,
+        block_id: BlockId,
         statements: &mut Vec<Statement>,
         remappings: impl DoubleEndedIterator<Item = (VariableId, VarUsage)>,
         new_remappings: &mut VarRemapping,
@@ -365,7 +367,15 @@ impl SplitStructsContext<'_> {
                     ));
                 }
                 (None, Some(_src_vars)) => {
-                    unreachable!("A split variable should not be mapped to an reconstructed one.")
+                    self.check_if_var_needs_reconstruction(
+                        split,
+                        src,
+                        block_id,
+                        statements,
+                        orig_src.location,
+                    );
+                    new_remappings
+                        .insert(dst, VarUsage { var_id: src, location: orig_src.location });
                 }
             }
         }
