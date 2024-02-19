@@ -48,6 +48,27 @@ fn test_poseidon_hash_span() {
     );
 }
 
+#[test]
+fn test_poseidon_hash_one_element() {
+    // Test hashing one element
+    assert_eq(
+        @core::poseidon::poseidon_hash_one_element(1),
+        @0x06d226d4c804cd74567f5ac59c6a4af1fe2a6eced19fb7560a9124579877da25,
+        'wrong result'
+    );
+}
+
+#[test]
+fn test_poseidon_hash_two_elements() {
+    // Test hashing two elements
+    assert_eq(
+        @core::poseidon::poseidon_hash_two_elements(1, 2),
+        @0x5d44a3decb2b2e0cc71071f7b802f45dd792d064f0fc7316c46514f70f9891a,
+        'wrong result'
+    );
+}
+
+
 #[derive(Hash)]
 enum EnumForHash {
     First,
