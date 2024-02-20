@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
@@ -43,18 +44,31 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         target_blocks.insert(target_block);
     }
 
-    // Fix match arms not to jump directly to blocks that have incoming gotos.
+    // Fix match arms not to jump directly to blocks that have incoming gotos and add remapping
+    // for merge.
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
     for block in lowered.blocks.iter_mut() {
-        if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
+        if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
             &mut block.end
         {
             for arm in arms {
                 if target_blocks.contains(&arm.block_id) {
+                    let arm_var = arm.var_ids.get_mut(0).unwrap();
+                    let orig_var = *arm_var;
+                    *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
+
                     new_blocks.push(FlatBlock {
                         statements: vec![],
-                        end: FlatBlockEnd::Goto(arm.block_id, VarRemapping::default()),
+                        end: FlatBlockEnd::Goto(
+                            arm.block_id,
+                            VarRemapping {
+                                remapping: OrderedHashMap::from_iter([(
+                                    orig_var,
+                                    VarUsage { var_id: *arm_var, location: *location },
+                                )]),
+                            },
+                        ),
                     });
 
                     arm.block_id = next_block_id;
@@ -107,11 +121,9 @@ impl MatchOptimizerContext {
         let mut demand = candidate.arm_demands[arm_idx].clone();
 
         let mut remapping = VarRemapping::default();
-        if demand.vars.contains_key(var_id) {
-            // The input to EnumConstruct should be available as `var_id`
-            // in `arm.block_id`
-            remapping.insert(*var_id, *input);
-        }
+        // The input to EnumConstruct should be available as `var_id`
+        // in `arm.block_id`
+        remapping.insert(*var_id, *input);
 
         demand.apply_remapping(
             self,

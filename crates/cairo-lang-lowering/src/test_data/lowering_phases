@@ -922,7 +922,7 @@ blk4:
 Statements:
   (v0: ()) <- struct_construct()
 End:
-  Goto(blk2, {})
+  Goto(blk2, {v0 -> v3})
 
 blk5:
 Statements:
