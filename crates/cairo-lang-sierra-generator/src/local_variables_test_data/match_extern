@@ -51,8 +51,8 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v1)
+  (v12: core::felt252) <- test::revoke_ap()
+  (v15: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v1)
 End:
   Goto(blk3, {})
 
@@ -73,10 +73,10 @@ End:
 
 blk5:
 Statements:
-  (v9: core::felt252) <- test::revoke_ap()
-  (v14: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v7)
+  (v14: core::felt252) <- test::revoke_ap()
+  (v16: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v7)
 End:
-  Return(v14)
+  Return(v16)
 
 //! > local_variables
 v13
@@ -114,9 +114,9 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v0)
-  (v15: core::felt252) <- core::felt252_add(v13, v13)
+  (v16: core::felt252) <- core::felt252_add(v13, v13)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v16) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v4) => blk2,
   })
@@ -156,7 +156,7 @@ End:
 
 blk6:
 Statements:
-  (v12: core::felt252) <- test::revoke_ap()
+  (v15: core::felt252) <- test::revoke_ap()
 End:
   Return(v11)
 
@@ -220,7 +220,7 @@ End:
 
 blk1:
 Statements:
-  (v14: core::felt252) <- core::felt252_add(v13, v0)
+  (v15: core::felt252) <- core::felt252_add(v13, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
@@ -239,13 +239,13 @@ End:
 
 blk4:
 Statements:
-  (v15: core::felt252) <- core::felt252_add(v14, v0)
+  (v16: core::felt252) <- core::felt252_add(v15, v0)
 End:
-  Return(v15)
+  Return(v16)
 
 blk5:
 Statements:
-  (v4: core::felt252) <- test::revoke_ap()
+  (v14: core::felt252) <- test::revoke_ap()
   (v5: core::felt252) <- 0u
 End:
   Return(v5)

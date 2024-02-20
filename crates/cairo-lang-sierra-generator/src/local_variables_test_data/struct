@@ -39,7 +39,7 @@ blk0 (root):
 Statements:
   (v17: core::felt252) <- core::felt252_add(v0, v0)
   (v2: core::felt252) <- test::immovable::<core::felt252>(v17)
-  (v3: core::felt252) <- test::revoke_ap()
+  (v18: core::felt252) <- test::revoke_ap()
   (v4: test::MyStruct) <- struct_construct(v0, v2)
   (v5: test::MyStruct) <- test::immovable::<test::MyStruct>(v4)
   (v6: core::felt252, v7: core::felt252) <- struct_destructure(v5)
@@ -49,7 +49,7 @@ Statements:
   (v11: core::felt252) <- 1u
   (v12: test::MyStruct) <- struct_construct(v0, v11)
   (v13: test::MyStruct) <- test::immovable::<test::MyStruct>(v12)
-  (v14: core::felt252) <- test::revoke_ap()
+  (v19: core::felt252) <- test::revoke_ap()
   (v15: core::felt252, v16: core::felt252) <- struct_destructure(v13)
 End:
   Return(v15)
