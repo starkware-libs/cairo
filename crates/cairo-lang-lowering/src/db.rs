@@ -81,12 +81,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the lowered representation after the inlining phase.
-    fn priv_concrete_function_with_body_postinline_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
     /// Computes the lowered representation after the panic phase.
     fn concrete_function_with_body_postpanic_lowered(
         &self,
@@ -369,30 +363,15 @@ fn concrete_function_with_body_postpanic_lowered(
     Ok(Arc::new(lowered))
 }
 
-// Applies inlining.
-fn priv_concrete_function_with_body_postinline_lowered(
+// Applies optimization to the post_pacic lowering.
+fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
 
     apply_inlining(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
-}
-
-// * Optimizes remappings.
-// * Delays var definitions.
-// * Lowers implicits.
-// * Optimizes matches.
-// * Optimizes remappings again.
-// * Reorganizes blocks (topological sort).
-fn concrete_function_with_body_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
     return_optimization(db, &mut lowered);
-
     optimize_remappings(&mut lowered);
     // The call to `reorder_statements` before and after `branch_inversion` is intentional.
     // See description of `branch_inversion` for more details.
