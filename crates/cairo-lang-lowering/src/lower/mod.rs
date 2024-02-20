@@ -920,12 +920,17 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let const_expr =
-        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?.value;
-    let semantic::Expr::Literal(const_expr_literal) = const_expr else {
-        panic!("Only literal constants are supported.");
+    let constant =
+        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?;
+    let value = match &constant.exprs[constant.value] {
+        semantic::Expr::FunctionCall(expr) => {
+            try_extract_minus_literal(ctx.db.upcast(), &constant.exprs, expr)
+                .expect("Only supported function call in const is minus.")
+        }
+        semantic::Expr::Literal(expr) => expr.value.clone(),
+        _ => panic!("Only literal constants are supported."),
     };
-    lower_expr_literal(ctx, const_expr_literal, builder)
+    lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &value, builder)
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
