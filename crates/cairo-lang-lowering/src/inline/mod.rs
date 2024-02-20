@@ -20,11 +20,32 @@ use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VarUsage, VariableId,
 };
 
+pub fn get_inline_diagnostics(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Diagnostics<LoweringDiagnostic>> {
+    let semantic_function_id = function_id.base_semantic_function(db);
+    let mut diagnostics = LoweringDiagnostics::new(
+        semantic_function_id.module_file_id(db.upcast()).file_id(db.upcast())?,
+    );
+
+    if let InlineConfiguration::Always(_) =
+        db.function_declaration_inline_config(semantic_function_id)?
+    {
+        if db.in_cycle(function_id)? {
+            diagnostics.report(
+                semantic_function_id.untyped_stable_ptr(db.upcast()),
+                LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+            );
+        }
+    }
+
+    Ok(diagnostics.build())
+}
+
 /// data about inlining.
 #[derive(Debug, PartialEq, Eq)]
 pub struct PrivInlineData {
-    /// Diagnostics produced while collecting inlining Info.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
     pub config: InlineConfiguration,
     pub info: InlineInfo,
 }
@@ -38,53 +59,31 @@ pub struct InlineInfo {
     pub should_inline: bool,
 }
 
-pub fn priv_inline_data(
+pub fn gather_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
     let semantic_function_id = function_id.base_semantic_function(db);
-    let mut diagnostics = LoweringDiagnostics::new(
-        semantic_function_id.module_file_id(db.upcast()).file_id(db.upcast())?,
-    );
     let config = db.function_declaration_inline_config(semantic_function_id)?;
 
     let info = match config {
         InlineConfiguration::Never(_) => InlineInfo { is_inlinable: false, should_inline: false },
         InlineConfiguration::Should(_) => InlineInfo { is_inlinable: true, should_inline: true },
-        InlineConfiguration::Always(_) => {
-            gather_inlining_info(db, &mut diagnostics, true, function_id)?
-        }
-        InlineConfiguration::None => {
-            gather_inlining_info(db, &mut diagnostics, false, function_id)?
-        }
+        InlineConfiguration::Always(_) => gather_inlining_info(db, function_id)?,
+        InlineConfiguration::None => gather_inlining_info(db, function_id)?,
     };
-    Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, info }))
+    Ok(Arc::new(PrivInlineData { config, info }))
 }
 
 /// Gathers inlining information for the given function.
-/// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
 fn gather_inlining_info(
     db: &dyn LoweringGroup,
-    diagnostics: &mut LoweringDiagnostics,
-    report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let semantic_function_id = function_id.base_semantic_function(db);
-    let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
-    // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
-    // we can inline it.
+    let lowered = db.function_with_body_lowering(function_id)?;
     if db.in_cycle(function_id)? {
-        if report_diagnostics {
-            diagnostics.report(
-                stable_ptr,
-                LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
-            );
-        }
         return Ok(InlineInfo { is_inlinable: false, should_inline: false });
     }
-
-    let lowered = db.function_with_body_lowering(function_id)?;
-
     Ok(InlineInfo { is_inlinable: true, should_inline: should_inline(db, &lowered)? })
 }
 
@@ -290,13 +289,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
             let semantic_db = self.variables.db.upcast();
             if let Some(function_id) = stmt.function.body(self.variables.db)? {
                 // TODO(spapini): Change logic to be based on concrete.
-                let inline_data = self
-                    .variables
-                    .db
-                    .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
-
-                self.inlining_success =
-                    self.inlining_success.and_then(|()| inline_data.diagnostics.check_error_free());
+                let inline_data = gather_inline_data(
+                    self.variables.db,
+                    function_id.function_with_body_id(semantic_db),
+                )?;
 
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline

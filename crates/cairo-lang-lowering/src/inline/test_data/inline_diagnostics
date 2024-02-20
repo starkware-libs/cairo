@@ -33,6 +33,11 @@ End:
 
 //! > after
 Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v3: core::felt252, v2: core::felt252) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
 
 //! > ==========================================================================
 
