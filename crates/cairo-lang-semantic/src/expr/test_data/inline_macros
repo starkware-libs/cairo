@@ -102,11 +102,6 @@ error: This expression is not supported as constant.
 const f: felt252 = consteval_int!{4 + 5};
                    ^*******************^
 
-error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:15:26
-const out_of_range: u8 = consteval_int!(120 + 160);
-                         ^***********************^
-
 //! > ==========================================================================
 
 //! > Test bad array! macros

@@ -125,6 +125,17 @@ pub struct FlatLowered {
     pub parameters: Vec<VariableId>,
 }
 
+/// A lowered constant.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LoweredConstant {
+    /// The value of the constant.
+    pub value: ConstValue,
+    /// The type of the constant.
+    pub ty: semantic::TypeId,
+    /// Diagnostics produced while lowering the constant.
+    pub diagnostics: Diagnostics<LoweringDiagnostic>,
+}
+
 /// Remapping of lowered variable ids. Useful for convergence of branches.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VarRemapping {
@@ -266,12 +277,15 @@ pub struct StatementConst {
     pub output: VariableId,
 }
 
+/// A constant value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstValue {
     Int(BigInt),
     Struct(Vec<(semantic::TypeId, ConstValue)>),
     Enum(ConcreteVariant, Box<ConstValue>),
     NonZero(semantic::TypeId, Box<ConstValue>),
+    /// A missing value, used in cases where the value is not known due to diagnostics.
+    Missing,
 }
 
 /// A statement that calls a user function.

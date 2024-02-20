@@ -33,7 +33,8 @@ use crate::optimizations::return_optimization::return_optimization;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{
-    ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement,
+    ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, LoweredConstant, MatchInfo,
+    Statement,
 };
 
 // Salsa database interface.
@@ -58,6 +59,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
     fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
+
+    /// Returns all the lowering diagnostics of a constant.
+    #[salsa::invoke(crate::lower::lowered_constant)]
+    fn lowered_constant(&self, constant_id: defs::ids::ConstantId) -> Maybe<Arc<LoweredConstant>>;
 
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
@@ -678,7 +683,9 @@ fn module_lowering_diagnostics(
                 diagnostics
                     .extend(db.semantic_function_with_body_lowering_diagnostics(function_id)?);
             }
-            ModuleItemId::Constant(_) => {}
+            ModuleItemId::Constant(constant_id) => {
+                diagnostics.extend(db.lowered_constant(*constant_id)?.diagnostics.clone());
+            }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}
             ModuleItemId::Struct(_) => {}

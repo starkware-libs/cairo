@@ -46,8 +46,6 @@ const MY_CONST: MissingType = {
 
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
 
-const ZERO_NON_ZERO: NonZero<u8> = 0;
-
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -84,11 +82,6 @@ error: This expression is not supported as constant.
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
 
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
- --> lib.cairo:8:36
-const ZERO_NON_ZERO: NonZero<u8> = 0;
-                                   ^
-
 //! > ==========================================================================
 
 //! > Const of wrong type.
@@ -111,58 +104,6 @@ error: Mismatched types. The type `core::bool` cannot be created from a numeric 
 const DEFAULT_VAR: bool = 1;
                           ^
 
-error: A numeric literal of type core::bool cannot be created.
- --> lib.cairo:1:27
-const DEFAULT_VAR: bool = 1;
-                          ^
-
-//! > ==========================================================================
-
-//! > Const of positive values out of range.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() { }
-
-//! > function_name
-foo
-
-//! > module_code
-const UNSIGNED_VAR: u8 = 256;
-const SIGNED_VAR: i8 = 128;
-
-//! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:1:26
-const UNSIGNED_VAR: u8 = 256;
-                         ^*^
-
-error: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:2:24
-const SIGNED_VAR: i8 = 128;
-                       ^*^
-
-//! > ==========================================================================
-
-//! > Const of negative values in range.
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
-
-//! > function
-fn foo() -> i8 nopanic { A }
-
-//! > function_name
-foo
-
-//! > module_code
-const A: i8 = -0x80;
-const B: i16 = -5;
-
-//! > expected_diagnostics
-
 //! > ==========================================================================
 
 //! > Const of negative values out of range.
@@ -177,30 +118,13 @@ fn foo() { }
 foo
 
 //! > module_code
-const A: i8 = -0x81;
 const B: u8 = -1;
-const C: i16 = -0x8001;
 
 //! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:1:15
-const A: i8 = -0x81;
-              ^***^
-
 error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
- --> lib.cairo:2:15
+ --> lib.cairo:1:15
 const B: u8 = -1;
               ^^
-
-error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:2:15
-const B: u8 = -1;
-              ^^
-
-error: The value does not fit within the range of type core::integer::i16.
- --> lib.cairo:3:16
-const C: i16 = -0x8001;
-               ^*****^
 
 //! > ==========================================================================
 
