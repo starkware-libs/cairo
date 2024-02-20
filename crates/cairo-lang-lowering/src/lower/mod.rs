@@ -975,6 +975,11 @@ fn lowered_constant_helper(
                 .lowered_constant(expr.constant_id)
                 .map(|v| v.value.clone())
                 .unwrap_or(ConstValue::Missing),
+            semantic::Expr::Block(semantic::ExprBlock {
+                statements, tail: Some(inner), ..
+            }) if statements.is_empty() => {
+                lowered_constant_helper(db, exprs, *inner, diagnostics).1
+            }
             semantic::Expr::FunctionCall(expr) => {
                 let value = try_extract_minus_literal(db.upcast(), exprs, expr)
                     .expect("Only supported function call in const is minus.");

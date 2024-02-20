@@ -96,6 +96,20 @@ const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
 const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
 const ZERO_NON_ZERO: NonZero<u8> = 0;
 
+struct ComplexStruct {
+    a: u8,
+    b: i8,
+    c: i16,
+    d: NonZero<u8>,
+}
+
+const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
+    a: 1,
+    b: {IN_RANGE_NEGATIVE1},
+    c: OUT_OF_RANGE_NEGATIVE2,
+    d: 0,
+};
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -123,6 +137,11 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
  --> lib.cairo:7:36
 const ZERO_NON_ZERO: NonZero<u8> = 0;
                                    ^
+
+error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
+ --> lib.cairo:20:8
+    d: 0,
+       ^
 
 //! > lowering_flat
 Parameters:
