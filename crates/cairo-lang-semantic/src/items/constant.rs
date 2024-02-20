@@ -128,7 +128,9 @@ fn validate_constant_expr(
                 validate_constant_expr(db, resolver, exprs, *expr_id, diagnostics)
             });
         }
-        // TODO(orizi): Handle `Expr::EnumVariantCtor`.
+        Expr::EnumVariantCtor(expr) => {
+            validate_constant_expr(db, resolver, exprs, expr.value_expr, diagnostics)
+        }
         // TODO(orizi): Handle `Expr::Constant`.
         _ => {
             report_err(diagnostics, crate::diagnostic::SemanticDiagnosticKind::UnsupportedConstant)

@@ -183,6 +183,13 @@ fn const_type_id(
                     }
                     args
                 }
+                ConstValue::Enum(variant, inner) => {
+                    vec![
+                        first_arg,
+                        GenericArg::Value(variant.idx.into()),
+                        GenericArg::Type(const_type_id(db, variant.ty, inner)),
+                    ]
+                }
                 ConstValue::NonZero(ty, value) => {
                     vec![first_arg, GenericArg::Type(const_type_id(db, *ty, value))]
                 }
