@@ -13,10 +13,12 @@ use defs::ids::{ConstantId, LanguageElementId};
 use id_arena::Arena;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
+use num_traits::{Num, Zero};
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
+use semantic::items::functions::GenericFunctionId;
 use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
@@ -981,9 +983,17 @@ fn lowered_constant_helper(
                 lowered_constant_helper(db, exprs, *inner, diagnostics).1
             }
             semantic::Expr::FunctionCall(expr) => {
-                let value = try_extract_minus_literal(db.upcast(), exprs, expr)
-                    .expect("Only supported function call in const is minus.");
-                value_as_const_value(db, expr.stable_ptr.untyped(), expr.ty, &value, diagnostics)
+                if let Some(value) = evaluate_const_function_call(db, exprs, expr, diagnostics) {
+                    value_as_const_value(
+                        db,
+                        expr.stable_ptr.untyped(),
+                        expr.ty,
+                        &value,
+                        diagnostics,
+                    )
+                } else {
+                    ConstValue::Missing
+                }
             }
             semantic::Expr::Literal(expr) => value_as_const_value(
                 db,
@@ -1011,6 +1021,76 @@ fn lowered_constant_helper(
             _ => panic!("Unexpected constant in lowering: {:?}.", expr),
         },
     )
+}
+
+/// Attempts to evaluate constants from a function call.
+fn evaluate_const_function_call(
+    db: &dyn LoweringGroup,
+    exprs: &Arena<semantic::Expr>,
+    expr: &semantic::ExprFunctionCall,
+    diagnostics: &mut LoweringDiagnostics,
+) -> Option<BigInt> {
+    if let Some(value) = try_extract_minus_literal(db.upcast(), exprs, expr) {
+        return Some(value);
+    }
+    let args = expr
+        .args
+        .iter()
+        .map(|arg| {
+            let arg = extract_matches!(arg, ExprFunctionCallArg::Value);
+            match lowered_constant_helper(db, exprs, *arg, diagnostics).1 {
+                ConstValue::Int(v) => Some(v),
+                // Handling u256 constants to enable const evaluation of them.
+                ConstValue::Struct(v) => {
+                    if let [(_, ConstValue::Int(low)), (_, ConstValue::Int(high))] = &v[..] {
+                        Some(low + (high << 128))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            }
+        })
+        .collect::<Option<Vec<_>>>()?;
+    // No need for validation of the function args and generic id - as we only allowed the specific
+    // trait functions and validated them at the semantic level.
+    let imp = extract_matches!(
+        expr.function.get_concrete(db.upcast()).generic_function,
+        GenericFunctionId::Impl
+    );
+    let is_felt252_ty = expr.ty == core_felt252_ty(db.upcast());
+    let mut value = match imp.function.name(db.upcast()).as_str() {
+        "neg" => -&args[0],
+        "add" => &args[0] + &args[1],
+        "sub" => &args[0] - &args[1],
+        "mul" => &args[0] * &args[1],
+        "div" | "rem" | "bitand" | "bitor" | "bitxor" if is_felt252_ty => {
+            diagnostics.report(
+                expr.stable_ptr.untyped(),
+                LoweringDiagnosticKind::UnsupportedConstantEvaluation,
+            );
+            return None;
+        }
+        "div" | "rem" if args[1].is_zero() => {
+            diagnostics.report(expr.stable_ptr.untyped(), LoweringDiagnosticKind::DivisionByZero);
+            return None;
+        }
+        "div" => &args[0] / &args[1],
+        "rem" => &args[0] % &args[1],
+        "bitand" => &args[0] & &args[1],
+        "bitor" => &args[0] | &args[1],
+        "bitxor" => &args[0] ^ &args[1],
+        _ => unreachable!("Unexpected function call in constant lowering: {:?}", expr),
+    };
+    if is_felt252_ty {
+        // Specifically handling felt252s since their evaluation is more complex.
+        value %= BigInt::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000001",
+            16,
+        )
+        .unwrap();
+    }
+    Some(value)
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].

@@ -82,7 +82,9 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() {}
+fn foo() -> (felt252, felt252, u256, i8) {
+  (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
+}
 
 //! > function_name
 foo
@@ -95,6 +97,14 @@ const IN_RANGE_NEGATIVE2: i16 = -5;
 const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
 const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
 const ZERO_NON_ZERO: NonZero<u8> = 0;
+const BASIC_CALCULATION: i8 = 120 + 7;
+const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
+const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
+const FELT_WRAPAROUND_OVER: felt252 = 0x800000000000011000000000000000000000000000000000000000000000000 + 2;
+const FELT_WRAPAROUND_UNDER: felt252 = -0x800000000000011000000000000000000000000000000000000000000000000 - 2;
+const FELT_UNSUPPORTED_OPERATION: felt252 = 1 / 5;
+const U256_VALUE: u256 = 0x180000000000000000000000000000001;
+const U256_CALCULATION: u256 = U256_VALUE * 8;
 
 struct ComplexStruct {
     a: u8,
@@ -109,6 +119,11 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
     c: OUT_OF_RANGE_NEGATIVE2,
     d: 0,
 };
+
+// Added to prevent semantic failure.
+impl Felt252Div of Div<felt252> {
+    fn div(lhs: felt252, rhs: felt252) -> felt252 { lhs - rhs }
+}
 
 //! > semantic_diagnostics
 
@@ -138,8 +153,23 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
 const ZERO_NON_ZERO: NonZero<u8> = 0;
                                    ^
 
+error: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:9:39
+const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
+                                      ^******^
+
+error: Division by zero.
+ --> lib.cairo:10:39
+const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
+                                      ^*****^
+
+error: Unsupported constant evaluation.
+ --> lib.cairo:13:45
+const FELT_UNSUPPORTED_OPERATION: felt252 = 1 / 5;
+                                            ^***^
+
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
- --> lib.cairo:20:8
+ --> lib.cairo:28:8
     d: 0,
        ^
 
@@ -147,6 +177,10 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
+  (v0: core::felt252) <- 1u
+  (v1: core::felt252) <- -1u
+  (v2: core::integer::u256) <- { 8u: core::integer::u128, 12u: core::integer::u128 }
+  (v3: core::integer::i8) <- 127u
+  (v4: (core::felt252, core::felt252, core::integer::u256, core::integer::i8)) <- struct_construct(v0, v1, v2, v3)
 End:
-  Return(v0)
+  Return(v4)

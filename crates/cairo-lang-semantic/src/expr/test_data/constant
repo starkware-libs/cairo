@@ -52,11 +52,6 @@ error: Type not found.
 const MY_CONST: MissingType = {
                 ^*********^
 
-error: Function call is not supported outside of functions.
- --> lib.cairo:2:12
-    return foo();
-           ^***^
-
 error: Return statement is not supported outside of functions.
  --> lib.cairo:2:5
     return foo();
@@ -72,15 +67,10 @@ error: This expression is not supported as constant.
     Option::<felt252>::Some(0)?
     ^*************************^
 
-error: Function call is not supported outside of functions.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
-
-error: This expression is not supported as constant.
- --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
+                                         ^
 
 //! > ==========================================================================
 
