@@ -193,6 +193,7 @@ fn const_type_id(
                 ConstValue::NonZero(ty, value) => {
                     vec![first_arg, GenericArg::Type(const_type_id(db, *ty, value))]
                 }
+                ConstValue::Missing => unreachable!("Should be caught by the lowering."),
             },
         }
         .into(),
