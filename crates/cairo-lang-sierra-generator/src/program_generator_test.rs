@@ -22,6 +22,7 @@ fn test_program_generator() {
                     bar(5)
                 }
 
+                #[inline(never)]
                 fn bar(a: felt252) -> felt252 {
                     felt252_add(felt252_add(a, a), a)
                 }

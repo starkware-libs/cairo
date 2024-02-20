@@ -92,12 +92,6 @@
     "0x1",
     "0x208b7fff7fff7ffe"
   ],
-<<<<<<< HEAD
-=======
-  "bytecode_segment_lengths": [
-    89
-  ],
->>>>>>> f2deaae12... Add inlining of small functions. (#5067)
   "hints": [
     [
       0,
