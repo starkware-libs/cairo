@@ -46,16 +46,17 @@ const MY_CONST: MissingType = {
 
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
 
+// Non-corelib impl, preventing the missing operator warning.
+impl Felt252Div of Div<felt252> {
+    fn div(lhs: felt252, rhs: felt252) -> felt252 { core::felt252_div(lhs, rhs.try_into().unwrap()) }
+}
+const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
 const MY_CONST: MissingType = {
                 ^*********^
-
-error: Function call is not supported outside of functions.
- --> lib.cairo:2:12
-    return foo();
-           ^***^
 
 error: Return statement is not supported outside of functions.
  --> lib.cairo:2:5
@@ -67,20 +68,15 @@ error: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^*************************^
 
-error: This expression is not supported as constant.
- --> lib.cairo:3:5
-    Option::<felt252>::Some(0)?
-    ^*************************^
-
-error: Function call is not supported outside of functions.
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
+                                         ^
 
 error: This expression is not supported as constant.
- --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
+ --> lib.cairo:12:47
+const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
+                                              ^***^
 
 //! > ==========================================================================
 
