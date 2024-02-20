@@ -18,7 +18,7 @@ use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::implicits::lower_implicits;
-use crate::inline::{apply_inlining, PrivInlineData};
+use crate::inline::{apply_inlining, get_inline_diagnostics};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
 use crate::optimizations::cancel_ops::cancel_ops;
@@ -51,10 +51,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
-
-    // Reports inlining diagnostics.
-    #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
 
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
@@ -489,11 +485,7 @@ fn function_with_body_lowering_diagnostics(
         }
     }
 
-    diagnostics.extend(
-        db.priv_inline_data(function_id)
-            .map(|inline_data| inline_data.diagnostics.clone())
-            .unwrap_or_default(),
-    );
+    diagnostics.extend(get_inline_diagnostics(db, function_id)?);
 
     Ok(diagnostics.build())
 }
