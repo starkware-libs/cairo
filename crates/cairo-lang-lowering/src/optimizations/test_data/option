@@ -85,20 +85,20 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v0 -> v5})
 
 blk2:
 Statements:
   (v2: ()) <- struct_construct()
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v2 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v5) => blk7,
-    Option::None(v6) => blk8,
+    Option::Some(v12) => blk7,
+    Option::None(v13) => blk8,
   })
 
 blk4:
@@ -123,12 +123,12 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v12 -> v5})
 
 blk8:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v13 -> v6})
 
 //! > ==========================================================================
 
@@ -468,14 +468,14 @@ blk2:
 Statements:
   (v2: ()) <- struct_construct()
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v2 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v5) => blk15,
-    Option::None(v6) => blk16,
+    Option::Some(v46) => blk15,
+    Option::None(v47) => blk16,
   })
 
 blk4:
@@ -489,14 +489,14 @@ blk5:
 Statements:
   (v10: ()) <- struct_construct()
 End:
-  Goto(blk8, {})
+  Goto(blk8, {v10 -> v25})
 
 blk6:
 Statements:
 End:
   Match(match_enum(v12) {
-    Option::Some(v24) => blk17,
-    Option::None(v25) => blk18,
+    Option::Some(v48) => blk17,
+    Option::None(v49) => blk18,
   })
 
 blk7:
@@ -531,8 +531,8 @@ blk11:
 Statements:
 End:
   Match(match_enum(v16) {
-    PanicResult::Ok(v17) => blk19,
-    PanicResult::Err(v18) => blk20,
+    PanicResult::Ok(v50) => blk19,
+    PanicResult::Err(v51) => blk20,
   })
 
 blk12:
@@ -559,32 +559,32 @@ End:
 blk15:
 Statements:
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v46 -> v5})
 
 blk16:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v47 -> v6})
 
 blk17:
 Statements:
 End:
-  Goto(blk7, {})
+  Goto(blk7, {v48 -> v24})
 
 blk18:
 Statements:
 End:
-  Goto(blk8, {})
+  Goto(blk8, {v49 -> v25})
 
 blk19:
 Statements:
 End:
-  Goto(blk12, {})
+  Goto(blk12, {v50 -> v17})
 
 blk20:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk13, {v51 -> v18})
 
 //! > ==========================================================================
 
@@ -693,20 +693,20 @@ blk1:
 Statements:
   (v0: ()) <- struct_construct()
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v0 -> v8})
 
 blk2:
 Statements:
   (v2: ()) <- struct_construct()
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v2 -> v9})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v8) => blk9,
-    Option::None(v9) => blk10,
+    Option::Some(v30) => blk9,
+    Option::None(v31) => blk10,
   })
 
 blk4:
@@ -748,9 +748,9 @@ End:
 blk9:
 Statements:
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v30 -> v8})
 
 blk10:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk5, {v31 -> v9})
