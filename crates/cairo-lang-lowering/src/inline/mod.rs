@@ -19,7 +19,6 @@ use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VarUsage, VariableId,
 };
 
-/// Returns inline related lowering diagnostics for the given function.
 pub fn get_inline_diagnostics(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
@@ -43,52 +42,24 @@ pub fn get_inline_diagnostics(
     Ok(diagnostics.build())
 }
 
-/// data about inlining.
-#[derive(Debug, PartialEq, Eq)]
-pub struct PrivInlineData {
-    pub config: InlineConfiguration,
-    pub info: InlineInfo,
+//  a heuristic to decide if a given `function_id` should be inlined.
+fn should_inline(db: &dyn LoweringGroup, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool> {
+    let config = db.function_declaration_inline_config(
+        function_id.function_with_body_id(db).base_semantic_function(db),
+    )?;
+    Ok(match config {
+        InlineConfiguration::Never(_) => false,
+        InlineConfiguration::Should(_) => true,
+        InlineConfiguration::Always(_) => true,
+        InlineConfiguration::None => {
+            let lowered = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+            should_inline_lowered(&lowered)?
+        }
+    })
 }
 
-/// Per function information for the inlining phase.
-#[derive(Debug, PartialEq, Eq)]
-pub struct InlineInfo {
-    /// Indicates that the function can be inlined.
-    pub is_inlinable: bool,
-    /// Indicates that the function should be inlined.
-    pub should_inline: bool,
-}
-
-pub fn gather_inline_data(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<PrivInlineData> {
-    let semantic_function_id = function_id.base_semantic_function(db);
-    let config = db.function_declaration_inline_config(semantic_function_id)?;
-
-    let info = match config {
-        InlineConfiguration::Never(_) => InlineInfo { is_inlinable: false, should_inline: false },
-        InlineConfiguration::Should(_) => InlineInfo { is_inlinable: true, should_inline: true },
-        InlineConfiguration::Always(_) => gather_inlining_info(db, function_id)?,
-        InlineConfiguration::None => gather_inlining_info(db, function_id)?,
-    };
-    Ok(PrivInlineData { config, info })
-}
-
-/// Gathers inlining information for the given function.
-fn gather_inlining_info(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<InlineInfo> {
-    let lowered = db.function_with_body_lowering(function_id)?;
-    if db.in_cycle(function_id)? {
-        return Ok(InlineInfo { is_inlinable: false, should_inline: false });
-    }
-    Ok(InlineInfo { is_inlinable: true, should_inline: should_inline(db, &lowered)? })
-}
-
-// A heuristic to decide if a function should be inlined.
-fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+// A heuristic to decide if a given `lowering` should be inlined.
+fn should_inline_lowered(lowered: &FlatLowered) -> Maybe<bool> {
     let root_block = lowered.blocks.root_block()?;
 
     Ok(match &root_block.end {
@@ -215,6 +186,13 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
     fn transform_end(&mut self, end: &mut FlatBlockEnd) {
         match end {
             FlatBlockEnd::Return(returns) => {
+                if self.outputs.len() != returns.len() {
+                    eprintln!(
+                        "Mismatched return values: expected {:?}, got {:?}",
+                        self.outputs, returns
+                    );
+                }
+
                 let remapping = VarRemapping {
                     remapping: OrderedHashMap::from_iter(zip_eq(
                         self.outputs.iter().cloned(),
@@ -286,19 +264,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            let semantic_db = self.variables.db.upcast();
             if let Some(function_id) = stmt.function.body(self.variables.db)? {
-                // TODO(spapini): Change logic to be based on concrete.
-                let inline_data = gather_inline_data(
-                    self.variables.db,
-                    function_id.function_with_body_id(semantic_db),
-                )?;
-
-                if inline_data.info.is_inlinable
-                    && (inline_data.info.should_inline
-                        || matches!(inline_data.config, InlineConfiguration::Always(_)))
-                    && !self.is_function_in_call_stack(function_id)
-                {
+                if !self.is_function_in_call_stack(function_id) && should_inline(db, function_id)? {
                     return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
@@ -335,7 +302,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
     ) -> Maybe<()> {
         let lowered =
             self.variables.db.concrete_function_with_body_postpanic_lowered(function_id)?;
-
         lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
