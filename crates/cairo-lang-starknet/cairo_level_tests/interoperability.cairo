@@ -89,17 +89,10 @@ fn test_flow_safe_dispatcher() {
 }
 
 // If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
-<<<<<<< HEAD
 // gas usage and remove 10000.
-#[test]
-#[available_gas(1160970)]
-#[should_panic(expected: ('Syscall out of gas', 'ENTRYPOINT_FAILED',))]
-=======
-// gas usage and add about 200000.
 #[test]
 #[available_gas(980000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
->>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.
     test_flow();

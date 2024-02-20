@@ -51,22 +51,3 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
         serde_json::to_string_pretty(&casm_contract).unwrap() + "\n",
     );
 }
-<<<<<<< HEAD
-=======
-
-/// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
-/// constant that was computed by other implementations.
-#[test_case("account__account", "76f61f27b9314a918f67ebd53421dc169d2408d3a89b7ac68ae759a8e266771")]
-fn test_compiled_class_hash(name: &str, expected_hash: &str) {
-    let compiled_json_path =
-        get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());
-    let compiled_json_str = fs::read_to_string(compiled_json_path.clone())
-        .unwrap_or_else(|_| panic!("Could not read file: '{compiled_json_path:?}'"));
-    let casm_contract_class: CasmContractClass =
-        serde_json::from_str(compiled_json_str.as_str()).unwrap();
-    assert_eq!(
-        format!("{:x}", casm_contract_class.compiled_class_hash().to_biguint()),
-        expected_hash
-    );
-}
->>>>>>> f2deaae12... Add inlining of small functions. (#5067)

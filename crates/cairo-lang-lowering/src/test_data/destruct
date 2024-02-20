@@ -20,6 +20,7 @@ foo
 use integer::u128_overflowing_add;
 struct A {}
 impl ADestruct of Destruct::<A> {
+  #[inline(never)]
   fn destruct(self: A) nopanic {
     // Use RangeCheck, a previously unused implicit.
     match u128_overflowing_add(1_u128, 2_u128) {
@@ -114,6 +115,7 @@ fn may_panic() {
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
+  #[inline(never)]
   fn panic_destruct(self: A, ref panic: Panic) nopanic {
     let A {} = self;
   }
@@ -121,6 +123,7 @@ impl APanicDestruct of PanicDestruct<A> {
 
 struct B {}
 impl BPanicDestruct of PanicDestruct<B> {
+  #[inline(never)]
   fn panic_destruct(self: B, ref panic: Panic) nopanic {
     let B {} = self;
   }
@@ -202,12 +205,14 @@ fn foo(a: bool, d: A) -> A {
 foo
 
 //! > module_code
+#[inline(never)]
 fn may_panic() {
   panic_with_felt252('123');
 }
 
 struct A {}
 impl APanicDestruct of PanicDestruct<A> {
+  #[inline(never)]
   fn panic_destruct(self: A, ref panic: Panic) nopanic {
     let A {} = self;
   }

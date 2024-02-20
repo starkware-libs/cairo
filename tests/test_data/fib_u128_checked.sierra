@@ -1,6 +1,5 @@
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -16,18 +15,10 @@ libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<co
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
-<<<<<<< HEAD
-libfunc store_temp<u128> = store_temp<u128>;
-libfunc function_call<user@core::integer::u128_checked_add> = function_call<user@core::integer::u128_checked_add>;
-libfunc enum_match<core::option::Option::<core::integer::u128>> = enum_match<core::option::Option::<core::integer::u128>>;
-libfunc u128_const<1> = u128_const<1>;
-libfunc function_call<user@core::integer::u128_checked_sub> = function_call<user@core::integer::u128_checked_sub>;
-=======
 libfunc u128_overflowing_add = u128_overflowing_add;
-libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
+libfunc u128_const<1> = u128_const<1>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
->>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 libfunc function_call<user@examples::fib_u128_checked::fib> = function_call<user@examples::fib_u128_checked::fib>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<core::option::Option::<core::integer::u128>, 1>;
@@ -48,25 +39,16 @@ drop<NonZero<felt252>>([6]) -> (); // 12
 dup<u128>([2]) -> ([2], [8]); // 13
 u128_overflowing_add([0], [1], [8]) { fallthrough([9], [10]) 35([11], [12]) }; // 14
 branch_align() -> (); // 15
-const_as_immediate<Const<u128, 1>>() -> ([13]); // 16
+u128_const<1>() -> ([13]); // 16
 store_temp<u128>([13]) -> ([13]); // 17
 u128_overflowing_sub([9], [3], [13]) { fallthrough([14], [15]) 26([16], [17]) }; // 18
 branch_align() -> (); // 19
-<<<<<<< HEAD
-u128_const<1>() -> ([13]); // 20
-store_temp<RangeCheck>([9]) -> ([9]); // 21
-store_temp<u128>([3]) -> ([3]); // 22
-store_temp<u128>([13]) -> ([13]); // 23
-function_call<user@core::integer::u128_checked_sub>([9], [3], [13]) -> ([14], [15]); // 24
-enum_match<core::option::Option::<core::integer::u128>>([15]) { fallthrough([16]) 33([17]) }; // 25
-=======
 store_temp<RangeCheck>([14]) -> ([14]); // 20
 store_temp<u128>([2]) -> ([2]); // 21
 store_temp<u128>([10]) -> ([10]); // 22
 store_temp<u128>([15]) -> ([15]); // 23
 function_call<user@examples::fib_u128_checked::fib>([14], [2], [10], [15]) -> ([18], [19]); // 24
 return([18], [19]); // 25
->>>>>>> f2deaae12... Add inlining of small functions. (#5067)
 branch_align() -> (); // 26
 drop<u128>([17]) -> (); // 27
 drop<u128>([2]) -> (); // 28
