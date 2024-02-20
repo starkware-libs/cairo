@@ -39,39 +39,39 @@ Originating location:
 In function: lib.cairo::foo
 store_temp<felt252>([3]) -> ([4])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 dup<felt252>([4]) -> ([4], [3])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 dup<felt252>([3]) -> ([3], [5])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 store_temp<felt252>([5]) -> ([5])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 store_temp<felt252>([3]) -> ([3])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 function_call<user@test::bar>([4], [5], [3]) -> ([6])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 return([6])
 Originating location:
-    bar(b, b, b)
+    bar(x, y, z)
     ^**********^
-In function: lib.cairo::foo
+In function: lib.cairo::bar
 
 //! > ==========================================================================
 

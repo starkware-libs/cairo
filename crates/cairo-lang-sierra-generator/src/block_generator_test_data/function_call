@@ -110,14 +110,14 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 7u
   (v1: core::felt252) <- 7u
-  (v2: core::felt252) <- test::bar(v0, v1)
+  (v8: core::felt252) <- test::bar(v0, v1)
   (v3: core::felt252) <- 7u
-  (v4: core::felt252) <- test::bar(v0, v3)
+  (v9: core::felt252) <- test::bar(v0, v3)
   (v5: core::felt252) <- 7u
-  (v6: core::felt252) <- test::bar(v0, v5)
-  (v7: core::felt252) <- test::bar2(v4, v6)
+  (v10: core::felt252) <- test::bar(v0, v5)
+  (v11: core::felt252) <- test::bar2(v9, v10)
 End:
-  Return(v7)
+  Return(v11)
 
 //! > ==========================================================================
 
