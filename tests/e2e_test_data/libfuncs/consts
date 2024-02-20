@@ -153,12 +153,17 @@ mod struct2 { extern type Const<T, C0, C1>; }
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<u256> nopanic;
 
 type C = struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>>;
-const V: u256 = 0x2000000000000000000000000000000010;
+const V1: u256 = 0x2000000000000000000000000000000010;
+const V2: u256 = u256 { low: 0x10, high: 0x20 };
 
-fn bar() -> u256 { V }
+fn bar1() -> u256 { V1 }
+fn bar2() -> u256 { V2 }
 fn foo() -> Box<u256> { const_as_box::<C, 0>() }
 
 //! > casm
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
 [ap + 0] = 16, ap++;
 [ap + 0] = 32, ap++;
 ret;
@@ -170,7 +175,8 @@ dw 16;
 dw 32;
 
 //! > function_costs
-test::bar: OrderedHashMap({Const: 200})
+test::bar1: OrderedHashMap({Const: 200})
+test::bar2: OrderedHashMap({Const: 200})
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
@@ -188,11 +194,15 @@ libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>
 const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 0
 store_temp<core::integer::u256>([0]) -> ([0]); // 1
 return([0]); // 2
-const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 3
-return([0]); // 4
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 3
+store_temp<core::integer::u256>([0]) -> ([0]); // 4
+return([0]); // 5
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 6
+return([0]); // 7
 
-test::bar@0() -> (core::integer::u256);
-test::foo@3() -> (Box<core::integer::u256>);
+test::bar1@0() -> (core::integer::u256);
+test::bar2@3() -> (core::integer::u256);
+test::foo@6() -> (Box<core::integer::u256>);
 
 //! > ==========================================================================
 
