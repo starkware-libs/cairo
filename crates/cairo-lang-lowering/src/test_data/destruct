@@ -323,3 +323,44 @@ Statements:
   (v10: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
 End:
   Return(v10)
+
+//! > ==========================================================================
+
+//! > Test inline of self calling destruct.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(){
+    let a = A{};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+impl ADestruct of Destruct::<A> {
+  #[inline(always)]
+  fn destruct(self: A) nopanic {
+  }
+}
+
+//! > semantic_diagnostics
+warning: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:8:9
+    let a = A{};
+        ^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::A) <- struct_construct()
+  (v4: ()) <- test::ADestruct::destruct(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
