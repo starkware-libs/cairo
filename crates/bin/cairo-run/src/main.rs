@@ -9,7 +9,7 @@ use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::short_string::as_cairo_short_string;
-use cairo_lang_runner::{SierraCasmRunner, StarknetState};
+use cairo_lang_runner::{ProfilingInfoCollectionConfig, SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -76,7 +76,11 @@ fn main() -> anyhow::Result<()> {
         sierra_program.clone(),
         if args.available_gas.is_some() { Some(Default::default()) } else { None },
         contracts_info,
-        args.run_profiler,
+        if args.run_profiler {
+            Some(ProfilingInfoCollectionConfig::default())
+        } else {
+            None
+        },
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner

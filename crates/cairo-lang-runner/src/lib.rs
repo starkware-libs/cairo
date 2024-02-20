@@ -171,14 +171,14 @@ pub struct SierraCasmRunner {
     /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     /// Whether to run the profiler when running using this runner.
-    run_profiler: bool,
+    run_profiler: Option<ProfilingInfoCollectionConfig>,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
         starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
-        run_profiler: bool,
+        run_profiler: Option<ProfilingInfoCollectionConfig>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -280,8 +280,8 @@ impl SierraCasmRunner {
             Self::handle_main_return_value(inner_ty, values, &cells)
         };
 
-        let profiling_info = if self.run_profiler {
-            Some(self.collect_profiling_info(vm.get_relocated_trace().unwrap()))
+        let profiling_info = if let Some(config) = &self.run_profiler {
+            Some(self.collect_profiling_info(vm.get_relocated_trace().unwrap(), config.clone()))
         } else {
             None
         };
@@ -290,9 +290,11 @@ impl SierraCasmRunner {
     }
 
     /// Collects profiling info of the current run using the trace.
-    fn collect_profiling_info(&self, trace: &[TraceEntry]) -> ProfilingInfo {
-        let max_stack_trace_depth = get_max_stack_trace_depth();
-
+    fn collect_profiling_info(
+        &self,
+        trace: &[TraceEntry],
+        profiling_config: ProfilingInfoCollectionConfig,
+    ) -> ProfilingInfo {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
         let bytecode_len =
             self.casm_program.debug_info.sierra_statement_info.last().unwrap().code_offset;
@@ -367,7 +369,7 @@ impl SierraCasmRunner {
                         Ok(CoreConcreteLibfunc::FunctionCall(_))
                     ) {
                         // Push to the stack.
-                        if function_stack_depth < max_stack_trace_depth {
+                        if function_stack_depth < profiling_config.max_stack_trace_depth {
                             function_stack.push((user_function_idx, cur_weight));
                             cur_weight = 0;
                         }
@@ -376,7 +378,7 @@ impl SierraCasmRunner {
                 }
                 GenStatement::Return(_) => {
                     // Pop from the stack.
-                    if function_stack_depth <= max_stack_trace_depth {
+                    if function_stack_depth <= profiling_config.max_stack_trace_depth {
                         // The current stack trace, including the current function.
                         let cur_stack: Vec<_> =
                             chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
@@ -768,18 +770,37 @@ impl SierraCasmRunner {
     }
 }
 
-// TODO(yuval): consider changing this setting to use flags.
-/// Gets the max_stack_trace_depth according to the environment variable `MAX_STACK_TRACE_DEPTH`, if
-/// set.
-fn get_max_stack_trace_depth() -> usize {
-    if let Ok(max) = std::env::var("MAX_STACK_TRACE_DEPTH") {
-        if max.is_empty() {
-            MAX_STACK_TRACE_DEPTH_DEFAULT
-        } else {
-            max.parse::<usize>().expect("MAX_STACK_TRACE_DEPTH_DEFAULT env var is not numeric")
+/// Configuration for the profiling info collection phase.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct ProfilingInfoCollectionConfig {
+    /// The maximum depth of the stack trace to collect.
+    max_stack_trace_depth: usize,
+}
+
+impl ProfilingInfoCollectionConfig {
+    pub fn set_max_stack_trace_depth(&mut self, max_stack_depth: usize) -> &mut Self {
+        self.max_stack_trace_depth = max_stack_depth;
+        self
+    }
+}
+
+impl Default for ProfilingInfoCollectionConfig {
+    // TODO(yuval): consider changing this setting to use flags.
+    /// Gets the max_stack_trace_depth according to the environment variable
+    /// `MAX_STACK_TRACE_DEPTH`, if set.
+    fn default() -> Self {
+        Self {
+            max_stack_trace_depth: if let Ok(max) = std::env::var("MAX_STACK_TRACE_DEPTH") {
+                if max.is_empty() {
+                    MAX_STACK_TRACE_DEPTH_DEFAULT
+                } else {
+                    max.parse::<usize>()
+                        .expect("MAX_STACK_TRACE_DEPTH_DEFAULT env var is not numeric")
+                }
+            } else {
+                MAX_STACK_TRACE_DEPTH_DEFAULT
+            },
         }
-    } else {
-        MAX_STACK_TRACE_DEPTH_DEFAULT
     }
 }
 
