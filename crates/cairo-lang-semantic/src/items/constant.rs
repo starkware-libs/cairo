@@ -4,19 +4,24 @@ use cairo_lang_defs::ids::{ConstantId, LanguageElementId, LookupItemId, ModuleIt
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_utils::try_extract_matches;
 use id_arena::Arena;
 
+use super::functions::GenericFunctionWithBodyId;
+use crate::corelib::get_core_trait;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::InferenceId;
-use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{Expr, ExprBlock, ExprId, ExprStructCtor, ExprTuple, SemanticDiagnostic, TypeId};
+use crate::{
+    Expr, ExprBlock, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprStructCtor, ExprTuple,
+    FunctionId, SemanticDiagnostic, TypeId,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -121,7 +126,13 @@ fn validate_constant_expr(
         Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) if statements.is_empty() => {
             validate_constant_expr(db, exprs, *inner, diagnostics)
         }
-        Expr::FunctionCall(expr) if try_extract_minus_literal(db, exprs, expr).is_some() => {}
+        Expr::FunctionCall(ExprFunctionCall { function, args, coupon_arg: None, .. })
+            if is_function_const(db, *function) =>
+        {
+            args.iter()
+                .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
+                .for_each(|arg| validate_constant_expr(db, exprs, *arg, diagnostics));
+        }
         Expr::Tuple(ExprTuple { items, .. }) => {
             items
                 .iter()
@@ -135,13 +146,42 @@ fn validate_constant_expr(
         Expr::EnumVariantCtor(expr) => {
             validate_constant_expr(db, exprs, expr.value_expr, diagnostics)
         }
-        _ => {
+        // Adding a diagnostic for unsupported constants only if there is no more internal error.
+        _ if diagnostics.diagnostics.error_count == 0 => {
             diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
                 SemanticDiagnosticKind::UnsupportedConstant,
             );
         }
+        _ => {}
     }
+}
+
+/// Returns true if the given function is allowed to be called in constant context.
+fn is_function_const(db: &dyn SemanticGroup, function_id: FunctionId) -> bool {
+    let concrete_function = function_id.get_concrete(db);
+    let Ok(Some(body)) = concrete_function.body(db) else { return false };
+    let GenericFunctionWithBodyId::Impl(imp) = body.generic_function(db) else { return false };
+    let impl_def = imp.concrete_impl_id.impl_def_id(db);
+    if impl_def.parent_module(db.upcast()).owning_crate(db.upcast()) != db.core_crate() {
+        return false;
+    }
+    let Ok(trait_id) = db.impl_def_trait(impl_def) else {
+        return false;
+    };
+    let expected_trait_name = match imp.function.name(db.upcast()).as_str() {
+        "neg" => "Neg",
+        "add" => "Add",
+        "sub" => "Sub",
+        "mul" => "Mul",
+        "div" => "Div",
+        "rem" => "Rem",
+        "bitand" => "BitAnd",
+        "bitor" => "BitOr",
+        "bitxor" => "BitXor",
+        _ => return false,
+    };
+    trait_id == get_core_trait(db, expected_trait_name.into())
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].

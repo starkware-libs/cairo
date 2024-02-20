@@ -528,7 +528,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
-                    UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
                     UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
                 };
@@ -1044,7 +1043,6 @@ pub enum NotFoundItemType {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum UnsupportedOutsideOfFunctionFeatureName {
-    FunctionCall,
     ReturnStatement,
     ErrorPropagate,
 }
