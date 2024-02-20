@@ -301,14 +301,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
                         || matches!(inline_data.config, InlineConfiguration::Always(_)))
+                    && !self.is_function_in_call_stack(function_id)
                 {
-                    if matches!(inline_data.config, InlineConfiguration::Should(_)) {
-                        if !self.is_function_in_call_stack(function_id) {
-                            return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
-                        }
-                    } else {
-                        return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
-                    }
+                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
