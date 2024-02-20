@@ -58,7 +58,6 @@ use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
@@ -145,24 +144,6 @@ pub struct State {
 }
 impl std::panic::UnwindSafe for State {}
 
-#[derive(Clone)]
-pub struct NotificationService {
-    pub client: Client,
-}
-impl NotificationService {
-    pub fn new(client: Client) -> Self {
-        Self { client }
-    }
-    pub async fn notify_resolving_start(&self) {
-        self.client.send_notification::<ScarbResolvingStart>(ScarbResolvingStartParams {}).await;
-    }
-    pub async fn notify_resolving_finish(&self) {
-        self.client.send_notification::<ScarbResolvingFinish>(ScarbResolvingFinishParams {}).await;
-    }
-    pub async fn notify_scarb_missing(&self) {
-        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
-    }
-}
 pub struct Backend {
     pub client: Client,
     // TODO(spapini): Remove this once we support ParallelDatabase.
@@ -170,7 +151,6 @@ pub struct Backend {
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
-    pub notification: NotificationService,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
@@ -179,13 +159,12 @@ fn from_pos(pos: TextPosition) -> Position {
 }
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
-        let notification = NotificationService::new(client.clone());
+        let scarb = ScarbService::new(&client);
         Self {
             client,
             db_mutex: db.into(),
-            notification: notification.clone(),
             state_mutex: State::default().into(),
-            scarb: ScarbService::new(notification),
+            scarb,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: Duration::from_secs(
                 std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
@@ -439,7 +418,7 @@ impl Backend {
                 return;
             } else {
                 warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.notification.notify_scarb_missing().await;
+                self.client.send_notification::<ScarbPathMissing>(()).await;
             }
         }
 
@@ -485,33 +464,24 @@ impl Backend {
 #[derive(Debug)]
 pub struct ScarbPathMissing {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbPathMissingParams {}
-
 impl Notification for ScarbPathMissing {
-    type Params = ScarbPathMissingParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
 }
 
 #[derive(Debug)]
 pub struct ScarbResolvingStart {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbResolvingStartParams {}
-
 impl Notification for ScarbResolvingStart {
-    type Params = ScarbResolvingStartParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/resolving-start";
 }
 
 #[derive(Debug)]
 pub struct ScarbResolvingFinish {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbResolvingFinishParams {}
-
 impl Notification for ScarbResolvingFinish {
-    type Params = ScarbResolvingFinishParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/resolving-finish";
 }
 

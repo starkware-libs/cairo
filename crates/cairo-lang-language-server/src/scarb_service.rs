@@ -6,21 +6,22 @@ use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::CrateLongId;
 use scarb_metadata::Metadata;
 use tower_lsp::lsp_types::Url;
+use tower_lsp::Client;
 
-use crate::NotificationService;
+use crate::{ScarbResolvingFinish, ScarbResolvingStart};
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
 
 pub struct ScarbService {
     scarb_path: Option<PathBuf>,
-    notification: NotificationService,
+    client: Client,
 }
 
 impl ScarbService {
-    pub fn new(notification: NotificationService) -> Self {
+    pub fn new(client: &Client) -> Self {
         let scarb_path = env::var_os("SCARB").map(PathBuf::from);
-        ScarbService { scarb_path, notification }
+        ScarbService { scarb_path, client: client.clone() }
     }
 
     fn scarb_path(&self) -> Option<PathBuf> {
@@ -64,9 +65,9 @@ impl ScarbService {
 
     /// Reads Scarb project metadata from manifest file.
     pub async fn scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
-        self.notification.notify_resolving_start().await;
+        self.client.send_notification::<ScarbResolvingStart>(()).await;
         let result = self.get_scarb_metadata(root_path);
-        self.notification.notify_resolving_finish().await;
+        self.client.send_notification::<ScarbResolvingFinish>(()).await;
         result
     }
 
