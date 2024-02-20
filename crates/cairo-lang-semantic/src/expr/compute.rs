@@ -2372,7 +2372,7 @@ fn expr_function_call(
         stable_ptr,
     };
     // Check panicable.
-    if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call)? {
+    if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call) {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
@@ -2384,20 +2384,18 @@ fn expr_function_call(
 fn has_panic_incompatibility(
     ctx: &mut ComputationContext<'_>,
     expr_function_call: &ExprFunctionCall,
-) -> Maybe<bool> {
+) -> bool {
     // If this is not an actual function call, but actually a minus literal (e.g. -1), then this is
     // the same as nopanic.
     if try_extract_minus_literal(ctx.db, &ctx.exprs, expr_function_call).is_some() {
-        return Ok(false);
+        return false;
     }
-    // If this is not from within a context of a function - e.g. a const item, we will exit with an
-    // error here, as this is a call with bad context.
-    let caller_signature = ctx.get_signature(
-        expr_function_call.stable_ptr.untyped(),
-        UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
-    )?;
-    // If the caller is nopanic, then this is a panic incompatibility.
-    Ok(!caller_signature.panicable)
+    if let Some(signature) = ctx.signature {
+        // If the caller is nopanic, then this is a panic incompatibility.
+        !signature.panicable
+    } else {
+        false
+    }
 }
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
