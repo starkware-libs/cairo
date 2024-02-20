@@ -68,9 +68,9 @@ error: The '?' operator is not supported outside of functions.
     ^*************************^
 
 error: This expression is not supported as constant.
- --> lib.cairo:1:31
-const MY_CONST: MissingType = {
-                              ^
+ --> lib.cairo:3:5
+    Option::<felt252>::Some(0)?
+    ^*************************^
 
 error: Function call is not supported outside of functions.
  --> lib.cairo:6:42

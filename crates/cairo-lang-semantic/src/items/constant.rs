@@ -16,7 +16,7 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{Expr, ExprId, ExprStructCtor, ExprTuple, SemanticDiagnostic, TypeId};
+use crate::{Expr, ExprBlock, ExprId, ExprStructCtor, ExprTuple, SemanticDiagnostic, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -118,6 +118,9 @@ fn validate_constant_expr(
     let expr = &exprs[expr_id];
     match expr {
         Expr::Constant(_) | Expr::Literal(_) => {}
+        Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) if statements.is_empty() => {
+            validate_constant_expr(db, exprs, *inner, diagnostics)
+        }
         Expr::FunctionCall(expr) if try_extract_minus_literal(db, exprs, expr).is_some() => {}
         Expr::Tuple(ExprTuple { items, .. }) => {
             items
