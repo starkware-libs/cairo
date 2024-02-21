@@ -1095,84 +1095,82 @@ store_temp<GasBuiltin>([20]) -> ([20]); // 926
 store_temp<System>([21]) -> ([21]); // 927
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>>([28]) -> ([28]); // 928
 return([20], [21], [28]); // 929
-enum_match<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>([0]) { fallthrough([3]) 935([4]) 946([5]) 957([6]) }; // 930
+enum_match<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>([0]) { fallthrough([3]) 933([4]) 944([5]) 955([6]) }; // 930
 branch_align() -> (); // 931
-drop<Array<felt252>>([1]) -> (); // 932
-drop<Array<felt252>>([2]) -> (); // 933
-enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>([3]) { }; // 934
-branch_align() -> (); // 935
-felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>() -> ([7]); // 936
-store_temp<felt252>([7]) -> ([7]); // 937
-array_append<felt252>([1], [7]) -> ([8]); // 938
-struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>([4]) -> ([9]); // 939
-rename<u128>([9]) -> ([10]); // 940
-u128_to_felt252([10]) -> ([11]); // 941
-array_append<felt252>([2], [11]) -> ([12]); // 942
-store_temp<Array<felt252>>([8]) -> ([13]); // 943
-store_temp<Array<felt252>>([12]) -> ([14]); // 944
-jump() { 964() }; // 945
-branch_align() -> (); // 946
-felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>() -> ([15]); // 947
-store_temp<felt252>([15]) -> ([15]); // 948
-array_append<felt252>([1], [15]) -> ([16]); // 949
-struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>([5]) -> ([17]); // 950
-rename<u128>([17]) -> ([18]); // 951
-u128_to_felt252([18]) -> ([19]); // 952
-array_append<felt252>([2], [19]) -> ([20]); // 953
-store_temp<Array<felt252>>([16]) -> ([13]); // 954
-store_temp<Array<felt252>>([20]) -> ([14]); // 955
-jump() { 964() }; // 956
-branch_align() -> (); // 957
-drop<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>([6]) -> (); // 958
-felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124>() -> ([21]); // 959
-store_temp<felt252>([21]) -> ([21]); // 960
-array_append<felt252>([1], [21]) -> ([22]); // 961
-store_temp<Array<felt252>>([22]) -> ([13]); // 962
-store_temp<Array<felt252>>([2]) -> ([14]); // 963
-struct_construct<Unit>() -> ([23]); // 964
-return([13], [14], [23]); // 965
-struct_deconstruct<core::array::Span::<core::felt252>>([0]) -> ([1]); // 966
-array_snapshot_pop_front<felt252>([1]) { fallthrough([2], [3]) 973([4]) }; // 967
-branch_align() -> (); // 968
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([3]) -> ([5]); // 969
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([6]); // 970
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([5]) -> ([7]); // 971
-jump() { 978() }; // 972
-branch_align() -> (); // 973
-struct_construct<Unit>() -> ([8]); // 974
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 975
-store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 976
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 977
-struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 978
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 979
-enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 1001([12]) }; // 980
-branch_align() -> (); // 981
-unbox<felt252>([11]) -> ([13]); // 982
-rename<felt252>([13]) -> ([14]); // 983
-store_temp<felt252>([14]) -> ([14]); // 984
-felt252_is_zero([14]) { fallthrough() 991([15]) }; // 985
-branch_align() -> (); // 986
-struct_construct<Unit>() -> ([16]); // 987
-enum_init<core::bool, 1>([16]) -> ([17]); // 988
-store_temp<core::bool>([17]) -> ([18]); // 989
-jump() { 996() }; // 990
-branch_align() -> (); // 991
-drop<NonZero<felt252>>([15]) -> (); // 992
-struct_construct<Unit>() -> ([19]); // 993
-enum_init<core::bool, 0>([19]) -> ([20]); // 994
-store_temp<core::bool>([20]) -> ([18]); // 995
-bool_not_impl([18]) -> ([21]); // 996
-enum_init<core::option::Option::<core::bool>, 0>([21]) -> ([22]); // 997
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 998
-store_temp<core::option::Option::<core::bool>>([22]) -> ([22]); // 999
-return([10], [22]); // 1000
-branch_align() -> (); // 1001
-drop<Unit>([12]) -> (); // 1002
-struct_construct<Unit>() -> ([23]); // 1003
-enum_init<core::option::Option::<core::bool>, 1>([23]) -> ([24]); // 1004
-store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1005
-store_temp<core::option::Option::<core::bool>>([24]) -> ([24]); // 1006
-return([10], [24]); // 1007
+enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>([3]) { }; // 932
+branch_align() -> (); // 933
+felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>() -> ([7]); // 934
+store_temp<felt252>([7]) -> ([7]); // 935
+array_append<felt252>([1], [7]) -> ([8]); // 936
+struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>([4]) -> ([9]); // 937
+rename<u128>([9]) -> ([10]); // 938
+u128_to_felt252([10]) -> ([11]); // 939
+array_append<felt252>([2], [11]) -> ([12]); // 940
+store_temp<Array<felt252>>([8]) -> ([13]); // 941
+store_temp<Array<felt252>>([12]) -> ([14]); // 942
+jump() { 962() }; // 943
+branch_align() -> (); // 944
+felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>() -> ([15]); // 945
+store_temp<felt252>([15]) -> ([15]); // 946
+array_append<felt252>([1], [15]) -> ([16]); // 947
+struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>([5]) -> ([17]); // 948
+rename<u128>([17]) -> ([18]); // 949
+u128_to_felt252([18]) -> ([19]); // 950
+array_append<felt252>([2], [19]) -> ([20]); // 951
+store_temp<Array<felt252>>([16]) -> ([13]); // 952
+store_temp<Array<felt252>>([20]) -> ([14]); // 953
+jump() { 962() }; // 954
+branch_align() -> (); // 955
+drop<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>([6]) -> (); // 956
+felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124>() -> ([21]); // 957
+store_temp<felt252>([21]) -> ([21]); // 958
+array_append<felt252>([1], [21]) -> ([22]); // 959
+store_temp<Array<felt252>>([22]) -> ([13]); // 960
+store_temp<Array<felt252>>([2]) -> ([14]); // 961
+struct_construct<Unit>() -> ([23]); // 962
+return([13], [14], [23]); // 963
+struct_deconstruct<core::array::Span::<core::felt252>>([0]) -> ([1]); // 964
+array_snapshot_pop_front<felt252>([1]) { fallthrough([2], [3]) 971([4]) }; // 965
+branch_align() -> (); // 966
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([3]) -> ([5]); // 967
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([6]); // 968
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([5]) -> ([7]); // 969
+jump() { 976() }; // 970
+branch_align() -> (); // 971
+struct_construct<Unit>() -> ([8]); // 972
+enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([8]) -> ([9]); // 973
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([6]); // 974
+store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) -> ([7]); // 975
+struct_construct<core::array::Span::<core::felt252>>([6]) -> ([10]); // 976
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 977
+enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) { fallthrough([11]) 999([12]) }; // 978
+branch_align() -> (); // 979
+unbox<felt252>([11]) -> ([13]); // 980
+rename<felt252>([13]) -> ([14]); // 981
+store_temp<felt252>([14]) -> ([14]); // 982
+felt252_is_zero([14]) { fallthrough() 989([15]) }; // 983
+branch_align() -> (); // 984
+struct_construct<Unit>() -> ([16]); // 985
+enum_init<core::bool, 1>([16]) -> ([17]); // 986
+store_temp<core::bool>([17]) -> ([18]); // 987
+jump() { 994() }; // 988
+branch_align() -> (); // 989
+drop<NonZero<felt252>>([15]) -> (); // 990
+struct_construct<Unit>() -> ([19]); // 991
+enum_init<core::bool, 0>([19]) -> ([20]); // 992
+store_temp<core::bool>([20]) -> ([18]); // 993
+bool_not_impl([18]) -> ([21]); // 994
+enum_init<core::option::Option::<core::bool>, 0>([21]) -> ([22]); // 995
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 996
+store_temp<core::option::Option::<core::bool>>([22]) -> ([22]); // 997
+return([10], [22]); // 998
+branch_align() -> (); // 999
+drop<Unit>([12]) -> (); // 1000
+struct_construct<Unit>() -> ([23]); // 1001
+enum_init<core::option::Option::<core::bool>, 1>([23]) -> ([24]); // 1002
+store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]); // 1003
+store_temp<core::option::Option::<core::bool>>([24]) -> ([24]); // 1004
+return([10], [24]); // 1005
 
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__get_counter@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__increase_counter@105([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -1184,4 +1182,4 @@ cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Contra
 cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcherImpl::decrease_allowed@850([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher) -> (GasBuiltin, System, core::panics::PanicResult::<(core::bool,)>);
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>@894([0]: GasBuiltin, [1]: System, [2]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, [3]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased) -> (GasBuiltin, System, core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>);
 cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventIsEvent::append_keys_and_data@930([0]: cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>, Unit);
-core::BoolSerde::deserialize@966([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
+core::BoolSerde::deserialize@964([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
