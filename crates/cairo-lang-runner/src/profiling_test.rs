@@ -60,14 +60,15 @@ pub fn test_profiling(
         .run_function_with_starknet_context(func, &[], Some(u32::MAX as usize), Default::default())
         .unwrap();
     let profiling_processor =
-        ProfilingInfoProcessor::new(Some(&db), sierra_program, statements_functions);
+        ProfilingInfoProcessor::new(Some(&db), sierra_program.clone(), statements_functions);
     let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
 
     TestRunnerResult {
-        outputs: OrderedHashMap::from([(
-            "expected_profiling_info".into(),
-            processed_profiling_info.to_string(),
-        )]),
+        outputs: OrderedHashMap::from([
+            ("Sierra Program".into(), sierra_program.to_string()),
+            ("Casms Program".into(), runner.casm_program.to_string()),
+            ("expected_profiling_info".into(), processed_profiling_info.to_string()),
+        ]),
         error: None,
     }
 }
