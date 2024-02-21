@@ -146,6 +146,9 @@ fn validate_constant_expr(
         Expr::EnumVariantCtor(expr) => {
             validate_constant_expr(db, exprs, expr.value_expr, diagnostics)
         }
+        Expr::MemberAccess(expr) => {
+            validate_constant_expr(db, exprs, expr.expr, diagnostics);
+        }
         // Adding a diagnostic for unsupported constants only if there is no more internal error.
         _ if diagnostics.diagnostics.error_count == 0 => {
             diagnostics.report_by_ptr(

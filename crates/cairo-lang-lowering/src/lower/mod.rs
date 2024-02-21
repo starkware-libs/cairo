@@ -1018,6 +1018,10 @@ fn lowered_constant_helper(
                 expr.variant.clone(),
                 Box::new(lowered_constant_helper(db, exprs, expr.value_expr, diagnostics).1),
             ),
+            semantic::Expr::MemberAccess(expr) => {
+                extract_const_member_access(db, exprs, expr, diagnostics)
+                    .unwrap_or(ConstValue::Missing)
+            }
             _ => panic!("Unexpected constant in lowering: {:?}.", expr),
         },
     )
@@ -1084,6 +1088,20 @@ fn evaluate_const_function_call(
         .unwrap();
     }
     Some(value)
+}
+
+/// Extract const member access from a const value.
+fn extract_const_member_access(
+    db: &dyn LoweringGroup,
+    exprs: &Arena<semantic::Expr>,
+    expr: &semantic::ExprMemberAccess,
+    diagnostics: &mut LoweringDiagnostics,
+) -> Option<ConstValue> {
+    let full_struct = lowered_constant_helper(db, exprs, expr.expr, diagnostics).1;
+    let mut values = try_extract_matches!(full_struct, ConstValue::Struct)?;
+    let members = db.concrete_struct_members(expr.concrete_struct_id).ok()?;
+    let member_idx = members.iter().position(|(_, member)| member.id == expr.member)?;
+    Some(values.swap_remove(member_idx).1)
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
