@@ -1063,8 +1063,12 @@ End:
 blk23:
 Statements:
   (v41: core::felt252) <- 39878429859757942499084499860145094553463u
+  (v42: core::panics::PanicResult::<(core::integer::u128,)>) <- core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>(v39, v41)
 End:
-  Goto(blk28, {})
+  Match(match_enum(v42) {
+    PanicResult::Ok(v43) => blk25,
+    PanicResult::Err(v44) => blk26,
+  })
 
 blk24:
 Statements:
@@ -1084,96 +1088,6 @@ Statements:
   (v49: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v44)
 End:
   Goto(blk19, {v49 -> v28})
-
-blk27:
-Statements:
-End:
-  Match(match_enum(v42) {
-    PanicResult::Ok(v43) => blk25,
-    PanicResult::Err(v44) => blk26,
-  })
-
-blk28:
-Statements:
-End:
-  Match(match_enum(v39) {
-    Result::Ok(v50) => blk29,
-    Result::Err(v51) => blk30,
-  })
-
-blk29:
-Statements:
-End:
-  Goto(blk31, {v50 -> v52})
-
-blk30:
-Statements:
-End:
-  Goto(blk36, {})
-
-blk31:
-Statements:
-  (v56: (core::integer::u128,)) <- struct_construct(v52)
-  (v57: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v56)
-End:
-  Goto(blk27, {v57 -> v42})
-
-blk32:
-Statements:
-End:
-  Match(match_enum(v58) {
-  })
-
-blk33:
-Statements:
-  (v59: core::never) <- struct_destructure(v54)
-End:
-  Goto(blk32, {v59 -> v58})
-
-blk34:
-Statements:
-  (v60: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v55)
-End:
-  Goto(blk27, {v60 -> v42})
-
-blk35:
-Statements:
-End:
-  Match(match_enum(v53) {
-    PanicResult::Ok(v54) => blk33,
-    PanicResult::Err(v55) => blk34,
-  })
-
-blk36:
-Statements:
-End:
-  Goto(blk38, {})
-
-blk37:
-Statements:
-End:
-  Goto(blk40, {})
-
-blk38:
-Statements:
-  (v67: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk37, {v67 -> v61})
-
-blk39:
-Statements:
-  (v64: core::panics::Panic) <- struct_construct()
-  (v65: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v64, v62)
-  (v66: core::panics::PanicResult::<(core::never,)>) <- PanicResult::Err(v65)
-End:
-  Goto(blk35, {v66 -> v53})
-
-blk40:
-Statements:
-  (v68: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v61, v41)
-  (v69: ()) <- struct_construct()
-End:
-  Goto(blk39, {v68 -> v62, v69 -> v63})
 
 //! > lowering_diagnostics
 

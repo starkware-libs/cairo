@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod test;
 
+mod statements_weights;
+
 use std::collections::{HashMap, VecDeque};
 
 use cairo_lang_defs::ids::LanguageElementId;
@@ -9,6 +11,7 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
 
+use self::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
@@ -90,11 +93,13 @@ fn gather_inlining_info(
 // A heuristic to decide if a function should be inlined.
 fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block = lowered.blocks.root_block()?;
+
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
-    let num_of_statements: usize =
-        lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
-    if num_of_statements < inline_small_functions_threshold(db) {
+
+    let weight = ApproxCasmInlineWeight {};
+    let weight_of_blocks = weight.lowered_weight(db, lowered)?;
+    if weight_of_blocks < inline_small_functions_threshold(db).try_into().unwrap() {
         return Ok(true);
     }
 

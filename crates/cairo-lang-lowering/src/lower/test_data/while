@@ -190,9 +190,23 @@ Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 5u
-  (v3: core::felt252, v2: ()) <- test::foo[expr13](v1)
 End:
-  Return(v0, v3)
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v28) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v0, v1)
+
+blk2:
+Statements:
+  (v12: core::felt252) <- 1u
+  (v24: core::felt252) <- core::felt252_sub(v1, v12)
+End:
+  Return(v0, v24)
 
 
 Generated lowering for source location:
