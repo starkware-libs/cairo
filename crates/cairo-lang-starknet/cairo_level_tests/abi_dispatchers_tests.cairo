@@ -127,7 +127,7 @@ fn test_validate_gas_cost() {
     assert!(
         call_building_gas_usage == 3150
             && serialization_gas_usage == 50950
-            && entry_point_gas_usage == 210400,
+            && entry_point_gas_usage == 153300,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.

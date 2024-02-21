@@ -153,41 +153,24 @@ pub(crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
 //
 // Panics if `n_bytes >= BYTES_IN_U128`.
 pub(crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
-    // TODO(yuval): change to match once it's supported for integers.
-    if n_bytes == 0 {
-        0x1_u128
-    } else if n_bytes == 1 {
-        0x100_u128
-    } else if n_bytes == 2 {
-        0x10000_u128
-    } else if n_bytes == 3 {
-        0x1000000_u128
-    } else if n_bytes == 4 {
-        0x100000000_u128
-    } else if n_bytes == 5 {
-        0x10000000000_u128
-    } else if n_bytes == 6 {
-        0x1000000000000_u128
-    } else if n_bytes == 7 {
-        0x100000000000000_u128
-    } else if n_bytes == 8 {
-        0x10000000000000000_u128
-    } else if n_bytes == 9 {
-        0x1000000000000000000_u128
-    } else if n_bytes == 10 {
-        0x100000000000000000000_u128
-    } else if n_bytes == 11 {
-        0x10000000000000000000000_u128
-    } else if n_bytes == 12 {
-        0x1000000000000000000000000_u128
-    } else if n_bytes == 13 {
-        0x100000000000000000000000000_u128
-    } else if n_bytes == 14 {
-        0x10000000000000000000000000000_u128
-    } else if n_bytes == 15 {
-        0x1000000000000000000000000000000_u128
-    } else {
-        core::panic_with_felt252('n_bytes too big')
+    match n_bytes {
+        0 => 0x1,
+        1 => 0x100,
+        2 => 0x10000,
+        3 => 0x1000000,
+        4 => 0x100000000,
+        5 => 0x10000000000,
+        6 => 0x1000000000000,
+        7 => 0x100000000000000,
+        8 => 0x10000000000000000,
+        9 => 0x1000000000000000000,
+        10 => 0x100000000000000000000,
+        11 => 0x10000000000000000000000,
+        12 => 0x1000000000000000000000000,
+        13 => 0x100000000000000000000000000,
+        14 => 0x10000000000000000000000000000,
+        15 => 0x1000000000000000000000000000000,
+        _ => core::panic_with_felt252('n_bytes too big'),
     }
 }
 
