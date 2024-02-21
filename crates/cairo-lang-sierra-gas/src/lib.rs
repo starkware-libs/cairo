@@ -246,9 +246,10 @@ fn calc_gas_info_inner<
             if !function_costs.contains_key(id) {
                 function_costs.insert(id.clone(), OrderedHashMap::default());
             }
-            let value = solution[&Var::StatementFuture(func.entry_point, token_type)];
-            if value != 0 {
-                function_costs.get_mut(id).unwrap().insert(token_type, value);
+            if let Some(value) = solution.get(&Var::StatementFuture(func.entry_point, token_type)) {
+                if value != 0 {
+                    function_costs.get_mut(id).unwrap().insert(token_type, value);
+                }
             }
         }
         for (var, value) in solution {
