@@ -64,6 +64,7 @@ members = [
     "crates/bin/starknet-compile",
     "crates/bin/starknet-sierra-compile",
     "crates/bin/starknet-sierra-extract-code",
+    "crates/bin/get-lowering",
     "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
@@ -118,7 +119,6 @@ quote = "1.0.33"
 rayon = "1.8.0"
 rstest = "0.18.2"
 salsa = "0.16.1"
-scarb-metadata = "1"
 schemars = { version = "0.8.15", features = ["preserve_order"] }
 serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 serde_json = "1.0"
@@ -137,6 +137,5 @@ time = { version = "0.3.30", features = [
 ] }
 tokio = { version = "1.33.0", features = ["full", "sync"] }
 toml = "0.8.8"
-tower-lsp = "0.20.0"
 unescaper = "0.1.2"
 xshell = "0.2.5"

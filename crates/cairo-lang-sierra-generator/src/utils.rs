@@ -10,7 +10,16 @@ use cairo_lang_sierra::extensions::{
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, GenericArg};
 use cairo_lang_utils::extract_matches;
+<<<<<<< HEAD
 use lowering::ConstValue;
+||||||| a1f2f2396
+use num_bigint::BigInt;
+use semantic::corelib::get_const_libfunc_name_by_type;
+=======
+use defs::ids::NamedLanguageElementId;
+use num_bigint::BigInt;
+use semantic::corelib::get_const_libfunc_name_by_type;
+>>>>>>> origin/main
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};

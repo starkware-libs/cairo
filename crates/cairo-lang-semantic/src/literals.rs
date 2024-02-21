@@ -1,3 +1,4 @@
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_utils::{define_short_id, try_extract_matches};
 use id_arena::Arena;

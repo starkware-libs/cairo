@@ -8,30 +8,48 @@ use crate::DependencyType;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
-pub struct ConcreteFunctionWithBodyPostInlineNode<'a> {
+pub struct ConcreteFunctionWithBodyNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
     pub dependency_type: DependencyType,
 }
-impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
+impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
+<<<<<<< HEAD:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
         let Ok(direct_callees) =
             self.db.concrete_function_with_body_postinline_direct_callees_with_body(
                 self.function_id,
                 self.dependency_type,
             )
+||||||| a1f2f2396:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
+        let Ok(direct_callees) = self
+            .db
+            .concrete_function_with_body_postinline_direct_callees_with_body(self.function_id)
+=======
+        let Ok(direct_callees) =
+            self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
+>>>>>>> origin/main:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_node.rs
         else {
             return vec![];
         };
         direct_callees
             .into_iter()
+<<<<<<< HEAD:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
             .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
                 function_id: callee,
                 db: self.db,
                 dependency_type: self.dependency_type,
             })
+||||||| a1f2f2396:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
+            .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
+                function_id: callee,
+                db: self.db,
+            })
+=======
+            .map(|callee| ConcreteFunctionWithBodyNode { function_id: callee, db: self.db })
+>>>>>>> origin/main:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_node.rs
             .collect()
     }
 
@@ -39,7 +57,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
         self.function_id
     }
 }
-impl<'a> ComputeScc for ConcreteFunctionWithBodyPostInlineNode<'a> {
+impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
         concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }

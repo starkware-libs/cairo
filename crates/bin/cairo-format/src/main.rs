@@ -18,8 +18,8 @@ fn eprintln_if_verbose(s: &str, verbose: bool) {
     }
 }
 
-/// Sierra to casm compiler.
-/// Exits with 0/1 if the compilation fails.
+/// Formats a file or directory with the Cairo formatter.
+/// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
@@ -201,5 +201,5 @@ fn main() -> ExitCode {
         // Input comes from walk of listed locations
         args.files.iter().all(|file| format_path(file, &args, &fmt))
     };
-    if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if all_correct { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }

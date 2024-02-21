@@ -347,10 +347,16 @@ pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
             return Ok(true);
         }
         // For each direct callee, find if it may panic.
+<<<<<<< HEAD
         let direct_callees = db.concrete_function_with_body_postinline_direct_callees(
             function,
             DependencyType::Call,
         )?;
+||||||| a1f2f2396
+        let direct_callees = db.concrete_function_with_body_postinline_direct_callees(function)?;
+=======
+        let direct_callees = db.concrete_function_with_body_direct_callees(function)?;
+>>>>>>> origin/main
         for direct_callee in direct_callees {
             if let Some(callee_body) = direct_callee.body(db.upcast())? {
                 let callee_scc = db.concrete_function_with_body_scc_representative(
@@ -373,7 +379,7 @@ pub fn has_direct_panic(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
+    let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
     Ok(itertools::any(&lowered_function.blocks, |(_, block)| {
         matches!(&block.end, FlatBlockEnd::Panic(..))
     }))
