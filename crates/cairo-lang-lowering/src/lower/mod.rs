@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::vec;
 
 use block_builder::BlockBuilder;
@@ -8,6 +9,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
+use defs::ids::{ConstantId, LanguageElementId};
 use id_arena::Arena;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
@@ -36,7 +38,7 @@ use self::lower_match::lower_expr_match;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
-use crate::diagnostic::{MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::{LoweringDiagnostics, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction, LocationId,
     SemanticFunctionIdEx, Signature,
@@ -48,8 +50,8 @@ use crate::lower::lower_match::{
     MatchArmWrapper, TupleInfo,
 };
 use crate::{
-    BlockId, ConstValue, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    VarUsage, VariableId,
+    BlockId, ConstValue, FlatLowered, LoweredConstant, MatchArm, MatchEnumInfo, MatchExternInfo,
+    MatchInfo, VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -742,7 +744,7 @@ fn lower_expr_literal_helper(
     value: &BigInt,
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
-    let value = value_as_const_value(ctx, stable_ptr, ty, value);
+    let value = value_as_const_value(ctx.db, stable_ptr, ty, value, &mut ctx.diagnostics);
     let location = ctx.get_location(stable_ptr);
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
@@ -750,21 +752,22 @@ fn lower_expr_literal_helper(
 }
 
 fn value_as_const_value(
-    ctx: &mut LoweringContext<'_, '_>,
+    db: &dyn LoweringGroup,
     stable_ptr: SyntaxStablePtrId,
     ty: semantic::TypeId,
     value: &BigInt,
+    diagnostics: &mut LoweringDiagnostics,
 ) -> ConstValue {
-    if let Err(err) = validate_literal(ctx.db.upcast(), ty, value.clone()) {
-        ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err));
+    if let Err(err) = validate_literal(db.upcast(), ty, value.clone()) {
+        diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err));
     }
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
+        let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone())
         } else {
-            let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
+            let u128_ty = get_core_ty_by_name(db.upcast(), "u128".into(), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
@@ -775,7 +778,7 @@ fn value_as_const_value(
         }
     };
 
-    if let Some(inner) = try_extract_nz_wrapped_type(ctx.db.upcast(), ty) {
+    if let Some(inner) = try_extract_nz_wrapped_type(db.upcast(), ty) {
         ConstValue::NonZero(inner, Box::new(get_basic_const_value(inner)))
     } else {
         get_basic_const_value(ty)
@@ -930,55 +933,75 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let constant =
-        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?;
+    let lowered_constant =
+        ctx.db.lowered_constant(expr.constant_id).map_err(LoweringFlowError::Failed)?;
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let (ty, value) = lower_expr_constant_helper(ctx, &constant.exprs, constant.value);
     Ok(LoweredExpr::AtVariable(
-        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
+        generators::Const {
+            value: lowered_constant.value.clone(),
+            ty: lowered_constant.ty,
+            location,
+        }
+        .add(ctx, &mut builder.statements),
     ))
 }
 
+/// Lowers a constant expression.
+pub fn lowered_constant(
+    db: &dyn LoweringGroup,
+    constant_id: ConstantId,
+) -> Maybe<Arc<LoweredConstant>> {
+    db.constant_semantic_diagnostics(constant_id).check_error_free()?;
+    let constant = db.constant_semantic_data(constant_id).unwrap();
+    let module_file_id = constant_id.module_file_id(db.upcast());
+    let mut diagnostics = LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let (ty, value) =
+        lowered_constant_helper(db, &constant.exprs, constant.value, &mut diagnostics);
+    Ok(Arc::new(LoweredConstant { value, ty, diagnostics: diagnostics.build() }))
+}
+
 /// Helper function to recursively create a lowered constant.
-fn lower_expr_constant_helper(
-    ctx: &mut LoweringContext<'_, '_>,
+fn lowered_constant_helper(
+    db: &dyn LoweringGroup,
     exprs: &Arena<semantic::Expr>,
     expr_id: semantic::ExprId,
+    diagnostics: &mut LoweringDiagnostics,
 ) -> (semantic::TypeId, ConstValue) {
     let expr = &exprs[expr_id];
-    let ty = expr.ty();
     (
-        ty,
+        expr.ty(),
         match expr {
-            semantic::Expr::Constant(expr) => {
-                let constant = &ctx.db.constant_semantic_data(expr.constant_id).expect(
-                    "Would have failed at semantic on type mismatch if constant didn't exist.",
-                );
-                lower_expr_constant_helper(ctx, &constant.exprs, constant.value).1
-            }
+            semantic::Expr::Constant(expr) => db
+                .lowered_constant(expr.constant_id)
+                .map(|v| v.value.clone())
+                .unwrap_or(ConstValue::Missing),
             semantic::Expr::FunctionCall(expr) => {
-                let value = try_extract_minus_literal(ctx.db.upcast(), exprs, expr)
+                let value = try_extract_minus_literal(db.upcast(), exprs, expr)
                     .expect("Only supported function call in const is minus.");
-                value_as_const_value(ctx, expr.stable_ptr.untyped(), ty, &value)
+                value_as_const_value(db, expr.stable_ptr.untyped(), expr.ty, &value, diagnostics)
             }
-            semantic::Expr::Literal(expr) => {
-                value_as_const_value(ctx, expr.stable_ptr.untyped(), ty, &expr.value)
-            }
+            semantic::Expr::Literal(expr) => value_as_const_value(
+                db,
+                expr.stable_ptr.untyped(),
+                expr.ty,
+                &expr.value,
+                diagnostics,
+            ),
             semantic::Expr::Tuple(expr) => ConstValue::Struct(
                 expr.items
                     .iter()
-                    .map(|expr_id| lower_expr_constant_helper(ctx, exprs, *expr_id))
+                    .map(|expr_id| lowered_constant_helper(db, exprs, *expr_id, diagnostics))
                     .collect(),
             ),
             semantic::Expr::StructCtor(expr) => ConstValue::Struct(
                 expr.members
                     .iter()
-                    .map(|(_, expr_id)| lower_expr_constant_helper(ctx, exprs, *expr_id))
+                    .map(|(_, expr_id)| lowered_constant_helper(db, exprs, *expr_id, diagnostics))
                     .collect(),
             ),
             semantic::Expr::EnumVariantCtor(expr) => ConstValue::Enum(
                 expr.variant.clone(),
-                Box::new(lower_expr_constant_helper(ctx, exprs, expr.value_expr).1),
+                Box::new(lowered_constant_helper(db, exprs, expr.value_expr, diagnostics).1),
             ),
             _ => panic!("Unexpected constant in lowering: {:?}.", expr),
         },

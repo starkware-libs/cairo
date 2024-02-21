@@ -73,3 +73,61 @@ Statements:
   (v0: test::MyStruct) <- { 1234u: core::felt252, bool::True({}): core::bool, MyEnum::A(5678u): test::MyEnum, MyEnum::B({}): test::MyEnum }
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > const literal values
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const UNSIGNED_VAR: u8 = 256;
+const SIGNED_VAR: i8 = 128;
+const IN_RANGE_NEGATIVE1: i8 = -0x80;
+const IN_RANGE_NEGATIVE2: i16 = -5;
+const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
+const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
+const ZERO_NON_ZERO: NonZero<u8> = 0;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:1:26
+const UNSIGNED_VAR: u8 = 256;
+                         ^*^
+
+error: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:2:24
+const SIGNED_VAR: i8 = 128;
+                       ^*^
+
+error: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:5:36
+const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
+                                   ^***^
+
+error: The value does not fit within the range of type core::integer::i16.
+ --> lib.cairo:6:37
+const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
+                                    ^*****^
+
+error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
+ --> lib.cairo:7:36
+const ZERO_NON_ZERO: NonZero<u8> = 0;
+                                   ^
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
