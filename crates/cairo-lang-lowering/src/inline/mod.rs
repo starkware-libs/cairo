@@ -1,13 +1,17 @@
 #[cfg(test)]
 mod test;
 
+mod statements_weights;
+
 use std::collections::{HashMap, VecDeque};
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
+use statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
@@ -73,9 +77,10 @@ fn should_inline_lowered(
     let lowered = db.concrete_function_with_body_postpanic_lowered(function_id)?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
-    let num_of_statements: usize =
-        lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
-    if num_of_statements < inline_small_functions_threshold(db) {
+
+    let weight = ApproxCasmInlineWeight {};
+    let weight_of_blocks = weight.lowered_weight(db, lowered.as_ref());
+    if weight_of_blocks < inline_small_functions_threshold(db).into_or_panic() {
         return Ok(true);
     }
 
