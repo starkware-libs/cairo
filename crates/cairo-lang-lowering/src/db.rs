@@ -16,6 +16,7 @@ use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
+use crate::graph_algorithms::cycles::get_direct_callees;
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, get_inline_diagnostics};
@@ -31,7 +32,7 @@ use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
+use crate::{ids, FlatLowered, Location};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -164,12 +165,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     // ### cycles ###
 
-    /// Returns the set of direct callees of a function with a body.
-    #[salsa::invoke(crate::graph_algorithms::cycles::function_with_body_direct_callees)]
-    fn function_with_body_direct_callees(
-        &self,
-        function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<OrderedHashSet<ids::FunctionId>>;
     /// Returns the set of direct callees which are functions with body of a function with a body
     /// (i.e. excluding libfunc callees).
     #[salsa::invoke(
@@ -396,22 +391,6 @@ fn concrete_function_with_body_lowered(
     reorganize_blocks(&mut lowered);
 
     Ok(Arc::new(lowered))
-}
-
-/// Given the lowering of a function, returns the set of direct callees of that function.
-fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<ids::FunctionId> {
-    let mut direct_callees = Vec::new();
-    for (_, block) in &lowered_function.blocks {
-        for statement in &block.statements {
-            if let Statement::Call(statement_call) = statement {
-                direct_callees.push(statement_call.function);
-            }
-        }
-        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
-            direct_callees.push(s.function);
-        }
-    }
-    direct_callees
 }
 
 fn concrete_function_with_body_direct_callees(

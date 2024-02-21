@@ -3,22 +3,16 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
-use crate::MatchInfo;
+use crate::{FlatLowered, MatchInfo};
 
-/// Query implementation of
-/// [crate::db::LoweringGroup::function_with_body_direct_callees].
-pub fn function_with_body_direct_callees(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<OrderedHashSet<FunctionId>> {
-    let lowered = db.function_with_body_lowering(function_id)?;
-    let mut direct_callees = OrderedHashSet::default();
-    lowered.blocks.has_root()?;
-    for (_, block) in lowered.blocks.iter() {
+/// Given the lowering of a function, returns the set of direct callees of that function.
+pub fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<FunctionId> {
+    let mut direct_callees = Vec::new();
+    for (_, block) in lowered_function.blocks.iter() {
         for stmt in &block.statements {
             match stmt {
                 crate::Statement::Call(stmt) => {
-                    direct_callees.insert(stmt.function);
+                    direct_callees.push(stmt.function);
                 }
                 crate::Statement::Literal(_)
                 | crate::Statement::StructConstruct(_)
@@ -30,7 +24,7 @@ pub fn function_with_body_direct_callees(
         }
         match &block.end {
             crate::FlatBlockEnd::Match { info: MatchInfo::Extern(s) } => {
-                direct_callees.insert(s.function);
+                direct_callees.push(s.function);
             }
             crate::FlatBlockEnd::Match { info: MatchInfo::Value(_) }
             | crate::FlatBlockEnd::Match { info: MatchInfo::Enum(_) }
@@ -40,7 +34,7 @@ pub fn function_with_body_direct_callees(
             | crate::FlatBlockEnd::Goto(_, _) => {}
         }
     }
-    Ok(direct_callees)
+    direct_callees
 }
 
 /// Query implementation of
@@ -49,8 +43,10 @@ pub fn function_with_body_direct_function_with_body_callees(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<OrderedHashSet<FunctionWithBodyId>> {
-    Ok(db
-        .function_with_body_direct_callees(function_id)?
+    let lowered = db.function_with_body_lowering(function_id)?;
+    lowered.blocks.has_root()?;
+
+    Ok(get_direct_callees(&lowered)
         .into_iter()
         .map(|function_id| function_id.body(db))
         .collect::<Maybe<Vec<Option<_>>>>()?
