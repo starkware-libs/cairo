@@ -47,11 +47,10 @@ fn test_generated_function(
         )
         .unwrap();
 
-        let lowering = db
-            .concrete_function_with_body_lowered(ConcreteFunctionWithBodyId::from_semantic(
-                db,
-                test_function.concrete_function_id,
-            ))
+        let lowering =
+            db.final_concrete_function_with_body_lowered(
+                ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id),
+            )
             .unwrap();
         writeln!(
             &mut writer,
@@ -85,7 +84,7 @@ fn test_generated_function(
             )
             .unwrap();
 
-            let lowering = db.concrete_function_with_body_lowered(generated_id).unwrap();
+            let lowering = db.final_concrete_function_with_body_lowered(generated_id).unwrap();
             writeln!(
                 &mut writer,
                 "Final lowering:\n{:?}",

@@ -62,7 +62,7 @@ fn block_generator_test(
     let lowering_diagnostics =
         db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
 
-    let lowered = match db.concrete_function_with_body_lowered(function_id) {
+    let lowered = match db.final_concrete_function_with_body_lowered(function_id) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,
         _ => {
             return TestRunnerResult::success(OrderedHashMap::from([
