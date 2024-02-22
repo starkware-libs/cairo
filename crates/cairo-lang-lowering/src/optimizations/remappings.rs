@@ -52,8 +52,9 @@ struct Context {
     variable_used: HashSet<VariableId>,
 }
 impl Context {
-    /// Marks `var` as used.
+    /// Find the `canonical` variable that `var` maps to and mark it as used.
     fn set_used(&mut self, var: VariableId) {
+        let var = self.map_var_id(var);
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
                 self.set_used(src);
@@ -114,26 +115,22 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
 
         for stmt in &block.statements {
             for var_usage in stmt.inputs() {
-                let var = ctx.map_var_id(var_usage.var_id);
-                ctx.set_used(var);
+                ctx.set_used(var_usage.var_id);
             }
         }
         match &block.end {
             FlatBlockEnd::Return(returns) => {
                 for var_usage in returns {
-                    let var_usage = ctx.map_var_usage(*var_usage);
                     ctx.set_used(var_usage.var_id);
                 }
             }
             FlatBlockEnd::Panic(data) => {
-                let var_usage = ctx.map_var_usage(*data);
-                ctx.set_used(var_usage.var_id);
+                ctx.set_used(data.var_id);
             }
             FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::Match { info } => {
                 for var_usage in info.inputs() {
-                    let var = ctx.map_var_id(var_usage.var_id);
-                    ctx.set_used(var);
+                    ctx.set_used(var_usage.var_id);
                 }
             }
             FlatBlockEnd::NotSet => unreachable!(),
