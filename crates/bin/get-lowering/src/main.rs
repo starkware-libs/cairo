@@ -132,7 +132,7 @@ impl fmt::Debug for PhasesFormatter<'_> {
         apply_stage("after_optimize_remappings4", &optimize_remappings);
         apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
-        let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
+        let after_all = db.final_concrete_function_with_body_lowered(function_id).unwrap();
 
         // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
         // If something is changed there, it should be changed here too.
