@@ -29,17 +29,7 @@ pub fn concrete_function_with_body_scc(
     function_id: ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-<<<<<<< HEAD
-    compute_scc(&ConcreteFunctionWithBodyPostInlineNode {
-        function_id,
-        db: db.upcast(),
-        dependency_type,
-    })
-||||||| a1f2f2396
-    compute_scc(&ConcreteFunctionWithBodyPostInlineNode { function_id, db: db.upcast() })
-=======
-    compute_scc(&ConcreteFunctionWithBodyNode { function_id, db: db.upcast() })
->>>>>>> origin/main
+    compute_scc(&ConcreteFunctionWithBodyNode { function_id, db: db.upcast(), dependency_type })
 }
 
 /// Query implementation of

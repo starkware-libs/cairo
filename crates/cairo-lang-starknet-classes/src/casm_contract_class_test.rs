@@ -55,7 +55,7 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
 
 /// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
 /// constant that was computed by other implementations.
-#[test_case("account__account", "76f61f27b9314a918f67ebd53421dc169d2408d3a89b7ac68ae759a8e266771")]
+#[test_case("account__account", "27d154a3a08cef0181c16783f567d5b7068fc1bcd2c2ea6a1a2099305696155")]
 fn test_compiled_class_hash(name: &str, expected_hash: &str) {
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());

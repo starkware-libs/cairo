@@ -327,30 +327,13 @@ Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
 End:
-<<<<<<< HEAD
-  Match(match core::integer::u32_overflowing_add(v0, v0) {
-    Result::Ok(v2) => blk1,
-    Result::Err(v3) => blk2,
-||||||| a1f2f2396
-  Match(match_enum(v2) {
-    PanicResult::Ok(v3) => blk1,
-    PanicResult::Err(v5) => blk2,
-=======
   Match(match core::integer::u32_overflowing_add(v0, v0) {
     Result::Ok(v9) => blk1,
     Result::Err(v10) => blk2,
->>>>>>> origin/main
   })
 
 blk1:
 Statements:
-<<<<<<< HEAD
-  (v4: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Ok(v2)
-||||||| a1f2f2396
-  (v4: core::integer::u32) <- struct_destructure(v3)
-  (v6: (core::integer::u32,)) <- struct_construct(v4)
-  (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v6)
-=======
   (v11: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Ok(v9)
 End:
   Goto(blk3, {v11 -> v12})
@@ -438,69 +421,27 @@ Statements:
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v6: (core::integer::u32,)) <- struct_construct(v4)
   (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v6)
->>>>>>> origin/main
 End:
-  Goto(blk3, {v4 -> v5})
+  Return(v7)
 
 blk13:
 Statements:
-  (v6: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Err(v3)
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
 End:
-  Goto(blk3, {v6 -> v5})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v5) {
-    Result::Ok(v9) => blk4,
-    Result::Err(v10) => blk5,
-  })
-
-blk4:
-Statements:
-  (v21: (core::integer::u32,)) <- struct_construct(v9)
-  (v22: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v21)
-End:
-  Return(v22)
-
-blk5:
-Statements:
-  (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::felt252) <- 155785504323917466144735657540098748279u
-  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v18, v7)
-  (v16: core::panics::Panic) <- struct_construct()
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v19)
-  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v17)
-End:
-  Return(v23)
+  Return(v8)
 
 //! > after
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
 End:
-<<<<<<< HEAD
-  Match(match core::integer::u32_overflowing_add(v0, v0) {
-    Result::Ok(v2) => blk1,
-    Result::Err(v3) => blk2,
-||||||| a1f2f2396
-  Match(match_enum(v2) {
-    PanicResult::Ok(v3) => blk1,
-    PanicResult::Err(v5) => blk2,
-=======
   Match(match core::integer::u32_overflowing_add(v0, v0) {
     Result::Ok(v9) => blk1,
     Result::Err(v10) => blk2,
->>>>>>> origin/main
   })
 
 blk1:
 Statements:
-<<<<<<< HEAD
-  (v4: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Ok(v2)
-||||||| a1f2f2396
-  (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v3)
-=======
   (v11: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Ok(v9)
 End:
   Goto(blk3, {v11 -> v12})
@@ -584,41 +525,14 @@ End:
 blk12:
 Statements:
   (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v3)
->>>>>>> origin/main
 End:
-  Goto(blk3, {v4 -> v5})
+  Return(v7)
 
 blk13:
 Statements:
-  (v6: core::result::Result::<core::integer::u32, core::integer::u32>) <- Result::Err(v3)
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v5)
 End:
-  Goto(blk3, {v6 -> v5})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v5) {
-    Result::Ok(v9) => blk4,
-    Result::Err(v10) => blk5,
-  })
-
-blk4:
-Statements:
-  (v21: (core::integer::u32,)) <- struct_construct(v9)
-  (v22: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v21)
-End:
-  Return(v22)
-
-blk5:
-Statements:
-  (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::felt252) <- 155785504323917466144735657540098748279u
-  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v18, v7)
-  (v16: core::panics::Panic) <- struct_construct()
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v16, v19)
-  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v17)
-End:
-  Return(v23)
+  Return(v8)
 
 //! > ==========================================================================
 

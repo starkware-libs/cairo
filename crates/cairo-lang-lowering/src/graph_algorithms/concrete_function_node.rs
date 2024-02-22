@@ -17,39 +17,19 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-<<<<<<< HEAD:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
-        let Ok(direct_callees) =
-            self.db.concrete_function_with_body_postinline_direct_callees_with_body(
-                self.function_id,
-                self.dependency_type,
-            )
-||||||| a1f2f2396:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
-        let Ok(direct_callees) = self
-            .db
-            .concrete_function_with_body_postinline_direct_callees_with_body(self.function_id)
-=======
-        let Ok(direct_callees) =
-            self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
->>>>>>> origin/main:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_node.rs
-        else {
+        let Ok(direct_callees) = self.db.concrete_function_with_body_direct_callees_with_body(
+            self.function_id,
+            self.dependency_type,
+        ) else {
             return vec![];
         };
         direct_callees
             .into_iter()
-<<<<<<< HEAD:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
-            .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
+            .map(|callee| ConcreteFunctionWithBodyNode {
                 function_id: callee,
                 db: self.db,
                 dependency_type: self.dependency_type,
             })
-||||||| a1f2f2396:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_postiniline_node.rs
-            .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
-                function_id: callee,
-                db: self.db,
-            })
-=======
-            .map(|callee| ConcreteFunctionWithBodyNode { function_id: callee, db: self.db })
->>>>>>> origin/main:crates/cairo-lang-lowering/src/graph_algorithms/concrete_function_node.rs
             .collect()
     }
 
