@@ -76,7 +76,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Call cycle of `nopanic` functions is not allowed.".into()
             },
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            LoweringDiagnosticKind::DivisionByZero => "Division by zero.".into(),
+            
             LoweringDiagnosticKind::UnsupportedPattern => {
                 "Inner patterns are not in this context.".into()
             }
@@ -200,7 +200,6 @@ pub enum LoweringDiagnosticKind {
     MemberPathLoop,
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
-    DivisionByZero,
     UnsupportedPattern,
     Unsupported,
 }

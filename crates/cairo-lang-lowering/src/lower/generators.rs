@@ -5,6 +5,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_utils::extract_matches;
 use itertools::chain;
+use semantic::items::constant::ConstValue;
 
 use super::context::VarRequest;
 use super::VariableId;
@@ -14,7 +15,7 @@ use crate::objects::{
     Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
     VarUsage,
 };
-use crate::{ConstValue, StatementDesnap, StatementEnumConstruct, StatementSnapshot};
+use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
 #[derive(Clone, Default)]
 pub struct StatementsBuilder {

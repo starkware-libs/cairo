@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::enm::MatchArmSelector;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
@@ -11,9 +12,9 @@ use crate::objects::{
     VariableId,
 };
 use crate::{
-    ConstValue, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue,
-    MatchInfo, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
-    StatementStructConstruct, VarRemapping, VarUsage, Variable,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
+    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    VarRemapping, VarUsage, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
