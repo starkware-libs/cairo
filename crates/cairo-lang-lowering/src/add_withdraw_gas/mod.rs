@@ -3,6 +3,7 @@ use cairo_lang_semantic::corelib::{
     core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
     get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
@@ -10,8 +11,8 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, ConstValue, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementConst, StatementStructConstruct, VarUsage,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
+    StatementCall, StatementConst, StatementStructConstruct, VarUsage,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
