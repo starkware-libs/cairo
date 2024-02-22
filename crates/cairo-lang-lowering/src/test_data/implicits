@@ -42,14 +42,14 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk5, {v71 -> v75})
+  Goto(blk5, {v71 -> v72})
 
 blk2:
 Statements:
 End:
   Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v71, v10) {
-    Option::Some(v85, v40) => blk3,
-    Option::None(v86) => blk4,
+    Option::Some(v73, v40) => blk3,
+    Option::None(v74) => blk4,
   })
 
 blk3:
@@ -57,12 +57,12 @@ Statements:
   (v51: (core::integer::u64,)) <- struct_construct(v40)
   (v52: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v51)
 End:
-  Return(v85, v52)
+  Return(v73, v52)
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v86 -> v75})
+  Goto(blk5, {v74 -> v72})
 
 blk5:
 Statements:
@@ -73,7 +73,7 @@ Statements:
   (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v69, v63)
   (v55: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v50)
 End:
-  Return(v75, v55)
+  Return(v72, v55)
 
 //! > lowering
 Main:

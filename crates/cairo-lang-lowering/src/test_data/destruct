@@ -85,10 +85,10 @@ fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 { 1_u128 }
 Parameters: v7: core::RangeCheck, v8: core::SegmentArena, v9: core::gas::GasBuiltin, v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v16: core::RangeCheck, v17: core::SegmentArena, v18: core::gas::GasBuiltin, v5: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v7, v8, v9, v0)
+  (v10: core::RangeCheck, v11: core::SegmentArena, v12: core::gas::GasBuiltin, v5: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v7, v8, v9, v0)
   (v2: ()) <- struct_construct()
 End:
-  Return(v16, v17, v18, v2)
+  Return(v10, v11, v12, v2)
 
 //! > ==========================================================================
 

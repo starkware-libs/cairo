@@ -130,9 +130,9 @@ blk3:
 Statements:
   (v8: core::felt252) <- 1u
   (v31: core::felt252) <- core::felt252_sub(v0, v8)
-  (v77: core::RangeCheck, v78: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v55, v56, v31)
+  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v55, v56, v31)
 End:
-  Return(v77, v78, v22)
+  Return(v59, v60, v22)
 
 blk4:
 Statements:
@@ -418,9 +418,9 @@ End:
 blk2:
 Statements:
   (v23: core::felt252) <- core::felt252_add(v0, v1)
-  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v26, v27, v23)
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v26, v27, v23)
 End:
-  Return(v34, v35, v14)
+  Return(v30, v31, v14)
 
 blk3:
 Statements:
