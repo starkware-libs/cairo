@@ -78,7 +78,7 @@ impl OptimizationStrategyId {
         db.intern_strategy(OptimizationStrategy(vec![
             OptimizationPhase::ApplyInlining,
             OptimizationPhase::ReturnOptimization,
-            OptimizationPhase::OptimizeRemappings,
+            OptimizationPhase::ReorganizeBlocks,
             // The call to `reorder_statements` before and after `branch_inversion` is intentional.
             // See description of `branch_inversion` for more details.
             OptimizationPhase::ReorderStatements,
@@ -87,11 +87,11 @@ impl OptimizationStrategyId {
             OptimizationPhase::ConstFolding,
             OptimizationPhase::OptimizeMatches,
             OptimizationPhase::SplitStructs,
-            OptimizationPhase::OptimizeRemappings,
+            OptimizationPhase::ReorganizeBlocks,
             OptimizationPhase::ReorderStatements,
             OptimizationPhase::OptimizeMatches,
             OptimizationPhase::LowerImplicits,
-            OptimizationPhase::OptimizeRemappings,
+            OptimizationPhase::ReorganizeBlocks,
             OptimizationPhase::CancelOps,
             OptimizationPhase::ReorderStatements,
             OptimizationPhase::ReorganizeBlocks,

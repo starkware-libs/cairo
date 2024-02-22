@@ -244,11 +244,11 @@ function_call<user@cairo_level_tests::contracts::test_contract::test_contract::I
 store_temp<RangeCheck>([55]) -> ([55]); // 87
 enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::test_contract::test_contract::ContractState, core::felt252, core::felt252)>>([64]) { fallthrough([65]) 105([66]) }; // 88
 branch_align() -> (); // 89
-struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>>([65]) -> ([67], [68], [69]); // 90
-drop<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([67]) -> (); // 91
-array_new<felt252>() -> ([70]); // 92
-array_append<felt252>([70], [68]) -> ([71]); // 93
-array_append<felt252>([71], [69]) -> ([72]); // 94
+array_new<felt252>() -> ([67]); // 90
+struct_deconstruct<Tuple<cairo_level_tests::contracts::test_contract::test_contract::ContractState, felt252, felt252>>([65]) -> ([68], [69], [70]); // 91
+drop<cairo_level_tests::contracts::test_contract::test_contract::ContractState>([68]) -> (); // 92
+array_append<felt252>([67], [69]) -> ([71]); // 93
+array_append<felt252>([71], [70]) -> ([72]); // 94
 snapshot_take<Array<felt252>>([72]) -> ([73], [74]); // 95
 drop<Array<felt252>>([73]) -> (); // 96
 struct_construct<core::array::Span::<core::felt252>>([74]) -> ([75]); // 97

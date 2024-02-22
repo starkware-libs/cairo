@@ -135,9 +135,9 @@ End:
 
 blk3:
 Statements:
-  (v45: core::RangeCheck, v46: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v31, v32, v27)
+  (v35: core::RangeCheck, v36: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v31, v32, v27)
 End:
-  Return(v45, v46, v18)
+  Return(v35, v36, v18)
 
 blk4:
 Statements:
@@ -288,9 +288,9 @@ End:
 
 blk3:
 Statements:
-  (v45: core::RangeCheck, v46: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v31, v32, v27)
+  (v35: core::RangeCheck, v36: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v31, v32, v27)
 End:
-  Return(v45, v46, v18)
+  Return(v35, v36, v18)
 
 blk4:
 Statements:
@@ -620,9 +620,9 @@ End:
 
 blk2:
 Statements:
-  (v57: core::RangeCheck, v58: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v45, v46, v41)
+  (v49: core::RangeCheck, v50: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v45, v46, v41)
 End:
-  Return(v57, v58, v21)
+  Return(v49, v50, v21)
 
 blk3:
 Statements:
@@ -645,9 +645,9 @@ End:
 
 blk5:
 Statements:
-  (v67: core::RangeCheck, v68: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v45, v46, v41)
+  (v51: core::RangeCheck, v52: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v45, v46, v41)
 End:
-  Return(v67, v68, v28)
+  Return(v51, v52, v28)
 
 blk6:
 Statements:
@@ -887,9 +887,9 @@ End:
 
 blk2:
 Statements:
-  (v61: core::RangeCheck, v62: core::gas::GasBuiltin, v27: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v47, v48, v4)
+  (v51: core::RangeCheck, v52: core::gas::GasBuiltin, v27: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v47, v48, v4)
 End:
-  Return(v61, v62, v27)
+  Return(v51, v52, v27)
 
 blk3:
 Statements:
