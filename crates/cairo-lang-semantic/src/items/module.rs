@@ -5,8 +5,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId, ImplDefId,
-    LanguageElementId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitId,
-    UseId,
+    LanguageElementId, ModuleId, ModuleItemId, ModuleTypeAliasId, NamedLanguageElementId, StructId,
+    SubmoduleId, TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};

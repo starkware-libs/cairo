@@ -12,7 +12,6 @@ use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
-use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
 
@@ -48,11 +47,10 @@ fn test_cancel_ops(
     }
 
     let mut before =
-        db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
+        db.concrete_function_with_body_postpanic_lowered(function_id).unwrap().deref().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     apply_inlining(db, function_id, &mut before).unwrap();
-    before = lower_panics(db, function_id, &before).unwrap();
     optimize_remappings(&mut before);
     reorganize_blocks(&mut before);
     reorder_statements(db, &mut before);

@@ -383,6 +383,7 @@ pub fn lower_loop_function(
     })
 }
 
+<<<<<<< HEAD
 /// Wraps `block_sealed` as the root block of a function.
 fn wrap_sealed_block_as_function(
     ctx: &mut LoweringContext<'_, '_>,
@@ -428,6 +429,54 @@ fn wrap_sealed_block_as_function(
     }
 }
 
+||||||| a1f2f2396
+=======
+/// Wraps `block_sealed` as the root block of a function.
+fn wrap_sealed_block_as_function(
+    ctx: &mut LoweringContext<'_, '_>,
+    block_sealed: SealedBlockBuilder,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<()> {
+    let SealedBlockBuilder::GotoCallsite { mut builder, expr } = block_sealed else {
+        return Ok(());
+    };
+    let location = ctx.get_location(stable_ptr);
+    match &expr {
+        Some(expr) if ctx.variables[expr.var_id].ty == never_ty(ctx.db.upcast()) => {
+            // If the expression is of type never, then the block is unreachable, so add a match on
+            // never to make it a viable block end.
+            let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+                ctx.db.lookup_intern_type(ctx.variables[expr.var_id].ty)
+            else {
+                unreachable!("Never type must be a concrete enum.");
+            };
+            builder.unreachable_match(
+                ctx,
+                MatchInfo::Enum(MatchEnumInfo {
+                    concrete_enum_id,
+                    input: *expr,
+                    arms: vec![],
+                    location,
+                }),
+            );
+            Ok(())
+        }
+        _ => {
+            // Convert to a return.
+            let var_usage = expr.unwrap_or_else(|| {
+                generators::StructConstruct {
+                    inputs: vec![],
+                    ty: unit_ty(ctx.db.upcast()),
+                    location,
+                }
+                .add(ctx, &mut builder.statements)
+            });
+            builder.ret(ctx, var_usage, location)
+        }
+    }
+}
+
+>>>>>>> origin/main
 /// Lowers a semantic block.
 fn lower_block(
     ctx: &mut LoweringContext<'_, '_>,

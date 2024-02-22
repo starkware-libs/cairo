@@ -6,8 +6,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeId, ImplTypeLongId, LanguageElementId,
-    LookupItemId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitTypeId,
+    LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -34,6 +34,7 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
 use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
+use super::resolve_trait_path;
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use super::type_aliases::{
@@ -309,15 +310,7 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
 
     let trait_path_syntax = impl_ast.trait_path(db.upcast());
 
-    try_extract_matches!(
-        resolver.resolve_generic_path_with_args(
-            &mut diagnostics,
-            &trait_path_syntax,
-            NotFoundItemType::Trait,
-        )?,
-        ResolvedGenericItem::Trait
-    )
-    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
+    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].

@@ -39,10 +39,15 @@ mod issue4314;
 mod issue4318;
 mod issue4380;
 mod issue4897;
+<<<<<<< HEAD
 mod issue4937;
+||||||| a1f2f2396
+=======
+
+mod issue4937;
+>>>>>>> origin/main
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;
 mod revoked_locals;
 mod zero_sized_locals;
-

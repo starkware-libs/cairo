@@ -4,7 +4,7 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_utils::graph_algos::feedback_set::calc_feedback_set;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use super::concrete_function_postiniline_node::ConcreteFunctionWithBodyPostInlineNode;
+use super::concrete_function_node::ConcreteFunctionWithBodyNode;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::DependencyType;
@@ -40,6 +40,7 @@ pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
+<<<<<<< HEAD
     Ok(calc_feedback_set(
         &ConcreteFunctionWithBodyPostInlineNode {
             function_id: function.0,
@@ -48,4 +49,11 @@ pub fn priv_function_with_body_feedback_set_of_representative(
         }
         .into(),
     ))
+||||||| a1f2f2396
+    Ok(calc_feedback_set(
+        &ConcreteFunctionWithBodyPostInlineNode { function_id: function.0, db }.into(),
+    ))
+=======
+    Ok(calc_feedback_set(&ConcreteFunctionWithBodyNode { function_id: function.0, db }.into()))
+>>>>>>> origin/main
 }
