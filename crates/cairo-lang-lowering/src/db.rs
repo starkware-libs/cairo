@@ -667,7 +667,7 @@ fn module_lowering_diagnostics(
                     .extend(db.semantic_function_with_body_lowering_diagnostics(function_id)?);
             }
             ModuleItemId::Constant(constant_id) => {
-                diagnostics.extend(db.lowered_constant(*constant_id)?.diagnostics.clone());
+                db.lowered_constant(*constant_id)?;
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}

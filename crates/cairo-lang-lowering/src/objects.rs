@@ -13,10 +13,10 @@ use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
 use itertools::chain;
-use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
+use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 use semantic::MatchArmSelector;
 
@@ -132,8 +132,6 @@ pub struct LoweredConstant {
     pub value: ConstValue,
     /// The type of the constant.
     pub ty: semantic::TypeId,
-    /// Diagnostics produced while lowering the constant.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
@@ -275,17 +273,6 @@ pub struct StatementConst {
     pub value: ConstValue,
     /// The variable to bind the value to.
     pub output: VariableId,
-}
-
-/// A constant value.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ConstValue {
-    Int(BigInt),
-    Struct(Vec<(semantic::TypeId, ConstValue)>),
-    Enum(ConcreteVariant, Box<ConstValue>),
-    NonZero(semantic::TypeId, Box<ConstValue>),
-    /// A missing value, used in cases where the value is not known due to diagnostics.
-    Missing,
 }
 
 /// A statement that calls a user function.

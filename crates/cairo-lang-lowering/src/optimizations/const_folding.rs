@@ -5,15 +5,15 @@ mod test;
 use std::collections::HashMap;
 
 use cairo_lang_semantic::corelib;
+use cairo_lang_semantic::items::constant::ConstValue;
 use num_bigint::BigInt;
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementSnapshot,
-    VarUsage,
+    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementConst, StatementDesnap, StatementSnapshot, VarUsage,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.

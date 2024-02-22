@@ -124,8 +124,6 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
 
 //! > semantic_diagnostics
-
-//! > lowering_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:26
 const UNSIGNED_VAR: u8 = 256;
@@ -156,7 +154,7 @@ error: The value does not fit within the range of type core::integer::i8.
 const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
                                       ^******^
 
-error: Division by zero.
+error: This expression is not supported as constant.
  --> lib.cairo:10:39
 const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
                                       ^*****^
@@ -165,6 +163,8 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
  --> lib.cairo:28:8
     d: 0,
        ^
+
+//! > lowering_diagnostics
 
 //! > lowering_flat
 Parameters:

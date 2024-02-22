@@ -549,3 +549,30 @@ error: Unknown impl.
  --> lib.cairo:4:30
 impl MyImpl<T> of MyTrait<T, T> {
                              ^
+
+//! > ==========================================================================
+
+//! > Pass const expressions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar::<{1+2}>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+const X : felt252 = 1+9;
+extern fn bar<const M : felt252>() nopanic;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unknown literal.
+ --> lib.cairo:4:11
+    bar::<{1+2}>();
+          ^***^
