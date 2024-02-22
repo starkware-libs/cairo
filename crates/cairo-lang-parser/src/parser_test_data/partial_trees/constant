@@ -71,3 +71,51 @@ const X = 0x1234;
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '0x1234'
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Fixed size array
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+const X: [felt252; 3] = [1, 2, 3];
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprFixedSizeArray)
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── exprs (kind: ExprList)
+    │       │   └── item #0 (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       ├── size (kind: FixedSizeArraySize)
+    │       │   ├── semicolon (kind: TokenSemicolon): ';'
+    │       │   └── size (kind: TokenLiteralNumber): '3'
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: ExprFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── exprs (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'
