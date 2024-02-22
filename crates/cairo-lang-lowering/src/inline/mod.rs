@@ -51,9 +51,16 @@ pub fn priv_should_inline(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+    // Breaks cycles.
+    // TODO(ilya): consider #[inline(never)] attributes for feedback set.
+    if db.function_with_body_feedback_set(function_id)?.contains(&function_id) {
+        return Ok(false);
+    }
+
     let config = db.function_declaration_inline_config(
         function_id.function_with_body_id(db).base_semantic_function(db),
     )?;
+
     Ok(match config {
         InlineConfiguration::Never(_) => false,
         InlineConfiguration::Should(_) => true,
@@ -67,14 +74,7 @@ fn should_inline_lowered(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    if db
-        .concrete_function_with_body_postpanic_direct_callees_with_body(function_id)?
-        .contains(&function_id)
-    {
-        return Ok(false);
-    }
-
-    let lowered = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+    let lowered = db.inlined_function_with_body_lowered(function_id)?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
 
@@ -282,31 +282,15 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            if let Some(function_id) = stmt.function.body(self.variables.db)? {
-                if !self.is_function_in_call_stack(function_id)
-                    && self.variables.db.priv_should_inline(function_id)?
-                {
-                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+            if let Some(called_func) = stmt.function.body(self.variables.db)? {
+                if self.variables.db.priv_should_inline(called_func)? {
+                    return self.inline_function(called_func, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
 
         self.statements.push(statement);
         Ok(())
-    }
-
-    fn is_function_in_call_stack(&self, function_id: ConcreteFunctionWithBodyId) -> bool {
-        let mut current_block = &self.current_block_id;
-        if self.block_to_function[current_block] == function_id {
-            return true;
-        }
-        while let Some(block_id) = self.block_to_parent.get(current_block) {
-            if self.block_to_function[block_id] == function_id {
-                return true;
-            }
-            current_block = block_id;
-        }
-        false
     }
 
     /// Inlines the given function, with the given input and output variables.
@@ -320,8 +304,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         inputs: &[VarUsage],
         outputs: &[VariableId],
     ) -> Maybe<()> {
-        let lowered =
-            self.variables.db.concrete_function_with_body_postpanic_lowered(function_id)?;
+        let lowered = self.variables.db.inlined_function_with_body_lowered(function_id)?;
         lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
