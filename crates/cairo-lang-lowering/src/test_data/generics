@@ -115,9 +115,9 @@ impl MyImpl of MyTrait {
 Parameters:
 blk0 (root):
 Statements:
-  (v2: ()) <- struct_construct()
+  (v1: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 

@@ -33,9 +33,10 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- test::foo[expr28]()
+  (v1: ()) <- struct_construct()
+  (v2: core::bool) <- bool::True(v1)
 End:
-  Return(v0)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -76,7 +77,6 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr32]()
   (v1: ()) <- struct_construct()
 End:
   Return(v1)
