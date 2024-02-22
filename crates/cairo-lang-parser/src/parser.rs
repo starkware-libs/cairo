@@ -1094,7 +1094,6 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
-
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1180,6 +1179,7 @@ impl<'a> Parser<'a> {
                 // [LbraceAllowed::Forbid].
                 Ok(self.expect_parenthesized_expr())
             }
+            SyntaxKind::TerminalLBrack => Ok(self.expect_fixed_size_array_expr().into()),
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.parse_block().into())
             }
@@ -1215,6 +1215,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalIdentifier => Ok(self.parse_type_path().into()),
             SyntaxKind::TerminalLParen => Ok(self.expect_type_tuple_expr()),
+            SyntaxKind::TerminalLBrack => Ok(self.expect_type_fixed_size_array_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
                 Err(TryParseFailure::SkipToken)
@@ -1492,6 +1493,32 @@ impl<'a> Parser<'a> {
         .into()
     }
 
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[<type_expr>; <expr>\]`.
+    /// Returns a GreenId of a node with kind ExprFixedSizeArray.
+    fn expect_type_fixed_size_array_expr(&mut self) -> ExprGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_type_expr,
+                is_of_kind!(rbrack, semicolon),
+                "type expression",
+            );
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        let size_expr = self.parse_expr();
+        let fixed_size_array_size =
+            FixedSizeArraySize::new_green(self.db, semicolon, size_expr).into();
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            fixed_size_array_size,
+            rbrack,
+        )
+        .into()
+    }
+
     /// Assumes the current token is DotDot.
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
@@ -1661,7 +1688,30 @@ impl<'a> Parser<'a> {
 
         ExprWhile::new_green(self.db, while_kw, condition, body)
     }
-
+    fn expect_fixed_size_array_expr(&mut self) -> ExprFixedSizeArrayGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rbrack, semicolon),
+                "expression",
+            );
+        let size_green = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+            let semicolon = self.take::<TerminalSemicolon>();
+            let size = self.parse_expr();
+            FixedSizeArraySize::new_green(self.db, semicolon, size).into()
+        } else {
+            OptionFixedSizeArraySizeEmpty::new_green(self.db).into()
+        };
+        let rbrack = self.parse_token::<TerminalRBrack>();
+        ExprFixedSizeArray::new_green(
+            self.db,
+            lbrack,
+            ExprList::new_green(self.db, exprs),
+            size_green,
+            rbrack,
+        )
+    }
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
     /// parsed.
     pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {

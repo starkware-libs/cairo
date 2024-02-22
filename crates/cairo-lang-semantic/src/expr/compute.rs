@@ -383,6 +383,7 @@ pub fn maybe_compute_expr_semantic(
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
+        ast::Expr::FixedSizeArray(_) => todo!(),
     }
 }
 

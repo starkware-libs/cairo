@@ -104,6 +104,15 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprInlineMacro => {
             vec![]
         }
+        SyntaxKind::ExprFixedSizeArray => {
+            vec![]
+        }
+        SyntaxKind::FixedSizeArraySize => {
+            vec![]
+        }
+        SyntaxKind::OptionFixedSizeArraySizeEmpty => {
+            vec![]
+        }
         SyntaxKind::StructArgExpr => {
             vec![]
         }
