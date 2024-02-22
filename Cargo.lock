@@ -1596,7 +1596,7 @@ dependencies = [
 
 [[package]]
 name = "get-lowering"
-version = "2.5.4"
+version = "2.6.0-rc.1"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",

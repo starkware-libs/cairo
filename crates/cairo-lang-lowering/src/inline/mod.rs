@@ -28,42 +28,10 @@ pub fn get_inline_diagnostics(
         semantic_function_id.module_file_id(db.upcast()).file_id(db.upcast())?,
     );
 
-<<<<<<< HEAD
-/// Gathers inlining information for the given function.
-/// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
-fn gather_inlining_info(
-    db: &dyn LoweringGroup,
-    diagnostics: &mut LoweringDiagnostics,
-    report_diagnostics: bool,
-    function_id: FunctionWithBodyId,
-) -> Maybe<InlineInfo> {
-    let semantic_function_id = function_id.base_semantic_function(db);
-    let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
-    // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
-    // we can inline it.
-    if db.in_cycle(function_id, crate::DependencyType::Call)? {
-        if report_diagnostics {
-||||||| a1f2f2396
-/// Gathers inlining information for the given function.
-/// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
-fn gather_inlining_info(
-    db: &dyn LoweringGroup,
-    diagnostics: &mut LoweringDiagnostics,
-    report_diagnostics: bool,
-    function_id: FunctionWithBodyId,
-) -> Maybe<InlineInfo> {
-    let semantic_function_id = function_id.base_semantic_function(db);
-    let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
-    // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
-    // we can inline it.
-    if db.in_cycle(function_id)? {
-        if report_diagnostics {
-=======
     if let InlineConfiguration::Always(_) =
         db.function_declaration_inline_config(semantic_function_id)?
     {
-        if db.in_cycle(function_id)? {
->>>>>>> origin/main
+        if db.in_cycle(function_id, crate::DependencyType::Call)? {
             diagnostics.report(
                 semantic_function_id.untyped_stable_ptr(db.upcast()),
                 LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
@@ -90,20 +58,16 @@ pub fn priv_should_inline(
     })
 }
 
-<<<<<<< HEAD
-// A heuristic to decide if a function should be inlined.
-fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
-||||||| a1f2f2396
-// A heuristic to decide if a function should be inlined.
-fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
-=======
 // A heuristic to decide if a function without an inline attribute should be inlined.
 fn should_inline_lowered(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
     if db
-        .concrete_function_with_body_postpanic_direct_callees_with_body(function_id)?
+        .concrete_function_with_body_postpanic_direct_callees_with_body(
+            function_id,
+            crate::DependencyType::Call,
+        )?
         .contains(&function_id)
     {
         return Ok(false);
@@ -118,7 +82,6 @@ fn should_inline_lowered(
         return Ok(true);
     }
 
->>>>>>> origin/main
     let root_block = lowered.blocks.root_block()?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
@@ -323,43 +286,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-<<<<<<< HEAD
-            let semantic_db = self.variables.db.upcast();
             if let (Some(function_id), None) =
                 (stmt.function.body(self.variables.db)?, stmt.coupon_input)
             {
-                // TODO(spapini): Change logic to be based on concrete.
-                let inline_data = self
-                    .variables
-                    .db
-                    .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
-
-                self.inlining_success =
-                    self.inlining_success.and_then(|()| inline_data.diagnostics.check_error_free());
-
-                if inline_data.info.is_inlinable
-                    && (inline_data.info.should_inline
-                        || matches!(inline_data.config, InlineConfiguration::Always(_)))
-||||||| a1f2f2396
-            let semantic_db = self.variables.db.upcast();
-            if let Some(function_id) = stmt.function.body(self.variables.db)? {
-                // TODO(spapini): Change logic to be based on concrete.
-                let inline_data = self
-                    .variables
-                    .db
-                    .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
-
-                self.inlining_success =
-                    self.inlining_success.and_then(|()| inline_data.diagnostics.check_error_free());
-
-                if inline_data.info.is_inlinable
-                    && (inline_data.info.should_inline
-                        || matches!(inline_data.config, InlineConfiguration::Always(_)))
-=======
-            if let Some(function_id) = stmt.function.body(self.variables.db)? {
                 if !self.is_function_in_call_stack(function_id)
                     && self.variables.db.priv_should_inline(function_id)?
->>>>>>> origin/main
                 {
                     return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }

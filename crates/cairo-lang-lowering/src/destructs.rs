@@ -358,14 +358,8 @@ pub fn add_destructs(
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
-<<<<<<< HEAD
-                        inputs: vec![VarUsage { var_id, location }],
-                        coupon_input: None,
-||||||| a1f2f2396
-                        inputs: vec![VarUsage { var_id, location }],
-=======
                         inputs: vec![VarUsage { var_id: plain_destruct.var_id, location }],
->>>>>>> origin/main
+                        coupon_input: None,
                         outputs: vec![output_var],
                         location: lowered.variables[plain_destruct.var_id].location,
                     })
@@ -390,6 +384,7 @@ pub fn add_destructs(
                             VarUsage { var_id: last_panic_var, location },
                             VarUsage { var_id: panic_destruct.var_id, location },
                         ],
+                        coupon_input: None,
                         outputs: vec![new_panic_var, output_var],
                         location,
                     });
@@ -446,110 +441,10 @@ pub fn add_destructs(
                                 .into_iter()
                                 .map(|var_id| VarUsage { var_id, location })
                                 .collect(),
-<<<<<<< HEAD
-                            coupon_input: None,
-                            outputs: vec![panic_var, output_var],
-                            location: lowered.variables[panic_var].location,
-                        }),
-||||||| a1f2f2396
-                            outputs: vec![panic_var, output_var],
-                            location: lowered.variables[panic_var].location,
-                        }),
-=======
                             output: orig_tuple_var,
-                        })]
->>>>>>> origin/main
+                        })],
                     ),
-<<<<<<< HEAD
-                    PanicLocation::PanicTuple {
-                        tuple_var,
-                        statement_location: (block_id, insert_index),
-                    } => {
-                        let long_ty = db.lookup_intern_type(lowered.variables[tuple_var].ty);
-                        let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
-
-                        let location = variables.get_location(stable_ptr);
-                        let vars = tys
-                            .iter()
-                            .copied()
-                            .map(|ty| variables.new_var(VarRequest { ty, location }))
-                            .collect::<Vec<_>>();
-                        let output_var =
-                            variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
-                        let statements = vec![
-                            Statement::StructDestructure(StatementStructDestructure {
-                                input: VarUsage { var_id: tuple_var, location },
-                                outputs: vars.clone(),
-                            }),
-                            Statement::Call(StatementCall {
-                                function: semantic_function.lowered(db),
-                                inputs: vec![
-                                    VarUsage { var_id: vars[0], location },
-                                    VarUsage { var_id, location },
-                                ],
-                                coupon_input: None,
-                                outputs: vec![vars[0], output_var],
-                                location: lowered.variables[tuple_var].location,
-                            }),
-                            Statement::StructConstruct(StatementStructConstruct {
-                                inputs: vars
-                                    .into_iter()
-                                    .map(|var_id| VarUsage { var_id, location })
-                                    .collect(),
-                                output: tuple_var,
-                            }),
-                        ];
-                        lowered.blocks[block_id]
-                            .statements
-                            .splice(insert_index..insert_index, statements);
-                    }
-                }
-||||||| a1f2f2396
-                    PanicLocation::PanicTuple {
-                        tuple_var,
-                        statement_location: (block_id, insert_index),
-                    } => {
-                        let long_ty = db.lookup_intern_type(lowered.variables[tuple_var].ty);
-                        let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
-
-                        let location = variables.get_location(stable_ptr);
-                        let vars = tys
-                            .iter()
-                            .copied()
-                            .map(|ty| variables.new_var(VarRequest { ty, location }))
-                            .collect::<Vec<_>>();
-                        let output_var =
-                            variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
-                        let statements = vec![
-                            Statement::StructDestructure(StatementStructDestructure {
-                                input: VarUsage { var_id: tuple_var, location },
-                                outputs: vars.clone(),
-                            }),
-                            Statement::Call(StatementCall {
-                                function: semantic_function.lowered(db),
-                                inputs: vec![
-                                    VarUsage { var_id: vars[0], location },
-                                    VarUsage { var_id, location },
-                                ],
-                                outputs: vec![vars[0], output_var],
-                                location: lowered.variables[tuple_var].location,
-                            }),
-                            Statement::StructConstruct(StatementStructConstruct {
-                                inputs: vars
-                                    .into_iter()
-                                    .map(|var_id| VarUsage { var_id, location })
-                                    .collect(),
-                                output: tuple_var,
-                            }),
-                        ];
-                        lowered.blocks[block_id]
-                            .statements
-                            .splice(insert_index..insert_index, statements);
-                    }
-                }
-=======
                 );
->>>>>>> origin/main
             }
             AddDestructFlowType::PanicVar => {
                 let block = &mut lowered.blocks[BlockId(block_id)];

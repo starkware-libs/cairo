@@ -40,20 +40,12 @@ pub fn priv_function_with_body_feedback_set_of_representative(
     db: &dyn LoweringGroup,
     function: ConcreteSCCRepresentative,
 ) -> Maybe<OrderedHashSet<ConcreteFunctionWithBodyId>> {
-<<<<<<< HEAD
     Ok(calc_feedback_set(
-        &ConcreteFunctionWithBodyPostInlineNode {
+        &ConcreteFunctionWithBodyNode {
             function_id: function.0,
             db,
             dependency_type: DependencyType::Cost,
         }
         .into(),
     ))
-||||||| a1f2f2396
-    Ok(calc_feedback_set(
-        &ConcreteFunctionWithBodyPostInlineNode { function_id: function.0, db }.into(),
-    ))
-=======
-    Ok(calc_feedback_set(&ConcreteFunctionWithBodyNode { function_id: function.0, db }.into()))
->>>>>>> origin/main
 }

@@ -7,20 +7,11 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
 
-<<<<<<< HEAD
-/// The default threshold for inlining small functions. Decided according to sample contracts
-/// profiling.
-// TODO(Gil): Expose this as a configuration in the project toml.
-const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 7;
-
-||||||| a1f2f2396
-=======
 /// The default threshold for inlining small functions. Decided according to sample contracts
 /// profiling.
 // TODO(Gil): Expose this as a configuration in the project toml.
 const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 10;
 
->>>>>>> origin/main
 /// A configuration struct that controls the behavior of the optimization passes.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct OptimizationConfig {

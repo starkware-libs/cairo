@@ -9,6 +9,7 @@ use cairo_lang_semantic::{self as semantic, TypeId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
+use defs::ids::NamedLanguageElementLongId;
 use itertools::Itertools;
 use semantic::corelib;
 
@@ -57,22 +58,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
 
-<<<<<<< HEAD
-    // Reports inlining diagnostics.
-    #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
-
     /// Computes the lowered representation of a constant.
     #[salsa::invoke(crate::lower::lowered_constant)]
     fn lowered_constant(&self, constant_id: defs::ids::ConstantId) -> Maybe<Arc<LoweredConstant>>;
 
-||||||| a1f2f2396
-    // Reports inlining diagnostics.
-    #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
-
-=======
->>>>>>> origin/main
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering(
@@ -502,16 +491,8 @@ fn concrete_function_with_body_direct_callees(
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
-<<<<<<< HEAD
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type))
-||||||| a1f2f2396
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
-    Ok(get_direct_callees(&lowered_function))
-=======
     let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-    Ok(get_direct_callees(&lowered_function))
->>>>>>> origin/main
+    Ok(get_direct_callees(db, &lowered_function, dependency_type))
 }
 
 fn concrete_function_with_body_postpanic_direct_callees(
@@ -550,7 +531,6 @@ fn functions_with_body_from_function_ids(
         .collect_vec())
 }
 
-<<<<<<< HEAD
 /// Given a [ids::FunctionId] that represents `coupon_buy` or `coupon_refund`, returns the coupon's
 /// function.
 ///
@@ -595,26 +575,15 @@ fn extract_coupon_function(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
-fn concrete_function_with_body_postinline_direct_callees_with_body(
-||||||| a1f2f2396
-fn concrete_function_with_body_postinline_direct_callees_with_body(
-=======
 fn concrete_function_with_body_direct_callees_with_body(
->>>>>>> origin/main
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-<<<<<<< HEAD
-        db.concrete_function_with_body_postinline_direct_callees(function_id, dependency_type)?,
+        db.concrete_function_with_body_direct_callees(function_id, dependency_type)?,
         dependency_type,
-||||||| a1f2f2396
-        db.concrete_function_with_body_postinline_direct_callees(function_id)?,
-=======
-        db.concrete_function_with_body_direct_callees(function_id)?,
->>>>>>> origin/main
     )
 }
 

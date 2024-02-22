@@ -28,13 +28,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-<<<<<<< HEAD
-Parameters: v46: core::RangeCheck, v0: core::integer::u256
-||||||| a1f2f2396
-Parameters: v41: core::RangeCheck, v0: core::integer::u256
-=======
 Parameters: v71: core::RangeCheck, v0: core::integer::u256
->>>>>>> origin/main
 blk0 (root):
 Statements:
   (v10: core::integer::u128, v11: core::integer::u128) <- struct_destructure(v0)
@@ -48,96 +42,38 @@ End:
 blk1:
 Statements:
 End:
-<<<<<<< HEAD
-  Goto(blk5, {v46 -> v50})
-||||||| a1f2f2396
-  Goto(blk5, {v41 -> v45})
-=======
   Goto(blk5, {v71 -> v75})
->>>>>>> origin/main
 
 blk2:
 Statements:
 End:
-<<<<<<< HEAD
-  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v46, v3) {
-    Option::Some(v58, v26) => blk3,
-    Option::None(v59) => blk4,
-||||||| a1f2f2396
-  Match(match_enum(v13) {
-    Option::Some(v26) => blk3,
-    Option::None(v27) => blk4,
-=======
   Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v71, v10) {
     Option::Some(v85, v40) => blk3,
     Option::None(v86) => blk4,
->>>>>>> origin/main
   })
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v43: (core::integer::u64,)) <- struct_construct(v26)
-  (v44: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v43)
-||||||| a1f2f2396
-  (v38: (core::integer::u64,)) <- struct_construct(v26)
-  (v39: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v38)
-=======
   (v51: (core::integer::u64,)) <- struct_construct(v40)
   (v52: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v51)
->>>>>>> origin/main
 End:
-<<<<<<< HEAD
-  Return(v58, v44)
-||||||| a1f2f2396
-  Return(v52, v39)
-=======
   Return(v85, v52)
->>>>>>> origin/main
 
 blk4:
 Statements:
 End:
-<<<<<<< HEAD
-  Goto(blk5, {v59 -> v50})
-||||||| a1f2f2396
-  Goto(blk5, {v52 -> v45})
-=======
   Goto(blk5, {v86 -> v75})
->>>>>>> origin/main
 
 blk5:
 Statements:
-<<<<<<< HEAD
-  (v40: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v17: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v41: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v40, v17)
-  (v38: core::panics::Panic) <- struct_construct()
-  (v39: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v38, v41)
-  (v45: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v39)
-||||||| a1f2f2396
-  (v35: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v17: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v36: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v35, v17)
-  (v33: core::panics::Panic) <- struct_construct()
-  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v33, v36)
-  (v40: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v34)
-=======
   (v62: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
   (v63: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v62, v24)
   (v69: core::panics::Panic) <- struct_construct()
   (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v69, v63)
   (v55: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v50)
->>>>>>> origin/main
 End:
-<<<<<<< HEAD
-  Return(v50, v45)
-||||||| a1f2f2396
-  Return(v45, v40)
-=======
   Return(v75, v55)
->>>>>>> origin/main
 
 //! > lowering
 Main:
