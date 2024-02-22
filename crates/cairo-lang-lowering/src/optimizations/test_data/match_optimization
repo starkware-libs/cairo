@@ -123,12 +123,12 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {v12 -> v5})
+  Goto(blk4, {v0 -> v5})
 
 blk8:
 Statements:
 End:
-  Goto(blk5, {v13 -> v6})
+  Goto(blk5, {v2 -> v6})
 
 //! > ==========================================================================
 
@@ -489,22 +489,22 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk4, {v27 -> v5})
+  Goto(blk4, {v0 -> v5})
 
 blk11:
 Statements:
 End:
-  Goto(blk5, {v28 -> v6})
+  Goto(blk5, {v2 -> v6})
 
 blk12:
 Statements:
 End:
-  Goto(blk7, {v29 -> v15})
+  Goto(blk7, {v14 -> v15})
 
 blk13:
 Statements:
 End:
-  Goto(blk8, {v30 -> v16})
+  Goto(blk8, {v10 -> v16})
 
 //! > ==========================================================================
 
@@ -640,12 +640,12 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {v19 -> v8})
+  Goto(blk4, {v0 -> v8})
 
 blk8:
 Statements:
 End:
-  Goto(blk5, {v20 -> v9})
+  Goto(blk5, {v2 -> v9})
 
 //! > ==========================================================================
 
@@ -773,4 +773,126 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {v9 -> v6})
+  Goto(blk4, {v3 -> v6})
+
+//! > ==========================================================================
+
+//! > ref argument remapping.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: Array<u32>) -> u32 {
+    match a.pop_front() {
+        Option::Some(x) => { return x; },
+        Option::None => { return 0 }
+    }   
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:4:35
+        Option::None => { return 0 }
+                                  ^
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v6, v7) => blk1,
+    Option::None(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v7)
+  (v10: core::option::Option::<core::integer::u32>) <- Option::Some(v9)
+End:
+  Goto(blk3, {v6 -> v2, v10 -> v1})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::option::Option::<core::integer::u32>) <- Option::None(v11)
+End:
+  Goto(blk3, {v8 -> v2, v12 -> v1})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk4,
+    Option::None(v4) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Return(v2, v3)
+
+blk5:
+Statements:
+  (v5: core::integer::u32) <- 0u
+End:
+  Return(v2, v5)
+
+//! > after
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v6, v7) => blk1,
+    Option::None(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v7)
+End:
+  Goto(blk4, {v6 -> v2, v10 -> v1, v9 -> v3})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+End:
+  Goto(blk5, {v8 -> v2, v12 -> v1, v11 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v13) => blk6,
+    Option::None(v14) => blk7,
+  })
+
+blk4:
+Statements:
+End:
+  Return(v2, v3)
+
+blk5:
+Statements:
+  (v5: core::integer::u32) <- 0u
+End:
+  Return(v2, v5)
+
+blk6:
+Statements:
+End:
+  Goto(blk4, {v6 -> v2, v10 -> v1, v9 -> v3})
+
+blk7:
+Statements:
+End:
+  Goto(blk5, {v8 -> v2, v12 -> v1, v11 -> v4})

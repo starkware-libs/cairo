@@ -3,7 +3,7 @@
 mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{self, OrderedHashMap};
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -22,11 +22,16 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let ctx = MatchOptimizerContext { fixes: vec![] };
+    let ctx = MatchOptimizerContext {
+        lowered,
+        fixes: vec![],
+        incoming: Default::default(),
+        merge_block: Default::default(),
+    };
     let mut analysis =
         BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
-    let ctx = analysis.analyzer;
+    let MatchOptimizerContext { fixes, incoming, .. } = analysis.analyzer;
 
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
@@ -35,16 +40,26 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     // Either order is will result in correct code, but this way variables with smaller ids appear
     // earlier.
     for FixInfo { statement_location, match_block, arm_idx, target_block, remapping } in
-        ctx.fixes.into_iter().rev()
+        fixes.into_iter().rev()
     {
+        if remapping.len() > 1 {
+            if let Some(incoming) = incoming.get(&match_block) {
+                if *incoming > 0 {
+                    // The optimization is not applicable here
+                    continue;
+                }
+            }
+        }
+
         let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
             block.statements.len() - 1,
             statement_location.1,
             "The optimization can only be applied to the last statement in the block."
         );
+
         block.statements.pop();
-        block.end = FlatBlockEnd::Goto(target_block, remapping);
+        block.end = FlatBlockEnd::Goto(target_block, remapping.clone());
 
         if statement_location.0 == match_block {
             // The match was removed, no need to fix it.
@@ -52,7 +67,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         }
 
         let block = &mut lowered.blocks[match_block];
-        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
+        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location: _, .. }) } =
             &mut block.end
         else {
             unreachable!("match block should end with a match.");
@@ -71,15 +86,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
         new_blocks.push(FlatBlock {
             statements: vec![],
-            end: FlatBlockEnd::Goto(
-                arm.block_id,
-                VarRemapping {
-                    remapping: OrderedHashMap::from_iter([(
-                        orig_var,
-                        VarUsage { var_id: *arm_var, location: *location },
-                    )]),
-                },
-            ),
+            end: FlatBlockEnd::Goto(arm.block_id, remapping.clone()),
         });
         arm.block_id = next_block_id;
         next_block_id = next_block_id.next_block_id();
@@ -90,18 +97,24 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     }
 }
 
-pub struct MatchOptimizerContext {
+pub struct MatchOptimizerContext<'a> {
+    lowered: &'a FlatLowered,
     fixes: Vec<FixInfo>,
+    incoming: OrderedHashMap<BlockId, usize>,
+
+    // Maps a block_id that end with a match to a block_id where all the optimized arms
+    // merge
+    merge_block: OrderedHashMap<BlockId, Option<BlockId>>,
 }
 
-impl MatchOptimizerContext {
+impl MatchOptimizerContext<'_> {
     /// Returns true if the statement can be optimized out and false otherwise.
     /// If the statement can be optimized a fix info is added to `self.fixes`.
     fn statement_can_be_optimized_out(
         &mut self,
         stmt: &Statement,
         info: &mut AnalysisInfo<'_>,
-        statement_location: (BlockId, usize),
+        (block_id, statement_idx): StatementLocation,
     ) -> bool {
         let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt
         else {
@@ -121,13 +134,64 @@ impl MatchOptimizerContext {
             })
             .expect("arm not found.");
 
+        match self.merge_block.entry(block_id) {
+            ordered_hash_map::Entry::Vacant(entry) => match &self.lowered.blocks[block_id].end {
+                FlatBlockEnd::Goto(target_block_id, _) => {
+                    entry.insert(Some(*target_block_id));
+                }
+                FlatBlockEnd::Return(_, _) => {
+                    // no effct on convergence
+                }
+                FlatBlockEnd::Match { .. } => {
+                    // The converge pattern is complicated, convergence is not applicable.
+                    entry.insert(None);
+                }
+                FlatBlockEnd::NotSet | FlatBlockEnd::Panic(_) => unreachable!(),
+            },
+            ordered_hash_map::Entry::Occupied(mut entry) => {
+                if entry.get().is_none() && candidate.remapping.is_some() {
+                    //
+
+                    return false;
+                }
+
+                match &self.lowered.blocks[block_id].end {
+                    FlatBlockEnd::Goto(target_block_id, _) => {
+                        if &Some(*target_block_id) != entry.get() {
+                            entry.insert(None);
+                            if candidate.remapping.is_some() {
+                                return false;
+                            }
+                        }
+                    }
+                    FlatBlockEnd::Return(_, _) => {}
+                    FlatBlockEnd::Match { .. } => {
+                        entry.insert(None);
+                    }
+                    FlatBlockEnd::NotSet | FlatBlockEnd::Panic(_) => unreachable!(),
+                }
+            }
+        }
+
         let [var_id] = arm.var_ids.as_slice() else {
             panic!("An arm of an EnumMatch should produce a single variable.");
         };
 
         let mut demand = candidate.arm_demands[arm_idx].clone();
 
-        let mut remapping = VarRemapping::default();
+        // if let Some(remappings1) = candidate.remapping {
+        //     if let FlatBlockEnd::Goto(_block_id, remappings2) =
+        //         &self.lowered.blocks[arm.block_id].end
+        //     {
+        //         if remappings1.len() != remappings2.len()
+        //             || zip_eq(remappings1.keys(), remappings2.values()).all(|(a, b)| a != &b.var_id)
+        //         {
+        //             return false;
+        //         }
+        //     }
+        // }
+
+        let mut remapping = candidate.remapping.cloned().unwrap_or_default();
         // The input to EnumConstruct should be available as `var_id`
         // in `arm.block_id`
         remapping.insert(*var_id, *input);
@@ -138,8 +202,11 @@ impl MatchOptimizerContext {
         );
         info.demand = demand;
 
+        if let Some(counter) = self.incoming.get_mut(&block_id) {
+            *counter -= 1;
+        }
         self.fixes.push(FixInfo {
-            statement_location,
+            statement_location: (block_id, statement_idx),
             match_block: candidate.match_block,
             arm_idx,
             target_block: arm.block_id,
@@ -149,7 +216,7 @@ impl MatchOptimizerContext {
     }
 }
 
-impl DemandReporter<VariableId> for MatchOptimizerContext {
+impl DemandReporter<VariableId> for MatchOptimizerContext<'_> {
     type IntroducePosition = ();
     type UsePosition = ();
 }
@@ -180,6 +247,8 @@ struct OptimizationCandidate<'a> {
 
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand>,
+
+    remapping: Option<&'a VarRemapping>,
 }
 
 #[derive(Clone)]
@@ -187,7 +256,7 @@ pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,
 }
-impl<'a> Analyzer<'a> for MatchOptimizerContext {
+impl<'a> Analyzer<'a> for MatchOptimizerContext<'a> {
     type Info = AnalysisInfo<'a>;
 
     fn visit_stmt(
@@ -210,29 +279,33 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        _statement_location: StatementLocation,
+        (block_id, _statement_idx): StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &'a VarRemapping,
     ) {
-        if !remapping.is_empty() {
-            info.demand
-                .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
+        info.demand
+            .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
 
-            if let Some(ref mut candidate) = &mut info.candidate {
-                let expected_remappings =
-                    if let Some(var_usage) = remapping.get(&candidate.match_variable) {
-                        candidate.match_variable = var_usage.var_id;
-                        1
-                    } else {
-                        0
-                    };
+        if let Some(ref mut candidate) = &mut info.candidate {
+            *self.incoming.entry(block_id).or_default() += 1;
 
-                if remapping.len() != expected_remappings {
-                    // Remapping is currently not supported as it breaks SSA when we use the same
-                    // remapping with different destination blocks.
+            let expected_remappings =
+                if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+                    candidate.match_variable = var_usage.var_id;
+                    1
+                } else {
+                    0
+                };
 
-                    // TODO(ilya): Support multiple remappings.
+            if remapping.len() != expected_remappings {
+                // Remapping is currently not supported as it breaks SSA when we use the same
+                // remapping with different destination blocks.
+
+                // TODO(ilya): Support multiple remappings.
+                if candidate.remapping.is_some() {
                     info.candidate = None;
+                } else {
+                    candidate.remapping = Some(remapping);
                 }
             }
         }
@@ -265,6 +338,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_arms: arms,
                     match_block: block_id,
                     arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
+                    remapping: None,
                 })
             }
 
