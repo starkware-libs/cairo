@@ -1,6 +1,5 @@
 //! Internal debug utility for printing lowering phases.
 
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 
@@ -10,30 +9,17 @@ use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::implicits::lower_implicits;
-use cairo_lang_lowering::inline::apply_inlining;
-use cairo_lang_lowering::optimizations::branch_inversion::branch_inversion;
-use cairo_lang_lowering::optimizations::cancel_ops::cancel_ops;
-use cairo_lang_lowering::optimizations::const_folding::const_folding;
-use cairo_lang_lowering::optimizations::match_optimizer::optimize_matches;
-use cairo_lang_lowering::optimizations::remappings::optimize_remappings;
-use cairo_lang_lowering::optimizations::reorder_statements::reorder_statements;
-use cairo_lang_lowering::optimizations::return_optimization::return_optimization;
-use cairo_lang_lowering::optimizations::split_structs::split_structs;
-use cairo_lang_lowering::panic::lower_panics;
-use cairo_lang_lowering::reorganize_blocks::reorganize_blocks;
+use cairo_lang_lowering::optimizations::strategy::OptimizationStrategyId;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{self, OrderedHashMap};
 use clap::Parser;
 use itertools::Itertools;
 
@@ -86,58 +72,37 @@ struct PhasesFormatter<'a> {
 impl fmt::Debug for PhasesFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
-        let function_id = self.function_id;
-        let before_all =
-            db.priv_concrete_function_with_body_lowered_flat(self.function_id).unwrap();
-        assert!(
-            before_all.blocks.iter().all(|(_, b)| b.is_set()),
-            "There should not be any unset blocks"
-        );
+        let function = self.function_id;
+        let strategy = OptimizationStrategyId::default_strategy(db);
 
-        let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
-            writeln!(f, "{name}:").unwrap();
+        let mut used_names = OrderedHashMap::<&str, usize>::default();
+
+        let mut lowered =
+            (*db.concrete_function_with_body_postpanic_lowered(function).unwrap()).clone();
+
+        let mut add_stage_state = |name: &'static str, lowered: &FlatLowered| {
+            match used_names.entry(name) {
+                ordered_hash_map::Entry::Occupied(mut entry) => {
+                    let counter = entry.get_mut();
+                    *counter += 1;
+                    writeln!(f, "{name}{counter}:").unwrap();
+                }
+                ordered_hash_map::Entry::Vacant(entry) => {
+                    writeln!(f, "{name}:").unwrap();
+                    entry.insert(1);
+                }
+            };
+
             let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
             write!(f, "{:?}", lowered.debug(&lowered_formatter)).unwrap();
         };
-        add_stage_state("before_all", &before_all);
-        let mut curr_state = before_all.deref().clone();
-        let mut apply_stage = |name: &str, stage: &dyn Fn(&mut FlatLowered)| {
-            (*stage)(&mut curr_state);
-            add_stage_state(name, &curr_state);
-        };
+        add_stage_state("before_all", &lowered);
 
-        apply_stage("after_add_withdraw_gas", &|lowered| {
-            add_withdraw_gas(db, function_id, lowered).unwrap()
-        });
-        apply_stage("after_lower_panics", &|lowered| {
-            *lowered = lower_panics(db, function_id, lowered).unwrap();
-        });
-        apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
-        apply_stage("after_inlining", &|lowered| apply_inlining(db, function_id, lowered).unwrap());
-        apply_stage("after_return_optimization", &|lowered| return_optimization(db, lowered));
-        apply_stage("after_optimize_remappings1", &optimize_remappings);
-        apply_stage("after_reorder_statements1", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_branch_inversion", &|lowered| branch_inversion(db, lowered));
-        apply_stage("after_reorder_statements2", &|lowered| reorder_statements(db, lowered));
-        apply_stage("const_folding", &|lowered| const_folding(db, lowered));
-        apply_stage("after_optimize_matches1", &optimize_matches);
-        apply_stage("split_structs", &split_structs);
-        apply_stage("after_optimize_remappings2", &optimize_remappings);
-        apply_stage("after_reorder_statements3", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_optimize_matches2", &optimize_matches);
-        apply_stage("after_lower_implicits", &|lowered| lower_implicits(db, function_id, lowered));
-        apply_stage("after_optimize_remappings3", &optimize_remappings);
-        apply_stage("cancel_ops", &cancel_ops);
-        apply_stage("after_reorder_statements4", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_optimize_remappings4", &optimize_remappings);
-        apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
-
-        let after_all = db.final_concrete_function_with_body_lowered(function_id).unwrap();
-
-        // This asserts that we indeed follow the logic of
-        // `final_concrete_function_with_body_lowered`. If something is changed there, it
-        // should be changed here too.
-        assert_eq!(*after_all, curr_state);
+        for phase in db.lookup_intern_strategy(strategy).0 {
+            let name = phase.name();
+            phase.apply(db, function, &mut lowered).unwrap();
+            add_stage_state(name, &lowered);
+        }
 
         Ok(())
     }

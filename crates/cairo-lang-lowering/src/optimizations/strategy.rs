@@ -35,6 +35,22 @@ pub enum OptimizationPhase {
 }
 
 impl OptimizationPhase {
+    pub fn name(&self) -> &'static str {
+        match self {
+            OptimizationPhase::ApplyInlining => "apply_inlining",
+            OptimizationPhase::BranchInversion => "branch_inversion",
+            OptimizationPhase::CancelOps => "cancel_ops",
+            OptimizationPhase::ConstFolding => "const_folding",
+            OptimizationPhase::OptimizeMatches => "optimize_matches",
+            OptimizationPhase::OptimizeRemappings => "optimize_remappings",
+            OptimizationPhase::ReorderStatements => "reorder_statements",
+            OptimizationPhase::ReorganizeBlocks => "reorganize_blocks",
+            OptimizationPhase::ReturnOptimization => "return_optimization",
+            OptimizationPhase::SplitStructs => "split_structs",
+            OptimizationPhase::LowerImplicits => "lower_implicits",
+        }
+    }
+
     /// Applies the optimization phase to the lowering.
     ///
     /// Assumes `lowered` is a a lowering of `function`.
