@@ -144,23 +144,23 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v52: core::RangeCheck, v53: core::gas::GasBuiltin, v0: core::felt252
+Parameters: v50: core::RangeCheck, v51: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
   (v28: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas_all(v52, v53, v28) {
-    Option::Some(v54, v55) => blk1,
-    Option::None(v56, v57) => blk7,
+  Match(match core::gas::withdraw_gas_all(v50, v51, v28) {
+    Option::Some(v52, v53) => blk1,
+    Option::None(v54, v55) => blk7,
   })
 
 blk1:
 Statements:
   (v3: core::felt252) <- 1u
   (v6: core::felt252) <- 1u
-  (v47: core::felt252) <- core::felt252_sub(v3, v6)
+  (v39: core::felt252) <- core::felt252_sub(v3, v6)
 End:
-  Match(match core::felt252_is_zero(v47) {
+  Match(match core::felt252_is_zero(v39) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero(v40) => blk3,
   })
@@ -178,7 +178,7 @@ End:
 blk4:
 Statements:
   (v15: core::felt252) <- 3u
-  (v60: core::RangeCheck, v61: core::gas::GasBuiltin, v29: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v54, v55, v15)
+  (v58: core::RangeCheck, v59: core::gas::GasBuiltin, v29: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v52, v53, v15)
 End:
   Match(match_enum(v29) {
     PanicResult::Ok(v30) => blk5,
@@ -190,19 +190,19 @@ Statements:
   (v31: core::felt252) <- struct_destructure(v30)
   (v17: core::felt252) <- 5u
   (v19: core::felt252) <- 0u
-  (v46: core::felt252) <- core::felt252_add(v0, v19)
-  (v48: core::felt252) <- core::felt252_mul(v17, v46)
-  (v49: core::felt252) <- core::felt252_add(v31, v48)
-  (v34: (core::felt252,)) <- struct_construct(v49)
+  (v45: core::felt252) <- core::felt252_add(v0, v19)
+  (v46: core::felt252) <- core::felt252_mul(v17, v45)
+  (v47: core::felt252) <- core::felt252_add(v31, v46)
+  (v34: (core::felt252,)) <- struct_construct(v47)
   (v35: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v34)
 End:
-  Return(v60, v61, v35)
+  Return(v58, v59, v35)
 
 blk6:
 Statements:
   (v36: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v32)
 End:
-  Return(v60, v61, v36)
+  Return(v58, v59, v36)
 
 blk7:
 Statements:
@@ -213,7 +213,7 @@ Statements:
   (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v26)
   (v33: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v27)
 End:
-  Return(v56, v57, v33)
+  Return(v54, v55, v33)
 
 //! > ==========================================================================
 

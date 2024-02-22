@@ -37,14 +37,14 @@ End:
 
 blk2:
 Statements:
-  (v22: core::felt252) <- core::felt252_add(v0, v0)
+  (v21: core::felt252) <- core::felt252_add(v0, v0)
   (v10: core::felt252) <- 0u
   (v11: core::felt252) <- test::foo(v10)
 End:
-  Return(v22)
+  Return(v21)
 
 //! > last_use
-v22: ((BlockId(2), 3), 0)
+v21: ((BlockId(2), 3), 0)
 v10: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
@@ -52,4 +52,4 @@ v0: ((BlockId(1), 0), 0)
 //! > drops
 PostStatement((BlockId(2), 2)): v11
 BeginningOfBlock(BlockId(2)): v16
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v22)
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v21)
