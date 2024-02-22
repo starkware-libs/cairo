@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 use num_traits::Zero;
@@ -11,9 +12,9 @@ use num_traits::Zero;
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
-    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementStructConstruct, StatementStructDestructure, VarUsage, VariableId,
+    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement, StatementCall,
+    StatementConst, StatementDesnap, StatementEnumConstruct, StatementStructConstruct,
+    StatementStructDestructure, VarUsage, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
