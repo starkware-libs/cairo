@@ -4,7 +4,6 @@ mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -29,53 +28,49 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     analysis.get_root_info();
     let ctx = analysis.analyzer;
 
-    let mut target_blocks = UnorderedHashSet::<_>::default();
-    for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
-        let block = &mut lowered.blocks[statement_location.0];
+    // for merge.
+    let mut new_blocks = vec![];
+    let mut next_block_id = BlockId(lowered.blocks.len());
+    for FixInfo { statement_location, match_block, arm_idx, remapping } in ctx.fixes.into_iter() {
+        let block = &mut lowered.blocks[match_block];
+        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
+            &mut block.end
+        else {
+            unreachable!("match block should end with a match.");
+        };
 
+        // Fix match arms not to jump directly to blocks that have incoming gotos and add remapping
+        // for merge.
+        let arm = arms.get_mut(arm_idx).unwrap();
+        let arm_var = arm.var_ids.get_mut(0).unwrap();
+        let orig_var = *arm_var;
+        *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
+
+        let target_block = arm.block_id;
+
+        new_blocks.push(FlatBlock {
+            statements: vec![],
+            end: FlatBlockEnd::Goto(
+                arm.block_id,
+                VarRemapping {
+                    remapping: OrderedHashMap::from_iter([(
+                        orig_var,
+                        VarUsage { var_id: *arm_var, location: *location },
+                    )]),
+                },
+            ),
+        });
+        arm.block_id = next_block_id;
+        next_block_id = next_block_id.next_block_id();
+
+        let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
             block.statements.len() - 1,
             statement_location.1,
             "The optimization can only be applied to the last statement in the block."
         );
         block.statements.pop();
-
         block.end = FlatBlockEnd::Goto(target_block, remapping);
-        target_blocks.insert(target_block);
-    }
-
-    // Fix match arms not to jump directly to blocks that have incoming gotos and add remapping
-    // for merge.
-    let mut new_blocks = vec![];
-    let mut next_block_id = BlockId(lowered.blocks.len());
-    for block in lowered.blocks.iter_mut() {
-        if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
-            &mut block.end
-        {
-            for arm in arms {
-                if target_blocks.contains(&arm.block_id) {
-                    let arm_var = arm.var_ids.get_mut(0).unwrap();
-                    let orig_var = *arm_var;
-                    *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
-
-                    new_blocks.push(FlatBlock {
-                        statements: vec![],
-                        end: FlatBlockEnd::Goto(
-                            arm.block_id,
-                            VarRemapping {
-                                remapping: OrderedHashMap::from_iter([(
-                                    orig_var,
-                                    VarUsage { var_id: *arm_var, location: *location },
-                                )]),
-                            },
-                        ),
-                    });
-
-                    arm.block_id = next_block_id;
-                    next_block_id = next_block_id.next_block_id();
-                }
-            }
-        }
     }
 
     for block in new_blocks.into_iter() {
@@ -131,7 +126,12 @@ impl MatchOptimizerContext {
         );
         info.demand = demand;
 
-        self.fixes.push(FixInfo { statement_location, target_block: arm.block_id, remapping });
+        self.fixes.push(FixInfo {
+            statement_location,
+            match_block: statement_location.0,
+            arm_idx,
+            remapping,
+        });
         true
     }
 }
@@ -145,7 +145,8 @@ pub struct FixInfo {
     /// The location that needs to be fixed,
     statement_location: (BlockId, usize),
     /// The block That we want to jump to.
-    target_block: BlockId,
+    match_block: BlockId,
+    arm_idx: usize,
     /// The variable remapping that should be applied.
     remapping: VarRemapping,
 }
