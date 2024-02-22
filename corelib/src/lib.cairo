@@ -116,7 +116,17 @@ impl Felt252Serde of Serde<felt252> {
         output.append(*self);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
-        Option::Some(*serialized.pop_front()?)
+        let mut snapshot = serialized.snapshot;
+        match core::array::array_snapshot_pop_front(ref snapshot) {
+            Option::Some(x) => {
+                serialized = Span { snapshot };
+                Option::Some(*x.unbox())
+            },
+            Option::None => {
+                serialized = Span { snapshot };
+                Option::None
+            },
+        }
     }
 }
 
