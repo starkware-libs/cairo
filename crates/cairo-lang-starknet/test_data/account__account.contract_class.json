@@ -14,7 +14,7 @@
     "0x4172726179",
     "0x800000000000000300000000000000000000000000000001",
     "0x1",
-    "0x11",
+    "0xc",
     "0x536e617073686f74",
     "0x800000000000000700000000000000000000000000000001",
     "0x537472756374",
@@ -37,30 +37,29 @@
     "0x6",
     "0x8",
     "0x426f78",
-    "0x1f5d91ca543c7f9a0585a1c8beffc7a207d4af73ee640223a154b1da196a40d",
-    "0xa",
-    "0xc",
-    "0x556e696e697469616c697a6564",
-    "0x800000000000000200000000000000000000000000000001",
     "0xd",
-    "0x12",
     "0x436f6e747261637441646472657373",
     "0x800000000000000700000000000000000000000000000000",
     "0x66656c74323532",
     "0x800000000000000700000000000000000000000000000004",
     "0x3693aea200ee3080885d21614d01b9532a8670f69e658a94addaadd72e9aca",
-    "0x10",
+    "0xb",
     "0x18508a22cd4cf1437b721f596cd2277fc0a5e4dcd247b107ef2ef5fd2752cf7",
-    "0x13",
+    "0xe",
     "0x8416421239ce8805ed9d27e6ddae62a97ab5d01883bb8f5246b4742a44b429",
-    "0x14",
+    "0xf",
     "0x4563506f696e74",
     "0x45635374617465",
     "0x4e6f6e5a65726f",
+    "0x11",
+    "0x1f5d91ca543c7f9a0585a1c8beffc7a207d4af73ee640223a154b1da196a40d",
+    "0x14",
     "0x16",
-    "0x28f8d296e28032baef1f420f78ea9d933102ba47a50b1c5f80fc8a3a1041da",
+    "0x556e696e697469616c697a6564",
+    "0x800000000000000200000000000000000000000000000001",
+    "0x17",
     "0x800000000000000300000000000000000000000000000004",
-    "0x1a",
+    "0x19",
     "0x32cb17bdb0d0d053909169ec443a25462b7e27237007511f772a7d957ce924c",
     "0x1b",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
@@ -179,23 +178,22 @@
     "0x1f",
     "0x636f6e74726163745f616464726573735f746f5f66656c74323532",
     "0x66656c743235325f69735f7a65726f",
-    "0x1d",
+    "0x1c",
     "0x626f6f6c5f6e6f745f696d706c",
     "0x494e56414c49445f54585f56455253494f4e",
-    "0xb",
-    "0x1c",
+    "0x1b",
     "0x494e56414c49445f43414c4c4552",
-    "0x7533325f746f5f66656c74323532",
-    "0x19",
+    "0x15",
+    "0x18",
     "0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f",
     "0x66656c743235325f737562",
     "0x65635f706f696e745f66726f6d5f785f6e7a",
-    "0x18",
+    "0x13",
     "0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca",
     "0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f",
     "0x65635f706f696e745f7472795f6e65775f6e7a",
     "0x65635f73746174655f696e6974",
-    "0x17",
+    "0x12",
     "0x65635f73746174655f6164645f6d756c",
     "0x65635f73746174655f7472795f66696e616c697a655f6e7a",
     "0x65635f706f696e745f756e77726170",
@@ -204,12 +202,10 @@
     "0x65635f6e6567",
     "0x65635f706f696e745f69735f7a65726f",
     "0x4f7074696f6e3a3a756e77726170206661696c65642e",
-    "0x15",
+    "0x10",
     "0x61727261795f706f705f66726f6e74",
     "0x63616c6c5f636f6e74726163745f73797363616c6c",
-    "0xe",
     "0x21adb5788e32c84f69a1863d85ef9394b7bf761a0ce1190f826984e5075c371",
-    "0xf",
     "0x7533325f7472795f66726f6d5f66656c74323532",
     "0x61727261795f736c696365",
     "0x7533325f6f766572666c6f77696e675f737562",
@@ -341,6 +337,7 @@
     "0x91",
     "0x92",
     "0x93",
+    "0x440",
     "0x94",
     "0x444",
     "0x95",
@@ -360,6 +357,7 @@
     "0x4f5",
     "0x9f",
     "0xa1",
+    "0x48e",
     "0xa2",
     "0xa3",
     "0x4e7",
@@ -370,11 +368,13 @@
     "0x4a9",
     "0x4a6",
     "0xa7",
+    "0x55a",
     "0xa8",
     "0x4aa",
     "0xa9",
     "0xaa",
     "0xab",
+    "0x53f",
     "0xac",
     "0x4bc",
     "0xad",
@@ -392,6 +392,7 @@
     "0x541",
     "0xb4",
     "0xb5",
+    "0x4f4",
     "0xb6",
     "0x59b",
     "0xb7",
@@ -406,13 +407,16 @@
     "0xbd",
     "0x584",
     "0xbe",
+    "0x595",
     "0xbf",
     "0xc0",
+    "0x58b",
     "0xc1",
     "0xc2",
     "0xc3",
     "0x5e6",
     "0xc4",
+    "0x5ba",
     "0xc5",
     "0x5ba",
     "0xc6",
@@ -447,6 +451,7 @@
     "0x62c",
     "0xda",
     "0xdb",
+    "0x6e5",
     "0xdc",
     "0xdd",
     "0xde",
@@ -1113,82 +1118,78 @@
       ],
       [
         10,
-        "Box<core::array::Span::<core::felt252>>"
-      ],
-      [
-        11,
-        "core::option::Option::<core::box::Box::<@core::array::Span::<core::felt252>>>"
-      ],
-      [
-        12,
-        "Array<core::array::Span::<core::felt252>>"
-      ],
-      [
-        13,
-        "Snapshot<Array<core::array::Span::<core::felt252>>>"
-      ],
-      [
-        14,
-        "Uninitialized<Snapshot<Array<core::array::Span::<core::felt252>>>>"
-      ],
-      [
-        15,
         "Box<core::starknet::account::Call>"
       ],
       [
-        16,
+        11,
         "ContractAddress"
       ],
       [
-        17,
+        12,
         "felt252"
       ],
       [
-        18,
+        13,
         "core::starknet::account::Call"
       ],
       [
-        19,
+        14,
         "core::option::Option::<core::starknet::account::Call>"
       ],
       [
-        20,
+        15,
         "Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>>"
       ],
       [
-        21,
+        16,
         "core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>"
       ],
       [
-        22,
+        17,
         "EcPoint"
       ],
       [
-        23,
+        18,
         "EcState"
       ],
       [
-        24,
+        19,
         "NonZero<EcPoint>"
       ],
       [
-        25,
-        "core::array::Span::<core::array::Span::<core::felt252>>"
+        20,
+        "Box<core::array::Span::<core::felt252>>"
       ],
       [
-        26,
+        21,
+        "core::option::Option::<core::box::Box::<@core::array::Span::<core::felt252>>>"
+      ],
+      [
+        22,
+        "Array<core::array::Span::<core::felt252>>"
+      ],
+      [
+        23,
+        "Snapshot<Array<core::array::Span::<core::felt252>>>"
+      ],
+      [
+        24,
+        "Uninitialized<Snapshot<Array<core::array::Span::<core::felt252>>>>"
+      ],
+      [
+        25,
         "Array<core::starknet::account::Call>"
       ],
       [
-        27,
+        26,
         "Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>"
       ],
       [
-        28,
+        27,
         "core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>"
       ],
       [
-        29,
+        28,
         "NonZero<felt252>"
       ],
       [
@@ -2182,6 +2183,194 @@
         "store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>"
       ],
       [
+        161,
+        "dup<felt252>"
+      ],
+      [
+        162,
+        "struct_construct<Tuple<core::bool>>"
+      ],
+      [
+        163,
+        "enum_init<core::panics::PanicResult::<(core::bool,)>, 0>"
+      ],
+      [
+        164,
+        "store_temp<core::panics::PanicResult::<(core::bool,)>>"
+      ],
+      [
+        165,
+        "felt252_const<3618502788666131213697322783095070105526743751716087489154079457884512865583>"
+      ],
+      [
+        166,
+        "felt252_sub"
+      ],
+      [
+        167,
+        "ec_point_from_x_nz"
+      ],
+      [
+        168,
+        "store_temp<NonZero<EcPoint>>"
+      ],
+      [
+        169,
+        "felt252_const<874739451078007766457464989774322083649278607533249481151382481072868806602>"
+      ],
+      [
+        170,
+        "felt252_const<152666792071518830868575557812948353041420400780739481342941381225525861407>"
+      ],
+      [
+        171,
+        "ec_point_try_new_nz"
+      ],
+      [
+        172,
+        "ec_state_init"
+      ],
+      [
+        173,
+        "dup<EcState>"
+      ],
+      [
+        174,
+        "ec_state_add_mul"
+      ],
+      [
+        175,
+        "store_temp<EcState>"
+      ],
+      [
+        176,
+        "ec_state_try_finalize_nz"
+      ],
+      [
+        177,
+        "ec_point_unwrap"
+      ],
+      [
+        178,
+        "dup<NonZero<EcPoint>>"
+      ],
+      [
+        179,
+        "ec_state_add"
+      ],
+      [
+        180,
+        "drop<EcState>"
+      ],
+      [
+        181,
+        "drop<NonZero<EcPoint>>"
+      ],
+      [
+        182,
+        "unwrap_non_zero<EcPoint>"
+      ],
+      [
+        183,
+        "ec_neg"
+      ],
+      [
+        184,
+        "store_temp<EcPoint>"
+      ],
+      [
+        185,
+        "ec_point_is_zero"
+      ],
+      [
+        186,
+        "felt252_const<29721761890975875353235833581453094220424382983267374>"
+      ],
+      [
+        187,
+        "enum_init<core::panics::PanicResult::<(core::bool,)>, 1>"
+      ],
+      [
+        188,
+        "enum_init<core::option::Option::<core::array::Array::<core::starknet::account::Call>>, 0>"
+      ],
+      [
+        189,
+        "function_call<user@core::starknet::account::CallSerde::deserialize>"
+      ],
+      [
+        190,
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
+      ],
+      [
+        191,
+        "struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>>>"
+      ],
+      [
+        192,
+        "enum_match<core::option::Option::<core::starknet::account::Call>>"
+      ],
+      [
+        193,
+        "array_append<core::starknet::account::Call>"
+      ],
+      [
+        194,
+        "felt252_const<1>"
+      ],
+      [
+        195,
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 1>"
+      ],
+      [
+        196,
+        "array_pop_front<core::starknet::account::Call>"
+      ],
+      [
+        197,
+        "unbox<core::starknet::account::Call>"
+      ],
+      [
+        198,
+        "enum_init<core::option::Option::<core::starknet::account::Call>, 0>"
+      ],
+      [
+        199,
+        "store_temp<core::option::Option::<core::starknet::account::Call>>"
+      ],
+      [
+        200,
+        "enum_init<core::option::Option::<core::starknet::account::Call>, 1>"
+      ],
+      [
+        201,
+        "struct_deconstruct<core::starknet::account::Call>"
+      ],
+      [
+        202,
+        "call_contract_syscall"
+      ],
+      [
+        203,
+        "array_append<core::array::Span::<core::felt252>>"
+      ],
+      [
+        204,
+        "enum_init<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>, 1>"
+      ],
+      [
+        205,
+        "store_temp<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>"
+      ],
+      [
+        206,
+        "struct_construct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>"
+      ],
+      [
+        207,
+        "enum_init<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>, 0>"
+      ],
+      [
         208,
         "struct_construct<Tuple<Array<felt252>, Unit>>"
       ],
@@ -2329,7 +2518,7 @@
       ],
       [
         8,
-        "core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>::serialize"
+        "core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>"
       ],
       [
         9,
@@ -2345,7 +2534,7 @@
       ],
       [
         12,
-        "core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>"
+        "core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>"
       ],
       [
         13,
@@ -2353,15 +2542,7 @@
       ],
       [
         14,
-        "core::array::SpanFelt252Serde::serialize"
-      ],
-      [
-        15,
         "core::array::SpanFelt252Serde::deserialize"
-      ],
-      [
-        16,
-        "core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>"
       ]
     ]
   },

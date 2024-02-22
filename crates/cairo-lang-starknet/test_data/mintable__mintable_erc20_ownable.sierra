@@ -324,9 +324,22 @@ libfunc enum_init<core::result::Result::<core::integer::u256, core::array::Array
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc snapshot_take<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = snapshot_take<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
 libfunc drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = drop<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
-libfunc function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::EventIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::EventIsEvent::append_keys_and_data>;
+libfunc enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
+libfunc felt252_const<1315179652631394294064859285368582092817875666364334119489007832181357818971> = felt252_const<1315179652631394294064859285368582092817875666364334119489007832181357818971>;
+libfunc enum_match<cairo_level_tests::components::erc20::erc20::Event> = enum_match<cairo_level_tests::components::erc20::erc20::Event>;
+libfunc felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697> = felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>;
+libfunc dup<cairo_level_tests::components::erc20::erc20::TransferEvent> = dup<cairo_level_tests::components::erc20::erc20::TransferEvent>;
+libfunc struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent> = struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>;
+libfunc rename<ContractAddress> = rename<ContractAddress>;
+libfunc felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999> = felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>;
+libfunc dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent> = dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>;
+libfunc struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent> = struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>;
 libfunc store_temp<core::array::Span::<core::felt252>> = store_temp<core::array::Span::<core::felt252>>;
 libfunc emit_event_syscall = emit_event_syscall;
+libfunc felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382> = felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382>;
+libfunc enum_match<cairo_level_tests::components::ownable::ownable::Event> = enum_match<cairo_level_tests::components::ownable::ownable::Event>;
+libfunc felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293> = felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293>;
+libfunc enum_match<cairo_level_tests::components::mintable::mintable::Event> = enum_match<cairo_level_tests::components::mintable::mintable::Event>;
 libfunc u128_const<340282366920938463463374607431768211455> = u128_const<340282366920938463463374607431768211455>;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_eq = u128_eq;
@@ -338,20 +351,6 @@ libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics
 libfunc felt252_const<27063539617145597287547105838> = felt252_const<27063539617145597287547105838>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 libfunc drop<Tuple<ContractAddress>> = drop<Tuple<ContractAddress>>;
-libfunc enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event> = enum_match<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::Event>;
-libfunc felt252_const<1315179652631394294064859285368582092817875666364334119489007832181357818971> = felt252_const<1315179652631394294064859285368582092817875666364334119489007832181357818971>;
-libfunc enum_match<cairo_level_tests::components::erc20::erc20::Event> = enum_match<cairo_level_tests::components::erc20::erc20::Event>;
-libfunc felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697> = felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>;
-libfunc dup<cairo_level_tests::components::erc20::erc20::TransferEvent> = dup<cairo_level_tests::components::erc20::erc20::TransferEvent>;
-libfunc struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent> = struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>;
-libfunc rename<ContractAddress> = rename<ContractAddress>;
-libfunc felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999> = felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>;
-libfunc dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent> = dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>;
-libfunc struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent> = struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>;
-libfunc felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382> = felt252_const<893548093986874009400988980495341258255101589376777083502931894778565076382>;
-libfunc enum_match<cairo_level_tests::components::ownable::ownable::Event> = enum_match<cairo_level_tests::components::ownable::ownable::Event>;
-libfunc felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293> = felt252_const<139920406589358003318461022536394622946554485098363229037999171008247124293>;
-libfunc enum_match<cairo_level_tests::components::mintable::mintable::Event> = enum_match<cairo_level_tests::components::mintable::mintable::Event>;
 
 revoke_ap_tracking() -> (); // 0
 withdraw_gas([0], [1]) { fallthrough([4], [5]) 91([6], [7]) }; // 1
