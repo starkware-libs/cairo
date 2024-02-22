@@ -20,13 +20,14 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.6.0-rc.1"
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.6.0-rc.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.6.0-rc.1" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.0-rc.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.0-rc.1", features = ["env_logger"] }
-log.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.0-rc.1" }
 salsa.workspace = true
-scarb-metadata.workspace = true
+scarb-metadata = "1"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 tokio.workspace = true
-tower-lsp.workspace = true
+tower-lsp = "0.20.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]

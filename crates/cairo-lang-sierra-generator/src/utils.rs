@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::const_type::{ConstAsImmediateLibfunc, ConstType};
 use cairo_lang_sierra::extensions::core::CoreLibfunc;

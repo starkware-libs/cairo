@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_semantic::items::enm::MatchArmSelector;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;

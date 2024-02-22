@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -20,7 +20,7 @@ use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::ids::FunctionLongId;
 use crate::implicits::lower_implicits;
-use crate::inline::{apply_inlining, PrivInlineData};
+use crate::inline::{apply_inlining, get_inline_diagnostics};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
 use crate::optimizations::cancel_ops::cancel_ops;
@@ -30,6 +30,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
+use crate::optimizations::split_structs::split_structs;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{
@@ -55,10 +56,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
-
-    // Reports inlining diagnostics.
-    #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
 
     /// Computes the lowered representation of a constant.
     #[salsa::invoke(crate::lower::lowered_constant)]
@@ -89,12 +86,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the lowered representation after the inlining phase.
-    fn priv_concrete_function_with_body_postinline_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
     /// Computes the lowered representation after the panic phase.
     fn concrete_function_with_body_postpanic_lowered(
         &self,
@@ -108,7 +99,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Returns the set of direct callees of a concrete function with a body after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees(
+    fn concrete_function_with_body_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -123,7 +114,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), after the inline phase.
-    fn concrete_function_with_body_postinline_direct_callees_with_body(
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -307,6 +298,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
     fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
 
+    // Internal query for a heuristic to decide if a given `function_id` should be inlined.
+    #[salsa::invoke(crate::inline::priv_should_inline)]
+    fn priv_should_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
@@ -382,16 +377,6 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-// Applies inlining.
-fn priv_concrete_function_with_body_postinline_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
-    apply_inlining(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
-}
-
 // * Adds `withdraw_gas` calls.
 // * Adds panics.
 // * Adds destructor calls.
@@ -399,26 +384,24 @@ fn concrete_function_with_body_postpanic_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
-    return_optimization(db, &mut lowered);
     add_destructs(db, function, &mut lowered);
+
     Ok(Arc::new(lowered))
 }
 
-// * Optimizes remappings.
-// * Delays var definitions.
-// * Lowers implicits.
-// * Optimizes matches.
-// * Optimizes remappings again.
-// * Reorganizes blocks (topological sort).
+// Applies optimizations to the post_panic lowering.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+
+    apply_inlining(db, function, &mut lowered)?;
+    return_optimization(db, &mut lowered);
     optimize_remappings(&mut lowered);
     // The call to `reorder_statements` before and after `branch_inversion` is intentional.
     // See description of `branch_inversion` for more details.
@@ -426,6 +409,10 @@ fn concrete_function_with_body_lowered(
     branch_inversion(db, &mut lowered);
     reorder_statements(db, &mut lowered);
     const_folding(db, &mut lowered);
+    optimize_matches(&mut lowered);
+    split_structs(&mut lowered);
+    optimize_remappings(&mut lowered);
+    reorder_statements(db, &mut lowered);
     optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
@@ -497,12 +484,12 @@ pub(crate) fn get_direct_callees(
     direct_callees
 }
 
-fn concrete_function_with_body_postinline_direct_callees(
+fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
+    let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
     Ok(get_direct_callees(db, &lowered_function, dependency_type))
 }
 
@@ -586,14 +573,14 @@ fn extract_coupon_function(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
-fn concrete_function_with_body_postinline_direct_callees_with_body(
+fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postinline_direct_callees(function_id, dependency_type)?,
+        db.concrete_function_with_body_direct_callees(function_id, dependency_type)?,
         dependency_type,
     )
 }
@@ -635,11 +622,7 @@ fn function_with_body_lowering_diagnostics(
         }
     }
 
-    diagnostics.extend(
-        db.priv_inline_data(function_id)
-            .map(|inline_data| inline_data.diagnostics.clone())
-            .unwrap_or_default(),
-    );
+    diagnostics.extend(get_inline_diagnostics(db, function_id)?);
 
     Ok(diagnostics.build())
 }

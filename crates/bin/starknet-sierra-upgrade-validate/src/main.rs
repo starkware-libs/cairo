@@ -15,8 +15,7 @@ use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use serde::Deserialize;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Runs validation on existing contract classes to make sure they are still valid and compilable.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {

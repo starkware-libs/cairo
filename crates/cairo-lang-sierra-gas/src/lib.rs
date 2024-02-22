@@ -285,9 +285,14 @@ fn calc_gas_info_inner<
             if !function_costs.contains_key(id) {
                 function_costs.insert(id.clone(), OrderedHashMap::default());
             }
-            let value = solution[&Var::StatementFuture(func.entry_point, token_type)];
-            if value != 0 {
-                function_costs.get_mut(id).unwrap().insert(token_type, value);
+            // The `None` case is of a function that can never actually be called, as it has no
+            // return, so solver for it would not actually be calculated. (Such a function may exist
+            // by receiving a never type and matching on it) The cost of the function is considered
+            // as 0.
+            if let Some(value) = solution.get(&Var::StatementFuture(func.entry_point, token_type)) {
+                if *value != 0 {
+                    function_costs.get_mut(id).unwrap().insert(token_type, *value);
+                }
             }
         }
         for (var, value) in solution {

@@ -9,12 +9,12 @@ use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Compiles the specified contract from a Cairo project, into a contract class file.
+/// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The crate to compile.
+    /// The path of the crate to compile.
     path: PathBuf,
     /// Whether path is a single file.
     #[arg(short, long)]
