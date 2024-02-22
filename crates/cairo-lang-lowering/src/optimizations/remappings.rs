@@ -16,7 +16,10 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
 /// Visits all the reachable remappings in the function, calls `f` on each one and returns a vector
 /// indicating which blocks are reachable.
-fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) -> Vec<bool> {
+pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
+    lowered: &mut FlatLowered,
+    mut f: F,
+) -> Vec<bool> {
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -42,9 +45,9 @@ fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F
 
 /// Context for the optimize remappings optimization.
 #[derive(Default)]
-struct Context {
+pub(crate) struct Context {
     /// Maps a destination variable to the source variables that are remapped to it.
-    dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
+    pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
     /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
     /// This mapping is built on demand.
     var_representatives: HashMap<VariableId, VariableId>,
@@ -53,7 +56,7 @@ struct Context {
 }
 impl Context {
     /// Find the `canonical` variable that `var` maps to and mark it as used.
-    fn set_used(&mut self, var: VariableId) {
+    pub fn set_used(&mut self, var: VariableId) {
         let var = self.map_var_id(var);
         if self.variable_used.insert(var) {
             for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
