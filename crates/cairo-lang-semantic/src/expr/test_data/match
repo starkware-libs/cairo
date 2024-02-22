@@ -193,3 +193,37 @@ error: variable is bound inconsistently across alternatives separated by `|` bou
  --> lib.cairo:16:46
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, z: mut t, .. }) => x + t,
                                              ^***^
+
+//! > ==========================================================================
+
+//! > Test generic
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+  bar::<1+3>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const N: felt252>() -> felt252 nopanic;
+
+//! > expected_diagnostics
+error: Missing token TerminalComma.
+ --> lib.cairo:3:10
+  bar::<1+3>()
+         ^
+
+error: Skipped tokens. Expected: generic arg.
+ --> lib.cairo:3:10
+  bar::<1+3>()
+         ^
+
+error: Expected 1 generic arguments, found 2.
+ --> lib.cairo:3:11
+  bar::<1+3>()
+          ^

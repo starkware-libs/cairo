@@ -6,14 +6,15 @@ use std::collections::HashMap;
 
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
+use cairo_lang_semantic::items::constant::ConstValue;
 use itertools::zip_eq;
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage,
 };
 
