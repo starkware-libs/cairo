@@ -829,12 +829,15 @@ impl LanguageServer for Backend {
             let node = stable_ptr.lookup(syntax_db);
             let found_file = stable_ptr.file_id(syntax_db);
             let span = node.span_without_trivia(syntax_db);
-            let (found_file, span) = get_originating_location(db.upcast(), found_file, span);
+            let width = span.width();
+            let (found_file, span) =
+                get_originating_location(db.upcast(), found_file, span.start_only());
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
-
+            let end = from_pos(
+                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
+            );
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
