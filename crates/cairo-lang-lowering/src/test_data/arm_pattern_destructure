@@ -451,63 +451,63 @@ extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v57: core::RangeCheck, v0: core::felt252
+Parameters: v77: core::RangeCheck, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::bar(v57, v0) {
-    MyEnum::a(v58, v1, v2, v3) => blk1,
-    MyEnum::b(v59, v6, v7, v8) => blk2,
-    MyEnum::c(v60, v11, v12, v13) => blk3,
-    MyEnum::d(v61, v16, v17, v18) => blk4,
-    MyEnum::e(v62, v21, v22, v23) => blk5,
-    MyEnum::f(v63, v26, v27) => blk6,
-    MyEnum::g(v64, v30, v31) => blk7,
-    MyEnum::h(v65, v34, v35) => blk8,
+  Match(match test::bar(v77, v0) {
+    MyEnum::a(v78, v1, v2, v3) => blk1,
+    MyEnum::b(v79, v6, v7, v8) => blk2,
+    MyEnum::c(v80, v11, v12, v13) => blk3,
+    MyEnum::d(v81, v16, v17, v18) => blk4,
+    MyEnum::e(v82, v21, v22, v23) => blk5,
+    MyEnum::f(v83, v26, v27) => blk6,
+    MyEnum::g(v84, v30, v31) => blk7,
+    MyEnum::h(v85, v34, v35) => blk8,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk9, {v58 -> v67})
+  Goto(blk9, {v78 -> v86})
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v59 -> v67})
+  Goto(blk9, {v79 -> v86})
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v60 -> v67})
+  Goto(blk9, {v80 -> v86})
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v61 -> v67})
+  Goto(blk9, {v81 -> v86})
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v62 -> v67})
+  Goto(blk9, {v82 -> v86})
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v63 -> v67})
+  Goto(blk9, {v83 -> v86})
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v64 -> v67})
+  Goto(blk9, {v84 -> v86})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v65 -> v67})
+  Goto(blk9, {v85 -> v86})
 
 blk9:
 Statements:
   (v56: ()) <- struct_construct()
 End:
-  Return(v67, v56)
+  Return(v86, v56)

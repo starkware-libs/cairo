@@ -6,6 +6,16 @@ test_function_lowering
 //! > function
 fn foo() -> bool {
     loop {
+        // Some statements to prevent the loop function from being inlined.
+        let mut x = 0;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
+        x += 1;
         break true;
     }
 }
@@ -23,7 +33,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- test::foo[expr3]()
+  (v0: core::bool) <- test::foo[expr28]()
 End:
   Return(v0)
 
@@ -37,6 +47,18 @@ test_function_lowering
 //! > function
 fn foo() {
   loop {
+    // Some statements to prevent the loop function from being inlined.
+    let mut x = 0;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
+    x += 1;
     break;
   }; 
 }
@@ -54,7 +76,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr1]()
+  (v0: ()) <- test::foo[expr32]()
   (v1: ()) <- struct_construct()
 End:
   Return(v1)

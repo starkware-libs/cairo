@@ -13,7 +13,7 @@ use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
-use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::{ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -303,7 +303,7 @@ pub fn run_tests(
             linear_ap_change_solver: true,
         }),
         contracts_info,
-        run_profiler,
+        if run_profiler { Some(ProfilingInfoCollectionConfig::default()) } else { None },
     )
     .with_context(|| "Failed setting up runner.")?;
     let suffix = if named_tests.len() != 1 { "s" } else { "" };

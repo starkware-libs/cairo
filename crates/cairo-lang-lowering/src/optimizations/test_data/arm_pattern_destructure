@@ -189,61 +189,61 @@ blk1:
 Statements:
   (v4: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v3)
 End:
-  Goto(blk10, {})
+  Goto(blk10, {v4 -> v39})
 
 blk2:
 Statements:
   (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v7, v8)
 End:
-  Goto(blk11, {})
+  Goto(blk11, {v9 -> v44})
 
 blk3:
 Statements:
   (v14: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v12, v13)
 End:
-  Goto(blk12, {})
+  Goto(blk12, {v14 -> v47})
 
 blk4:
 Statements:
   (v19: (core::felt252, core::felt252)) <- struct_construct(v17, v18)
 End:
-  Goto(blk13, {})
+  Goto(blk13, {v19 -> v48})
 
 blk5:
 Statements:
   (v24: (core::felt252, core::felt252)) <- struct_construct(v22, v23)
 End:
-  Goto(blk14, {})
+  Goto(blk14, {v24 -> v51})
 
 blk6:
 Statements:
   (v28: (core::felt252,)) <- struct_construct(v27)
 End:
-  Goto(blk15, {})
+  Goto(blk15, {v28 -> v52})
 
 blk7:
 Statements:
   (v32: (core::felt252,)) <- struct_construct(v31)
 End:
-  Goto(blk16, {})
+  Goto(blk16, {v32 -> v54})
 
 blk8:
 Statements:
 End:
-  Goto(blk17, {})
+  Goto(blk17, {v35 -> v55})
 
 blk9:
 Statements:
 End:
   Match(match_enum(v37) {
-    MyEnum::a(v39) => blk19,
-    MyEnum::b(v44) => blk20,
-    MyEnum::c(v47) => blk21,
-    MyEnum::d(v48) => blk22,
-    MyEnum::e(v51) => blk23,
-    MyEnum::f(v52) => blk24,
-    MyEnum::g(v54) => blk25,
-    MyEnum::h(v55) => blk26,
+    MyEnum::a(v57) => blk19,
+    MyEnum::b(v58) => blk20,
+    MyEnum::c(v59) => blk21,
+    MyEnum::d(v60) => blk22,
+    MyEnum::e(v61) => blk23,
+    MyEnum::f(v62) => blk24,
+    MyEnum::g(v63) => blk25,
+    MyEnum::h(v64) => blk26,
   })
 
 blk10:
@@ -295,39 +295,39 @@ End:
 blk19:
 Statements:
 End:
-  Goto(blk10, {})
+  Goto(blk10, {v57 -> v39})
 
 blk20:
 Statements:
 End:
-  Goto(blk11, {})
+  Goto(blk11, {v58 -> v44})
 
 blk21:
 Statements:
 End:
-  Goto(blk12, {})
+  Goto(blk12, {v59 -> v47})
 
 blk22:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk13, {v60 -> v48})
 
 blk23:
 Statements:
 End:
-  Goto(blk14, {})
+  Goto(blk14, {v61 -> v51})
 
 blk24:
 Statements:
 End:
-  Goto(blk15, {})
+  Goto(blk15, {v62 -> v52})
 
 blk25:
 Statements:
 End:
-  Goto(blk16, {})
+  Goto(blk16, {v63 -> v54})
 
 blk26:
 Statements:
 End:
-  Goto(blk17, {})
+  Goto(blk17, {v64 -> v55})

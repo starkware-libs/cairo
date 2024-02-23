@@ -42,7 +42,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Mutability, SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -58,7 +58,6 @@ use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
@@ -145,24 +144,6 @@ pub struct State {
 }
 impl std::panic::UnwindSafe for State {}
 
-#[derive(Clone)]
-pub struct NotificationService {
-    pub client: Client,
-}
-impl NotificationService {
-    pub fn new(client: Client) -> Self {
-        Self { client }
-    }
-    pub async fn notify_resolving_start(&self) {
-        self.client.send_notification::<ScarbResolvingStart>(ScarbResolvingStartParams {}).await;
-    }
-    pub async fn notify_resolving_finish(&self) {
-        self.client.send_notification::<ScarbResolvingFinish>(ScarbResolvingFinishParams {}).await;
-    }
-    pub async fn notify_scarb_missing(&self) {
-        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
-    }
-}
 pub struct Backend {
     pub client: Client,
     // TODO(spapini): Remove this once we support ParallelDatabase.
@@ -170,7 +151,6 @@ pub struct Backend {
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
-    pub notification: NotificationService,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
 }
@@ -179,13 +159,12 @@ fn from_pos(pos: TextPosition) -> Position {
 }
 impl Backend {
     pub fn new(client: Client, db: RootDatabase) -> Self {
-        let notification = NotificationService::new(client.clone());
+        let scarb = ScarbService::new(&client);
         Self {
             client,
             db_mutex: db.into(),
-            notification: notification.clone(),
             state_mutex: State::default().into(),
-            scarb: ScarbService::new(notification),
+            scarb,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: Duration::from_secs(
                 std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
@@ -439,7 +418,7 @@ impl Backend {
                 return;
             } else {
                 warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.notification.notify_scarb_missing().await;
+                self.client.send_notification::<ScarbPathMissing>(()).await;
             }
         }
 
@@ -485,33 +464,24 @@ impl Backend {
 #[derive(Debug)]
 pub struct ScarbPathMissing {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbPathMissingParams {}
-
 impl Notification for ScarbPathMissing {
-    type Params = ScarbPathMissingParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
 }
 
 #[derive(Debug)]
 pub struct ScarbResolvingStart {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbResolvingStartParams {}
-
 impl Notification for ScarbResolvingStart {
-    type Params = ScarbResolvingStartParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/resolving-start";
 }
 
 #[derive(Debug)]
 pub struct ScarbResolvingFinish {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ScarbResolvingFinishParams {}
-
 impl Notification for ScarbResolvingFinish {
-    type Params = ScarbResolvingFinishParams;
+    type Params = ();
     const METHOD: &'static str = "scarb/resolving-finish";
 }
 
@@ -828,7 +798,7 @@ impl LanguageServer for Backend {
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
             } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
+                hints.push(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
                 hints.push(MarkedString::String(hint));
@@ -859,12 +829,15 @@ impl LanguageServer for Backend {
             let node = stable_ptr.lookup(syntax_db);
             let found_file = stable_ptr.file_id(syntax_db);
             let span = node.span_without_trivia(syntax_db);
-            let (found_file, span) = get_originating_location(db.upcast(), found_file, span);
+            let width = span.width();
+            let (found_file, span) =
+                get_originating_location(db.upcast(), found_file, span.start_only());
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
-
+            let end = from_pos(
+                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
+            );
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
@@ -1303,10 +1276,42 @@ fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<String> {
+) -> Option<MarkedString> {
     let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
+    let text = match semantic_expr {
+        cairo_lang_semantic::Expr::FunctionCall(call) => {
+            let args = if let Ok(signature) =
+                call.function.get_concrete(db).generic_function.generic_signature(db.upcast())
+            {
+                signature
+                    .params
+                    .iter()
+                    .map(|arg| {
+                        let mutability = match arg.mutability {
+                            Mutability::Immutable => "",
+                            Mutability::Mutable => "mut ",
+                            Mutability::Reference => "ref ",
+                        };
+                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            } else {
+                "".to_owned()
+            };
+            let mut s = format!(
+                "fn {}({}) -> {}",
+                call.function.name(db.upcast()),
+                args,
+                call.ty.format(db.upcast())
+            );
+            s.retain(|c| c != '"');
+            s
+        }
+        _ => semantic_expr.ty().format(db),
+    };
     // Format the hover text.
-    Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
+    Some(MarkedString::from_language_code("cairo".to_owned(), text))
 }
 
 /// Returns the semantic expression for the current node.

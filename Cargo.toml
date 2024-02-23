@@ -64,6 +64,7 @@ members = [
     "crates/bin/starknet-compile",
     "crates/bin/starknet-sierra-compile",
     "crates/bin/starknet-sierra-extract-code",
+    "crates/bin/get-lowering",
     "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
