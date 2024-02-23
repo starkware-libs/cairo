@@ -798,7 +798,7 @@ impl LanguageServer for Backend {
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
             } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
+                hints.push(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
                 hints.push(MarkedString::String(hint));
@@ -1273,7 +1273,7 @@ fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<String> {
+) -> Option<MarkedString> {
     let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     let text = match semantic_expr {
         cairo_lang_semantic::Expr::FunctionCall(call) => {
@@ -1308,7 +1308,7 @@ fn get_expr_hint(
         _ => semantic_expr.ty().format(db),
     };
     // Format the hover text.
-    Some(format!("rs\n{}\n", text))
+    Some(MarkedString::from_language_code("cairo".to_owned(), text))
 }
 
 /// Returns the semantic expression for the current node.
