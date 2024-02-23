@@ -63,8 +63,9 @@ use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, trace_span, warn};
 use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::fmt::format::FmtSpan;
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -89,8 +90,12 @@ pub async fn start() {
                 .with_env_var("CAIRO_LS_LOG")
                 .from_env_lossy(),
         )
-        .with_ansi(false)
+        .with_timer(tracing_subscriber::fmt::time::Uptime::default())
+        .with_ansi(std::io::IsTerminal::is_terminal(&std::io::stderr()))
+        .with_span_events(FmtSpan::CLOSE)
         .init();
+
+    info!("language server starting");
 
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
@@ -100,6 +105,8 @@ pub async fn start() {
         .custom_method("vfs/provide", Backend::vfs_provide)
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
+
+    info!("language server stopped");
 }
 
 fn configured_db() -> RootDatabase {
@@ -113,6 +120,7 @@ fn configured_db() -> RootDatabase {
 }
 
 /// Makes sure that all open files exist in the new db, with their current changes.
+#[tracing::instrument(level = "trace", skip_all)]
 fn ensure_exists_in_db(
     new_db: &mut RootDatabase,
     old_db: &RootDatabase,
@@ -191,6 +199,7 @@ impl Backend {
     }
 
     /// Locks and gets a database instance.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
     }
@@ -198,7 +207,8 @@ impl Backend {
     // TODO(spapini): Consider managing vfs in a different way, using the
     // client.send_notification::<UpdateVirtualFile> call.
 
-    // Refresh diagnostics and send diffs to client.
+    /// Refresh diagnostics and send diffs to client.
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
         let real_state = self.state_mutex.lock().await;
         let state = real_state.clone();
@@ -209,48 +219,54 @@ impl Backend {
                 let mut res = vec![];
                 // Get all files. Try to go over open files first.
                 let mut files_set: OrderedHashSet<_> = state.open_files.iter().cloned().collect();
-                for crate_id in db.crates() {
-                    for module_id in db.crate_modules(crate_id).iter() {
-                        for file_id in
-                            db.module_files(*module_id).unwrap_or_default().iter().copied()
-                        {
-                            files_set.insert(get_uri(db, file_id));
+                trace_span!("get_all_files").in_scope(|| {
+                    for crate_id in db.crates() {
+                        for module_id in db.crate_modules(crate_id).iter() {
+                            for file_id in
+                                db.module_files(*module_id).unwrap_or_default().iter().copied()
+                            {
+                                files_set.insert(get_uri(db, file_id));
+                            }
                         }
                     }
-                }
+                });
 
                 // Get all diagnostics.
-                for uri in files_set.iter().cloned() {
-                    let file_id = file(db, uri.clone());
-                    let new_file_diagnostics = FileDiagnostics {
-                        parser: db.file_syntax_diagnostics(file_id),
-                        semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
-                        lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
-                    };
-                    // Since we are using Arcs, this comparison should be efficient.
-                    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
-                        if old_file_diagnostics == &new_file_diagnostics {
-                            continue;
+                trace_span!("get_all_diagnostics").in_scope(|| {
+                    for uri in files_set.iter().cloned() {
+                        let file_id = file(db, uri.clone());
+                        let new_file_diagnostics = FileDiagnostics {
+                            parser: db.file_syntax_diagnostics(file_id),
+                            semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
+                            lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
+                        };
+                        // Since we are using Arcs, this comparison should be efficient.
+                        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&uri) {
+                            if old_file_diagnostics == &new_file_diagnostics {
+                                continue;
+                            }
                         }
-                    }
-                    let mut diags = Vec::new();
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
-                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
-                    state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
+                        let mut diags = Vec::new();
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
+                        get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
+                        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics);
 
-                    res.push((uri, diags));
-                }
+                        res.push((uri, diags));
+                    }
+                });
 
                 // Clear old diagnostics.
                 let old_files: Vec<_> = state.file_diagnostics.keys().cloned().collect();
-                for uri in old_files {
-                    if files_set.contains(&uri) {
-                        continue;
+                trace_span!("clear_old_diagnostics").in_scope(|| {
+                    for uri in old_files {
+                        if files_set.contains(&uri) {
+                            continue;
+                        }
+                        state.file_diagnostics.remove(&uri);
+                        res.push((uri, Vec::new()));
                     }
-                    state.file_diagnostics.remove(&uri);
-                    res.push((uri, Vec::new()));
-                }
+                });
 
                 (state, res)
             })
@@ -268,6 +284,7 @@ impl Backend {
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn maybe_swap_database(&self) -> LSPResult<()> {
         let Ok(mut last_replace) = self.last_replace.try_lock() else {
             // Another thread is already swapping the database.
@@ -277,8 +294,16 @@ impl Backend {
             // Not enough time passed since last swap.
             return Ok(());
         }
+        let result = self.swap_database().await;
+        *last_replace = SystemTime::now();
+        result
+    }
+
+    /// Perform database swap
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn swap_database(&self) -> LSPResult<()> {
         let open_files = self.state_mutex.lock().await.open_files.clone();
-        eprintln!("DB swap - scheduled.");
+        debug!("scheduled");
         let mut new_db = self
             .with_db(|db| {
                 let mut new_db = configured_db();
@@ -286,20 +311,20 @@ impl Backend {
                 new_db
             })
             .await?;
-        eprintln!("DB swap - initial setup done.");
+        debug!("initial setup done");
         self.ensure_diagnostics_queries_up_to_date(&mut new_db, open_files.into_iter()).await;
-        eprintln!("DB swap - initial compilation done.");
+        debug!("initial compilation done");
         let mut db = self.db_mut().await;
-        eprintln!("DB swap - starting.");
+        debug!("starting");
         let state = self.state_mutex.lock().await;
         ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().cloned());
         *db = new_db;
-        *last_replace = SystemTime::now();
-        eprintln!("DB swap - done.");
+        debug!("done");
         Ok(())
     }
 
     /// Ensures that all diagnostics are up to date.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn ensure_diagnostics_queries_up_to_date(
         &self,
         db: &mut RootDatabase,
@@ -326,6 +351,7 @@ impl Backend {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
@@ -342,6 +368,7 @@ impl Backend {
     /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
     /// The value is not required to be set.
     /// The path may omit the `corelib/src` or `src` suffix.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
         const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
         let item = vec![ConfigurationItem {
@@ -385,6 +412,7 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: PathBuf) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
         if self.scarb.is_scarb_project(file_path.clone()) {
@@ -448,6 +476,7 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub async fn reload(&self) -> LSPResult<()> {
         let mut db = self.db_mut().await;
         for uri in self.state_mutex.lock().await.open_files.iter() {
@@ -502,6 +531,7 @@ impl TryFrom<String> for ServerCommands {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
@@ -546,6 +576,7 @@ impl LanguageServer for Backend {
         })
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn initialized(&self, _: InitializedParams) {
         // Register patterns for client file watcher.
         // This is used to detect changes to Scarb.toml and invalidate .cairo files.
@@ -577,6 +608,7 @@ impl LanguageServer for Backend {
 
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
         let mut db = self.db_mut().await;
@@ -595,6 +627,7 @@ impl LanguageServer for Backend {
         }
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(command = params.command))]
     async fn execute_command(&self, params: ExecuteCommandParams) -> LSPResult<Option<Value>> {
         let command = ServerCommands::try_from(params.command);
         if let Ok(cmd) = command {
@@ -614,6 +647,7 @@ impl LanguageServer for Backend {
         Ok(None)
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
@@ -634,6 +668,7 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let text =
             if let [TextDocumentContentChangeEvent { text, .. }] = &params.content_changes[..] {
@@ -650,6 +685,7 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
         let mut db = self.db_mut().await;
         let file = file(&db, params.text_document.uri);
@@ -657,6 +693,7 @@ impl LanguageServer for Backend {
         db.override_file_content(file, None);
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db_mut().await;
         self.state_mutex.lock().await.open_files.remove(&params.text_document.uri);
@@ -666,11 +703,11 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await.ok();
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position.text_document.uri))]
     async fn completion(&self, params: CompletionParams) -> LSPResult<Option<CompletionResponse>> {
         self.with_db(|db| {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
-            eprintln!("Complete {file_uri}");
             let file_id = file(db, file_uri);
             let mut position = text_document_position.position;
             position.character = position.character.saturating_sub(1);
@@ -716,6 +753,7 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn semantic_tokens_full(
         &self,
         params: SemanticTokensParams,
@@ -740,6 +778,7 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn formatting(
         &self,
         params: DocumentFormattingParams,
@@ -773,10 +812,10 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
-            eprintln!("Hover {file_uri}");
             let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
             let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
@@ -809,11 +848,11 @@ impl LanguageServer for Backend {
         .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document_position_params.text_document.uri))]
     async fn goto_definition(
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        eprintln!("Goto definition");
         self.with_db(|db| {
             let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
@@ -847,6 +886,7 @@ impl LanguageServer for Backend {
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_definition(
     db: &RootDatabase,
     file: FileId,
@@ -884,6 +924,7 @@ fn find_definition(
     None
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_concrete_item_def(
     db: &dyn SemanticGroup,
     item: ResolvedConcreteItem,
@@ -903,6 +944,7 @@ fn resolved_concrete_item_def(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
     match item {
         ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
@@ -949,6 +991,7 @@ enum CompletionKind {
     ColonColon(Vec<PathSegment>),
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
     debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
@@ -1037,6 +1080,7 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
     CompletionKind::ColonColon(vec![])
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
     debug!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
     let expr = ast::ExprPath::from_syntax_node(db, parent);
@@ -1050,6 +1094,7 @@ fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> Comp
 
 /// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
 /// See [LookupItemId].
+#[tracing::instrument(level = "trace", skip_all)]
 fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
@@ -1157,6 +1202,7 @@ fn lookup_item_from_ast(
 
 /// Given a position in a file, return the syntax node for the token at that position, and all the
 /// lookup items above this node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_node_and_lookup_items(
     db: &(dyn SemanticGroup + 'static),
     file: FileId,
@@ -1205,6 +1251,7 @@ fn get_node_and_lookup_items(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn position_to_offset(
     file_summary: Arc<FileSummary>,
     position: Position,
@@ -1223,6 +1270,7 @@ fn position_to_offset(
     Some(offset)
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_node_module(
     db: &dyn SemanticGroup,
     main_file: FileId,
@@ -1254,6 +1302,7 @@ fn find_node_module(
 }
 
 /// If the node is an identifier, retrieves a hover hint for it.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_identifier_hint(
     db: &(dyn SemanticGroup + 'static),
     lookup_item_id: LookupItemId,
@@ -1272,6 +1321,7 @@ fn get_identifier_hint(
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
@@ -1315,6 +1365,7 @@ fn get_expr_hint(
 }
 
 /// Returns the semantic expression for the current node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn nearest_semantic_expr(
     db: &dyn SemanticGroup,
     mut node: SyntaxNode,
@@ -1336,6 +1387,7 @@ fn nearest_semantic_expr(
 }
 
 /// If the node is a pattern, retrieves a hover hint for it.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_pattern_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
@@ -1347,6 +1399,7 @@ fn get_pattern_hint(
 }
 
 /// Returns the semantic pattern for the current node.
+#[tracing::instrument(level = "trace", skip_all)]
 fn nearest_semantic_pat(
     db: &dyn SemanticGroup,
     mut node: SyntaxNode,
@@ -1367,6 +1420,7 @@ fn nearest_semantic_pat(
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 fn update_crate_roots(
     db: &mut dyn SemanticGroup,
     source_paths: Vec<(CrateLongId, PathBuf, CrateSettings)>,
@@ -1412,6 +1466,7 @@ fn update_crate_roots(
 /// This approach allows compiling crates that do not define `lib.cairo` file.
 /// For example, single file crates can be created this way.
 /// The actual single file module is defined as `mod` item in created lib file.
+#[tracing::instrument(level = "trace", skip_all)]
 fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(CrateId, String)>) {
     for (crate_id, file_stem) in components {
         let module_id = ModuleId::CrateRoot(crate_id);
@@ -1463,6 +1518,7 @@ fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
 }
 
 /// Converts internal diagnostics to LSP format.
+#[tracing::instrument(level = "trace", skip_all)]
 fn get_diagnostics<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
