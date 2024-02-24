@@ -236,6 +236,10 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
                 write!(f, ")")
             }
             ConstValue::NonZero(_, value) => value.fmt(f, ctx),
+            ConstValue::Boxed(_, value) => {
+                value.fmt(f, ctx)?;
+                write!(f, ".into_box()")
+            }
             ConstValue::Missing => write!(f, "missing"),
         }
     }
