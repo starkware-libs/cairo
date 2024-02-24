@@ -39,3 +39,86 @@ Statements:
   (v6: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test const folding through known branch scenario.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   if (a - 0) == 0 {
+      1
+   } else {
+      2
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0u
+  (v7: core::felt252) <- core::felt252_sub(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 2u
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0u
+  (v7: core::felt252) <- core::felt252_sub(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 2u
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v6)
+
+//! > lowering_diagnostics
