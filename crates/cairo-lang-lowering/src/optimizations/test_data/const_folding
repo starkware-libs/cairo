@@ -39,3 +39,138 @@ Statements:
   (v6: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test const folding through known branch scenario.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+   if a == 0 {
+      1
+   } else {
+      2
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0u
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v12: core::felt252) <- desnap(v2)
+  (v13: core::felt252) <- desnap(v5)
+  (v21: core::felt252) <- core::felt252_sub(v12, v13)
+End:
+  Match(match core::felt252_is_zero(v21) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v15) => blk2,
+  })
+
+blk1:
+Statements:
+  (v16: ()) <- struct_construct()
+  (v17: core::bool) <- bool::True(v16)
+End:
+  Goto(blk3, {v17 -> v18})
+
+blk2:
+Statements:
+  (v19: ()) <- struct_construct()
+  (v20: core::bool) <- bool::False(v19)
+End:
+  Goto(blk3, {v20 -> v18})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v18) {
+    bool::False(v9) => blk4,
+    bool::True(v7) => blk5,
+  })
+
+blk4:
+Statements:
+  (v10: core::felt252) <- 2u
+End:
+  Goto(blk6, {v10 -> v11})
+
+blk5:
+Statements:
+  (v8: core::felt252) <- 1u
+End:
+  Goto(blk6, {v8 -> v11})
+
+blk6:
+Statements:
+End:
+  Return(v11)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0u
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v12: core::felt252) <- desnap(v2)
+  (v13: core::felt252) <- desnap(v5)
+  (v21: core::felt252) <- core::felt252_sub(v12, v13)
+End:
+  Match(match core::felt252_is_zero(v12) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v15) => blk2,
+  })
+
+blk1:
+Statements:
+  (v16: ()) <- struct_construct()
+  (v17: core::bool) <- bool::True(v16)
+End:
+  Goto(blk3, {v17 -> v18})
+
+blk2:
+Statements:
+  (v19: ()) <- struct_construct()
+  (v20: core::bool) <- bool::False(v19)
+End:
+  Goto(blk3, {v20 -> v18})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v18) {
+    bool::False(v9) => blk4,
+    bool::True(v7) => blk5,
+  })
+
+blk4:
+Statements:
+  (v10: core::felt252) <- 2u
+End:
+  Goto(blk6, {v10 -> v11})
+
+blk5:
+Statements:
+  (v8: core::felt252) <- 1u
+End:
+  Goto(blk6, {v8 -> v11})
+
+blk6:
+Statements:
+End:
+  Return(v11)
+
+//! > lowering_diagnostics
