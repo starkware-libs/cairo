@@ -1,7 +1,9 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_sierra::extensions::const_type::{ConstAsImmediateLibfunc, ConstType};
+use cairo_lang_sierra::extensions::const_type::{
+    ConstAsBoxLibfunc, ConstAsImmediateLibfunc, ConstType,
+};
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
@@ -157,12 +159,24 @@ pub fn const_libfunc_id_by_type(
     ty: semantic::TypeId,
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
-        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
-            ConstAsImmediateLibfunc::STR_ID,
-        ),
-        generic_args: vec![GenericArg::Type(const_type_id(db, ty, value))],
-    })
+    if let ConstValue::Boxed(ty, inner_value) = value {
+        db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+            generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
+                ConstAsBoxLibfunc::STR_ID,
+            ),
+            generic_args: vec![
+                GenericArg::Type(const_type_id(db, *ty, inner_value)),
+                GenericArg::Value(0.into()),
+            ],
+        })
+    } else {
+        db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+            generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string(
+                ConstAsImmediateLibfunc::STR_ID,
+            ),
+            generic_args: vec![GenericArg::Type(const_type_id(db, ty, value))],
+        })
+    }
 }
 
 /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] for the given `ty` and `value`.
@@ -193,6 +207,9 @@ fn const_type_id(
                 }
                 ConstValue::NonZero(ty, value) => {
                     vec![first_arg, GenericArg::Type(const_type_id(db, *ty, value))]
+                }
+                ConstValue::Boxed(_, _) => {
+                    unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
                 ConstValue::Missing => unreachable!("Should be caught by the lowering."),
             },
