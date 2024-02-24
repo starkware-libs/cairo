@@ -4,6 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
+use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
 use itertools::zip_eq;
 use num_traits::{ToPrimitive, Zero};
@@ -40,7 +41,12 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let felt_sub = db.intern_lowering_function(FunctionLongId::Semantic(
         corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]),
     ));
-
+    let box_module = corelib::core_submodule(db.upcast(), "box");
+    let Ok(Some(ModuleItemId::ExternFunction(into_box))) =
+        db.module_item_by_name(box_module, "into_box".into())
+    else {
+        unreachable!("core::box::into_box not found");
+    };
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -89,6 +95,18 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                         {
                             if val.is_zero() {
                                 var_info.insert(outputs[0], VarInfo::Var(inputs[0]));
+                            }
+                        }
+                    } else if let Some(extrn) = function.get_extern(db) {
+                        if extrn == into_box {
+                            if let Some(VarInfo::Const(val)) = var_info.get(&inputs[0].var_id) {
+                                let value = ConstValue::Boxed(
+                                    lowered.variables[inputs[0].var_id].ty,
+                                    val.clone().into(),
+                                );
+                                var_info.insert(outputs[0], VarInfo::Const(value.clone()));
+                                *stmt =
+                                    Statement::Const(StatementConst { value, output: outputs[0] });
                             }
                         }
                     }

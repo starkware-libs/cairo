@@ -284,6 +284,7 @@ pub enum ConstValue {
     Struct(Vec<(semantic::TypeId, ConstValue)>),
     Enum(ConcreteVariant, Box<ConstValue>),
     NonZero(semantic::TypeId, Box<ConstValue>),
+    Boxed(semantic::TypeId, Box<ConstValue>),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing,
 }
