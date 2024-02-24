@@ -65,7 +65,9 @@ impl SierraGenDatabaseForTesting {
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         res.set_analyzer_plugins(suite.analyzer_plugins);
 
-        res.set_optimization_config(Arc::new(OptimizationConfig::default()));
+        res.set_optimization_config(Arc::new(
+            OptimizationConfig::default().with_moveable_functions(vec!["felt252_sub".into()]),
+        ));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
