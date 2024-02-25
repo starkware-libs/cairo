@@ -239,7 +239,8 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 72
 Weight by Cairo function:
-  function lib.cairo::main: 72
+  function lib.cairo::main: 60
+  function lib.cairo::Felt252PartialEq::eq: 12
 Weight by Sierra stack trace:
   test::main: 72
   test::main -> test::main[expr12]: 61

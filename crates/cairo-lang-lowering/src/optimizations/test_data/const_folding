@@ -68,57 +68,113 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0u
-  (v7: core::felt252) <- core::felt252_sub(v0, v1)
+  (v14: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v14)
+  (v5: core::felt252) <- 0u
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v15: core::felt252) <- desnap(v4)
+  (v16: core::felt252) <- desnap(v7)
+  (v24: core::felt252) <- core::felt252_sub(v15, v16)
 End:
-  Match(match core::felt252_is_zero(v7) {
+  Match(match core::felt252_is_zero(v24) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
+    IsZeroResult::NonZero(v18) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v19: ()) <- struct_construct()
+  (v20: core::bool) <- bool::True(v19)
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {v20 -> v21})
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 2u
+  (v22: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v22)
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v23 -> v21})
 
 blk3:
 Statements:
 End:
-  Return(v6)
+  Match(match_enum(v21) {
+    bool::False(v11) => blk4,
+    bool::True(v9) => blk5,
+  })
+
+blk4:
+Statements:
+  (v12: core::felt252) <- 2u
+End:
+  Goto(blk6, {v12 -> v13})
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 1u
+End:
+  Goto(blk6, {v10 -> v13})
+
+blk6:
+Statements:
+End:
+  Return(v13)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0u
-  (v7: core::felt252) <- core::felt252_sub(v0, v1)
+  (v14: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v14)
+  (v5: core::felt252) <- 0u
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v15: core::felt252) <- desnap(v4)
+  (v16: core::felt252) <- desnap(v7)
+  (v24: core::felt252) <- core::felt252_sub(v15, v16)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
+    IsZeroResult::NonZero(v18) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v19: ()) <- struct_construct()
+  (v20: core::bool) <- bool::True(v19)
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {v20 -> v21})
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 2u
+  (v22: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v22)
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v23 -> v21})
 
 blk3:
 Statements:
 End:
-  Return(v6)
+  Match(match_enum(v21) {
+    bool::False(v11) => blk4,
+    bool::True(v9) => blk5,
+  })
+
+blk4:
+Statements:
+  (v12: core::felt252) <- 2u
+End:
+  Goto(blk6, {v12 -> v13})
+
+blk5:
+Statements:
+  (v10: core::felt252) <- 1u
+End:
+  Goto(blk6, {v10 -> v13})
+
+blk6:
+Statements:
+End:
+  Return(v13)
 
 //! > lowering_diagnostics
