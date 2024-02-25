@@ -14,7 +14,6 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::optimizations::strategy::OptimizationStrategyId;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
@@ -77,7 +76,7 @@ impl fmt::Debug for PhasesFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
-        let strategy = OptimizationStrategyId::default_strategy(db);
+        let strategy = db.default_optimization_strategy();
 
         let mut curr_state =
             (*db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap()).clone();

@@ -278,6 +278,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
+
+    /// Returns the default optimization strategy.
+    #[salsa::invoke(crate::optimizations::strategy::default_optimization_strategy)]
+    fn default_optimization_strategy(&self) -> OptimizationStrategyId;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -380,10 +384,7 @@ fn final_concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    db.optimized_concrete_function_with_body_lowered(
-        function,
-        OptimizationStrategyId::default_strategy(db),
-    )
+    db.optimized_concrete_function_with_body_lowered(function, db.default_optimization_strategy())
 }
 
 /// Given the lowering of a function, returns the set of direct callees of that function.
