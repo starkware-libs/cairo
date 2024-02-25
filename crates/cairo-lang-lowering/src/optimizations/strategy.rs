@@ -100,6 +100,7 @@ pub fn default_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStra
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::BranchInversion,
         OptimizationPhase::ReorderStatements,
+        OptimizationPhase::CancelOps,
         OptimizationPhase::ConstFolding,
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::SplitStructs,
