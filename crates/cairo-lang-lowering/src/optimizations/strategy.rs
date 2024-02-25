@@ -84,6 +84,7 @@ impl OptimizationStrategyId {
             OptimizationPhase::ReorderStatements,
             OptimizationPhase::BranchInversion,
             OptimizationPhase::ReorderStatements,
+            OptimizationPhase::CancelOps,
             OptimizationPhase::ConstFolding,
             OptimizationPhase::OptimizeMatches,
             OptimizationPhase::SplitStructs,
