@@ -100,9 +100,21 @@ pub mod into_felt252_based {
         fn serialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
         }
+
         #[inline(always)]
         fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
-            Option::Some((*serialized.pop_front()?).try_into()?)
+            // TODO(ilya): Use serialized.pop_front when the generated code is good enough.
+            let mut snapshot = serialized.snapshot;
+            match core::array::array_snapshot_pop_front(ref snapshot) {
+                Option::Some(x) => {
+                    serialized = Span { snapshot };
+                    (*x.unbox()).try_into()
+                },
+                Option::None => {
+                    serialized = Span { snapshot };
+                    Option::None
+                },
+            }
         }
     }
 }
