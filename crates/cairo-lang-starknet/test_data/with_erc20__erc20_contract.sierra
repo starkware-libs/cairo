@@ -287,7 +287,6 @@ libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::wit
 libfunc u128_const<340282366920938463463374607431768211455> = u128_const<340282366920938463463374607431768211455>;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_eq = u128_eq;
-libfunc rename<core::bool> = rename<core::bool>;
 
 revoke_ap_tracking() -> (); // 0
 withdraw_gas([0], [1]) { fallthrough([4], [5]) 70([6], [7]) }; // 1
@@ -4128,113 +4127,95 @@ store_temp<Pedersen>([2]) -> ([2]); // 3835
 store_temp<System>([3]) -> ([3]); // 3836
 store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([18]); // 3837
 function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>([0], [1], [2], [3], [15], [18]) -> ([19], [20], [21], [22], [23]); // 3838
-enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 3929([25]) }; // 3839
+enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 3911([25]) }; // 3839
 branch_align() -> (); // 3840
-u128_const<340282366920938463463374607431768211455>() -> ([26]); // 3841
-struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([27]); // 3842
+struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]); // 3841
+dup<core::integer::u256>([26]) -> ([26], [27]); // 3842
 struct_deconstruct<core::integer::u256>([27]) -> ([28], [29]); // 3843
-dup<u128>([28]) -> ([28], [30]); // 3844
-dup<u128>([26]) -> ([26], [31]); // 3845
-u128_eq([30], [31]) { fallthrough() 3853() }; // 3846
+u128_const<340282366920938463463374607431768211455>() -> ([30]); // 3844
+dup<u128>([30]) -> ([30], [31]); // 3845
+u128_eq([28], [31]) { fallthrough() 3851() }; // 3846
 branch_align() -> (); // 3847
-drop<u128>([26]) -> (); // 3848
-struct_construct<Unit>() -> ([32]); // 3849
-enum_init<core::bool, 0>([32]) -> ([33]); // 3850
-store_temp<core::bool>([33]) -> ([34]); // 3851
-jump() { 3866() }; // 3852
+drop<u128>([30]) -> (); // 3848
+drop<u128>([29]) -> (); // 3849
+jump() { 3854() }; // 3850
+branch_align() -> (); // 3851
+u128_eq([29], [30]) { fallthrough() 3896() }; // 3852
 branch_align() -> (); // 3853
-dup<u128>([29]) -> ([29], [35]); // 3854
-u128_eq([35], [26]) { fallthrough() 3861() }; // 3855
-branch_align() -> (); // 3856
-struct_construct<Unit>() -> ([36]); // 3857
-enum_init<core::bool, 0>([36]) -> ([37]); // 3858
-store_temp<core::bool>([37]) -> ([38]); // 3859
-jump() { 3865() }; // 3860
-branch_align() -> (); // 3861
-struct_construct<Unit>() -> ([39]); // 3862
-enum_init<core::bool, 1>([39]) -> ([40]); // 3863
-store_temp<core::bool>([40]) -> ([38]); // 3864
-rename<core::bool>([38]) -> ([34]); // 3865
-enum_match<core::bool>([34]) { fallthrough([41]) 3912([42]) }; // 3866
-branch_align() -> (); // 3867
-drop<Unit>([41]) -> (); // 3868
-struct_construct<core::integer::u256>([28], [29]) -> ([43]); // 3869
-store_temp<RangeCheck>([19]) -> ([19]); // 3870
-store_temp<core::integer::u256>([43]) -> ([43]); // 3871
-store_temp<core::integer::u256>([7]) -> ([7]); // 3872
-function_call<user@core::integer::u256_overflow_sub>([19], [43], [7]) -> ([44], [45]); // 3873
-struct_deconstruct<Tuple<core::integer::u256, core::bool>>([45]) -> ([46], [47]); // 3874
-enum_match<core::bool>([47]) { fallthrough([48]) 3888([49]) }; // 3875
-branch_align() -> (); // 3876
-drop<Unit>([48]) -> (); // 3877
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>>([8], [9], [10], [11], [12], [14]) -> ([50]); // 3878
-store_temp<RangeCheck>([44]) -> ([44]); // 3879
-store_temp<GasBuiltin>([20]) -> ([20]); // 3880
-store_temp<Pedersen>([21]) -> ([21]); // 3881
-store_temp<System>([22]) -> ([22]); // 3882
-store_temp<ContractAddress>([5]) -> ([5]); // 3883
-store_temp<ContractAddress>([6]) -> ([6]); // 3884
-store_temp<core::integer::u256>([46]) -> ([46]); // 3885
-function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState, cairo_level_tests::contracts::with_erc20::erc20_contract::HasComponentImpl_erc20_comp>::approve_helper>([44], [20], [21], [22], [50], [5], [6], [46]) -> ([51], [52], [53], [54], [55]); // 3886
-return([51], [52], [53], [54], [55]); // 3887
-branch_align() -> (); // 3888
-drop<Unit>([49]) -> (); // 3889
-drop<core::integer::u256>([46]) -> (); // 3890
-drop<ContractAddress>([6]) -> (); // 3891
-drop<ContractAddress>([5]) -> (); // 3892
-drop<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>([14]) -> (); // 3893
-drop<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>([12]) -> (); // 3894
-drop<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>([11]) -> (); // 3895
-drop<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>([10]) -> (); // 3896
-drop<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>([9]) -> (); // 3897
-drop<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>([8]) -> (); // 3898
-array_new<felt252>() -> ([56]); // 3899
-felt252_const<39879774624085075084607933104993585622903>() -> ([57]); // 3900
-store_temp<felt252>([57]) -> ([57]); // 3901
-array_append<felt252>([56], [57]) -> ([58]); // 3902
-struct_construct<core::panics::Panic>() -> ([59]); // 3903
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([59], [58]) -> ([60]); // 3904
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 1>([60]) -> ([61]); // 3905
-store_temp<RangeCheck>([44]) -> ([44]); // 3906
-store_temp<GasBuiltin>([20]) -> ([20]); // 3907
-store_temp<Pedersen>([21]) -> ([21]); // 3908
-store_temp<System>([22]) -> ([22]); // 3909
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([61]) -> ([61]); // 3910
-return([44], [20], [21], [22], [61]); // 3911
-branch_align() -> (); // 3912
-drop<Unit>([42]) -> (); // 3913
-drop<ContractAddress>([6]) -> (); // 3914
-drop<ContractAddress>([5]) -> (); // 3915
-drop<core::integer::u256>([7]) -> (); // 3916
-drop<u128>([29]) -> (); // 3917
-drop<u128>([28]) -> (); // 3918
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>>([8], [9], [10], [11], [12], [14]) -> ([62]); // 3919
-struct_construct<Unit>() -> ([63]); // 3920
-struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, Unit>>([62], [63]) -> ([64]); // 3921
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 0>([64]) -> ([65]); // 3922
-store_temp<RangeCheck>([19]) -> ([19]); // 3923
-store_temp<GasBuiltin>([20]) -> ([20]); // 3924
-store_temp<Pedersen>([21]) -> ([21]); // 3925
-store_temp<System>([22]) -> ([22]); // 3926
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([65]) -> ([65]); // 3927
-return([19], [20], [21], [22], [65]); // 3928
-branch_align() -> (); // 3929
-drop<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>([8]) -> (); // 3930
-drop<ContractAddress>([6]) -> (); // 3931
-drop<ContractAddress>([5]) -> (); // 3932
-drop<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>([9]) -> (); // 3933
-drop<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>([14]) -> (); // 3934
-drop<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>([12]) -> (); // 3935
-drop<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>([11]) -> (); // 3936
-drop<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>([10]) -> (); // 3937
-drop<core::integer::u256>([7]) -> (); // 3938
-enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 1>([25]) -> ([66]); // 3939
-store_temp<RangeCheck>([19]) -> ([19]); // 3940
-store_temp<GasBuiltin>([20]) -> ([20]); // 3941
-store_temp<Pedersen>([21]) -> ([21]); // 3942
-store_temp<System>([22]) -> ([22]); // 3943
-store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([66]) -> ([66]); // 3944
-return([19], [20], [21], [22], [66]); // 3945
+store_temp<RangeCheck>([19]) -> ([19]); // 3854
+store_temp<core::integer::u256>([26]) -> ([26]); // 3855
+store_temp<core::integer::u256>([7]) -> ([7]); // 3856
+function_call<user@core::integer::u256_overflow_sub>([19], [26], [7]) -> ([32], [33]); // 3857
+struct_deconstruct<Tuple<core::integer::u256, core::bool>>([33]) -> ([34], [35]); // 3858
+enum_match<core::bool>([35]) { fallthrough([36]) 3872([37]) }; // 3859
+branch_align() -> (); // 3860
+drop<Unit>([36]) -> (); // 3861
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>>([8], [9], [10], [11], [12], [14]) -> ([38]); // 3862
+store_temp<RangeCheck>([32]) -> ([32]); // 3863
+store_temp<GasBuiltin>([20]) -> ([20]); // 3864
+store_temp<Pedersen>([21]) -> ([21]); // 3865
+store_temp<System>([22]) -> ([22]); // 3866
+store_temp<ContractAddress>([5]) -> ([5]); // 3867
+store_temp<ContractAddress>([6]) -> ([6]); // 3868
+store_temp<core::integer::u256>([34]) -> ([34]); // 3869
+function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState, cairo_level_tests::contracts::with_erc20::erc20_contract::HasComponentImpl_erc20_comp>::approve_helper>([32], [20], [21], [22], [38], [5], [6], [34]) -> ([39], [40], [41], [42], [43]); // 3870
+return([39], [40], [41], [42], [43]); // 3871
+branch_align() -> (); // 3872
+drop<Unit>([37]) -> (); // 3873
+drop<core::integer::u256>([34]) -> (); // 3874
+drop<ContractAddress>([6]) -> (); // 3875
+drop<ContractAddress>([5]) -> (); // 3876
+drop<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>([14]) -> (); // 3877
+drop<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>([12]) -> (); // 3878
+drop<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>([11]) -> (); // 3879
+drop<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>([10]) -> (); // 3880
+drop<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>([9]) -> (); // 3881
+drop<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>([8]) -> (); // 3882
+array_new<felt252>() -> ([44]); // 3883
+felt252_const<39879774624085075084607933104993585622903>() -> ([45]); // 3884
+store_temp<felt252>([45]) -> ([45]); // 3885
+array_append<felt252>([44], [45]) -> ([46]); // 3886
+struct_construct<core::panics::Panic>() -> ([47]); // 3887
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([47], [46]) -> ([48]); // 3888
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 1>([48]) -> ([49]); // 3889
+store_temp<RangeCheck>([32]) -> ([32]); // 3890
+store_temp<GasBuiltin>([20]) -> ([20]); // 3891
+store_temp<Pedersen>([21]) -> ([21]); // 3892
+store_temp<System>([22]) -> ([22]); // 3893
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([49]) -> ([49]); // 3894
+return([32], [20], [21], [22], [49]); // 3895
+branch_align() -> (); // 3896
+drop<ContractAddress>([6]) -> (); // 3897
+drop<ContractAddress>([5]) -> (); // 3898
+drop<core::integer::u256>([7]) -> (); // 3899
+drop<core::integer::u256>([26]) -> (); // 3900
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>>([8], [9], [10], [11], [12], [14]) -> ([50]); // 3901
+struct_construct<Unit>() -> ([51]); // 3902
+struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, Unit>>([50], [51]) -> ([52]); // 3903
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 0>([52]) -> ([53]); // 3904
+store_temp<RangeCheck>([19]) -> ([19]); // 3905
+store_temp<GasBuiltin>([20]) -> ([20]); // 3906
+store_temp<Pedersen>([21]) -> ([21]); // 3907
+store_temp<System>([22]) -> ([22]); // 3908
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([53]) -> ([53]); // 3909
+return([19], [20], [21], [22], [53]); // 3910
+branch_align() -> (); // 3911
+drop<cairo_level_tests::components::erc20::erc20::__member_module_name::ComponentMemberState>([8]) -> (); // 3912
+drop<ContractAddress>([6]) -> (); // 3913
+drop<ContractAddress>([5]) -> (); // 3914
+drop<cairo_level_tests::components::erc20::erc20::__member_module_symbol::ComponentMemberState>([9]) -> (); // 3915
+drop<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>([14]) -> (); // 3916
+drop<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>([12]) -> (); // 3917
+drop<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>([11]) -> (); // 3918
+drop<cairo_level_tests::components::erc20::erc20::__member_module_decimals::ComponentMemberState>([10]) -> (); // 3919
+drop<core::integer::u256>([7]) -> (); // 3920
+enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>, 1>([25]) -> ([54]); // 3921
+store_temp<RangeCheck>([19]) -> ([19]); // 3922
+store_temp<GasBuiltin>([20]) -> ([20]); // 3923
+store_temp<Pedersen>([21]) -> ([21]); // 3924
+store_temp<System>([22]) -> ([22]); // 3925
+store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState>, ())>>([54]) -> ([54]); // 3926
+return([19], [20], [21], [22], [54]); // 3927
 
 cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState, cairo_level_tests::contracts::with_erc20::erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::with_erc20::erc20_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20::erc20_contract::ContractStateIERC20>@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_symbol::<cairo_level_tests::contracts::with_erc20::erc20_contract::ContractState, cairo_level_tests::contracts::with_erc20::erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::with_erc20::erc20_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20::erc20_contract::ContractStateIERC20>@84([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
