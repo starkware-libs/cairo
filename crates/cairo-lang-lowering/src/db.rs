@@ -476,7 +476,9 @@ fn function_with_body_lowering_diagnostics(
         }
     }
 
-    diagnostics.extend(get_inline_diagnostics(db, function_id)?);
+    if let Ok(diag) = get_inline_diagnostics(db, function_id) {
+        diagnostics.extend(diag);
+    }
 
     Ok(diagnostics.build())
 }
