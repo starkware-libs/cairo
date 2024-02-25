@@ -27,28 +27,28 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v15) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v10: core::felt252) <- 1u
 End:
-  Return(v3)
+  Return(v10)
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v11: core::felt252) <- 0u
 End:
-  Return(v4)
+  Return(v11)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
-v3: ((BlockId(1), 1), 0)
+v11: ((BlockId(2), 1), 0)
+v10: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(2)): v15
 
 //! > ==========================================================================
 
@@ -82,12 +82,12 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2u
-  (v6: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 2u
+  (v30: core::felt252) <- core::felt252_sub(v0, v3)
 End:
-  Match(match core::felt252_is_zero(v6) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk4,
+    IsZeroResult::NonZero(v14) => blk4,
   })
 
 blk1:
@@ -95,20 +95,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v34) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v28: core::felt252) <- 1u
 End:
-  Return(v8)
+  Return(v28)
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 0u
+  (v29: core::felt252) <- 0u
 End:
-  Return(v9)
+  Return(v29)
 
 blk4:
 Statements:
@@ -117,15 +117,15 @@ End:
 
 //! > last_use
 v0: ((BlockId(4), 0), 0)
-v9: ((BlockId(3), 1), 0)
-v8: ((BlockId(2), 1), 0)
+v29: ((BlockId(3), 1), 0)
+v28: ((BlockId(2), 1), 0)
 v0: ((BlockId(1), 0), 0)
-v6: ((BlockId(0), 2), 0)
-v1: ((BlockId(0), 1), 1)
+v30: ((BlockId(0), 2), 0)
+v3: ((BlockId(0), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v7
-BeginningOfBlock(BlockId(4)): v4
+BeginningOfBlock(BlockId(3)): v34
+BeginningOfBlock(BlockId(4)): v14
 
 //! > ==========================================================================
 
@@ -166,7 +166,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v16) => blk2,
   })
 
 blk1:
@@ -176,20 +176,20 @@ End:
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v5: ()) <- test::revoke_tempvars()
+  (v22: core::felt252) <- core::felt252_add(v0, v0)
+  (v12: ()) <- test::revoke_tempvars()
 End:
-  Return(v6)
+  Return(v22)
 
 //! > last_use
-v6: ((BlockId(2), 2), 0)
+v22: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
-BeginningOfBlock(BlockId(2)): v2
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+PostStatement((BlockId(2), 1)): v12
+BeginningOfBlock(BlockId(2)): v16
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v22)
 
 //! > ==========================================================================
 
