@@ -36,6 +36,10 @@ pub enum TypeLongId {
     GenericParameter(GenericParamId),
     Var(TypeVar),
     Coupon(FunctionId),
+    FixedSizeArray {
+        type_id: TypeId,
+        size: usize,
+    },
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -89,6 +93,7 @@ impl TypeId {
             TypeLongId::Var(_) => false,
             TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
         }
     }
 }
@@ -110,6 +115,9 @@ impl TypeLongId {
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                format!("[{}; {}]", type_id.format(db), size)
+            }
         }
     }
 
@@ -120,6 +128,7 @@ impl TypeLongId {
             TypeLongId::Tuple(_) => TypeHead::Tuple,
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::Coupon(_) => TypeHead::Coupon,
+            TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
@@ -145,6 +154,7 @@ pub enum TypeHead {
     Snapshot(Box<TypeHead>),
     Tuple,
     Coupon,
+    FixedSizeArray,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -381,10 +391,54 @@ pub fn maybe_resolve_type(
                 return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
             }
         }
+        ast::Expr::FixedSizeArray(array_syntax) => {
+            let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
+                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+            };
+            let ty = resolve_type(db, diagnostics, resolver, ty);
+            let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax)? {
+                Some(size) => size,
+                None => {
+                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
+                }
+            };
+            db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size })
+        }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
         }
     })
+}
+
+/// Extracts the size of a fixed size array, or none if the size is missing. Reports an error if the
+/// size is not a numeric literal.
+pub fn extract_fixed_size_array_size(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    syntax: &ast::ExprFixedSizeArray,
+) -> Maybe<Option<usize>> {
+    let syntax_db = db.upcast();
+    match syntax.size(syntax_db) {
+        ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
+            match size_clause.size(syntax_db) {
+                ast::Expr::Literal(size) => match size.numeric_value(syntax_db) {
+                    Some(size) => Ok(Some(size.try_into().unwrap())),
+                    None => {
+                        Err(diagnostics
+                            .report(&size_clause.size(syntax_db), FixedSizeArrayNonNumericSize))
+                    }
+                },
+                // TODO(Gil): Add support for constant expressions.
+                _ => {
+                    Err(diagnostics
+                        .report(&size_clause.size(syntax_db), FixedSizeArrayNonNumericSize))
+                }
+            }
+        }
+        ast::OptionFixedSizeArraySize::Empty(_) => {
+            Ok(None)
+        }
+    }
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
@@ -460,6 +514,9 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::Var(_) => false,
         semantic::TypeLongId::Missing(_) => false,
         semantic::TypeLongId::Coupon(_) => false,
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            db.single_value_type(type_id)? || size == 0
+        }
     })
 }
 

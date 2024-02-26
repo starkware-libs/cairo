@@ -65,7 +65,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    are_coupons_enabled, peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId,
+    are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots, resolve_type,
+    wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
@@ -383,7 +384,7 @@ pub fn maybe_compute_expr_semantic(
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
-        ast::Expr::FixedSizeArray(_) => todo!(),
+        ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
     }
 }
 
@@ -660,6 +661,54 @@ fn compute_expr_tuple_semantic(
     Ok(Expr::Tuple(ExprTuple {
         items,
         ty: db.intern_type(TypeLongId::Tuple(types)),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+fn compute_expr_fixed_size_array_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprFixedSizeArray,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+    let exprs = syntax.exprs(syntax_db).elements(syntax_db);
+    let (first_expr, tail_exprs) = exprs
+        .split_first()
+        .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayEmptyElements))?;
+    let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
+    // The type of the first expression is the type of the array. All other expressions must have
+    // the same type.
+    let first_expr_ty = ctx.reduce_ty(first_expr_semantic.ty());
+
+    let mut items: Vec<ExprId> = vec![];
+
+    if let Some(size) = extract_fixed_size_array_size(db, ctx.diagnostics, syntax)? {
+        // Fixed size array with a defined size must have exactly one element.
+        if !tail_exprs.is_empty() {
+            return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
+        }
+        for _ in 0..size {
+            items.push(first_expr_semantic.id);
+        }
+    } else {
+        items.push(first_expr_semantic.id);
+
+        for expr_syntax in tail_exprs {
+            let expr_semantic = compute_expr_semantic(ctx, expr_syntax);
+            let expr_ty = ctx.reduce_ty(expr_semantic.ty());
+            if ctx.resolver.inference().conform_ty(expr_ty, first_expr_ty).is_err() {
+                return Err(ctx.diagnostics.report(
+                    expr_syntax,
+                    WrongArgumentType { expected_ty: first_expr_ty, actual_ty: expr_ty },
+                ));
+            }
+            items.push(expr_semantic.id);
+        }
+    }
+    let size = items.len();
+    Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
+        items,
+        ty: db.intern_type(TypeLongId::FixedSizeArray { type_id: first_expr_ty, size }),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -2164,6 +2213,9 @@ fn member_access_expr(
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
         TypeLongId::Missing(diag_added) => Err(diag_added),
+        TypeLongId::FixedSizeArray { .. } => {
+            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
+        }
     }
 }
 
