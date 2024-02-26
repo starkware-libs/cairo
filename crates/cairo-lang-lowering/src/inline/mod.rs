@@ -88,7 +88,7 @@ fn should_inline_lowered(
     let root_block = lowered.blocks.root_block()?;
 
     Ok(match &root_block.end {
-        FlatBlockEnd::Return(_) => {
+        FlatBlockEnd::Return(..) => {
             // Inline a function that only calls another function or returns a literal.
             matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
         }
@@ -210,7 +210,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
 
     fn transform_end(&mut self, end: &mut FlatBlockEnd) {
         match end {
-            FlatBlockEnd::Return(returns) => {
+            FlatBlockEnd::Return(returns, _location) => {
                 let remapping = VarRemapping {
                     remapping: OrderedHashMap::from_iter(zip_eq(
                         self.outputs.iter().cloned(),

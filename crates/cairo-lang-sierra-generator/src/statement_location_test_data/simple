@@ -152,23 +152,23 @@ struct_construct<Tuple<u8>>([5]) -> ([6])
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
 Originating location:
-    match myEnum {
-    ^************^
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
 In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
-    match myEnum {
-    ^************^
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
 Originating location:
-    match myEnum {
-    ^************^
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
 In function: lib.cairo::foo
 return([0], [7])
 Originating location:
-    match myEnum {
-    ^************^
+fn foo(myEnum: MyEnum) -> u8 {
+                             ^
 In function: lib.cairo::foo
 label_test::foo::2:
 
@@ -222,23 +222,23 @@ struct_construct<Tuple<u8>>([18]) -> ([20])
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
-        match self {
-        ^**********^
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
 In function: option.cairo::OptionTraitImpl::expect
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
-        match self {
-        ^**********^
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
 In function: option.cairo::OptionTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
-        match self {
-        ^**********^
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
 In function: option.cairo::OptionTraitImpl::expect
 return([17], [21])
 Originating location:
-        match self {
-        ^**********^
+    fn expect(self: Option<T>, err: felt252) -> T {
+                                                  ^
 In function: option.cairo::OptionTraitImpl::expect
 label_test::foo::7:
 
@@ -313,23 +313,23 @@ struct_construct<Tuple<u8>>([29]) -> ([32])
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-        match self {
-        ^**********^
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
 In function: result.cairo::ResultTraitImpl::expect
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-        match self {
-        ^**********^
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
 In function: result.cairo::ResultTraitImpl::expect
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-        match self {
-        ^**********^
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
 In function: result.cairo::ResultTraitImpl::expect
 return([28], [33])
 Originating location:
-        match self {
-        ^**********^
+    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
+                                                               ^
 In function: result.cairo::ResultTraitImpl::expect
 label_test::foo::9:
 
