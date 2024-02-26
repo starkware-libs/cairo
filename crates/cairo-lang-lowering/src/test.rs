@@ -66,7 +66,7 @@ fn test_function_lowering(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered = db.concrete_function_with_body_lowered(function_id);
+    let lowered = db.final_concrete_function_with_body_lowered(function_id);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),

@@ -10,7 +10,7 @@ use crate::ids::{FunctionId, FunctionLongId};
 /// The default threshold for inlining small functions. Decided according to sample contracts
 /// profiling.
 // TODO(Gil): Expose this as a configuration in the project toml.
-const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 10;
+const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 17;
 
 /// A configuration struct that controls the behavior of the optimization passes.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -27,6 +27,10 @@ impl OptimizationConfig {
     pub fn with_moveable_functions(mut self, moveable_functions: Vec<String>) -> Self {
         self.moveable_functions = moveable_functions;
         self
+    }
+    /// Sets the list of moveable functions to a minimal set, useful for testing.
+    pub fn with_minimal_movable_functions(self) -> Self {
+        self.with_moveable_functions(vec!["felt252_sub".into()])
     }
     /// Sets the threshold for inlining small functions.
     pub fn with_inline_small_functions_threshold(
