@@ -262,6 +262,7 @@ impl BlockUsages {
             Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Constant(_) => {}
             Expr::Missing(_) => {}
+            Expr::FixedSizeArray(_) => todo!(),
         }
     }
 

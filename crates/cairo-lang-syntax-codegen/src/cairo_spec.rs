@@ -271,6 +271,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("Struct")
         .node("Tuple")
         .node("Enum")
+        .node("FixedSizeArray")
         .node_with_explicit_kind("Path", "ExprPath")
     )
     .add_struct(StructBuilder::new("PatternIdentifier")
