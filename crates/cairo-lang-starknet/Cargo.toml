@@ -8,7 +8,6 @@ description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
 anyhow.workspace = true
-cairo-felt.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.3" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.6.3" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.6.3" }
@@ -28,6 +27,7 @@ once_cell.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 smol_str.workspace = true
+starknet-types-core = { workspace = true, default-features = true }
 thiserror.workspace = true
 indent.workspace = true
 

@@ -1,7 +1,6 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::instructions::Instruction;
@@ -35,7 +34,7 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
-use cairo_vm::vm::trace::trace_entry::TraceEntry;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
@@ -43,6 +42,7 @@ use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::casm_run::{RunFunctionContext, RunFunctionResult};
@@ -289,7 +289,7 @@ impl SierraCasmRunner {
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
-        let RunFunctionResult { memory, ap, used_resources } = casm_run::run_function(
+        let RunFunctionResult { memory, trace, used_resources } = casm_run::run_function(
             vm,
             bytecode,
             builtins,
@@ -297,6 +297,7 @@ impl SierraCasmRunner {
             hint_processor,
             hints_dict,
         )?;
+        let ap = trace.last().unwrap().ap;
         let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
 
@@ -310,9 +311,10 @@ impl SierraCasmRunner {
             Self::handle_main_return_value(inner_ty, values, &memory)
         };
 
-        let profiling_info = self.run_profiler.as_ref().map(|config| {
-            self.collect_profiling_info(vm.get_relocated_trace().unwrap(), config.clone())
-        });
+        let profiling_info = self
+            .run_profiler
+            .as_ref()
+            .map(|config| self.collect_profiling_info(&trace, config.clone()));
 
         Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }
@@ -320,7 +322,7 @@ impl SierraCasmRunner {
     /// Collects profiling info of the current run using the trace.
     fn collect_profiling_info(
         &self,
-        trace: &[TraceEntry],
+        trace: &[RelocatedTraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
@@ -363,6 +365,9 @@ impl SierraCasmRunner {
             if step.pc < real_pc_0 {
                 continue;
             }
+            // Safe to unwrap because:
+            // - both Relocatable values exist in the same segment.
+            // - `real_pc_0` is by construction always greater than any step pc.
             let real_pc = step.pc - real_pc_0;
             // Skip the footer.
             if real_pc == bytecode_len {
@@ -528,7 +533,7 @@ impl SierraCasmRunner {
         for (ty, ty_size) in return_types.iter().rev() {
             let size = *ty_size as usize;
             let values: Vec<Felt252> =
-                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
+                ((ap - size)..ap).map(|index| cells[index].unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -561,7 +566,11 @@ impl SierraCasmRunner {
             .funcs
             .iter()
             .find(|f| {
-                if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
+                if let Some(name) = &f.id.debug_name {
+                    name.ends_with(name_suffix)
+                } else {
+                    false
+                }
             })
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }
