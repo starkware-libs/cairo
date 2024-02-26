@@ -42,7 +42,7 @@ use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::casm_run::RunFunctionContext;
@@ -81,8 +81,8 @@ pub enum RunnerError {
 
 /// The full result of a run with Starknet state.
 pub struct RunResultStarknet {
-    pub gas_counter: Option<Felt>,
-    pub memory: Vec<Option<Felt>>,
+    pub gas_counter: Option<Felt252>,
+    pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
     /// The profiling info of the run, if requested.
@@ -92,8 +92,8 @@ pub struct RunResultStarknet {
 /// The full result of a run.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct RunResult {
-    pub gas_counter: Option<Felt>,
-    pub memory: Vec<Option<Felt>>,
+    pub gas_counter: Option<Felt252>,
+    pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
@@ -103,9 +103,9 @@ pub struct RunResult {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
-    Success(Vec<Felt>),
+    Success(Vec<Felt252>),
     /// Run panicked, returning the carried error data.
-    Panic(Vec<Felt>),
+    Panic(Vec<Felt252>),
 }
 
 // Approximated costs token types.
@@ -122,11 +122,11 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 /// An argument to a sierra function run,
 #[derive(Debug)]
 pub enum Arg {
-    Value(Felt),
-    Array(Vec<Felt>),
+    Value(Felt252),
+    Array(Vec<Felt252>),
 }
-impl From<Felt> for Arg {
-    fn from(value: Felt) -> Self {
+impl From<Felt252> for Arg {
+    fn from(value: Felt252) -> Self {
         Self::Value(value)
     }
 }
@@ -169,7 +169,7 @@ pub struct SierraCasmRunner {
     casm_program: CairoProgram,
     #[allow(dead_code)]
     /// Mapping from class_hash to contract info.
-    starknet_contracts_info: OrderedHashMap<Felt, ContractInfo>,
+    starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     /// Whether to run the profiler when running using this runner.
     run_profiler: Option<ProfilingInfoCollectionConfig>,
 }
@@ -177,7 +177,7 @@ impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
-        starknet_contracts_info: OrderedHashMap<Felt, ContractInfo>,
+        starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
         run_profiler: Option<ProfilingInfoCollectionConfig>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
@@ -466,12 +466,12 @@ impl SierraCasmRunner {
     /// Handling the main return value to create a `RunResultValue`.
     pub fn handle_main_return_value(
         inner_type_size: Option<i16>,
-        values: Vec<Felt>,
-        cells: &[Option<Felt>],
+        values: Vec<Felt252>,
+        cells: &[Option<Felt252>],
     ) -> RunResultValue {
         if let Some(inner_type_size) = inner_type_size {
             // The function includes a panic wrapper.
-            if values[0] == Felt::from(0) {
+            if values[0] == Felt252::from(0) {
                 // The run resulted successfully, returning the inner value.
                 let inner_ty_size = inner_type_size as usize;
                 let skip_size = values.len() - inner_ty_size;
@@ -497,13 +497,14 @@ impl SierraCasmRunner {
     /// Returns the final values and type of all `func`s returning variables.
     pub fn get_results_data(
         return_types: &[(GenericTypeId, i16)],
-        cells: &[Option<Felt>],
+        cells: &[Option<Felt252>],
         mut ap: usize,
-    ) -> (Vec<(GenericTypeId, Vec<Felt>)>, Option<Felt>) {
+    ) -> (Vec<(GenericTypeId, Vec<Felt252>)>, Option<Felt252>) {
         let mut results_data = vec![];
         for (ty, ty_size) in return_types.iter().rev() {
             let size = *ty_size as usize;
-            let values: Vec<Felt> = ((ap - size)..ap).map(|index| cells[index].unwrap()).collect();
+            let values: Vec<Felt252> =
+                ((ap - size)..ap).map(|index| cells[index].unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -816,7 +817,7 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     for token_type in CostTokenType::iter_precost() {
         vm.insert_value(
             (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)).unwrap(),
-            Felt::from(token_gas_cost(*token_type)),
+            Felt252::from(token_gas_cost(*token_type)),
         )
         .map_err(|e| Box::new(e.into()))?;
     }

@@ -36,7 +36,7 @@ use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
@@ -51,8 +51,8 @@ mod contract_address;
 mod dict_manager;
 
 /// The Beta value of the Starkware elliptic curve.
-const BETA: Felt =
-    Felt::from_hex_unchecked("6F21413EFBE40DE150E596D72F7A8C5609AD26C15C915C1F4CDFCB99CEE9E89");
+const BETA: Felt252 =
+    Felt252::from_hex_unchecked("6F21413EFBE40DE150E596D72F7A8C5609AD26C15C915C1F4CDFCB99CEE9E89");
 
 #[derive(MontConfig)]
 #[modulus = "3618502788666131213697322783095070105623107215331596699973092056135872020481"]
@@ -118,37 +118,37 @@ macro_rules! insert_value_to_cellref {
 }
 
 // Log type signature
-type Log = (Vec<Felt>, Vec<Felt>);
+type Log = (Vec<Felt252>, Vec<Felt252>);
 
 // L2 to L1 message type signature
-type L2ToL1Message = (Felt, Vec<Felt>);
+type L2ToL1Message = (Felt252, Vec<Felt252>);
 
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
-    storage: HashMap<Felt, HashMap<Felt, Felt>>,
+    storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
     #[allow(dead_code)]
-    deployed_contracts: HashMap<Felt, Felt>,
+    deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt, ContractLogs>,
+    logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
-    next_id: Felt,
+    next_id: Felt252,
 }
 impl StarknetState {
-    pub fn get_next_id(&mut self) -> Felt {
-        self.next_id += Felt::from(1);
+    pub fn get_next_id(&mut self) -> Felt252 {
+        self.next_id += Felt252::from(1);
         self.next_id
     }
 
     /// Replaces the addresses in the context.
     pub fn open_caller_context(
         &mut self,
-        (new_contract_address, new_caller_address): (Felt, Felt),
-    ) -> (Felt, Felt) {
+        (new_contract_address, new_caller_address): (Felt252, Felt252),
+    ) -> (Felt252, Felt252) {
         let old_contract_address =
             std::mem::replace(&mut self.exec_info.contract_address, new_contract_address);
         let old_caller_address =
@@ -159,7 +159,7 @@ impl StarknetState {
     /// Restores the addresses in the context.
     pub fn close_caller_context(
         &mut self,
-        (old_contract_address, old_caller_address): (Felt, Felt),
+        (old_contract_address, old_caller_address): (Felt252, Felt252),
     ) {
         self.exec_info.contract_address = old_contract_address;
         self.exec_info.caller_address = old_caller_address;
@@ -180,43 +180,43 @@ struct ContractLogs {
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
-    caller_address: Felt,
-    contract_address: Felt,
-    entry_point_selector: Felt,
+    caller_address: Felt252,
+    contract_address: Felt252,
+    entry_point_selector: Felt252,
 }
 
 /// Copy of the cairo `BlockInfo` struct.
 #[derive(Clone, Default)]
 struct BlockInfo {
-    block_number: Felt,
-    block_timestamp: Felt,
-    sequencer_address: Felt,
+    block_number: Felt252,
+    block_timestamp: Felt252,
+    sequencer_address: Felt252,
 }
 
 /// Copy of the cairo `TxInfo` struct.
 #[derive(Clone, Default)]
 struct TxInfo {
-    version: Felt,
-    account_contract_address: Felt,
-    max_fee: Felt,
-    signature: Vec<Felt>,
-    transaction_hash: Felt,
-    chain_id: Felt,
-    nonce: Felt,
+    version: Felt252,
+    account_contract_address: Felt252,
+    max_fee: Felt252,
+    signature: Vec<Felt252>,
+    transaction_hash: Felt252,
+    chain_id: Felt252,
+    nonce: Felt252,
     resource_bounds: Vec<ResourceBounds>,
-    tip: Felt,
-    paymaster_data: Vec<Felt>,
-    nonce_data_availability_mode: Felt,
-    fee_data_availability_mode: Felt,
-    account_deployment_data: Vec<Felt>,
+    tip: Felt252,
+    paymaster_data: Vec<Felt252>,
+    nonce_data_availability_mode: Felt252,
+    fee_data_availability_mode: Felt252,
+    account_deployment_data: Vec<Felt252>,
 }
 
 /// Copy of the cairo `ResourceBounds` struct.
 #[derive(Clone, Default)]
 struct ResourceBounds {
-    resource: Felt,
-    max_amount: Felt,
-    max_price_per_unit: Felt,
+    resource: Felt252,
+    max_amount: Felt252,
+    max_price_per_unit: Felt252,
 }
 
 /// Execution scope for constant memory allocation.
@@ -226,7 +226,7 @@ struct MemoryExecScope {
 }
 
 /// Fetches the value of a cell from the vm.
-fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt, VirtualMachineError> {
+fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
     Ok(*vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref())
 }
 
@@ -251,7 +251,7 @@ fn get_cell_maybe(
 pub fn get_ptr(
     vm: &VirtualMachine,
     cell: &CellRef,
-    offset: &Felt,
+    offset: &Felt252,
 ) -> Result<Relocatable, VirtualMachineError> {
     Ok((vm.get_relocatable(cell_ref_to_relocatable(cell, vm))? + offset)?)
 }
@@ -260,8 +260,8 @@ pub fn get_ptr(
 fn get_double_deref_val(
     vm: &VirtualMachine,
     cell: &CellRef,
-    offset: &Felt,
-) -> Result<Felt, VirtualMachineError> {
+    offset: &Felt252,
+) -> Result<Felt252, VirtualMachineError> {
     Ok(*vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref())
 }
 
@@ -270,7 +270,7 @@ fn get_double_deref_val(
 fn get_double_deref_maybe(
     vm: &VirtualMachine,
     cell: &CellRef,
-    offset: &Felt,
+    offset: &Felt252,
 ) -> Result<MaybeRelocatable, VirtualMachineError> {
     get_maybe_from_addr(vm, get_ptr(vm, cell, offset)?)
 }
@@ -285,16 +285,19 @@ pub fn extract_relocatable(
 }
 
 /// Fetches the value of `res_operand` from the vm.
-pub fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt, VirtualMachineError> {
+pub fn get_val(
+    vm: &VirtualMachine,
+    res_operand: &ResOperand,
+) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
-        ResOperand::Immediate(x) => Ok(Felt::from(x.value.clone())),
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.value.clone())),
         ResOperand::BinOp(op) => {
             let a = get_cell_val(vm, &op.a)?;
             let b = match &op.b {
                 DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt::from(x.value.clone()),
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.value.clone()),
             };
             match op.op {
                 Operation::Add => Ok(a + b),
@@ -309,15 +312,15 @@ enum SyscallResult {
     /// The syscall was successful.
     Success(Vec<MaybeRelocatable>),
     /// The syscall failed, with the revert reason.
-    Failure(Vec<Felt>),
+    Failure(Vec<Felt252>),
 }
 
 macro_rules! fail_syscall {
     ($reason:expr) => {
-        return Ok(SyscallResult::Failure(vec![Felt::from_bytes_be_slice($reason)]))
+        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be_slice($reason)]))
     };
     ($existing:ident, $reason:expr) => {
-        $existing.push(Felt::from_bytes_be_slice($reason));
+        $existing.push(Felt252::from_bytes_be_slice($reason));
         return Ok(SyscallResult::Failure($existing))
     };
 }
@@ -380,12 +383,12 @@ fn get_maybe(
         ResOperand::DoubleDeref(cell, offset) => {
             get_double_deref_maybe(vm, cell, &(*offset).into())
         }
-        ResOperand::Immediate(x) => Ok(Felt::from(x.value.clone()).into()),
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.value.clone()).into()),
         ResOperand::BinOp(op) => {
             let a = get_cell_maybe(vm, &op.a)?;
             let b = match &op.b {
                 DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt::from(x.value.clone()),
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.value.clone()),
             };
             Ok(match op.op {
                 Operation::Add => a.add_int(&b)?,
@@ -407,7 +410,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
-        _constants: &HashMap<String, Felt>,
+        _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -521,7 +524,7 @@ impl<'a> MemBuffer<'a> {
     /// Returns the felt252 value in the current position of the buffer and advances it by one.
     /// Fails if the value is not a felt252.
     /// Borrows the buffer since a reference is returned.
-    pub fn next_felt252(&mut self) -> Result<Cow<'_, Felt>, MemoryError> {
+    pub fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
         let ptr = self.next();
         self.vm.vm().get_integer(ptr)
     }
@@ -573,7 +576,7 @@ impl<'a> MemBuffer<'a> {
     /// Returns the array of integer values pointed to by the two next addresses in the buffer and
     /// advances it by two. Will fail if the two values are not addresses or if the addresses do
     /// not point to an array of integers.
-    pub fn next_arr(&mut self) -> Result<Vec<Felt>, HintError> {
+    pub fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
         let start = self.next_addr()?;
         let end = self.next_addr()?;
         vm_get_range(self.vm.vm(), start, end)
@@ -640,12 +643,12 @@ impl<'a> CairoHintProcessor<'a> {
                 match handler(&mut system_buffer, &mut gas_counter)? {
                     SyscallResult::Success(values) => {
                         system_buffer.write(gas_counter)?;
-                        system_buffer.write(Felt::from(0))?;
+                        system_buffer.write(Felt252::from(0))?;
                         system_buffer.write_data(values.into_iter())?;
                     }
                     SyscallResult::Failure(revert_reason) => {
                         system_buffer.write(gas_counter)?;
-                        system_buffer.write(Felt::from(1))?;
+                        system_buffer.write(Felt252::from(1))?;
                         system_buffer.write_arr(revert_reason.into_iter())?;
                     }
                 }
@@ -795,9 +798,9 @@ impl<'a> CairoHintProcessor<'a> {
     fn storage_write(
         &mut self,
         gas_counter: &mut usize,
-        addr_domain: Felt,
-        addr: Felt,
-        value: Felt,
+        addr_domain: Felt252,
+        addr: Felt252,
+        value: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, STORAGE_WRITE);
         if !addr_domain.is_zero() {
@@ -813,8 +816,8 @@ impl<'a> CairoHintProcessor<'a> {
     fn storage_read(
         &mut self,
         gas_counter: &mut usize,
-        addr_domain: Felt,
-        addr: Felt,
+        addr_domain: Felt252,
+        addr: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, STORAGE_READ);
         if !addr_domain.is_zero() {
@@ -827,7 +830,7 @@ impl<'a> CairoHintProcessor<'a> {
             .get(&self.starknet_state.exec_info.contract_address)
             .and_then(|contract_storage| contract_storage.get(&addr))
             .cloned()
-            .unwrap_or_else(|| Felt::from(0));
+            .unwrap_or_else(|| Felt252::from(0));
         Ok(SyscallResult::Success(vec![value.into()]))
     }
 
@@ -906,8 +909,8 @@ impl<'a> CairoHintProcessor<'a> {
     fn emit_event(
         &mut self,
         gas_counter: &mut usize,
-        keys: Vec<Felt>,
-        data: Vec<Felt>,
+        keys: Vec<Felt252>,
+        data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address;
@@ -919,8 +922,8 @@ impl<'a> CairoHintProcessor<'a> {
     fn send_message_to_l1(
         &mut self,
         gas_counter: &mut usize,
-        to_address: Felt,
-        payload: Vec<Felt>,
+        to_address: Felt252,
+        payload: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
         let contract = self.starknet_state.exec_info.contract_address;
@@ -937,9 +940,9 @@ impl<'a> CairoHintProcessor<'a> {
     fn deploy(
         &mut self,
         gas_counter: &mut usize,
-        class_hash: Felt,
-        _contract_address_salt: Felt,
-        calldata: Vec<Felt>,
+        class_hash: Felt252,
+        _contract_address_salt: Felt252,
+        calldata: Vec<Felt252>,
         deploy_from_zero: bool,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
@@ -947,7 +950,7 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Assign the starknet address of the contract.
         let deployer_address = if deploy_from_zero {
-            Felt::zero()
+            Felt252::zero()
         } else {
             self.starknet_state.exec_info.contract_address
         };
@@ -1002,9 +1005,9 @@ impl<'a> CairoHintProcessor<'a> {
     fn call_contract(
         &mut self,
         gas_counter: &mut usize,
-        contract_address: Felt,
-        selector: Felt,
-        calldata: Vec<Felt>,
+        contract_address: Felt252,
+        selector: Felt252,
+        calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, CALL_CONTRACT);
@@ -1047,9 +1050,9 @@ impl<'a> CairoHintProcessor<'a> {
     fn library_call(
         &mut self,
         gas_counter: &mut usize,
-        class_hash: Felt,
-        selector: Felt,
-        calldata: Vec<Felt>,
+        class_hash: Felt252,
+        selector: Felt252,
+        calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, LIBRARY_CALL);
@@ -1077,7 +1080,7 @@ impl<'a> CairoHintProcessor<'a> {
     fn replace_class(
         &mut self,
         gas_counter: &mut usize,
-        new_class: Felt,
+        new_class: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, REPLACE_CLASS);
         // Validating the class hash was declared as one of the starknet contracts.
@@ -1100,9 +1103,9 @@ impl<'a> CairoHintProcessor<'a> {
         gas_counter: &mut usize,
         runner: &SierraCasmRunner,
         entry_point: &FunctionId,
-        calldata: Vec<Felt>,
+        calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
-    ) -> Result<(Relocatable, Relocatable), Vec<Felt>> {
+    ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
             .sierra_program_registry
             .get_function(entry_point)
@@ -1148,7 +1151,7 @@ impl<'a> CairoHintProcessor<'a> {
         let inputs = vm_get_range(vm, input_start, input_end)?;
 
         // Helper for all the instances requiring only a single input.
-        let as_single_input = |inputs: Vec<Felt>| {
+        let as_single_input = |inputs: Vec<Felt252>| {
             if inputs.len() != 1 {
                 Err(HintError::CustomHint(Box::from(format!(
                     "`{selector}` cheatcode invalid args: pass span of an array with exactly one \
@@ -1233,7 +1236,7 @@ impl<'a> CairoHintProcessor<'a> {
 }
 
 /// Executes the `keccak_syscall` syscall.
-fn keccak(gas_counter: &mut usize, data: Vec<Felt>) -> Result<SyscallResult, HintError> {
+fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, KECCAK);
     if data.len() % 17 != 0 {
         fail_syscall!(b"Invalid keccak input size");
@@ -1249,8 +1252,10 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt>) -> Result<SyscallResult, Hin
     // 2 ** 64 in mont representation
     const TWO_64_RAW: [u64; 4] = [0x483ff, 0xffffffffffffffff, 0xffffffffffffffe0, 0x4400];
     Ok(SyscallResult::Success(vec![
-        ((Felt::from(state[1]) * Felt::from_raw(TWO_64_RAW)) + Felt::from(state[0])).into(),
-        ((Felt::from(state[3]) * Felt::from_raw(TWO_64_RAW)) + Felt::from(state[2])).into(),
+        ((Felt252::from(state[1]) * Felt252::from_raw(TWO_64_RAW)) + Felt252::from(state[0]))
+            .into(),
+        ((Felt252::from(state[3]) * Felt252::from_raw(TWO_64_RAW)) + Felt252::from(state[2]))
+            .into(),
     ]))
 }
 
@@ -1361,10 +1366,10 @@ fn secp256k1_get_xy(
     let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
     let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
     Ok(SyscallResult::Success(vec![
-        Felt::from(x0).into(),
-        Felt::from(x1).into(),
-        Felt::from(y0).into(),
-        Felt::from(y1).into(),
+        Felt252::from(x0).into(),
+        Felt252::from(x1).into(),
+        Felt252::from(y0).into(),
+        Felt252::from(y1).into(),
     ]))
 }
 
@@ -1488,10 +1493,10 @@ fn secp256r1_get_xy(
     let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
     let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
     Ok(SyscallResult::Success(vec![
-        Felt::from(x0).into(),
-        Felt::from(x1).into(),
-        Felt::from(y0).into(),
-        Felt::from(y1).into(),
+        Felt252::from(x0).into(),
+        Felt252::from(x1).into(),
+        Felt252::from(y0).into(),
+        Felt252::from(y1).into(),
     ]))
 }
 
@@ -1581,7 +1586,7 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(
                 vm,
                 dst,
-                if lhs_val < rhs_val { Felt::from(1) } else { Felt::from(0) }
+                if lhs_val < rhs_val { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
         CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => {
@@ -1590,7 +1595,7 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(
                 vm,
                 dst,
-                if lhs_val <= rhs_val { Felt::from(1) } else { Felt::from(0) }
+                if lhs_val <= rhs_val { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
         CoreHint::WideMul128 { lhs, rhs, high, low } => {
@@ -1598,14 +1603,18 @@ pub fn execute_core_hint(
             let lhs_val = get_val(vm, lhs)?.to_biguint();
             let rhs_val = get_val(vm, rhs)?.to_biguint();
             let prod = lhs_val * rhs_val;
-            insert_value_to_cellref!(vm, high, Felt::from(prod.clone() >> 128))?;
-            insert_value_to_cellref!(vm, low, Felt::from(prod & mask128))?;
+            insert_value_to_cellref!(vm, high, Felt252::from(prod.clone() >> 128))?;
+            insert_value_to_cellref!(vm, low, Felt252::from(prod & mask128))?;
         }
         CoreHint::DivMod { lhs, rhs, quotient, remainder } => {
             let lhs_val = get_val(vm, lhs)?.to_biguint();
             let rhs_val = get_val(vm, rhs)?.to_biguint();
-            insert_value_to_cellref!(vm, quotient, Felt::from(lhs_val.clone() / rhs_val.clone()))?;
-            insert_value_to_cellref!(vm, remainder, Felt::from(lhs_val % rhs_val))?;
+            insert_value_to_cellref!(
+                vm,
+                quotient,
+                Felt252::from(lhs_val.clone() / rhs_val.clone())
+            )?;
+            insert_value_to_cellref!(vm, remainder, Felt252::from(lhs_val % rhs_val))?;
         }
         CoreHint::Uint256DivMod {
             dividend0,
@@ -1626,11 +1635,11 @@ pub fn execute_core_hint(
             let divisor = divisor0 + divisor1.shl(128);
             let (quotient, remainder) = dividend.div_rem(&divisor);
             let (limb1, limb0) = quotient.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, quotient0, Felt::from(limb0))?;
-            insert_value_to_cellref!(vm, quotient1, Felt::from(limb1))?;
+            insert_value_to_cellref!(vm, quotient0, Felt252::from(limb0))?;
+            insert_value_to_cellref!(vm, quotient1, Felt252::from(limb1))?;
             let (limb1, limb0) = remainder.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, remainder0, Felt::from(limb0))?;
-            insert_value_to_cellref!(vm, remainder1, Felt::from(limb1))?;
+            insert_value_to_cellref!(vm, remainder0, Felt252::from(limb0))?;
+            insert_value_to_cellref!(vm, remainder1, Felt252::from(limb1))?;
         }
         CoreHint::Uint512DivModByUint256 {
             dividend0,
@@ -1658,19 +1667,19 @@ pub fn execute_core_hint(
             let divisor = divisor0 + divisor1.shl(128);
             let (quotient, remainder) = dividend.div_rem(&divisor);
             let (quotient, limb0) = quotient.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, quotient0, Felt::from(limb0))?;
+            insert_value_to_cellref!(vm, quotient0, Felt252::from(limb0))?;
             let (quotient, limb1) = quotient.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, quotient1, Felt::from(limb1))?;
+            insert_value_to_cellref!(vm, quotient1, Felt252::from(limb1))?;
             let (limb3, limb2) = quotient.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, quotient2, Felt::from(limb2))?;
-            insert_value_to_cellref!(vm, quotient3, Felt::from(limb3))?;
+            insert_value_to_cellref!(vm, quotient2, Felt252::from(limb2))?;
+            insert_value_to_cellref!(vm, quotient3, Felt252::from(limb3))?;
             let (limb1, limb0) = remainder.div_rem(&pow_2_128);
-            insert_value_to_cellref!(vm, remainder0, Felt::from(limb0))?;
-            insert_value_to_cellref!(vm, remainder1, Felt::from(limb1))?;
+            insert_value_to_cellref!(vm, remainder0, Felt252::from(limb0))?;
+            insert_value_to_cellref!(vm, remainder1, Felt252::from(limb1))?;
         }
         CoreHint::SquareRoot { value, dst } => {
             let val = get_val(vm, value)?.to_biguint();
-            insert_value_to_cellref!(vm, dst, Felt::from(val.sqrt()))?;
+            insert_value_to_cellref!(vm, dst, Felt252::from(val.sqrt()))?;
         }
         CoreHint::Uint256SquareRoot {
             value_low,
@@ -1693,17 +1702,17 @@ pub fn execute_core_hint(
 
             // Guess sqrt limbs.
             let (sqrt1_val, sqrt0_val) = sqrt.div_rem(&pow_2_64);
-            insert_value_to_cellref!(vm, sqrt0, Felt::from(sqrt0_val))?;
-            insert_value_to_cellref!(vm, sqrt1, Felt::from(sqrt1_val))?;
+            insert_value_to_cellref!(vm, sqrt0, Felt252::from(sqrt0_val))?;
+            insert_value_to_cellref!(vm, sqrt1, Felt252::from(sqrt1_val))?;
 
             let (remainder_high_val, remainder_low_val) = remainder.div_rem(&pow_2_128);
             // Guess remainder limbs.
-            insert_value_to_cellref!(vm, remainder_low, Felt::from(remainder_low_val))?;
-            insert_value_to_cellref!(vm, remainder_high, Felt::from(remainder_high_val))?;
+            insert_value_to_cellref!(vm, remainder_low, Felt252::from(remainder_low_val))?;
+            insert_value_to_cellref!(vm, remainder_high, Felt252::from(remainder_high_val))?;
             insert_value_to_cellref!(
                 vm,
                 sqrt_mul_2_minus_remainder_ge_u128,
-                Felt::from(usize::from(sqrt_mul_2_minus_remainder_ge_u128_val))
+                Felt252::from(usize::from(sqrt_mul_2_minus_remainder_ge_u128_val))
             )?;
         }
         CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
@@ -1712,8 +1721,8 @@ pub fn execute_core_hint(
             let max_x = get_val(vm, max_x)?.to_biguint();
             let x_value = (value.clone() / scalar.clone()).min(max_x);
             let y_value = value - x_value.clone() * scalar;
-            insert_value_to_cellref!(vm, x, Felt::from(x_value))?;
-            insert_value_to_cellref!(vm, y, Felt::from(y_value))?;
+            insert_value_to_cellref!(vm, x, Felt252::from(x_value))?;
+            insert_value_to_cellref!(vm, y, Felt252::from(y_value))?;
         }
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
@@ -1729,8 +1738,8 @@ pub fn execute_core_hint(
             };
             let x_bigint: BigUint = random_x.into_bigint().into();
             let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
-            insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
-            insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
+            insert_value_to_cellref!(vm, x, Felt252::from(x_bigint))?;
+            insert_value_to_cellref!(vm, y, Felt252::from(y_bigint))?;
         }
         CoreHint::FieldSqrt { val, sqrt } => {
             let val = Fq::from(get_val(vm, val)?.to_biguint());
@@ -1741,7 +1750,7 @@ pub fn execute_core_hint(
                 let root0: BigUint = res.into_bigint().into();
                 let root1: BigUint = (-res).into_bigint().into();
                 let res_big_uint = std::cmp::min(root0, root1);
-                Felt::from(res_big_uint)
+                Felt252::from(res_big_uint)
             })?;
         }
         CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
@@ -1782,7 +1791,7 @@ pub fn execute_core_hint(
         CoreHint::Felt252DictEntryUpdate { dict_ptr, value } => {
             let (dict_base, dict_offset) = extract_buffer(dict_ptr);
             let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
-            let key = get_double_deref_val(vm, dict_base, &(dict_offset + Felt::from(-3)))?;
+            let key = get_double_deref_val(vm, dict_base, &(dict_offset + Felt252::from(-3)))?;
             let value = get_maybe(vm, value)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -1795,11 +1804,11 @@ pub fn execute_core_hint(
                 .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to read from a dict while dict manager was not initialized.");
             let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
-            insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
+            insert_value_to_cellref!(vm, dict_index, Felt252::from(dict_infos_index))?;
         }
         CoreHint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
             let dict_access_size = 3;
-            let rangecheck_bound = Felt::from(u128::MAX) + Felt::ONE;
+            let rangecheck_bound = Felt252::from(u128::MAX) + Felt252::ONE;
 
             exec_scopes.assign_or_update_variable(
                 "dict_squash_exec_scope",
@@ -1817,8 +1826,8 @@ pub fn execute_core_hint(
                 dict_squash_exec_scope
                     .access_indices
                     .entry(current_key.into_owned())
-                    .and_modify(|indices| indices.push(Felt::from(i)))
-                    .or_insert_with(|| vec![Felt::from(i)]);
+                    .and_modify(|indices| indices.push(Felt252::from(i)))
+                    .or_insert_with(|| vec![Felt252::from(i)]);
             }
             // Reverse the accesses in order to pop them in order later.
             for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
@@ -1833,9 +1842,9 @@ pub fn execute_core_hint(
                 vm,
                 big_keys,
                 if dict_squash_exec_scope.keys[0] < rangecheck_bound {
-                    Felt::from(0)
+                    Felt252::from(0)
                 } else {
-                    Felt::from(1)
+                    Felt252::from(1)
                 }
             )?;
             insert_value_to_cellref!(vm, first_key, dict_squash_exec_scope.current_key().unwrap())?;
@@ -1856,9 +1865,9 @@ pub fn execute_core_hint(
                 // The loop verifies that each two consecutive accesses are valid, thus we
                 // break when there is only one remaining access.
                 if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                    Felt::from(0)
+                    Felt252::from(0)
                 } else {
-                    Felt::from(1)
+                    Felt252::from(1)
                 }
             )?;
         }
@@ -1868,7 +1877,7 @@ pub fn execute_core_hint(
             let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
             let index_delta_minus_1_val = dict_squash_exec_scope.current_access_index().unwrap()
                 - prev_access_index
-                - Felt::ONE;
+                - Felt252::ONE;
             insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
         }
         CoreHint::ShouldContinueSquashLoop { should_continue } => {
@@ -1880,9 +1889,9 @@ pub fn execute_core_hint(
                 // The loop verifies that each two consecutive accesses are valid, thus we
                 // break when there is only one remaining access.
                 if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                    Felt::from(1)
+                    Felt252::from(1)
                 } else {
-                    Felt::from(0)
+                    Felt252::from(0)
                 }
             )?;
         }
@@ -1896,7 +1905,7 @@ pub fn execute_core_hint(
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
             let mut lengths_and_indices =
-                [(a_val, 0), (b_val - a_val, 1), (Felt::from(-1) - b_val, 2)];
+                [(a_val, 0), (b_val - a_val, 1), (Felt252::from(-1) - b_val, 2)];
             lengths_and_indices.sort();
             exec_scopes
                 .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
@@ -1907,19 +1916,19 @@ pub fn execute_core_hint(
             let range_check_ptr = extract_relocatable(vm, range_check_ptr)?;
             vm.insert_value(
                 range_check_ptr,
-                Felt::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
+                Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
             )?;
             vm.insert_value(
                 (range_check_ptr + 1)?,
-                Felt::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
+                Felt252::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
             )?;
             vm.insert_value(
                 (range_check_ptr + 2)?,
-                Felt::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
+                Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
             )?;
             vm.insert_value(
                 (range_check_ptr + 3)?,
-                Felt::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
+                Felt252::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
             )?;
         }
         CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
@@ -1927,7 +1936,7 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(
                 vm,
                 skip_exclude_a_flag,
-                if excluded_arc != 0 { Felt::from(1) } else { Felt::from(0) }
+                if excluded_arc != 0 { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
         CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
@@ -1935,7 +1944,7 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(
                 vm,
                 skip_exclude_b_minus_a,
-                if excluded_arc != 1 { Felt::from(1) } else { Felt::from(0) }
+                if excluded_arc != 1 { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
         CoreHint::DebugPrint { start, end } => {
@@ -1978,26 +1987,26 @@ pub fn execute_core_hint(
             let n: BigInt = n0 + n1.shl(128);
             let ExtendedGcd { gcd: mut g, x: _, y: mut r } = n.extended_gcd(&b);
             if n == 1.into() {
-                insert_value_to_cellref!(vm, s_or_r0, Felt::from(b0))?;
-                insert_value_to_cellref!(vm, s_or_r1, Felt::from(b1))?;
-                insert_value_to_cellref!(vm, t_or_k0, Felt::from(1))?;
-                insert_value_to_cellref!(vm, t_or_k1, Felt::from(0))?;
-                insert_value_to_cellref!(vm, g0_or_no_inv, Felt::from(1))?;
-                insert_value_to_cellref!(vm, g1_option, Felt::from(0))?;
+                insert_value_to_cellref!(vm, s_or_r0, Felt252::from(b0))?;
+                insert_value_to_cellref!(vm, s_or_r1, Felt252::from(b1))?;
+                insert_value_to_cellref!(vm, t_or_k0, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, t_or_k1, Felt252::from(0))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(1))?;
+                insert_value_to_cellref!(vm, g1_option, Felt252::from(0))?;
             } else if g != 1.into() {
                 // This makes sure `g0_or_no_inv` is always non-zero in the no inverse case.
                 if g.is_even() {
                     g = 2u32.into();
                 }
                 let (limb1, limb0) = (&b / &g).div_rem(&pow_2_128);
-                insert_value_to_cellref!(vm, s_or_r0, Felt::from(limb0))?;
-                insert_value_to_cellref!(vm, s_or_r1, Felt::from(limb1))?;
+                insert_value_to_cellref!(vm, s_or_r0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, s_or_r1, Felt252::from(limb1))?;
                 let (limb1, limb0) = (&n / &g).div_rem(&pow_2_128);
-                insert_value_to_cellref!(vm, t_or_k0, Felt::from(limb0))?;
-                insert_value_to_cellref!(vm, t_or_k1, Felt::from(limb1))?;
+                insert_value_to_cellref!(vm, t_or_k0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, t_or_k1, Felt252::from(limb1))?;
                 let (limb1, limb0) = g.div_rem(&pow_2_128);
-                insert_value_to_cellref!(vm, g0_or_no_inv, Felt::from(limb0))?;
-                insert_value_to_cellref!(vm, g1_option, Felt::from(limb1))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, g1_option, Felt252::from(limb1))?;
             } else {
                 r %= &n;
                 if r.is_negative() {
@@ -2005,24 +2014,24 @@ pub fn execute_core_hint(
                 }
                 let k: BigInt = (&r * b - 1) / n;
                 let (limb1, limb0) = r.div_rem(&pow_2_128);
-                insert_value_to_cellref!(vm, s_or_r0, Felt::from(limb0))?;
-                insert_value_to_cellref!(vm, s_or_r1, Felt::from(limb1))?;
+                insert_value_to_cellref!(vm, s_or_r0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, s_or_r1, Felt252::from(limb1))?;
                 let (limb1, limb0) = k.div_rem(&pow_2_128);
-                insert_value_to_cellref!(vm, t_or_k0, Felt::from(limb0))?;
-                insert_value_to_cellref!(vm, t_or_k1, Felt::from(limb1))?;
-                insert_value_to_cellref!(vm, g0_or_no_inv, Felt::from(0))?;
+                insert_value_to_cellref!(vm, t_or_k0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, t_or_k1, Felt252::from(limb1))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
             }
         }
     };
     Ok(())
 }
 
-/// Reads a range of `Felt`s from the VM.
+/// Reads a range of `Felt252`s from the VM.
 fn read_felts(
     vm: &mut VirtualMachine,
     start: &ResOperand,
     end: &ResOperand,
-) -> Result<Vec<Felt>, HintError> {
+) -> Result<Vec<Felt252>, HintError> {
     let mut curr = extract_relocatable(vm, start)?;
     let end = extract_relocatable(vm, end)?;
 
@@ -2037,7 +2046,7 @@ fn read_felts(
 }
 
 /// Reads the result of a function call that returns `Array<felt252>`.
-fn read_array_result_as_vec(memory: &[Option<Felt>], value: &[Felt]) -> Vec<Felt> {
+fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Vec<Felt252> {
     // TODO(spapini): Handle failures.
     let [res_start, res_end] = value else {
         panic!("Unexpected return value from contract call");
@@ -2052,7 +2061,7 @@ pub fn vm_get_range(
     vm: &mut VirtualMachine,
     mut calldata_start_ptr: Relocatable,
     calldata_end_ptr: Relocatable,
-) -> Result<Vec<Felt>, HintError> {
+) -> Result<Vec<Felt252>, HintError> {
     let mut values = vec![];
     while calldata_start_ptr != calldata_end_ptr {
         let val = vm.get_integer(calldata_start_ptr)?;
@@ -2063,7 +2072,7 @@ pub fn vm_get_range(
 }
 
 /// Extracts a parameter assumed to be a buffer.
-pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt) {
+pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
@@ -2080,7 +2089,7 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-type RunFunctionRes = (Vec<Option<Felt>>, Vec<RelocatedTraceEntry>);
+type RunFunctionRes = (Vec<Option<Felt252>>, Vec<RelocatedTraceEntry>);
 
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
@@ -2136,7 +2145,7 @@ pub fn run_function<'a, 'b: 'a>(
     hints_dict: HashMap<usize, Vec<HintParams>>,
 ) -> Result<RunFunctionRes, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
-        bytecode.map(Felt::from).map(MaybeRelocatable::from).collect();
+        bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
     let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
@@ -2146,7 +2155,7 @@ pub fn run_function<'a, 'b: 'a>(
 }
 
 /// Formats the given felts as a debug string.
-fn format_for_debug(mut felts: IntoIter<Felt>) -> String {
+fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
     let mut items = Vec::new();
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item);
@@ -2190,7 +2199,7 @@ impl FormattedItem {
 /// indicating whether it's a string. If can't format the item, returns None.
 pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
 where
-    T: Iterator<Item = Felt> + Clone,
+    T: Iterator<Item = Felt252> + Clone,
 {
     let first_felt = values.next()?;
 
@@ -2202,8 +2211,8 @@ where
     Some(FormattedItem { item: format_short_string(&first_felt), is_string: false })
 }
 
-/// Formats a `Felt`, as a short string if possible.
-fn format_short_string(value: &Felt) -> String {
+/// Formats a `Felt252`, as a short string if possible.
+fn format_short_string(value: &Felt252) -> String {
     let hex_value = value.to_biguint();
     match as_cairo_short_string(value) {
         Some(as_string) => format!("{hex_value:#x} ('{as_string}')"),
@@ -2211,12 +2220,12 @@ fn format_short_string(value: &Felt) -> String {
     }
 }
 
-/// Tries to format a string, represented as a sequence of `Felt`s.
+/// Tries to format a string, represented as a sequence of `Felt252`s.
 /// If the sequence is not a valid serialization of a ByteArray, returns None and doesn't change the
 /// given iterator (`values`).
 fn try_format_string<T>(values: &mut T) -> Option<String>
 where
-    T: Iterator<Item = Felt> + Clone,
+    T: Iterator<Item = Felt252> + Clone,
 {
     // Clone the iterator and work with the clone. If the extraction of the string is successful,
     // change the original iterator to the one we worked with. If not, continue with the

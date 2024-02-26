@@ -28,7 +28,7 @@ use cairo_lang_utils::ordered_hash_map::{
 };
 use itertools::chain;
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
@@ -281,13 +281,13 @@ pub struct ContractInfo {
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
     )]
-    pub externals: OrderedHashMap<Felt, FunctionId>,
+    pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
     )]
-    pub l1_handlers: OrderedHashMap<Felt, FunctionId>,
+    pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 
 /// Returns the list of functions in a given module.
@@ -295,7 +295,7 @@ pub fn get_contracts_info<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     main_crate_ids: Vec<CrateId>,
     replacer: &T,
-) -> Result<OrderedHashMap<Felt, ContractInfo>, anyhow::Error> {
+) -> Result<OrderedHashMap<Felt252, ContractInfo>, anyhow::Error> {
     let contracts = find_contracts(db.upcast(), &main_crate_ids);
     let mut contracts_info = OrderedHashMap::default();
     for contract in contracts {
@@ -310,7 +310,7 @@ fn analyze_contract<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     contract: &ContractDeclaration,
     replacer: &T,
-) -> anyhow::Result<(Felt, ContractInfo)> {
+) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
@@ -348,7 +348,7 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     function_with_body: &Aliased<lowering::ids::ConcreteFunctionWithBodyId>,
     replacer: &T,
-) -> (Felt, FunctionId) {
+) -> (Felt252, FunctionId) {
     let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
     let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
     let selector = starknet_keccak(function_with_body.alias.as_bytes()).into();

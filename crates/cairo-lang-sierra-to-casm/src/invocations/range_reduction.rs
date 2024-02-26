@@ -4,7 +4,7 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -27,7 +27,7 @@ pub fn build_felt252_range_reduction(
     out_range: &Range,
     verify_optimal_range: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let prime: BigInt = Felt::prime().into();
+    let prime: BigInt = Felt252::prime().into();
     if verify_optimal_range {
         // `validate_under_limit` is better with `K == 1` for other range.
         assert!(

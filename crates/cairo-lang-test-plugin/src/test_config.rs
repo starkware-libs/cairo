@@ -8,7 +8,7 @@ use itertools::chain;
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
 
@@ -18,7 +18,7 @@ pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
     /// Accept only a panic with this specific vector of felts.
-    Exact(Vec<Felt>),
+    Exact(Vec<Felt252>),
 }
 
 /// Expectation for a result of a test.
@@ -160,7 +160,7 @@ fn extract_available_gas(
 
 /// Tries to extract the expected panic bytes out of the given `should_panic` attribute.
 /// Assumes the attribute is `should_panic`.
-fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt>> {
+fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
     let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
@@ -204,7 +204,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
 fn extract_string_panic_bytes(
     panic_string: &ast::TerminalString,
     db: &dyn SyntaxGroup,
-) -> Vec<Felt> {
+) -> Vec<Felt252> {
     let panic_string = panic_string.string_value(db).unwrap();
     let chunks = panic_string.as_bytes().chunks_exact(BYTES_IN_WORD);
     let num_full_words = chunks.len().into();

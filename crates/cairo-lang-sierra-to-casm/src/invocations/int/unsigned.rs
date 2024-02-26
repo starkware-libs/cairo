@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::{BigInt, ToBigInt};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
@@ -72,7 +72,7 @@ fn build_divmod<const BOUND: u128>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // Sanity check: make sure BOUND is not too large.
-    assert!(BigInt::from(BOUND).shl(128) < Felt::prime().to_bigint().unwrap(),);
+    assert!(BigInt::from(BOUND).shl(128) < Felt252::prime().to_bigint().unwrap(),);
 
     let [range_check, a, b] = builder.try_get_single_cells()?;
 

@@ -1,8 +1,8 @@
 use num_traits::Zero;
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.
-pub fn as_cairo_short_string(value: &Felt) -> Option<String> {
+pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     let mut as_string = String::default();
     let mut is_end = false;
     for byte in value.to_bytes_be().into_iter().skip_while(|b| *b == 0) {
@@ -21,7 +21,7 @@ pub fn as_cairo_short_string(value: &Felt) -> Option<String> {
 
 /// Converts a bigint representing a felt252 to a Cairo short-string of the given length.
 /// Nulls are allowed and length must be <= 31.
-pub fn as_cairo_short_string_ex(value: &Felt, length: usize) -> Option<String> {
+pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String> {
     if length == 0 {
         return if value.is_zero() { Some("".to_string()) } else { None };
     }

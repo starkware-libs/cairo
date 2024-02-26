@@ -5,7 +5,7 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -290,7 +290,7 @@ pub fn build_unsigned_try_from_felt252(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(Felt::prime().to_bigint().unwrap() - val_bound.clone()),
+        &(Felt252::prime().to_bigint().unwrap() - val_bound.clone()),
         shifted_value,
         range_check,
         &auxiliary_vars,

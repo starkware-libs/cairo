@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
-    data: HashMap<Felt, MaybeRelocatable>,
+    data: HashMap<Felt252, MaybeRelocatable>,
     /// The index of the dictionary in the dict_infos segment.
     #[allow(dead_code)]
     idx: usize,
@@ -63,13 +63,22 @@ impl DictManagerExecScope {
     }
 
     /// Inserts a value to the dict tracker corresponding to a given pointer to a dict segment.
-    pub fn insert_to_tracker(&mut self, dict_end: Relocatable, key: Felt, value: MaybeRelocatable) {
+    pub fn insert_to_tracker(
+        &mut self,
+        dict_end: Relocatable,
+        key: Felt252,
+        value: MaybeRelocatable,
+    ) {
         self.get_dict_tracker_mut(dict_end).data.insert(key, value);
     }
 
     /// Gets a value from the dict tracker corresponding to a given pointer to a dict segment.
     /// None if the key does not exist in the tracker data.
-    pub fn get_from_tracker(&self, dict_end: Relocatable, key: &Felt) -> Option<MaybeRelocatable> {
+    pub fn get_from_tracker(
+        &self,
+        dict_end: Relocatable,
+        key: &Felt252,
+    ) -> Option<MaybeRelocatable> {
         self.get_dict_tracker(dict_end).data.get(key).cloned()
     }
 }
@@ -78,20 +87,20 @@ impl DictManagerExecScope {
 #[derive(Default, Debug)]
 pub struct DictSquashExecScope {
     /// A map from key to the list of indices accessing it, each list in reverse order.
-    pub access_indices: HashMap<Felt, Vec<Felt>>,
+    pub access_indices: HashMap<Felt252, Vec<Felt252>>,
     /// Descending list of keys.
-    pub keys: Vec<Felt>,
+    pub keys: Vec<Felt252>,
 }
 
 impl DictSquashExecScope {
     /// Returns the current key to process.
-    pub fn current_key(&self) -> Option<Felt> {
+    pub fn current_key(&self) -> Option<Felt252> {
         self.keys.last().cloned()
     }
 
     /// Returns and removes the current key, and its access indices. Should be called when only the
     /// last key access is in the corresponding indices list.
-    pub fn pop_current_key(&mut self) -> Option<Felt> {
+    pub fn pop_current_key(&mut self) -> Option<Felt252> {
         let key_accesses = self.access_indices.remove(&self.current_key().unwrap());
         assert!(
             key_accesses.unwrap().len() == 1,
@@ -101,18 +110,18 @@ impl DictSquashExecScope {
     }
 
     /// Returns a reference to the access indices list of the current key.
-    pub fn current_access_indices(&mut self) -> Option<&mut Vec<Felt>> {
+    pub fn current_access_indices(&mut self) -> Option<&mut Vec<Felt252>> {
         let current_key = self.current_key()?;
         self.access_indices.get_mut(&current_key)
     }
 
     /// Returns a reference to the last index in the current access indices list.
-    pub fn current_access_index(&mut self) -> Option<&Felt> {
+    pub fn current_access_index(&mut self) -> Option<&Felt252> {
         self.current_access_indices()?.last()
     }
 
     /// Returns and removes the current access index.
-    pub fn pop_current_access_index(&mut self) -> Option<Felt> {
+    pub fn pop_current_access_index(&mut self) -> Option<Felt252> {
         self.current_access_indices()?.pop()
     }
 }

@@ -31,7 +31,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use starknet_types_core::felt::Felt;
+use starknet_types_core::felt::Felt as Felt252;
 
 #[cfg(test)]
 mod test;
@@ -139,7 +139,7 @@ impl CompiledTestRunner {
 }
 
 /// Formats the given felts as a panic string.
-fn format_for_panic(mut felts: IntoIter<Felt>) -> String {
+fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
     let mut items = Vec::new();
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item.quote_if_string());
@@ -291,7 +291,7 @@ pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt, ContractInfo>,
+    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     run_profiler: bool,
     statements_functions: UnorderedHashMap<StatementIdx, String>,
 ) -> Result<TestsSummary> {
