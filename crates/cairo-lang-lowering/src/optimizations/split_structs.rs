@@ -92,7 +92,7 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::Return(..) => {}
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -229,7 +229,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     );
                 }
             }
-            FlatBlockEnd::Return(vars) => {
+            FlatBlockEnd::Return(vars, _location) => {
                 for var in vars.iter_mut() {
                     var.var_id = ctx.maybe_reconstruct_var(
                         &split,

@@ -1,0 +1,81 @@
+//! > test inlined function.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(a: felt252, b: felt252) -> felt252 {
+    let mut z = a + b;
+    if a == 0 {
+      let v = if b == 0 {
+        1
+      } else {
+        2
+      };
+      z + v
+    } else {
+       let k = z + 3;
+       revoke_ap();
+       k
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<felt252>() -> ([3])
+finalize_locals() -> ()
+dup<felt252>([0]) -> ([0], [5])
+dup<felt252>([1]) -> ([1], [6])
+felt252_add([5], [6]) -> ([4])
+enable_ap_tracking() -> ()
+store_temp<felt252>([4]) -> ([4])
+felt252_is_zero([0]) { fallthrough() label1([7]) }
+branch_align() -> ()
+drop<Uninitialized<felt252>>([3]) -> ()
+enable_ap_tracking() -> ()
+felt252_is_zero([1]) { fallthrough() label3([8]) }
+branch_align() -> ()
+felt252_const<1>() -> ([9])
+store_temp<felt252>([9]) -> ([10])
+jump() { label5() }
+label3:
+branch_align() -> ()
+drop<NonZero<felt252>>([8]) -> ()
+felt252_const<2>() -> ([11])
+store_temp<felt252>([11]) -> ([10])
+label5:
+felt252_add([4], [10]) -> ([12])
+disable_ap_tracking() -> ()
+store_temp<felt252>([12]) -> ([13])
+jump() { label6() }
+label4:
+label1:
+branch_align() -> ()
+drop<NonZero<felt252>>([7]) -> ()
+drop<felt252>([1]) -> ()
+felt252_const<3>() -> ([14])
+felt252_add([4], [14]) -> ([2])
+store_local<felt252>([3], [2]) -> ([2])
+function_call<user@test::revoke_ap>() -> ([15])
+drop<felt252>([15]) -> ()
+disable_ap_tracking() -> ()
+store_temp<felt252>([2]) -> ([13])
+label6:
+rename<felt252>([13]) -> ([16])
+return([16])
+label2:

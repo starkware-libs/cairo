@@ -9,6 +9,7 @@ use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
+use crate::ids::LocationId;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
@@ -38,6 +39,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 .iter()
                 .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
                 .collect_vec(),
+            return_info.location,
         )
     }
 }
@@ -90,19 +92,25 @@ impl ReturnOptimizerContext<'_> {
                 return None;
             }
 
-            if let Some(prev_info) = &opt_last_info {
-                if prev_info != &curr_info {
-                    return None;
+            match (opt_last_info, curr_info) {
+                (None, AnalyzerInfo { opt_return_info: Some(return_info) }) => {
+                    // First iteration, just save the return info.
+                    opt_last_info = Some(return_info)
                 }
-            } else {
-                opt_last_info = Some(curr_info);
+                (Some(prev_return_info), AnalyzerInfo { opt_return_info: Some(return_info) })
+                    if prev_return_info.returned_vars == return_info.returned_vars =>
+                {
+                    // If the returned var are the same as the previous iteration, then the
+                    // optimization is still applicable.
+                    opt_last_info = Some(return_info)
+                }
+                _ => return None,
             }
         }
 
         let last_info = opt_last_info.unwrap();
-        self.fixes
-            .push(FixInfo { block_id, return_info: last_info.opt_return_info.clone().unwrap() });
-        last_info.opt_return_info
+        self.fixes.push(FixInfo { block_id, return_info: last_info.clone() });
+        Some(last_info)
     }
 }
 
@@ -293,6 +301,7 @@ impl ValueInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReturnInfo {
     returned_vars: Vec<ValueInfo>,
+    location: LocationId,
 }
 
 /// A wrapper around `ReturnInfo` that makes it optional.
@@ -320,7 +329,7 @@ impl AnalyzerInfo {
     where
         F: Fn(&VarUsage) -> ValueInfo,
     {
-        let Some(ReturnInfo { ref mut returned_vars }) = self.opt_return_info else {
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else {
             return;
         };
 
@@ -342,7 +351,7 @@ impl AnalyzerInfo {
         ctx: &ReturnOptimizerContext<'_>,
         stmt: &StatementStructDestructure,
     ) {
-        let Some(ReturnInfo { ref mut returned_vars }) = self.opt_return_info else { return };
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else { return };
 
         let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
@@ -365,7 +374,7 @@ impl AnalyzerInfo {
 
     /// Updates the info to the state before match arm.
     fn apply_match_arm(&mut self, is_droppable: bool, input: &ValueInfo, arm: &MatchArm) {
-        let Some(ReturnInfo { ref mut returned_vars }) = self.opt_return_info else { return };
+        let Some(ReturnInfo { ref mut returned_vars, .. }) = self.opt_return_info else { return };
 
         let mut input_consumed = false;
         for var_info in returned_vars.iter_mut() {
@@ -388,7 +397,7 @@ impl AnalyzerInfo {
 
     /// Returns true if the an early return is possible according to 'self'.
     fn early_return_possible(&self) -> bool {
-        let Some(ReturnInfo { ref returned_vars }) = self.opt_return_info else { return false };
+        let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
 
         returned_vars.iter().all(|var_info| match var_info {
             ValueInfo::Var(_) => true,
@@ -470,14 +479,20 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
 
     fn info_from_return(
         &mut self,
-        _statement_location: StatementLocation,
+        (block_id, _statement_idx): StatementLocation,
         vars: &'a [VarUsage],
     ) -> Self::Info {
+        let location = match &self.lowered.blocks[block_id].end {
+            FlatBlockEnd::Return(_vars, location) => *location,
+            _ => unreachable!(),
+        };
+
         // Note that `self.get_var_info` is not used here because ValueInfo::Interchangeable is
         // supported only inside other ValueInfo variants.
         AnalyzerInfo {
             opt_return_info: Some(ReturnInfo {
                 returned_vars: vars.iter().map(|var_usage| ValueInfo::Var(*var_usage)).collect(),
+                location,
             }),
         }
     }
