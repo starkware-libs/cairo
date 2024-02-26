@@ -77,7 +77,8 @@ Weight by original user function (exc. generated):
   function test::pow2_by_add_loop: 196014
   function test::pow2_14000: 12
 Weight by Cairo function:
-  function lib.cairo::pow2_by_add_loop: 196014
+  function lib.cairo::pow2_by_add_loop: 168012
+  function lib.cairo::Felt252PartialEq::eq: 28002
   function lib.cairo::pow2_14000: 12
 Weight by Sierra stack trace:
   test::pow2_14000: 196026
@@ -382,7 +383,7 @@ Weight by original user function (exc. generated):
   function test::test_contract::__wrapper____validate__: 27
   function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by Cairo function:
-  function array.cairo::deserialize_array_helper: 63
+  function array.cairo::deserialize_array_helper: 57
   function array.cairo::ArrayImpl::append: 46
   function impls::CallSerde::deserialize: 38
   function array.cairo::SpanImpl::pop_front: 30
@@ -395,6 +396,7 @@ Weight by Cairo function:
   function integer.cairo::U32Sub::sub: 12
   function integer.cairo::Felt252TryIntoU32::try_into: 10
   function array.cairo::ArraySerde::deserialize: 9
+  function lib.cairo::Felt252PartialEq::eq: 6
   function array.cairo::ArrayImpl::new: 3
   function array.cairo::SpanImpl::is_empty: 3
   function option.cairo::OptionTraitImpl::expect: 1
@@ -662,7 +664,7 @@ Weight by original user function (exc. generated):
   function test::test_contract::__wrapper____validate__: 27
   function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by Cairo function:
-  function array.cairo::deserialize_array_helper: 40
+  function array.cairo::deserialize_array_helper: 36
   function contract::__wrapper____validate__: 22
   function array.cairo::SpanImpl::pop_front: 20
   function impls::CallSerde::deserialize: 19
@@ -675,6 +677,7 @@ Weight by Cairo function:
   function array.cairo::SpanFelt252Serde::deserialize: 8
   function integer.cairo::U32Sub::sub: 6
   function integer.cairo::Felt252TryIntoU32::try_into: 5
+  function lib.cairo::Felt252PartialEq::eq: 4
   function array.cairo::ArrayImpl::new: 3
   function array.cairo::SpanImpl::is_empty: 3
   function option.cairo::OptionTraitImpl::expect: 1
@@ -815,12 +818,13 @@ Weight by Cairo function:
   function ec.cairo::EcStateImpl::finalize_nz: 67
   function ec.cairo::EcPointImpl::new_nz_from_x: 30
   function ec.cairo::EcStateImpl::add_mul: 15
-  function ecdsa.cairo::check_ecdsa_signature: 15
   function lib.cairo::ecdsa_call: 14
   function ec.cairo::EcPointImpl::new_nz: 12
   function ec.cairo::EcStateImpl::add: 10
   function ec.cairo::EcStateImpl::sub: 10
+  function lib.cairo::Felt252PartialEq::eq: 9
   function ec.cairo::EcStateImpl::init: 7
+  function ecdsa.cairo::check_ecdsa_signature: 6
   function ec.cairo::EcPointTryIntoNonZero::try_into: 3
   function unknown: 1
 Weight by Sierra stack trace:

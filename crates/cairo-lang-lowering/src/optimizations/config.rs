@@ -28,6 +28,10 @@ impl OptimizationConfig {
         self.moveable_functions = moveable_functions;
         self
     }
+    /// Sets the list of moveable functions to a minimal set, useful for testing.
+    pub fn with_minimal_movable_functions(self) -> Self {
+        self.with_moveable_functions(vec!["felt252_sub".into()])
+    }
     /// Sets the threshold for inlining small functions.
     pub fn with_inline_small_functions_threshold(
         mut self,
