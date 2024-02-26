@@ -117,7 +117,9 @@ pub fn get_concrete_long_type_id(
                 }
             }
         }
-        semantic::TypeLongId::Tuple(_) => user_type_long_id("Struct", "Tuple".into())?.into(),
+        semantic::TypeLongId::Tuple(_) | semantic::TypeLongId::FixedSizeArray { .. } => {
+            user_type_long_id("Struct", "Tuple".into())?.into()
+        }
         semantic::TypeLongId::Snapshot(ty) => {
             let inner_ty = db.get_concrete_type_id(ty).unwrap();
             let ty =
@@ -191,6 +193,7 @@ pub fn type_dependencies(
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
+        semantic::TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

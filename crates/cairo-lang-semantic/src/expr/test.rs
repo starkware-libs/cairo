@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         coupon: "coupon",
         enum_: "enum",
         error_propagate: "error_propagate",
+        fixed_size_array: "fixed_size_array",
         function_call: "function_call",
         generics: "generics",
         if_: "if",

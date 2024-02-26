@@ -130,6 +130,20 @@ impl<'db> InferenceConform for Inference<'db> {
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
             }
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
+                let TypeLongId::FixedSizeArray { type_id: type_id1, size: size1 } = long_ty1 else {
+                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                };
+                if size != size1 {
+                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
+                }
+                let ty = self.conform_ty(type_id, type_id1)?;
+                Ok((
+                    self.db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size }),
+                    n_snapshots,
+                ))
+            }
             TypeLongId::Snapshot(ty0) => {
                 let TypeLongId::Snapshot(ty1) = long_ty1 else {
                     return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
@@ -332,6 +346,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
+            TypeLongId::FixedSizeArray { type_id, .. } => self.ty_contains_var(type_id, var),
         }
     }
 
