@@ -36,8 +36,11 @@ impl InlineWeight for SimpleInlineWeight {
         0
     }
 
-    fn statement_weight(&self, _db: &dyn LoweringGroup, _statement: &Statement) -> isize {
-        1
+    fn statement_weight(&self, _db: &dyn LoweringGroup, statement: &Statement) -> isize {
+        match statement {
+            Statement::Call(_) => 1,
+            _ => 0,
+        }
     }
 
     fn block_end_weight(&self, _db: &dyn LoweringGroup, _block_end: &FlatBlockEnd) -> isize {
