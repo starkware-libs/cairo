@@ -694,6 +694,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                  specified."
                     .into()
             }
+            SemanticDiagnosticKind::FixedSizeArrayTypeNonSingleType => {
+                "Fixed size array type must have exactly one type.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayTypeEmptySize => {
+                "Fixed size array type must have a size clause.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayNonNumericSize => {
+                "Fixed size array type must have a positive integer size.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayNonSingleValue => {
+                "Fixed size array with defined size must have exactly one value.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayEmptyElements => {
+                "Fixed size array must have at least one element.".into()
+            }
         }
     }
 
@@ -1030,6 +1045,11 @@ pub enum SemanticDiagnosticKind {
     CouponArgumentNoModifiers,
     /// Coupons are disabled in the current crate.
     CouponsDisabled,
+    FixedSizeArrayTypeNonSingleType,
+    FixedSizeArrayTypeEmptySize,
+    FixedSizeArrayNonNumericSize,
+    FixedSizeArrayNonSingleValue,
+    FixedSizeArrayEmptyElements,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
