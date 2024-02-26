@@ -17,7 +17,6 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenQuestionMark
             | SyntaxKind::TokenRParen
             | SyntaxKind::TokenRBrack
-            | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenNot
                 if matches!(
@@ -38,6 +37,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenLBrace
                 if matches!(parent_kind(db, self), Some(SyntaxKind::UsePathList)) =>
+            {
+                true
+            }
+            SyntaxKind::TokenLBrack
+                if grandparent_kind(db, self) != Some(SyntaxKind::ExprFixedSizeArray) =>
             {
                 true
             }
