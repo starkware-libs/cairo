@@ -8,7 +8,6 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 
 [dependencies]
 anyhow.workspace = true
-starknet-types-core.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.3" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.5.3" }
 cairo-lang-runner = { path = "../cairo-lang-runner", version = "2.5.3" }
@@ -22,6 +21,7 @@ colored.workspace = true
 itertools = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
 rayon.workspace = true
+starknet-types-core = { workspace = true, default-features = true }
 
 [dev-dependencies]
 serde_json.workspace = true

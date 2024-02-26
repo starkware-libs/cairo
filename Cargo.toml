@@ -126,7 +126,7 @@ smol_str = { version = "0.2.0", features = ["serde"] }
 starknet-crypto = "0.6.1"
 starknet-types-core = { version = "0.0.9", features = [
     "hash",
-] }
+], default-features = false }
 syn = { version = "2.0.39", features = ["full", "extra-traits"] }
 test-case = "3.2.1"
 test-case-macros = "3.2.1"

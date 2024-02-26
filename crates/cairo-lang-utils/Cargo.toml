@@ -35,6 +35,7 @@ std = [
   "indexmap/std",
   "num-bigint/std",
   "num-traits/std",
+  "starknet-types-core/std",
   "serde?/std"
 ]
 serde = ["dep:serde", "num-bigint/serde", "indexmap/serde"]
