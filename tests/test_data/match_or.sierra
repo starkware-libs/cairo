@@ -1,16 +1,16 @@
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252> = Struct<ut@Tuple, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@core::panics::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<Unit> = Struct<ut@Tuple, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
-type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type core::panics::PanicResult::<((),)> = Enum<ut@core::panics::PanicResult::<((),)>, Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::match_or::P = Struct<ut@examples::match_or::P, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<u8, u8, u8> = Struct<ut@Tuple, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
-type Tuple<felt252> = Struct<ut@Tuple, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@core::panics::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::match_or::MyEnum = Enum<ut@examples::match_or::MyEnum, Tuple<felt252, felt252>, Tuple<felt252, felt252>, Tuple<u8, u8, u8>, examples::match_or::P> [storable: true, drop: true, dup: true, zero_sized: false];
 
@@ -18,12 +18,6 @@ libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_const<2> = felt252_const<2>;
 libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
 libfunc enum_init<examples::match_or::MyEnum, 0> = enum_init<examples::match_or::MyEnum, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<examples::match_or::MyEnum> = store_temp<examples::match_or::MyEnum>;
-libfunc function_call<user@examples::match_or::foo> = function_call<user@examples::match_or::foo>;
-libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>> = enum_match<core::panics::PanicResult::<(core::felt252,)>>;
-libfunc branch_align = branch_align;
-libfunc drop<Tuple<felt252>> = drop<Tuple<felt252>>;
 libfunc enum_init<examples::match_or::MyEnum, 1> = enum_init<examples::match_or::MyEnum, 1>;
 libfunc u8_const<1> = u8_const<1>;
 libfunc u8_const<2> = u8_const<2>;
@@ -33,146 +27,275 @@ libfunc enum_init<examples::match_or::MyEnum, 2> = enum_init<examples::match_or:
 libfunc u8_const<9> = u8_const<9>;
 libfunc struct_construct<examples::match_or::P> = struct_construct<examples::match_or::P>;
 libfunc enum_init<examples::match_or::MyEnum, 3> = enum_init<examples::match_or::MyEnum, 3>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
-libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
-libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
-libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
+libfunc store_temp<examples::match_or::MyEnum> = store_temp<examples::match_or::MyEnum>;
 libfunc enum_match<examples::match_or::MyEnum> = enum_match<examples::match_or::MyEnum>;
+libfunc branch_align = branch_align;
 libfunc struct_deconstruct<Tuple<felt252, felt252>> = struct_deconstruct<Tuple<felt252, felt252>>;
 libfunc drop<felt252> = drop<felt252>;
-libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc jump = jump;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc struct_deconstruct<Tuple<u8, u8, u8>> = struct_deconstruct<Tuple<u8, u8, u8>>;
 libfunc drop<u8> = drop<u8>;
 libfunc store_temp<u8> = store_temp<u8>;
 libfunc struct_deconstruct<examples::match_or::P> = struct_deconstruct<examples::match_or::P>;
 libfunc u8_overflowing_add = u8_overflowing_add;
 libfunc u8_to_felt252 = u8_to_felt252;
-libfunc struct_construct<Tuple<felt252>> = struct_construct<Tuple<felt252>>;
-libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 0> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>;
-libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>> = store_temp<core::panics::PanicResult::<(core::felt252,)>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
+libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc felt252_const<608642104203229548495787928534675319> = felt252_const<608642104203229548495787928534675319>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
+libfunc drop<examples::match_or::MyEnum> = drop<examples::match_or::MyEnum>;
+libfunc struct_construct<Tuple<felt252>> = struct_construct<Tuple<felt252>>;
+libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 0> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>> = store_temp<core::panics::PanicResult::<(core::felt252,)>>;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
 
 felt252_const<1>() -> ([1]); // 0
 felt252_const<2>() -> ([2]); // 1
 struct_construct<Tuple<felt252, felt252>>([1], [2]) -> ([3]); // 2
 enum_init<examples::match_or::MyEnum, 0>([3]) -> ([4]); // 3
-store_temp<RangeCheck>([0]) -> ([0]); // 4
-store_temp<examples::match_or::MyEnum>([4]) -> ([4]); // 5
-function_call<user@examples::match_or::foo>([0], [4]) -> ([5], [6]); // 6
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([6]) { fallthrough([7]) 63([8]) }; // 7
-branch_align() -> (); // 8
-drop<Tuple<felt252>>([7]) -> (); // 9
-felt252_const<1>() -> ([9]); // 10
-felt252_const<2>() -> ([10]); // 11
-struct_construct<Tuple<felt252, felt252>>([9], [10]) -> ([11]); // 12
-enum_init<examples::match_or::MyEnum, 1>([11]) -> ([12]); // 13
-store_temp<RangeCheck>([5]) -> ([5]); // 14
-store_temp<examples::match_or::MyEnum>([12]) -> ([12]); // 15
-function_call<user@examples::match_or::foo>([5], [12]) -> ([13], [14]); // 16
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([14]) { fallthrough([15]) 58([16]) }; // 17
-branch_align() -> (); // 18
-drop<Tuple<felt252>>([15]) -> (); // 19
-u8_const<1>() -> ([17]); // 20
-u8_const<2>() -> ([18]); // 21
-u8_const<3>() -> ([19]); // 22
-struct_construct<Tuple<u8, u8, u8>>([17], [18], [19]) -> ([20]); // 23
-enum_init<examples::match_or::MyEnum, 2>([20]) -> ([21]); // 24
-store_temp<RangeCheck>([13]) -> ([13]); // 25
-store_temp<examples::match_or::MyEnum>([21]) -> ([21]); // 26
-function_call<user@examples::match_or::foo>([13], [21]) -> ([22], [23]); // 27
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([23]) { fallthrough([24]) 53([25]) }; // 28
-branch_align() -> (); // 29
-drop<Tuple<felt252>>([24]) -> (); // 30
-u8_const<1>() -> ([26]); // 31
-u8_const<2>() -> ([27]); // 32
-u8_const<9>() -> ([28]); // 33
-struct_construct<examples::match_or::P>([26], [27], [28]) -> ([29]); // 34
-enum_init<examples::match_or::MyEnum, 3>([29]) -> ([30]); // 35
-store_temp<RangeCheck>([22]) -> ([22]); // 36
-store_temp<examples::match_or::MyEnum>([30]) -> ([30]); // 37
-function_call<user@examples::match_or::foo>([22], [30]) -> ([31], [32]); // 38
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([32]) { fallthrough([33]) 48([34]) }; // 39
+felt252_const<1>() -> ([5]); // 4
+felt252_const<2>() -> ([6]); // 5
+struct_construct<Tuple<felt252, felt252>>([5], [6]) -> ([7]); // 6
+enum_init<examples::match_or::MyEnum, 1>([7]) -> ([8]); // 7
+u8_const<1>() -> ([9]); // 8
+u8_const<2>() -> ([10]); // 9
+u8_const<3>() -> ([11]); // 10
+struct_construct<Tuple<u8, u8, u8>>([9], [10], [11]) -> ([12]); // 11
+enum_init<examples::match_or::MyEnum, 2>([12]) -> ([13]); // 12
+u8_const<1>() -> ([14]); // 13
+u8_const<2>() -> ([15]); // 14
+u8_const<9>() -> ([16]); // 15
+struct_construct<examples::match_or::P>([14], [15], [16]) -> ([17]); // 16
+enum_init<examples::match_or::MyEnum, 3>([17]) -> ([18]); // 17
+store_temp<examples::match_or::MyEnum>([4]) -> ([4]); // 18
+store_temp<examples::match_or::MyEnum>([8]) -> ([8]); // 19
+store_temp<examples::match_or::MyEnum>([13]) -> ([13]); // 20
+store_temp<examples::match_or::MyEnum>([18]) -> ([18]); // 21
+enum_match<examples::match_or::MyEnum>([4]) { fallthrough([19]) 28([20]) 34([21]) 40([22]) }; // 22
+branch_align() -> (); // 23
+struct_deconstruct<Tuple<felt252, felt252>>([19]) -> ([23], [24]); // 24
+drop<felt252>([23]) -> (); // 25
+drop<felt252>([24]) -> (); // 26
+jump() { 32() }; // 27
+branch_align() -> (); // 28
+struct_deconstruct<Tuple<felt252, felt252>>([20]) -> ([25], [26]); // 29
+drop<felt252>([25]) -> (); // 30
+drop<felt252>([26]) -> (); // 31
+store_temp<RangeCheck>([0]) -> ([27]); // 32
+jump() { 50() }; // 33
+branch_align() -> (); // 34
+struct_deconstruct<Tuple<u8, u8, u8>>([21]) -> ([28], [29], [30]); // 35
+drop<u8>([29]) -> (); // 36
+store_temp<u8>([28]) -> ([31]); // 37
+store_temp<u8>([30]) -> ([32]); // 38
+jump() { 45() }; // 39
 branch_align() -> (); // 40
-drop<Tuple<felt252>>([33]) -> (); // 41
-struct_construct<Unit>() -> ([35]); // 42
-struct_construct<Tuple<Unit>>([35]) -> ([36]); // 43
-enum_init<core::panics::PanicResult::<((),)>, 0>([36]) -> ([37]); // 44
-store_temp<RangeCheck>([31]) -> ([31]); // 45
-store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37]); // 46
-return([31], [37]); // 47
-branch_align() -> (); // 48
-enum_init<core::panics::PanicResult::<((),)>, 1>([34]) -> ([38]); // 49
-store_temp<RangeCheck>([31]) -> ([31]); // 50
-store_temp<core::panics::PanicResult::<((),)>>([38]) -> ([38]); // 51
-return([31], [38]); // 52
-branch_align() -> (); // 53
-enum_init<core::panics::PanicResult::<((),)>, 1>([25]) -> ([39]); // 54
-store_temp<RangeCheck>([22]) -> ([22]); // 55
-store_temp<core::panics::PanicResult::<((),)>>([39]) -> ([39]); // 56
-return([22], [39]); // 57
-branch_align() -> (); // 58
-enum_init<core::panics::PanicResult::<((),)>, 1>([16]) -> ([40]); // 59
-store_temp<RangeCheck>([13]) -> ([13]); // 60
-store_temp<core::panics::PanicResult::<((),)>>([40]) -> ([40]); // 61
-return([13], [40]); // 62
-branch_align() -> (); // 63
-enum_init<core::panics::PanicResult::<((),)>, 1>([8]) -> ([41]); // 64
-store_temp<RangeCheck>([5]) -> ([5]); // 65
-store_temp<core::panics::PanicResult::<((),)>>([41]) -> ([41]); // 66
-return([5], [41]); // 67
-enum_match<examples::match_or::MyEnum>([1]) { fallthrough([2]) 74([3]) 81([4]) 87([5]) }; // 68
-branch_align() -> (); // 69
-struct_deconstruct<Tuple<felt252, felt252>>([2]) -> ([6], [7]); // 70
-drop<felt252>([6]) -> (); // 71
-store_temp<felt252>([7]) -> ([8]); // 72
-jump() { 78() }; // 73
+struct_deconstruct<examples::match_or::P>([22]) -> ([33], [34], [35]); // 41
+drop<u8>([34]) -> (); // 42
+store_temp<u8>([33]) -> ([31]); // 43
+store_temp<u8>([35]) -> ([32]); // 44
+u8_overflowing_add([0], [31], [32]) { fallthrough([36], [37]) 178([38], [39]) }; // 45
+branch_align() -> (); // 46
+u8_to_felt252([37]) -> ([40]); // 47
+drop<felt252>([40]) -> (); // 48
+store_temp<RangeCheck>([36]) -> ([27]); // 49
+enum_match<examples::match_or::MyEnum>([8]) { fallthrough([41]) 56([42]) 62([43]) 68([44]) }; // 50
+branch_align() -> (); // 51
+struct_deconstruct<Tuple<felt252, felt252>>([41]) -> ([45], [46]); // 52
+drop<felt252>([45]) -> (); // 53
+drop<felt252>([46]) -> (); // 54
+jump() { 60() }; // 55
+branch_align() -> (); // 56
+struct_deconstruct<Tuple<felt252, felt252>>([42]) -> ([47], [48]); // 57
+drop<felt252>([47]) -> (); // 58
+drop<felt252>([48]) -> (); // 59
+store_temp<RangeCheck>([27]) -> ([49]); // 60
+jump() { 78() }; // 61
+branch_align() -> (); // 62
+struct_deconstruct<Tuple<u8, u8, u8>>([43]) -> ([50], [51], [52]); // 63
+drop<u8>([51]) -> (); // 64
+store_temp<u8>([50]) -> ([53]); // 65
+store_temp<u8>([52]) -> ([54]); // 66
+jump() { 73() }; // 67
+branch_align() -> (); // 68
+struct_deconstruct<examples::match_or::P>([44]) -> ([55], [56], [57]); // 69
+drop<u8>([56]) -> (); // 70
+store_temp<u8>([55]) -> ([53]); // 71
+store_temp<u8>([57]) -> ([54]); // 72
+u8_overflowing_add([27], [53], [54]) { fallthrough([58], [59]) 164([60], [61]) }; // 73
 branch_align() -> (); // 74
-struct_deconstruct<Tuple<felt252, felt252>>([3]) -> ([9], [10]); // 75
-drop<felt252>([10]) -> (); // 76
-store_temp<felt252>([9]) -> ([8]); // 77
-store_temp<RangeCheck>([0]) -> ([11]); // 78
-store_temp<felt252>([8]) -> ([12]); // 79
-jump() { 97() }; // 80
-branch_align() -> (); // 81
-struct_deconstruct<Tuple<u8, u8, u8>>([4]) -> ([13], [14], [15]); // 82
-drop<u8>([14]) -> (); // 83
-store_temp<u8>([13]) -> ([16]); // 84
-store_temp<u8>([15]) -> ([17]); // 85
-jump() { 92() }; // 86
-branch_align() -> (); // 87
-struct_deconstruct<examples::match_or::P>([5]) -> ([18], [19], [20]); // 88
-drop<u8>([19]) -> (); // 89
-store_temp<u8>([18]) -> ([16]); // 90
-store_temp<u8>([20]) -> ([17]); // 91
-u8_overflowing_add([0], [16], [17]) { fallthrough([21], [22]) 102([23], [24]) }; // 92
-branch_align() -> (); // 93
-u8_to_felt252([22]) -> ([25]); // 94
-store_temp<RangeCheck>([21]) -> ([11]); // 95
-store_temp<felt252>([25]) -> ([12]); // 96
-struct_construct<Tuple<felt252>>([12]) -> ([26]); // 97
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([26]) -> ([27]); // 98
-store_temp<RangeCheck>([11]) -> ([11]); // 99
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([27]) -> ([27]); // 100
-return([11], [27]); // 101
+u8_to_felt252([59]) -> ([62]); // 75
+drop<felt252>([62]) -> (); // 76
+store_temp<RangeCheck>([58]) -> ([49]); // 77
+enum_match<examples::match_or::MyEnum>([13]) { fallthrough([63]) 84([64]) 90([65]) 96([66]) }; // 78
+branch_align() -> (); // 79
+struct_deconstruct<Tuple<felt252, felt252>>([63]) -> ([67], [68]); // 80
+drop<felt252>([67]) -> (); // 81
+drop<felt252>([68]) -> (); // 82
+jump() { 88() }; // 83
+branch_align() -> (); // 84
+struct_deconstruct<Tuple<felt252, felt252>>([64]) -> ([69], [70]); // 85
+drop<felt252>([69]) -> (); // 86
+drop<felt252>([70]) -> (); // 87
+store_temp<RangeCheck>([49]) -> ([71]); // 88
+jump() { 106() }; // 89
+branch_align() -> (); // 90
+struct_deconstruct<Tuple<u8, u8, u8>>([65]) -> ([72], [73], [74]); // 91
+drop<u8>([73]) -> (); // 92
+store_temp<u8>([72]) -> ([75]); // 93
+store_temp<u8>([74]) -> ([76]); // 94
+jump() { 101() }; // 95
+branch_align() -> (); // 96
+struct_deconstruct<examples::match_or::P>([66]) -> ([77], [78], [79]); // 97
+drop<u8>([78]) -> (); // 98
+store_temp<u8>([77]) -> ([75]); // 99
+store_temp<u8>([79]) -> ([76]); // 100
+u8_overflowing_add([49], [75], [76]) { fallthrough([80], [81]) 151([82], [83]) }; // 101
 branch_align() -> (); // 102
-drop<u8>([24]) -> (); // 103
-array_new<felt252>() -> ([28]); // 104
-felt252_const<608642104203229548495787928534675319>() -> ([29]); // 105
-store_temp<felt252>([29]) -> ([29]); // 106
-array_append<felt252>([28], [29]) -> ([30]); // 107
-struct_construct<core::panics::Panic>() -> ([31]); // 108
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([31], [30]) -> ([32]); // 109
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([32]) -> ([33]); // 110
-store_temp<RangeCheck>([23]) -> ([23]); // 111
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([33]) -> ([33]); // 112
-return([23], [33]); // 113
+u8_to_felt252([81]) -> ([84]); // 103
+drop<felt252>([84]) -> (); // 104
+store_temp<RangeCheck>([80]) -> ([71]); // 105
+enum_match<examples::match_or::MyEnum>([18]) { fallthrough([85]) 112([86]) 118([87]) 124([88]) }; // 106
+branch_align() -> (); // 107
+struct_deconstruct<Tuple<felt252, felt252>>([85]) -> ([89], [90]); // 108
+drop<felt252>([89]) -> (); // 109
+drop<felt252>([90]) -> (); // 110
+jump() { 116() }; // 111
+branch_align() -> (); // 112
+struct_deconstruct<Tuple<felt252, felt252>>([86]) -> ([91], [92]); // 113
+drop<felt252>([91]) -> (); // 114
+drop<felt252>([92]) -> (); // 115
+store_temp<RangeCheck>([71]) -> ([93]); // 116
+jump() { 134() }; // 117
+branch_align() -> (); // 118
+struct_deconstruct<Tuple<u8, u8, u8>>([87]) -> ([94], [95], [96]); // 119
+drop<u8>([95]) -> (); // 120
+store_temp<u8>([94]) -> ([97]); // 121
+store_temp<u8>([96]) -> ([98]); // 122
+jump() { 129() }; // 123
+branch_align() -> (); // 124
+struct_deconstruct<examples::match_or::P>([88]) -> ([99], [100], [101]); // 125
+drop<u8>([100]) -> (); // 126
+store_temp<u8>([99]) -> ([97]); // 127
+store_temp<u8>([101]) -> ([98]); // 128
+u8_overflowing_add([71], [97], [98]) { fallthrough([102], [103]) 139([104], [105]) }; // 129
+branch_align() -> (); // 130
+u8_to_felt252([103]) -> ([106]); // 131
+drop<felt252>([106]) -> (); // 132
+store_temp<RangeCheck>([102]) -> ([93]); // 133
+struct_construct<Unit>() -> ([107]); // 134
+struct_construct<Tuple<Unit>>([107]) -> ([108]); // 135
+enum_init<core::panics::PanicResult::<((),)>, 0>([108]) -> ([109]); // 136
+store_temp<core::panics::PanicResult::<((),)>>([109]) -> ([109]); // 137
+return([93], [109]); // 138
+branch_align() -> (); // 139
+drop<u8>([105]) -> (); // 140
+array_new<felt252>() -> ([110]); // 141
+felt252_const<608642104203229548495787928534675319>() -> ([111]); // 142
+store_temp<felt252>([111]) -> ([111]); // 143
+array_append<felt252>([110], [111]) -> ([112]); // 144
+struct_construct<core::panics::Panic>() -> ([113]); // 145
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([113], [112]) -> ([114]); // 146
+enum_init<core::panics::PanicResult::<((),)>, 1>([114]) -> ([115]); // 147
+store_temp<RangeCheck>([104]) -> ([104]); // 148
+store_temp<core::panics::PanicResult::<((),)>>([115]) -> ([115]); // 149
+return([104], [115]); // 150
+branch_align() -> (); // 151
+drop<u8>([83]) -> (); // 152
+drop<examples::match_or::MyEnum>([18]) -> (); // 153
+array_new<felt252>() -> ([116]); // 154
+felt252_const<608642104203229548495787928534675319>() -> ([117]); // 155
+store_temp<felt252>([117]) -> ([117]); // 156
+array_append<felt252>([116], [117]) -> ([118]); // 157
+struct_construct<core::panics::Panic>() -> ([119]); // 158
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([119], [118]) -> ([120]); // 159
+enum_init<core::panics::PanicResult::<((),)>, 1>([120]) -> ([121]); // 160
+store_temp<RangeCheck>([82]) -> ([82]); // 161
+store_temp<core::panics::PanicResult::<((),)>>([121]) -> ([121]); // 162
+return([82], [121]); // 163
+branch_align() -> (); // 164
+drop<u8>([61]) -> (); // 165
+drop<examples::match_or::MyEnum>([18]) -> (); // 166
+drop<examples::match_or::MyEnum>([13]) -> (); // 167
+array_new<felt252>() -> ([122]); // 168
+felt252_const<608642104203229548495787928534675319>() -> ([123]); // 169
+store_temp<felt252>([123]) -> ([123]); // 170
+array_append<felt252>([122], [123]) -> ([124]); // 171
+struct_construct<core::panics::Panic>() -> ([125]); // 172
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([125], [124]) -> ([126]); // 173
+enum_init<core::panics::PanicResult::<((),)>, 1>([126]) -> ([127]); // 174
+store_temp<RangeCheck>([60]) -> ([60]); // 175
+store_temp<core::panics::PanicResult::<((),)>>([127]) -> ([127]); // 176
+return([60], [127]); // 177
+branch_align() -> (); // 178
+drop<u8>([39]) -> (); // 179
+drop<examples::match_or::MyEnum>([18]) -> (); // 180
+drop<examples::match_or::MyEnum>([13]) -> (); // 181
+drop<examples::match_or::MyEnum>([8]) -> (); // 182
+array_new<felt252>() -> ([128]); // 183
+felt252_const<608642104203229548495787928534675319>() -> ([129]); // 184
+store_temp<felt252>([129]) -> ([129]); // 185
+array_append<felt252>([128], [129]) -> ([130]); // 186
+struct_construct<core::panics::Panic>() -> ([131]); // 187
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([131], [130]) -> ([132]); // 188
+enum_init<core::panics::PanicResult::<((),)>, 1>([132]) -> ([133]); // 189
+store_temp<RangeCheck>([38]) -> ([38]); // 190
+store_temp<core::panics::PanicResult::<((),)>>([133]) -> ([133]); // 191
+return([38], [133]); // 192
+enum_match<examples::match_or::MyEnum>([1]) { fallthrough([2]) 199([3]) 206([4]) 212([5]) }; // 193
+branch_align() -> (); // 194
+struct_deconstruct<Tuple<felt252, felt252>>([2]) -> ([6], [7]); // 195
+drop<felt252>([6]) -> (); // 196
+store_temp<felt252>([7]) -> ([8]); // 197
+jump() { 203() }; // 198
+branch_align() -> (); // 199
+struct_deconstruct<Tuple<felt252, felt252>>([3]) -> ([9], [10]); // 200
+drop<felt252>([10]) -> (); // 201
+store_temp<felt252>([9]) -> ([8]); // 202
+store_temp<RangeCheck>([0]) -> ([11]); // 203
+store_temp<felt252>([8]) -> ([12]); // 204
+jump() { 222() }; // 205
+branch_align() -> (); // 206
+struct_deconstruct<Tuple<u8, u8, u8>>([4]) -> ([13], [14], [15]); // 207
+drop<u8>([14]) -> (); // 208
+store_temp<u8>([13]) -> ([16]); // 209
+store_temp<u8>([15]) -> ([17]); // 210
+jump() { 217() }; // 211
+branch_align() -> (); // 212
+struct_deconstruct<examples::match_or::P>([5]) -> ([18], [19], [20]); // 213
+drop<u8>([19]) -> (); // 214
+store_temp<u8>([18]) -> ([16]); // 215
+store_temp<u8>([20]) -> ([17]); // 216
+u8_overflowing_add([0], [16], [17]) { fallthrough([21], [22]) 227([23], [24]) }; // 217
+branch_align() -> (); // 218
+u8_to_felt252([22]) -> ([25]); // 219
+store_temp<RangeCheck>([21]) -> ([11]); // 220
+store_temp<felt252>([25]) -> ([12]); // 221
+struct_construct<Tuple<felt252>>([12]) -> ([26]); // 222
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([26]) -> ([27]); // 223
+store_temp<RangeCheck>([11]) -> ([11]); // 224
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([27]) -> ([27]); // 225
+return([11], [27]); // 226
+branch_align() -> (); // 227
+drop<u8>([24]) -> (); // 228
+array_new<felt252>() -> ([28]); // 229
+felt252_const<608642104203229548495787928534675319>() -> ([29]); // 230
+store_temp<felt252>([29]) -> ([29]); // 231
+array_append<felt252>([28], [29]) -> ([30]); // 232
+struct_construct<core::panics::Panic>() -> ([31]); // 233
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([31], [30]) -> ([32]); // 234
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([32]) -> ([33]); // 235
+store_temp<RangeCheck>([23]) -> ([23]); // 236
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([33]) -> ([33]); // 237
+return([23], [33]); // 238
 
 examples::match_or::main@0([0]: RangeCheck) -> (RangeCheck, core::panics::PanicResult::<((),)>);
-examples::match_or::foo@68([0]: RangeCheck, [1]: examples::match_or::MyEnum) -> (RangeCheck, core::panics::PanicResult::<(core::felt252,)>);
+examples::match_or::foo@193([0]: RangeCheck, [1]: examples::match_or::MyEnum) -> (RangeCheck, core::panics::PanicResult::<(core::felt252,)>);
