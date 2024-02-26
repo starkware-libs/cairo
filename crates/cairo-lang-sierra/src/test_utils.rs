@@ -1,7 +1,7 @@
 use bimap::BiMap;
-use cairo_felt::Felt252;
 use itertools::chain;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt;
 
 use crate::ids::ConcreteTypeId;
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -31,7 +31,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     );
     elements.insert(
         "BoundedInt0_-1".into(),
-        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), Felt252::from(-1).to_bigint()]),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), Felt::from(-1).to_bigint()]),
     );
     elements.insert(
         "BoundedInt0_10".into(),

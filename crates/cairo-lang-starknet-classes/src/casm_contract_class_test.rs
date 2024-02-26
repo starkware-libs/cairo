@@ -1,7 +1,7 @@
 use std::io::BufReader;
 
-use cairo_felt::Felt252;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
+use starknet_types_core::felt::Felt;
 use test_case::test_case;
 
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
@@ -14,7 +14,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
     let f =
         std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
     let mut contract_class: ContractClass = serde_json::from_reader(BufReader::new(f)).unwrap();
-    contract_class.sierra_program[17] = BigUintAsHex { value: Felt252::prime() };
+    contract_class.sierra_program[17] = BigUintAsHex { value: Felt::prime() };
 
     let add_pythonic_hints = false;
     assert_eq!(

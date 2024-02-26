@@ -1,4 +1,3 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -9,6 +8,7 @@ use itertools::chain;
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt;
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
 
@@ -18,7 +18,7 @@ pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
     /// Accept only a panic with this specific vector of felts.
-    Exact(Vec<Felt252>),
+    Exact(Vec<Felt>),
 }
 
 /// Expectation for a result of a test.
@@ -160,7 +160,7 @@ fn extract_available_gas(
 
 /// Tries to extract the expected panic bytes out of the given `should_panic` attribute.
 /// Assumes the attribute is `should_panic`.
-fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
+fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt>> {
     let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
@@ -204,7 +204,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
 fn extract_string_panic_bytes(
     panic_string: &ast::TerminalString,
     db: &dyn SyntaxGroup,
-) -> Vec<Felt252> {
+) -> Vec<Felt> {
     let panic_string = panic_string.string_value(db).unwrap();
     let chunks = panic_string.as_bytes().chunks_exact(BYTES_IN_WORD);
     let num_full_words = chunks.len().into();
@@ -214,7 +214,7 @@ fn extract_string_panic_bytes(
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
     chain!(
-        [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
+        [BYTE_ARRAY_MAGIC, num_full_words],
         full_words.into_iter(),
         [pending_word, pending_word_len]
     )

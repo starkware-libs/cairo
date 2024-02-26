@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use starknet_crypto::{pedersen_hash, FieldElement};
+use starknet_types_core::felt::Felt;
 
 /// Computes Pedersen hash using STARK curve on an array of elements, as defined
 /// in <https://docs.starknet.io/documentation/architecture_and_concepts/Hashing/hash-functions/#array_hashing.>
@@ -28,19 +28,19 @@ const CONTRACT_ADDRESS_PREFIX: FieldElement = FieldElement::from_mont([
     533439743893157637,
 ]);
 
-/// Converts a Felt252 to the FieldElement type used in starknet-crypto.
-fn felt252_to_field_element(input: &Felt252) -> FieldElement {
-    FieldElement::from_bytes_be(&input.to_be_bytes()).unwrap()
+/// Converts a Felt to the FieldElement type used in starknet-crypto.
+fn felt252_to_field_element(input: &Felt) -> FieldElement {
+    FieldElement::from_bytes_be(&input.to_bytes_be()).unwrap()
 }
 
 /// Calculates the address of a starknet contract, as defined in
 /// <https://docs.starknet.io/documentation/architecture_and_concepts/Smart_Contracts/contract-address/>.
 pub fn calculate_contract_address(
-    salt: &Felt252,
-    class_hash: &Felt252,
-    constructor_calldata: &[Felt252],
-    deployer_address: &Felt252,
-) -> Felt252 {
+    salt: &Felt,
+    class_hash: &Felt,
+    constructor_calldata: &[Felt],
+    deployer_address: &Felt,
+) -> Felt {
     let constructor_calldata_hash = pedersen_hash_array(
         &constructor_calldata.iter().map(felt252_to_field_element).collect::<Vec<_>>(),
     );
@@ -53,5 +53,5 @@ pub fn calculate_contract_address(
     ]);
     address = address % ADDR_BOUND;
 
-    Felt252::from_bytes_be(&address.to_bytes_be())
+    Felt::from_bytes_be(&address.to_bytes_be())
 }

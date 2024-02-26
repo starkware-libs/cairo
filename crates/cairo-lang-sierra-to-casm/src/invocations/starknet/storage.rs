@@ -1,7 +1,7 @@
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use num_bigint::{BigInt, ToBigInt};
+use starknet_types_core::felt::Felt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
@@ -50,7 +50,7 @@ pub fn build_storage_base_address_from_felt252(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(Felt252::prime().to_bigint().unwrap() - addr_bound.clone()),
+        &(Felt::prime().to_bigint().unwrap() - addr_bound.clone()),
         res,
         range_check,
         &auxiliary_vars[..4],

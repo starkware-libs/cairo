@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
@@ -35,6 +34,7 @@ use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_types_core::felt::Felt;
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -110,7 +110,7 @@ pub struct CasmContractClass {
 }
 impl CasmContractClass {
     /// Returns the hash value for the compiled contract class.
-    pub fn compiled_class_hash(&self) -> Felt252 {
+    pub fn compiled_class_hash(&self) -> Felt {
         // Compute hashes on each component separately.
         let external_funcs_hash = self.entry_points_hash(&self.entry_points_by_type.external);
         let l1_handlers_hash = self.entry_points_hash(&self.entry_points_by_type.l1_handler);
@@ -126,7 +126,7 @@ impl CasmContractClass {
         );
 
         // Compute total hash by hashing each component on top of the previous one.
-        Felt252::from_bytes_be(
+        Felt::from_bytes_be(
             &poseidon_hash_many(&[
                 FieldElement::from_byte_slice_be(b"COMPILED_CLASS_V1").unwrap(),
                 external_funcs_hash,
@@ -290,7 +290,7 @@ impl CasmContractClass {
         contract_class: ContractClass,
         add_pythonic_hints: bool,
     ) -> Result<Self, StarknetSierraCompilationError> {
-        let prime = Felt252::prime();
+        let prime = Felt::prime();
         for felt252 in &contract_class.sierra_program {
             if felt252.value >= prime {
                 return Err(StarknetSierraCompilationError::ValueOutOfRange);

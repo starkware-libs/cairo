@@ -1,9 +1,9 @@
-use cairo_felt::Felt252;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::ToPrimitive;
+use starknet_types_core::felt::Felt;
 
 /// Compresses a vector of `BigUintAsHex` representing felts into `result`, by creating a code
 /// mapping, and then compressing several original code words into the given felts.
@@ -70,7 +70,7 @@ fn pop_usize(values: &[BigUintAsHex]) -> Option<(&[BigUintAsHex], usize)> {
 /// Given the size of the code book, returns the number of code words that can be encoded in a felt.
 fn words_per_felt(padded_code_size: usize) -> usize {
     let mut count = 0;
-    let prime = Felt252::prime();
+    let prime = Felt::prime();
     let mut max_encoded = BigUint::from(padded_code_size);
     while max_encoded < prime {
         max_encoded *= padded_code_size;

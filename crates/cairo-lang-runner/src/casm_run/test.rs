@@ -1,4 +1,3 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
@@ -8,6 +7,7 @@ use indoc::indoc;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use starknet_types_core::felt::Felt;
 use test_case::test_case;
 
 use super::format_for_debug;
@@ -123,7 +123,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         .flat_map(|instruction| instruction.assemble().encode())
         .collect();
 
-    let (cells, ap) = run_function(
+    let (cells, trace) = run_function(
         &mut VirtualMachine::new(true),
         bytecode.iter(),
         vec![],
@@ -132,10 +132,11 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         hints_dict,
     )
     .expect("Running code failed.");
-    let cells = cells.into_iter().skip(ap - n_returns);
+    let last_ap = trace.last().unwrap().ap;
+    let cells = cells.into_iter().skip(last_ap - n_returns);
     assert_eq!(
         cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
-        expected.iter().copied().map(Felt252::from).collect_vec()
+        expected.iter().copied().map(Felt::from).collect_vec()
     );
 }
 
@@ -158,7 +159,7 @@ fn test_allocate_segment() {
     let bytecode: Vec<BigInt> =
         casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
-    let (memory, ap) = run_function(
+    let (memory, trace) = run_function(
         &mut VirtualMachine::new(true),
         bytecode.iter(),
         vec![],
@@ -167,74 +168,78 @@ fn test_allocate_segment() {
         hints_dict,
     )
     .expect("Running code failed.");
-    let ptr = memory[ap]
+    let last_ap = trace.last().unwrap().ap;
+    let ptr = memory[last_ap]
         .as_ref()
         .expect("Uninitialized value.")
         .to_usize()
         .expect("Number not in index range.");
-    assert_eq!(memory[ptr], Some(Felt252::from(1337)));
+    assert_eq!(memory[ptr], Some(Felt::from(1337)));
 }
 
 #[test]
 fn test_as_cairo_short_string() {
     // Simple short strings.
-    assert_eq!(as_cairo_short_string(&Felt252::from(0)), Some("".to_string()));
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x61)), Some("a".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0)), Some("".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0x61)), Some("a".to_string()));
     assert_eq!(
-        as_cairo_short_string(&felt_str!(
-            "30313233343536373839303132333435363738393031323334353637383930",
-            16
+        as_cairo_short_string(&Felt::from_hex_unchecked(
+            "30313233343536373839303132333435363738393031323334353637383930"
         )),
         Some("0123456789012345678901234567890".to_string())
     );
 
     // With whitespace.
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x612062)), Some("a b".to_string()));
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x610962)), Some("a\tb".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0x612062)), Some("a b".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0x610962)), Some("a\tb".to_string()));
 
     // With null in the middle.
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x610062)), None);
+    assert_eq!(as_cairo_short_string(&Felt::from(0x610062)), None);
 
     // Nulls in the end are OK.
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x6100)), Some("a".to_string()));
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x61000000)), Some("a".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0x6100)), Some("a".to_string()));
+    assert_eq!(as_cairo_short_string(&Felt::from(0x61000000)), Some("a".to_string()));
 
     // With a non printable character.
-    assert_eq!(as_cairo_short_string(&Felt252::from(0x610162)), None);
+    assert_eq!(as_cairo_short_string(&Felt::from(0x610162)), None);
 }
 
 #[test]
 fn test_as_cairo_short_string_ex() {
     // Simple short strings.
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0), 0), Some("".to_string()));
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x61), 1), Some("a".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0), 0), Some("".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x61), 1), Some("a".to_string()));
     assert_eq!(
         as_cairo_short_string_ex(
-            &felt_str!("30313233343536373839303132333435363738393031323334353637383930", 16),
+            &Felt::from_hex_unchecked(
+                "30313233343536373839303132333435363738393031323334353637383930"
+            ),
             31
         ),
         Some("0123456789012345678901234567890".to_string())
     );
 
     // With whitespace.
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x612062), 3), Some("a b".to_string()));
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610962), 3), Some("a\tb".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x612062), 3), Some("a b".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x610962), 3), Some("a\tb".to_string()));
 
     // Nulls are OK.
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x6100), 2), Some(r"a\0".to_string()));
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610062), 3), Some(r"a\0b".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x6100), 2), Some(r"a\0".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x610062), 3), Some(r"a\0b".to_string()));
 
     // With a non printable character.
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610162), 3), Some(r"a\x01b".to_string()));
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x610162), 3), Some(r"a\x01b".to_string()));
 
     // More data than expected.
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x61), 0), None);
-    assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x6161), 1), None);
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x61), 0), None);
+    assert_eq!(as_cairo_short_string_ex(&Felt::from(0x6161), 1), None);
 
     // length > 31.
     assert_eq!(
         as_cairo_short_string_ex(
-            &felt_str!("100000000000000000000000000000000000000000000000000000000000000", 16),
+            &Felt::from_hex_unchecked(
+                "100000000000000000000000000000000000000000000000000000000000000"
+            ),
             32
         ),
         None
@@ -244,33 +249,33 @@ fn test_as_cairo_short_string_ex() {
 #[test]
 fn test_format_for_debug() {
     // Valid short string.
-    let felts = vec![felt_str!("68656c6c6f", 16)];
+    let felts = vec![Felt::from_hex_unchecked("68656c6c6f")];
     assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t0x68656c6c6f ('hello')\n");
 
     // felt252
-    let felts = vec![Felt252::from(1)];
+    let felts = vec![Felt::from(1)];
     assert_eq!(format_for_debug(felts.into_iter()), "[DEBUG]\t0x1\n");
 
     // Valid string with < 31 characters (no full words).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
-        Felt252::from(0),                                    // No full words.
-        felt_str!("73686f72742c2062757420737472696e67", 16), // 'short, but string'
-        Felt252::from(17),                                   // pending word length
+        BYTE_ARRAY_MAGIC,
+        Felt::from(0), // No full words.
+        Felt::from_hex_unchecked("73686f72742c2062757420737472696e67"), // 'short, but string'
+        Felt::from(17), // pending word length
     ];
     assert_eq!(format_for_debug(felts.into_iter()), "short, but string");
 
     // Valid string with > 31 characters (with a full word).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // A single full word.
-        Felt252::from(1),
+        Felt::from(1),
         // full word: 'This is a long string with more'
-        felt_str!("546869732069732061206c6f6e6720737472696e672077697468206d6f7265", 16),
+        Felt::from_hex_unchecked("546869732069732061206c6f6e6720737472696e672077697468206d6f7265"),
         // pending word: ' than 31 characters.'
-        felt_str!("207468616e20333120636861726163746572732e", 16),
+        Felt::from_hex_unchecked("207468616e20333120636861726163746572732e"),
         // pending word length
-        Felt252::from(20),
+        Felt::from(20),
     ];
     assert_eq!(
         format_for_debug(felts.into_iter()),
@@ -278,14 +283,14 @@ fn test_format_for_debug() {
     );
 
     // Only magic.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16)];
+    let felts = vec![BYTE_ARRAY_MAGIC];
     assert_eq!(
         format_for_debug(felts.into_iter()),
         "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3\n"
     );
 
     // num_full_words > usize.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), felt_str!("100000000", 16)];
+    let felts = vec![BYTE_ARRAY_MAGIC, Felt::from_hex_unchecked("100000000")];
     assert_eq!(
         format_for_debug(felts.into_iter()),
         indoc!(
@@ -296,7 +301,7 @@ fn test_format_for_debug() {
     );
 
     // Not enough data after num_full_words.
-    let felts = vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(0)];
+    let felts = vec![BYTE_ARRAY_MAGIC, Felt::from(0)];
     assert_eq!(
         format_for_debug(felts.into_iter()),
         "[DEBUG]\t0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3\n[DEBUG]\t0x0 \
@@ -304,8 +309,7 @@ fn test_format_for_debug() {
     );
 
     // Not enough full words.
-    let felts =
-        vec![felt_str!(BYTE_ARRAY_MAGIC, 16), Felt252::from(1), Felt252::from(0), Felt252::from(0)];
+    let felts = vec![BYTE_ARRAY_MAGIC, Felt::from(1), Felt::from(0), Felt::from(0)];
     assert_eq!(
         format_for_debug(felts.into_iter()),
         indoc!(
@@ -318,11 +322,11 @@ fn test_format_for_debug() {
 
     // Too much data in full word.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
-        Felt252::from(1),
-        felt_str!("161616161616161616161616161616161616161616161616161616161616161", 16),
-        Felt252::from(0),
-        Felt252::from(0),
+        BYTE_ARRAY_MAGIC,
+        Felt::from(1),
+        Felt::from_hex_unchecked("161616161616161616161616161616161616161616161616161616161616161"),
+        Felt::from(0),
+        Felt::from(0),
     ];
     assert_eq!(
         format_for_debug(felts.into_iter()),
@@ -337,12 +341,8 @@ fn test_format_for_debug() {
     );
 
     // num_pending_bytes > usize.
-    let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
-        Felt252::from(0),
-        Felt252::from(0),
-        felt_str!("100000000", 16),
-    ];
+    let felts =
+        vec![BYTE_ARRAY_MAGIC, Felt::from(0), Felt::from(0), Felt::from_hex_unchecked("100000000")];
     assert_eq!(
         format_for_debug(felts.into_iter()),
         indoc!(
@@ -356,25 +356,25 @@ fn test_format_for_debug() {
 
     // "Not enough" data in pending_word (nulls in the beginning).
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // No full words.
-        Felt252::from(0),
+        Felt::from(0),
         // 'a'
-        felt_str!("61", 16),
+        Felt::from_hex_unchecked("61"),
         // pending word length. Bigger than the actual data in the pending word.
-        Felt252::from(2),
+        Felt::from(2),
     ];
     assert_eq!(format_for_debug(felts.into_iter()), "\\0a");
 
     // Too much data in pending_word.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // No full words.
-        Felt252::from(0),
+        Felt::from(0),
         // 'aa'
-        felt_str!("6161", 16),
+        Felt::from_hex_unchecked("6161"),
         // pending word length. Smaller than the actual data in the pending word.
-        Felt252::from(1),
+        Felt::from(1),
     ];
     assert_eq!(
         format_for_debug(felts.into_iter()),
@@ -389,53 +389,53 @@ fn test_format_for_debug() {
 
     // Valid string with Null.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // No full word.
-        Felt252::from(0),
+        Felt::from(0),
         // pending word: 'Hello\0world'
-        felt_str!("48656c6c6f00776f726c64", 16),
+        Felt::from_hex_unchecked("48656c6c6f00776f726c64"),
         // pending word length
-        Felt252::from(11),
+        Felt::from(11),
     ];
     assert_eq!(format_for_debug(felts.into_iter()), "Hello\\0world");
 
     // Valid string with a non printable character.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // No full word.
-        Felt252::from(0),
+        Felt::from(0),
         // pending word: 'Hello\x11world'
-        felt_str!("48656c6c6f11776f726c64", 16),
+        Felt::from_hex_unchecked("48656c6c6f11776f726c64"),
         // pending word length
-        Felt252::from(11),
+        Felt::from(11),
     ];
     assert_eq!(format_for_debug(felts.into_iter()), "Hello\\x11world");
 
     // Valid string with a newline.
     let felts = vec![
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
+        BYTE_ARRAY_MAGIC,
         // No full word.
-        Felt252::from(0),
+        Felt::from(0),
         // pending word: 'Hello\nworld'
-        felt_str!("48656c6c6f0a776f726c64", 16),
+        Felt::from_hex_unchecked("48656c6c6f0a776f726c64"),
         // pending word length
-        Felt252::from(11),
+        Felt::from(11),
     ];
     assert_eq!(format_for_debug(felts.into_iter()), "Hello\nworld");
 
     // Multiple values: (felt, string, short_string, felt)
     let felts = vec![
         // felt: 0x9999
-        Felt252::from(0x9999),
+        Felt::from(0x9999),
         // String: "hello"
-        felt_str!(BYTE_ARRAY_MAGIC, 16),
-        Felt252::from(0),
-        felt_str!("68656c6c6f", 16),
-        Felt252::from(5),
+        BYTE_ARRAY_MAGIC,
+        Felt::from(0),
+        Felt::from_hex_unchecked("68656c6c6f"),
+        Felt::from(5),
         // Short string: 'world'
-        felt_str!("776f726c64", 16),
+        Felt::from_hex_unchecked("776f726c64"),
         // felt: 0x8888
-        Felt252::from(0x8888),
+        Felt::from(0x8888),
     ];
     assert_eq!(
         format_for_debug(felts.into_iter()),
@@ -451,16 +451,21 @@ fn test_format_for_debug() {
 
 #[test]
 fn test_calculate_contract_address() {
-    let salt = felt_str!("122660764594045088044512115");
-    let deployer_address = Felt252::from(0x01);
-    let class_hash =
-        felt_str!("1779576919126046589190499439779938629977579841313883525093195577363779864274");
-    let calldata = vec![deployer_address.clone(), salt.clone()];
+    let salt = Felt::from_dec_str("122660764594045088044512115").unwrap();
+    let deployer_address = Felt::from(0x01);
+    let class_hash = Felt::from_dec_str(
+        "1779576919126046589190499439779938629977579841313883525093195577363779864274",
+    )
+    .unwrap();
+    let calldata = vec![deployer_address, salt];
     let deployed_contract_address =
         calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address);
 
     assert_eq!(
-        felt_str!("2288343933438457476985546536845198482236255384896285993520343604559094835567"),
+        Felt::from_dec_str(
+            "2288343933438457476985546536845198482236255384896285993520343604559094835567"
+        )
+        .unwrap(),
         deployed_contract_address
     );
 }

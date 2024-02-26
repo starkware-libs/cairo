@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt;
 
 use super::utils::Range;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
@@ -29,7 +29,7 @@ impl NamedType for BoundedIntType {
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
 
-        let prime: BigInt = Felt252::prime().into();
+        let prime: BigInt = Felt::prime().into();
         if min > max || min <= -&prime || max >= prime || &max - &min >= prime {
             return Err(SpecializationError::UnsupportedGenericArg);
         }

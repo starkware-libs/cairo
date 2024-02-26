@@ -1,8 +1,8 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use num_bigint::BigInt;
 use num_traits::One;
+use starknet_types_core::felt::Felt;
 
 use super::bounded_int::BoundedIntType;
 use super::bytes31::Bytes31Type;
@@ -59,7 +59,7 @@ impl Range {
     pub fn from_type_info(ty_info: &TypeInfo) -> Result<Self, SpecializationError> {
         Ok(match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
             (id, []) if *id == Felt252Type::id() => {
-                let prime: BigInt = Felt252::prime().into();
+                let prime: BigInt = Felt::prime().into();
                 Self::half_open(1 - &prime, prime)
             }
             (id, []) if *id == Uint8Type::id() => Self::closed(u8::MIN, u8::MAX),
@@ -94,7 +94,7 @@ impl Range {
     }
     /// Returns true if this range can contain all possible values of a CASM cell.
     pub fn is_full_felt252_range(&self) -> bool {
-        self.size() >= Felt252::prime().into()
+        self.size() >= Felt::prime().into()
     }
     /// Returns the size of the range.
     pub fn size(&self) -> BigInt {

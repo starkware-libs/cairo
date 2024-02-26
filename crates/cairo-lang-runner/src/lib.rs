@@ -2,7 +2,6 @@
 use std::collections::HashMap;
 
 use ark_std::iterable::Iterable;
-use cairo_felt::Felt252;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
@@ -35,7 +34,7 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
-use cairo_vm::vm::trace::trace_entry::TraceEntry;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
@@ -43,6 +42,7 @@ use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
+use starknet_types_core::felt::Felt;
 use thiserror::Error;
 
 use crate::casm_run::RunFunctionContext;
@@ -81,8 +81,8 @@ pub enum RunnerError {
 
 /// The full result of a run with Starknet state.
 pub struct RunResultStarknet {
-    pub gas_counter: Option<Felt252>,
-    pub memory: Vec<Option<Felt252>>,
+    pub gas_counter: Option<Felt>,
+    pub memory: Vec<Option<Felt>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
     /// The profiling info of the run, if requested.
@@ -92,8 +92,8 @@ pub struct RunResultStarknet {
 /// The full result of a run.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct RunResult {
-    pub gas_counter: Option<Felt252>,
-    pub memory: Vec<Option<Felt252>>,
+    pub gas_counter: Option<Felt>,
+    pub memory: Vec<Option<Felt>>,
     pub value: RunResultValue,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
@@ -103,9 +103,9 @@ pub struct RunResult {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
-    Success(Vec<Felt252>),
+    Success(Vec<Felt>),
     /// Run panicked, returning the carried error data.
-    Panic(Vec<Felt252>),
+    Panic(Vec<Felt>),
 }
 
 // Approximated costs token types.
@@ -122,11 +122,11 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 /// An argument to a sierra function run,
 #[derive(Debug)]
 pub enum Arg {
-    Value(Felt252),
-    Array(Vec<Felt252>),
+    Value(Felt),
+    Array(Vec<Felt>),
 }
-impl From<Felt252> for Arg {
-    fn from(value: Felt252) -> Self {
+impl From<Felt> for Arg {
+    fn from(value: Felt) -> Self {
         Self::Value(value)
     }
 }
@@ -169,7 +169,7 @@ pub struct SierraCasmRunner {
     casm_program: CairoProgram,
     #[allow(dead_code)]
     /// Mapping from class_hash to contract info.
-    starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    starknet_contracts_info: OrderedHashMap<Felt, ContractInfo>,
     /// Whether to run the profiler when running using this runner.
     run_profiler: Option<ProfilingInfoCollectionConfig>,
 }
@@ -177,7 +177,7 @@ impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
-        starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+        starknet_contracts_info: OrderedHashMap<Felt, ContractInfo>,
         run_profiler: Option<ProfilingInfoCollectionConfig>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
@@ -259,7 +259,7 @@ impl SierraCasmRunner {
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
-        let (cells, ap) = casm_run::run_function(
+        let (cells, trace) = casm_run::run_function(
             vm,
             bytecode,
             builtins,
@@ -267,6 +267,8 @@ impl SierraCasmRunner {
             hint_processor,
             hints_dict,
         )?;
+        let ap = trace.last().unwrap().ap;
+
         let (results_data, gas_counter) = Self::get_results_data(&return_types, &cells, ap);
         assert!(results_data.len() <= 1);
 
@@ -280,9 +282,10 @@ impl SierraCasmRunner {
             Self::handle_main_return_value(inner_ty, values, &cells)
         };
 
-        let profiling_info = self.run_profiler.as_ref().map(|config| {
-            self.collect_profiling_info(vm.get_relocated_trace().unwrap(), config.clone())
-        });
+        let profiling_info = self
+            .run_profiler
+            .as_ref()
+            .map(|config| self.collect_profiling_info(&trace, config.clone()));
 
         Ok(RunResult { gas_counter, memory: cells, value, profiling_info })
     }
@@ -290,7 +293,7 @@ impl SierraCasmRunner {
     /// Collects profiling info of the current run using the trace.
     fn collect_profiling_info(
         &self,
-        trace: &[TraceEntry],
+        trace: &[RelocatedTraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
         let sierra_len = self.casm_program.debug_info.sierra_statement_info.len() - 1;
@@ -333,6 +336,9 @@ impl SierraCasmRunner {
             if step.pc < real_pc_0 {
                 continue;
             }
+            // Safe to unwrap because:
+            // - both Relocatable values exist in the same segment
+            // - `real_pc_0` is by construction always greater than any step pc
             let real_pc = step.pc - real_pc_0;
             // Skip the footer.
             if real_pc == bytecode_len {
@@ -460,12 +466,12 @@ impl SierraCasmRunner {
     /// Handling the main return value to create a `RunResultValue`.
     pub fn handle_main_return_value(
         inner_type_size: Option<i16>,
-        values: Vec<Felt252>,
-        cells: &[Option<Felt252>],
+        values: Vec<Felt>,
+        cells: &[Option<Felt>],
     ) -> RunResultValue {
         if let Some(inner_type_size) = inner_type_size {
             // The function includes a panic wrapper.
-            if values[0] == Felt252::from(0) {
+            if values[0] == Felt::from(0) {
                 // The run resulted successfully, returning the inner value.
                 let inner_ty_size = inner_type_size as usize;
                 let skip_size = values.len() - inner_ty_size;
@@ -491,14 +497,13 @@ impl SierraCasmRunner {
     /// Returns the final values and type of all `func`s returning variables.
     pub fn get_results_data(
         return_types: &[(GenericTypeId, i16)],
-        cells: &[Option<Felt252>],
+        cells: &[Option<Felt>],
         mut ap: usize,
-    ) -> (Vec<(GenericTypeId, Vec<Felt252>)>, Option<Felt252>) {
+    ) -> (Vec<(GenericTypeId, Vec<Felt>)>, Option<Felt>) {
         let mut results_data = vec![];
         for (ty, ty_size) in return_types.iter().rev() {
             let size = *ty_size as usize;
-            let values: Vec<Felt252> =
-                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
+            let values: Vec<Felt> = ((ap - size)..ap).map(|index| cells[index].unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -811,7 +816,7 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     for token_type in CostTokenType::iter_precost() {
         vm.insert_value(
             (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)).unwrap(),
-            Felt252::from(token_gas_cost(*token_type)),
+            Felt::from(token_gas_cost(*token_type)),
         )
         .map_err(|e| Box::new(e.into()))?;
     }

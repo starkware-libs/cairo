@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use num_traits::Zero;
+use starknet_types_core::felt::Felt;
 
 use super::range_check::RangeCheckType;
 use super::utils::{reinterpret_cast_signature, Range};
@@ -118,7 +118,7 @@ impl NamedLibfunc for DowncastLibfunc {
         // Only allow `size < prime % u128::MAX` so that we can safely use `K=2` in
         // `validate_under_limit`.
         let is_felt252_valid_downcast = from_range.is_full_felt252_range()
-            && to_range.size() < (Felt252::prime() % u128::MAX).into();
+            && to_range.size() < (Felt::prime() % u128::MAX).into();
         if !(is_small_values_downcast || is_felt252_valid_downcast) {
             return Err(SpecializationError::UnsupportedGenericArg);
         }

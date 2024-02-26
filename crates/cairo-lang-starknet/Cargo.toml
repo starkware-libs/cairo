@@ -8,7 +8,7 @@ description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
 anyhow.workspace = true
-cairo-felt.workspace = true
+starknet-types-core.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.5.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.5.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.5.4" }

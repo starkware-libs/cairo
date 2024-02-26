@@ -1,11 +1,11 @@
-use cairo_felt::Felt252;
 use num_traits::Zero;
+use starknet_types_core::felt::Felt;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.
-pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
+pub fn as_cairo_short_string(value: &Felt) -> Option<String> {
     let mut as_string = String::default();
     let mut is_end = false;
-    for byte in value.to_bytes_be() {
+    for byte in value.to_bytes_be().into_iter().skip_while(|b| *b == 0) {
         if byte == 0 {
             is_end = true;
         } else if is_end {
@@ -21,7 +21,7 @@ pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
 
 /// Converts a bigint representing a felt252 to a Cairo short-string of the given length.
 /// Nulls are allowed and length must be <= 31.
-pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String> {
+pub fn as_cairo_short_string_ex(value: &Felt, length: usize) -> Option<String> {
     if length == 0 {
         return if value.is_zero() { Some("".to_string()) } else { None };
     }
@@ -31,14 +31,13 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     }
 
     let bytes = value.to_bytes_be();
-    let bytes_len = bytes.len();
-    if bytes_len > length {
-        // `value` has more bytes than expected.
-        return None;
-    }
 
     let mut as_string = "".to_string();
-    for byte in bytes {
+    for (i, byte) in bytes.into_iter().skip_while(|b| *b == 0).enumerate() {
+        if i == length {
+            return None;
+        }
+
         if byte == 0 {
             as_string.push_str(r"\0");
         } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
@@ -49,8 +48,10 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     }
 
     // `to_bytes_be` misses starting nulls. Prepend them as needed.
-    let missing_nulls = length - bytes_len;
-    as_string.insert_str(0, &r"\0".repeat(missing_nulls));
+    let missing_nulls = length.saturating_sub(as_string.len());
+    if missing_nulls > 0 {
+        as_string.insert_str(0, &r"\0".repeat(missing_nulls));
+    }
 
     Some(as_string)
 }

@@ -3,7 +3,6 @@ use std::sync::Mutex;
 use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
-use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -32,6 +31,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use starknet_types_core::felt::Felt;
 
 #[cfg(test)]
 mod test;
@@ -139,7 +139,7 @@ impl CompiledTestRunner {
 }
 
 /// Formats the given felts as a panic string.
-fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
+fn format_for_panic(mut felts: IntoIter<Felt>) -> String {
     let mut items = Vec::new();
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item.quote_if_string());
@@ -291,7 +291,7 @@ pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    contracts_info: OrderedHashMap<Felt, ContractInfo>,
     run_profiler: bool,
     statements_functions: UnorderedHashMap<StatementIdx, String>,
 ) -> Result<TestsSummary> {
