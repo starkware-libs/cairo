@@ -1706,6 +1706,7 @@ fn maybe_compute_pattern_semantic(
                 inner_pattern: None,
             })
         }
+        ast::Pattern::FixedSizeArray(_) => todo!(),
     };
     ctx.resolver
         .inference()
