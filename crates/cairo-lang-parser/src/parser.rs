@@ -1822,6 +1822,20 @@ impl<'a> Parser<'a> {
                 let rparen = self.parse_token::<TerminalRParen>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
             }
+            SyntaxKind::TerminalLBrack => {
+                let lbrack = self.take::<TerminalLBrack>();
+                let patterns = PatternList::new_green(self.db,  self.parse_separated_list::<
+                    Pattern,
+                    TerminalComma,
+                    PatternListElementOrSeparatorGreen>
+                (
+                    Self::try_parse_pattern,
+                    is_of_kind!(rbrack, block, rbrace, module_item_kw),
+                    "pattern",
+                ));
+                let rbrack = self.parse_token::<TerminalRBrack>();
+                PatternFixedSizeArray::new_green(self.db, lbrack, patterns, rbrack).into()
+            }
             _ => return Err(TryParseFailure::SkipToken),
         })
     }
