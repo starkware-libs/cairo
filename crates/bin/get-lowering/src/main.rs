@@ -37,12 +37,13 @@ fn test_lowering_consistency() {
 
     let db: &dyn LoweringGroup = &db_val;
 
-    format_phases_by_name(
+    let function_id = get_func_id_by_name(
         db,
         &[db.core_crate()],
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();
+    format!("{:?}", PhasesFormatter { db, function_id });
 }
 
 /// Prints the lowering of a concrete function:
@@ -61,6 +62,10 @@ struct Args {
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
+
+    /// whenever to print all lowering stages or only the final lowering.
+    #[arg(short, long)]
+    all: bool,
 
     /// The output file name (default: stdout).
     output: Option<String>,
@@ -173,18 +178,6 @@ fn get_func_id_by_name(
     ))
 }
 
-/// Given a function name and list of crates, returns a string representing the lowering phases of
-/// the function.
-fn format_phases_by_name(
-    db: &dyn LoweringGroup,
-    crate_ids: &[CrateId],
-    function_path: String,
-) -> anyhow::Result<String> {
-    let function_id = get_func_id_by_name(db, crate_ids, function_path)?;
-
-    Ok(format!("{:?}", PhasesFormatter { db, function_id }))
-}
-
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
@@ -200,7 +193,16 @@ fn main() -> anyhow::Result<()> {
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
-        format_phases_by_name(db, &main_crate_ids, function_path)?
+        let function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+
+        match args.all {
+            true => format!("{:?}", PhasesFormatter { db, function_id }),
+            false => {
+                let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
+                let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+                format!("{:?}", lowered.debug(&lowered_formatter))
+            }
+        }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
     };
