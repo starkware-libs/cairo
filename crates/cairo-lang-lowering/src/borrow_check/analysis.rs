@@ -105,7 +105,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                 dfs_stack.push(*target_block_id);
                 true
             }
-            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => false,
+            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => false,
             FlatBlockEnd::Match { info } => {
                 let mut missing_cache = false;
                 for arm in info.arms() {
@@ -134,7 +134,9 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                 );
                 info
             }
-            FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),
+            FlatBlockEnd::Return(vars, _location) => {
+                self.analyzer.info_from_return(statement_location, vars)
+            }
             FlatBlockEnd::Panic(data) => self.analyzer.info_from_panic(statement_location, data),
             FlatBlockEnd::Match { info } => {
                 let arm_infos = info

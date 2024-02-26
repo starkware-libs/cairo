@@ -35,7 +35,7 @@ pub fn function_with_body_direct_callees(
             crate::FlatBlockEnd::Match { info: MatchInfo::Value(_) }
             | crate::FlatBlockEnd::Match { info: MatchInfo::Enum(_) }
             | crate::FlatBlockEnd::NotSet
-            | crate::FlatBlockEnd::Return(_)
+            | crate::FlatBlockEnd::Return(..)
             | crate::FlatBlockEnd::Panic(_)
             | crate::FlatBlockEnd::Goto(_, _) => {}
         }

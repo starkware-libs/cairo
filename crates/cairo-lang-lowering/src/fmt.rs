@@ -92,7 +92,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Return(returns) => {
+            FlatBlockEnd::Return(returns, _location) => {
                 write!(f, "  Return(")?;
                 returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
