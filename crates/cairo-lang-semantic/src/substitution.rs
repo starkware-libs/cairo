@@ -204,6 +204,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, LocalImplVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, LocalTypeVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
+        // TODO(Gil): Remove once fixed size arrays will depend on ConstantID.
+        $crate::prune_single!(__identity_helper, usize, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -283,6 +285,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprEnumVariantCtor, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprPropagateError, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArm, $($exclude)*);

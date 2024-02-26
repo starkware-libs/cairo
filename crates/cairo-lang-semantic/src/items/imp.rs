@@ -755,6 +755,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         }
         TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Coupon(_) => vec![],
+        TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
