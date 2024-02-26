@@ -41,7 +41,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenLBrack
-                if grandparent_kind(db, self) != Some(SyntaxKind::ExprFixedSizeArray) =>
+                if !matches!(
+                    grandparent_kind(db, self),
+                    Some(SyntaxKind::ExprFixedSizeArray) | Some(SyntaxKind::PatternFixedSizeArray)
+                ) =>
             {
                 true
             }
