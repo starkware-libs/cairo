@@ -337,8 +337,8 @@ impl SierraCasmRunner {
                 continue;
             }
             // Safe to unwrap because:
-            // - both Relocatable values exist in the same segment
-            // - `real_pc_0` is by construction always greater than any step pc
+            // - both Relocatable values exist in the same segment.
+            // - `real_pc_0` is by construction always greater than any step pc.
             let real_pc = step.pc - real_pc_0;
             // Skip the footer.
             if real_pc == bytecode_len {
@@ -537,7 +537,11 @@ impl SierraCasmRunner {
             .funcs
             .iter()
             .find(|f| {
-                if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
+                if let Some(name) = &f.id.debug_name {
+                    name.ends_with(name_suffix)
+                } else {
+                    false
+                }
             })
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }
