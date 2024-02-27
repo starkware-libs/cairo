@@ -139,7 +139,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Cycle detected while resolving 'use' items.".into()
             }
             SemanticDiagnosticKind::TypeAliasCycle => {
-                "Cycle detected while resolving 'type alias' items.".into()
+                "Cycle detected while resolving type-alias/impl-type items.".into()
             }
             SemanticDiagnosticKind::ImplAliasCycle => {
                 "Cycle detected while resolving 'impls alias' items.".into()
@@ -205,6 +205,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_id.name(defs_db),
                     function_id.name(defs_db),
                 )
+            }
+            SemanticDiagnosticKind::TraitTypeForbiddenInTheTrait => {
+                "In a trait, paths of the same trait are not allowed. Did you mean to use  \
+                 `Self::`?"
+                    .to_string()
+            }
+            SemanticDiagnosticKind::TraitTypeForbiddenInItsImpl => "In an impl, paths of the \
+                                                                    impl's trait are not allowed. \
+                                                                    Did you mean to use  `Self::`?"
+                .to_string(),
+            SemanticDiagnosticKind::ImplTypeForbiddenInTheImpl => {
+                "In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?"
+                    .to_string()
             }
             SemanticDiagnosticKind::TraitFunctionWithBody { trait_id, function_id } => {
                 let defs_db = db.upcast();
@@ -845,6 +858,9 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
+    TraitTypeForbiddenInTheTrait,
+    TraitTypeForbiddenInItsImpl,
+    ImplTypeForbiddenInTheImpl,
     TraitFunctionWithBody {
         trait_id: TraitId,
         function_id: TraitFunctionId,
