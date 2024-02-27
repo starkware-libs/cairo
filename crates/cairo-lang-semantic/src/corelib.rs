@@ -393,6 +393,7 @@ pub fn unwrap_error_propagation_type(
         | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
         | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_)
         | TypeLongId::Missing(_)
         | TypeLongId::FixedSizeArray { .. } => None,
     }

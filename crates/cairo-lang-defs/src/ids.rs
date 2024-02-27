@@ -259,8 +259,10 @@ macro_rules! toplevel_enum {
     }
 }
 
+// use cairo_lang_proc_macros::DebugWithDb;
 /// Id for a module. Either the root module of a crate, or a submodule.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq /* , DebugWithDb */)]
+// #[debug_db(dyn DefsGroup + 'static)]
 pub enum ModuleId {
     CrateRoot(CrateId),
     Submodule(SubmoduleId),
@@ -988,6 +990,16 @@ pub enum TraitOrImplContext {
     Trait(TraitContext),
     /// The context is of an impl.
     Impl(ImplContext),
+}
+impl TraitOrImplContext {
+    /// Returns the trait context, if the context is a trait context, or None otherwise.
+    pub fn trait_context(&self) -> Option<TraitContext> {
+        if let TraitOrImplContext::Trait(ctx) = self { Some(*ctx) } else { None }
+    }
+    /// Returns the impl context, if the context is an impl context, or None otherwise.
+    pub fn impl_context(&self) -> Option<ImplContext> {
+        if let TraitOrImplContext::Impl(ctx) = self { Some(*ctx) } else { None }
+    }
 }
 impl DebugWithDb<dyn DefsGroup> for TraitOrImplContext {
     fn fmt(

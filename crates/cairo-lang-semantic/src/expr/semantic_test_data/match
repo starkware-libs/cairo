@@ -504,7 +504,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::integer::U32Add::add,
+                        function: ?0::add,
                         args: [
                             Value(
                                 Literal(
@@ -540,7 +540,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::integer::U16Add::add,
+                        function: ?3::add,
                         args: [
                             Value(
                                 Literal(
@@ -644,7 +644,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::Felt252Add::add,
+                        function: ?1::add,
                         args: [
                             Value(
                                 Var(
@@ -742,7 +742,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: core::integer::U8Add::add,
+                        function: ?2::add,
                         args: [
                             Value(
                                 Var(

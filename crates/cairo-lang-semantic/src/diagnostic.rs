@@ -140,7 +140,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Cycle detected while resolving 'use' items.".into()
             }
             SemanticDiagnosticKind::TypeAliasCycle => {
-                "Cycle detected while resolving 'type alias' items.".into()
+                "Cycle detected while resolving type-alias/impl-type items.".into()
             }
             SemanticDiagnosticKind::ImplAliasCycle => {
                 "Cycle detected while resolving 'impls alias' items.".into()

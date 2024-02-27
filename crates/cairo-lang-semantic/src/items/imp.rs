@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
-use std::vec;
+use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -52,12 +52,13 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment, R
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
-use crate::expr::inference::{ImplVarId, InferenceError, InferenceId};
+use crate::expr::inference::{ImplVarId, Inference, InferenceError, InferenceId};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::{implize_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -165,7 +166,9 @@ impl ImplId {
             ImplId::GenericParameter(generic_param_impl) => {
                 generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
             }
-            ImplId::ImplVar(var) => format!("{var:?}").into(),
+            ImplId::ImplVar(var) => {
+                format!("ImplVar({})", var.concrete_trait_id(db).full_path(db)).into()
+            }
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -793,7 +796,9 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
+            panic!("Types should be fully resolved at this point.")
+        }
         TypeLongId::Coupon(_) => vec![],
         TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
         TypeLongId::Missing(diag_added) => {
@@ -1071,6 +1076,7 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
+
     let Some((concrete_trait_id, _)) = temp_inference.infer_concrete_trait_by_self(
         trait_function_id,
         self_ty,
@@ -1081,6 +1087,7 @@ pub fn can_infer_impl_by_self(
     ) else {
         return false;
     };
+    // enrich_lookup_context(ctx.db, concrete_trait_id, &mut lookup_context);
     // Find impls for it.
     if let Err(err_set) = temp_inference.solve() {
         // Error is propagated and will be reported later.
@@ -1227,6 +1234,16 @@ pub fn impl_type_def_resolved_type(
     db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.resolved_type
 }
 
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_def_resolved_type].
+pub fn impl_type_def_resolved_type_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_type_def_id: &ImplTypeDefId,
+) -> Maybe<TypeId> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_def_resolved_type(db, *impl_type_def_id)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
 pub fn impl_type_def_generic_params(
     db: &dyn SemanticGroup,
@@ -1276,6 +1293,8 @@ pub fn priv_impl_type_semantic_data(
     let trait_type_id =
         validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, impl_type_def_ast);
 
+    // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
+    // non-cyclic chains.
     Ok(ImplItemTypeData {
         type_alias_data: type_alias_semantic_data_helper(
             db,
@@ -1374,6 +1393,55 @@ fn validate_impl_item_type(
     }
 
     Ok(trait_type_id)
+}
+
+// === Impl Type ===
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_implized_by_context].
+pub fn impl_type_implized_by_context(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+    impl_def_id: ImplDefId,
+) -> Maybe<Option<TypeId>> {
+    let Some(impl_type_def_id) = db.impl_type_by_trait_type(impl_def_id, impl_type_id.ty())? else {
+        return Ok(None);
+    };
+
+    Ok(Some(db.impl_type_def_resolved_type(impl_type_def_id)?))
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_implized_by_context].
+pub fn impl_type_implized_by_context_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_type_id: &ImplTypeId,
+    impl_def_id: &ImplDefId,
+) -> Maybe<Option<TypeId>> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_implized_by_context(db, *impl_type_id, *impl_def_id)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_type_concrete_implized].
+pub fn impl_type_concrete_implized(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+) -> Maybe<Option<TypeId>> {
+    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id() else {
+        return Ok(None);
+    };
+
+    let impl_def_id = concrete_impl.impl_def_id(db);
+    db.impl_type_implized_by_context(impl_type_id, impl_def_id)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
+pub fn impl_type_concrete_implized_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_type_id: &ImplTypeId,
+) -> Maybe<Option<TypeId>> {
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    impl_type_concrete_implized(db, *impl_type_id)
 }
 
 // === Impl Function Declaration ===
@@ -1552,14 +1620,18 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
+    let inference = &mut resolver.inference();
     let trait_function_id = validate_impl_function_signature(
         db,
         &mut diagnostics,
-        impl_function_id,
-        &signature_syntax,
-        &signature,
-        function_syntax,
-        &generic_params,
+        inference,
+        ValidateImplFunctionSignatureParams {
+            impl_function_id,
+            signature_syntax: &signature_syntax,
+            signature: &signature,
+            impl_function_syntax: function_syntax,
+            impl_func_generics: &generic_params,
+        },
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -1593,15 +1665,32 @@ pub fn priv_impl_function_declaration_data(
     })
 }
 
+/// Struct for the parameters of [validate_impl_function_signature].
+struct ValidateImplFunctionSignatureParams<'a> {
+    /// The impl function to validate the signature of.
+    impl_function_id: ImplFunctionId,
+    /// The signature syntax.
+    signature_syntax: &'a ast::FunctionSignature,
+    // The semantic signature.
+    signature: &'a semantic::Signature,
+    /// The impl function syntax.
+    impl_function_syntax: &'a ast::FunctionWithBody,
+    /// The generic parameters of the impl function.
+    impl_func_generics: &'a [GenericParam],
+}
+
 /// Validates the impl function, and returns the matching trait function id.
 fn validate_impl_function_signature(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    impl_function_id: ImplFunctionId,
-    signature_syntax: &ast::FunctionSignature,
-    signature: &semantic::Signature,
-    impl_function_syntax: &ast::FunctionWithBody,
-    impl_func_generics: &[GenericParam],
+    inference: &mut Inference<'_>,
+    ValidateImplFunctionSignatureParams {
+        impl_function_id,
+        signature_syntax,
+        signature,
+        impl_function_syntax,
+        impl_func_generics,
+    }: ValidateImplFunctionSignatureParams<'_>,
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();
@@ -1656,11 +1745,12 @@ fn validate_impl_function_signature(
             },
         );
     }
+    let impl_ctx = Some(ImplContext { impl_def_id });
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let expected_ty = trait_param.ty;
-        let actual_ty = param.ty;
+        let expected_ty = implize_type(db, trait_param.ty, impl_ctx, inference)?;
+        let actual_ty = implize_type(db, param.ty, impl_ctx, inference)?;
 
         if expected_ty != actual_ty {
             diagnostics.report(
@@ -1712,8 +1802,8 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty = concrete_trait_signature.return_type;
-    let actual_ty = signature.return_type;
+    let expected_ty = implize_type(db, concrete_trait_signature.return_type, impl_ctx, inference)?;
+    let actual_ty = implize_type(db, signature.return_type, impl_ctx, inference)?;
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {

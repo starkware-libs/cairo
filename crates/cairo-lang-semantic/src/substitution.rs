@@ -23,7 +23,9 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
-use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
+use crate::types::{
+    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+};
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
@@ -245,6 +247,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, EnumId, $($exclude)*);
         $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplTypeId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, ConstVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
