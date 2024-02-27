@@ -25,10 +25,10 @@ use thiserror::Error;
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
+    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
 };
 use crate::metadata::Metadata;
-use crate::references::{check_types_match, ReferencesError};
+use crate::references::{check_types_match, ReferenceValue, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 
 #[cfg(test)]
@@ -167,11 +167,21 @@ pub struct SierraStatementDebugInfo {
     pub instruction_idx: usize,
 }
 
+/// The debug references and branch changes information of a compilation from Sierra to casm.
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct SierraRefsDebugInfo {
+    pub invoke_refs: Vec<ReferenceValue>,
+    pub result_branch_changes: Vec<BranchChanges>,
+    pub return_refs: Vec<ReferenceValue>,
+}
+
 /// The debug information of a compilation from Sierra to casm.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
+    /// The debug references and branch changes information per Sierra statement.
+    pub sierra_refs_info: Vec<SierraRefsDebugInfo>,
 }
 
 /// The information about the constants used in the program.
@@ -348,6 +358,7 @@ pub fn compile(
     .map_err(|err| Box::new(err.into()))?;
 
     let mut program_offset: usize = 0;
+    let mut sierra_refs_info: Vec<SierraRefsDebugInfo> = Vec::new();
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
@@ -389,6 +400,12 @@ pub fn compile(
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
+
+                sierra_refs_info.push(SierraRefsDebugInfo {
+                    invoke_refs: vec![],
+                    result_branch_changes: vec![],
+                    return_refs,
+                });
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
@@ -435,6 +452,12 @@ pub fn compile(
                     environment: compiled_invocation.environment,
                     ..annotations
                 };
+
+                sierra_refs_info.push(SierraRefsDebugInfo {
+                    invoke_refs,
+                    result_branch_changes: compiled_invocation.results.clone(),
+                    return_refs: vec![],
+                });
 
                 let branching_libfunc = compiled_invocation.results.len() > 1;
 
@@ -493,6 +516,7 @@ pub fn compile(
                     instruction_idx,
                 })
                 .collect(),
+            sierra_refs_info,
         },
     })
 }
