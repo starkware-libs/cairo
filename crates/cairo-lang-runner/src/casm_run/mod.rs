@@ -1249,13 +1249,13 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         }
         keccak::f1600(&mut state)
     }
-    // 2 ** 64 in mont representation
-    const TWO_64_RAW: [u64; 4] = [0x483ff, 0xffffffffffffffff, 0xffffffffffffffe0, 0x4400];
+
+    // a felt equal to 2 ** 64
+    const TWO_64_FELT: Felt252 = Felt252::from_hex_unchecked("0x10000000000000000");
+
     Ok(SyscallResult::Success(vec![
-        ((Felt252::from(state[1]) * Felt252::from_raw(TWO_64_RAW)) + Felt252::from(state[0]))
-            .into(),
-        ((Felt252::from(state[3]) * Felt252::from_raw(TWO_64_RAW)) + Felt252::from(state[2]))
-            .into(),
+        ((Felt252::from(state[1]) * TWO_64_FELT) + Felt252::from(state[0])).into(),
+        ((Felt252::from(state[3]) * TWO_64_FELT) + Felt252::from(state[2])).into(),
     ]))
 }
 
@@ -2191,7 +2191,11 @@ impl FormattedItem {
     }
     /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
     pub fn quote_if_string(self) -> String {
-        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
+        if self.is_string {
+            format!("\"{}\"", self.item)
+        } else {
+            self.item
+        }
     }
 }
 
