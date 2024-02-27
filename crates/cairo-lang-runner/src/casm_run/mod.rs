@@ -629,8 +629,6 @@ impl<'a> CairoHintProcessor<'a> {
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
 
         let selector = system_buffer.next_felt252()?.to_bytes_be();
-        let first_selector_non_zero_byte =
-            selector.iter().position(|b| *b != 0).expect("'selector' should not be an empty value");
 
         let mut gas_counter = system_buffer.next_usize()?;
         let mut execute_handle_helper =
@@ -654,143 +652,193 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        match std::str::from_utf8(&selector[first_selector_non_zero_byte..]).unwrap() {
-            "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.storage_write(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                )
-            }),
-            "StorageRead" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.storage_read(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                )
-            }),
-            "GetBlockHash" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.get_block_hash(gas_counter, system_buffer.next_u64()?)
-            }),
-            "GetExecutionInfo" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.get_execution_info(gas_counter, system_buffer)
-            }),
-            "EmitEvent" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
-            }),
-            "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.send_message_to_l1(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                )
-            }),
-            "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                keccak(gas_counter, system_buffer.next_arr()?)
-            }),
-            "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_new(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1Add" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_add(
-                    gas_counter,
-                    exec_scopes,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_usize()?,
-                )
-            }),
-            "Secp256k1Mul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_mul(
-                    gas_counter,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1GetPointFromX" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_get_point_from_x(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_bool()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1GetXy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
-            }),
-            "Secp256r1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_new(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1Add" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_add(
-                    gas_counter,
-                    exec_scopes,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_usize()?,
-                )
-            }),
-            "Secp256r1Mul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_mul(
-                    gas_counter,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1GetPointFromX" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_get_point_from_x(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_bool()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1GetXy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
-            }),
-            "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.deploy(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer.next_bool()?,
-                    system_buffer,
-                )
-            }),
-            "CallContract" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.call_contract(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer,
-                )
-            }),
-            "LibraryCall" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.library_call(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer,
-                )
-            }),
-            "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
-            }),
-            s => panic!("Unknown selector for system call!: {s}"),
+
+        match &selector {
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0StorageWrite" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.storage_write(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0StorageRead" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.storage_read(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0GetBlockHash" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.get_block_hash(gas_counter, system_buffer.next_u64()?)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0GetExecutionInfo" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.get_execution_info(gas_counter, system_buffer)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0EmitEvent" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.emit_event(
+                        gas_counter,
+                        system_buffer.next_arr()?,
+                        system_buffer.next_arr()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0SendMessageToL1" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.send_message_to_l1(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Keccak" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    keccak(gas_counter, system_buffer.next_arr()?)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1New" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_new(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1Add" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_add(
+                        gas_counter,
+                        exec_scopes,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_usize()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1Mul" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_mul(
+                        gas_counter,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0Secp256k1GetPointFromX" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_get_point_from_x(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_bool()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1GetXy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1New" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_new(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1Add" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_add(
+                        gas_counter,
+                        exec_scopes,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_usize()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1Mul" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_mul(
+                        gas_counter,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0Secp256r1GetPointFromX" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_get_point_from_x(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_bool()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1GetXy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Deploy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.deploy(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer.next_bool()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0CallContract" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.call_contract(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0LibraryCall" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.library_call(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0ReplaceClass" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
+                })
+            }
+            s => panic!(
+                "Unknown selector for system call!: {}",
+                std::str::from_utf8(s).expect("`selector` should be a valid utf8 string")
+            ),
         }
     }
 
