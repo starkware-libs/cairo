@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplTypeDefId, ModuleFileId,
-    NamedLanguageElementId, StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitOrImplContext, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -46,6 +46,7 @@ pub enum TypeLongId {
         type_id: TypeId,
         size: ConstValueId,
     },
+    ImplType(ImplTypeId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -57,6 +58,10 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
+    pub fn lookup(&self, db: &dyn SemanticGroup) -> TypeLongId {
+        db.lookup_intern_type(*self)
+    }
+
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         db.intern_type(TypeLongId::Missing(diag_added))
     }
@@ -100,6 +105,7 @@ impl TypeId {
             TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
+            TypeLongId::ImplType(_) => todo!(), // TODO(yg)
         }
     }
 }
@@ -117,6 +123,13 @@ impl TypeLongId {
             TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
                 format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
+            }
+            TypeLongId::ImplType(impl_type_id) => {
+                format!(
+                    "{}::{}",
+                    impl_type_id.impl_id.name(db.upcast()),
+                    impl_type_id.ty.name(db.upcast())
+                )
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
@@ -138,6 +151,7 @@ impl TypeLongId {
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
+            TypeLongId::ImplType(_) => todo!(), // TODO(yg)
         })
     }
 }
@@ -149,6 +163,62 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     ) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
     }
+}
+
+// TODO(yg): doc.
+/// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
+/// wrapping impl is the context here.
+pub fn reduce_impl_type_if_possible(
+    db: &dyn SemanticGroup,
+    type_to_reduce: TypeId,
+    trait_or_impl_context: TraitOrImplContext,
+) -> Maybe<TypeId> {
+    let TypeLongId::ImplType(impl_type_id) = type_to_reduce.lookup(db) else {
+        // Nothing to reduce.
+        return Ok(type_to_reduce);
+    };
+    // Try to reduce by the concrete impl type if it is concrete.
+    if let Some(ty) = reduce_concrete_impl_type(db, impl_type_id)? {
+        return Ok(ty);
+    }
+    // Try to reduce by the impl context, if given.
+    if let TraitOrImplContext::Impl { impl_def_id } = trait_or_impl_context {
+        if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
+            return Ok(ty);
+        }
+    }
+    // Could not reduce.
+    Ok(type_to_reduce)
+}
+
+// TODO(yg): doc.
+fn reduce_in_impl_context(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+    impl_def_id: ImplDefId,
+) -> Maybe<Option<TypeId>> {
+    let Some(impl_type_def_id) = db.impl_type_by_trait_type(impl_def_id, impl_type_id.ty)? else {
+        return Ok(None);
+    };
+
+    Ok(Some(db.impl_type_resolved_type(impl_type_def_id)?))
+}
+
+// TODO(yg): doc. Resolves an impl type if the impl is concrete. Returns a TypeId that's not an impl
+// type with a concrete impl.
+// TODO(yg/yuval): make sure impl_type_resolved_type gets a non impl type (that is, resolves in
+// chain). Also make sure cycles are handled correctly.
+// TODO(yg): query, cycle handling.
+fn reduce_concrete_impl_type(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+) -> Maybe<Option<TypeId>> {
+    let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id else {
+        return Ok(None);
+    };
+
+    let impl_def_id = concrete_impl.impl_def_id(db);
+    reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
 /// Head of a type. A non-param non-variable type has a head, which represents the kind of the root
@@ -552,7 +622,7 @@ pub fn get_impl_at_context(
 /// Query implementation of [crate::db::SemanticGroup::single_value_type].
 pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
     Ok(match db.lookup_intern_type(ty) {
-        semantic::TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 for member in db.struct_members(id.struct_id(db))?.values() {
                     if !db.single_value_type(member.ty)? {
@@ -573,7 +643,7 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
             }
             ConcreteTypeId::Extern(_) => false,
         },
-        semantic::TypeLongId::Tuple(types) => {
+        TypeLongId::Tuple(types) => {
             for ty in &types {
                 if !db.single_value_type(*ty)? {
                     return Ok(false);
@@ -581,16 +651,17 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
             }
             true
         }
-        semantic::TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
-        semantic::TypeLongId::GenericParameter(_) => false,
-        semantic::TypeLongId::Var(_) => false,
-        semantic::TypeLongId::Missing(_) => false,
-        semantic::TypeLongId::Coupon(_) => false,
-        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+        TypeLongId::Snapshot(ty) => db.single_value_type(ty)?,
+        TypeLongId::GenericParameter(_) => false,
+        TypeLongId::Var(_) => false,
+        TypeLongId::Missing(_) => false,
+        TypeLongId::Coupon(_) => false,
+        TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
                 || matches!(db.lookup_intern_const_value(size),
                             ConstValue::Int(value) if value.is_zero())
         }
+        TypeLongId::ImplType(_) => todo!(), // TODO(yg)
     })
 }
 

@@ -115,7 +115,7 @@ impl ConcreteTraitGenericFunctionLongId {
         assert_eq!(
             concrete_trait.trait_id(db),
             trait_function.trait_id(db.upcast()),
-            "Concrete trait a trait function must belong to the same generic trait."
+            "Concrete trait and trait function must belong to the same generic trait."
         );
         Self { concrete_trait, trait_function }
     }

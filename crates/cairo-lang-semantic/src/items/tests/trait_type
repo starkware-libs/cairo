@@ -1,0 +1,42 @@
+//! > Test type items in trait/impl. phase0.
+
+//! > TODO(yg):
+* ygg2: Add more tests
+* 1. make this work. 2. change in impl to MyImpl::InputType. 3. change in both to Self. All in separate tests. 4. Also add tests with referring to it as test::MyTrait and super::MyTrait.
+* more tests: 0. All combinations of trait type vs. concrete type in impl/trait X {matches, don't match} X {param, return type} 1. type Type2 = Self::Type1. 2. cycle: type Type2 = Self::Type1; type Type1 = Self::Type2; 3. impl type value is concrete with args (Option<u32>).
+* more tests: member access of a trait type which is assigned with a struct.
+* more tests: method call on a trait type according to the type it's assigned.
+* more tests: path to a trait item with correct name but not from a trait this impl implements.
+* make sure it works with type aliases. Add a test for it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct<T> {
+   value: T,
+}
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::InputType) -> MyTrait::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType = MyStruct<u32>;
+    type OutputType = MyStruct<u32>;
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+        MyStruct { value: x.value }
+    }
+}
+fn main() {
+   let x = MyStruct { value: 3_u32 };
+   let _y: MyStruct<u32> = MyImpl::foo(x);
+}
+
+//! > expected_diagnostics

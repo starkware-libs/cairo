@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitOrImplContext,
+    ModuleId, TraitId, TraitItemId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -35,10 +35,13 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
-use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
+    ConcreteTraitTypeLongId,
+};
 use crate::items::visibility;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, resolve_type};
+use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -567,55 +570,94 @@ impl<'db> Resolver<'db> {
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
-                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)?
-                else {
+
+                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
 
-                let concrete_trait_function = self.db.intern_concrete_trait_function(
-                    ConcreteTraitGenericFunctionLongId::new(
-                        self.db,
-                        *concrete_trait_id,
-                        trait_function_id,
-                    ),
-                );
-                let impl_lookup_context = self.impl_lookup_context();
-                let generic_function = self
-                    .data
-                    .inference_data
-                    .inference(self.db)
-                    .infer_trait_generic_function(
-                        concrete_trait_function,
-                        &impl_lookup_context,
-                        Some(identifier.stable_ptr().untyped()),
-                    )
-                    .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
+                match trait_item_id {
+                    TraitItemId::Function(trait_function_id) => {
+                        let concrete_trait_function = self.db.intern_concrete_trait_function(
+                            ConcreteTraitGenericFunctionLongId::new(
+                                self.db,
+                                *concrete_trait_id,
+                                trait_function_id,
+                            ),
+                        );
+                        let impl_lookup_context = self.impl_lookup_context();
+                        let generic_function = self
+                            .data
+                            .inference_data
+                            .inference(self.db)
+                            .infer_trait_generic_function(
+                                concrete_trait_function,
+                                &impl_lookup_context,
+                                Some(identifier.stable_ptr().untyped()),
+                            )
+                            .map_err(|err| {
+                                err.report(diagnostics, identifier.stable_ptr().untyped())
+                            })?;
 
-                Ok(ResolvedConcreteItem::Function(self.specialize_function(
-                    diagnostics,
-                    identifier.stable_ptr().untyped(),
-                    generic_function,
-                    generic_args_syntax.unwrap_or_default(),
-                )?))
+                        Ok(ResolvedConcreteItem::Function(self.specialize_function(
+                            diagnostics,
+                            identifier.stable_ptr().untyped(),
+                            generic_function,
+                            generic_args_syntax.unwrap_or_default(),
+                        )?))
+                    }
+                    TraitItemId::Type(trait_type_id) => {
+                        let concrete_trait_type =
+                            self.db.intern_concrete_trait_type(ConcreteTraitTypeLongId::new(
+                                self.db,
+                                *concrete_trait_id,
+                                trait_type_id,
+                            ));
+                        let impl_lookup_context = self.impl_lookup_context();
+                        let ty = self
+                            .data
+                            .inference_data
+                            .inference(self.db)
+                            .infer_trait_type(
+                                concrete_trait_type,
+                                &impl_lookup_context,
+                                Some(identifier.stable_ptr().untyped()),
+                            )
+                            .map_err(|err| {
+                                err.report(diagnostics, identifier.stable_ptr().untyped())
+                            })?;
+
+                        Ok(ResolvedConcreteItem::Type(ty))
+                    }
+                }
             }
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
-                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)?
-                else {
+                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
-                let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {
-                    impl_id: *impl_id,
-                    function: trait_function_id,
-                });
 
-                Ok(ResolvedConcreteItem::Function(self.specialize_function(
-                    diagnostics,
-                    identifier.stable_ptr().untyped(),
-                    generic_function_id,
-                    generic_args_syntax.unwrap_or_default(),
-                )?))
+                match trait_item_id {
+                    TraitItemId::Function(trait_function_id) => {
+                        let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id: *impl_id,
+                            function: trait_function_id,
+                        });
+
+                        Ok(ResolvedConcreteItem::Function(self.specialize_function(
+                            diagnostics,
+                            identifier.stable_ptr().untyped(),
+                            generic_function_id,
+                            generic_args_syntax.unwrap_or_default(),
+                        )?))
+                    }
+                    TraitItemId::Type(trait_type_id) => {
+                        let type_long_id =
+                            TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
+
+                        Ok(ResolvedConcreteItem::Type(self.db.intern_type(type_long_id)))
+                    }
+                }
             }
             ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
                 if !are_coupons_enabled(self.db, self.module_file_id) {

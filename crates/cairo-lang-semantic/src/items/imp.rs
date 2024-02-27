@@ -56,6 +56,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::reduce_impl_type_if_possible;
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
@@ -436,6 +437,8 @@ pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
 
     // AST maps.
+
+    // TODO(yg): separate pr: wrap with arc?
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
     item_type_asts: Arc<OrderedHashMap<ImplTypeDefId, ast::ItemTypeAlias>>,
 
@@ -549,6 +552,7 @@ pub fn impl_type_by_trait_type(
 
     let defs_db = db.upcast();
     let name = trait_type_id.name(defs_db);
+    // TODO(yg): use impl_item_by_name?
     for impl_type_id in db.priv_impl_definition_data(impl_def_id)?.item_type_asts.keys() {
         if db.lookup_intern_impl_type_def(*impl_type_id).name(defs_db) == name {
             return Ok(Some(*impl_type_id));
@@ -794,6 +798,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
+        TypeLongId::ImplType(_) => todo!(), // TODO(yg)
     })
 }
 
@@ -1636,11 +1641,12 @@ fn validate_impl_function_signature(
             },
         );
     }
+    let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let expected_ty = trait_param.ty;
-        let actual_ty = param.ty;
+        let expected_ty = reduce_impl_type_if_possible(db, trait_param.ty, impl_ctx)?;
+        let actual_ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx)?;
 
         if expected_ty != actual_ty {
             diagnostics.report(
@@ -1692,8 +1698,9 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty = concrete_trait_signature.return_type;
-    let actual_ty = signature.return_type;
+    let expected_ty =
+        reduce_impl_type_if_possible(db, concrete_trait_signature.return_type, impl_ctx)?;
+    let actual_ty = reduce_impl_type_if_possible(db, signature.return_type, impl_ctx)?;
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {

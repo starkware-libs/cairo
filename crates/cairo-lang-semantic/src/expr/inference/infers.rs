@@ -8,11 +8,12 @@ use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
-use crate::items::trt::ConcreteTraitGenericFunctionId;
+use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitTypeId};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::ImplTypeId;
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, FunctionId,
-    FunctionLongId, GenericArgumentId, GenericParam, TypeId,
+    FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
 };
 
 /// Functions for embedding generic semantic objects in an existing [Inference] object, by
@@ -85,6 +86,12 @@ pub trait InferenceEmbeddings {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<GenericFunctionId>;
+    fn infer_trait_type(
+        &mut self,
+        trait_type: ConcreteTraitTypeId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> InferenceResult<TypeId>;
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
@@ -338,5 +345,25 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             impl_id,
             function: concrete_trait_function.trait_function(self.db),
         }))
+    }
+
+    /// Infers the impl to be substituted instead of a trait for a given trait type.
+    /// Returns the resulting impl type.
+    fn infer_trait_type(
+        &mut self,
+        trait_type: ConcreteTraitTypeId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: Option<SyntaxStablePtrId>,
+    ) -> InferenceResult<TypeId> {
+        let impl_id = self.new_impl_var(
+            trait_type.concrete_trait(self.db),
+            stable_ptr,
+            lookup_context.clone(),
+        )?;
+        Ok(self.db.intern_type(TypeLongId::ImplType(ImplTypeId::new(
+            impl_id,
+            trait_type.trait_type(self.db),
+            self.db,
+        ))))
     }
 }
