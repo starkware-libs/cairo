@@ -754,7 +754,10 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .unwrap()
         }
         TypeLongId::Coupon(_) => 0,
-        TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => {
             panic!("Function should only be called with fully concrete types")
         }
     }
