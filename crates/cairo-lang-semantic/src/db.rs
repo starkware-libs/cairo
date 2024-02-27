@@ -30,6 +30,7 @@ use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemTypeData};
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use crate::types::ImplTypeId;
 use crate::{
     corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
@@ -646,7 +647,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::priv_impl_is_var_free)]
     fn priv_impl_is_var_free(&self, impl_id: ImplId) -> bool;
 
-    // Impl type.
+    // Impl type def.
     // ================
     /// Returns the semantic diagnostics of an impl item type.
     #[salsa::invoke(items::imp::impl_type_def_semantic_diagnostics)]
@@ -656,6 +657,7 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the resolved type of an impl item type.
     #[salsa::invoke(items::imp::impl_type_def_resolved_type)]
+    #[salsa::cycle(items::imp::impl_type_def_resolved_type_cycle)]
     fn impl_type_def_resolved_type(&self, impl_type_def_id: ImplTypeDefId) -> Maybe<TypeId>;
     /// Returns the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::impl_type_def_generic_params)]
@@ -681,14 +683,30 @@ pub trait SemanticGroup:
     #[salsa::cycle(items::imp::priv_impl_type_semantic_data_cycle)]
     fn priv_impl_type_semantic_data(
         &self,
-        impl_type_id: ImplTypeDefId,
+        impl_type_def_id: ImplTypeDefId,
     ) -> Maybe<items::imp::ImplItemTypeData>;
     /// Private query to compute data about the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_def_generic_params_data)]
     fn priv_impl_type_def_generic_params_data(
         &self,
-        enum_id: ImplTypeDefId,
+        impl_type_def_id: ImplTypeDefId,
     ) -> Maybe<GenericParamsData>;
+
+    // Impl type.
+    // ================
+    /// Returns the given impl type, implized by the given impl context.
+    #[salsa::invoke(items::imp::impl_type_implized_by_context)]
+    #[salsa::cycle(items::imp::impl_type_implized_by_context_cycle)]
+    fn impl_type_implized_by_context(
+        &self,
+        impl_type_def_id: ImplTypeId,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<Option<TypeId>>;
+    /// Returns the implized impl type if the impl is concrete. Returns a TypeId that's not an impl
+    /// type with a concrete impl.
+    #[salsa::invoke(items::imp::impl_type_concrete_implized)]
+    #[salsa::cycle(items::imp::impl_type_concrete_implized_cycle)]
+    fn impl_type_concrete_implized(&self, impl_type_def_id: ImplTypeId) -> Maybe<Option<TypeId>>;
 
     // Impl function.
     // ================
@@ -1023,6 +1041,13 @@ pub trait SemanticGroup:
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
+    /// Returns the given function's signature, after implization as needed (that is, if this is an
+    /// impl function).
+    #[salsa::invoke(items::functions::concrete_function_implized_signature)]
+    fn concrete_function_implized_signature(
+        &self,
+        function_id: FunctionId,
+    ) -> Maybe<semantic::Signature>;
 
     // Generic type.
     // =============

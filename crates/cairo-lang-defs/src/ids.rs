@@ -989,6 +989,16 @@ pub enum TraitOrImplContext {
     /// The context is of an impl.
     Impl(ImplContext),
 }
+impl TraitOrImplContext {
+    /// Returns the trait context, if the context is a trait context, or None otherwise.
+    pub fn trait_context(&self) -> Option<TraitContext> {
+        if let TraitOrImplContext::Trait(ctx) = self { Some(*ctx) } else { None }
+    }
+    /// Returns the impl context, if the context is an impl context, or None otherwise.
+    pub fn impl_context(&self) -> Option<ImplContext> {
+        if let TraitOrImplContext::Impl(ctx) = self { Some(*ctx) } else { None }
+    }
+}
 impl DebugWithDb<dyn DefsGroup> for TraitOrImplContext {
     fn fmt(
         &self,
