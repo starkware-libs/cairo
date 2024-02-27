@@ -116,7 +116,7 @@ impl ConcreteTraitGenericFunctionLongId {
         assert_eq!(
             concrete_trait.trait_id(db),
             trait_function.trait_id(db.upcast()),
-            "Concrete trait a trait function must belong to the same generic trait."
+            "Concrete trait and trait function must belong to the same generic trait."
         );
         Self { concrete_trait, trait_function }
     }
@@ -758,7 +758,7 @@ pub fn priv_trait_function_declaration_data(
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
-    let declaration = function_syntax.declaration(syntax_db);
+    let declaration_syntax = function_syntax.declaration(syntax_db);
     let function_generic_params_data =
         db.priv_trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
@@ -775,7 +775,7 @@ pub fn priv_trait_function_declaration_data(
         function_syntax,
         &mut diagnostics,
     );
-    let signature_syntax = declaration.signature(syntax_db);
+    let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
@@ -789,6 +789,8 @@ pub fn priv_trait_function_declaration_data(
     // Check fully resolved.
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    let signature = inference.rewrite(signature).no_err();
+    let function_generic_params = inference.rewrite(function_generic_params).no_err();
 
     validate_trait_function_signature(
         db,
