@@ -35,7 +35,9 @@ use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamTy
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
+use crate::types::{
+    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId, ImplTypeId,
+};
 use crate::{
     add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
     ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
@@ -132,7 +134,8 @@ pub enum InferenceVar {
 }
 
 // TODO(spapini): Add to diagnostics.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum InferenceError {
     /// An inference error wrapping a previously reported error.
     Reported(DiagnosticAdded),
@@ -301,7 +304,7 @@ pub struct InferenceData {
 
     // Error handling members.
     /// The current error status.
-    error_status: Result<(), InferenceErrorStatus>,
+    pub error_status: Result<(), InferenceErrorStatus>,
     /// `Some` only when error_state is Err(Pending).
     error: Option<InferenceError>,
     /// `Some` only when error_state is Err(Consumed).
@@ -568,6 +571,11 @@ impl<'db> Inference<'db> {
     pub fn finalize_without_reporting(
         &mut self,
     ) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
+        if self.error_status.is_err() {
+            // TODO(yuval): consider adding error location to the set error.
+            return Err((ErrorSet, None));
+        }
+
         let numeric_trait_id = get_core_trait(self.db, "NumericLiteral".into());
         let felt_ty = core_felt252_ty(self.db);
 

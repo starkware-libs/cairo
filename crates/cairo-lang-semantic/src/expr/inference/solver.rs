@@ -99,7 +99,7 @@ pub fn enrich_lookup_context(
 ) {
     lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db.upcast()).0);
     let generic_args = concrete_trait_id.generic_args(db);
-    // Add the defining module of the generic params to the lookup.
+    // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
             match db.lookup_intern_type(*ty) {

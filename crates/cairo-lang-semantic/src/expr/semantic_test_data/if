@@ -184,7 +184,7 @@ If(
                 tail: Some(
                     FunctionCall(
                         ExprFunctionCall {
-                            function: core::integer::U32Add::add,
+                            function: ?0::add,
                             args: [
                                 Value(
                                     Literal(
@@ -218,7 +218,7 @@ If(
                     tail: Some(
                         FunctionCall(
                             ExprFunctionCall {
-                                function: core::integer::U16Add::add,
+                                function: ?3::add,
                                 args: [
                                     Value(
                                         Literal(
