@@ -1,0 +1,24 @@
+//! > bla  add as test.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn foo();
+}
+impl MyImpl<T> of MyTrait {
+    type MyType = T;
+    fn foo() { //let _: MyImpl::<u8>::MyType = 3_u8; // should work.
+    //let _: Self::MyType = 3_u8; // should fail.
+    }
+}
+
+//! > expected_diagnostics

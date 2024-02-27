@@ -67,7 +67,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots, resolve_type,
+    are_coupons_enabled, extract_fixed_size_array_size, implize_type, peel_snapshots, resolve_type,
     verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
@@ -205,6 +205,21 @@ impl<'ctx> ComputationContext<'ctx> {
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         // TODO(spapini): Propagate error to diagnostics.
         self.resolver.inference().rewrite(ty).unwrap()
+    }
+
+    /// Tries to implize a type, according to the computation context. See [implize_type] for more
+    /// details.
+    fn implize_type(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
+        // TODO(yuval): this is a temporary measure for inference cycle errors to not disappear
+        // until fixing inference errors wrong consumption. Remove it once fixed.
+        let tmp_inference_data = &mut self.resolver.inference().temporary_clone();
+        let mut tmp_inference = tmp_inference_data.inference(self.db);
+        implize_type(
+            self.db,
+            type_to_reduce,
+            self.resolver.data.trait_or_impl_ctx.impl_context(),
+            &mut tmp_inference,
+        )
     }
 }
 
@@ -857,9 +872,9 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    let res_ty = ctx.reduce_ty(res.ty());
+    let res_ty = ctx.implize_type(res.ty())?;
     let res = ctx.exprs.alloc(res);
-    let return_type = ctx.reduce_ty(return_type);
+    let return_type = ctx.implize_type(return_type)?;
     let inference = &mut ctx.resolver.inference();
     if let Err(err_set) = inference.conform_ty(res_ty, return_type) {
         let diag_added = ctx
@@ -986,7 +1001,7 @@ impl FlowMergeTypeHelper {
     }
 }
 
-/// computes the semnatic of a match arm pattern and the block expression.
+/// computes the semantic of a match arm pattern and the block expression.
 fn compute_arm_semantic(
     ctx: &mut ComputationContext<'_>,
     expr: &Expr,
@@ -1106,7 +1121,7 @@ fn compute_expr_match_semantic(
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
-        let expr_ty = ctx.reduce_ty(expr.ty());
+        let expr_ty = ctx.implize_type(expr.ty())?;
         helper.try_merge_types(
             &mut ctx.resolver.inference(),
             ctx.db,
@@ -1181,8 +1196,8 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
-    let if_block_ty = ctx.reduce_ty(if_block.ty());
-    let else_block_ty = ctx.reduce_ty(else_block_ty);
+    let if_block_ty = ctx.implize_type(if_block.ty())?;
+    let else_block_ty = ctx.implize_type(else_block_ty)?;
     let mut report_type_mismatch = |block_if_ty, block_else_ty| {
         ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty })
     };
@@ -1428,7 +1443,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> SemanticDiagnosticKind,
 ) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
-    let self_ty = ctx.reduce_ty(self_expr.ty());
+    let self_ty = ctx.implize_type(self_expr.ty())?;
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
     // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
     // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
@@ -2282,8 +2297,9 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let ty = ctx.reduce_ty(lexpr.ty());
+    let ty = ctx.implize_type(lexpr.ty())?;
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
@@ -2341,6 +2357,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
         }
+        TypeLongId::ImplType(_) => unreachable!("Impl type should've been reduced."),
         TypeLongId::Var(_) => Err(ctx
             .diagnostics
             .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred { ty }))),
@@ -2471,9 +2488,6 @@ fn expr_function_call(
     {
         validate_unstable_feature_usage(ctx, attr, stable_ptr);
     }
-    // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
-    // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
-    let signature = ctx.db.concrete_function_signature(function_id)?;
 
     // Check if the last item in `named_args`, has the argument name `__coupon__`, and remove it
     // if so.
@@ -2509,6 +2523,9 @@ fn expr_function_call(
         }
     }
 
+    let signature = ctx.db.concrete_function_implized_signature(function_id)?;
+
+    // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
             stable_ptr.untyped(),
@@ -2529,7 +2546,7 @@ fn expr_function_call(
         // added).
         // TODO(lior): Add a test to missing type once possible.
         let expected_ty = ctx.reduce_ty(param_typ);
-        let actual_ty = ctx.reduce_ty(arg_typ);
+        let actual_ty = ctx.implize_type(arg_typ)?;
         if !arg_typ.is_missing(ctx.db) {
             let inference = &mut ctx.resolver.inference();
             if let Err(err_set) = inference.conform_ty(actual_ty, expected_ty) {
@@ -2666,8 +2683,8 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    let explicit_type = ctx.reduce_ty(explicit_type);
-                    let inferred_type = ctx.reduce_ty(inferred_type);
+                    let explicit_type = ctx.implize_type(explicit_type)?;
+                    let inferred_type = ctx.implize_type(inferred_type)?;
                     if !inferred_type.is_missing(db) {
                         let inference = &mut ctx.resolver.inference();
                         if let Err(err_set) = inference.conform_ty(inferred_type, explicit_type) {
@@ -2773,6 +2790,9 @@ pub fn compute_statement_semantic(
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                 )?
                 .return_type;
+
+            let expected_ty = ctx.implize_type(expected_ty)?;
+            let expr_ty = ctx.implize_type(expr_ty)?;
             if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
                 let inference = &mut ctx.resolver.inference();
                 if let Err(err_set) = inference.conform_ty(expr_ty, expected_ty) {
@@ -2799,7 +2819,7 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
                 }
             };
-            let ty = ctx.reduce_ty(ty);
+            let ty = ctx.implize_type(ty)?;
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
