@@ -115,7 +115,7 @@ impl ConcreteTraitGenericFunctionLongId {
         assert_eq!(
             concrete_trait.trait_id(db),
             trait_function.trait_id(db.upcast()),
-            "Concrete trait a trait function must belong to the same generic trait."
+            "Concrete trait and trait function must belong to the same generic trait."
         );
         Self { concrete_trait, trait_function }
     }
@@ -758,7 +758,7 @@ pub fn priv_trait_function_declaration_data(
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
-    let declaration = function_syntax.declaration(syntax_db);
+    let declaration_syntax = function_syntax.declaration(syntax_db);
     let function_generic_params_data =
         db.priv_trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
@@ -770,7 +770,7 @@ pub fn priv_trait_function_declaration_data(
     );
     diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
 
-    let signature_syntax = declaration.signature(syntax_db);
+    let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
@@ -781,6 +781,19 @@ pub fn priv_trait_function_declaration_data(
         &mut environment,
     );
 
+    // Check fully resolved.
+    // TODO(yg): signature is not fully resolved even when finalize succeeds. Maybe the impl types
+    // in the signature are not added to the inference?
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
+    }
+    println!("yg sig: {:?}", signature.debug(db.elongate()));
+    let signature = resolver.inference().rewrite(signature).no_err();
+    let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();
+    println!("yg sig after: {:?}", signature.debug(db.elongate()));
+
+    // Validations on the signature.
     validate_trait_function_signature(
         db,
         &mut diagnostics,

@@ -1,0 +1,39 @@
+//! > Using traits' items is allowed in other traits, if well resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+impl AnotherImpl of AnotherTrait {
+    type AnotherType = u32;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::AnotherType);
+    fn bar2() -> AnotherTrait::AnotherType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 {
+        3_u32
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:12:16
+    fn bar1(x: u32) {}
+               ^*^
+
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `ImplVar(test::AnotherTrait)::AnotherType`, actual: `core::integer::u32`.
+ --> lib.cairo:13:18
+    fn bar2() -> u32 {
+                 ^*^
