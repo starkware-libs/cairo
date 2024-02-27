@@ -540,6 +540,7 @@ impl LanguageServer for Backend {
                 ),
                 document_formatting_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
                 ..ServerCapabilities::default()
             },
@@ -844,6 +845,57 @@ impl LanguageServer for Backend {
             }))
         })
         .await
+    }
+
+    async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
+        eprintln!("Code action");
+        self.with_db(|db| {
+            let mut actions = Vec::with_capacity(params.context.diagnostics.len());
+            let file_id = file(db, params.text_document.uri.clone());
+            let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
+            for diagnostic in params.context.diagnostics.iter() {
+                let action = match diagnostic.message.as_str() {
+                    "Unused variable. Consider ignoring by prefixing with `_`." => unused_variable(
+                        db,
+                        &node,
+                        diagnostic.clone(),
+                        params.text_document.uri.clone(),
+                    ),
+                    _ => CodeAction::default(),
+                };
+                actions.push(CodeActionOrCommand::from(action));
+            }
+            Some(actions)
+        })
+        .await
+    }
+}
+
+/// Create a code action that prefixes an unused variable with an `_`.
+fn unused_variable(
+    db: &dyn SemanticGroup,
+    node: &SyntaxNode,
+    diagnostic: Diagnostic,
+    uri: Url,
+) -> CodeAction {
+    CodeAction {
+        title: format!(
+            "if this is intentional, prefix it with an underscore: `_{}`",
+            node.get_text(db.upcast())
+        ),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from_iter([(
+                uri,
+                // The diagnostic range is just the first char of the variable name so we can just
+                // pass an underscore as the new text it won't replace the current variable name
+                // and it will prefix it with `_`
+                vec![TextEdit { range: diagnostic.range, new_text: "_".to_owned() }],
+            )])),
+            document_changes: None,
+            change_annotations: None,
+        }),
+        diagnostics: Some(vec![diagnostic]),
+        ..Default::default()
     }
 }
 
