@@ -324,7 +324,7 @@ impl SplitStructsContext<'_> {
             (Some(split_info.block_id), var_id)
         };
 
-        self.reconstructed.insert(var_id, opt_block_id);
+        self.reconstructed.insert(reconstructed_var_id, opt_block_id);
         reconstructed_var_id
     }
 

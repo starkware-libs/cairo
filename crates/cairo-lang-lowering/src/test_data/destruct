@@ -35,7 +35,7 @@ impl ADestruct of Destruct::<A> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v11: core::RangeCheck, v0: core::bool
+Parameters: v12: core::RangeCheck, v0: core::bool
 blk0 (root):
 Statements:
 End:
@@ -46,18 +46,19 @@ End:
 
 blk1:
 Statements:
-  (v12: core::RangeCheck, v9: ()) <- test::ADestruct::destruct(v11, v1)
+  (v11: test::A) <- struct_construct()
+  (v13: core::RangeCheck, v9: ()) <- test::ADestruct::destruct(v12, v11)
   (v5: ()) <- struct_construct()
   (v6: core::option::Option::<test::A>) <- Option::None(v5)
 End:
-  Return(v12, v6)
+  Return(v13, v6)
 
 blk2:
 Statements:
   (v10: test::A) <- struct_construct()
   (v3: core::option::Option::<test::A>) <- Option::Some(v10)
 End:
-  Return(v11, v3)
+  Return(v12, v3)
 
 //! > ==========================================================================
 
