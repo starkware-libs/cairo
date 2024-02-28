@@ -81,10 +81,13 @@ impl Call {
         let outputs =
             chain!(&extra_outputs, &returns).map(|var_usage: &VarUsage| var_usage.var_id).collect();
 
+        let with_coupon = self.coupon_input.is_some();
+        let mut inputs = self.inputs;
+        inputs.extend(self.coupon_input);
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs,
-            coupon_input: self.coupon_input,
+            inputs,
+            with_coupon,
             outputs,
             location: self.location,
         }));

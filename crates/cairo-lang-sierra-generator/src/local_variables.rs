@@ -363,7 +363,7 @@ impl<'a> FindLocalsContext<'a> {
                 let (_, concrete_function_id) = get_concrete_libfunc_id(
                     self.db,
                     statement_call.function,
-                    statement_call.coupon_input.is_some(),
+                    statement_call.with_coupon,
                 );
 
                 self.analyze_call(concrete_function_id, &inputs, &outputs)

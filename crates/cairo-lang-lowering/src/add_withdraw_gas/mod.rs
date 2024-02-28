@@ -131,7 +131,7 @@ fn create_panic_block(
                 )
                 .lowered(db),
                 inputs: vec![],
-                coupon_input: None,
+                with_coupon: false,
                 outputs: vec![new_array_var],
                 location,
             }),
@@ -151,7 +151,7 @@ fn create_panic_block(
                     .into_iter()
                     .map(add_location)
                     .collect(),
-                coupon_input: None,
+                with_coupon: false,
                 outputs: vec![panic_data_var],
                 location,
             }),

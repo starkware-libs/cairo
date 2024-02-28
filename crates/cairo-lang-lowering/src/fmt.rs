@@ -248,20 +248,15 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
-        let mut first = true;
-        for var in &self.inputs {
-            if !first {
-                write!(f, ", ")?;
+        for (i, var) in self.inputs.iter().enumerate() {
+            let is_last = i == self.inputs.len() - 1;
+            if is_last && self.with_coupon {
+                write!(f, "__coupon__: ")?;
             }
             var.fmt(f, ctx)?;
-            first = false;
-        }
-        if let Some(var) = self.coupon_input {
-            if !first {
+            if !is_last {
                 write!(f, ", ")?;
             }
-            write!(f, "__coupon__: ")?;
-            var.fmt(f, ctx)?;
         }
         write!(f, ")")
     }

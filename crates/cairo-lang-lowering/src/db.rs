@@ -457,8 +457,7 @@ pub(crate) fn get_direct_callees(
                 // If the dependency_type is DependencyType::Cost and this call has a coupon input,
                 // then the call statement has a constant cost and therefore there
                 // is no cost dependency in the called function.
-                if dependency_type != DependencyType::Cost || statement_call.coupon_input.is_none()
-                {
+                if dependency_type != DependencyType::Cost || !statement_call.with_coupon {
                     direct_callees.push(statement_call.function);
                 }
             }
