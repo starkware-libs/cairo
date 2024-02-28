@@ -5,7 +5,7 @@ use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
+#[derive(Copy, Drop, Hash, PartialEq, Serde, starknet::Store)]
 pub struct EthAddress {
     address: felt252,
 }
