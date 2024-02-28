@@ -193,7 +193,7 @@ pub fn type_dependencies(
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
-        semantic::TypeLongId::FixedSizeArray { type_id, .. } => vec![type_id],
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => [type_id].repeat(size),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

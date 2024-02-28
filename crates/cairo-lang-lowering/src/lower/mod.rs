@@ -722,11 +722,11 @@ fn lower_expr(
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, builder),
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
+        semantic::Expr::FixedSizeArray(expr) => lower_expr_fixed_size_array(ctx, expr, builder),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, builder),
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
         }
-        semantic::Expr::FixedSizeArray(_) => todo!(),
     }
 }
 
@@ -1119,6 +1119,22 @@ fn lower_expr_tuple(
         .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(LoweredExpr::Tuple { exprs: inputs, location })
+}
+
+/// Lowers an expression of type [semantic::ExprFixedSizeArray]
+fn lower_expr_fixed_size_array(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprFixedSizeArray,
+    builder: &mut BlockBuilder,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    log::trace!("Lowering a fixed size array: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let exprs = expr
+        .items
+        .iter()
+        .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(LoweredExpr::FixedSizeArray { exprs, location })
 }
 
 /// Lowers an expression of type [semantic::ExprSnapshot].
