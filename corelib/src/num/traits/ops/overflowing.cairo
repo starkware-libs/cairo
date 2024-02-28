@@ -8,8 +8,8 @@ pub trait OverflowingAdd<T> {
 
 /// Performs subtraction with a flag for overflow.
 pub trait OverflowingSub<T> {
-    /// Returns a tuple of the difference along with a boolean indicating whether an arithmetic overflow
-    /// would occur.
+    /// Returns a tuple of the difference along with a boolean indicating whether an arithmetic
+    /// overflow would occur.
     /// If an overflow would have occurred then the wrapped value is returned.
     fn overflowing_sub(self: T, v: T) -> (T, bool);
 }
