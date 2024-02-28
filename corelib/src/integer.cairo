@@ -2958,3 +2958,60 @@ impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
         }
     }
 }
+
+// OverflowingMul implementations
+impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
+    fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
+        let wide_result = u8_wide_mul(self, v);
+        if wide_result > BoundedInt::<u8>::max().into() {
+            ((wide_result & BoundedInt::<u8>::max().into()).try_into().unwrap(), true)
+        } else {
+            (wide_result.try_into().unwrap(), false)
+        }
+    }
+}
+
+impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
+    fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
+        let wide_result = u16_wide_mul(self, v);
+        if wide_result > BoundedInt::<u16>::max().into() {
+            ((wide_result & BoundedInt::<u16>::max().into()).try_into().unwrap(), true)
+        } else {
+            (wide_result.try_into().unwrap(), false)
+        }
+    }
+}
+
+impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
+    fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
+        let wide_result = u32_wide_mul(self, v);
+        if wide_result > BoundedInt::<u32>::max().into() {
+            ((wide_result & BoundedInt::<u32>::max().into()).try_into().unwrap(), true)
+        } else {
+            (wide_result.try_into().unwrap(), false)
+        }
+    }
+}
+
+impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
+    fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
+        let wide_result = u64_wide_mul(self, v);
+        if wide_result > BoundedInt::<u64>::max().into() {
+            ((wide_result & BoundedInt::<u64>::max().into()).try_into().unwrap(), true)
+        } else {
+            (wide_result.try_into().unwrap(), false)
+        }
+    }
+}
+
+impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
+    fn overflowing_mul(self: u128, v: u128) -> (u128, bool) {
+        u128_overflowing_mul(self, v)
+    }
+}
+
+impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
+    fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_mul(self, v)
+    }
+}
