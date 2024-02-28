@@ -169,3 +169,72 @@ error: Missing member "b".
  --> lib.cairo:6:9
     let MyStruct { a: _, c: _, a: _ } = s;
         ^***************************^
+
+//! > ==========================================================================
+
+//! > Test fixed size array pattern incompatible number of elements.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: [felt252; 3]) {
+    let [_a, _b] = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
+ --> lib.cairo:2:9
+    let [_a, _b] = s;
+        ^******^
+
+//! > ==========================================================================
+
+//! > Test tuple assigned to a fixed size array pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: (felt252, felt252, felt252)) {
+    let [_a, _b, _c] = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
+ --> lib.cairo:2:9
+    let [_a, _b, _c] = s;
+        ^**********^
+
+//! > ==========================================================================
+
+//! > Test fixed size array assigned to a tuple pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: [felt252; 3]) {
+    let (_a, _b, _c) = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
+ --> lib.cairo:2:9
+    let (_a, _b, _c) = s;
+        ^**********^

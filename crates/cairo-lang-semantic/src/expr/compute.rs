@@ -41,8 +41,8 @@ use super::inference::infers::InferenceEmbeddings;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternMissing, PatternOtherwise, PatternTuple,
-    PatternVariable,
+    Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
+    PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
@@ -1706,7 +1706,36 @@ fn maybe_compute_pattern_semantic(
                 inner_pattern: None,
             })
         }
-        ast::Pattern::FixedSizeArray(_) => todo!(),
+        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+            let TypeLongId::FixedSizeArray { type_id, size } = long_ty else {
+                return Err(ctx
+                    .diagnostics
+                    .report(pattern_fixed_size_array, UnexpectedFixedSizeArrayPattern { ty }));
+            };
+            let pattern_asts = pattern_fixed_size_array.patterns(syntax_db).elements(syntax_db);
+            if size != pattern_asts.len() {
+                return Err(ctx.diagnostics.report(
+                    pattern_fixed_size_array,
+                    WrongNumberOfFixedSizeArrayElements {
+                        expected: size,
+                        actual: pattern_asts.len(),
+                    },
+                ));
+            }
+            let pattern_options = pattern_asts.iter().map(|pattern_ast| {
+                let ty = wrap_in_snapshots(ctx.db, type_id, n_snapshots);
+                let pattern =
+                    compute_pattern_semantic(ctx, pattern_ast, ty, or_pattern_variables_map);
+                Ok(pattern.id)
+            });
+            let elements_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
+            Pattern::FixedSizeArray(PatternFixedSizeArray {
+                elements_patterns,
+                ty,
+                stable_ptr: pattern_fixed_size_array.stable_ptr(),
+            })
+        }
     };
     ctx.resolver
         .inference()

@@ -301,6 +301,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, PatternVariable, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternStruct, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternTuple, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternEnumVariant, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternOtherwise, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternMissing, $($exclude)*);
