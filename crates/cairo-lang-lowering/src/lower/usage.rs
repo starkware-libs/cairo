@@ -294,6 +294,7 @@ impl BlockUsages {
             }
             Pattern::Otherwise(_) => {}
             Pattern::Missing(_) => {}
+            Pattern::FixedSizeArray(_) => todo!(),
         }
     }
 }
