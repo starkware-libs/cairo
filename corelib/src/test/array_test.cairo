@@ -144,3 +144,11 @@ fn test_tuple_span_from_tuple() {
     assert!(*span[2] == (70, 80, 90));
 }
 
+#[test]
+fn test_fixed_size_array() {
+    let arr = [10, 11, 12];
+    let [x, y, z] = arr;
+    assert_eq!(x, 10);
+    assert_eq!(y, 11);
+    assert_eq!(z, 12);
+}
