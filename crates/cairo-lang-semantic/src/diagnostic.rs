@@ -461,10 +461,22 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnexpectedTuplePattern { ty } => {
                 format!(r#"Unexpected type for tuple pattern. "{}" is not a tuple."#, ty.format(db),)
             }
+            SemanticDiagnosticKind::UnexpectedFixedSizeArrayPattern { ty } => {
+                format!(
+                    r#"Unexpected type for fixed size array pattern. "{}" is not a fixed size array."#,
+                    ty.format(db),
+                )
+            }
             SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
                 r#"Wrong number of tuple elements in pattern. Expected: {}. Got: {}."#,
                 expected, actual
             ),
+            SemanticDiagnosticKind::WrongNumberOfFixedSizeArrayElements { expected, actual } => {
+                format!(
+                    r#"Wrong number of fixed size array elements in pattern. Expected: {}. Got: {}."#,
+                    expected, actual
+                )
+            }
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
@@ -945,7 +957,14 @@ pub enum SemanticDiagnosticKind {
     UnexpectedTuplePattern {
         ty: semantic::TypeId,
     },
+    UnexpectedFixedSizeArrayPattern {
+        ty: semantic::TypeId,
+    },
     WrongNumberOfTupleElements {
+        expected: usize,
+        actual: usize,
+    },
+    WrongNumberOfFixedSizeArrayElements {
         expected: usize,
         actual: usize,
     },
