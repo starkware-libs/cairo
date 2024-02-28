@@ -6,7 +6,7 @@ pub trait OverflowingAdd<T> {
     fn overflowing_add(self: T, v: T) -> (T, bool);
 }
 
-/// Performs substraction with a flag for overflow.
+/// Performs subtraction with a flag for overflow.
 pub trait OverflowingSub<T> {
     /// Returns a tuple of the difference along with a boolean indicating whether an arithmetic overflow
     /// would occur.
