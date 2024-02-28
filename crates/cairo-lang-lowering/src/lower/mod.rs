@@ -670,9 +670,51 @@ fn lower_single_pattern(
                 )?;
             }
         }
+        semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
+            elements_patterns,
+            ty,
+            ..
+        }) => {
+            let outputs = if let LoweredExpr::FixedSizeArray { exprs, .. } = lowered_expr {
+                exprs
+            } else {
+                let (n_snapshots, _) = peel_snapshots(ctx.db.upcast(), ty);
+                let reqs = elements_patterns
+                    .iter()
+                    .map(|pattern| VarRequest {
+                        ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
+                        location: ctx.get_location(
+                            ctx.function_body.patterns[*pattern].stable_ptr().untyped(),
+                        ),
+                    })
+                    .collect();
+                generators::StructDestructure {
+                    input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
+                    var_reqs: reqs,
+                }
+                .add(ctx, &mut builder.statements)
+                .into_iter()
+                .map(|var_id| {
+                    LoweredExpr::AtVariable(VarUsage {
+                        var_id,
+                        // The variable is used immediately after the destructure, so the usage
+                        // location is the same as the definition location.
+                        location: ctx.variables[var_id].location,
+                    })
+                })
+                .collect()
+            };
+            for (var, pattern) in zip_eq(outputs, elements_patterns) {
+                lower_single_pattern(
+                    ctx,
+                    builder,
+                    ctx.function_body.patterns[pattern].clone(),
+                    var,
+                )?;
+            }
+        }
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
-        semantic::Pattern::FixedSizeArray(_) => todo!(),
     }
     Ok(())
 }
