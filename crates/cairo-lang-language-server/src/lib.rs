@@ -879,10 +879,7 @@ fn unused_variable(
     uri: Url,
 ) -> CodeAction {
     CodeAction {
-        title: format!(
-            "if this is intentional, prefix it with an underscore: `_{}`",
-            node.get_text(db.upcast())
-        ),
+        title: format!("Rename to `_{}`", node.get_text(db.upcast())),
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
                 uri,
