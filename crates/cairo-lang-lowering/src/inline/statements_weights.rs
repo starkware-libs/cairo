@@ -70,7 +70,7 @@ impl InlineWeight for ApproxCasmInlineWeight {
     fn block_end_weight(&self, _db: &dyn LoweringGroup, block_end: &FlatBlockEnd) -> isize {
         match block_end {
             // Return are removed when the function is inlined.
-            FlatBlockEnd::Return(_) => 0,
+            FlatBlockEnd::Return(..) => 0,
             FlatBlockEnd::NotSet => 0,
             FlatBlockEnd::Panic(_) => 0,
             FlatBlockEnd::Goto(_, _) => 1,

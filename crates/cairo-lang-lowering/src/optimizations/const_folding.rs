@@ -123,7 +123,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     }
                 };
             }
-            FlatBlockEnd::Return(ref mut inputs) => {
+            FlatBlockEnd::Return(ref mut inputs, ..) => {
                 maybe_replace_inputs(inputs);
             }
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),

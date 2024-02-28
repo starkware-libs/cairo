@@ -173,7 +173,7 @@ pub enum FlatBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VarUsage>),
+    Return(Vec<VarUsage>, LocationId),
     /// This block ends with a panic.
     Panic(VarUsage),
     /// This block ends with a jump to a different block.
@@ -232,6 +232,19 @@ impl Statement {
             Statement::Desnap(stmt) => vec![stmt.input],
         }
     }
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            Statement::Literal(_stmt) => &mut [],
+            Statement::Call(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.input),
+        }
+    }
+
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
@@ -391,6 +404,14 @@ impl MatchInfo {
             MatchInfo::Enum(s) => vec![s.input],
             MatchInfo::Extern(s) => s.inputs.clone(),
             MatchInfo::Value(s) => vec![s.input],
+        }
+    }
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            MatchInfo::Enum(s) => std::slice::from_mut(&mut s.input),
+            MatchInfo::Extern(s) => s.inputs.as_mut_slice(),
+            MatchInfo::Value(s) => std::slice::from_mut(&mut s.input),
         }
     }
     pub fn arms(&self) -> &Vec<MatchArm> {

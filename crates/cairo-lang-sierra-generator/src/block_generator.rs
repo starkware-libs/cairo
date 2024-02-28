@@ -117,7 +117,7 @@ pub fn generate_block_code(
     let last_location = statements.iter().rev().find_map(|statement| statement.location);
 
     match &block.end {
-        lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Return(returned_variables, _location) => {
             statements.extend(generate_return_code(
                 context,
                 returned_variables,
