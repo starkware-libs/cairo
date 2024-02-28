@@ -35,7 +35,7 @@ pub(crate) fn visit_remappings<F: FnMut(&VarRemapping)>(
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -122,7 +122,7 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
             }
         }
         match &block.end {
-            FlatBlockEnd::Return(returns) => {
+            FlatBlockEnd::Return(returns, _location) => {
                 for var_usage in returns {
                     ctx.set_used(var_usage.var_id);
                 }
