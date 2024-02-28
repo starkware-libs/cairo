@@ -294,11 +294,11 @@ impl SplitStructsContext<'_> {
         // reconstruct it before the first usage. If not we need to reconstruct it at the
         // end of the of the original block as it might be used by more then one of the
         // children.
-        let (opt_block_id, reconstructed_var_id) = if block_id == split_info.block_id
-            || self.variables[var_id].duplicatable.is_err()
-        {
+        if block_id == split_info.block_id || self.variables[var_id].duplicatable.is_err() {
             let reconstructed_var_id = if block_id == split_info.block_id {
-                // If the reconstruction is in the original block we can reuse the variable id.
+                // If the reconstruction is in the original block we can reuse the variable id
+                // and mark the variable as reconstructed.
+                self.reconstructed.insert(var_id, None);
                 var_id
             } else {
                 // Use a new variable id in case the variable is also reconstructed elsewhere.
@@ -319,13 +319,12 @@ impl SplitStructsContext<'_> {
             };
             statements.push(Statement::StructConstruct(reconstruct_stmt));
 
-            (None, reconstructed_var_id)
+            reconstructed_var_id
         } else {
-            (Some(split_info.block_id), var_id)
-        };
-
-        self.reconstructed.insert(var_id, opt_block_id);
-        reconstructed_var_id
+            // Mark `var_id` for reconstruction at the end of `split_info.block_id`.
+            self.reconstructed.insert(var_id, Some(split_info.block_id));
+            var_id
+        }
     }
 
     /// Given an iterator over the original remapping, rebuilds the remapping with the given

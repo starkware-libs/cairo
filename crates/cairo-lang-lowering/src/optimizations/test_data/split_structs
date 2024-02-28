@@ -881,15 +881,20 @@ End:
 test_split_structs
 
 //! > function
-fn foo(a: felt252) -> (felt252, NonDupStruct) {
+fn foo(a: felt252, e: ThreeCases) -> (felt252, NonDupStruct) {
    let b = (a, NonDupStruct { a });
-   match a {
-      0 => {
+   match e {
+      ThreeCases::One => {
         let (_, non_dup) = b;
         use_struct(non_dup);
         (a, NonDupStruct { a: 0 })
       },
-      _ =>  {
+      ThreeCases::Two => {
+        let (_, non_dup) = b;
+        use_struct(non_dup);
+        (a, NonDupStruct { a: 1 })
+      },
+      ThreeCases::Three =>  {
         use_tuple(b);
         (a, NonDupStruct { a: 0 })
       },
@@ -907,75 +912,102 @@ struct NonDupStruct {
   a: felt252,
 }
 
+enum ThreeCases {
+  One,
+  Two,
+  Three,
+}
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > before
-Parameters: v0: core::felt252
+Parameters: v0: core::felt252, v1: test::ThreeCases
 blk0 (root):
 Statements:
-  (v1: test::NonDupStruct) <- struct_construct(v0)
-  (v2: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v1)
+  (v2: test::NonDupStruct) <- struct_construct(v0)
+  (v3: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v2)
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+  Match(match_enum(v1) {
+    ThreeCases::One(v4) => blk1,
+    ThreeCases::Two(v5) => blk2,
+    ThreeCases::Three(v6) => blk3,
   })
 
 blk1:
 Statements:
-  (v4: core::felt252, v5: test::NonDupStruct) <- struct_destructure(v2)
-  () <- test::use_struct(v5)
-  (v6: core::felt252) <- 0u
-  (v7: test::NonDupStruct) <- struct_construct(v6)
-  (v8: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v7)
-End:
-  Goto(blk3, {v8 -> v12})
-
-blk2:
-Statements:
-  () <- test::use_tuple::<test::NonDupStruct>(v2)
+  (v7: core::felt252, v8: test::NonDupStruct) <- struct_destructure(v3)
+  () <- test::use_struct(v8)
   (v9: core::felt252) <- 0u
   (v10: test::NonDupStruct) <- struct_construct(v9)
   (v11: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v10)
 End:
-  Goto(blk3, {v11 -> v12})
+  Goto(blk4, {v11 -> v20})
+
+blk2:
+Statements:
+  (v12: core::felt252, v13: test::NonDupStruct) <- struct_destructure(v3)
+  () <- test::use_struct(v13)
+  (v14: core::felt252) <- 1u
+  (v15: test::NonDupStruct) <- struct_construct(v14)
+  (v16: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v15)
+End:
+  Goto(blk4, {v16 -> v20})
 
 blk3:
 Statements:
+  () <- test::use_tuple::<test::NonDupStruct>(v3)
+  (v17: core::felt252) <- 0u
+  (v18: test::NonDupStruct) <- struct_construct(v17)
+  (v19: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v18)
 End:
-  Return(v12)
+  Goto(blk4, {v19 -> v20})
+
+blk4:
+Statements:
+End:
+  Return(v20)
 
 //! > after
-Parameters: v0: core::felt252
+Parameters: v0: core::felt252, v1: test::ThreeCases
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+  Match(match_enum(v1) {
+    ThreeCases::One(v4) => blk1,
+    ThreeCases::Two(v5) => blk2,
+    ThreeCases::Three(v6) => blk3,
   })
 
 blk1:
 Statements:
-  () <- test::use_struct(v1)
-  (v6: core::felt252) <- 0u
+  (v27: test::NonDupStruct) <- struct_construct(v0)
+  () <- test::use_struct(v27)
+  (v9: core::felt252) <- 0u
 End:
-  Goto(blk3, {v0 -> v13, v6 -> v15})
+  Goto(blk4, {v0 -> v21, v9 -> v23})
 
 blk2:
 Statements:
-  (v17: test::NonDupStruct) <- struct_construct(v0)
-  (v16: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v17)
-  () <- test::use_tuple::<test::NonDupStruct>(v16)
-  (v9: core::felt252) <- 0u
+  (v26: test::NonDupStruct) <- struct_construct(v0)
+  () <- test::use_struct(v26)
+  (v14: core::felt252) <- 1u
 End:
-  Goto(blk3, {v0 -> v13, v9 -> v15})
+  Goto(blk4, {v0 -> v21, v14 -> v23})
 
 blk3:
 Statements:
-  (v14: test::NonDupStruct) <- struct_construct(v15)
-  (v12: (core::felt252, test::NonDupStruct)) <- struct_construct(v13, v14)
+  (v25: test::NonDupStruct) <- struct_construct(v0)
+  (v24: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v25)
+  () <- test::use_tuple::<test::NonDupStruct>(v24)
+  (v17: core::felt252) <- 0u
 End:
-  Return(v12)
+  Goto(blk4, {v0 -> v21, v17 -> v23})
+
+blk4:
+Statements:
+  (v22: test::NonDupStruct) <- struct_construct(v23)
+  (v20: (core::felt252, test::NonDupStruct)) <- struct_construct(v21, v22)
+End:
+  Return(v20)
