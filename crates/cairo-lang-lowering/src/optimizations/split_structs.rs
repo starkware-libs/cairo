@@ -290,6 +290,21 @@ impl SplitStructsContext<'_> {
             return var_id;
         };
 
+        let inputs = split_info
+            .vars
+            .iter()
+            .map(|input_var_id| VarUsage {
+                var_id: self.maybe_reconstruct_var(
+                    split,
+                    *input_var_id,
+                    block_id,
+                    statements,
+                    location,
+                ),
+                location,
+            })
+            .collect_vec();
+
         // If the variable was defined in the same block or it is non-duplicatable then we can
         // reconstruct it before the first usage. If not we need to reconstruct it at the
         // end of the of the original block as it might be used by more then one of the
@@ -305,23 +320,19 @@ impl SplitStructsContext<'_> {
                 self.variables.alloc(self.variables[var_id].clone())
             };
 
-            let reconstruct_stmt = StatementStructConstruct {
-                inputs: split_info
-                    .vars
-                    .iter()
-                    .map(|var_id| VarUsage {
-                        var_id: self
-                            .maybe_reconstruct_var(split, *var_id, block_id, statements, location),
-                        location,
-                    })
-                    .collect_vec(),
+            statements.push(Statement::StructConstruct(StatementStructConstruct {
+                inputs,
                 output: reconstructed_var_id,
-            };
-            statements.push(Statement::StructConstruct(reconstruct_stmt));
+            }));
 
             reconstructed_var_id
         } else {
-            // Mark `var_id` for reconstruction at the end of `split_info.block_id`.
+            // All the inputs should use the original var names.
+            assert!(
+                zip_eq(&inputs, &split_info.vars).all(|(input, var_id)| &input.var_id == var_id)
+            );
+
+            // Mark `var_id` for reconstruction at the end of `split_info.block_id`
             self.reconstructed.insert(var_id, Some(split_info.block_id));
             var_id
         }

@@ -998,9 +998,9 @@ End:
 
 blk3:
 Statements:
-  (v25: test::NonDupStruct) <- struct_construct(v0)
-  (v24: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v25)
-  () <- test::use_tuple::<test::NonDupStruct>(v24)
+  (v24: test::NonDupStruct) <- struct_construct(v0)
+  (v25: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v24)
+  () <- test::use_tuple::<test::NonDupStruct>(v25)
   (v17: core::felt252) <- 0u
 End:
   Goto(blk4, {v0 -> v21, v17 -> v23})
