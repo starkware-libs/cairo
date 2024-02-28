@@ -142,7 +142,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), None);
+        info.variables_introduced(self, stmt.outputs(), None);
         match stmt {
             Statement::Call(stmt) => {
                 if let Ok(signature) = stmt.function.signature(self.db) {

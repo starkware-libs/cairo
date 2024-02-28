@@ -142,11 +142,11 @@ impl Snapshot {
         let output_original =
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::Snapshot(StatementSnapshot {
-            input: self.input,
+        builder.push_statement(Statement::Snapshot(StatementSnapshot::new(
+            self.input,
             output_original,
             output_snapshot,
-        }));
+        )));
         (output_original, output_snapshot)
     }
 }

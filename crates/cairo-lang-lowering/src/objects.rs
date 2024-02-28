@@ -221,15 +221,15 @@ pub enum Statement {
     Desnap(StatementDesnap),
 }
 impl Statement {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match &self {
-            Statement::Literal(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
-            Statement::StructDestructure(stmt) => vec![stmt.input],
-            Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::Snapshot(stmt) => vec![stmt.input],
-            Statement::Desnap(stmt) => vec![stmt.input],
+            Statement::Literal(_stmt) => &[],
+            Statement::Call(stmt) => stmt.inputs.as_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.input),
         }
     }
 
@@ -245,15 +245,15 @@ impl Statement {
         }
     }
 
-    pub fn outputs(&self) -> Vec<VariableId> {
+    pub fn outputs(&self) -> &[VariableId] {
         match &self {
-            Statement::Literal(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct(stmt) => vec![stmt.output],
-            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
-            Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
-            Statement::Desnap(stmt) => vec![stmt.output],
+            Statement::Literal(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {
@@ -325,8 +325,18 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    pub output_original: VariableId,
-    pub output_snapshot: VariableId,
+    outputs: [VariableId; 2],
+}
+impl StatementSnapshot {
+    pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
+        Self { input, outputs: [output_original, output_snapshot] }
+    }
+    pub fn original(&self) -> VariableId {
+        self.outputs[0]
+    }
+    pub fn snapshot(&self) -> VariableId {
+        self.outputs[1]
+    }
 }
 
 /// A statement that desnaps a variable.
@@ -399,11 +409,11 @@ pub enum MatchInfo {
     Value(MatchEnumValue),
 }
 impl MatchInfo {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match self {
-            MatchInfo::Enum(s) => vec![s.input],
-            MatchInfo::Extern(s) => s.inputs.clone(),
-            MatchInfo::Value(s) => vec![s.input],
+            MatchInfo::Enum(s) => std::slice::from_ref(&s.input),
+            MatchInfo::Extern(s) => s.inputs.as_slice(),
+            MatchInfo::Value(s) => std::slice::from_ref(&s.input),
         }
     }
 

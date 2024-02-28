@@ -11,8 +11,8 @@ use num_traits::Zero;
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, StatementDesnap, StatementLiteral, StatementSnapshot, VarUsage,
+    BlockId, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementDesnap,
+    StatementLiteral, VarUsage,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -54,15 +54,11 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 Statement::Literal(StatementLiteral { value, output }) => {
                     var_info.insert(*output, VarInfo::Literal(value.clone()));
                 }
-                Statement::Snapshot(StatementSnapshot {
-                    input,
-                    output_original,
-                    output_snapshot,
-                }) => {
-                    if let Some(VarInfo::Literal(val)) = var_info.get(&input.var_id) {
+                Statement::Snapshot(stmt) => {
+                    if let Some(VarInfo::Literal(val)) = var_info.get(&stmt.input.var_id) {
                         let val = val.clone();
-                        var_info.insert(*output_original, VarInfo::Literal(val.clone()));
-                        var_info.insert(*output_snapshot, VarInfo::Literal(val));
+                        var_info.insert(stmt.original(), VarInfo::Literal(val.clone()));
+                        var_info.insert(stmt.snapshot(), VarInfo::Literal(val));
                     }
                 }
                 Statement::Desnap(StatementDesnap { input, output }) => {
@@ -112,16 +108,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             }
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
-
-                match info {
-                    MatchInfo::Extern(MatchExternInfo { ref mut inputs, .. }) => {
-                        maybe_replace_inputs(inputs);
-                    }
-                    MatchInfo::Enum(MatchEnumInfo { ref mut input, .. })
-                    | MatchInfo::Value(MatchEnumValue { ref mut input, .. }) => {
-                        maybe_replace_input(input);
-                    }
-                };
+                maybe_replace_inputs(info.inputs_mut());
             }
             FlatBlockEnd::Return(ref mut inputs, ..) => {
                 maybe_replace_inputs(inputs);

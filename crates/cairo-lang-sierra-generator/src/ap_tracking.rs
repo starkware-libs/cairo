@@ -90,7 +90,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         stmt: &Statement,
     ) {
         for var_id in stmt.outputs() {
-            info.vars.swap_remove(&var_id);
+            info.vars.swap_remove(var_id);
         }
 
         info.variables_used(

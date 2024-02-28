@@ -240,7 +240,7 @@ impl<'a> CancelOpsContext<'a> {
                 let desnaps = filter_use_sites(
                     &self.use_sites,
                     &self.aliases,
-                    &stmt.output_snapshot,
+                    &stmt.snapshot(),
                     |location| {
                         if let Some(Statement::Desnap(desnap_stmt)) =
                             self.lowered.blocks[location.0].statements.get(location.1)
@@ -256,12 +256,12 @@ impl<'a> CancelOpsContext<'a> {
 
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
-                    self.rename_var(stmt.output_original, stmt.input.var_id);
+                    self.rename_var(stmt.original(), stmt.input.var_id);
                     stmt.input.var_id
                 } else if desnaps.is_empty()
                     && self.lowered.variables[stmt.input.var_id].duplicatable.is_err()
                 {
-                    stmt.output_original
+                    stmt.original()
                 } else {
                     stmt.input.var_id
                 };
