@@ -31,7 +31,7 @@ pub trait RebuilderEx: Rebuilder {
             Statement::Call(stmt) => Statement::Call(StatementCall {
                 function: stmt.function,
                 inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
-                coupon_input: stmt.coupon_input.map(|v| self.map_var_usage(v)),
+                with_coupon: stmt.with_coupon,
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 location: stmt.location,
             }),

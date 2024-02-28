@@ -286,8 +286,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            if let (Some(function_id), None) =
-                (stmt.function.body(self.variables.db)?, stmt.coupon_input)
+            if let (Some(function_id), false) =
+                (stmt.function.body(self.variables.db)?, stmt.with_coupon)
             {
                 if !self.is_function_in_call_stack(function_id)
                     && self.variables.db.priv_should_inline(function_id)?

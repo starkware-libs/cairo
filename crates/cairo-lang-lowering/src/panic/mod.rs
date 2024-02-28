@@ -209,7 +209,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         self.statements.push(Statement::Call(StatementCall {
             function: call.function,
             inputs: call.inputs.clone(),
-            coupon_input: call.coupon_input,
+            with_coupon: call.with_coupon,
             outputs: call_outputs,
             location,
         }));
