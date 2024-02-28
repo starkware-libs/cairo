@@ -226,7 +226,6 @@ Statements:
   (v30: core::felt252) <- desnap(v13)
   (v31: core::felt252) <- desnap(v16)
   (v39: core::felt252) <- core::felt252_sub(v30, v31)
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
 End:
   Match(match core::felt252_is_zero(v39) {
     IsZeroResult::Zero => blk1,
@@ -257,7 +256,8 @@ End:
 
 blk4:
 Statements:
-  () <- test::cosume(v11)
+  (v40: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
+  () <- test::cosume(v40)
   (v22: core::felt252) <- 1u
 End:
   Return(v22)
@@ -872,3 +872,110 @@ Statements:
   (v63: core::felt252) <- core::felt252_add(v69, v70)
 End:
   Return(v63)
+
+//! > ==========================================================================
+
+//! > Test split a struct with a non-dup members.
+
+//! > test_runner_name
+test_split_structs
+
+//! > function
+fn foo(a: felt252) -> (felt252, NonDupStruct) {
+   let b = (a, NonDupStruct { a });
+   match a {
+      0 => {
+        let (_, non_dup) = b;
+        use_struct(non_dup);
+        (a, NonDupStruct { a: 0 })
+      },
+      _ =>  {
+        use_tuple(b);
+        (a, NonDupStruct { a: 0 })
+      },
+   }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+extern fn use_struct(a: NonDupStruct) nopanic;
+
+struct NonDupStruct {
+  a: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::NonDupStruct) <- struct_construct(v0)
+  (v2: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v1)
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252, v5: test::NonDupStruct) <- struct_destructure(v2)
+  () <- test::use_struct(v5)
+  (v6: core::felt252) <- 0u
+  (v7: test::NonDupStruct) <- struct_construct(v6)
+  (v8: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v7)
+End:
+  Goto(blk3, {v8 -> v12})
+
+blk2:
+Statements:
+  () <- test::use_tuple::<test::NonDupStruct>(v2)
+  (v9: core::felt252) <- 0u
+  (v10: test::NonDupStruct) <- struct_construct(v9)
+  (v11: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v10)
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::use_struct(v1)
+  (v6: core::felt252) <- 0u
+End:
+  Goto(blk3, {v0 -> v13, v6 -> v15})
+
+blk2:
+Statements:
+  (v17: test::NonDupStruct) <- struct_construct(v0)
+  (v16: (core::felt252, test::NonDupStruct)) <- struct_construct(v0, v17)
+  () <- test::use_tuple::<test::NonDupStruct>(v16)
+  (v9: core::felt252) <- 0u
+End:
+  Goto(blk3, {v0 -> v13, v9 -> v15})
+
+blk3:
+Statements:
+  (v14: test::NonDupStruct) <- struct_construct(v15)
+  (v12: (core::felt252, test::NonDupStruct)) <- struct_construct(v13, v14)
+End:
+  Return(v12)
