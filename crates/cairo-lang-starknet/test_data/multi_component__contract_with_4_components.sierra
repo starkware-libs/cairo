@@ -1418,20 +1418,20 @@ struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_de
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([96]); // 1015
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([97]); // 1016
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([98]); // 1017
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([99]); // 1018
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([100], [101], [102], [103], [104]); // 1019
-drop<Box<core::starknet::info::BlockInfo>>([100]) -> (); // 1020
-drop<Box<core::starknet::info::v2::TxInfo>>([101]) -> (); // 1021
-drop<ContractAddress>([103]) -> (); // 1022
-drop<felt252>([104]) -> (); // 1023
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([99], [100], [101], [102], [103]); // 1018
+drop<Box<core::starknet::info::BlockInfo>>([99]) -> (); // 1019
+drop<Box<core::starknet::info::v2::TxInfo>>([100]) -> (); // 1020
+drop<ContractAddress>([102]) -> (); // 1021
+drop<felt252>([103]) -> (); // 1022
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([104]); // 1023
 store_temp<RangeCheck>([82]) -> ([82]); // 1024
 store_temp<GasBuiltin>([86]) -> ([86]); // 1025
 store_temp<Pedersen>([0]) -> ([0]); // 1026
 store_temp<System>([87]) -> ([87]); // 1027
-store_temp<ContractAddress>([102]) -> ([102]); // 1028
+store_temp<ContractAddress>([101]) -> ([101]); // 1028
 store_temp<ContractAddress>([23]) -> ([23]); // 1029
 store_temp<core::integer::u256>([70]) -> ([70]); // 1030
-function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState, cairo_level_tests::contracts::multi_component::contract_with_4_components::HasComponentImpl_erc20_comp>::transfer_helper>([82], [86], [0], [87], [99], [102], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1031
+function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState, cairo_level_tests::contracts::multi_component::contract_with_4_components::HasComponentImpl_erc20_comp>::transfer_helper>([82], [86], [0], [87], [104], [101], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1031
 enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>, ())>>([109]) { fallthrough([110]) 1047([111]) }; // 1032
 branch_align() -> (); // 1033
 drop<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>, Unit>>([110]) -> (); // 1034
@@ -1962,20 +1962,20 @@ struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_de
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_total_supply::ComponentMemberState>() -> ([96]); // 1559
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_balances::ComponentMemberState>() -> ([97]); // 1560
 struct_construct<cairo_level_tests::components::erc20::erc20::__member_module_allowances::ComponentMemberState>() -> ([98]); // 1561
-struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([99]); // 1562
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([100], [101], [102], [103], [104]); // 1563
-drop<Box<core::starknet::info::BlockInfo>>([100]) -> (); // 1564
-drop<Box<core::starknet::info::v2::TxInfo>>([101]) -> (); // 1565
-drop<ContractAddress>([103]) -> (); // 1566
-drop<felt252>([104]) -> (); // 1567
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([92]) -> ([99], [100], [101], [102], [103]); // 1562
+drop<Box<core::starknet::info::BlockInfo>>([99]) -> (); // 1563
+drop<Box<core::starknet::info::v2::TxInfo>>([100]) -> (); // 1564
+drop<ContractAddress>([102]) -> (); // 1565
+drop<felt252>([103]) -> (); // 1566
+struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>>([93], [94], [95], [96], [97], [98]) -> ([104]); // 1567
 store_temp<RangeCheck>([82]) -> ([82]); // 1568
 store_temp<GasBuiltin>([86]) -> ([86]); // 1569
 store_temp<Pedersen>([0]) -> ([0]); // 1570
 store_temp<System>([87]) -> ([87]); // 1571
-store_temp<ContractAddress>([102]) -> ([102]); // 1572
+store_temp<ContractAddress>([101]) -> ([101]); // 1572
 store_temp<ContractAddress>([23]) -> ([23]); // 1573
 store_temp<core::integer::u256>([70]) -> ([70]); // 1574
-function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState, cairo_level_tests::contracts::multi_component::contract_with_4_components::HasComponentImpl_erc20_comp>::approve_helper>([82], [86], [0], [87], [99], [102], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1575
+function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState, cairo_level_tests::contracts::multi_component::contract_with_4_components::HasComponentImpl_erc20_comp>::approve_helper>([82], [86], [0], [87], [104], [101], [23], [70]) -> ([105], [106], [107], [108], [109]); // 1575
 enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>, ())>>([109]) { fallthrough([110]) 1591([111]) }; // 1576
 branch_align() -> (); // 1577
 drop<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::multi_component::contract_with_4_components::ContractState>, Unit>>([110]) -> (); // 1578
