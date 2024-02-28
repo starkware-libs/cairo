@@ -1,5 +1,5 @@
 use core::num::traits::BitSize;
-use core::num::traits::OverflowingAdd;
+use core::num::traits::{OverflowingAdd, OverflowingSub};
 use core::integer::BoundedInt;
 
 
@@ -65,4 +65,47 @@ fn test_overflowing_add_negative_signed_integers() {
     assert!(
         BoundedInt::<i128>::min().overflowing_add(-1) == (0x7fffffffffffffffffffffffffffffff, true)
     );
+}
+
+fn test_overflowing_sub_unsigned_integers() {
+    assert_eq!(3_u8.overflowing_sub(2), (1, false));
+    assert_eq!(0_u8.overflowing_sub(1), (BoundedInt::<u8>::max(), true));
+    assert_eq!(3_u16.overflowing_sub(2), (1, false));
+    assert_eq!(0_u16.overflowing_sub(1), (BoundedInt::<u16>::max(), true));
+    assert_eq!(3_u32.overflowing_sub(2), (1, false));
+    assert_eq!(0_u32.overflowing_sub(1), (BoundedInt::<u32>::max(), true));
+    assert_eq!(3_u64.overflowing_sub(2), (1, false));
+    assert_eq!(0_u64.overflowing_sub(1), (BoundedInt::<u64>::max(), true));
+    assert_eq!(3_u128.overflowing_sub(2), (1, false));
+    assert_eq!(0_u128.overflowing_sub(1), (BoundedInt::<u128>::max(), true));
+    assert_eq!(3_u256.overflowing_sub(2), (1, false));
+    assert_eq!(0_u256.overflowing_sub(1), (BoundedInt::<u256>::max(), true));
+}
+
+#[test]
+fn test_overflowing_sub_positive_signed_integers() {
+    assert!(3_i8.overflowing_sub(2) == (1, false));
+    assert!(BoundedInt::<i8>::min().overflowing_sub(1) == (BoundedInt::<i8>::max(), true));
+    assert!(3_i16.overflowing_sub(2) == (1, false));
+    assert!(BoundedInt::<i16>::min().overflowing_sub(1) == (BoundedInt::<i16>::max(), true));
+    assert!(3_i32.overflowing_sub(2) == (1, false));
+    assert!(BoundedInt::<i32>::min().overflowing_sub(1) == (BoundedInt::<i32>::max(), true));
+    assert!(3_i64.overflowing_sub(2) == (1, false));
+    assert!(BoundedInt::<i64>::min().overflowing_sub(1) == (BoundedInt::<i64>::max(), true));
+    assert!(3_i128.overflowing_sub(2) == (1, false));
+    assert!(BoundedInt::<i128>::min().overflowing_sub(1) == (BoundedInt::<i128>::max(), true));
+}
+
+#[test]
+fn test_overflowing_sub_negative_signed_integers() {
+    assert!((-3_i8).overflowing_sub(-2) == (-1, false));
+    assert!(BoundedInt::<i8>::max().overflowing_sub(-1) == (BoundedInt::<i8>::min(), true));
+    assert!((-3_i16).overflowing_sub(-2) == (-1, false));
+    assert!(BoundedInt::<i16>::max().overflowing_sub(-1) == (BoundedInt::<i16>::min(), true));
+    assert!((-3_i32).overflowing_sub(-2) == (-1, false));
+    assert!(BoundedInt::<i32>::max().overflowing_sub(-1) == (BoundedInt::<i32>::min(), true));
+    assert!((-3_i64).overflowing_sub(-2) == (-1, false));
+    assert!(BoundedInt::<i64>::max().overflowing_sub(-1) == (BoundedInt::<i64>::min(), true));
+    assert!((-3_i128).overflowing_sub(-2) == (-1, false));
+    assert!(BoundedInt::<i128>::max().overflowing_sub(-1) == (BoundedInt::<i128>::min(), true));
 }
