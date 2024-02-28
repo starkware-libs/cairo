@@ -631,48 +631,64 @@ fn lower_single_pattern(
                 }
             }
         }
-        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, .. }) => {
-            let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
-                exprs
-            } else {
-                let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
-                let reqs =
-                    zip_eq(&field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
-                        .map(|(pattern, ty)| VarRequest {
-                            ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                            location: ctx.get_location(
-                                ctx.function_body.patterns[*pattern].stable_ptr().untyped(),
-                            ),
-                        })
-                        .collect();
-                generators::StructDestructure {
-                    input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
-                    var_reqs: reqs,
-                }
-                .add(ctx, &mut builder.statements)
-                .into_iter()
-                .map(|var_id| {
-                    LoweredExpr::AtVariable(VarUsage {
-                        var_id,
-                        // The variable is used immediately after the destructure, so the usage
-                        // location is the same as the definition location.
-                        location: ctx.variables[var_id].location,
-                    })
-                })
-                .collect()
-            };
-            for (var, pattern) in zip_eq(outputs, field_patterns) {
-                lower_single_pattern(
-                    ctx,
-                    builder,
-                    ctx.function_body.patterns[pattern].clone(),
-                    var,
-                )?;
-            }
+        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns: patterns, ty, .. }) |
+        semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
+            elements_patterns: patterns,
+            ty,
+            ..
+        }) => {
+            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, ty)?;
         }
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
-        semantic::Pattern::FixedSizeArray(_) => todo!(),
+    }
+    Ok(())
+}
+
+/// An helper function to handle patterns of tuples or fixed size arrays.
+fn lower_tuple_like_pattern_helper(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    lowered_expr: LoweredExpr,
+    patterns: &[semantic::PatternId],
+    ty: semantic::TypeId,
+) -> LoweringResult<()> {
+    let outputs = match lowered_expr {
+        LoweredExpr::Tuple { exprs, .. } => exprs,
+        LoweredExpr::FixedSizeArray { exprs, .. } => exprs,
+        _ => {
+            let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+            let tys = match long_type_id {
+                TypeLongId::Tuple(tys) => tys,
+                TypeLongId::FixedSizeArray { type_id, size } => vec![type_id; size],
+                _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
+            };
+            let reqs = patterns
+                .iter()
+                .zip_eq(tys)
+                .map(|(pattern, ty)| VarRequest {
+                    ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
+                    location: ctx
+                        .get_location(ctx.function_body.patterns[*pattern].stable_ptr().untyped()),
+                })
+                .collect();
+            generators::StructDestructure {
+                input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
+                var_reqs: reqs,
+            }
+            .add(ctx, &mut builder.statements)
+            .into_iter()
+            .map(|var_id| {
+                LoweredExpr::AtVariable(VarUsage {
+                    var_id,
+                    location: ctx.variables[var_id].location,
+                })
+            })
+            .collect()
+        }
+    };
+    for (var, pattern) in zip_eq(outputs, patterns) {
+        lower_single_pattern(ctx, builder, ctx.function_body.patterns[*pattern].clone(), var)?;
     }
     Ok(())
 }

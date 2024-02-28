@@ -287,6 +287,11 @@ impl BlockUsages {
                     Self::handle_pattern(arena, *pattern, current);
                 }
             }
+            Pattern::FixedSizeArray(pattern) => {
+                for pattern in &pattern.elements_patterns {
+                    Self::handle_pattern(arena, *pattern, current);
+                }
+            }
             Pattern::EnumVariant(pattern) => {
                 if let Some(inner_pattern) = &pattern.inner_pattern {
                     Self::handle_pattern(arena, *inner_pattern, current);
@@ -294,7 +299,6 @@ impl BlockUsages {
             }
             Pattern::Otherwise(_) => {}
             Pattern::Missing(_) => {}
-            Pattern::FixedSizeArray(_) => todo!(),
         }
     }
 }
