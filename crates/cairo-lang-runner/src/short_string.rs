@@ -33,8 +33,9 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     let bytes = value.to_bytes_be();
 
     let mut as_string = "".to_string();
-    for (i, byte) in bytes.into_iter().skip_while(|b| *b == 0).enumerate() {
-        if i == length {
+    let mut bytes_len = 0;
+    for byte in bytes.into_iter().skip_while(|b| *b == 0) {
+        if bytes_len == length {
             return None;
         }
 
@@ -45,10 +46,12 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
         } else {
             as_string.push_str(format!(r"\x{:02x}", byte).as_str());
         }
+
+        bytes_len += 1;
     }
 
     // `to_bytes_be` misses starting nulls. Prepend them as needed.
-    let missing_nulls = length.saturating_sub(as_string.len());
+    let missing_nulls = length - bytes_len;
     if missing_nulls > 0 {
         as_string.insert_str(0, &r"\0".repeat(missing_nulls));
     }
