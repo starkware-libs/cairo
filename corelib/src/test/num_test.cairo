@@ -1,5 +1,7 @@
 use core::num::traits::BitSize;
-use core::num::traits::{OverflowingAdd, OverflowingSub, OverflowingMul};
+use core::num::traits::{
+    OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul
+};
 use core::integer::BoundedInt;
 
 
@@ -18,6 +20,8 @@ fn test_bit_size() {
     assert!(BitSize::<i128>::bits() == 128);
     assert!(BitSize::<bytes31>::bits() == 248);
 }
+
+// Overflowing tests
 
 #[test]
 fn tests_overflowing_add_unsigned_integers() {
@@ -124,4 +128,110 @@ fn test_overflowing_mul_unsigned_integers() {
     assert_eq!(BoundedInt::<u128>::max().overflowing_mul(2), (BoundedInt::<u128>::max() - 1, true));
     assert_eq!(2_u256.overflowing_mul(3), (6, false));
     assert_eq!(BoundedInt::<u256>::max().overflowing_mul(2), (BoundedInt::<u256>::max() - 1, true));
+}
+
+// Wrapping tests
+
+#[test]
+fn tests_wrapping_add_unsigned_integers() {
+    assert_eq!(1_u8.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u8>::max().wrapping_add(1), 0);
+    assert_eq!(1_u16.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u16>::max().wrapping_add(1), 0);
+    assert_eq!(1_u32.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u32>::max().wrapping_add(1), 0);
+    assert_eq!(1_u64.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u64>::max().wrapping_add(1), 0);
+    assert_eq!(1_u128.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u128>::max().wrapping_add(1), 0);
+    assert_eq!(1_u256.wrapping_add(2), 3);
+    assert_eq!(BoundedInt::<u256>::max().wrapping_add(1), 0);
+}
+
+#[test]
+fn test_wrapping_add_positive_signed_integers() {
+    assert!(1_i8.wrapping_add(2) == 3);
+    assert!(BoundedInt::<i8>::max().wrapping_add(1) == -0x80);
+    assert!(1_i16.wrapping_add(2) == 3);
+    assert!(BoundedInt::<i16>::max().wrapping_add(1) == -0x8000);
+    assert!(1_i32.wrapping_add(2) == 3);
+    assert!(BoundedInt::<i32>::max().wrapping_add(1) == -0x80000000);
+    assert!(1_i64.wrapping_add(2) == 3);
+    assert!(BoundedInt::<i64>::max().wrapping_add(1) == -0x8000000000000000);
+    assert!(1_i128.wrapping_add(2) == 3);
+    assert!(BoundedInt::<i128>::max().wrapping_add(1) == -0x80000000000000000000000000000000);
+}
+
+#[test]
+fn test_wrapping_add_negative_signed_integers() {
+    assert!((-1_i8).wrapping_add(-2) == -3);
+    assert!(BoundedInt::<i8>::min().wrapping_add(-1) == 0x7f);
+    assert!((-1_i16).wrapping_add(-2) == -3);
+    assert!(BoundedInt::<i16>::min().wrapping_add(-1) == 0x7fff);
+    assert!((-1_i32).wrapping_add(-2) == -3);
+    assert!(BoundedInt::<i32>::min().wrapping_add(-1) == 0x7fffffff);
+    assert!((-1_i64).wrapping_add(-2) == -3);
+    assert!(BoundedInt::<i64>::min().wrapping_add(-1) == 0x7fffffffffffffff);
+    assert!((-1_i128).wrapping_add(-2) == -3);
+    assert!(BoundedInt::<i128>::min().wrapping_add(-1) == 0x7fffffffffffffffffffffffffffffff);
+}
+
+#[test]
+fn test_wrapping_sub_unsigned_integers() {
+    assert_eq!(3_u8.wrapping_sub(2), 1);
+    assert_eq!(0_u8.wrapping_sub(1), BoundedInt::<u8>::max());
+    assert_eq!(3_u16.wrapping_sub(2), 1);
+    assert_eq!(0_u16.wrapping_sub(1), BoundedInt::<u16>::max());
+    assert_eq!(3_u32.wrapping_sub(2), 1);
+    assert_eq!(0_u32.wrapping_sub(1), BoundedInt::<u32>::max());
+    assert_eq!(3_u64.wrapping_sub(2), 1);
+    assert_eq!(0_u64.wrapping_sub(1), BoundedInt::<u64>::max());
+    assert_eq!(3_u128.wrapping_sub(2), 1);
+    assert_eq!(0_u128.wrapping_sub(1), BoundedInt::<u128>::max());
+    assert_eq!(3_u256.wrapping_sub(2), 1);
+    assert_eq!(0_u256.wrapping_sub(1), BoundedInt::<u256>::max());
+}
+
+#[test]
+fn test_wrapping_sub_positive_signed_integers() {
+    assert!(3_i8.wrapping_sub(2) == 1);
+    assert!(BoundedInt::<i8>::min().wrapping_sub(1) == BoundedInt::<i8>::max());
+    assert!(3_i16.wrapping_sub(2) == 1);
+    assert!(BoundedInt::<i16>::min().wrapping_sub(1) == BoundedInt::<i16>::max());
+    assert!(3_i32.wrapping_sub(2) == 1);
+    assert!(BoundedInt::<i32>::min().wrapping_sub(1) == BoundedInt::<i32>::max());
+    assert!(3_i64.wrapping_sub(2) == 1);
+    assert!(BoundedInt::<i64>::min().wrapping_sub(1) == BoundedInt::<i64>::max());
+    assert!(3_i128.wrapping_sub(2) == 1);
+    assert!(BoundedInt::<i128>::min().wrapping_sub(1) == BoundedInt::<i128>::max());
+}
+
+#[test]
+fn test_wrapping_sub_negative_signed_integers() {
+    assert!((-3_i8).wrapping_sub(-2) == -1);
+    assert!(BoundedInt::<i8>::max().wrapping_sub(-1) == BoundedInt::<i8>::min());
+    assert!((-3_i16).wrapping_sub(-2) == -1);
+    assert!(BoundedInt::<i16>::max().wrapping_sub(-1) == BoundedInt::<i16>::min());
+    assert!((-3_i32).wrapping_sub(-2) == -1);
+    assert!(BoundedInt::<i32>::max().wrapping_sub(-1) == BoundedInt::<i32>::min());
+    assert!((-3_i64).wrapping_sub(-2) == -1);
+    assert!(BoundedInt::<i64>::max().wrapping_sub(-1) == BoundedInt::<i64>::min());
+    assert!((-3_i128).wrapping_sub(-2) == -1);
+    assert!(BoundedInt::<i128>::max().wrapping_sub(-1) == BoundedInt::<i128>::min());
+}
+
+#[test]
+fn test_wrapping_mul_unsigned_integers() {
+    assert_eq!(2_u8.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u8>::max().wrapping_mul(2), BoundedInt::<u8>::max() - 1);
+    assert_eq!(2_u16.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u16>::max().wrapping_mul(2), BoundedInt::<u16>::max() - 1);
+    assert_eq!(2_u32.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u32>::max().wrapping_mul(2), BoundedInt::<u32>::max() - 1);
+    assert_eq!(2_u64.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u64>::max().wrapping_mul(2), BoundedInt::<u64>::max() - 1);
+    assert_eq!(2_u128.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u128>::max().wrapping_mul(2), BoundedInt::<u128>::max() - 1);
+    assert_eq!(2_u256.wrapping_mul(3), 6);
+    assert_eq!(BoundedInt::<u256>::max().wrapping_mul(2), BoundedInt::<u256>::max() - 1);
 }

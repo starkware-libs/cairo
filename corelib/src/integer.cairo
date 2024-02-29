@@ -3008,3 +3008,27 @@ impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
         u256_overflow_mul(self, v)
     }
 }
+
+/// WrappingAdd implementations
+impl TWrappingAdd<T, +core::num::traits::OverflowingAdd<T>> of core::num::traits::WrappingAdd<T> {
+    fn wrapping_add(self: T, v: T) -> T {
+        let (result, _) = self.overflowing_add(v);
+        result
+    }
+}
+
+/// WrappingSub implementations
+impl TWrappingSub<T, +core::num::traits::OverflowingSub<T>> of core::num::traits::WrappingSub<T> {
+    fn wrapping_sub(self: T, v: T) -> T {
+        let (result, _) = self.overflowing_sub(v);
+        result
+    }
+}
+
+/// WrappingMul implementations
+impl TWrappingMul<T, +core::num::traits::OverflowingMul<T>> of core::num::traits::WrappingMul<T> {
+    fn wrapping_mul(self: T, v: T) -> T {
+        let (result, _) = self.overflowing_mul(v);
+        result
+    }
+}
