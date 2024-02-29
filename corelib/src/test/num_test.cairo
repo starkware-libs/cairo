@@ -1,5 +1,5 @@
 use core::num::traits::BitSize;
-use core::num::traits::{OverflowingAdd, OverflowingSub};
+use core::num::traits::{OverflowingAdd, OverflowingSub, OverflowingMul};
 use core::integer::BoundedInt;
 
 
@@ -108,4 +108,20 @@ fn test_overflowing_sub_negative_signed_integers() {
     assert!(BoundedInt::<i64>::max().overflowing_sub(-1) == (BoundedInt::<i64>::min(), true));
     assert!((-3_i128).overflowing_sub(-2) == (-1, false));
     assert!(BoundedInt::<i128>::max().overflowing_sub(-1) == (BoundedInt::<i128>::min(), true));
+}
+
+#[test]
+fn test_overflowing_mul_unsigned_integers() {
+    assert_eq!(2_u8.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u8>::max().overflowing_mul(2), (BoundedInt::<u8>::max() - 1, true));
+    assert_eq!(2_u16.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u16>::max().overflowing_mul(2), (BoundedInt::<u16>::max() - 1, true));
+    assert_eq!(2_u32.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u32>::max().overflowing_mul(2), (BoundedInt::<u32>::max() - 1, true));
+    assert_eq!(2_u64.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u64>::max().overflowing_mul(2), (BoundedInt::<u64>::max() - 1, true));
+    assert_eq!(2_u128.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u128>::max().overflowing_mul(2), (BoundedInt::<u128>::max() - 1, true));
+    assert_eq!(2_u256.overflowing_mul(3), (6, false));
+    assert_eq!(BoundedInt::<u256>::max().overflowing_mul(2), (BoundedInt::<u256>::max() - 1, true));
 }

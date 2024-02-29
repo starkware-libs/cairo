@@ -230,6 +230,7 @@ impl U128PartialOrd of PartialOrd<u128> {
 }
 
 pub extern type Bitwise;
+/// Returns the bitwise operations (AND, XOR, OR) between `lhs` and `rhs`.
 extern fn bitwise(lhs: u128, rhs: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
 impl U128BitAnd of BitAnd<u128> {
     #[inline(always)]
@@ -2956,5 +2957,54 @@ impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
             SignedIntegerResult::Underflow(x) => (x, true),
             SignedIntegerResult::Overflow(x) => (x, true),
         }
+    }
+}
+
+// OverflowingMul implementations
+impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
+    fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
+        let wide_result = u8_wide_mul(self, v);
+        let MASK: u16 = BoundedInt::<u8>::max().into();
+        let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
+    fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
+        let wide_result = u16_wide_mul(self, v);
+        let MASK: u32 = BoundedInt::<u16>::max().into();
+        let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
+    fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
+        let wide_result = u32_wide_mul(self, v);
+        let MASK: u64 = BoundedInt::<u32>::max().into();
+        let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
+    fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
+        let wide_result = u64_wide_mul(self, v);
+        let MASK: u128 = BoundedInt::<u64>::max().into();
+        let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
+        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+    }
+}
+
+impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
+    fn overflowing_mul(self: u128, v: u128) -> (u128, bool) {
+        u128_overflowing_mul(self, v)
+    }
+}
+
+impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
+    fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
+        u256_overflow_mul(self, v)
     }
 }
