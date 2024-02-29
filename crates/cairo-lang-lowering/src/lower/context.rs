@@ -225,6 +225,11 @@ pub enum LoweredExpr {
         exprs: Vec<LoweredExpr>,
         location: LocationId,
     },
+    /// The expression value is a fixed size array.
+    FixedSizeArray {
+        exprs: Vec<LoweredExpr>,
+        location: LocationId,
+    },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
     Member(ExprVarMemberPath, LocationId),
@@ -267,6 +272,18 @@ impl LoweredExpr {
 
                 Ok(VarUsage { var_id: snapshot, location })
             }
+            LoweredExpr::FixedSizeArray { exprs, location } => {
+                let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
+                    type_id: exprs[0].ty(ctx),
+                    size: exprs.len(),
+                });
+                let inputs = exprs
+                    .into_iter()
+                    .map(|expr| expr.as_var_usage(ctx, builder))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(generators::StructConstruct { inputs, ty, location }
+                    .add(ctx, &mut builder.statements))
+            }
         }
     }
 
@@ -285,6 +302,12 @@ impl LoweredExpr {
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
+            LoweredExpr::FixedSizeArray { exprs, .. } => {
+                ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
+                    type_id: exprs[0].ty(ctx),
+                    size: exprs.len(),
+                })
+            }
         }
     }
     pub fn location(&self) -> LocationId {
@@ -294,6 +317,7 @@ impl LoweredExpr {
             | LoweredExpr::ExternEnum(LoweredExprExternEnum { location, .. })
             | LoweredExpr::Member(_, location)
             | LoweredExpr::Snapshot { location, .. } => *location,
+            LoweredExpr::FixedSizeArray { location, .. } => *location,
         }
     }
 }

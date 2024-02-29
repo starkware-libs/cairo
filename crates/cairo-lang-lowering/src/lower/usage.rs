@@ -132,6 +132,11 @@ impl BlockUsages {
                     self.handle_expr(function_body, *expr_id, current);
                 }
             }
+            Expr::FixedSizeArray(expr) => {
+                for expr_id in &expr.items {
+                    self.handle_expr(function_body, *expr_id, current);
+                }
+            }
             Expr::Snapshot(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
@@ -262,7 +267,6 @@ impl BlockUsages {
             Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Constant(_) => {}
             Expr::Missing(_) => {}
-            Expr::FixedSizeArray(_) => todo!(),
         }
     }
 
