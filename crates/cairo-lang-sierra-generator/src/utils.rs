@@ -211,7 +211,7 @@ fn const_type_id(
                 ConstValue::Boxed(_, _) => {
                     unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
-                ConstValue::Missing => unreachable!("Should be caught by the lowering."),
+                ConstValue::Missing(_) => unreachable!("Should be caught by the lowering."),
             },
         }
         .into(),
