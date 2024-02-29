@@ -166,11 +166,9 @@ pub struct SierraStatementDebugInfo {
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
     /// The result branch changes of the sierra statement.
-    pub result_branch_changes: Option<Vec<BranchChanges>>,
-    /// The invoke references of the sierra statement.
-    pub invoke_refs: Option<Vec<ReferenceValue>>,
-    /// The return references of the sierra statement.
-    pub return_refs: Option<Vec<ReferenceValue>>,
+    pub result_branch_changes: Vec<BranchChanges>,
+    /// The invoke and return references of the sierra statement.
+    pub ref_values: Vec<ReferenceValue>,
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -363,9 +361,8 @@ pub fn compile(
         sierra_statement_info.push(SierraStatementDebugInfo {
             code_offset: program_offset,
             instruction_idx: instructions.len(),
-            result_branch_changes: None,
-            invoke_refs: None,
-            return_refs: None,
+            result_branch_changes: vec![],
+            ref_values: vec![],
         });
 
         if program_offset > config.max_bytecode_size {
@@ -405,7 +402,7 @@ pub fn compile(
                 program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
 
-                sierra_statement_info[statement_id].return_refs = Some(return_refs);
+                sierra_statement_info[statement_id].ref_values = return_refs;
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
@@ -454,8 +451,8 @@ pub fn compile(
                 };
 
                 sierra_statement_info[statement_id].result_branch_changes =
-                    Some(compiled_invocation.results.clone());
-                sierra_statement_info[statement_id].invoke_refs = Some(invoke_refs);
+                    compiled_invocation.results.clone();
+                sierra_statement_info[statement_id].ref_values = invoke_refs;
 
                 let branching_libfunc = compiled_invocation.results.len() > 1;
 
@@ -493,9 +490,8 @@ pub fn compile(
     sierra_statement_info.push(SierraStatementDebugInfo {
         code_offset: program_offset,
         instruction_idx: instructions.len(),
-        result_branch_changes: None,
-        invoke_refs: None,
-        return_refs: None,
+        result_branch_changes: vec![],
+        ref_values: vec![],
     });
 
     let statement_offsets: Vec<usize> =
