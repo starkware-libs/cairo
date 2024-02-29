@@ -159,20 +159,18 @@ impl CairoProgram {
 }
 
 /// The debug information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
     /// The offset of the sierra statement within the bytecode.
     pub code_offset: usize,
     /// The index of the sierra statement in the instructions vector.
     pub instruction_idx: usize,
-}
-
-/// The debug references and branch changes information of a compilation from Sierra to casm.
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct SierraRefsDebugInfo {
-    pub invoke_refs: Vec<ReferenceValue>,
-    pub result_branch_changes: Vec<BranchChanges>,
-    pub return_refs: Vec<ReferenceValue>,
+    /// The result branch changes of the sierra statement.
+    pub result_branch_changes: Option<Vec<BranchChanges>>,
+    /// The invoke references of the sierra statement.
+    pub invoke_refs: Option<Vec<ReferenceValue>>,
+    /// The return references of the sierra statement.
+    pub return_refs: Option<Vec<ReferenceValue>>,
 }
 
 /// The debug information of a compilation from Sierra to casm.
@@ -180,8 +178,6 @@ pub struct SierraRefsDebugInfo {
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
     pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
-    /// The debug references and branch changes information per Sierra statement.
-    pub sierra_refs_info: Vec<SierraRefsDebugInfo>,
 }
 
 /// The information about the constants used in the program.
@@ -336,10 +332,12 @@ pub fn compile(
 ) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
-    // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
+
+    // Maps statement_idx to program_offset, result_branch_changes, invoke_refs and return_refs.
+    // The last value (for statement_idx=number-of-statements)
     // contains the final offset (the size of the program code segment).
-    let mut statement_offsets = Vec::with_capacity(program.statements.len());
-    let mut statement_indices = Vec::with_capacity(program.statements.len());
+    let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
+        Vec::with_capacity(program.statements.len());
 
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
@@ -358,12 +356,18 @@ pub fn compile(
     .map_err(|err| Box::new(err.into()))?;
 
     let mut program_offset: usize = 0;
-    let mut sierra_refs_info: Vec<SierraRefsDebugInfo> = Vec::new();
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
-        statement_indices.push(instructions.len());
-        statement_offsets.push(program_offset);
+
+        sierra_statement_info.push(SierraStatementDebugInfo {
+            code_offset: program_offset,
+            instruction_idx: instructions.len(),
+            result_branch_changes: None,
+            invoke_refs: None,
+            return_refs: None,
+        });
+
         if program_offset > config.max_bytecode_size {
             return Err(Box::new(CompilationError::CodeSizeLimitExceeded));
         }
@@ -401,11 +405,7 @@ pub fn compile(
                 program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
 
-                sierra_refs_info.push(SierraRefsDebugInfo {
-                    invoke_refs: vec![],
-                    result_branch_changes: vec![],
-                    return_refs,
-                });
+                sierra_statement_info[statement_id].return_refs = Some(return_refs);
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
@@ -453,11 +453,9 @@ pub fn compile(
                     ..annotations
                 };
 
-                sierra_refs_info.push(SierraRefsDebugInfo {
-                    invoke_refs,
-                    result_branch_changes: compiled_invocation.results.clone(),
-                    return_refs: vec![],
-                });
+                sierra_statement_info[statement_id].result_branch_changes =
+                    Some(compiled_invocation.results.clone());
+                sierra_statement_info[statement_id].invoke_refs = Some(invoke_refs);
 
                 let branching_libfunc = compiled_invocation.results.len() > 1;
 
@@ -492,8 +490,17 @@ pub fn compile(
         }
     }
     // Push the final offset and index at the end of the vectors.
-    statement_indices.push(instructions.len());
-    statement_offsets.push(program_offset);
+    sierra_statement_info.push(SierraStatementDebugInfo {
+        code_offset: program_offset,
+        instruction_idx: instructions.len(),
+        result_branch_changes: None,
+        invoke_refs: None,
+        return_refs: None,
+    });
+
+    let statement_offsets: Vec<usize> =
+        sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.code_offset).collect();
+
     let const_segments_max_size = config
         .max_bytecode_size
         .checked_sub(program_offset)
@@ -509,15 +516,7 @@ pub fn compile(
     Ok(CairoProgram {
         instructions,
         consts_info,
-        debug_info: CairoProgramDebugInfo {
-            sierra_statement_info: zip_eq(statement_offsets, statement_indices)
-                .map(|(code_offset, instruction_idx)| SierraStatementDebugInfo {
-                    code_offset,
-                    instruction_idx,
-                })
-                .collect(),
-            sierra_refs_info,
-        },
+        debug_info: CairoProgramDebugInfo { sierra_statement_info },
     })
 }
 
