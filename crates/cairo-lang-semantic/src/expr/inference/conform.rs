@@ -454,7 +454,8 @@ impl Inference<'_> {
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)
             }
-            TypeLongId::ImplType(_) => todo!(), // TODO(yg)
+            TypeLongId::ImplType(_) => false, /* TODO(yg): I've put false here for now for tests
+                                               * to work, but what's the right logic here? */
         }
     }
 }

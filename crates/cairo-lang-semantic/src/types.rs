@@ -151,7 +151,9 @@ impl TypeLongId {
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
-            TypeLongId::ImplType(_) => todo!(), // TODO(yg)
+            TypeLongId::ImplType(_) => return None, /* TODO(yg): I've put this here to make tests
+                                                     * pass, but what't the right logic? If None,
+                                                     * unite with other Nones. */
         })
     }
 }

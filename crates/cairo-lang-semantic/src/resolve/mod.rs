@@ -41,7 +41,7 @@ use crate::items::trt::{
 };
 use crate::items::visibility;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
+use crate::types::{are_coupons_enabled, reduce_impl_type_if_possible, resolve_type, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -625,6 +625,8 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
+                        let ty =
+                            reduce_impl_type_if_possible(self.db, ty, TraitOrImplContext::None)?;
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
@@ -655,7 +657,12 @@ impl<'db> Resolver<'db> {
                         let type_long_id =
                             TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
 
-                        Ok(ResolvedConcreteItem::Type(self.db.intern_type(type_long_id)))
+                        let ty = reduce_impl_type_if_possible(
+                            self.db,
+                            self.db.intern_type(type_long_id),
+                            TraitOrImplContext::None,
+                        )?;
+                        Ok(ResolvedConcreteItem::Type(ty))
                     }
                 }
             }

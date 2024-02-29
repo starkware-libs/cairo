@@ -1,13 +1,105 @@
-//! > Test type items in trait/impl. phase0.
+//! > Test type items in trait/impl.
 
 //! > TODO(yg):
-* ygg2: Add more tests
-* 1. make this work. 2. change in impl to MyImpl::InputType. 3. change in both to Self. All in separate tests. 4. Also add tests with referring to it as test::MyTrait and super::MyTrait.
-* more tests: 0. All combinations of trait type vs. concrete type in impl/trait X {matches, don't match} X {param, return type} 1. type Type2 = Self::Type1. 2. cycle: type Type2 = Self::Type1; type Type1 = Self::Type2; 3. impl type value is concrete with args (Option<u32>).
-* more tests: member access of a trait type which is assigned with a struct.
+* Later: 1. "Self::", 2. generics.
+* Cycles/chains: 1. type Type2 = Self::Type1. 2. cycle: type Type2 = Self::Type1; type Type1 = Self::Type2;
 * more tests: method call on a trait type according to the type it's assigned.
-* more tests: path to a trait item with correct name but not from a trait this impl implements.
 * make sure it works with type aliases. Add a test for it.
+* Consider and add test: should using impls' types in traits be allowed? If any - make sure cycles are avoided. And if not allowed - consider whether impls' types should be allowed to be used in other impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType;
+    fn foo2(x: MyTrait::InputType) -> MyTrait::OutputType;
+    fn foo3(x: MyTrait::InputType) -> MyTrait::OutputType;
+    fn foo4(x: u32) -> u32;
+    fn foo5(x: u32) -> u32;
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+    fn foo2(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+    fn foo3(x: u32) -> u32 { x }
+    fn foo4(x: MyTrait::InputType) -> MyTrait::OutputType { x }
+    fn foo5(x: MyImpl::InputType) -> MyImpl::OutputType { x }
+}
+fn main() {
+   MyImpl::foo1(3_u32);
+   MyImpl::foo2(3_u32);
+   MyImpl::foo3(3_u32);
+   MyImpl::foo4(3_u32);
+   MyImpl::foo5(3_u32);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Incompatible signatures with trait/impl type items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: MyTrait::InputType);
+    fn foo2() -> MyTrait::OutputType;
+    fn foo3(x: u16);
+    fn foo4() -> u16;
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    fn foo1(x: u16) {} // param type doesn't match.
+    fn foo2() -> u16 { 1_u16 } // return type doesn't match.
+    fn foo3(x: MyImpl::InputType) {} // param type doesn't match.
+    fn foo4() -> MyImpl::OutputType { 1_u32 } // return type doesn't match.
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:12:16
+    fn foo1(x: u16) {} // param type doesn't match.
+               ^*^
+
+error: Return type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:13:18
+    fn foo2() -> u16 { 1_u16 } // return type doesn't match.
+                 ^*^
+
+error: Parameter type of impl function `MyImpl::foo3` is incompatible with `MyTrait::foo3`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:14:16
+    fn foo3(x: MyImpl::InputType) {} // param type doesn't match.
+               ^***************^
+
+error: Return type of impl function `MyImpl::foo4` is incompatible with `MyTrait::foo4`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:15:18
+    fn foo4() -> MyImpl::OutputType { 1_u32 } // return type doesn't match.
+                 ^****************^
+
+//! > ==========================================================================
+
+//! > Member access of impl type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -36,7 +128,344 @@ impl MyImpl of MyTrait {
 }
 fn main() {
    let x = MyStruct { value: 3_u32 };
-   let _y: MyStruct<u32> = MyImpl::foo(x);
+   let _: MyStruct<u32> = MyImpl::foo(x);
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Method call on impl type that has this method.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = Option<usize>;
+    fn foo(x: MyImpl::InputType) {
+        x.unwrap();
+    }
+}
+fn main() {
+   MyImpl::foo(Option::Some(3));
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Method call on impl type that doesn't have this method.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = usize;
+    fn foo(x: MyImpl::InputType) {
+        x.unwrap();
+    }
+}
+
+//! > expected_diagnostics
+error: Method `unwrap` could not be called on type `core::integer::u32`.
+Candidate `OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`
+Candidate `ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`
+ --> lib.cairo:8:11
+        x.unwrap();
+          ^****^
+
+//! > ==========================================================================
+
+//! > Unary operator on impl type that implements it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = i32;
+    fn foo(x: MyImpl::InputType) {
+        -x;
+    }
+}
+fn main() {
+   MyImpl::foo(3);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unary operator on impl type that doesn't implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    fn foo(x: MyImpl::InputType) {
+        -x; // u32 doesn't implement `Neg`.
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+ --> lib.cairo:8:9
+        -x; // u32 doesn't implement `Neg`.
+        ^^
+
+//! > ==========================================================================
+
+//! > Binary operator on impl types that implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType1;
+    type InputType2;
+    type OutputType;
+    fn foo(x: MyTrait::InputType1, y: MyTrait::InputType2) -> MyTrait::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType1 = usize;
+    type InputType2 = usize;
+    type OutputType = usize;
+    fn foo(x: MyImpl::InputType1, y: MyImpl::InputType2) -> MyImpl::OutputType {
+        x + y
+    }
+}
+fn main() {
+   let _: usize = MyImpl::foo(3, 4);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Binary operator on impl type that doesn't implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = Option<usize>;
+    fn foo(x: MyImpl::InputType) {
+        x + x; // Option<usize> doesn't implement `Add`.
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Add::<core::option::Option::<core::integer::u32>>
+ --> lib.cairo:8:9
+        x + x; // Option<usize> doesn't implement `Add`.
+        ^***^
+
+//! > ==========================================================================
+
+//! > Indexing an impl type that implements `Index`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo(x: MyTrait::InputType)  -> MyTrait::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType = Array<usize>;
+    type OutputType = usize;
+    fn foo(x: MyImpl::InputType) -> MyImpl::OutputType {
+        *x[0_u32]
+    }
+}
+fn main() {
+   MyImpl::foo(array![0]);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Indexing an impl type that doesn't implement `Index`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+    fn foo(x: MyTrait::InputType);
+}
+impl MyImpl of MyTrait {
+    type InputType = usize;
+    fn foo(x: MyImpl::InputType) {
+        x[0];
+    }
+}
+
+//! > expected_diagnostics
+error: Type `core::integer::u32` could not be indexed.
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::traits::Index::<core::integer::u32, ?2, ?3>
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::traits::IndexView::<core::integer::u32, ?2, ?3>
+ --> lib.cairo:8:9
+        x[0];
+        ^**^
+
+//! > ==========================================================================
+
+//! > Using other traits' items is prohibited in traits.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+trait MyTrait {
+    // TODO(yg): These should have diagnostics.
+    // TODO(yg): change expect_diagnostics to true.
+    fn foo1(x: AnotherTrait::AnotherType) -> u32;
+    fn foo2(x: u32) -> AnotherTrait::AnotherType;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Mixing traits.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type InputType;
+    type OutputType;
+}
+impl AnotherImpl of AnotherTrait {
+    type InputType = u32;
+    type OutputType = u32;
+}
+trait MyTrait {
+    type InputType;
+    type OutputType;
+    fn foo1(x: MyTrait::InputType);
+    fn foo2() -> MyTrait::OutputType;
+    fn foo3(x: MyTrait::InputType);
+    fn foo4() -> MyTrait::OutputType;
+}
+impl MyImpl of MyTrait {
+    type InputType = u32;
+    type OutputType = u32;
+    // TODO(yg): Improve diag + make it more robust by prohibiting the use of trait types of other traits.
+    fn foo1(x: AnotherTrait::InputType) {} // Using param type from another trait.
+    fn foo2() -> AnotherTrait::OutputType { 1_u32 } // Using return type from another trait.
+    // TODO(yg): these should be allowed. Move to another test. Also use from the trait and in the function body.
+    fn foo3(x: AnotherImpl::InputType) {} // Using param type from another impl.
+    fn foo4() -> AnotherImpl::OutputType { 1_u32 } // Using return type from another impl.
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(864)::InputType`.
+ --> lib.cairo:21:16
+    fn foo1(x: AnotherTrait::InputType) {} // Using param type from another trait.
+               ^*********************^
+
+error: Return type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(865)::OutputType`.
+ --> lib.cairo:22:18
+    fn foo2() -> AnotherTrait::OutputType { 1_u32 } // Using return type from another trait.
+                 ^**********************^
+
+error: Unexpected return type. Expected: "ImplVarId(865)::OutputType", found: "core::integer::u32".
+ --> lib.cairo:22:43
+    fn foo2() -> AnotherTrait::OutputType { 1_u32 } // Using return type from another trait.
+                                          ^*******^
