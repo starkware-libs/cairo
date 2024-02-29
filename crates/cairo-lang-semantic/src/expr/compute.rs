@@ -41,8 +41,8 @@ use super::inference::infers::InferenceEmbeddings;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternMissing, PatternOtherwise, PatternTuple,
-    PatternVariable,
+    Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
+    PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
@@ -1636,37 +1636,22 @@ fn maybe_compute_pattern_semantic(
                 stable_ptr: pattern_struct.stable_ptr(),
             })
         }
-        ast::Pattern::Tuple(pattern_tuple) => {
-            // Peel all snapshot wrappers.
-            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
-
-            let tys = try_extract_matches!(long_ty, TypeLongId::Tuple).ok_or_else(|| {
-                ctx.diagnostics.report(pattern_tuple, UnexpectedTuplePattern { ty })
-            })?;
-
-            let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
-            if tys.len() != patterns_ast.len() {
-                return Err(ctx.diagnostics.report(
-                    pattern_tuple,
-                    WrongNumberOfTupleElements { expected: tys.len(), actual: patterns_ast.len() },
-                ));
-            }
-            // Iterator of Option<Pattern?, for each field.
-            let pattern_options = zip_eq(patterns_ast, tys).map(|(pattern_ast, ty)| {
-                let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
-                let pattern =
-                    compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map);
-                Ok(pattern.id)
-            });
-            // If all are Some, collect into a Vec.
-            let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
-
-            Pattern::Tuple(PatternTuple {
-                field_patterns,
-                ty,
-                stable_ptr: pattern_tuple.stable_ptr(),
-            })
-        }
+        ast::Pattern::Tuple(_) => maybe_compute_tuple_like_pattern_semantic(
+            ctx,
+            pattern_syntax,
+            ty,
+            or_pattern_variables_map,
+            |ty: TypeId| UnexpectedTuplePattern { ty },
+            |expected, actual| WrongNumberOfTupleElements { expected, actual },
+        )?,
+        ast::Pattern::FixedSizeArray(_) => maybe_compute_tuple_like_pattern_semantic(
+            ctx,
+            pattern_syntax,
+            ty,
+            or_pattern_variables_map,
+            |ty: TypeId| UnexpectedFixedSizeArrayPattern { ty },
+            |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
+        )?,
         ast::Pattern::False(pattern_false) => {
             let enum_expr = extract_matches!(
                 false_literal_expr(ctx, pattern_false.stable_ptr().into()),
@@ -1706,13 +1691,71 @@ fn maybe_compute_pattern_semantic(
                 inner_pattern: None,
             })
         }
-        ast::Pattern::FixedSizeArray(_) => todo!(),
     };
     ctx.resolver
         .inference()
         .conform_ty(pattern.ty(), ty)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
     Ok(pattern)
+}
+
+/// Computes the semantic model of a pattern of a tuple or a fixed size array. Assumes that the
+/// pattern is one of these types.
+fn maybe_compute_tuple_like_pattern_semantic(
+    ctx: &mut ComputationContext<'_>,
+    pattern_syntax: &ast::Pattern,
+    ty: TypeId,
+    or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
+    unexpected_pattern: fn(TypeId) -> SemanticDiagnosticKind,
+    wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind,
+) -> Maybe<Pattern> {
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+    // Assert that the pattern is of the same type as the expr.
+    match (pattern_syntax, &long_ty) {
+        (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
+        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
+        _ => {
+            return Err(ctx.diagnostics.report(pattern_syntax, unexpected_pattern(ty)));
+        }
+    };
+    let inner_tys = match long_ty {
+        TypeLongId::Tuple(inner_tys) => inner_tys,
+        TypeLongId::FixedSizeArray { type_id: inner_ty, size } => [inner_ty].repeat(size),
+        _ => unreachable!(),
+    };
+    let patterns_syntax = match pattern_syntax {
+        ast::Pattern::Tuple(pattern_tuple) => {
+            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
+            pattern_fixed_size_array.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        _ => unreachable!(),
+    };
+    let size = inner_tys.len();
+    if size != patterns_syntax.len() {
+        return Err(ctx
+            .diagnostics
+            .report(pattern_syntax, wrong_number_of_elements(size, patterns_syntax.len())));
+    }
+    let pattern_options = zip_eq(patterns_syntax, inner_tys).map(|(pattern_ast, ty)| {
+        let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
+        let pattern = compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map);
+        Ok(pattern.id)
+    });
+    // If all are Some, collect into a Vec.
+    let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
+    Ok(match pattern_syntax {
+        ast::Pattern::Tuple(syntax) => {
+            Pattern::Tuple(PatternTuple { field_patterns, ty, stable_ptr: syntax.stable_ptr() })
+        }
+        ast::Pattern::FixedSizeArray(syntax) => Pattern::FixedSizeArray(PatternFixedSizeArray {
+            elements_patterns: field_patterns,
+            ty,
+            stable_ptr: syntax.stable_ptr(),
+        }),
+        _ => unreachable!(),
+    })
 }
 
 /// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.

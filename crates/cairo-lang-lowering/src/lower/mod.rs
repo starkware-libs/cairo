@@ -672,6 +672,7 @@ fn lower_single_pattern(
         }
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
+        semantic::Pattern::FixedSizeArray(_) => todo!(),
     }
     Ok(())
 }
