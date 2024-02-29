@@ -28,6 +28,7 @@ serde_json.workspace = true
 tokio.workspace = true
 tower-lsp = "0.20.0"
 tracing = "0.1"
+tracing-flame = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
