@@ -5458,6 +5458,7 @@ pub enum Pattern {
     Struct(PatternStruct),
     Tuple(PatternTuple),
     Enum(PatternEnum),
+    FixedSizeArray(PatternFixedSizeArray),
     Path(ExprPath),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5520,6 +5521,11 @@ impl From<PatternEnumPtr> for PatternPtr {
         Self(value.0)
     }
 }
+impl From<PatternFixedSizeArrayPtr> for PatternPtr {
+    fn from(value: PatternFixedSizeArrayPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprPathPtr> for PatternPtr {
     fn from(value: ExprPathPtr) -> Self {
         Self(value.0)
@@ -5575,6 +5581,11 @@ impl From<PatternEnumGreen> for PatternGreen {
         Self(value.0)
     }
 }
+impl From<PatternFixedSizeArrayGreen> for PatternGreen {
+    fn from(value: PatternFixedSizeArrayGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprPathGreen> for PatternGreen {
     fn from(value: ExprPathGreen) -> Self {
         Self(value.0)
@@ -5612,6 +5623,9 @@ impl TypedSyntaxNode for Pattern {
             SyntaxKind::PatternStruct => Pattern::Struct(PatternStruct::from_syntax_node(db, node)),
             SyntaxKind::PatternTuple => Pattern::Tuple(PatternTuple::from_syntax_node(db, node)),
             SyntaxKind::PatternEnum => Pattern::Enum(PatternEnum::from_syntax_node(db, node)),
+            SyntaxKind::PatternFixedSizeArray => {
+                Pattern::FixedSizeArray(PatternFixedSizeArray::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprPath => Pattern::Path(ExprPath::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Pattern"),
         }
@@ -5628,6 +5642,7 @@ impl TypedSyntaxNode for Pattern {
             Pattern::Struct(x) => x.as_syntax_node(),
             Pattern::Tuple(x) => x.as_syntax_node(),
             Pattern::Enum(x) => x.as_syntax_node(),
+            Pattern::FixedSizeArray(x) => x.as_syntax_node(),
             Pattern::Path(x) => x.as_syntax_node(),
         }
     }
@@ -5649,6 +5664,7 @@ impl Pattern {
             SyntaxKind::PatternStruct => true,
             SyntaxKind::PatternTuple => true,
             SyntaxKind::PatternEnum => true,
+            SyntaxKind::PatternFixedSizeArray => true,
             SyntaxKind::ExprPath => true,
             _ => false,
         }
@@ -5981,6 +5997,88 @@ impl TypedSyntaxNode for PatternTuple {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternTuplePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PatternFixedSizeArray {
+    node: SyntaxNode,
+    children: Arc<Vec<SyntaxNode>>,
+}
+impl PatternFixedSizeArray {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_PATTERNS: usize = 1;
+    pub const INDEX_RBRACK: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        patterns: PatternListGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> PatternFixedSizeArrayGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, patterns.0, rbrack.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PatternFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternFixedSizeArray,
+            details: GreenNodeDetails::Node { children, width },
+        })))
+    }
+}
+impl PatternFixedSizeArray {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
+        PatternList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternFixedSizeArrayPtr(pub SyntaxStablePtrId);
+impl PatternFixedSizeArrayPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> PatternFixedSizeArray {
+        PatternFixedSizeArray::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternFixedSizeArrayGreen(pub GreenId);
+impl TypedSyntaxNode for PatternFixedSizeArray {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternFixedSizeArray);
+    type StablePtr = PatternFixedSizeArrayPtr;
+    type Green = PatternFixedSizeArrayGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PatternFixedSizeArrayGreen(db.intern_green(Arc::new(GreenNode {
+            kind: SyntaxKind::PatternFixedSizeArray,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrack::missing(db).0,
+                    PatternList::missing(db).0,
+                    TerminalRBrack::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PatternFixedSizeArray,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PatternFixedSizeArray
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PatternFixedSizeArrayPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

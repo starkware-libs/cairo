@@ -143,3 +143,55 @@ StatementLet
     │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
     │   └── rbrack (kind: TokenRBrack): ']'
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test fixed array pattern.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let [x, y, z] = [1, 2, 3];
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── patterns (kind: PatternList)
+    │   │   ├── item #0 (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'y'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: ExprPath)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'z'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── exprs (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'

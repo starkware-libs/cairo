@@ -145,6 +145,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::PatternTuple => {
             vec![]
         }
+        SyntaxKind::PatternFixedSizeArray => {
+            vec![]
+        }
         SyntaxKind::PatternList => vec![],
         SyntaxKind::PatternListOr => vec![],
         SyntaxKind::PatternStructParamWithExpr => {
