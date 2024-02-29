@@ -38,7 +38,7 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 value.fmt(f, db)?;
                 write!(f, ".into_box()")
             }
-            ConstValue::Missing => write!(f, "missing"),
+            ConstValue::Missing(_) => write!(f, "missing"),
         }
     }
 }

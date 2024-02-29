@@ -2,7 +2,7 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -767,7 +767,7 @@ fn lower_expr_literal_helper(
                 ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err)),
             )
         })
-        .unwrap_or(ConstValue::Missing);
+        .unwrap_or(ConstValue::Missing(skip_diagnostic()));
     let location = ctx.get_location(stable_ptr);
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
