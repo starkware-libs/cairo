@@ -8,4 +8,4 @@ pub mod bit_size;
 pub use bit_size::BitSize;
 
 pub mod ops;
-pub use ops::{OverflowingAdd};
+pub use ops::{OverflowingAdd, OverflowingSub};
