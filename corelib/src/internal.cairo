@@ -9,3 +9,11 @@ extern type index_enum_type<const NUM_VARIANTS: felt252>;
 
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
+extern type S<const N: felt252>;
+extern fn bar()->S<{3 + 8}> nopanic;
+const k : felt252 = 98;
+mod A {
+    fn f() {
+        let x: super::S<{ super::k + 9 }> = super::bar();
+    }
+}

@@ -763,11 +763,9 @@ fn lower_expr_literal_helper(
 ) -> LoweringResult<LoweredExpr> {
     let value = value_as_const_value(ctx.db.upcast(), ty, value)
         .map_err(|err| {
-            LoweringFlowError::Failed(
-                ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err)),
-            )
+            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err))
         })
-        .unwrap_or(ConstValue::Missing);
+        .unwrap_or_else(ConstValue::Missing);
     let location = ctx.get_location(stable_ptr);
     Ok(LoweredExpr::AtVariable(
         generators::Const { value, ty, location }.add(ctx, &mut builder.statements),

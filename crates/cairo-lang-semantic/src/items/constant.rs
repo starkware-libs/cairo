@@ -4,8 +4,9 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use id_arena::Arena;
@@ -21,7 +22,7 @@ use crate::corelib::{
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::InferenceId;
@@ -77,7 +78,7 @@ pub enum ConstValue {
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
     /// A missing value, used in cases where the value is not known due to diagnostics.
-    Missing,
+    Missing(DiagnosticAdded),
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
@@ -106,21 +107,15 @@ pub fn priv_constant_semantic_data(
 
     let environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
     let mut ctx = ComputationContext::new(db, &mut diagnostics, None, resolver, None, environment);
-    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
-    if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), const_type) {
-        err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());
-    }
-    // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err
-            .report(ctx.diagnostics, stable_ptr.unwrap_or(const_ast.stable_ptr().untyped()));
-    }
-    for (_, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
-    }
 
-    // Check that the expression is a valid constant.
-    let (ty, const_value) = evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics);
+    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
+    let (ty, const_value) = resolve_const_expr_and_evaluate(
+        db,
+        &mut ctx,
+        &value,
+        const_ast.stable_ptr().untyped(),
+        const_type,
+    );
 
     let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, exprs: Arc::new(ctx.exprs) };
@@ -131,6 +126,29 @@ pub fn priv_constant_semantic_data(
         constant: Ok(constant),
         resolver_data,
     })
+}
+
+/// resolves the given const expression and evaluates its value.
+pub fn resolve_const_expr_and_evaluate(
+    db: &dyn SemanticGroup,
+    ctx: &mut ComputationContext<'_>,
+    value: &ExprAndId,
+    const_stable_ptr: SyntaxStablePtrId,
+    target_type: TypeId,
+) -> (TypeId, ConstValue) {
+    if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), target_type) {
+        err.report(ctx.diagnostics, const_stable_ptr);
+    }
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
+        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(const_stable_ptr));
+    }
+    for (_, expr) in ctx.exprs.iter_mut() {
+        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
+    }
+
+    // Check that the expression is a valid constant.
+    evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics)
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
@@ -147,7 +165,7 @@ pub fn priv_constant_semantic_data_cycle(
     let diagnostic_add = diagnostics.report(&const_ast, SemanticDiagnosticKind::ConstCycle);
     Ok(ConstantData {
         constant: Err(diagnostic_add),
-        const_value: ConstValue::Missing,
+        const_value: ConstValue::Missing(diagnostic_add),
         ty: TypeId::missing(db, diagnostic_add),
         diagnostics: diagnostics.build(),
         resolver_data: Arc::new(Resolver::new(db, module_file_id, inference_id).data),
@@ -186,7 +204,7 @@ pub fn value_as_const_value(
 }
 
 /// evaluate the given const expression value.
-fn evaluate_constant_expr(
+pub fn evaluate_constant_expr(
     db: &dyn SemanticGroup,
     exprs: &Arena<Expr>,
     expr_id: ExprId,
@@ -198,7 +216,7 @@ fn evaluate_constant_expr(
         match expr {
             Expr::Constant(expr) => priv_constant_semantic_data(db, expr.constant_id)
                 .map(|data| data.const_value)
-                .unwrap_or(ConstValue::Missing),
+                .unwrap_or_else(ConstValue::Missing),
 
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. })
                 if statements.is_empty() =>
@@ -214,9 +232,9 @@ fn evaluate_constant_expr(
                                 SemanticDiagnosticKind::LiteralError(err),
                             )
                         })
-                        .unwrap_or(ConstValue::Missing)
+                        .unwrap_or_else(ConstValue::Missing)
                 })
-                .unwrap_or(ConstValue::Missing),
+                .unwrap_or_else(ConstValue::Missing),
             Expr::Literal(expr) => value_as_const_value(db, expr.ty, &expr.value)
                 .map_err(|err| {
                     diagnostics.report_by_ptr(
@@ -224,7 +242,7 @@ fn evaluate_constant_expr(
                         SemanticDiagnosticKind::LiteralError(err),
                     )
                 })
-                .unwrap_or(ConstValue::Missing),
+                .unwrap_or_else(ConstValue::Missing),
             Expr::Tuple(expr) => ConstValue::Struct(
                 expr.items
                     .iter()
@@ -246,7 +264,7 @@ fn evaluate_constant_expr(
                 Box::new(evaluate_constant_expr(db, exprs, expr.value_expr, diagnostics).1),
             ),
             Expr::MemberAccess(expr) => extract_const_member_access(db, exprs, expr, diagnostics)
-                .unwrap_or(ConstValue::Missing),
+                .unwrap_or_else(ConstValue::Missing),
             Expr::FixedSizeArray(expr) => ConstValue::Struct(
                 expr.items
                     .iter()
@@ -254,13 +272,12 @@ fn evaluate_constant_expr(
                     .collect(),
             ),
             _ if diagnostics.diagnostics.error_count == 0 => {
-                diagnostics.report_by_ptr(
+                ConstValue::Missing(diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),
                     SemanticDiagnosticKind::UnsupportedConstant,
-                );
-                ConstValue::Missing
+                ))
             }
-            _ => ConstValue::Missing,
+            _ => ConstValue::Missing(skip_diagnostic()),
         },
     )
 }
@@ -320,7 +337,7 @@ fn evaluate_const_function_call(
                         ))
                     }
                 }
-                ConstValue::Missing => Err(skip_diagnostic()),
+                ConstValue::Missing(err) => Err(err),
                 _ => Err(diagnostics.report_by_ptr(
                     exprs[*arg].stable_ptr().untyped(),
                     SemanticDiagnosticKind::UnsupportedConstant,
