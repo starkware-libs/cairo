@@ -98,10 +98,7 @@ pub fn compile_prepared_db(
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let SierraProgramWithDebug { program: sierra_program, .. } =
-        compile_prepared_db_with_debug_info(db, main_crate_ids, compiler_config)?;
-
-    Ok(sierra_program)
+    Ok(compile_prepared_db_with_debug_info(db, main_crate_ids, compiler_config)?.program)
 }
 
 /// Runs Cairo compiler.
