@@ -18,25 +18,32 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
+<<<<<<< HEAD
 use crate::ids::FunctionLongId;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, get_inline_diagnostics};
+||||||| 4c4b4700e
+use crate::implicits::lower_implicits;
+use crate::inline::{apply_inlining, get_inline_diagnostics};
+=======
+use crate::inline::get_inline_diagnostics;
+>>>>>>> origin/main
 use crate::lower::{lower_semantic_function, MultiLowering};
-use crate::optimizations::branch_inversion::branch_inversion;
-use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::config::OptimizationConfig;
-use crate::optimizations::const_folding::const_folding;
-use crate::optimizations::match_optimizer::optimize_matches;
-use crate::optimizations::remappings::optimize_remappings;
-use crate::optimizations::reorder_statements::reorder_statements;
-use crate::optimizations::return_optimization::return_optimization;
-use crate::optimizations::split_structs::split_structs;
+use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
+<<<<<<< HEAD
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::{
     ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, LoweredConstant, MatchInfo,
     Statement,
 };
+||||||| 4c4b4700e
+use crate::reorganize_blocks::reorganize_blocks;
+use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
+=======
+use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
+>>>>>>> origin/main
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -57,10 +64,17 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
 
+<<<<<<< HEAD
     /// Computes the lowered representation of a constant.
     #[salsa::invoke(crate::lower::lowered_constant)]
     fn lowered_constant(&self, constant_id: defs::ids::ConstantId) -> Maybe<Arc<LoweredConstant>>;
 
+||||||| 4c4b4700e
+=======
+    #[salsa::interned]
+    fn intern_strategy(&self, id: OptimizationStrategy) -> OptimizationStrategyId;
+
+>>>>>>> origin/main
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering(
@@ -92,8 +106,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// Applies optimizations to the post_panic lowering.
+    fn optimized_concrete_function_with_body_lowered(
+        &self,
+        function: ids::ConcreteFunctionWithBodyId,
+        optimization_strategy: OptimizationStrategyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
     /// Computes the final lowered representation (after all the internal transformations).
-    fn concrete_function_with_body_lowered(
+    fn final_concrete_function_with_body_lowered(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
@@ -305,6 +326,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
+
+    /// Returns the default optimization strategy.
+    #[salsa::invoke(crate::optimizations::strategy::default_optimization_strategy)]
+    fn default_optimization_strategy(&self) -> OptimizationStrategyId;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -393,40 +418,21 @@ fn concrete_function_with_body_postpanic_lowered(
     Ok(Arc::new(lowered))
 }
 
-// Applies optimizations to the post_panic lowering.
-fn concrete_function_with_body_lowered(
+/// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
+fn optimized_concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+    optimization_strategy: OptimizationStrategyId,
+) -> Maybe<Arc<FlatLowered>> {
+    Ok(Arc::new(optimization_strategy.apply_strategy(db, function)?))
+}
+
+/// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
+fn final_concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-
-    apply_inlining(db, function, &mut lowered)?;
-    return_optimization(db, &mut lowered);
-    optimize_remappings(&mut lowered);
-    // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-    // See description of `branch_inversion` for more details.
-    reorder_statements(db, &mut lowered);
-    branch_inversion(db, &mut lowered);
-    reorder_statements(db, &mut lowered);
-    const_folding(db, &mut lowered);
-    optimize_matches(&mut lowered);
-    split_structs(&mut lowered);
-    optimize_remappings(&mut lowered);
-    reorder_statements(db, &mut lowered);
-    optimize_matches(&mut lowered);
-    lower_implicits(db, function, &mut lowered);
-    optimize_remappings(&mut lowered);
-    cancel_ops(&mut lowered);
-    reorder_statements(db, &mut lowered);
-    // `reorder_statements` may have caused some remappings to be redundant, so they need to be
-    // removed.
-    // `reorganize_blocks` assumes that there is no remappings on a goto to a block with 1 incoming
-    // edge.
-    // SierraGen drop additions assumes all remappings are of used variables.
-    optimize_remappings(&mut lowered);
-    reorganize_blocks(&mut lowered);
-
-    Ok(Arc::new(lowered))
+    db.optimized_concrete_function_with_body_lowered(function, db.default_optimization_strategy())
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
@@ -621,7 +627,9 @@ fn function_with_body_lowering_diagnostics(
         }
     }
 
-    diagnostics.extend(get_inline_diagnostics(db, function_id)?);
+    if let Ok(diag) = get_inline_diagnostics(db, function_id) {
+        diagnostics.extend(diag);
+    }
 
     Ok(diagnostics.build())
 }

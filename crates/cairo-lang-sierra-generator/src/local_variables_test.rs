@@ -50,7 +50,7 @@ fn check_find_local_variables(
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
+    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id).unwrap();
 
     let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));

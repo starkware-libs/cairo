@@ -117,7 +117,7 @@ pub fn generate_block_code(
     let last_location = statements.iter().rev().find_map(|statement| statement.location);
 
     match &block.end {
-        lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Return(returned_variables, _location) => {
             statements.extend(generate_return_code(
                 context,
                 returned_variables,
@@ -704,8 +704,8 @@ fn generate_statement_snapshot(
         func,
         &[input],
         &[
-            context.get_sierra_variable(statement.output_original),
-            context.get_sierra_variable(statement.output_snapshot),
+            context.get_sierra_variable(statement.original()),
+            context.get_sierra_variable(statement.snapshot()),
         ],
     ));
     Ok(statements)

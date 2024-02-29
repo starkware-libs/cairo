@@ -32,6 +32,7 @@ mod
 mut
 nopanic
 of
+pub
 ref
 return
 struct
@@ -39,6 +40,7 @@ trait
 true
 type
 use
+while
 ----
 
 == Reserved keywords
@@ -59,7 +61,6 @@ hint
 in
 macro
 move
-pub
 self
 static
 static_assert
@@ -68,7 +69,6 @@ try
 typeof
 unsafe
 where
-while
 with
 yield
 ----

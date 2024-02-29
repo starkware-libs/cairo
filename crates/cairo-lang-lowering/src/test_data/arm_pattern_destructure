@@ -469,45 +469,45 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {v78 -> v87})
+  Goto(blk9, {v78 -> v86})
 
 blk2:
 Statements:
 End:
-  Goto(blk9, {v79 -> v87})
+  Goto(blk9, {v79 -> v86})
 
 blk3:
 Statements:
 End:
-  Goto(blk9, {v80 -> v87})
+  Goto(blk9, {v80 -> v86})
 
 blk4:
 Statements:
 End:
-  Goto(blk9, {v81 -> v87})
+  Goto(blk9, {v81 -> v86})
 
 blk5:
 Statements:
 End:
-  Goto(blk9, {v82 -> v87})
+  Goto(blk9, {v82 -> v86})
 
 blk6:
 Statements:
 End:
-  Goto(blk9, {v83 -> v87})
+  Goto(blk9, {v83 -> v86})
 
 blk7:
 Statements:
 End:
-  Goto(blk9, {v84 -> v87})
+  Goto(blk9, {v84 -> v86})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v85 -> v87})
+  Goto(blk9, {v85 -> v86})
 
 blk9:
 Statements:
   (v56: ()) <- struct_construct()
 End:
-  Return(v87, v56)
+  Return(v86, v56)

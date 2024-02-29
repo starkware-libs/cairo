@@ -281,12 +281,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: err_data,
                     output,
                 }));
-                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
             }
-            FlatBlockEnd::Return(returns) => {
-                // The last var usage is the "real" return value (not implicit or ref).
-                let location = returns.last().unwrap().location;
-
+            FlatBlockEnd::Return(returns, location) => {
                 // Tuple construction.
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
@@ -303,7 +300,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
             }
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },

@@ -96,7 +96,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
         let mut optional_target_location = None;
         for var_to_move in stmt.outputs() {
-            let Some((block_id, index)) = info.next_use.swap_remove(&var_to_move) else { continue };
+            let Some((block_id, index)) = info.next_use.swap_remove(var_to_move) else { continue };
             if let Some((target_block_id, target_index)) = &mut optional_target_location {
                 *target_index = std::cmp::min(*target_index, index);
                 // If the output is used in multiple places we can't move their creation point.
@@ -124,14 +124,17 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
                     Entry::Vacant(e) => e.insert(target_location),
                 };
             }
-        }
 
-        let is_simple_move = optional_target_location.is_some();
-        // If a movable statement is unused, and all its inputs are droppable removing it is valid.
-        let is_removal_valid =
-            || stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok());
-        if is_simple_move || is_removal_valid() {
-            self.statement_to_move.push((statement_location, optional_target_location));
+            self.statement_to_move.push((statement_location, Some(target_location)))
+        } else if stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok()) {
+            // If a movable statement is unused, and all its inputs are droppable removing it is
+            // valid.
+            self.statement_to_move.push((statement_location, None))
+        } else {
+            // Statement is unused but can't be removed.
+            for var_usage in stmt.inputs() {
+                info.next_use.insert(var_usage.var_id, statement_location);
+            }
         }
     }
 

@@ -206,9 +206,9 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         (block_id, statement_index): StatementLocation,
         stmt: &Statement,
     ) {
-        self.set_post_stmt_destruct(&stmt.outputs(), info, block_id, statement_index);
+        self.set_post_stmt_destruct(stmt.outputs(), info, block_id, statement_index);
         // Since we need to insert destructor call right after the statement.
-        info.variables_introduced(self, &stmt.outputs(), (block_id, statement_index + 1));
+        info.variables_introduced(self, stmt.outputs(), (block_id, statement_index + 1));
         info.variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 

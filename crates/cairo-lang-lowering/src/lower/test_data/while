@@ -128,10 +128,24 @@ End:
 blk3:
 Statements:
   (v8: core::felt252) <- 1u
+<<<<<<< HEAD
   (v30: core::felt252) <- core::felt252_sub(v0, v8)
   (v76: core::RangeCheck, v77: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v54, v55, v30)
+||||||| 4c4b4700e
+  (v31: core::felt252) <- core::felt252_sub(v0, v8)
+  (v77: core::RangeCheck, v78: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v55, v56, v31)
+=======
+  (v31: core::felt252) <- core::felt252_sub(v0, v8)
+  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v55, v56, v31)
+>>>>>>> origin/main
 End:
+<<<<<<< HEAD
   Return(v76, v77, v21)
+||||||| 4c4b4700e
+  Return(v77, v78, v22)
+=======
+  Return(v59, v60, v22)
+>>>>>>> origin/main
 
 blk4:
 Statements:
@@ -415,10 +429,24 @@ End:
 
 blk2:
 Statements:
+<<<<<<< HEAD
   (v22: core::felt252) <- core::felt252_add(v0, v1)
   (v33: core::RangeCheck, v34: core::gas::GasBuiltin, v13: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v25, v26, v22)
+||||||| 4c4b4700e
+  (v23: core::felt252) <- core::felt252_add(v0, v1)
+  (v34: core::RangeCheck, v35: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v26, v27, v23)
+=======
+  (v23: core::felt252) <- core::felt252_add(v0, v1)
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v26, v27, v23)
+>>>>>>> origin/main
 End:
+<<<<<<< HEAD
   Return(v33, v34, v13)
+||||||| 4c4b4700e
+  Return(v34, v35, v14)
+=======
+  Return(v30, v31, v14)
+>>>>>>> origin/main
 
 blk3:
 Statements:
