@@ -96,7 +96,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
         let mut optional_target_location = None;
         for var_to_move in stmt.outputs() {
-            let Some((block_id, index)) = info.next_use.swap_remove(&var_to_move) else { continue };
+            let Some((block_id, index)) = info.next_use.swap_remove(var_to_move) else { continue };
             if let Some((target_block_id, target_index)) = &mut optional_target_location {
                 *target_index = std::cmp::min(*target_index, index);
                 // If the output is used in multiple places we can't move their creation point.

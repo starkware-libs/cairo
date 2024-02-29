@@ -701,8 +701,8 @@ fn generate_statement_snapshot(
         func,
         &[input],
         &[
-            context.get_sierra_variable(statement.output_original),
-            context.get_sierra_variable(statement.output_snapshot),
+            context.get_sierra_variable(statement.original()),
+            context.get_sierra_variable(statement.snapshot()),
         ],
     ));
     Ok(statements)

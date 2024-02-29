@@ -51,11 +51,11 @@ pub trait RebuilderEx: Rebuilder {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
-            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
-                input: self.map_var_usage(stmt.input),
-                output_original: self.map_var_id(stmt.output_original),
-                output_snapshot: self.map_var_id(stmt.output_snapshot),
-            }),
+            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot::new(
+                self.map_var_usage(stmt.input),
+                self.map_var_id(stmt.original()),
+                self.map_var_id(stmt.snapshot()),
+            )),
             Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),

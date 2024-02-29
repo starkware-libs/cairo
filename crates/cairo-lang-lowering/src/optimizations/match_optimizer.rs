@@ -197,7 +197,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         stmt: &Statement,
     ) {
         if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
-            info.demand.variables_introduced(self, &stmt.outputs(), ());
+            info.demand.variables_introduced(self, stmt.outputs(), ());
             info.demand.variables_used(
                 self,
                 stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
