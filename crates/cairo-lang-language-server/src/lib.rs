@@ -4,9 +4,10 @@
 
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+use std::{env, io};
 
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
@@ -64,8 +65,6 @@ use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn};
-use tracing_subscriber::filter::{EnvFilter, LevelFilter};
-use tracing_subscriber::fmt::format::FmtSpan;
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -82,18 +81,7 @@ const DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL: u64 = 300;
 
 #[tokio::main]
 pub async fn start() {
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::WARN.into())
-                .with_env_var("CAIRO_LS_LOG")
-                .from_env_lossy(),
-        )
-        .with_timer(tracing_subscriber::fmt::time::Uptime::default())
-        .with_ansi(std::io::IsTerminal::is_terminal(&std::io::stderr()))
-        .with_span_events(FmtSpan::CLOSE)
-        .init();
+    let _log_guard = init_logging();
 
     info!("language server starting");
 
@@ -107,6 +95,66 @@ pub async fn start() {
     Server::new(stdin, stdout, socket).serve(service).await;
 
     info!("language server stopped");
+}
+
+/// Initialize logging infrastructure for the language server.
+///
+/// Returns a guard that should be dropped when the LS ends, to flush log files.
+fn init_logging() -> Option<impl Drop> {
+    use std::io::IsTerminal;
+
+    use tracing_flame::FlameLayer;
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::fmt::format::FmtSpan;
+    use tracing_subscriber::fmt::time::Uptime;
+    use tracing_subscriber::fmt::Layer;
+    use tracing_subscriber::prelude::*;
+
+    let mut guard = None;
+
+    let fmt_layer = Layer::new()
+        .with_writer(io::stderr)
+        .with_timer(Uptime::default())
+        .with_ansi(io::stderr().is_terminal())
+        .with_span_events(FmtSpan::CLOSE)
+        .with_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::WARN.into())
+                .with_env_var("CAIRO_LS_LOG")
+                .from_env_lossy(),
+        );
+
+    let flame_layer = if let Some(path) = env::var_os("CAIRO_LS_LOG_FLAME") {
+        {
+            let path = Path::new(&path).display();
+            eprintln!("this LS run will generate flame data at: {path}");
+            eprintln!();
+            eprintln!("run the following to generate a flamegraph:");
+            eprintln!("inferno-flamegraph {path} > cairols-flamegraph.svg");
+            eprintln!();
+            eprintln!("run the following to generate a flamechart:");
+            eprintln!("inferno-flamegraph {path} --flamechart > cairols-flamegraph.svg");
+            eprintln!();
+            eprintln!("(you might need to run `cargo install inferno` beforehand)");
+        }
+
+        let (mut flame_layer, flame_layer_guard) =
+            FlameLayer::with_file(path).expect("Could not set up flame tracing layer.");
+
+        flame_layer = flame_layer.with_empty_samples(false);
+
+        guard = Some(flame_layer_guard);
+        Some(flame_layer)
+    } else {
+        None
+    };
+
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::registry().with(fmt_layer).with(flame_layer),
+    )
+    .expect("Could not set up global logger.");
+
+    guard
 }
 
 fn configured_db() -> RootDatabase {
@@ -175,7 +223,7 @@ impl Backend {
             scarb,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: Duration::from_secs(
-                std::env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
+                env::var("CAIRO_LSP_DB_REPLACE_INTERVAL")
                     .ok()
                     .and_then(|value| value.parse::<u64>().ok())
                     .unwrap_or(DEFAULT_CAIRO_LSP_DB_REPLACE_INTERVAL),
