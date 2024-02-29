@@ -241,7 +241,7 @@ impl Environment {
         }
     }
 
-    fn empty() -> Self {
+    pub fn empty() -> Self {
         Self {
             parent: None,
             variables: Default::default(),
