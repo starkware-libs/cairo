@@ -52,11 +52,11 @@ pub trait RebuilderEx: Rebuilder {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
-            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
-                input: self.map_var_usage(stmt.input),
-                output_original: self.map_var_id(stmt.output_original),
-                output_snapshot: self.map_var_id(stmt.output_snapshot),
-            }),
+            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot::new(
+                self.map_var_usage(stmt.input),
+                self.map_var_id(stmt.original()),
+                self.map_var_id(stmt.snapshot()),
+            )),
             Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
@@ -80,8 +80,9 @@ pub trait RebuilderEx: Rebuilder {
     /// Rebuilds the block end with renamed var and block ids.
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
-            FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
+            FlatBlockEnd::Return(returns, location) => FlatBlockEnd::Return(
                 returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
+                *location,
             ),
             FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_usage(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {

@@ -92,7 +92,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Return(returns) => {
+            FlatBlockEnd::Return(returns, _location) => {
                 write!(f, "  Return(")?;
                 returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
@@ -173,9 +173,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
 impl DebugWithDb<LoweredFormatter<'_>> for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "(")?;
-        let mut outputs = self.outputs().into_iter().peekable();
+        let mut outputs = self.outputs().iter().peekable();
         while let Some(var) = outputs.next() {
-            format_var_with_ty(var, f, ctx)?;
+            format_var_with_ty(*var, f, ctx)?;
             if outputs.peek().is_some() {
                 write!(f, ", ")?;
             }

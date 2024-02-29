@@ -88,6 +88,10 @@ impl TextSpan {
     pub fn after(&self) -> Self {
         Self { start: self.end, end: self.end }
     }
+    /// Get the span of width 0, located right at the beginning of this span.
+    pub fn start_only(&self) -> Self {
+        Self { start: self.start, end: self.start }
+    }
 }
 
 /// Human readable position inside a file, in lines and characters.

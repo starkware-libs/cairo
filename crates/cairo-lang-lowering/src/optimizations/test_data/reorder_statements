@@ -273,3 +273,48 @@ Statements:
   (v10: ()) <- struct_construct()
 End:
   Return(v10)
+
+//! > ==========================================================================
+
+//! > Test non-droppable struct
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo(a: felt252) {
+   let b = NonDupStruct { a };
+   let NonDupStruct { a: _ } = b;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct NonDupStruct {
+  a: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::NonDupStruct) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::NonDupStruct) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)

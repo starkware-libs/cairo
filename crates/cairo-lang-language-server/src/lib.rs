@@ -42,7 +42,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Mutability, SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -798,7 +798,7 @@ impl LanguageServer for Backend {
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
             } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(MarkedString::String(hint));
+                hints.push(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
                 hints.push(MarkedString::String(hint));
@@ -829,12 +829,15 @@ impl LanguageServer for Backend {
             let node = stable_ptr.lookup(syntax_db);
             let found_file = stable_ptr.file_id(syntax_db);
             let span = node.span_without_trivia(syntax_db);
-            let (found_file, span) = get_originating_location(db.upcast(), found_file, span);
+            let width = span.width();
+            let (found_file, span) =
+                get_originating_location(db.upcast(), found_file, span.start_only());
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
-
+            let end = from_pos(
+                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
+            );
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
@@ -1273,10 +1276,42 @@ fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
     node: SyntaxNode,
-) -> Option<String> {
+) -> Option<MarkedString> {
     let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
+    let text = match semantic_expr {
+        cairo_lang_semantic::Expr::FunctionCall(call) => {
+            let args = if let Ok(signature) =
+                call.function.get_concrete(db).generic_function.generic_signature(db.upcast())
+            {
+                signature
+                    .params
+                    .iter()
+                    .map(|arg| {
+                        let mutability = match arg.mutability {
+                            Mutability::Immutable => "",
+                            Mutability::Mutable => "mut ",
+                            Mutability::Reference => "ref ",
+                        };
+                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            } else {
+                "".to_owned()
+            };
+            let mut s = format!(
+                "fn {}({}) -> {}",
+                call.function.name(db.upcast()),
+                args,
+                call.ty.format(db.upcast())
+            );
+            s.retain(|c| c != '"');
+            s
+        }
+        _ => semantic_expr.ty().format(db),
+    };
     // Format the hover text.
-    Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
+    Some(MarkedString::from_language_code("cairo".to_owned(), text))
 }
 
 /// Returns the semantic expression for the current node.

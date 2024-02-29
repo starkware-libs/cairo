@@ -175,7 +175,7 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect()));
+        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect(), location));
         Ok(())
     }
 

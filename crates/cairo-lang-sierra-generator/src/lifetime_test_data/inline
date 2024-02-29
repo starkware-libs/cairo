@@ -27,28 +27,28 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v15) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v10: core::felt252) <- 1u
 End:
-  Return(v3)
+  Return(v10)
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v11: core::felt252) <- 0u
 End:
-  Return(v4)
+  Return(v11)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
-v3: ((BlockId(1), 1), 0)
+v11: ((BlockId(2), 1), 0)
+v10: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(2)): v15
 
 //! > ==========================================================================
 
@@ -82,12 +82,12 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2u
-  (v6: core::felt252) <- core::felt252_sub(v0, v1)
+  (v3: core::felt252) <- 2u
+  (v30: core::felt252) <- core::felt252_sub(v0, v3)
 End:
-  Match(match core::felt252_is_zero(v6) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk4,
+    IsZeroResult::NonZero(v14) => blk4,
   })
 
 blk1:
@@ -95,20 +95,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v34) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v28: core::felt252) <- 1u
 End:
-  Return(v8)
+  Return(v28)
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 0u
+  (v29: core::felt252) <- 0u
 End:
-  Return(v9)
+  Return(v29)
 
 blk4:
 Statements:
@@ -117,15 +117,15 @@ End:
 
 //! > last_use
 v0: ((BlockId(4), 0), 0)
-v9: ((BlockId(3), 1), 0)
-v8: ((BlockId(2), 1), 0)
+v29: ((BlockId(3), 1), 0)
+v28: ((BlockId(2), 1), 0)
 v0: ((BlockId(1), 0), 0)
-v6: ((BlockId(0), 2), 0)
-v1: ((BlockId(0), 1), 1)
+v30: ((BlockId(0), 2), 0)
+v3: ((BlockId(0), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v7
-BeginningOfBlock(BlockId(4)): v4
+BeginningOfBlock(BlockId(3)): v34
+BeginningOfBlock(BlockId(4)): v14
 
 //! > ==========================================================================
 
@@ -166,7 +166,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v16) => blk2,
   })
 
 blk1:
@@ -176,20 +176,20 @@ End:
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v5: ()) <- test::revoke_tempvars()
+  (v22: core::felt252) <- core::felt252_add(v0, v0)
+  (v12: ()) <- test::revoke_tempvars()
 End:
-  Return(v6)
+  Return(v22)
 
 //! > last_use
-v6: ((BlockId(2), 2), 0)
+v22: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
-BeginningOfBlock(BlockId(2)): v2
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+PostStatement((BlockId(2), 1)): v12
+BeginningOfBlock(BlockId(2)): v16
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v22)
 
 //! > ==========================================================================
 
@@ -221,8 +221,8 @@ blk0 (root):
 Statements:
 End:
   Match(match core::gas::withdraw_gas(v55, v56) {
-    Option::Some(v59, v60) => blk1,
-    Option::None(v61, v62) => blk2,
+    Option::Some(v57, v58) => blk1,
+    Option::None(v59, v60) => blk2,
   })
 
 blk1:
@@ -231,7 +231,7 @@ Statements:
   (v19: (core::array::Array::<core::felt252>,)) <- struct_construct(v42)
   (v20: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v19)
 End:
-  Return(v59, v60, v20)
+  Return(v57, v58, v20)
 
 blk2:
 Statements:
@@ -242,20 +242,20 @@ Statements:
   (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v52, v44)
   (v23: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v17)
 End:
-  Return(v61, v62, v23)
+  Return(v59, v60, v23)
 
 //! > last_use
 v23: ((BlockId(2), 6), 2)
-v62: ((BlockId(2), 6), 1)
-v61: ((BlockId(2), 6), 0)
+v60: ((BlockId(2), 6), 1)
+v59: ((BlockId(2), 6), 0)
 v17: ((BlockId(2), 5), 0)
 v44: ((BlockId(2), 4), 1)
 v52: ((BlockId(2), 4), 0)
 v14: ((BlockId(2), 2), 1)
 v43: ((BlockId(2), 2), 0)
 v20: ((BlockId(1), 3), 2)
-v60: ((BlockId(1), 3), 1)
-v59: ((BlockId(1), 3), 0)
+v58: ((BlockId(1), 3), 1)
+v57: ((BlockId(1), 3), 0)
 v19: ((BlockId(1), 2), 0)
 v42: ((BlockId(1), 1), 0)
 v56: ((BlockId(0), 0), 1)

@@ -2,19 +2,18 @@
 #[path = "const_folding_test.rs"]
 mod test;
 
-use std::collections::HashMap;
-
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchEnumValue, MatchExternInfo,
-    MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage,
+    BlockId, ConstValue, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    StatementStructConstruct, StatementStructDestructure, VarUsage, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -35,7 +34,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
-    let mut var_info = HashMap::new();
+    let mut var_info = UnorderedHashMap::<_, _>::default();
 
     let semantic_db = db.upcast();
     let felt_sub = db.intern_lowering_function(FunctionLongId::Semantic(
@@ -57,19 +56,16 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
 
         let block = &mut lowered.blocks[block_id];
         for stmt in block.statements.iter_mut() {
+            maybe_replace_inputs(&var_info, stmt.inputs_mut());
             match stmt {
                 Statement::Const(StatementConst { value, output }) => {
                     var_info.insert(*output, VarInfo::Const(value.clone()));
                 }
-                Statement::Snapshot(StatementSnapshot {
-                    input,
-                    output_original,
-                    output_snapshot,
-                }) => {
-                    if let Some(VarInfo::Const(val)) = var_info.get(&input.var_id) {
+                Statement::Snapshot(stmt) => {
+                    if let Some(VarInfo::Const(val)) = var_info.get(&stmt.input.var_id) {
                         let val = val.clone();
-                        var_info.insert(*output_original, VarInfo::Const(val.clone()));
-                        var_info.insert(*output_snapshot, VarInfo::Const(val));
+                        var_info.insert(stmt.original(), VarInfo::Const(val.clone()));
+                        var_info.insert(stmt.snapshot(), VarInfo::Const(val));
                     }
                 }
                 Statement::Desnap(StatementDesnap { input, output }) => {
@@ -79,15 +75,6 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     }
                 }
                 Statement::Call(StatementCall { function, ref mut inputs, outputs, .. }) => {
-                    for input in &mut inputs.iter_mut() {
-                        match var_info.get(&input.var_id) {
-                            Some(VarInfo::Var(new_var)) => {
-                                *input = *new_var;
-                            }
-                            Some(VarInfo::Const(_)) | None => {}
-                        }
-                    }
-
                     // (a - 0) can be replaced by a.
                     if function == &felt_sub {
                         if let Some(VarInfo::Const(ConstValue::Int(val))) =
@@ -145,46 +132,41 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             }
         }
 
-        let maybe_replace_input = |input: &mut VarUsage| {
-            if let Some(VarInfo::Var(new_var)) = var_info.get(&input.var_id) {
-                *input = *new_var;
-            }
-        };
-
-        let maybe_replace_inputs = |inputs: &mut [VarUsage]| {
-            for input in inputs.iter_mut() {
-                maybe_replace_input(input);
-            }
-        };
-
         match &mut block.end {
-            FlatBlockEnd::Goto(block_id, _remappings) => stack.push(*block_id),
+            FlatBlockEnd::Goto(block_id, remappings) => {
+                stack.push(*block_id);
+                for (_, v) in remappings.iter_mut() {
+                    maybe_replace_input(&var_info, v);
+                }
+            }
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
-                match info {
-                    MatchInfo::Extern(MatchExternInfo { ref mut inputs, .. }) => {
-                        maybe_replace_inputs(inputs);
-                    }
-                    MatchInfo::Enum(MatchEnumInfo { ref mut input, arms, .. }) => {
-                        match var_info.get(&input.var_id) {
-                            Some(VarInfo::Const(ConstValue::Enum(variant, value))) => {
-                                let arm = &arms[variant.idx];
-                                var_info
-                                    .insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
-                            }
-                            Some(VarInfo::Var(new_var)) => {
-                                *input = *new_var;
-                            }
-                            _ => {}
-                        }
-                    }
-                    MatchInfo::Value(MatchEnumValue { ref mut input, .. }) => {
-                        maybe_replace_input(input);
+                maybe_replace_inputs(&var_info, info.inputs_mut());
+                if let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = info {
+                    if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
+                        var_info.get(&input.var_id)
+                    {
+                        let arm = &arms[variant.idx];
+                        var_info.insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
                     }
                 }
             }
-            FlatBlockEnd::Return(ref mut inputs) => maybe_replace_inputs(inputs),
+            FlatBlockEnd::Return(ref mut inputs, _) => maybe_replace_inputs(&var_info, inputs),
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         }
+    }
+}
+
+/// Replaces the inputs in place if they are in the var_info map.
+fn maybe_replace_inputs(var_info: &UnorderedHashMap<VariableId, VarInfo>, inputs: &mut [VarUsage]) {
+    for input in inputs {
+        maybe_replace_input(var_info, input);
+    }
+}
+
+/// Replaces the input in place if it is in the var_info map.
+fn maybe_replace_input(var_info: &UnorderedHashMap<VariableId, VarInfo>, input: &mut VarUsage) {
+    if let Some(VarInfo::Var(new_var)) = var_info.get(&input.var_id) {
+        *input = *new_var;
     }
 }

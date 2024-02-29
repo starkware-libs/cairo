@@ -1608,6 +1608,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-utils",
  "clap",
+ "convert_case",
  "itertools 0.11.0",
 ]
 

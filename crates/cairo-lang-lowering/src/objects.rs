@@ -184,7 +184,7 @@ pub enum FlatBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VarUsage>),
+    Return(Vec<VarUsage>, LocationId),
     /// This block ends with a panic.
     Panic(VarUsage),
     /// This block ends with a jump to a different block.
@@ -231,26 +231,39 @@ pub enum Statement {
     Desnap(StatementDesnap),
 }
 impl Statement {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match &self {
-            Statement::Const(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
-            Statement::StructDestructure(stmt) => vec![stmt.input],
-            Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::Snapshot(stmt) => vec![stmt.input],
-            Statement::Desnap(stmt) => vec![stmt.input],
+            Statement::Const(_stmt) => &[],
+            Statement::Call(stmt) => stmt.inputs.as_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.input),
         }
     }
-    pub fn outputs(&self) -> Vec<VariableId> {
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            Statement::Const(_stmt) => &mut [],
+            Statement::Call(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => stmt.inputs.as_mut_slice(),
+            Statement::StructDestructure(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Snapshot(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.input),
+        }
+    }
+
+    pub fn outputs(&self) -> &[VariableId] {
         match &self {
-            Statement::Const(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct(stmt) => vec![stmt.output],
-            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
-            Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
-            Statement::Desnap(stmt) => vec![stmt.output],
+            Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
+            Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {
@@ -337,8 +350,18 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    pub output_original: VariableId,
-    pub output_snapshot: VariableId,
+    outputs: [VariableId; 2],
+}
+impl StatementSnapshot {
+    pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
+        Self { input, outputs: [output_original, output_snapshot] }
+    }
+    pub fn original(&self) -> VariableId {
+        self.outputs[0]
+    }
+    pub fn snapshot(&self) -> VariableId {
+        self.outputs[1]
+    }
 }
 
 /// A statement that desnaps a variable.
@@ -411,11 +434,19 @@ pub enum MatchInfo {
     Value(MatchEnumValue),
 }
 impl MatchInfo {
-    pub fn inputs(&self) -> Vec<VarUsage> {
+    pub fn inputs(&self) -> &[VarUsage] {
         match self {
-            MatchInfo::Enum(s) => vec![s.input],
-            MatchInfo::Extern(s) => s.inputs.clone(),
-            MatchInfo::Value(s) => vec![s.input],
+            MatchInfo::Enum(s) => std::slice::from_ref(&s.input),
+            MatchInfo::Extern(s) => s.inputs.as_slice(),
+            MatchInfo::Value(s) => std::slice::from_ref(&s.input),
+        }
+    }
+
+    pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
+        match self {
+            MatchInfo::Enum(s) => std::slice::from_mut(&mut s.input),
+            MatchInfo::Extern(s) => s.inputs.as_mut_slice(),
+            MatchInfo::Value(s) => std::slice::from_mut(&mut s.input),
         }
     }
     pub fn arms(&self) -> &Vec<MatchArm> {

@@ -9,6 +9,7 @@ use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
+use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::reorganize_blocks::reorganize_blocks;
@@ -44,6 +45,7 @@ fn test_match_optimizer(
     apply_inlining(db, function_id, &mut before).unwrap();
     optimize_remappings(&mut before);
     reorganize_blocks(&mut before);
+    cancel_ops(&mut before);
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     let mut after = before.clone();

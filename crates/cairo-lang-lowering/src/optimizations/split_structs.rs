@@ -92,7 +92,7 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
             }
-            FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::Return(..) => {}
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -124,7 +124,7 @@ fn split_remapping(
             let mut dst_vars = vec![];
             for split_src in src_vars {
                 let new_var = variables.alloc(variables[*split_src].clone());
-                // queue inner remmapping for for possible splitting.
+                // Queue inner remmapping for for possible splitting.
                 stack.push((new_var, *split_src));
                 dst_vars.push(new_var);
             }
@@ -164,7 +164,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
         let old_statements = std::mem::take(&mut block.statements);
         let statements = &mut block.statements;
 
-        for stmt in old_statements.into_iter() {
+        for mut stmt in old_statements.into_iter() {
             match stmt {
                 Statement::StructDestructure(stmt) => {
                     if let Some(output_split) =
@@ -187,8 +187,8 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     // Remove StructConstruct statement.
                 }
                 _ => {
-                    for input in stmt.inputs() {
-                        ctx.check_if_var_needs_reconstruction(
+                    for input in stmt.inputs_mut() {
+                        input.var_id = ctx.maybe_reconstruct_var(
                             &split,
                             input.var_id,
                             block_id,
@@ -219,8 +219,8 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
 
-                for input in info.inputs() {
-                    ctx.check_if_var_needs_reconstruction(
+                for input in info.inputs_mut() {
+                    input.var_id = ctx.maybe_reconstruct_var(
                         &split,
                         input.var_id,
                         block_id,
@@ -229,9 +229,9 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
                     );
                 }
             }
-            FlatBlockEnd::Return(vars) => {
-                for var in vars {
-                    ctx.check_if_var_needs_reconstruction(
+            FlatBlockEnd::Return(vars, _location) => {
+                for var in vars.iter_mut() {
+                    var.var_id = ctx.maybe_reconstruct_var(
                         &split,
                         var.var_id,
                         block_id,
@@ -251,7 +251,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
     for (var_id, opt_block_id) in ctx.reconstructed.iter() {
         if let Some(block_id) = opt_block_id {
             let split_vars =
-                split.get(var_id).expect("Should be check in `check_if_var_needs_reconstruction`.");
+                split.get(var_id).expect("Should be check in `maybe_reconstruct_var`.");
             lowered.blocks[*block_id].statements.push(Statement::StructConstruct(
                 StatementStructConstruct {
                     inputs: split_vars
@@ -271,50 +271,72 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
 
 impl SplitStructsContext<'_> {
     /// Given 'var_id' check if `var_remapper.map_var_id(*var_id)` was split and not reconstructed
-    /// yet, if this is the case, marks the variable for reconstruction.
-    fn check_if_var_needs_reconstruction(
+    /// yet, if this is the case, reconstructs the var or marks the variable for reconstruction and
+    /// returns the reconstructed variable id.
+    fn maybe_reconstruct_var(
         &mut self,
         split: &SplitMapping,
         var_id: VariableId,
         block_id: BlockId,
         statements: &mut Vec<Statement>,
         location: LocationId,
-    ) {
+    ) -> VariableId {
         let var_id = self.var_remapper.map_var_id(var_id);
         if self.reconstructed.contains_key(&var_id) {
-            return;
+            return var_id;
         }
 
         let Some(split_info) = split.get(&var_id) else {
-            return;
+            return var_id;
         };
 
-        for var in &split_info.vars {
-            self.check_if_var_needs_reconstruction(split, *var, block_id, statements, location);
-        }
+        let inputs = split_info
+            .vars
+            .iter()
+            .map(|input_var_id| VarUsage {
+                var_id: self.maybe_reconstruct_var(
+                    split,
+                    *input_var_id,
+                    block_id,
+                    statements,
+                    location,
+                ),
+                location,
+            })
+            .collect_vec();
 
-        // If the variable was defined in the same block then we can reconstruct it before the first
-        // usage. If not we need to reconstruct it at the end of the of the original block as it
-        // might be used by more then one of the children.
-        let opt_block_id = if block_id == split_info.block_id {
+        // If the variable was defined in the same block or it is non-duplicatable then we can
+        // reconstruct it before the first usage. If not we need to reconstruct it at the
+        // end of the of the original block as it might be used by more then one of the
+        // children.
+        if block_id == split_info.block_id || self.variables[var_id].duplicatable.is_err() {
+            let reconstructed_var_id = if block_id == split_info.block_id {
+                // If the reconstruction is in the original block we can reuse the variable id
+                // and mark the variable as reconstructed.
+                self.reconstructed.insert(var_id, None);
+                var_id
+            } else {
+                // Use a new variable id in case the variable is also reconstructed elsewhere.
+                self.variables.alloc(self.variables[var_id].clone())
+            };
+
             statements.push(Statement::StructConstruct(StatementStructConstruct {
-                inputs: split_info
-                    .vars
-                    .iter()
-                    .map(|var_id| VarUsage {
-                        var_id: self.var_remapper.map_var_id(*var_id),
-                        location,
-                    })
-                    .collect_vec(),
-                output: var_id,
+                inputs,
+                output: reconstructed_var_id,
             }));
 
-            None
+            reconstructed_var_id
         } else {
-            Some(split_info.block_id)
-        };
+            // All the inputs should use the original var names.
+            assert!(
+                zip_eq(&inputs, &split_info.vars)
+                    .all(|(input, var_id)| input.var_id == self.var_remapper.map_var_id(*var_id))
+            );
 
-        self.reconstructed.insert(var_id, opt_block_id);
+            // Mark `var_id` for reconstruction at the end of `split_info.block_id`
+            self.reconstructed.insert(var_id, Some(split_info.block_id));
+            var_id
+        }
     }
 
     /// Given an iterator over the original remapping, rebuilds the remapping with the given
@@ -367,15 +389,17 @@ impl SplitStructsContext<'_> {
                     ));
                 }
                 (None, Some(_src_vars)) => {
-                    self.check_if_var_needs_reconstruction(
+                    let reconstructed_src = self.maybe_reconstruct_var(
                         split,
                         src,
                         block_id,
                         statements,
                         orig_src.location,
                     );
-                    new_remappings
-                        .insert(dst, VarUsage { var_id: src, location: orig_src.location });
+                    new_remappings.insert(
+                        dst,
+                        VarUsage { var_id: reconstructed_src, location: orig_src.location },
+                    );
                 }
             }
         }

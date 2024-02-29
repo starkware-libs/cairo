@@ -193,7 +193,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     ) {
         self.introduce(
             info,
-            &stmt.outputs(),
+            stmt.outputs(),
             statement_location,
             DropLocation::PostStatement(statement_location),
         );

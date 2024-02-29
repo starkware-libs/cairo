@@ -1,6 +1,5 @@
 //! Internal debug utility for printing lowering phases.
 
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 
@@ -15,18 +14,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::implicits::lower_implicits;
-use cairo_lang_lowering::inline::apply_inlining;
-use cairo_lang_lowering::optimizations::branch_inversion::branch_inversion;
-use cairo_lang_lowering::optimizations::cancel_ops::cancel_ops;
-use cairo_lang_lowering::optimizations::const_folding::const_folding;
-use cairo_lang_lowering::optimizations::match_optimizer::optimize_matches;
-use cairo_lang_lowering::optimizations::remappings::optimize_remappings;
-use cairo_lang_lowering::optimizations::reorder_statements::reorder_statements;
-use cairo_lang_lowering::optimizations::return_optimization::return_optimization;
-use cairo_lang_lowering::optimizations::split_structs::split_structs;
 use cairo_lang_lowering::panic::lower_panics;
-use cairo_lang_lowering::reorganize_blocks::reorganize_blocks;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplGenericFunctionWithBodyId,
@@ -35,6 +23,7 @@ use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
+use convert_case::Casing;
 use itertools::Itertools;
 
 /// Tests that `PhasesFormatter` is consistent with the lowering phases.
@@ -48,12 +37,13 @@ fn test_lowering_consistency() {
 
     let db: &dyn LoweringGroup = &db_val;
 
-    format_phases_by_name(
+    let function_id = get_func_id_by_name(
         db,
         &[db.core_crate()],
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();
+    format!("{:?}", PhasesFormatter { db, function_id });
 }
 
 /// Prints the lowering of a concrete function:
@@ -73,6 +63,10 @@ struct Args {
     #[arg(short, long)]
     single_file: bool,
 
+    /// whenever to print all lowering stages or only the final lowering.
+    #[arg(short, long)]
+    all: bool,
+
     /// The output file name (default: stdout).
     output: Option<String>,
 }
@@ -87,25 +81,25 @@ impl fmt::Debug for PhasesFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let db = self.db;
         let function_id = self.function_id;
-        let before_all =
-            db.priv_concrete_function_with_body_lowered_flat(self.function_id).unwrap();
-        assert!(
-            before_all.blocks.iter().all(|(_, b)| b.is_set()),
-            "There should not be any unset blocks"
-        );
+        let strategy = db.default_optimization_strategy();
 
+        let mut curr_state =
+            (*db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap()).clone();
+
+        let mut phase_index = 0;
         let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
-            writeln!(f, "{name}:").unwrap();
+            writeln!(f, "{phase_index}. {name}:").unwrap();
             let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
             write!(f, "{:?}", lowered.debug(&lowered_formatter)).unwrap();
+
+            phase_index += 1;
         };
-        add_stage_state("before_all", &before_all);
-        let mut curr_state = before_all.deref().clone();
-        let mut apply_stage = |name: &str, stage: &dyn Fn(&mut FlatLowered)| {
+        add_stage_state("before_all", &curr_state);
+
+        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut FlatLowered)| {
             (*stage)(&mut curr_state);
             add_stage_state(name, &curr_state);
         };
-
         apply_stage("after_add_withdraw_gas", &|lowered| {
             add_withdraw_gas(db, function_id, lowered).unwrap()
         });
@@ -113,30 +107,12 @@ impl fmt::Debug for PhasesFormatter<'_> {
             *lowered = lower_panics(db, function_id, lowered).unwrap();
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
-        apply_stage("after_inlining", &|lowered| apply_inlining(db, function_id, lowered).unwrap());
-        apply_stage("after_return_optimization", &|lowered| return_optimization(db, lowered));
-        apply_stage("after_optimize_remappings1", &optimize_remappings);
-        apply_stage("after_reorder_statements1", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_branch_inversion", &|lowered| branch_inversion(db, lowered));
-        apply_stage("after_reorder_statements2", &|lowered| reorder_statements(db, lowered));
-        apply_stage("const_folding", &|lowered| const_folding(db, lowered));
-        apply_stage("after_optimize_matches1", &optimize_matches);
-        apply_stage("split_structs", &split_structs);
-        apply_stage("after_optimize_remappings2", &optimize_remappings);
-        apply_stage("after_reorder_statements3", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_optimize_matches2", &optimize_matches);
-        apply_stage("after_lower_implicits", &|lowered| lower_implicits(db, function_id, lowered));
-        apply_stage("after_optimize_remappings3", &optimize_remappings);
-        apply_stage("cancel_ops", &cancel_ops);
-        apply_stage("after_reorder_statements4", &|lowered| reorder_statements(db, lowered));
-        apply_stage("after_optimize_remappings4", &optimize_remappings);
-        apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
-        let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
-
-        // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
-        // If something is changed there, it should be changed here too.
-        assert_eq!(*after_all, curr_state);
+        for phase in db.lookup_intern_strategy(strategy).0 {
+            let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
+            phase.apply(db, function_id, &mut curr_state).unwrap();
+            add_stage_state(&name, &curr_state);
+        }
 
         Ok(())
     }
@@ -202,18 +178,6 @@ fn get_func_id_by_name(
     ))
 }
 
-/// Given a function name and list of crates, returns a string representing the lowering phases of
-/// the function.
-fn format_phases_by_name(
-    db: &dyn LoweringGroup,
-    crate_ids: &[CrateId],
-    function_path: String,
-) -> anyhow::Result<String> {
-    let function_id = get_func_id_by_name(db, crate_ids, function_path)?;
-
-    Ok(format!("{:?}", PhasesFormatter { db, function_id }))
-}
-
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
@@ -229,7 +193,16 @@ fn main() -> anyhow::Result<()> {
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
-        format_phases_by_name(db, &main_crate_ids, function_path)?
+        let function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+
+        match args.all {
+            true => format!("{:?}", PhasesFormatter { db, function_id }),
+            false => {
+                let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
+                let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+                format!("{:?}", lowered.debug(&lowered_formatter))
+            }
+        }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
     };

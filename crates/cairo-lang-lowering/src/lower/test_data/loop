@@ -74,20 +74,22 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
   (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v3: core::felt252) <- 10u
-  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v2)
+  (v5: core::felt252) <- 10u
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v8: core::bool) <- core::Felt252PartialEq::eq(v4, v7)
 End:
-  Match(match core::felt252_is_zero(v4) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v7) => blk2,
+  Match(match_enum(v8) {
+    bool::False(v12) => blk2,
+    bool::True(v9) => blk1,
   })
 
 blk1:
 Statements:
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::True(v5)
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
 End:
-  Return(v2, v6)
+  Return(v2, v11)
 
 blk2:
 Statements:
@@ -96,58 +98,58 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- test::foo[expr17](v2)
+  (v14: core::felt252, v13: core::bool) <- test::foo[expr17](v2)
 End:
-  Return(v9, v8)
+  Return(v14, v13)
 
 
 Final lowering:
-Parameters: v28: core::RangeCheck, v29: core::gas::GasBuiltin, v0: core::felt252
+Parameters: v44: core::RangeCheck, v45: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v28, v29) {
-    Option::Some(v30, v31) => blk1,
-    Option::None(v32, v33) => blk4,
+  Match(match core::gas::withdraw_gas(v44, v45) {
+    Option::Some(v46, v47) => blk1,
+    Option::None(v48, v49) => blk4,
   })
 
 blk1:
 Statements:
   (v1: core::felt252) <- 1u
-  (v26: core::felt252) <- core::felt252_add(v0, v1)
-  (v3: core::felt252) <- 10u
-  (v27: core::felt252) <- core::felt252_sub(v26, v3)
+  (v31: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- 10u
+  (v41: core::felt252) <- core::felt252_sub(v31, v5)
 End:
-  Match(match core::felt252_is_zero(v27) {
+  Match(match core::felt252_is_zero(v41) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v35) => blk3,
   })
 
 blk2:
 Statements:
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::True(v5)
-  (v15: (core::felt252, core::bool)) <- struct_construct(v26, v6)
-  (v16: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v15)
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
+  (v20: (core::felt252, core::bool)) <- struct_construct(v31, v11)
+  (v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v20)
 End:
-  Return(v30, v31, v16)
+  Return(v46, v47, v21)
 
 blk3:
 Statements:
-  (v44: core::RangeCheck, v45: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v30, v31, v26)
+  (v50: core::RangeCheck, v51: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v46, v47, v31)
 End:
-  Return(v44, v45, v17)
+  Return(v50, v51, v22)
 
 blk4:
 Statements:
-  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v11: core::felt252) <- 375233589013918064796019u
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
-  (v12: core::panics::Panic) <- struct_construct()
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v12, v13)
-  (v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v14)
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v16: core::felt252) <- 375233589013918064796019u
+  (v18: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v16)
+  (v17: core::panics::Panic) <- struct_construct()
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v18)
+  (v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v19)
 End:
-  Return(v32, v33, v22)
+  Return(v48, v49, v27)
 
 //! > ==========================================================================
 
@@ -226,20 +228,22 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
   (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v3: core::felt252) <- 10u
-  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v2)
+  (v5: core::felt252) <- 10u
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v8: core::bool) <- core::Felt252PartialEq::eq(v4, v7)
 End:
-  Match(match core::felt252_is_zero(v4) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v7) => blk2,
+  Match(match_enum(v8) {
+    bool::False(v12) => blk2,
+    bool::True(v9) => blk1,
   })
 
 blk1:
 Statements:
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::True(v5)
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
 End:
-  Return(v2, v6)
+  Return(v3, v11)
 
 blk2:
 Statements:
@@ -248,58 +252,58 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- test::foo[expr16](v2)
+  (v14: core::felt252, v13: core::bool) <- test::foo[expr16](v3)
 End:
-  Return(v9, v8)
+  Return(v14, v13)
 
 
 Final lowering:
-Parameters: v28: core::RangeCheck, v29: core::gas::GasBuiltin, v0: core::felt252
+Parameters: v44: core::RangeCheck, v45: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v28, v29) {
-    Option::Some(v30, v31) => blk1,
-    Option::None(v32, v33) => blk4,
+  Match(match core::gas::withdraw_gas(v44, v45) {
+    Option::Some(v46, v47) => blk1,
+    Option::None(v48, v49) => blk4,
   })
 
 blk1:
 Statements:
   (v1: core::felt252) <- 1u
-  (v26: core::felt252) <- core::felt252_add(v0, v1)
-  (v3: core::felt252) <- 10u
-  (v27: core::felt252) <- core::felt252_sub(v26, v3)
+  (v31: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- 10u
+  (v41: core::felt252) <- core::felt252_sub(v31, v5)
 End:
-  Match(match core::felt252_is_zero(v27) {
+  Match(match core::felt252_is_zero(v41) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v35) => blk3,
   })
 
 blk2:
 Statements:
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::True(v5)
-  (v15: (core::felt252, core::bool)) <- struct_construct(v26, v6)
-  (v16: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v15)
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
+  (v20: (core::felt252, core::bool)) <- struct_construct(v31, v11)
+  (v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v20)
 End:
-  Return(v30, v31, v16)
+  Return(v46, v47, v21)
 
 blk3:
 Statements:
-  (v44: core::RangeCheck, v45: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v30, v31, v26)
+  (v50: core::RangeCheck, v51: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v46, v47, v31)
 End:
-  Return(v44, v45, v17)
+  Return(v50, v51, v22)
 
 blk4:
 Statements:
-  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v11: core::felt252) <- 375233589013918064796019u
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
-  (v12: core::panics::Panic) <- struct_construct()
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v12, v13)
-  (v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v14)
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v16: core::felt252) <- 375233589013918064796019u
+  (v18: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v16)
+  (v17: core::panics::Panic) <- struct_construct()
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v18)
+  (v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v19)
 End:
-  Return(v32, v33, v22)
+  Return(v48, v49, v27)
 
 //! > ==========================================================================
 
@@ -544,19 +548,21 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
   (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v3: core::felt252) <- 7u
-  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v2)
+  (v5: core::felt252) <- 7u
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v8: core::bool) <- core::Felt252PartialEq::eq(v4, v7)
 End:
-  Match(match core::felt252_is_zero(v4) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v7) => blk2,
+  Match(match_enum(v8) {
+    bool::False(v12) => blk2,
+    bool::True(v9) => blk1,
   })
 
 blk1:
 Statements:
-  (v6: core::felt252, v5: core::bool) <- test::foo[expr24](v2)
+  (v11: core::felt252, v10: core::bool) <- test::foo[expr24](v2)
 End:
-  Return(v6, v5)
+  Return(v11, v10)
 
 blk2:
 Statements:
@@ -565,20 +571,22 @@ End:
 
 blk3:
 Statements:
-  (v8: core::felt252) <- 10u
-  (v9: core::felt252) <- core::Felt252Sub::sub(v2, v8)
+  (v13: core::felt252, v14: @core::felt252) <- snapshot(v3)
+  (v15: core::felt252) <- 10u
+  (v16: core::felt252, v17: @core::felt252) <- snapshot(v15)
+  (v18: core::bool) <- core::Felt252PartialEq::eq(v14, v17)
 End:
-  Match(match core::felt252_is_zero(v9) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero(v12) => blk5,
+  Match(match_enum(v18) {
+    bool::False(v22) => blk5,
+    bool::True(v19) => blk4,
   })
 
 blk4:
 Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::True(v10)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::True(v20)
 End:
-  Return(v2, v11)
+  Return(v2, v21)
 
 blk5:
 Statements:
@@ -587,74 +595,74 @@ End:
 
 blk6:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- test::foo[expr24](v2)
+  (v24: core::felt252, v23: core::bool) <- test::foo[expr24](v2)
 End:
-  Return(v14, v13)
+  Return(v24, v23)
 
 
 Final lowering:
-Parameters: v42: core::RangeCheck, v43: core::gas::GasBuiltin, v0: core::felt252
+Parameters: v74: core::RangeCheck, v75: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v42, v43) {
-    Option::Some(v44, v45) => blk1,
-    Option::None(v46, v47) => blk6,
+  Match(match core::gas::withdraw_gas(v74, v75) {
+    Option::Some(v76, v77) => blk1,
+    Option::None(v78, v79) => blk6,
   })
 
 blk1:
 Statements:
   (v1: core::felt252) <- 1u
-  (v40: core::felt252) <- core::felt252_add(v0, v1)
-  (v3: core::felt252) <- 7u
-  (v41: core::felt252) <- core::felt252_sub(v40, v3)
+  (v58: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- 7u
+  (v69: core::felt252) <- core::felt252_sub(v58, v5)
 End:
-  Match(match core::felt252_is_zero(v41) {
+  Match(match core::felt252_is_zero(v69) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v63) => blk3,
   })
 
 blk2:
 Statements:
-  (v56: core::RangeCheck, v57: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v44, v45, v40)
+  (v80: core::RangeCheck, v81: core::gas::GasBuiltin, v30: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v76, v77, v58)
 End:
-  Return(v56, v57, v20)
+  Return(v80, v81, v30)
 
 blk3:
 Statements:
-  (v8: core::felt252) <- 10u
-  (v39: core::felt252) <- core::felt252_sub(v40, v8)
+  (v15: core::felt252) <- 10u
+  (v59: core::felt252) <- core::felt252_sub(v58, v15)
 End:
-  Match(match core::felt252_is_zero(v39) {
+  Match(match core::felt252_is_zero(v59) {
     IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero(v12) => blk5,
+    IsZeroResult::NonZero(v52) => blk5,
   })
 
 blk4:
 Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::True(v10)
-  (v25: (core::felt252, core::bool)) <- struct_construct(v40, v11)
-  (v26: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v25)
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::True(v20)
+  (v35: (core::felt252, core::bool)) <- struct_construct(v58, v21)
+  (v36: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Ok(v35)
 End:
-  Return(v44, v45, v26)
+  Return(v76, v77, v36)
 
 blk5:
 Statements:
-  (v66: core::RangeCheck, v67: core::gas::GasBuiltin, v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v44, v45, v40)
+  (v82: core::RangeCheck, v83: core::gas::GasBuiltin, v37: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v76, v77, v58)
 End:
-  Return(v66, v67, v27)
+  Return(v82, v83, v37)
 
 blk6:
 Statements:
-  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v16: core::felt252) <- 375233589013918064796019u
-  (v18: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v16)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v18)
-  (v32: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v19)
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v26: core::felt252) <- 375233589013918064796019u
+  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v26)
+  (v27: core::panics::Panic) <- struct_construct()
+  (v29: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v27, v28)
+  (v42: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v29)
 End:
-  Return(v46, v47, v32)
+  Return(v78, v79, v42)
 
 //! > ==========================================================================
 
@@ -882,9 +890,9 @@ End:
 
 blk2:
 Statements:
-  (v60: core::RangeCheck, v61: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v46, v47, v4)
+  (v50: core::RangeCheck, v51: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v46, v47, v4)
 End:
-  Return(v60, v61, v26)
+  Return(v50, v51, v26)
 
 blk3:
 Statements:
