@@ -233,37 +233,19 @@ pub enum Statement {
 impl Statement {
     pub fn inputs(&self) -> &[VarUsage] {
         match &self {
-<<<<<<< HEAD
-            Statement::Const(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
-            Statement::StructDestructure(stmt) => vec![stmt.input],
-            Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::Snapshot(stmt) => vec![stmt.input],
-            Statement::Desnap(stmt) => vec![stmt.input],
-||||||| 4c4b4700e
-            Statement::Literal(_stmt) => vec![],
-            Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
-            Statement::StructDestructure(stmt) => vec![stmt.input],
-            Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::Snapshot(stmt) => vec![stmt.input],
-            Statement::Desnap(stmt) => vec![stmt.input],
-=======
-            Statement::Literal(_stmt) => &[],
+            Statement::Const(_stmt) => &[],
             Statement::Call(stmt) => stmt.inputs.as_slice(),
             Statement::StructConstruct(stmt) => stmt.inputs.as_slice(),
             Statement::StructDestructure(stmt) => std::slice::from_ref(&stmt.input),
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.input),
             Statement::Snapshot(stmt) => std::slice::from_ref(&stmt.input),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.input),
->>>>>>> origin/main
         }
     }
 
     pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
         match self {
-            Statement::Literal(_stmt) => &mut [],
+            Statement::Const(_stmt) => &mut [],
             Statement::Call(stmt) => stmt.inputs.as_mut_slice(),
             Statement::StructConstruct(stmt) => stmt.inputs.as_mut_slice(),
             Statement::StructDestructure(stmt) => std::slice::from_mut(&mut stmt.input),
@@ -275,31 +257,13 @@ impl Statement {
 
     pub fn outputs(&self) -> &[VariableId] {
         match &self {
-<<<<<<< HEAD
-            Statement::Const(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct(stmt) => vec![stmt.output],
-            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
-            Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
-            Statement::Desnap(stmt) => vec![stmt.output],
-||||||| 4c4b4700e
-            Statement::Literal(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct(stmt) => vec![stmt.output],
-            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
-            Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
-            Statement::Desnap(stmt) => vec![stmt.output],
-=======
-            Statement::Literal(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
             Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::StructDestructure(stmt) => stmt.outputs.as_slice(),
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
->>>>>>> origin/main
         }
     }
     pub fn location(&self) -> Option<LocationId> {

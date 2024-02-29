@@ -18,32 +18,16 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-<<<<<<< HEAD
 use crate::ids::FunctionLongId;
-use crate::implicits::lower_implicits;
-use crate::inline::{apply_inlining, get_inline_diagnostics};
-||||||| 4c4b4700e
-use crate::implicits::lower_implicits;
-use crate::inline::{apply_inlining, get_inline_diagnostics};
-=======
 use crate::inline::get_inline_diagnostics;
->>>>>>> origin/main
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
-<<<<<<< HEAD
-use crate::reorganize_blocks::reorganize_blocks;
 use crate::{
     ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, LoweredConstant, MatchInfo,
     Statement,
 };
-||||||| 4c4b4700e
-use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
-=======
-use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
->>>>>>> origin/main
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -64,17 +48,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::interned]
     fn intern_location(&self, id: Location) -> ids::LocationId;
 
-<<<<<<< HEAD
+    #[salsa::interned]
+    fn intern_strategy(&self, id: OptimizationStrategy) -> OptimizationStrategyId;
+
     /// Computes the lowered representation of a constant.
     #[salsa::invoke(crate::lower::lowered_constant)]
     fn lowered_constant(&self, constant_id: defs::ids::ConstantId) -> Maybe<Arc<LoweredConstant>>;
 
-||||||| 4c4b4700e
-=======
-    #[salsa::interned]
-    fn intern_strategy(&self, id: OptimizationStrategy) -> OptimizationStrategyId;
-
->>>>>>> origin/main
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).
     fn priv_function_with_body_multi_lowering(
@@ -469,7 +449,7 @@ pub(crate) fn get_direct_callees(
             }
         }
         match &block.end {
-            FlatBlockEnd::NotSet | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::Goto(next, _) => stack.push(*next),
             FlatBlockEnd::Match { info } => {
                 let mut arms = info.arms().iter();
