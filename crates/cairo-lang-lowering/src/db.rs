@@ -84,6 +84,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         optimization_strategy: OptimizationStrategyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// Computes the lowered representation of a function to be considered for inlining.
+    fn inlined_function_with_body_lowered(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
     /// Computes the final lowered representation (after all the internal transformations).
     fn final_concrete_function_with_body_lowered(
         &self,
@@ -282,6 +288,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the default optimization strategy.
     #[salsa::invoke(crate::optimizations::strategy::default_optimization_strategy)]
     fn default_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the the optimization strategy that is applied to a function before it is inlined.
+    #[salsa::invoke(crate::optimizations::strategy::inlined_function_optimization_strategy)]
+    fn inlined_function_optimization_strategy(&self) -> OptimizationStrategyId;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -377,6 +387,17 @@ fn optimized_concrete_function_with_body_lowered(
     optimization_strategy: OptimizationStrategyId,
 ) -> Maybe<Arc<FlatLowered>> {
     Ok(Arc::new(optimization_strategy.apply_strategy(db, function)?))
+}
+
+/// Query implementation of [LoweringGroup::inlined_function_with_body_lowered].
+fn inlined_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    db.optimized_concrete_function_with_body_lowered(
+        function,
+        db.inlined_function_optimization_strategy(),
+    )
 }
 
 /// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
