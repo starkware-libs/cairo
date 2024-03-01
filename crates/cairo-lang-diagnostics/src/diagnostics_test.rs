@@ -8,6 +8,7 @@ use indoc::indoc;
 use test_log::test;
 
 use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
+use crate::{error_code, ErrorCode};
 
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29,6 +30,10 @@ impl DiagnosticEntry for SimpleDiag {
                 end: TextOffset::default().add_width(TextWidth::new_for_testing(6)),
             },
         }
+    }
+
+    fn error_code(&self) -> Option<ErrorCode> {
+        Some(error_code!(E0001))
     }
 }
 
@@ -55,7 +60,7 @@ fn test_diagnostics() {
     assert_eq!(
         diagnostics.build().format(&db_val),
         indoc! { "
-            error: Simple diagnostic.
+            error[E0001]: Simple diagnostic.
              --> dummy_file.sierra:1:1
             abcd
             ^**^

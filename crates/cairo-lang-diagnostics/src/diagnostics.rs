@@ -1,8 +1,5 @@
-#[cfg(test)]
-#[path = "diagnostics_test.rs"]
-mod test;
-
-use core::fmt;
+use std::fmt;
+use std::hash::Hash;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
@@ -12,7 +9,12 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
+use crate::error_code::{ErrorCode, OptionErrorCodeExt};
 use crate::location_marks::get_location_marks;
+
+#[cfg(test)]
+#[path = "diagnostics_test.rs"]
+mod test;
 
 /// The severity of a diagnostic.
 #[derive(Eq, PartialEq, Hash, Ord, PartialOrd, Clone, Copy, Debug)]
@@ -20,7 +22,7 @@ pub enum Severity {
     Error,
     Warning,
 }
-impl std::fmt::Display for Severity {
+impl fmt::Display for Severity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Severity::Error => write!(f, "error"),
@@ -31,7 +33,7 @@ impl std::fmt::Display for Severity {
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
-pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
+pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
@@ -40,6 +42,9 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     }
     fn severity(&self) -> Severity {
         Severity::Error
+    }
+    fn error_code(&self) -> Option<ErrorCode> {
+        None
     }
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
@@ -52,7 +57,7 @@ pub struct DiagnosticLocation {
     pub span: TextSpan,
 }
 impl DiagnosticLocation {
-    /// Get the location of right after this diagnostic's location (with width 0).
+    /// Get the location of right after this diagnostics' location (with width 0).
     pub fn after(&self) -> Self {
         Self { file_id: self.file_id, span: self.span.after() }
     }
@@ -65,7 +70,7 @@ impl DiagnosticLocation {
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
         let user_location = self.user_location(db);
         let file_path = user_location.file_id.full_path(db);
         let marks = get_location_marks(db, &user_location);
@@ -95,11 +100,7 @@ impl DiagnosticNote {
 }
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn FilesGroup + 'static),
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &(dyn FilesGroup + 'static)) -> fmt::Result {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
             write!(f, ":\n  --> ")?;
@@ -111,7 +112,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
 
 /// This struct is used to ensure that when an error occurs, a diagnostic is properly reported.
 ///
-/// It must not be constructed directly. Instead it is returned by [DiagnosticsBuilder::add]
+/// It must not be constructed directly. Instead, it is returned by [DiagnosticsBuilder::add]
 /// when a diagnostic is reported.
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct DiagnosticAdded;
@@ -197,11 +198,15 @@ pub fn format_diagnostics(
 }
 
 #[derive(Debug)]
-pub struct FormattedDiagnosticEntry((Severity, String));
+pub struct FormattedDiagnosticEntry {
+    severity: Severity,
+    error_code: Option<ErrorCode>,
+    message: String,
+}
 
 impl FormattedDiagnosticEntry {
-    pub fn new(severity: Severity, message: String) -> Self {
-        Self((severity, message))
+    pub fn new(severity: Severity, error_code: Option<ErrorCode>, message: String) -> Self {
+        Self { severity, error_code, message }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -209,17 +214,27 @@ impl FormattedDiagnosticEntry {
     }
 
     pub fn severity(&self) -> Severity {
-        self.0.0
+        self.severity
+    }
+
+    pub fn error_code(&self) -> Option<ErrorCode> {
+        self.error_code
     }
 
     pub fn message(&self) -> &str {
-        &self.0.1
+        &self.message
     }
 }
 
-impl From<(Severity, String)> for FormattedDiagnosticEntry {
-    fn from((severity, message): (Severity, String)) -> Self {
-        Self::new(severity, message)
+impl fmt::Display for FormattedDiagnosticEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{severity}{code}: {message}",
+            severity = self.severity,
+            message = self.message,
+            code = self.error_code.format_bracketed()
+        )
     }
 }
 
@@ -249,19 +264,19 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
                 msg += &format!("note: {:?}\n", note.debug(files_db))
             }
             msg += "\n";
-            res.push((entry.severity(), msg).into());
+
+            let formatted =
+                FormattedDiagnosticEntry::new(entry.severity(), entry.error_code(), msg);
+            res.push(formatted);
         }
         // Format subtrees.
         res.extend(self.0.subtrees.iter().flat_map(|subtree| subtree.format_with_severity(db)));
         res
     }
 
-    /// Format entries to a String with messages prefixed by severity.
+    /// Format entries to a [`String`] with messages prefixed by severity.
     pub fn format(&self, db: &TEntry::DbType) -> String {
-        self.format_with_severity(db)
-            .iter()
-            .map(|entry| format!("{}: {}", entry.severity(), entry.message()))
-            .join("")
+        self.format_with_severity(db).iter().map(ToString::to_string).join("")
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
