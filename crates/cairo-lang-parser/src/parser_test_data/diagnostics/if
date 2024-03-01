@@ -13,7 +13,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: statement.
+error[E0002]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:18
     if MyStruct{a: 0} == MyStruct{a: 1} {
                  ^
@@ -35,12 +35,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E0001]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
            ^
 
-error: Skipped tokens. Expected: '{'.
+error[E0002]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
             ^**^
@@ -61,7 +61,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a pattern.
+error[E0001]: Missing tokens. Expected a pattern.
  --> dummy_file.cairo:2:11
     if let = 5 {
           ^
@@ -81,37 +81,37 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalOr.
+error[E0001]: Missing token TerminalOr.
  --> dummy_file.cairo:2:16
     if let x {}
                ^
 
-error: A trailing `|` is not allowed in an or-pattern.
+error[E0001]: A trailing `|` is not allowed in an or-pattern.
  --> dummy_file.cairo:3:1
 }
 ^
 
-error: Missing token TerminalEq.
+error[E0001]: Missing token TerminalEq.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing tokens. Expected an expression.
+error[E0001]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalLBrace.
+error[E0001]: Missing token TerminalLBrace.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error[E0001]: Missing token TerminalRBrace.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Skipped tokens. Expected: pattern.
+error[E0002]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:3:1
 }
 ^
@@ -131,52 +131,52 @@ fn f(a:felt252 b:felt252) {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalComma.
+error[E0001]: Missing token TerminalComma.
  --> dummy_file.cairo:1:15
 fn f(a:felt252 b:felt252) {
               ^
 
-error: Missing token TerminalOr.
+error[E0001]: Missing token TerminalOr.
  --> dummy_file.cairo:2:13
     if let x == y {}
             ^
 
-error: Skipped tokens. Expected: pattern.
+error[E0002]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:2:14
     if let x == y {}
              ^^
 
-error: Missing token TerminalOr.
+error[E0001]: Missing token TerminalOr.
  --> dummy_file.cairo:2:21
     if let x == y {}
                     ^
 
-error: A trailing `|` is not allowed in an or-pattern.
+error[E0001]: A trailing `|` is not allowed in an or-pattern.
  --> dummy_file.cairo:3:1
 }
 ^
 
-error: Missing token TerminalEq.
+error[E0001]: Missing token TerminalEq.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing tokens. Expected an expression.
+error[E0001]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalLBrace.
+error[E0001]: Missing token TerminalLBrace.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error[E0001]: Missing token TerminalRBrace.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Skipped tokens. Expected: pattern.
+error[E0002]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:3:1
 }
 ^

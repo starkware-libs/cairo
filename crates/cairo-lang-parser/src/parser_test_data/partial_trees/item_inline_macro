@@ -169,7 +169,7 @@ ItemInlineMacro
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+error[E0001]: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
 Did you mean to write `inline_macro!(...)'?
  --> dummy_file.cairo:1:1
 inline_macro(1,2);
@@ -211,7 +211,7 @@ ItemInlineMacro
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+error[E0001]: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
 Did you mean to write `inline_macro!{...}'?
  --> dummy_file.cairo:1:1
 inline_macro{1,2};
@@ -253,7 +253,7 @@ ItemInlineMacro
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+error[E0001]: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
 Did you mean to write `inline_macro![...]'?
  --> dummy_file.cairo:1:1
 inline_macro[1,2];
@@ -295,7 +295,7 @@ fn foo() {}
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E0002]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 identifier
 ^********^
@@ -341,12 +341,12 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+error[E0001]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> dummy_file.cairo:1:7
 macro!
       ^
 
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:7
 macro!
       ^
@@ -379,12 +379,12 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalRParen.
+error[E0001]: Missing token TerminalRParen.
  --> dummy_file.cairo:1:16
 identifier!(1,2
                ^
 
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:16
 identifier!(1,2
                ^
@@ -429,7 +429,7 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:17
 identifier!(1,2)
                 ^
@@ -474,13 +474,13 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Expected a '!' after the identifier 'identifier' to start an inline macro.
+error[E0001]: Expected a '!' after the identifier 'identifier' to start an inline macro.
 Did you mean to write `identifier!(...)'?
  --> dummy_file.cairo:1:1
 identifier(x)
 ^********^
 
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:14
 identifier(x)
              ^

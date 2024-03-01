@@ -88,7 +88,7 @@ FunctionWithBody
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: '{'.
+error[E0002]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc  {
                    ^******^
@@ -134,7 +134,7 @@ FunctionWithBody
 FunctionDeclaration
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: '{'.
+error[E0002]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
                    ^*******^

@@ -47,22 +47,22 @@ impl MyImpl2<T> of MyTrait::<T> {
 impl abc of abc;
 
 //! > expected_diagnostics
-error: Missing token TerminalEq.
+error[E0001]: Missing token TerminalEq.
  --> lib.cairo:16:20
     impl DummyImpl2 of MyTrait::<T>;
                    ^
 
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> lib.cairo:16:23
     impl DummyImpl2 of MyTrait::<T>;
                       ^
 
-error: 'of' is a reserved identifier.
+error[E0003]: 'of' is a reserved identifier.
  --> lib.cairo:16:21
     impl DummyImpl2 of MyTrait::<T>;
                     ^^
 
-error: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
+error[E0002]: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
  --> lib.cairo:16:24
     impl DummyImpl2 of MyTrait::<T>;
                        ^***********^

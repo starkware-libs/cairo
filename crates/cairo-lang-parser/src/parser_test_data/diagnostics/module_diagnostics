@@ -8,7 +8,7 @@ mod my_mod
 fn foo() {}
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:11
 mod my_mod
           ^
@@ -24,12 +24,12 @@ get_diagnostics
 mod my_mod }
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:11
 mod my_mod }
           ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E0002]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:12
 mod my_mod }
            ^
@@ -46,7 +46,7 @@ mod my_mod {
 fn foo() {}
 
 //! > expected_diagnostics
-error: Missing token TerminalRBrace.
+error[E0001]: Missing token TerminalRBrace.
  --> dummy_file.cairo:2:12
 fn foo() {}
            ^

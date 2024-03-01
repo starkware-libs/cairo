@@ -98,22 +98,22 @@ StatementList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing token TerminalEq.
+error[E0001]: Missing token TerminalEq.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing tokens. Expected an expression.
+error[E0001]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing token TerminalSemicolon.
+error[E0001]: Missing token TerminalSemicolon.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Skipped tokens. Expected: statement.
+error[E0002]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:11
     let x += 5;
           ^^

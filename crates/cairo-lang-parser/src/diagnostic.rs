@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::DiagnosticEntry;
+use cairo_lang_diagnostics::{error_code, DiagnosticEntry, ErrorCode};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
@@ -125,5 +125,34 @@ Did you mean to write `{identifier}!{left}...{right}'?",
 
     fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
+    }
+
+    fn error_code(&self) -> Option<ErrorCode> {
+        Some(match &self.kind {
+            ParserDiagnosticKind::SkippedElement { .. } => error_code!(E0002),
+            ParserDiagnosticKind::MissingToken(_) => error_code!(E0001),
+            ParserDiagnosticKind::MissingExpression => error_code!(E0001),
+            ParserDiagnosticKind::MissingPathSegment => error_code!(E0001),
+            ParserDiagnosticKind::MissingTypeClause => error_code!(E0001),
+            ParserDiagnosticKind::MissingTypeExpression => error_code!(E0001),
+            ParserDiagnosticKind::MissingWrappedArgList => error_code!(E0001),
+            ParserDiagnosticKind::MissingPatteren => error_code!(E0001),
+            ParserDiagnosticKind::ItemInlineMacroWithoutBang { .. } => error_code!(E0001),
+            ParserDiagnosticKind::ReservedIdentifier { .. } => error_code!(E0003),
+            ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier => error_code!(E0004),
+            ParserDiagnosticKind::MissingLiteralSuffix => error_code!(E0005),
+            ParserDiagnosticKind::InvalidNumericLiteralValue => error_code!(E0006),
+            ParserDiagnosticKind::IllegalStringEscaping => error_code!(E0007),
+            ParserDiagnosticKind::ShortStringMustBeAscii => error_code!(E0008),
+            ParserDiagnosticKind::StringMustBeAscii => error_code!(E0008),
+            ParserDiagnosticKind::UnterminatedShortString => error_code!(E0001),
+            ParserDiagnosticKind::UnterminatedString => error_code!(E0001),
+            ParserDiagnosticKind::VisibilityWithoutItem => error_code!(E0001),
+            ParserDiagnosticKind::AttributesWithoutItem => error_code!(E0001),
+            ParserDiagnosticKind::AttributesWithoutTraitItem => error_code!(E0001),
+            ParserDiagnosticKind::AttributesWithoutImplItem => error_code!(E0001),
+            ParserDiagnosticKind::AttributesWithoutStatement => error_code!(E0001),
+            ParserDiagnosticKind::DisallowedTrailingSeparatorOr => error_code!(E0001),
+        })
     }
 }
