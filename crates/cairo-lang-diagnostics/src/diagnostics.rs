@@ -10,6 +10,7 @@ use cairo_lang_filesystem::db::{get_originating_location, FilesGroup};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
+use downcast_rs::{impl_downcast, Downcast};
 use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
@@ -31,7 +32,7 @@ impl std::fmt::Display for Severity {
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
-pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
+pub trait DiagnosticEntry: std::fmt::Debug + Downcast {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
@@ -44,6 +45,7 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
+impl_downcast!(DiagnosticEntry assoc DbType where DbType: Upcast<dyn FilesGroup> + ?Sized);
 
 // The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -281,15 +283,15 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     }
 
     // TODO(spapini): This is temporary. Remove once the logic in language server doesn't use this.
-    pub fn get_all(&self) -> Vec<TEntry> {
-        let mut res = self.0.leaves.clone();
+    pub fn get_all(&self) -> Vec<Arc<&TEntry>> {
+        let mut res = self.0.leaves.iter().map(Arc::new).collect::<Vec<_>>();
         for subtree in &self.0.subtrees {
             res.extend(subtree.get_all())
         }
         res
     }
 }
-impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
+impl<TEntry: DiagnosticEntry + Clone> Default for Diagnostics<TEntry> {
     fn default() -> Self {
         Self::new()
     }

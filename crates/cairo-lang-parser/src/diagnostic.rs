@@ -39,6 +39,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutStatement,
     DisallowedTrailingSeparatorOr,
 }
+
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
 
