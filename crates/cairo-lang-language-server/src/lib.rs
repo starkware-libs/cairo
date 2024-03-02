@@ -2,6 +2,7 @@
 //!
 //! Implements the LSP protocol over stdin/out.
 
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
@@ -1533,6 +1534,12 @@ fn get_diagnostics<T: DiagnosticEntry>(
                 message += &format!("\nnote: {}", note.text);
             }
         }
+        let diagnostic: &&T = diagnostic.borrow();
+        let kind = if let Some(diag) = diagnostic.as_any().downcast_ref::<ParserDiagnostic>() {
+            format!("{:?}", diag.kind)
+        } else {
+            return;
+        };
 
         diags.push(Diagnostic {
             range: get_range(db.upcast(), &diagnostic.location(db)),
@@ -1546,6 +1553,7 @@ fn get_diagnostics<T: DiagnosticEntry>(
                 Severity::Error => DiagnosticSeverity::ERROR,
                 Severity::Warning => DiagnosticSeverity::WARNING,
             }),
+            code: Some(NumberOrString::String(kind)),
             ..Diagnostic::default()
         });
     }

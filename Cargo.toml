@@ -1,5 +1,5 @@
 [profile.release]
-overflow-checks = true     # Enable integer overflow checks.
+overflow-checks = true # Enable integer overflow checks.
 
 [profile.release-with-debug]
 inherits = "release"
@@ -94,10 +94,11 @@ const_format = "0.2.32"
 convert_case = "0.6.0"
 derivative = "2.2.0"
 diffy = "0.3.0"
+downcast-rs = "1.2.0"
 env_logger = "0.10.0"
 genco = "0.17.8"
 good_lp = { version = "1.7.0", features = ["minilp"], default-features = false }
-hashbrown = "0.14.3" 
+hashbrown = "0.14.3"
 id-arena = "2.2.1"
 ignore = "0.4.20"
 indent = "0.1.1"
@@ -111,7 +112,9 @@ num-bigint = { version = "0.4", default-features = false }
 num-integer = "0.1"
 num-traits = { version = "0.2", default-features = false }
 once_cell = "1.18.0"
-parity-scale-codec = { version = "3.6.5", default-features = false, features = ["derive"] }
+parity-scale-codec = { version = "3.6.5", default-features = false, features = [
+    "derive",
+] }
 path-clean = "1.0.1"
 pretty_assertions = "1.4.0"
 proc-macro2 = "1.0"
