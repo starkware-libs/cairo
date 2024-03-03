@@ -12,8 +12,9 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name};
+use semantic::corelib::{core_module, get_ty_by_name, get_usize_ty};
 use semantic::expr::inference::InferenceError;
+use semantic::items::constant::value_as_const_value;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -275,7 +276,14 @@ impl LoweredExpr {
             LoweredExpr::FixedSizeArray { exprs, location } => {
                 let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
                     type_id: exprs[0].ty(ctx),
-                    size: exprs.len(),
+                    size: ctx.db.intern_const_value(
+                        value_as_const_value(
+                            ctx.db.upcast(),
+                            get_usize_ty(ctx.db.upcast()),
+                            &exprs.len().into(),
+                        )
+                        .unwrap(),
+                    ),
                 });
                 let inputs = exprs
                     .into_iter()
@@ -305,7 +313,14 @@ impl LoweredExpr {
             LoweredExpr::FixedSizeArray { exprs, .. } => {
                 ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
                     type_id: exprs[0].ty(ctx),
-                    size: exprs.len(),
+                    size: ctx.db.intern_const_value(
+                        value_as_const_value(
+                            ctx.db.upcast(),
+                            get_usize_ty(ctx.db.upcast()),
+                            &exprs.len().into(),
+                        )
+                        .unwrap(),
+                    ),
                 })
             }
         }
