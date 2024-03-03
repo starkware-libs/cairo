@@ -22,6 +22,7 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::resolve::ResolvedConcreteItem;
 use crate::semantic;
+use crate::types::peel_snapshots;
 
 #[cfg(test)]
 #[path = "diagnostic_test.rs"]
@@ -269,11 +270,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
                                                             bound in different ways"
                 .into(),
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
-                format!(
+                let diagnostic_prefix = format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
-                )
+                );
+                if (expected_ty.is_fully_concrete(db) && actual_ty.is_fully_concrete(db))
+                    || peel_snapshots(db, *expected_ty).0 == peel_snapshots(db, *actual_ty).0
+                {
+                    diagnostic_prefix
+                } else {
+                    format!(
+                        "{}\nIt is possible that the type inference failed because the types \
+                         differ in the number of snapshots.\nConsider adding or removing \
+                         snapshots.",
+                        diagnostic_prefix
+                    )
+                }
             }
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
