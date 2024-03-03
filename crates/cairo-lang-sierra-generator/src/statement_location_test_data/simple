@@ -222,24 +222,24 @@ struct_construct<Tuple<u8>>([18]) -> ([20])
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: option.cairo::OptionTraitImpl::expect
+    fn mul(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Mul::mul
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: option.cairo::OptionTraitImpl::expect
+    fn mul(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Mul::mul
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: option.cairo::OptionTraitImpl::expect
+    fn mul(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Mul::mul
 return([17], [21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
-In function: option.cairo::OptionTraitImpl::expect
+    fn mul(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Mul::mul
 label_test::foo::7:
 
 branch_align() -> ()
@@ -270,24 +270,24 @@ struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([25], [24]) -> ([26
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([26]) -> ([27])
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: integer.cairo::U8Mul::mul
 store_temp<RangeCheck>([19]) -> ([19])
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: integer.cairo::U8Mul::mul
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([27]) -> ([27])
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: integer.cairo::U8Mul::mul
 return([19], [27])
 Originating location:
-            Option::None => core::panic_with_felt252(err),
-                            ^***************************^
-In function: option.cairo::OptionTraitImpl::expect
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^********************************************************^
+In function: integer.cairo::U8Mul::mul
 label_test::foo::8:
 
 label_test::foo::5:
@@ -313,24 +313,24 @@ struct_construct<Tuple<u8>>([29]) -> ([32])
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: result.cairo::ResultTraitImpl::expect
+    fn add(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Add::add
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: result.cairo::ResultTraitImpl::expect
+    fn add(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Add::add
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: result.cairo::ResultTraitImpl::expect
+    fn add(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Add::add
 return([28], [33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
-In function: result.cairo::ResultTraitImpl::expect
+    fn add(lhs: u8, rhs: u8) -> u8 {
+                                   ^
+In function: integer.cairo::U8Add::add
 label_test::foo::9:
 
 branch_align() -> ()
@@ -363,24 +363,24 @@ struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([37], [36]) -> ([38
 
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([38]) -> ([39])
 Originating location:
-            Result::Err(_) => core::panic_with_felt252(err),
-                              ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: integer.cairo::U8Add::add
 store_temp<RangeCheck>([30]) -> ([30])
 Originating location:
-            Result::Err(_) => core::panic_with_felt252(err),
-                              ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: integer.cairo::U8Add::add
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([39]) -> ([39])
 Originating location:
-            Result::Err(_) => core::panic_with_felt252(err),
-                              ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: integer.cairo::U8Add::add
 return([30], [39])
 Originating location:
-            Result::Err(_) => core::panic_with_felt252(err),
-                              ^***************************^
-In function: result.cairo::ResultTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^****************************************************^
+In function: integer.cairo::U8Add::add
 label_test::foo::10:
 
 label_test::foo::6:

@@ -118,7 +118,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v29) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v41) => blk2,
+    IsZeroResult::NonZero(v42) => blk2,
   })
 
 blk1:

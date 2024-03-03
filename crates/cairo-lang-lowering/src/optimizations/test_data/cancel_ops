@@ -223,19 +223,19 @@ Statements:
   (v31: ()) <- struct_construct()
   (v32: core::bool) <- bool::True(v31)
 End:
-  Goto(blk3, {v32 -> v17})
+  Goto(blk3, {v32 -> v33})
 
 blk2:
 Statements:
-  (v33: ()) <- struct_construct()
-  (v34: core::bool) <- bool::False(v33)
+  (v34: ()) <- struct_construct()
+  (v35: core::bool) <- bool::False(v34)
 End:
-  Goto(blk3, {v34 -> v17})
+  Goto(blk3, {v35 -> v33})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v17) {
+  Match(match_enum(v33) {
     bool::False(v21) => blk4,
     bool::True(v18) => blk5,
   })
@@ -278,19 +278,19 @@ Statements:
   (v31: ()) <- struct_construct()
   (v32: core::bool) <- bool::True(v31)
 End:
-  Goto(blk3, {v32 -> v17})
+  Goto(blk3, {v32 -> v33})
 
 blk2:
 Statements:
-  (v33: ()) <- struct_construct()
-  (v34: core::bool) <- bool::False(v33)
+  (v34: ()) <- struct_construct()
+  (v35: core::bool) <- bool::False(v34)
 End:
-  Goto(blk3, {v34 -> v17})
+  Goto(blk3, {v35 -> v33})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v17) {
+  Match(match_enum(v33) {
     bool::False(v21) => blk4,
     bool::True(v18) => blk5,
   })
@@ -565,19 +565,19 @@ Statements:
   (v20: ()) <- struct_construct()
   (v21: core::bool) <- bool::True(v20)
 End:
-  Goto(blk3, {v21 -> v7})
+  Goto(blk3, {v21 -> v22})
 
 blk2:
 Statements:
-  (v22: ()) <- struct_construct()
-  (v23: core::bool) <- bool::False(v22)
+  (v23: ()) <- struct_construct()
+  (v24: core::bool) <- bool::False(v23)
 End:
-  Goto(blk3, {v23 -> v7})
+  Goto(blk3, {v24 -> v22})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v7) {
+  Match(match_enum(v22) {
     bool::False(v10) => blk4,
     bool::True(v8) => blk5,
   })
@@ -618,19 +618,19 @@ Statements:
   (v20: ()) <- struct_construct()
   (v21: core::bool) <- bool::True(v20)
 End:
-  Goto(blk3, {v21 -> v7})
+  Goto(blk3, {v21 -> v22})
 
 blk2:
 Statements:
-  (v22: ()) <- struct_construct()
-  (v23: core::bool) <- bool::False(v22)
+  (v23: ()) <- struct_construct()
+  (v24: core::bool) <- bool::False(v23)
 End:
-  Goto(blk3, {v23 -> v7})
+  Goto(blk3, {v24 -> v22})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v7) {
+  Match(match_enum(v22) {
     bool::False(v10) => blk4,
     bool::True(v8) => blk5,
   })

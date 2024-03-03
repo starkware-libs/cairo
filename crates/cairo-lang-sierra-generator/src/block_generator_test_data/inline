@@ -47,20 +47,20 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v19) => blk3,
+    IsZeroResult::NonZero(v20) => blk3,
   })
 
 blk2:
 Statements:
-  (v20: core::felt252) <- 1u
+  (v21: core::felt252) <- 1u
 End:
-  Return(v20)
+  Return(v21)
 
 blk3:
 Statements:
-  (v21: core::felt252) <- 0u
+  (v22: core::felt252) <- 0u
 End:
-  Return(v21)
+  Return(v22)
 
 blk4:
 Statements:

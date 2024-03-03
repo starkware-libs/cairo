@@ -160,79 +160,79 @@ validate_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 591: 16 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([44]) -> ([44]))
-  statement 557: 14 (contract_address_try_from_felt252([0], [15]) { fallthrough([17], [18]) 617([19]) })
-  statement 733: 12 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([40]) -> ([40]))
-  statement 716: 10 (array_slice<felt252>([17], [21], [20], [22]) { fallthrough([23], [24]) 762([25]) })
-  statement 725: 10 (array_slice<felt252>([29], [7], [18], [30]) { fallthrough([33], [34]) 735([35]) })
-  statement 387: 9 (withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 439([8], [9]) })
-  statement 411: 8 (array_append<core::starknet::account::Call>([3], [21]) -> ([23]))
-  statement 709: 8 (u32_try_from_felt252([0], [16]) { fallthrough([17], [18]) 775([19]) })
-  statement 385: 6 (get_builtin_costs() -> ([5]))
-  statement 399: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([14]) -> ([14]))
-  statement 723: 6 (u32_overflowing_sub([23], [27], [28]) { fallthrough([29], [30]) 747([31], [32]) })
-  statement 404: 4 (store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]))
-  statement 416: 4 (store_temp<core::array::Span::<core::felt252>>([19]) -> ([19]))
-  statement 417: 4 (store_temp<Array<core::starknet::account::Call>>([23]) -> ([23]))
-  statement 539: 4 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 547([5]) })
-  statement 544: 4 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([9]))
-  statement 545: 4 (store_temp<core::option::Option::<core::felt252>>([8]) -> ([10]))
-  statement 554: 4 (store_temp<core::array::Span::<core::felt252>>([14]) -> ([14]))
-  statement 561: 4 (array_snapshot_pop_front<felt252>([9]) { fallthrough([20], [21]) 569([22]) })
-  statement 566: 4 (store_temp<Snapshot<Array<felt252>>>([20]) -> ([26]))
-  statement 567: 4 (store_temp<core::option::Option::<core::felt252>>([25]) -> ([27]))
-  statement 575: 4 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
-  statement 579: 4 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
-  statement 690: 4 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 696([5]) })
-  statement 693: 4 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([7]))
-  statement 694: 4 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([8]))
-  statement 703: 4 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
-  statement 722: 4 (store_temp<Snapshot<Array<felt252>>>([24]) -> ([24]))
+  statement 612: 16 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([44]) -> ([44]))
+  statement 578: 14 (contract_address_try_from_felt252([0], [15]) { fallthrough([17], [18]) 638([19]) })
+  statement 696: 12 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([40]) -> ([40]))
+  statement 679: 10 (array_slice<felt252>([17], [21], [20], [22]) { fallthrough([23], [24]) 725([25]) })
+  statement 688: 10 (array_slice<felt252>([29], [7], [18], [30]) { fallthrough([33], [34]) 698([35]) })
+  statement 434: 9 (withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 486([8], [9]) })
+  statement 458: 8 (array_append<core::starknet::account::Call>([3], [21]) -> ([23]))
+  statement 672: 8 (u32_try_from_felt252([0], [16]) { fallthrough([17], [18]) 738([19]) })
+  statement 432: 6 (get_builtin_costs() -> ([5]))
+  statement 446: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([14]) -> ([14]))
+  statement 686: 6 (u32_overflowing_sub([23], [27], [28]) { fallthrough([29], [30]) 710([31], [32]) })
+  statement 451: 4 (store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]))
+  statement 463: 4 (store_temp<core::array::Span::<core::felt252>>([19]) -> ([19]))
+  statement 464: 4 (store_temp<Array<core::starknet::account::Call>>([23]) -> ([23]))
+  statement 560: 4 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 568([5]) })
+  statement 565: 4 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([9]))
+  statement 566: 4 (store_temp<core::option::Option::<core::felt252>>([8]) -> ([10]))
+  statement 575: 4 (store_temp<core::array::Span::<core::felt252>>([14]) -> ([14]))
+  statement 582: 4 (array_snapshot_pop_front<felt252>([9]) { fallthrough([20], [21]) 590([22]) })
+  statement 587: 4 (store_temp<Snapshot<Array<felt252>>>([20]) -> ([26]))
+  statement 588: 4 (store_temp<core::option::Option::<core::felt252>>([25]) -> ([27]))
+  statement 596: 4 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
+  statement 600: 4 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
+  statement 653: 4 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 659([5]) })
+  statement 656: 4 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([7]))
+  statement 657: 4 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([8]))
+  statement 666: 4 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 685: 4 (store_temp<Snapshot<Array<felt252>>>([24]) -> ([24]))
   statement 76: 3 (store_temp<core::panics::PanicResult::<((),)>>([53]) -> ([53]))
-  statement 94: 3 (withdraw_gas([0], [1]) { fallthrough([4], [5]) 212([6], [7]) })
-  statement 130: 3 (store_temp<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([29]) -> ([34]))
-  statement 151: 3 (array_snapshot_pop_front<felt252>([33]) { fallthrough([40], [41]) 167([42]) })
-  statement 171: 3 (withdraw_gas_all([31], [32], [49]) { fallthrough([50], [51]) 184([52], [53]) })
-  statement 182: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([59]) -> ([59]))
-  statement 386: 3 (store_temp<BuiltinCosts>([5]) -> ([5]))
-  statement 390: 3 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 391: 3 (felt252_is_zero([10]) { fallthrough() 401([11]) })
+  statement 94: 3 (withdraw_gas([0], [1]) { fallthrough([4], [5]) 175([6], [7]) })
+  statement 107: 3 (array_snapshot_pop_front<felt252>([17]) { fallthrough([18], [19]) 123([20]) })
+  statement 127: 3 (withdraw_gas_all([8], [9], [27]) { fallthrough([28], [29]) 140([30], [31]) })
+  statement 138: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([37]) -> ([37]))
+  statement 433: 3 (store_temp<BuiltinCosts>([5]) -> ([5]))
+  statement 437: 3 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 438: 3 (felt252_is_zero([10]) { fallthrough() 448([11]) })
   statement 65: 2 (store_temp<core::array::Span::<core::felt252>>([44]) -> ([44]))
-  statement 99: 2 (array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 105([11]) })
-  statement 102: 2 (store_temp<Snapshot<Array<felt252>>>([9]) -> ([13]))
-  statement 103: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([12]) -> ([14]))
-  statement 119: 2 (store_temp<core::array::Span::<core::felt252>>([21]) -> ([21]))
-  statement 120: 2 (store_temp<Array<core::starknet::account::Call>>([20]) -> ([20]))
-  statement 129: 2 (store_temp<Snapshot<Array<felt252>>>([30]) -> ([33]))
-  statement 169: 2 (get_builtin_costs() -> ([49]))
-  statement 403: 2 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 405: 2 (function_call<user@core::starknet::account::CallSerde::deserialize>([6], [2]) -> ([15], [16]))
-  statement 406: 2 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([16]) { fallthrough([17]) 431([18]) })
-  statement 409: 2 (enum_match<core::option::Option::<core::starknet::account::Call>>([20]) { fallthrough([21]) 421([22]) })
-  statement 414: 2 (store_temp<RangeCheck>([15]) -> ([15]))
-  statement 415: 2 (store_temp<GasBuiltin>([7]) -> ([7]))
-  statement 418: 2 (store_temp<felt252>([25]) -> ([25]))
-  statement 419: 2 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([15], [7], [19], [23], [25]) -> ([26], [27], [28]))
-  statement 420: 2 (return([26], [27], [28]))
-  statement 546: 2 (jump() { 552() })
-  statement 555: 2 (enum_match<core::option::Option::<core::felt252>>([10]) { fallthrough([15]) 621([16]) })
-  statement 560: 2 (store_temp<RangeCheck>([17]) -> ([17]))
-  statement 568: 2 (jump() { 574() })
-  statement 576: 2 (enum_match<core::option::Option::<core::felt252>>([27]) { fallthrough([31]) 609([32]) })
-  statement 578: 2 (store_temp<RangeCheck>([17]) -> ([17]))
-  statement 580: 2 (function_call<user@core::array::SpanFelt252Serde::deserialize>([17], [30]) -> ([33], [34]))
-  statement 581: 2 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([34]) { fallthrough([35]) 602([36]) })
-  statement 584: 2 (enum_match<core::option::Option::<core::array::Span::<core::felt252>>>([38]) { fallthrough([39]) 593([40]) })
-  statement 590: 2 (store_temp<RangeCheck>([33]) -> ([33]))
-  statement 592: 2 (return([33], [44]))
-  statement 695: 2 (jump() { 701() })
-  statement 704: 2 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([13]) 784([14]) })
-  statement 708: 2 (store_temp<felt252>([16]) -> ([16]))
-  statement 715: 2 (store_temp<u32>([20]) -> ([20]))
-  statement 721: 2 (store_temp<u32>([27]) -> ([27]))
-  statement 726: 2 (branch_align() -> ())
-  statement 732: 2 (store_temp<RangeCheck>([33]) -> ([33]))
-  statement 734: 2 (return([33], [40]))
+  statement 98: 2 (store_temp<core::array::Span::<core::felt252>>([3]) -> ([3]))
+  statement 125: 2 (get_builtin_costs() -> ([27]))
+  statement 312: 2 (array_snapshot_pop_front<felt252>([3]) { fallthrough([4], [5]) 318([6]) })
+  statement 315: 2 (store_temp<Snapshot<Array<felt252>>>([4]) -> ([8]))
+  statement 316: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) -> ([9]))
+  statement 324: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 332: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 333: 2 (store_temp<Array<core::starknet::account::Call>>([16]) -> ([16]))
+  statement 450: 2 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 452: 2 (function_call<user@core::starknet::account::CallSerde::deserialize>([6], [2]) -> ([15], [16]))
+  statement 453: 2 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([16]) { fallthrough([17]) 478([18]) })
+  statement 456: 2 (enum_match<core::option::Option::<core::starknet::account::Call>>([20]) { fallthrough([21]) 468([22]) })
+  statement 461: 2 (store_temp<RangeCheck>([15]) -> ([15]))
+  statement 462: 2 (store_temp<GasBuiltin>([7]) -> ([7]))
+  statement 465: 2 (store_temp<felt252>([25]) -> ([25]))
+  statement 466: 2 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([15], [7], [19], [23], [25]) -> ([26], [27], [28]))
+  statement 467: 2 (return([26], [27], [28]))
+  statement 567: 2 (jump() { 573() })
+  statement 576: 2 (enum_match<core::option::Option::<core::felt252>>([10]) { fallthrough([15]) 642([16]) })
+  statement 581: 2 (store_temp<RangeCheck>([17]) -> ([17]))
+  statement 589: 2 (jump() { 595() })
+  statement 597: 2 (enum_match<core::option::Option::<core::felt252>>([27]) { fallthrough([31]) 630([32]) })
+  statement 599: 2 (store_temp<RangeCheck>([17]) -> ([17]))
+  statement 601: 2 (function_call<user@core::array::SpanFelt252Serde::deserialize>([17], [30]) -> ([33], [34]))
+  statement 602: 2 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([34]) { fallthrough([35]) 623([36]) })
+  statement 605: 2 (enum_match<core::option::Option::<core::array::Span::<core::felt252>>>([38]) { fallthrough([39]) 614([40]) })
+  statement 611: 2 (store_temp<RangeCheck>([33]) -> ([33]))
+  statement 613: 2 (return([33], [44]))
+  statement 658: 2 (jump() { 664() })
+  statement 667: 2 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([13]) 747([14]) })
+  statement 671: 2 (store_temp<felt252>([16]) -> ([16]))
+  statement 678: 2 (store_temp<u32>([20]) -> ([20]))
+  statement 684: 2 (store_temp<u32>([27]) -> ([27]))
+  statement 689: 2 (branch_align() -> ())
+  statement 695: 2 (store_temp<RangeCheck>([33]) -> ([33]))
+  statement 697: 2 (return([33], [40]))
   statement 1: 1 (array_new<felt252>() -> ([3]))
   statement 3: 1 (store_temp<felt252>([4]) -> ([4]))
   statement 4: 1 (array_append<felt252>([3], [4]) -> ([5]))
@@ -281,35 +281,35 @@ Weight by sierra statement:
   statement 74: 1 (store_temp<GasBuiltin>([46]) -> ([46]))
   statement 75: 1 (store_temp<System>([47]) -> ([47]))
   statement 77: 1 (return([45], [46], [47], [53]))
-  statement 98: 1 (store_temp<RangeCheck>([4]) -> ([4]))
-  statement 104: 1 (jump() { 110() })
-  statement 110: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([14]) { fallthrough([17]) 139([18]) })
-  statement 114: 1 (array_new<core::starknet::account::Call>() -> ([20]))
-  statement 117: 1 (store_temp<RangeCheck>([4]) -> ([4]))
-  statement 118: 1 (store_temp<GasBuiltin>([5]) -> ([5]))
-  statement 121: 1 (store_temp<felt252>([22]) -> ([22]))
-  statement 122: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([4], [5], [21], [20], [22]) -> ([23], [24], [25]))
-  statement 123: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([25]) { fallthrough([26]) 132([27]) })
-  statement 127: 1 (store_temp<RangeCheck>([23]) -> ([31]))
-  statement 128: 1 (store_temp<GasBuiltin>([24]) -> ([32]))
-  statement 131: 1 (jump() { 148() })
-  statement 148: 1 (enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([34]) { fallthrough([38]) 197([39]) })
-  statement 170: 1 (store_temp<BuiltinCosts>([49]) -> ([49]))
-  statement 173: 1 (array_new<felt252>() -> ([54]))
-  statement 179: 1 (store_temp<RangeCheck>([50]) -> ([50]))
-  statement 180: 1 (store_temp<GasBuiltin>([51]) -> ([51]))
-  statement 181: 1 (store_temp<System>([2]) -> ([2]))
-  statement 183: 1 (return([50], [51], [2], [59]))
-  statement 397: 1 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 398: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
-  statement 400: 1 (return([6], [7], [14]))
+  statement 96: 1 (store_temp<RangeCheck>([4]) -> ([4]))
+  statement 97: 1 (store_temp<GasBuiltin>([5]) -> ([5]))
+  statement 99: 1 (function_call<user@core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>([4], [5], [3]) -> ([8], [9], [10]))
+  statement 100: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([10]) { fallthrough([11]) 168([12]) })
+  statement 103: 1 (enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([14]) { fallthrough([15]) 153([16]) })
+  statement 126: 1 (store_temp<BuiltinCosts>([27]) -> ([27]))
+  statement 129: 1 (array_new<felt252>() -> ([32]))
+  statement 135: 1 (store_temp<RangeCheck>([28]) -> ([28]))
+  statement 136: 1 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 137: 1 (store_temp<System>([2]) -> ([2]))
+  statement 139: 1 (return([28], [29], [2], [37]))
+  statement 317: 1 (jump() { 323() })
+  statement 325: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) { fallthrough([13]) 337([14]) })
+  statement 328: 1 (array_new<core::starknet::account::Call>() -> ([16]))
+  statement 330: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 331: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
+  statement 334: 1 (store_temp<felt252>([17]) -> ([17]))
+  statement 335: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([0], [1], [12], [16], [17]) -> ([18], [19], [20]))
+  statement 336: 1 (return([18], [19], [20]))
+  statement 444: 1 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 445: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
+  statement 447: 1 (return([6], [7], [14]))
 Weight by concrete libfunc:
-  libfunc store_temp<core::array::Span::<core::felt252>>: 28
+  libfunc store_temp<core::array::Span::<core::felt252>>: 32
   libfunc store_temp<felt252>: 24
-  libfunc store_temp<RangeCheck>: 22
+  libfunc store_temp<RangeCheck>: 21
   libfunc array_slice<felt252>: 20
-  libfunc store_temp<Snapshot<Array<felt252>>>: 20
   libfunc array_append<felt252>: 19
+  libfunc store_temp<Snapshot<Array<felt252>>>: 18
   libfunc array_snapshot_pop_front<felt252>: 17
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>: 16
   libfunc contract_address_try_from_felt252: 14
@@ -317,10 +317,10 @@ Weight by concrete libfunc:
   libfunc withdraw_gas_all: 12
   libfunc array_append<core::starknet::account::Call>: 8
   libfunc get_builtin_costs: 8
-  libfunc jump: 8
   libfunc store_temp<GasBuiltin>: 8
   libfunc store_temp<core::option::Option::<core::felt252>>: 8
   libfunc u32_try_from_felt252: 8
+  libfunc jump: 7
   libfunc store_temp<Array<core::starknet::account::Call>>: 6
   libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>: 6
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>: 6
@@ -332,7 +332,6 @@ Weight by concrete libfunc:
   libfunc felt252_is_zero: 3
   libfunc function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>: 3
   libfunc store_temp<System>: 3
-  libfunc store_temp<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>: 3
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 3
   libfunc withdraw_gas: 3
@@ -348,76 +347,81 @@ Weight by concrete libfunc:
   libfunc enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 1
+  libfunc function_call<user@core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>: 1
   libfunc function_call<user@test::test_contract::__wrapper____validate__>: 1
-  return: 9
+  return: 10
 Weight by generic libfunc:
-  libfunc store_temp: 176
+  libfunc store_temp: 174
   libfunc array_append: 27
   libfunc array_slice: 20
   libfunc enum_match: 18
   libfunc array_snapshot_pop_front: 17
   libfunc contract_address_try_from_felt252: 14
   libfunc withdraw_gas_all: 12
-  libfunc function_call: 8
+  libfunc function_call: 9
   libfunc get_builtin_costs: 8
-  libfunc jump: 8
   libfunc u32_try_from_felt252: 8
+  libfunc jump: 7
   libfunc u32_overflowing_sub: 6
   libfunc array_new: 3
   libfunc felt252_is_zero: 3
   libfunc withdraw_gas: 3
   libfunc branch_align: 2
-  return: 9
+  return: 10
 Weight by user function (inc. generated):
   function core::starknet::account::CallSerde::deserialize: 88
   function core::array::SpanFelt252Serde::deserialize: 82
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 71
   function test::validate_call: 53
-  function test::test_contract::__wrapper____validate__: 48
+  function test::test_contract::__wrapper____validate__: 27
+  function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by original user function (exc. generated):
   function core::starknet::account::CallSerde::deserialize: 88
   function core::array::SpanFelt252Serde::deserialize: 82
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 71
   function test::validate_call: 53
-  function test::test_contract::__wrapper____validate__: 48
+  function test::test_contract::__wrapper____validate__: 27
+  function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by Cairo function:
   function array.cairo::deserialize_array_helper: 57
   function array.cairo::ArrayImpl::append: 46
   function impls::CallSerde::deserialize: 38
+  function array.cairo::SpanImpl::pop_front: 30
   function lib.cairo::Felt252Serde::deserialize: 30
-  function array.cairo::SpanImpl::pop_front: 29
-  function contract::__wrapper____validate__: 25
   function array.cairo::SpanImpl::slice: 24
+  function contract::__wrapper____validate__: 22
   function contract_address.cairo::ContractAddressSerde::deserialize: 20
   function array.cairo::SpanFelt252Serde::deserialize: 16
   function lib.cairo::validate_call: 14
   function integer.cairo::U32Sub::sub: 12
   function integer.cairo::Felt252TryIntoU32::try_into: 10
-  function array.cairo::ArraySerde::deserialize: 8
+  function array.cairo::ArraySerde::deserialize: 9
   function lib.cairo::Felt252PartialEq::eq: 6
   function array.cairo::ArrayImpl::new: 3
   function array.cairo::SpanImpl::is_empty: 3
   function option.cairo::OptionTraitImpl::expect: 1
 Weight by Sierra stack trace:
-  test::validate_call: 342
-  test::validate_call -> test::test_contract::__wrapper____validate__: 289
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 241
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
+  test::validate_call: 341
+  test::validate_call -> test::test_contract::__wrapper____validate__: 288
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 261
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 241
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
 Weight by Cairo stack trace:
-  test::validate_call: 342
-  test::validate_call -> test::test_contract::__wrapper____validate__: 289
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 241
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
+  test::validate_call: 341
+  test::validate_call -> test::test_contract::__wrapper____validate__: 288
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 261
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 241
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
 
 //! > ==========================================================================
 
@@ -461,51 +465,51 @@ validate_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 555: 8 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([44]) -> ([44]))
-  statement 521: 7 (contract_address_try_from_felt252([0], [15]) { fallthrough([17], [18]) 581([19]) })
-  statement 351: 6 (withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 403([8], [9]) })
-  statement 363: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([14]) -> ([14]))
-  statement 697: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([40]) -> ([40]))
-  statement 680: 5 (array_slice<felt252>([17], [21], [20], [22]) { fallthrough([23], [24]) 726([25]) })
-  statement 689: 5 (array_slice<felt252>([29], [7], [18], [30]) { fallthrough([33], [34]) 699([35]) })
-  statement 349: 4 (get_builtin_costs() -> ([5]))
-  statement 375: 4 (array_append<core::starknet::account::Call>([3], [21]) -> ([23]))
-  statement 673: 4 (u32_try_from_felt252([0], [16]) { fallthrough([17], [18]) 739([19]) })
+  statement 576: 8 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([44]) -> ([44]))
+  statement 542: 7 (contract_address_try_from_felt252([0], [15]) { fallthrough([17], [18]) 602([19]) })
+  statement 398: 6 (withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 450([8], [9]) })
+  statement 410: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([14]) -> ([14]))
+  statement 660: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([40]) -> ([40]))
+  statement 643: 5 (array_slice<felt252>([17], [21], [20], [22]) { fallthrough([23], [24]) 689([25]) })
+  statement 652: 5 (array_slice<felt252>([29], [7], [18], [30]) { fallthrough([33], [34]) 662([35]) })
+  statement 396: 4 (get_builtin_costs() -> ([5]))
+  statement 422: 4 (array_append<core::starknet::account::Call>([3], [21]) -> ([23]))
+  statement 636: 4 (u32_try_from_felt252([0], [16]) { fallthrough([17], [18]) 702([19]) })
   statement 40: 3 (store_temp<core::panics::PanicResult::<((),)>>([29]) -> ([29]))
-  statement 58: 3 (withdraw_gas([0], [1]) { fallthrough([4], [5]) 176([6], [7]) })
-  statement 94: 3 (store_temp<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([29]) -> ([34]))
-  statement 115: 3 (array_snapshot_pop_front<felt252>([33]) { fallthrough([40], [41]) 131([42]) })
-  statement 135: 3 (withdraw_gas_all([31], [32], [49]) { fallthrough([50], [51]) 148([52], [53]) })
-  statement 146: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([59]) -> ([59]))
-  statement 687: 3 (u32_overflowing_sub([23], [27], [28]) { fallthrough([29], [30]) 711([31], [32]) })
+  statement 58: 3 (withdraw_gas([0], [1]) { fallthrough([4], [5]) 139([6], [7]) })
+  statement 71: 3 (array_snapshot_pop_front<felt252>([17]) { fallthrough([18], [19]) 87([20]) })
+  statement 91: 3 (withdraw_gas_all([8], [9], [27]) { fallthrough([28], [29]) 104([30], [31]) })
+  statement 102: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([37]) -> ([37]))
+  statement 650: 3 (u32_overflowing_sub([23], [27], [28]) { fallthrough([29], [30]) 674([31], [32]) })
   statement 29: 2 (store_temp<core::array::Span::<core::felt252>>([20]) -> ([20]))
-  statement 63: 2 (array_snapshot_pop_front<felt252>([8]) { fallthrough([9], [10]) 69([11]) })
-  statement 66: 2 (store_temp<Snapshot<Array<felt252>>>([9]) -> ([13]))
-  statement 67: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([12]) -> ([14]))
-  statement 83: 2 (store_temp<core::array::Span::<core::felt252>>([21]) -> ([21]))
-  statement 84: 2 (store_temp<Array<core::starknet::account::Call>>([20]) -> ([20]))
-  statement 93: 2 (store_temp<Snapshot<Array<felt252>>>([30]) -> ([33]))
-  statement 133: 2 (get_builtin_costs() -> ([49]))
-  statement 350: 2 (store_temp<BuiltinCosts>([5]) -> ([5]))
-  statement 354: 2 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 355: 2 (felt252_is_zero([10]) { fallthrough() 365([11]) })
-  statement 368: 2 (store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]))
-  statement 380: 2 (store_temp<core::array::Span::<core::felt252>>([19]) -> ([19]))
-  statement 381: 2 (store_temp<Array<core::starknet::account::Call>>([23]) -> ([23]))
-  statement 503: 2 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 511([5]) })
-  statement 508: 2 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([9]))
-  statement 509: 2 (store_temp<core::option::Option::<core::felt252>>([8]) -> ([10]))
-  statement 518: 2 (store_temp<core::array::Span::<core::felt252>>([14]) -> ([14]))
-  statement 525: 2 (array_snapshot_pop_front<felt252>([9]) { fallthrough([20], [21]) 533([22]) })
-  statement 530: 2 (store_temp<Snapshot<Array<felt252>>>([20]) -> ([26]))
-  statement 531: 2 (store_temp<core::option::Option::<core::felt252>>([25]) -> ([27]))
-  statement 539: 2 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
-  statement 543: 2 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
-  statement 654: 2 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 660([5]) })
-  statement 657: 2 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([7]))
-  statement 658: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([8]))
-  statement 667: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
-  statement 686: 2 (store_temp<Snapshot<Array<felt252>>>([24]) -> ([24]))
+  statement 62: 2 (store_temp<core::array::Span::<core::felt252>>([3]) -> ([3]))
+  statement 89: 2 (get_builtin_costs() -> ([27]))
+  statement 276: 2 (array_snapshot_pop_front<felt252>([3]) { fallthrough([4], [5]) 282([6]) })
+  statement 279: 2 (store_temp<Snapshot<Array<felt252>>>([4]) -> ([8]))
+  statement 280: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([7]) -> ([9]))
+  statement 288: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 296: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 297: 2 (store_temp<Array<core::starknet::account::Call>>([16]) -> ([16]))
+  statement 397: 2 (store_temp<BuiltinCosts>([5]) -> ([5]))
+  statement 401: 2 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 402: 2 (felt252_is_zero([10]) { fallthrough() 412([11]) })
+  statement 415: 2 (store_temp<core::array::Span::<core::felt252>>([2]) -> ([2]))
+  statement 427: 2 (store_temp<core::array::Span::<core::felt252>>([19]) -> ([19]))
+  statement 428: 2 (store_temp<Array<core::starknet::account::Call>>([23]) -> ([23]))
+  statement 524: 2 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 532([5]) })
+  statement 529: 2 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([9]))
+  statement 530: 2 (store_temp<core::option::Option::<core::felt252>>([8]) -> ([10]))
+  statement 539: 2 (store_temp<core::array::Span::<core::felt252>>([14]) -> ([14]))
+  statement 546: 2 (array_snapshot_pop_front<felt252>([9]) { fallthrough([20], [21]) 554([22]) })
+  statement 551: 2 (store_temp<Snapshot<Array<felt252>>>([20]) -> ([26]))
+  statement 552: 2 (store_temp<core::option::Option::<core::felt252>>([25]) -> ([27]))
+  statement 560: 2 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
+  statement 564: 2 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
+  statement 617: 2 (array_snapshot_pop_front<felt252>([2]) { fallthrough([3], [4]) 623([5]) })
+  statement 620: 2 (store_temp<Snapshot<Array<felt252>>>([3]) -> ([7]))
+  statement 621: 2 (store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([8]))
+  statement 630: 2 (store_temp<core::array::Span::<core::felt252>>([12]) -> ([12]))
+  statement 649: 2 (store_temp<Snapshot<Array<felt252>>>([24]) -> ([24]))
   statement 1: 1 (array_new<felt252>() -> ([3]))
   statement 3: 1 (store_temp<felt252>([4]) -> ([4]))
   statement 4: 1 (array_append<felt252>([3], [4]) -> ([5]))
@@ -530,62 +534,62 @@ Weight by sierra statement:
   statement 38: 1 (store_temp<GasBuiltin>([22]) -> ([22]))
   statement 39: 1 (store_temp<System>([23]) -> ([23]))
   statement 41: 1 (return([21], [22], [23], [29]))
-  statement 62: 1 (store_temp<RangeCheck>([4]) -> ([4]))
-  statement 68: 1 (jump() { 74() })
-  statement 74: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([14]) { fallthrough([17]) 103([18]) })
-  statement 78: 1 (array_new<core::starknet::account::Call>() -> ([20]))
-  statement 81: 1 (store_temp<RangeCheck>([4]) -> ([4]))
-  statement 82: 1 (store_temp<GasBuiltin>([5]) -> ([5]))
-  statement 85: 1 (store_temp<felt252>([22]) -> ([22]))
-  statement 86: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([4], [5], [21], [20], [22]) -> ([23], [24], [25]))
-  statement 87: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([25]) { fallthrough([26]) 96([27]) })
-  statement 91: 1 (store_temp<RangeCheck>([23]) -> ([31]))
-  statement 92: 1 (store_temp<GasBuiltin>([24]) -> ([32]))
-  statement 95: 1 (jump() { 112() })
-  statement 112: 1 (enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([34]) { fallthrough([38]) 161([39]) })
-  statement 134: 1 (store_temp<BuiltinCosts>([49]) -> ([49]))
-  statement 137: 1 (array_new<felt252>() -> ([54]))
-  statement 143: 1 (store_temp<RangeCheck>([50]) -> ([50]))
-  statement 144: 1 (store_temp<GasBuiltin>([51]) -> ([51]))
-  statement 145: 1 (store_temp<System>([2]) -> ([2]))
-  statement 147: 1 (return([50], [51], [2], [59]))
-  statement 361: 1 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 362: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
-  statement 364: 1 (return([6], [7], [14]))
-  statement 367: 1 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 369: 1 (function_call<user@core::starknet::account::CallSerde::deserialize>([6], [2]) -> ([15], [16]))
-  statement 370: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([16]) { fallthrough([17]) 395([18]) })
-  statement 373: 1 (enum_match<core::option::Option::<core::starknet::account::Call>>([20]) { fallthrough([21]) 385([22]) })
-  statement 378: 1 (store_temp<RangeCheck>([15]) -> ([15]))
-  statement 379: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
-  statement 382: 1 (store_temp<felt252>([25]) -> ([25]))
-  statement 383: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([15], [7], [19], [23], [25]) -> ([26], [27], [28]))
-  statement 384: 1 (return([26], [27], [28]))
-  statement 510: 1 (jump() { 516() })
-  statement 519: 1 (enum_match<core::option::Option::<core::felt252>>([10]) { fallthrough([15]) 585([16]) })
-  statement 524: 1 (store_temp<RangeCheck>([17]) -> ([17]))
-  statement 532: 1 (jump() { 538() })
-  statement 540: 1 (enum_match<core::option::Option::<core::felt252>>([27]) { fallthrough([31]) 573([32]) })
-  statement 542: 1 (store_temp<RangeCheck>([17]) -> ([17]))
-  statement 544: 1 (function_call<user@core::array::SpanFelt252Serde::deserialize>([17], [30]) -> ([33], [34]))
-  statement 545: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([34]) { fallthrough([35]) 566([36]) })
-  statement 548: 1 (enum_match<core::option::Option::<core::array::Span::<core::felt252>>>([38]) { fallthrough([39]) 557([40]) })
-  statement 554: 1 (store_temp<RangeCheck>([33]) -> ([33]))
-  statement 556: 1 (return([33], [44]))
-  statement 659: 1 (jump() { 665() })
-  statement 668: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([13]) 748([14]) })
-  statement 672: 1 (store_temp<felt252>([16]) -> ([16]))
-  statement 679: 1 (store_temp<u32>([20]) -> ([20]))
-  statement 685: 1 (store_temp<u32>([27]) -> ([27]))
-  statement 690: 1 (branch_align() -> ())
-  statement 696: 1 (store_temp<RangeCheck>([33]) -> ([33]))
-  statement 698: 1 (return([33], [40]))
+  statement 60: 1 (store_temp<RangeCheck>([4]) -> ([4]))
+  statement 61: 1 (store_temp<GasBuiltin>([5]) -> ([5]))
+  statement 63: 1 (function_call<user@core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>([4], [5], [3]) -> ([8], [9], [10]))
+  statement 64: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([10]) { fallthrough([11]) 132([12]) })
+  statement 67: 1 (enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>([14]) { fallthrough([15]) 117([16]) })
+  statement 90: 1 (store_temp<BuiltinCosts>([27]) -> ([27]))
+  statement 93: 1 (array_new<felt252>() -> ([32]))
+  statement 99: 1 (store_temp<RangeCheck>([28]) -> ([28]))
+  statement 100: 1 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 101: 1 (store_temp<System>([2]) -> ([2]))
+  statement 103: 1 (return([28], [29], [2], [37]))
+  statement 281: 1 (jump() { 287() })
+  statement 289: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([9]) { fallthrough([13]) 301([14]) })
+  statement 292: 1 (array_new<core::starknet::account::Call>() -> ([16]))
+  statement 294: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 295: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
+  statement 298: 1 (store_temp<felt252>([17]) -> ([17]))
+  statement 299: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([0], [1], [12], [16], [17]) -> ([18], [19], [20]))
+  statement 300: 1 (return([18], [19], [20]))
+  statement 408: 1 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 409: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
+  statement 411: 1 (return([6], [7], [14]))
+  statement 414: 1 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 416: 1 (function_call<user@core::starknet::account::CallSerde::deserialize>([6], [2]) -> ([15], [16]))
+  statement 417: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>([16]) { fallthrough([17]) 442([18]) })
+  statement 420: 1 (enum_match<core::option::Option::<core::starknet::account::Call>>([20]) { fallthrough([21]) 432([22]) })
+  statement 425: 1 (store_temp<RangeCheck>([15]) -> ([15]))
+  statement 426: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
+  statement 429: 1 (store_temp<felt252>([25]) -> ([25]))
+  statement 430: 1 (function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>([15], [7], [19], [23], [25]) -> ([26], [27], [28]))
+  statement 431: 1 (return([26], [27], [28]))
+  statement 531: 1 (jump() { 537() })
+  statement 540: 1 (enum_match<core::option::Option::<core::felt252>>([10]) { fallthrough([15]) 606([16]) })
+  statement 545: 1 (store_temp<RangeCheck>([17]) -> ([17]))
+  statement 553: 1 (jump() { 559() })
+  statement 561: 1 (enum_match<core::option::Option::<core::felt252>>([27]) { fallthrough([31]) 594([32]) })
+  statement 563: 1 (store_temp<RangeCheck>([17]) -> ([17]))
+  statement 565: 1 (function_call<user@core::array::SpanFelt252Serde::deserialize>([17], [30]) -> ([33], [34]))
+  statement 566: 1 (enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>([34]) { fallthrough([35]) 587([36]) })
+  statement 569: 1 (enum_match<core::option::Option::<core::array::Span::<core::felt252>>>([38]) { fallthrough([39]) 578([40]) })
+  statement 575: 1 (store_temp<RangeCheck>([33]) -> ([33]))
+  statement 577: 1 (return([33], [44]))
+  statement 622: 1 (jump() { 628() })
+  statement 631: 1 (enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) { fallthrough([13]) 711([14]) })
+  statement 635: 1 (store_temp<felt252>([16]) -> ([16]))
+  statement 642: 1 (store_temp<u32>([20]) -> ([20]))
+  statement 648: 1 (store_temp<u32>([27]) -> ([27]))
+  statement 653: 1 (branch_align() -> ())
+  statement 659: 1 (store_temp<RangeCheck>([33]) -> ([33]))
+  statement 661: 1 (return([33], [40]))
 Weight by concrete libfunc:
-  libfunc store_temp<core::array::Span::<core::felt252>>: 16
-  libfunc store_temp<RangeCheck>: 15
-  libfunc store_temp<Snapshot<Array<felt252>>>: 12
+  libfunc store_temp<core::array::Span::<core::felt252>>: 20
+  libfunc store_temp<RangeCheck>: 14
   libfunc array_snapshot_pop_front<felt252>: 11
   libfunc array_slice<felt252>: 10
+  libfunc store_temp<Snapshot<Array<felt252>>>: 10
   libfunc store_temp<felt252>: 10
   libfunc withdraw_gas_all: 9
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>: 8
@@ -595,15 +599,14 @@ Weight by concrete libfunc:
   libfunc get_builtin_costs: 6
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>: 6
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>: 6
-  libfunc jump: 5
   libfunc array_append<core::starknet::account::Call>: 4
+  libfunc jump: 4
   libfunc store_temp<Array<core::starknet::account::Call>>: 4
   libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>: 4
   libfunc store_temp<core::option::Option::<core::felt252>>: 4
   libfunc u32_try_from_felt252: 4
   libfunc store_temp<BuiltinCosts>: 3
   libfunc store_temp<System>: 3
-  libfunc store_temp<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>: 3
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 3
   libfunc u32_overflowing_sub: 3
@@ -623,51 +626,54 @@ Weight by concrete libfunc:
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Span::<core::felt252>>)>>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 1
+  libfunc function_call<user@core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>: 1
   libfunc function_call<user@core::array::SpanFelt252Serde::deserialize>: 1
   libfunc function_call<user@core::starknet::account::CallSerde::deserialize>: 1
   libfunc function_call<user@test::test_contract::__wrapper____validate__>: 1
-  return: 6
+  return: 7
 Weight by generic libfunc:
-  libfunc store_temp: 109
+  libfunc store_temp: 107
   libfunc array_append: 11
   libfunc array_snapshot_pop_front: 11
   libfunc enum_match: 11
   libfunc array_slice: 10
   libfunc withdraw_gas_all: 9
   libfunc contract_address_try_from_felt252: 7
+  libfunc function_call: 6
   libfunc get_builtin_costs: 6
-  libfunc function_call: 5
-  libfunc jump: 5
+  libfunc jump: 4
   libfunc u32_try_from_felt252: 4
   libfunc array_new: 3
   libfunc u32_overflowing_sub: 3
   libfunc withdraw_gas: 3
   libfunc felt252_is_zero: 2
   libfunc branch_align: 1
-  return: 6
+  return: 7
 Weight by user function (inc. generated):
-  function test::test_contract::__wrapper____validate__: 48
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 44
   function core::starknet::account::CallSerde::deserialize: 44
   function core::array::SpanFelt252Serde::deserialize: 41
   function test::validate_call: 29
+  function test::test_contract::__wrapper____validate__: 27
+  function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by original user function (exc. generated):
-  function test::test_contract::__wrapper____validate__: 48
   function core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 44
   function core::starknet::account::CallSerde::deserialize: 44
   function core::array::SpanFelt252Serde::deserialize: 41
   function test::validate_call: 29
+  function test::test_contract::__wrapper____validate__: 27
+  function core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 20
 Weight by Cairo function:
   function array.cairo::deserialize_array_helper: 36
-  function contract::__wrapper____validate__: 25
-  function array.cairo::SpanImpl::pop_front: 19
+  function contract::__wrapper____validate__: 22
+  function array.cairo::SpanImpl::pop_front: 20
   function impls::CallSerde::deserialize: 19
   function array.cairo::ArrayImpl::append: 18
   function lib.cairo::Felt252Serde::deserialize: 15
   function lib.cairo::validate_call: 14
   function array.cairo::SpanImpl::slice: 12
   function contract_address.cairo::ContractAddressSerde::deserialize: 10
-  function array.cairo::ArraySerde::deserialize: 8
+  function array.cairo::ArraySerde::deserialize: 9
   function array.cairo::SpanFelt252Serde::deserialize: 8
   function integer.cairo::U32Sub::sub: 6
   function integer.cairo::Felt252TryIntoU32::try_into: 5
@@ -676,19 +682,21 @@ Weight by Cairo function:
   function array.cairo::SpanImpl::is_empty: 3
   function option.cairo::OptionTraitImpl::expect: 1
 Weight by Sierra stack trace:
-  test::validate_call: 206
-  test::validate_call -> test::test_contract::__wrapper____validate__: 177
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
+  test::validate_call: 205
+  test::validate_call -> test::test_contract::__wrapper____validate__: 176
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 149
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
 Weight by Cairo stack trace:
-  test::validate_call: 206
-  test::validate_call -> test::test_contract::__wrapper____validate__: 177
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
-  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
+  test::validate_call: 205
+  test::validate_call -> test::test_contract::__wrapper____validate__: 176
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize: 149
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 129
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize: 85
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::starknet::account::CallSerde::deserialize -> core::array::SpanFelt252Serde::deserialize: 41
+  test::validate_call -> test::test_contract::__wrapper____validate__ -> core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop> -> core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>: 17
 
 //! > ==========================================================================
 
@@ -912,36 +920,36 @@ erc20_transfer
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 681: 20 (storage_base_address_from_felt252([0], [9]) -> ([10], [11]))
-  statement 689: 14 (storage_read_syscall([1], [3], [15], [13]) { fallthrough([16], [17], [18]) 759([19], [20], [21]) })
-  statement 701: 14 (storage_read_syscall([16], [17], [14], [28]) { fallthrough([29], [30], [31]) 730([32], [33], [34]) })
-  statement 404: 10 (storage_base_address_from_felt252([44], [52]) -> ([53], [54]))
-  statement 448: 10 (storage_base_address_from_felt252([87], [95]) -> ([96], [97]))
-  statement 487: 9 (emit_event_syscall([113], [114], [130], [131]) { fallthrough([132], [133]) 499([134], [135], [136]) })
-  statement 414: 8 (storage_write_syscall([36], [38], [61], [59], [57]) { fallthrough([62], [63]) 609([64], [65], [66]) })
-  statement 422: 8 (storage_write_syscall([62], [63], [60], [69], [67]) { fallthrough([70], [71]) 595([72], [73], [74]) })
-  statement 458: 8 (storage_write_syscall([79], [81], [104], [102], [100]) { fallthrough([105], [106]) 529([107], [108], [109]) })
-  statement 466: 8 (storage_write_syscall([105], [106], [103], [112], [110]) { fallthrough([113], [114]) 515([115], [116], [117]) })
+  statement 687: 20 (storage_base_address_from_felt252([0], [9]) -> ([10], [11]))
+  statement 695: 14 (storage_read_syscall([1], [3], [15], [13]) { fallthrough([16], [17], [18]) 765([19], [20], [21]) })
+  statement 707: 14 (storage_read_syscall([16], [17], [14], [28]) { fallthrough([29], [30], [31]) 736([32], [33], [34]) })
+  statement 406: 10 (storage_base_address_from_felt252([44], [54]) -> ([55], [56]))
+  statement 452: 10 (storage_base_address_from_felt252([89], [99]) -> ([100], [101]))
+  statement 491: 9 (emit_event_syscall([117], [118], [134], [135]) { fallthrough([136], [137]) 503([138], [139], [140]) })
+  statement 416: 8 (storage_write_syscall([36], [38], [63], [61], [59]) { fallthrough([64], [65]) 614([66], [67], [68]) })
+  statement 424: 8 (storage_write_syscall([64], [65], [62], [71], [69]) { fallthrough([72], [73]) 600([74], [75], [76]) })
+  statement 462: 8 (storage_write_syscall([81], [83], [108], [106], [104]) { fallthrough([109], [110]) 533([111], [112], [113]) })
+  statement 470: 8 (storage_write_syscall([109], [110], [107], [116], [114]) { fallthrough([117], [118]) 519([119], [120], [121]) })
   statement 80: 7 (contract_address_try_from_felt252([5], [20]) { fallthrough([22], [23]) 216([24]) })
   statement 114: 6 (withdraw_gas_all([26], [6], [41]) { fallthrough([42], [43]) 182([44], [45]) })
-  statement 715: 6 (store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([42]) -> ([42]))
+  statement 721: 6 (store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([42]) -> ([42]))
   statement 117: 5 (get_execution_info_v2_syscall([43], [3]) { fallthrough([46], [47], [48]) 165([49], [50], [51]) })
-  statement 474: 5 (store_temp<test::erc_20::Event>([123]) -> ([123]))
-  statement 679: 4 (pedersen([2], [7], [6]) -> ([8], [9]))
-  statement 694: 4 (u128s_from_felt252([10], [18]) { fallthrough([22], [23]) 737([24], [25], [26]) })
-  statement 706: 4 (u128s_from_felt252([22], [31]) { fallthrough([35], [36]) 717([37], [38], [39]) })
+  statement 478: 5 (store_temp<test::erc_20::Event>([127]) -> ([127]))
+  statement 685: 4 (pedersen([2], [7], [6]) -> ([8], [9]))
+  statement 700: 4 (u128s_from_felt252([10], [18]) { fallthrough([22], [23]) 743([24], [25], [26]) })
+  statement 712: 4 (u128s_from_felt252([22], [31]) { fallthrough([35], [36]) 723([37], [38], [39]) })
   statement 41: 3 (store_temp<core::panics::PanicResult::<((),)>>([31]) -> ([31]))
   statement 60: 3 (withdraw_gas([1], [2]) { fallthrough([5], [6]) 238([7], [8]) })
   statement 89: 3 (array_snapshot_pop_front<felt252>([31]) { fallthrough([32], [33]) 109([34]) })
   statement 154: 3 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([77]) -> ([77]))
   statement 301: 3 (store_temp<core::option::Option::<core::integer::u256>>([41]) -> ([41]))
-  statement 497: 3 (store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([140]) -> ([140]))
-  statement 777: 3 (u128_overflowing_sub([0], [4], [6]) { fallthrough([7], [8]) 785([9], [10]) })
-  statement 791: 3 (u128_overflowing_sub([13], [3], [5]) { fallthrough([18], [19]) 798([20], [21]) })
-  statement 822: 3 (store_temp<core::option::Option::<core::integer::u256>>([36]) -> ([36]))
-  statement 835: 3 (u128_overflowing_add([0], [4], [6]) { fallthrough([7], [8]) 843([9], [10]) })
-  statement 849: 3 (u128_overflowing_add([13], [3], [5]) { fallthrough([18], [19]) 856([20], [21]) })
-  statement 880: 3 (store_temp<core::option::Option::<core::integer::u256>>([36]) -> ([36]))
+  statement 501: 3 (store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([144]) -> ([144]))
+  statement 783: 3 (u128_overflowing_sub([0], [4], [6]) { fallthrough([7], [8]) 791([9], [10]) })
+  statement 797: 3 (u128_overflowing_sub([13], [3], [5]) { fallthrough([18], [19]) 804([20], [21]) })
+  statement 802: 3 (store_temp<Tuple<core::integer::u256, core::bool>>([23]) -> ([23]))
+  statement 825: 3 (u128_overflowing_add([0], [4], [6]) { fallthrough([7], [8]) 833([9], [10]) })
+  statement 839: 3 (u128_overflowing_add([13], [3], [5]) { fallthrough([18], [19]) 846([20], [21]) })
+  statement 844: 3 (store_temp<Tuple<core::integer::u256, core::bool>>([23]) -> ([23]))
   statement 9: 2 (store_temp<core::array::Span::<core::felt252>>([10]) -> ([10]))
   statement 29: 2 (store_temp<core::array::Span::<core::felt252>>([21]) -> ([21]))
   statement 65: 2 (array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) 73([12]) })
@@ -963,36 +971,36 @@ Weight by sierra statement:
   statement 300: 2 (store_temp<core::array::Span::<core::felt252>>([30]) -> ([30]))
   statement 392: 2 (store_temp<core::integer::u256>([42]) -> ([42]))
   statement 394: 2 (store_temp<core::integer::u256>([43]) -> ([43]))
-  statement 402: 2 (pedersen([37], [50], [49]) -> ([51], [52]))
-  statement 436: 2 (store_temp<core::integer::u256>([85]) -> ([85]))
-  statement 438: 2 (store_temp<core::integer::u256>([86]) -> ([86]))
-  statement 446: 2 (pedersen([80], [93], [92]) -> ([94], [95]))
-  statement 475: 2 (store_temp<Array<felt252>>([118]) -> ([118]))
-  statement 476: 2 (store_temp<Array<felt252>>([119]) -> ([119]))
-  statement 485: 2 (store_temp<core::array::Span::<core::felt252>>([130]) -> ([130]))
-  statement 486: 2 (store_temp<core::array::Span::<core::felt252>>([131]) -> ([131]))
-  statement 678: 2 (store_temp<felt252>([7]) -> ([7]))
-  statement 680: 2 (store_temp<felt252>([9]) -> ([9]))
-  statement 686: 2 (store_temp<u32>([15]) -> ([15]))
-  statement 687: 2 (store_temp<Pedersen>([8]) -> ([8]))
-  statement 688: 2 (store_temp<RangeCheck>([10]) -> ([10]))
-  statement 691: 2 (store_temp<felt252>([18]) -> ([18]))
-  statement 692: 2 (store_temp<GasBuiltin>([16]) -> ([16]))
-  statement 693: 2 (store_temp<System>([17]) -> ([17]))
-  statement 698: 2 (store_temp<u32>([14]) -> ([14]))
-  statement 699: 2 (store_temp<StorageAddress>([28]) -> ([28]))
-  statement 700: 2 (store_temp<RangeCheck>([22]) -> ([22]))
-  statement 703: 2 (store_temp<felt252>([31]) -> ([31]))
-  statement 704: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
-  statement 705: 2 (store_temp<System>([30]) -> ([30]))
-  statement 707: 2 (branch_align() -> ())
-  statement 711: 2 (store_temp<RangeCheck>([35]) -> ([35]))
-  statement 712: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
-  statement 713: 2 (store_temp<Pedersen>([8]) -> ([8]))
-  statement 714: 2 (store_temp<System>([30]) -> ([30]))
-  statement 716: 2 (return([35], [29], [8], [30], [42]))
-  statement 924: 2 (store_temp<Array<felt252>>([6]) -> ([6]))
-  statement 925: 2 (store_temp<Array<felt252>>([34]) -> ([34]))
+  statement 404: 2 (pedersen([37], [52], [51]) -> ([53], [54]))
+  statement 438: 2 (store_temp<core::integer::u256>([87]) -> ([87]))
+  statement 440: 2 (store_temp<core::integer::u256>([88]) -> ([88]))
+  statement 450: 2 (pedersen([82], [97], [96]) -> ([98], [99]))
+  statement 479: 2 (store_temp<Array<felt252>>([122]) -> ([122]))
+  statement 480: 2 (store_temp<Array<felt252>>([123]) -> ([123]))
+  statement 489: 2 (store_temp<core::array::Span::<core::felt252>>([134]) -> ([134]))
+  statement 490: 2 (store_temp<core::array::Span::<core::felt252>>([135]) -> ([135]))
+  statement 684: 2 (store_temp<felt252>([7]) -> ([7]))
+  statement 686: 2 (store_temp<felt252>([9]) -> ([9]))
+  statement 692: 2 (store_temp<u32>([15]) -> ([15]))
+  statement 693: 2 (store_temp<Pedersen>([8]) -> ([8]))
+  statement 694: 2 (store_temp<RangeCheck>([10]) -> ([10]))
+  statement 697: 2 (store_temp<felt252>([18]) -> ([18]))
+  statement 698: 2 (store_temp<GasBuiltin>([16]) -> ([16]))
+  statement 699: 2 (store_temp<System>([17]) -> ([17]))
+  statement 704: 2 (store_temp<u32>([14]) -> ([14]))
+  statement 705: 2 (store_temp<StorageAddress>([28]) -> ([28]))
+  statement 706: 2 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 709: 2 (store_temp<felt252>([31]) -> ([31]))
+  statement 710: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 711: 2 (store_temp<System>([30]) -> ([30]))
+  statement 713: 2 (branch_align() -> ())
+  statement 717: 2 (store_temp<RangeCheck>([35]) -> ([35]))
+  statement 718: 2 (store_temp<GasBuiltin>([29]) -> ([29]))
+  statement 719: 2 (store_temp<Pedersen>([8]) -> ([8]))
+  statement 720: 2 (store_temp<System>([30]) -> ([30]))
+  statement 722: 2 (return([35], [29], [8], [30], [42]))
+  statement 898: 2 (store_temp<Array<felt252>>([6]) -> ([6]))
+  statement 899: 2 (store_temp<Array<felt252>>([34]) -> ([34]))
   statement 2: 1 (array_new<felt252>() -> ([5]))
   statement 4: 1 (store_temp<felt252>([6]) -> ([6]))
   statement 5: 1 (array_append<felt252>([5], [6]) -> ([7]))
@@ -1056,86 +1064,74 @@ Weight by sierra statement:
   statement 384: 1 (store_temp<System>([3]) -> ([3]))
   statement 386: 1 (store_temp<ContractAddress>([34]) -> ([34]))
   statement 387: 1 (function_call<user@test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read>([0], [1], [2], [3], [33], [34]) -> ([35], [36], [37], [38], [39]))
-  statement 388: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([39]) { fallthrough([40]) 658([41]) })
+  statement 388: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([39]) { fallthrough([40]) 664([41]) })
   statement 391: 1 (store_temp<RangeCheck>([35]) -> ([35]))
-  statement 395: 1 (function_call<user@core::integer::u256_checked_sub>([35], [42], [43]) -> ([44], [45]))
-  statement 396: 1 (enum_match<core::option::Option::<core::integer::u256>>([45]) { fallthrough([46]) 634([47]) })
-  statement 401: 1 (store_temp<felt252>([50]) -> ([50]))
+  statement 395: 1 (function_call<user@core::integer::u256_overflow_sub>([35], [42], [43]) -> ([44], [45]))
+  statement 397: 1 (enum_match<core::bool>([47]) { fallthrough([48]) 639([49]) })
   statement 403: 1 (store_temp<felt252>([52]) -> ([52]))
-  statement 411: 1 (store_temp<u32>([61]) -> ([61]))
-  statement 412: 1 (store_temp<Pedersen>([51]) -> ([51]))
-  statement 413: 1 (store_temp<RangeCheck>([53]) -> ([53]))
-  statement 419: 1 (store_temp<GasBuiltin>([62]) -> ([62]))
-  statement 420: 1 (store_temp<u32>([60]) -> ([60]))
-  statement 421: 1 (store_temp<StorageAddress>([69]) -> ([69]))
-  statement 425: 1 (store_temp<RangeCheck>([53]) -> ([53]))
-  statement 426: 1 (store_temp<GasBuiltin>([70]) -> ([70]))
-  statement 427: 1 (store_temp<Pedersen>([51]) -> ([51]))
-  statement 428: 1 (store_temp<System>([71]) -> ([71]))
-  statement 430: 1 (store_temp<ContractAddress>([77]) -> ([77]))
-  statement 431: 1 (function_call<user@test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read>([53], [70], [51], [71], [76], [77]) -> ([78], [79], [80], [81], [82]))
-  statement 432: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([82]) { fallthrough([83]) 578([84]) })
-  statement 435: 1 (store_temp<RangeCheck>([78]) -> ([78]))
-  statement 439: 1 (function_call<user@core::integer::u256_checked_add>([78], [85], [86]) -> ([87], [88]))
-  statement 440: 1 (enum_match<core::option::Option::<core::integer::u256>>([88]) { fallthrough([89]) 554([90]) })
-  statement 445: 1 (store_temp<felt252>([93]) -> ([93]))
-  statement 447: 1 (store_temp<felt252>([95]) -> ([95]))
-  statement 455: 1 (store_temp<u32>([104]) -> ([104]))
-  statement 456: 1 (store_temp<Pedersen>([94]) -> ([94]))
-  statement 457: 1 (store_temp<RangeCheck>([96]) -> ([96]))
-  statement 463: 1 (store_temp<GasBuiltin>([105]) -> ([105]))
-  statement 464: 1 (store_temp<u32>([103]) -> ([103]))
-  statement 465: 1 (store_temp<StorageAddress>([112]) -> ([112]))
-  statement 468: 1 (array_new<felt252>() -> ([118]))
-  statement 469: 1 (array_new<felt252>() -> ([119]))
-  statement 477: 1 (function_call<user@test::erc_20::EventIsEvent::append_keys_and_data>([123], [118], [119]) -> ([124], [125]))
-  statement 484: 1 (store_temp<GasBuiltin>([113]) -> ([113]))
-  statement 493: 1 (store_temp<RangeCheck>([96]) -> ([96]))
-  statement 494: 1 (store_temp<GasBuiltin>([132]) -> ([132]))
-  statement 495: 1 (store_temp<Pedersen>([94]) -> ([94]))
-  statement 496: 1 (store_temp<System>([133]) -> ([133]))
-  statement 498: 1 (return([96], [132], [94], [133], [140]))
-  statement 778: 1 (branch_align() -> ())
-  statement 781: 1 (store_temp<RangeCheck>([7]) -> ([13]))
-  statement 782: 1 (store_temp<u128>([8]) -> ([14]))
-  statement 783: 1 (store_temp<core::bool>([12]) -> ([15]))
-  statement 784: 1 (jump() { 791() })
-  statement 792: 1 (branch_align() -> ())
-  statement 793: 1 (store_temp<RangeCheck>([18]) -> ([22]))
-  statement 794: 1 (store_temp<u128>([19]) -> ([23]))
-  statement 795: 1 (store_temp<u128>([14]) -> ([24]))
-  statement 796: 1 (store_temp<core::bool>([15]) -> ([25]))
-  statement 797: 1 (jump() { 816() })
-  statement 816: 1 (enum_match<core::bool>([25]) { fallthrough([33]) 824([34]) })
-  statement 821: 1 (store_temp<RangeCheck>([22]) -> ([22]))
-  statement 823: 1 (return([22], [36]))
-  statement 836: 1 (branch_align() -> ())
-  statement 839: 1 (store_temp<RangeCheck>([7]) -> ([13]))
-  statement 840: 1 (store_temp<u128>([8]) -> ([14]))
-  statement 841: 1 (store_temp<core::bool>([12]) -> ([15]))
-  statement 842: 1 (jump() { 849() })
-  statement 850: 1 (branch_align() -> ())
-  statement 851: 1 (store_temp<RangeCheck>([18]) -> ([22]))
-  statement 852: 1 (store_temp<u128>([19]) -> ([23]))
-  statement 853: 1 (store_temp<u128>([14]) -> ([24]))
-  statement 854: 1 (store_temp<core::bool>([15]) -> ([25]))
-  statement 855: 1 (jump() { 874() })
-  statement 874: 1 (enum_match<core::bool>([25]) { fallthrough([33]) 882([34]) })
-  statement 879: 1 (store_temp<RangeCheck>([22]) -> ([22]))
-  statement 881: 1 (return([22], [36]))
-  statement 891: 1 (enum_match<test::erc_20::Event>([0]) { fallthrough([3]) 927([4]) })
-  statement 894: 1 (store_temp<felt252>([5]) -> ([5]))
-  statement 895: 1 (array_append<felt252>([1], [5]) -> ([6]))
-  statement 902: 1 (array_append<felt252>([2], [12]) -> ([13]))
-  statement 909: 1 (array_append<felt252>([13], [19]) -> ([20]))
-  statement 918: 1 (array_append<felt252>([20], [28]) -> ([29]))
-  statement 923: 1 (array_append<felt252>([29], [33]) -> ([34]))
-  statement 926: 1 (return([6], [34]))
+  statement 405: 1 (store_temp<felt252>([54]) -> ([54]))
+  statement 413: 1 (store_temp<u32>([63]) -> ([63]))
+  statement 414: 1 (store_temp<Pedersen>([53]) -> ([53]))
+  statement 415: 1 (store_temp<RangeCheck>([55]) -> ([55]))
+  statement 421: 1 (store_temp<GasBuiltin>([64]) -> ([64]))
+  statement 422: 1 (store_temp<u32>([62]) -> ([62]))
+  statement 423: 1 (store_temp<StorageAddress>([71]) -> ([71]))
+  statement 427: 1 (store_temp<RangeCheck>([55]) -> ([55]))
+  statement 428: 1 (store_temp<GasBuiltin>([72]) -> ([72]))
+  statement 429: 1 (store_temp<Pedersen>([53]) -> ([53]))
+  statement 430: 1 (store_temp<System>([73]) -> ([73]))
+  statement 432: 1 (store_temp<ContractAddress>([79]) -> ([79]))
+  statement 433: 1 (function_call<user@test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read>([55], [72], [53], [73], [78], [79]) -> ([80], [81], [82], [83], [84]))
+  statement 434: 1 (enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([84]) { fallthrough([85]) 583([86]) })
+  statement 437: 1 (store_temp<RangeCheck>([80]) -> ([80]))
+  statement 441: 1 (function_call<user@core::integer::u256_overflowing_add>([80], [87], [88]) -> ([89], [90]))
+  statement 443: 1 (enum_match<core::bool>([92]) { fallthrough([93]) 558([94]) })
+  statement 449: 1 (store_temp<felt252>([97]) -> ([97]))
+  statement 451: 1 (store_temp<felt252>([99]) -> ([99]))
+  statement 459: 1 (store_temp<u32>([108]) -> ([108]))
+  statement 460: 1 (store_temp<Pedersen>([98]) -> ([98]))
+  statement 461: 1 (store_temp<RangeCheck>([100]) -> ([100]))
+  statement 467: 1 (store_temp<GasBuiltin>([109]) -> ([109]))
+  statement 468: 1 (store_temp<u32>([107]) -> ([107]))
+  statement 469: 1 (store_temp<StorageAddress>([116]) -> ([116]))
+  statement 472: 1 (array_new<felt252>() -> ([122]))
+  statement 473: 1 (array_new<felt252>() -> ([123]))
+  statement 481: 1 (function_call<user@test::erc_20::EventIsEvent::append_keys_and_data>([127], [122], [123]) -> ([128], [129]))
+  statement 488: 1 (store_temp<GasBuiltin>([117]) -> ([117]))
+  statement 497: 1 (store_temp<RangeCheck>([100]) -> ([100]))
+  statement 498: 1 (store_temp<GasBuiltin>([136]) -> ([136]))
+  statement 499: 1 (store_temp<Pedersen>([98]) -> ([98]))
+  statement 500: 1 (store_temp<System>([137]) -> ([137]))
+  statement 502: 1 (return([100], [136], [98], [137], [144]))
+  statement 784: 1 (branch_align() -> ())
+  statement 787: 1 (store_temp<RangeCheck>([7]) -> ([13]))
+  statement 788: 1 (store_temp<u128>([8]) -> ([14]))
+  statement 789: 1 (store_temp<core::bool>([12]) -> ([15]))
+  statement 790: 1 (jump() { 797() })
+  statement 798: 1 (branch_align() -> ())
+  statement 801: 1 (store_temp<RangeCheck>([18]) -> ([18]))
+  statement 803: 1 (return([18], [23]))
+  statement 826: 1 (branch_align() -> ())
+  statement 829: 1 (store_temp<RangeCheck>([7]) -> ([13]))
+  statement 830: 1 (store_temp<u128>([8]) -> ([14]))
+  statement 831: 1 (store_temp<core::bool>([12]) -> ([15]))
+  statement 832: 1 (jump() { 839() })
+  statement 840: 1 (branch_align() -> ())
+  statement 843: 1 (store_temp<RangeCheck>([18]) -> ([18]))
+  statement 845: 1 (return([18], [23]))
+  statement 865: 1 (enum_match<test::erc_20::Event>([0]) { fallthrough([3]) 901([4]) })
+  statement 868: 1 (store_temp<felt252>([5]) -> ([5]))
+  statement 869: 1 (array_append<felt252>([1], [5]) -> ([6]))
+  statement 876: 1 (array_append<felt252>([2], [12]) -> ([13]))
+  statement 883: 1 (array_append<felt252>([13], [19]) -> ([20]))
+  statement 892: 1 (array_append<felt252>([20], [28]) -> ([29]))
+  statement 897: 1 (array_append<felt252>([29], [33]) -> ([34]))
+  statement 900: 1 (return([6], [34]))
 Weight by concrete libfunc:
   libfunc storage_base_address_from_felt252: 40
   libfunc storage_write_syscall: 32
   libfunc storage_read_syscall: 28
-  libfunc store_temp<RangeCheck>: 28
+  libfunc store_temp<RangeCheck>: 26
   libfunc store_temp<felt252>: 19
   libfunc store_temp<GasBuiltin>: 16
   libfunc store_temp<core::array::Span::<core::felt252>>: 16
@@ -1146,27 +1142,25 @@ Weight by concrete libfunc:
   libfunc array_append<felt252>: 9
   libfunc array_snapshot_pop_front<felt252>: 9
   libfunc emit_event_syscall: 9
-  libfunc store_temp<core::option::Option::<core::integer::u256>>: 9
   libfunc pedersen: 8
   libfunc store_temp<Array<felt252>>: 8
   libfunc store_temp<u32>: 8
   libfunc branch_align: 7
   libfunc contract_address_try_from_felt252: 7
-  libfunc jump: 7
   libfunc store_temp<Snapshot<Array<felt252>>>: 6
+  libfunc store_temp<Tuple<core::integer::u256, core::bool>>: 6
   libfunc store_temp<core::panics::PanicResult::<(core::integer::u256,)>>: 6
-  libfunc store_temp<u128>: 6
   libfunc u128_overflowing_add: 6
   libfunc u128_overflowing_sub: 6
   libfunc withdraw_gas_all: 6
   libfunc array_new<felt252>: 5
   libfunc get_execution_info_v2_syscall: 5
+  libfunc jump: 5
   libfunc store_temp<test::erc_20::Event>: 5
   libfunc store_temp<ContractAddress>: 4
   libfunc store_temp<StorageAddress>: 4
-  libfunc store_temp<core::bool>: 4
   libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>: 4
-  libfunc enum_match<core::option::Option::<core::integer::u256>>: 3
+  libfunc store_temp<core::option::Option::<core::integer::u256>>: 3
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>: 3
@@ -1177,15 +1171,18 @@ Weight by concrete libfunc:
   libfunc felt252_is_zero: 2
   libfunc function_call<user@test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read>: 2
   libfunc get_builtin_costs: 2
+  libfunc store_temp<core::bool>: 2
   libfunc store_temp<core::option::Option::<core::felt252>>: 2
+  libfunc store_temp<u128>: 2
   libfunc cheatcode<10052436086942832998170947883001859293934451>: 1
   libfunc enum_match<core::option::Option::<core::felt252>>: 1
+  libfunc enum_match<core::option::Option::<core::integer::u256>>: 1
   libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>: 1
   libfunc enum_match<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>: 1
   libfunc enum_match<test::erc_20::Event>: 1
   libfunc function_call<user@core::integer::u256Serde::deserialize>: 1
-  libfunc function_call<user@core::integer::u256_checked_add>: 1
-  libfunc function_call<user@core::integer::u256_checked_sub>: 1
+  libfunc function_call<user@core::integer::u256_overflow_sub>: 1
+  libfunc function_call<user@core::integer::u256_overflowing_add>: 1
   libfunc function_call<user@test::erc_20::EventIsEvent::append_keys_and_data>: 1
   libfunc function_call<user@test::erc_20::StorageImpl::transfer_helper>: 1
   libfunc function_call<user@test::erc_20::__wrapper__IERC20Impl__transfer>: 1
@@ -1193,12 +1190,12 @@ Weight by concrete libfunc:
   libfunc store_temp<BuiltinCosts>: 1
   return: 9
 Weight by generic libfunc:
-  libfunc store_temp: 192
+  libfunc store_temp: 184
   libfunc storage_base_address_from_felt252: 40
   libfunc storage_write_syscall: 32
   libfunc storage_read_syscall: 28
-  libfunc enum_match: 13
   libfunc u128s_from_felt252: 12
+  libfunc enum_match: 11
   libfunc array_append: 9
   libfunc array_snapshot_pop_front: 9
   libfunc emit_event_syscall: 9
@@ -1206,12 +1203,12 @@ Weight by generic libfunc:
   libfunc pedersen: 8
   libfunc branch_align: 7
   libfunc contract_address_try_from_felt252: 7
-  libfunc jump: 7
   libfunc u128_overflowing_add: 6
   libfunc u128_overflowing_sub: 6
   libfunc withdraw_gas_all: 6
   libfunc array_new: 5
   libfunc get_execution_info_v2_syscall: 5
+  libfunc jump: 5
   libfunc withdraw_gas: 3
   libfunc felt252_is_zero: 2
   libfunc get_builtin_costs: 2
@@ -1223,8 +1220,8 @@ Weight by user function (inc. generated):
   function test::erc_20::__wrapper__IERC20Impl__transfer: 62
   function core::integer::u256Serde::deserialize: 35
   function test::erc20_transfer: 29
-  function core::integer::u256_checked_add: 23
-  function core::integer::u256_checked_sub: 23
+  function core::integer::u256_overflow_sub: 17
+  function core::integer::u256_overflowing_add: 17
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by original user function (exc. generated):
   function test::erc_20::StorageImpl::transfer_helper: 136
@@ -1232,57 +1229,56 @@ Weight by original user function (exc. generated):
   function test::erc_20::__wrapper__IERC20Impl__transfer: 62
   function core::integer::u256Serde::deserialize: 35
   function test::erc20_transfer: 29
-  function core::integer::u256_checked_add: 23
-  function core::integer::u256_checked_sub: 23
+  function core::integer::u256_overflow_sub: 17
+  function core::integer::u256_overflowing_add: 17
   function test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo function:
   function contract::__member_module_balances::InternalContractMemberStateImpl::address: 44
   function contract::ContractStateEventEmitter::emit: 32
   function integer.cairo::u128_try_from_felt252: 29
-  function contract::__wrapper__IERC20Impl__transfer: 25
+  function contract::__wrapper__IERC20Impl__transfer: 24
   function storage_access.cairo::StoreFelt252::write: 22
   function storage_access.cairo::StoreFelt252::write_at_offset: 22
   function array.cairo::SpanImpl::pop_front: 21
   function storage_access.cairo::StoreFelt252::read: 20
   function storage_access.cairo::StoreFelt252::read_at_offset: 20
-  function array.cairo::ArrayImpl::append: 19
   function integer.cairo::u256_overflow_sub: 17
   function integer.cairo::u256_overflowing_add: 17
   function lib.cairo::erc20_transfer: 16
   function starknet.cairo::SyscallResultTraitImpl::unwrap_syscall: 16
+  function array.cairo::ArrayImpl::append: 14
   function lib.cairo::erc_20::StorageImpl::transfer_helper: 14
   function pedersen.cairo::HashStateImpl::update: 12
-  function lib.cairo::erc_20::IERC20Impl::transfer: 9
+  function lib.cairo::erc_20::IERC20Impl::transfer: 10
   function contract_address.cairo::ContractAddressSerde::deserialize: 8
   function lib.cairo::Felt252Serde::deserialize: 8
   function impls::u256Serde::deserialize: 7
+  function integer.cairo::u256_checked_add: 7
+  function integer.cairo::u256_checked_sub: 7
   function info.cairo::get_execution_info: 6
-  function integer.cairo::U256Add::add: 6
-  function integer.cairo::U256Sub::sub: 6
-  function integer.cairo::u256_checked_add: 6
-  function integer.cairo::u256_checked_sub: 6
   function array.cairo::ArrayImpl::new: 5
+  function starknet_derive::TransferIsEvent::append_keys_and_data: 5
   function array.cairo::SpanImpl::is_empty: 3
-  function option.cairo::OptionTraitImpl::expect: 3
   function testing.cairo::set_caller_address: 3
   function lib.cairo::Felt252PartialEq::eq: 2
   function box.cairo::BoxImpl::unbox: 1
+  function option.cairo::OptionTraitImpl::expect: 1
   function starknet_derive::EventIsEvent::append_keys_and_data: 1
 Weight by Sierra stack trace:
-  test::erc20_transfer: 426
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 397
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 300
+  test::erc20_transfer: 414
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 385
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 288
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read: 106
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> core::integer::u256Serde::deserialize: 35
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_checked_sub: 23
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_checked_add: 23
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_overflow_sub: 17
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_overflowing_add: 17
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::EventIsEvent::append_keys_and_data: 12
 Weight by Cairo stack trace:
-  test::erc20_transfer: 426
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 397
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 300
+  test::erc20_transfer: 414
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer: 385
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper: 288
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::__member_module_balances::InternalContractMemberStateImpl::read: 106
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> core::integer::u256Serde::deserialize: 35
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_checked_sub: 23
-  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_checked_add: 23
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_overflow_sub: 17
+  test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> core::integer::u256_overflowing_add: 17
   test::erc20_transfer -> test::erc_20::__wrapper__IERC20Impl__transfer -> test::erc_20::StorageImpl::transfer_helper -> test::erc_20::EventIsEvent::append_keys_and_data: 12
