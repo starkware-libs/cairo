@@ -8,12 +8,14 @@ use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
 use itertools::Itertools;
+use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait,
+    concrete_panic_destruct_trait, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -21,6 +23,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
+use crate::items::constant::{value_as_const_value, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
@@ -38,8 +41,7 @@ pub enum TypeLongId {
     Coupon(FunctionId),
     FixedSizeArray {
         type_id: TypeId,
-        // TODO(Gil): Use `constant_id` instead.
-        size: usize,
+        size: ConstValueId,
     },
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
@@ -117,7 +119,7 @@ impl TypeLongId {
             TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
             TypeLongId::FixedSizeArray { type_id, size } => {
-                format!("[{}; {}]", type_id.format(db), size)
+                format!("[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
             }
         }
     }
@@ -417,17 +419,21 @@ pub fn extract_fixed_size_array_size(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     syntax: &ast::ExprFixedSizeArray,
-) -> Maybe<Option<usize>> {
+) -> Maybe<Option<ConstValueId>> {
     let syntax_db = db.upcast();
     match syntax.size(syntax_db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
             match size_clause.size(syntax_db) {
                 ast::Expr::Literal(size) => match size.numeric_value(syntax_db) {
-                    Some(size) => Ok(Some(size.try_into().unwrap())),
-                    None => Err(diagnostics
+                    Some(size) => {
+                        verify_fixed_array_size(diagnostics, &size, syntax)?;
+                        Ok(Some(db.intern_const_value(
+                            value_as_const_value(db, get_usize_ty(db), &size).unwrap(),
+                        )))
+                    }
+                    _ => Err(diagnostics
                         .report(&size_clause.size(syntax_db), FixedSizeArrayNonNumericSize)),
                 },
-                // TODO(Gil): Add support for constant expressions.
                 _ => {
                     Err(diagnostics
                         .report(&size_clause.size(syntax_db), FixedSizeArrayNonNumericSize))
@@ -437,6 +443,21 @@ pub fn extract_fixed_size_array_size(
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
     }
 }
+
+/// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
+pub fn verify_fixed_array_size(
+    diagnostics: &mut SemanticDiagnostics,
+    size: &BigInt,
+    syntax: &ast::ExprFixedSizeArray,
+) -> Maybe<()> {
+    const FIXED_SIZE_ARRAY_MAX_SIZE: usize = i16::MAX as usize;
+    if size > &FIXED_SIZE_ARRAY_MAX_SIZE.into() {
+        return Err(diagnostics
+            .report(syntax, FixedSizeArraySizeTooBig));
+    }
+    Ok(())
+}
+
 
 /// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
 pub fn generic_type_generic_params(
@@ -512,6 +533,9 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::Missing(_) => false,
         semantic::TypeLongId::Coupon(_) => false,
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
             db.single_value_type(type_id)? || size == 0
         }
     })
