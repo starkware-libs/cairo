@@ -1,8 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::items::enm::MatchArmSelector;
-use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
 use itertools::Itertools;
 
@@ -206,43 +203,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementConst {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        self.value.fmt(f, ctx)
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for ConstValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        match self {
-            ConstValue::Int(value) => write!(f, "{}u", value),
-            ConstValue::Struct(inner) => {
-                write!(f, "{{")?;
-                let mut inner = inner.iter().peekable();
-                while let Some((ty, value)) = inner.next() {
-                    write!(f, " ")?;
-                    value.fmt(f, ctx)?;
-                    write!(f, ": ")?;
-                    ty.fmt(f, ctx.db.elongate())?;
-                    if inner.peek().is_some() {
-                        write!(f, ",")?;
-                    } else {
-                        write!(f, " ")?;
-                    }
-                }
-                write!(f, "}}")
-            }
-            ConstValue::Enum(variant, inner) => {
-                variant.fmt(f, ctx)?;
-                write!(f, "(")?;
-                inner.fmt(f, ctx)?;
-                write!(f, ")")
-            }
-            ConstValue::NonZero(_, value) => value.fmt(f, ctx),
-            ConstValue::Boxed(_, value) => {
-                value.fmt(f, ctx)?;
-                write!(f, ".into_box()")
-            }
-            ConstValue::Missing => write!(f, "missing"),
-        }
+        self.value.fmt(f, ctx.db)
     }
 }
 
@@ -282,29 +243,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name = self.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
-        let variant_name = self.id.name(ctx.db.upcast());
-        write!(f, "{enum_name}::{variant_name}")
-    }
-}
-impl DebugWithDb<LoweredFormatter<'_>> for MatchArmSelector {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        match self {
-            MatchArmSelector::VariantId(variant_id) => {
-                write!(f, "{:?}", variant_id.debug(ctx))
-            }
-            MatchArmSelector::Value(s) => {
-                write!(f, "{:?}", s.value)
-            }
-        }
-    }
-}
-
 impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "    {:?}", self.arm_selector.debug(ctx))?;
+        write!(f, "    {:?}", self.arm_selector.debug(ctx.db))?;
 
         if !self.var_ids.is_empty() {
             write!(f, "(")?;

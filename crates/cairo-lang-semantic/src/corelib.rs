@@ -15,6 +15,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
+use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
@@ -22,7 +23,6 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
 use crate::items::us::SemanticUseEx;
-use crate::literals::LiteralLongId;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId};
 use crate::{
@@ -70,13 +70,13 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
-    let lower_id = db.intern_literal(LiteralLongId { value: min });
-    let upper_id = db.intern_literal(LiteralLongId { value: max });
+    let lower_id = db.intern_const_value(ConstValue::Int(min));
+    let upper_id = db.intern_const_value(ConstValue::Int(max));
     try_get_ty_by_name(
         db,
         internal,
         "BoundedInt".into(),
-        vec![GenericArgumentId::Literal(lower_id), GenericArgumentId::Literal(upper_id)],
+        vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
     )
     .expect("could not find")
 }

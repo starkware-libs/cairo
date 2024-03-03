@@ -34,7 +34,7 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252) <- 2u
+  (v3: core::felt252) <- 2
   (v30: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Match(match core::felt252_is_zero(v30) {
@@ -52,13 +52,13 @@ End:
 
 blk2:
 Statements:
-  (v28: core::felt252) <- 1u
+  (v28: core::felt252) <- 1
 End:
   Return(v28)
 
 blk3:
 Statements:
-  (v29: core::felt252) <- 0u
+  (v29: core::felt252) <- 0
 End:
   Return(v29)
 

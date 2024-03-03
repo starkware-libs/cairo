@@ -31,8 +31,8 @@ struct MyStruct {}
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
-  (v2: core::felt252) <- 2u
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- 2
   (v4: test::MyStruct, v3: core::felt252) <- test::bar(v1, v2, v0)
   (v5: core::felt252) <- core::felt252_add(v3, v3)
   (v7: test::MyStruct, v6: core::felt252) <- test::bar(v3, v5, v4)
@@ -108,12 +108,12 @@ return([9])
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 7u
-  (v1: core::felt252) <- 7u
+  (v0: core::felt252) <- 7
+  (v1: core::felt252) <- 7
   (v2: core::felt252) <- test::bar(v0, v1)
-  (v3: core::felt252) <- 7u
+  (v3: core::felt252) <- 7
   (v4: core::felt252) <- test::bar(v0, v3)
-  (v5: core::felt252) <- 7u
+  (v5: core::felt252) <- 7
   (v6: core::felt252) <- test::bar(v0, v5)
   (v7: core::felt252) <- test::bar2(v4, v6)
 End:
@@ -160,8 +160,8 @@ return([4])
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 3u
-  (v1: core::felt252) <- 6u
+  (v0: core::felt252) <- 3
+  (v1: core::felt252) <- 6
   (v2: core::felt252) <- test::felt252_add(v0, v1)
   (v3: (core::felt252,)) <- struct_construct(v2)
   (v4: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)

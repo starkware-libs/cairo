@@ -13,13 +13,13 @@ use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
 
+use super::constant::ConstValueId;
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
-use crate::literals::LiteralId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
@@ -32,7 +32,7 @@ use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericArgumentId {
     Type(TypeId),
-    Literal(LiteralId),
+    Constant(ConstValueId),
     Impl(ImplId), // TODO(spapini): impls and constants as generic values.
     NegImpl,
 }
@@ -40,7 +40,7 @@ impl GenericArgumentId {
     pub fn kind(&self) -> GenericKind {
         match self {
             GenericArgumentId::Type(_) => GenericKind::Type,
-            GenericArgumentId::Literal(_) => GenericKind::Const,
+            GenericArgumentId::Constant(_) => GenericKind::Const,
             GenericArgumentId::Impl(_) => GenericKind::Impl,
             GenericArgumentId::NegImpl => GenericKind::NegImpl,
         }
@@ -48,7 +48,7 @@ impl GenericArgumentId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         match self {
             GenericArgumentId::Type(ty) => ty.format(db),
-            GenericArgumentId::Literal(lit) => lit.format(db),
+            GenericArgumentId::Constant(value) => value.format(db),
             GenericArgumentId::Impl(imp) => imp.format(db),
             GenericArgumentId::NegImpl => "_".into(),
         }
@@ -57,7 +57,7 @@ impl GenericArgumentId {
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<GenericArgumentHead> {
         Some(match self {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
-            GenericArgumentId::Literal(_) => GenericArgumentHead::Const,
+            GenericArgumentId::Constant(_) => GenericArgumentHead::Const,
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
             GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
@@ -66,7 +66,7 @@ impl GenericArgumentId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Literal(_) => true,
+            GenericArgumentId::Constant(_) => true,
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
             GenericArgumentId::NegImpl => true,
         }
@@ -80,7 +80,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     ) -> std::fmt::Result {
         match self {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
-            GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::Constant(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::NegImpl => write!(f, "_"),
         }

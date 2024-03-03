@@ -86,12 +86,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: core::bool,
-                                id: VariantId(core::True),
-                                ty: (),
-                                idx: 1,
-                            },
+                            variant: bool::True,
                             inner_pattern: None,
                             ty: core::bool,
                         },
@@ -108,12 +103,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: core::bool,
-                                id: VariantId(core::False),
-                                ty: (),
-                                idx: 0,
-                            },
+                            variant: bool::False,
                             inner_pattern: None,
                             ty: core::bool,
                         },
@@ -167,24 +157,14 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::A),
-                                ty: (),
-                                idx: 0,
-                            },
+                            variant: A::A,
                             inner_pattern: None,
                             ty: test::A,
                         },
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::B),
-                                ty: (),
-                                idx: 1,
-                            },
+                            variant: A::B,
                             inner_pattern: None,
                             ty: test::A,
                         },
@@ -201,12 +181,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::A,
-                                id: VariantId(test::C),
-                                ty: (),
-                                idx: 2,
-                            },
+                            variant: A::C,
                             inner_pattern: None,
                             ty: test::A,
                         },
@@ -266,12 +241,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -282,12 +252,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::felt252),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -317,12 +282,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -348,12 +308,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -468,12 +423,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::A),
-                                ty: core::felt252,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -484,12 +434,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::B),
-                                ty: (core::felt252, core::felt252),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -535,12 +480,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u8, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -566,12 +506,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u8>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -700,12 +635,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -716,12 +646,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::integer::u8),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -751,12 +676,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::C),
-                                ty: (core::integer::u32, core::integer::u8, core::integer::u8),
-                                idx: 2,
-                            },
+                            variant: MyEnum::C,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
@@ -784,12 +704,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum::<core::integer::u32>,
-                                id: VariantId(test::D),
-                                ty: test::P,
-                                idx: 3,
-                            },
+                            variant: MyEnum::D,
                             inner_pattern: Some(
                                 Struct(
                                     PatternStruct {
@@ -886,12 +801,7 @@ Match(
                 patterns: [
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum,
-                                id: VariantId(test::A),
-                                ty: core::integer::u8,
-                                idx: 0,
-                            },
+                            variant: MyEnum::A,
                             inner_pattern: Some(
                                 Variable(
                                     x,
@@ -902,12 +812,7 @@ Match(
                     ),
                     EnumVariant(
                         PatternEnumVariant {
-                            variant: ConcreteVariant {
-                                concrete_enum_id: test::MyEnum,
-                                id: VariantId(test::B),
-                                ty: (core::integer::u8, core::integer::u8),
-                                idx: 1,
-                            },
+                            variant: MyEnum::B,
                             inner_pattern: Some(
                                 Tuple(
                                     PatternTuple {
