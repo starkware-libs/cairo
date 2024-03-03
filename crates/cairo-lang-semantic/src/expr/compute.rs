@@ -33,6 +33,7 @@ use cairo_lang_utils::{extract_matches, try_extract_matches, OptionHelper};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 use smol_str::SmolStr;
 
 use super::inference::canonic::ResultNoErrEx;
@@ -46,7 +47,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
@@ -55,6 +56,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::items::constant::{value_as_const_value, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -66,7 +68,7 @@ use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Varia
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots, resolve_type,
-    wrap_in_snapshots, ConcreteTypeId,
+    verify_fixed_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
     ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
@@ -685,6 +687,9 @@ fn compute_expr_fixed_size_array_semantic(
         if !tail_exprs.is_empty() {
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         }
+        let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+            .to_usize()
+            .unwrap();
         for _ in 0..size {
             items.push(first_expr_semantic.id);
         }
@@ -706,11 +711,14 @@ fn compute_expr_fixed_size_array_semantic(
         }
     }
     let size = items.len();
+    verify_fixed_array_size(ctx.diagnostics, &size.into(), syntax)?;
+    let size_const_value_id =
+        db.intern_const_value(value_as_const_value(db, get_usize_ty(db), &size.into()).unwrap());
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
         items,
         ty: db.intern_type(TypeLongId::FixedSizeArray {
             type_id: ctx.reduce_ty(first_expr_semantic.ty()),
-            size,
+            size: size_const_value_id,
         }),
         stable_ptr: syntax.stable_ptr().into(),
     }))
@@ -1720,7 +1728,12 @@ fn maybe_compute_tuple_like_pattern_semantic(
     };
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
-        TypeLongId::FixedSizeArray { type_id: inner_ty, size } => [inner_ty].repeat(size),
+        TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
+            let size = extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
+            [inner_ty].repeat(size)
+        }
         _ => unreachable!(),
     };
     let patterns_syntax = match pattern_syntax {
