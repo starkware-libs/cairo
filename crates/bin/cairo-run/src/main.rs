@@ -47,7 +47,12 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let db = &mut RootDatabase::builder().detect_corelib().build()?;
+    let mut db_builder = RootDatabase::builder();
+    db_builder.detect_corelib();
+    if args.available_gas.is_none() {
+        db_builder.skip_auto_withdraw_gas();
+    }
+    let db = &mut db_builder.build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
