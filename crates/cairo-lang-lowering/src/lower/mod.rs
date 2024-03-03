@@ -10,6 +10,7 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
+use num_traits::ToPrimitive;
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, unit_ty,
@@ -657,7 +658,13 @@ fn lower_tuple_like_pattern_helper(
             let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
             let tys = match long_type_id {
                 TypeLongId::Tuple(tys) => tys,
-                TypeLongId::FixedSizeArray { type_id, size } => vec![type_id; size],
+                TypeLongId::FixedSizeArray { type_id, size } => {
+                    let size =
+                        extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
+                            .to_usize()
+                            .unwrap();
+                    vec![type_id; size]
+                }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
             };
             let reqs = patterns

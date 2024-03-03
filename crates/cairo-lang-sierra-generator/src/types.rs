@@ -12,6 +12,7 @@ use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::chain;
+use num_traits::ToPrimitive;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplLookupContext;
 use semantic::TypeId;
@@ -196,7 +197,12 @@ pub fn type_dependencies(
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
         semantic::TypeLongId::Coupon(_) => vec![],
-        semantic::TypeLongId::FixedSizeArray { type_id, size } => [type_id].repeat(size),
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
+            [type_id].repeat(size)
+        }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

@@ -631,6 +631,10 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
+pub fn get_usize_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "usize".into(), vec![])
+}
+
 /// Returns [FunctionId] of the libfunc that converts type of `ty` to felt252.
 pub fn get_convert_to_felt252_libfunc_name_by_type(
     db: &dyn SemanticGroup,
