@@ -30,9 +30,15 @@ If(
                 EnumVariant(
                     PatternEnumVariant {
                         variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::A),
-                            ty: core::felt252,
+                            concrete_enum_id: ConcreteEnumId(
+                                73,
+                            ),
+                            id: VariantId(
+                                22,
+                            ),
+                            ty: TypeId(
+                                0,
+                            ),
                             idx: 0,
                         },
                         inner_pattern: Some(
@@ -46,9 +52,15 @@ If(
                 EnumVariant(
                     PatternEnumVariant {
                         variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::B),
-                            ty: core::felt252,
+                            concrete_enum_id: ConcreteEnumId(
+                                73,
+                            ),
+                            id: VariantId(
+                                23,
+                            ),
+                            ty: TypeId(
+                                0,
+                            ),
                             idx: 1,
                         },
                         inner_pattern: Some(

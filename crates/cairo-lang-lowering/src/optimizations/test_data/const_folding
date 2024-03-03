@@ -22,9 +22,9 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
   (v5: core::felt252) <- core::felt252_sub(v0, v1)
-  (v3: core::felt252) <- 0u
+  (v3: core::felt252) <- 0
   (v6: core::felt252) <- core::felt252_sub(v5, v3)
 End:
   Return(v6)
@@ -33,9 +33,9 @@ End:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
   (v5: core::felt252) <- core::felt252_sub(v0, v1)
-  (v3: core::felt252) <- 0u
+  (v3: core::felt252) <- 0
   (v6: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Return(v0)
@@ -63,7 +63,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
+  (v0: core::felt252) <- 0
   (v2: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v0)
 End:
   Return(v2)
@@ -72,8 +72,8 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
-  (v2: core::box::Box::<core::felt252>) <- 0u.into_box()
+  (v0: core::felt252) <- 0
+  (v2: core::box::Box::<core::felt252>) <- 0.into_box()
 End:
   Return(v2)
 
@@ -106,7 +106,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1u
+  (v0: core::felt252) <- 1
   (v1: test::A) <- struct_construct(v0)
   (v3: core::box::Box::<test::A>) <- core::box::into_box::<test::A>(v1)
 End:
@@ -116,9 +116,9 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1u
+  (v0: core::felt252) <- 1
   (v1: test::A) <- struct_construct(v0)
-  (v3: core::box::Box::<test::A>) <- { 1u: core::felt252 }.into_box()
+  (v3: core::box::Box::<test::A>) <- { 1: core::felt252 }.into_box()
 End:
   Return(v3)
 
@@ -147,7 +147,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 2u
+  (v0: core::felt252) <- 2
   (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
   (v3: core::box::Box::<core::option::Option::<core::felt252>>) <- core::box::into_box::<core::option::Option::<core::felt252>>(v1)
 End:
@@ -157,9 +157,9 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 2u
+  (v0: core::felt252) <- 2
   (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
-  (v3: core::box::Box::<core::option::Option::<core::felt252>>) <- Option::Some(2u).into_box()
+  (v3: core::box::Box::<core::option::Option::<core::felt252>>) <- Option::Some(2).into_box()
 End:
   Return(v3)
 

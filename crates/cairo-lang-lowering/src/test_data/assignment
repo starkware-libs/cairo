@@ -31,12 +31,12 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 2u
+  (v1: core::felt252) <- 2
 End:
   Return(v1)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 3u
+  (v3: core::felt252) <- 3
 End:
   Return(v3)

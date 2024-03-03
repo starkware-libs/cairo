@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -60,8 +61,15 @@ pub struct ConstantData {
     pub resolver_data: Arc<ResolverData>,
 }
 
+define_short_id!(ConstValueId, ConstValue, SemanticGroup, lookup_intern_const_value);
+impl ConstValueId {
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", db.lookup_intern_const_value(*self).debug(db.elongate()))
+    }
+}
+
 /// A constant value.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ConstValue {
     Int(BigInt),
     Struct(Vec<(TypeId, ConstValue)>),

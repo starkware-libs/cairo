@@ -643,7 +643,7 @@ enum MyEnum {
 Parameters: v0: core::felt252, v1: test::MyEnum
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 3u
+  (v2: core::felt252) <- 3
 End:
   Match(match_enum(v1) {
     MyEnum::A(v3) => blk1,
@@ -669,7 +669,7 @@ End:
 Parameters: v0: core::felt252, v1: test::MyEnum
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 3u
+  (v2: core::felt252) <- 3
 End:
   Match(match_enum(v1) {
     MyEnum::A(v3) => blk1,

@@ -10,8 +10,9 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::chain;
+use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplLookupContext;
 use semantic::TypeId;
 
@@ -99,10 +100,12 @@ pub fn get_concrete_long_type_id(
                                 semantic::GenericArgumentId::Type(ty) => {
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
-                                semantic::GenericArgumentId::Literal(literal_id) => {
-                                    SierraGenericArg::Value(
-                                        db.lookup_intern_literal(literal_id).value,
-                                    )
+                                semantic::GenericArgumentId::Constant(value_id) => {
+                                    SierraGenericArg::Value(extract_matches!(
+                                        db.lookup_intern_const_value(value_id),
+                                        ConstValue::Int,
+                                        "Only integer constants are supported."
+                                    ))
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")

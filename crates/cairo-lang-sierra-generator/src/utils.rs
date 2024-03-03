@@ -388,9 +388,11 @@ pub fn get_concrete_libfunc_id(
                 // TODO(lior): How should the following unwrap() be handled?
                 GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
             }
-            semantic::GenericArgumentId::Literal(literal_id) => {
-                GenericArg::Value(db.lookup_intern_literal(*literal_id).value)
-            }
+            semantic::GenericArgumentId::Constant(value_id) => GenericArg::Value(extract_matches!(
+                db.lookup_intern_const_value(*value_id),
+                ConstValue::Int,
+                "Only integer constants are supported."
+            )),
             semantic::GenericArgumentId::Impl(_) => {
                 panic!("Extern function with impl generics are not supported.")
             }
