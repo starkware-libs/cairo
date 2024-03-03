@@ -11,8 +11,9 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
-use statements_weights::{InlineWeight, SimpleInlineWeight};
+use statements_weights::InlineWeight;
 
+use self::statements_weights::ApproxCasmInlineWeight;
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
@@ -78,8 +79,7 @@ fn should_inline_lowered(
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
 
-    let weight = SimpleInlineWeight {};
-    let weight_of_blocks = weight.lowered_weight(db, lowered.as_ref());
+    let weight_of_blocks = ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered);
 
     if weight_of_blocks < inline_small_functions_threshold(db).into_or_panic() {
         return Ok(true);

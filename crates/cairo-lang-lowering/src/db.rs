@@ -5,10 +5,13 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
+use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Upcast;
+use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
@@ -293,6 +296,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the the optimization strategy that is applied to a function before it is inlined.
     #[salsa::invoke(crate::optimizations::strategy::inlined_function_optimization_strategy)]
     fn inlined_function_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the expected size of a type.
+    fn type_size(&self, ty: TypeId) -> usize;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -578,4 +584,38 @@ fn file_lowering_diagnostics(
         }
     }
     Ok(diagnostics.build())
+}
+
+fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(struct_id) => db
+                .concrete_struct_members(struct_id)
+                .unwrap()
+                .into_iter()
+                .map(|(_, member)| db.type_size(member.ty))
+                .sum::<usize>(),
+            ConcreteTypeId::Enum(enum_id) => {
+                1 + db
+                    .concrete_enum_variants(enum_id)
+                    .unwrap()
+                    .into_iter()
+                    .map(|variant| db.type_size(variant.ty))
+                    .sum::<usize>()
+            }
+            ConcreteTypeId::Extern(extern_id) => {
+                match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
+                    "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
+                    "EcState" => 3,
+                    "Uint128MulGuarantee" => 4,
+                    _ => 1,
+                }
+            }
+        },
+        TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
+        TypeLongId::Snapshot(ty) => db.type_size(ty),
+        TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            panic!("Function should only be called with fully concrete types")
+        }
+    }
 }

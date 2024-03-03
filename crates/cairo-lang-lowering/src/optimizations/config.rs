@@ -10,7 +10,7 @@ use crate::ids::{FunctionId, FunctionLongId};
 /// The default threshold for inlining small functions. Decided according to sample contracts
 /// profiling.
 // TODO(Gil): Expose this as a configuration in the project toml.
-const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 20;
+const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 24;
 
 /// A configuration struct that controls the behavior of the optimization passes.
 #[derive(Debug, Eq, PartialEq, Clone)]
