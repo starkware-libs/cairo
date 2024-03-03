@@ -251,7 +251,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::integer::u256>) <- core::array::ArrayDefault::<core::integer::u256>::default()
-  (v1: core::felt252) <- 1u
+  (v1: core::felt252) <- 1
   (v2: core::integer::u256) <- core::integer::Felt252IntoU256::into(v1{`1`})
   (v4: core::array::Array::<core::integer::u256>, v3: ()) <- core::array::ArrayImpl::<core::integer::u256>::append(v0{`arr`}, v2{`1.into()`})
   (v5: ()) <- struct_construct()
@@ -295,8 +295,8 @@ note: Trait has no implementation in context: core::traits::PanicDestruct::<test
 Parameters: v0: test::A
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
-  (v2: core::felt252) <- 1u
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- 1
   (v3: core::felt252) <- core::Felt252Add::add(v1{`1`}, v2{`1`})
   (v4: ()) <- struct_construct()
 End:
@@ -409,9 +409,9 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
-  (v1: core::felt252) <- 7310030899191440485u
+  (v1: core::felt252) <- 7310030899191440485
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`'err_code'`})
-  (v4: core::felt252) <- 6450273u
+  (v4: core::felt252) <- 6450273
   (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3{`b`}, v4{`'bla'`})
   (v7: core::panics::Panic) <- struct_construct()
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7{`panic(arr)`}, v3{`arr`})
@@ -527,7 +527,7 @@ note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::integer::u32) <- 17u
+  (v1: core::integer::u32) <- 17
   (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x`})
   () <- test::use_non_copy(v3{`x.b`})
   (v4: test::MyStruct) <- struct_construct(v1{`x`}, v3{`x`})
@@ -642,7 +642,7 @@ blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self`})
   (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self.b`})
-  (v5: core::integer::u8) <- 0u
+  (v5: core::integer::u8) <- 0
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
 End:
@@ -708,7 +708,7 @@ blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`v`})
   (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`v.b`})
-  (v5: core::integer::u8) <- 0u
+  (v5: core::integer::u8) <- 0
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`v.b`}, v7{`0`})
 End:
@@ -780,9 +780,9 @@ note: Trait has no implementation in context: core::traits::PanicDestruct::<test
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 17u
+  (v1: core::felt252) <- 17
   (v2: core::felt252, v3: test::NonCopy) <- struct_destructure(v0{`x`})
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
   (v6: core::felt252, v5: ()) <- core::Felt252AddEq::add_eq(v1{`x.a`}, v4{`1`})
   (v7: test::MyStruct) <- struct_construct(v6{`x`}, v3{`x`})
 End:
@@ -898,9 +898,9 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::array::Array::<()>) <- core::array::ArrayImpl::<()>::new()
-  (v2: core::felt252) <- 17u
+  (v2: core::felt252) <- 17
   (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x`})
-  (v5: core::felt252) <- 1u
+  (v5: core::felt252) <- 1
   (v7: core::felt252, v6: ()) <- core::Felt252AddEq::add_eq(v2{`x.a`}, v5{`1`})
   (v8: ()) <- struct_construct()
   (v10: core::array::Array::<()>, v9: ()) <- core::array::ArrayImpl::<()>::append(v1{`__array_builder_macro_result__`}, v8{`{ x.a = 17; x.a += 1; }`})

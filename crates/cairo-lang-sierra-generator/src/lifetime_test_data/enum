@@ -48,10 +48,10 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
   (v10: test::MyEnum) <- MyEnum::A(v9)
   (v11: test::MyEnum) <- test::immovable::<test::MyEnum>(v10)
-  (v12: core::felt252) <- 2u
+  (v12: core::felt252) <- 2
   (v13: test::MyEnum) <- MyEnum::A(v12)
 End:
   Goto(blk4, {v13 -> v19})

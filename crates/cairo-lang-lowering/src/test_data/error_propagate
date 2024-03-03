@@ -38,7 +38,7 @@ End:
 
 blk2:
 Statements:
-  (v9: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
   (v10: core::result::Result::<core::felt252, core::felt252>) <- Result::Ok(v9)
 End:
   Return(v10)

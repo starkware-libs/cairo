@@ -166,18 +166,18 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1u
-  (v1: core::integer::u8) <- 2u
-  (v2: core::integer::u16) <- 3u
-  (v3: core::integer::u32) <- 4u
-  (v4: core::integer::u64) <- 5u
-  (v5: core::integer::u128) <- 6u
-  (v6: core::integer::i8) <- 7u
-  (v7: core::integer::i16) <- 8u
-  (v8: core::integer::i32) <- 9u
-  (v9: core::integer::i64) <- 10u
-  (v10: core::integer::i128) <- 11u
-  (v11: core::integer::u256) <- { 12u: core::integer::u128, 0u: core::integer::u128 }
+  (v0: core::felt252) <- 1
+  (v1: core::integer::u8) <- 2
+  (v2: core::integer::u16) <- 3
+  (v3: core::integer::u32) <- 4
+  (v4: core::integer::u64) <- 5
+  (v5: core::integer::u128) <- 6
+  (v6: core::integer::i8) <- 7
+  (v7: core::integer::i16) <- 8
+  (v8: core::integer::i32) <- 9
+  (v9: core::integer::i64) <- 10
+  (v10: core::integer::i128) <- 11
+  (v11: core::integer::u256) <- { 12: core::integer::u128, 0: core::integer::u128 }
   (v12: (core::felt252, core::integer::u8, core::integer::u16, core::integer::u32, core::integer::u64, core::integer::u128, core::integer::i8, core::integer::i16, core::integer::i32, core::integer::i64, core::integer::i128, core::integer::u256)) <- struct_construct(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
 End:
   Return(v12)

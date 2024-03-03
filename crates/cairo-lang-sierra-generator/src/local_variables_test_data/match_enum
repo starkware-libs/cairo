@@ -57,7 +57,7 @@ blk0 (root):
 Statements:
   (v0: test::MyEnum) <- test::bar()
   (v2: core::felt252) <- test::non_literal()
-  (v1: core::felt252) <- 2u
+  (v1: core::felt252) <- 2
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,
@@ -155,7 +155,7 @@ End:
 blk1:
 Statements:
   (v5: core::felt252) <- test::revoke_ap()
-  (v6: core::felt252) <- 0u
+  (v6: core::felt252) <- 0
 End:
   Return(v6)
 

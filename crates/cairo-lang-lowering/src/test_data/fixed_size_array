@@ -28,9 +28,9 @@ fn bar(x: [felt252; 3]) {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 10u
-  (v1: core::felt252) <- 20u
-  (v2: core::felt252) <- 30u
+  (v0: core::felt252) <- 10
+  (v1: core::felt252) <- 20
+  (v2: core::felt252) <- 30
   (v3: [core::felt252; 3]) <- struct_construct(v0, v1, v2)
   (v4: ()) <- test::bar(v3)
   (v5: ()) <- struct_construct()

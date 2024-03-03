@@ -221,7 +221,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 };
                 Ok(GenericArgumentId::Type(self.conform_ty(gty0, gty1)?))
             }
-            GenericArgumentId::Literal(_) => {
+            GenericArgumentId::Constant(_) => {
                 Err(InferenceError::GenericArgMismatch { garg0, garg1 })
             }
             GenericArgumentId::Impl(impl0) => {
@@ -232,7 +232,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }
             GenericArgumentId::NegImpl => match garg1 {
                 GenericArgumentId::NegImpl => Ok(GenericArgumentId::NegImpl),
-                GenericArgumentId::Literal(_)
+                GenericArgumentId::Constant(_)
                 | GenericArgumentId::Type(_)
                 | GenericArgumentId::Impl(_) => {
                     Err(InferenceError::GenericArgMismatch { garg0, garg1 })
@@ -360,7 +360,7 @@ impl<'db> InferenceConform for Inference<'db> {
         for garg in generic_args {
             if match garg {
                 GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
-                GenericArgumentId::Literal(_) => false,
+                GenericArgumentId::Constant(_) => false,
                 GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
                 GenericArgumentId::NegImpl => false,
             } {

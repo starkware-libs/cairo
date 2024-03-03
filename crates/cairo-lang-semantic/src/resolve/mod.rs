@@ -30,13 +30,13 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
+use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
 use crate::items::visibility;
-use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{are_coupons_enabled, resolve_type};
 use crate::{
@@ -1044,8 +1044,7 @@ impl<'db> Resolver<'db> {
                     }
                 };
 
-                let literal = LiteralLongId { value };
-                GenericArgumentId::Literal(self.db.intern_literal(literal))
+                GenericArgumentId::Constant(self.db.intern_const_value(ConstValue::Int(value)))
             }
             GenericParam::Impl(param) => {
                 let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
