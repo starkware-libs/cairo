@@ -715,7 +715,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Fixed size array type must have a size clause.".into()
             }
             SemanticDiagnosticKind::FixedSizeArrayNonNumericSize => {
-                "Fixed size array type must have a positive integer size.".into()
+                "Fixed size array type must have a positive integer size, smaller than 2^15.".into()
             }
             SemanticDiagnosticKind::FixedSizeArrayNonSingleValue => {
                 "Fixed size array with defined size must have exactly one value.".into()

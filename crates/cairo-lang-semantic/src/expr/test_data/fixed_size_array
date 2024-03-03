@@ -105,6 +105,7 @@ fn foo() {
     let _x: [u32; -1]  = [1; -1];
     let _x: [u32; SIZE]  = [1; SIZE];
     let _x: [u32; '1']  = [1; '1'];
+    let _x: [u32; 32768]  = [1; 32768];
 }
 
 //! > function_name
@@ -114,35 +115,45 @@ foo
 const SIZE: usize = 2;
 
 //! > expected_diagnostics
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:3:30
     let _x: [u32; -1]  = [1; -1];
                              ^^
 
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:3:19
     let _x: [u32; -1]  = [1; -1];
                   ^^
 
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:4:32
     let _x: [u32; SIZE]  = [1; SIZE];
                                ^**^
 
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:4:19
     let _x: [u32; SIZE]  = [1; SIZE];
                   ^**^
 
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:5:31
     let _x: [u32; '1']  = [1; '1'];
                               ^*^
 
-error: Fixed size array type must have a positive integer size.
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
  --> lib.cairo:5:19
     let _x: [u32; '1']  = [1; '1'];
                   ^*^
+
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
+ --> lib.cairo:6:33
+    let _x: [u32; 32768]  = [1; 32768];
+                                ^***^
+
+error: Fixed size array type must have a positive integer size, smaller than 2^15.
+ --> lib.cairo:6:19
+    let _x: [u32; 32768]  = [1; 32768];
+                  ^***^
 
 //! > ==========================================================================
 
