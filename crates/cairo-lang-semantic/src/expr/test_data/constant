@@ -17,6 +17,8 @@ const MY_CONST: felt252 = 0x1234;
 
 const FELT_TUPLE: (felt252, felt252) = (1, 2);
 
+const FELT_FIXED_SIZE_ARRAY: [felt252; 3] = [1, 2, 3];
+
 const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
 
 mod my_module {

@@ -239,6 +239,12 @@ fn evaluate_constant_expr(
             ),
             Expr::MemberAccess(expr) => extract_const_member_access(db, exprs, expr, diagnostics)
                 .unwrap_or(ConstValue::Missing),
+            Expr::FixedSizeArray(expr) => ConstValue::Struct(
+                expr.items
+                    .iter()
+                    .map(|expr_id| evaluate_constant_expr(db, exprs, *expr_id, diagnostics))
+                    .collect(),
+            ),
             _ if diagnostics.diagnostics.error_count == 0 => {
                 diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),
