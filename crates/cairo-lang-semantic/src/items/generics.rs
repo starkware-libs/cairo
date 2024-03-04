@@ -13,7 +13,7 @@ use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
 
-use super::constant::ConstValueId;
+use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId};
 use super::resolve_trait_path;
 use crate::db::SemanticGroup;
@@ -66,7 +66,9 @@ impl GenericArgumentId {
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Constant(_) => true,
+            GenericArgumentId::Constant(const_value_id) => {
+                !matches!(db.lookup_intern_const_value(*const_value_id), ConstValue::Generic(_))
+            }
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
             GenericArgumentId::NegImpl => true,
         }
@@ -375,15 +377,6 @@ fn semantic_from_generic_param_ast(
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            if !matches!(
-                parent_item_id,
-                GenericItemId::ModuleItem(
-                    GenericModuleItemId::ExternFunc(_) | GenericModuleItemId::ExternType(_)
-                )
-            ) {
-                diagnostics
-                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
-            }
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }
