@@ -89,6 +89,31 @@ impl OptimizationStrategyId {
     }
 }
 
+/// Query implementation of [crate::db::LoweringGroup::inlined_function_optimization_strategy].
+pub fn inlined_function_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
+    db.intern_strategy(OptimizationStrategy(vec![
+        OptimizationPhase::ApplyInlining,
+        OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::ReorganizeBlocks,
+        // The call to `reorder_statements` before and after `branch_inversion` is intentional.
+        // See description of `branch_inversion` for more details.
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::BranchInversion,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ConstFolding,
+        OptimizationPhase::OptimizeMatches,
+        OptimizationPhase::SplitStructs,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::OptimizeMatches,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
+    ]))
+}
+
 /// Query implementation of [crate::db::LoweringGroup::default_optimization_strategy].
 pub fn default_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     db.intern_strategy(OptimizationStrategy(vec![

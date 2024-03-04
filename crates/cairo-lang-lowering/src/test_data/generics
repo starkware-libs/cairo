@@ -43,9 +43,8 @@ Statements:
   (v8: core::bool) <- bool::False(v7)
   (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
   (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v14)
-  (v12: ()) <- struct_construct()
 End:
-  Return(v12)
+  Return()
 
 //! > ==========================================================================
 
@@ -115,9 +114,8 @@ impl MyImpl of MyTrait {
 Parameters:
 blk0 (root):
 Statements:
-  (v2: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return()
 
 //! > ==========================================================================
 
@@ -151,11 +149,20 @@ impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
 Parameters:
 blk0 (root):
 Statements:
+<<<<<<< HEAD
   (v0: core::felt252) <- 5
   (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
   (v2: ()) <- struct_construct()
+||||||| 6fe4987d2
+  (v0: core::felt252) <- 5u
+  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
+  (v2: ()) <- struct_construct()
+=======
+  (v0: core::felt252) <- 5u
+  () <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
+>>>>>>> origin/main
 End:
-  Return(v2)
+  Return()
 
 //! > ==========================================================================
 

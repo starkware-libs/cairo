@@ -40,6 +40,5 @@ struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
 store_temp<Tuple<felt252, felt252>>([4]) -> ([4])
 function_call<user@test::immovable::<(core::felt252, core::felt252)>>([4]) -> ([5])
 drop<Tuple<felt252, felt252>>([5]) -> ()
-struct_construct<Unit>() -> ([6])
-return([6])
+return()
 label_test::foo::2:

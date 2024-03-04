@@ -162,14 +162,16 @@ fn get_function_signature(
         extra_rets.push(concrete_type_id);
     }
 
-    // TODO(ilya): Handle tuple and struct types.
     let mut ret_types = implicits;
     if may_panic {
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
     } else {
         ret_types.extend(extra_rets);
-        ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+        // Functions that return the unit type don't have a return type in the signature.
+        if !signature.return_type.is_unit(db.upcast()) {
+            ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+        }
     }
 
     Ok(Arc::new(cairo_lang_sierra::program::FunctionSignature {
