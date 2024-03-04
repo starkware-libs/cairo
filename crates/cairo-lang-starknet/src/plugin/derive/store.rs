@@ -235,7 +235,7 @@ fn handle_enum(
     let store_impl = formatdoc!(
         "
         impl Store{enum_name} of {STORE_TRAIT}::<{enum_name}> {{
-            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+            fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> \
          starknet::SyscallResult<{enum_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read(address_domain, base)?;
                 match idx {{
@@ -245,15 +245,16 @@ fn handle_enum(
                     }}
                 }}
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {enum_name}) \
-         -> starknet::SyscallResult<()> {{
+            fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, \
+         value: {enum_name}) -> starknet::SyscallResult<()> {{
                 match value {{
                     {match_value}
                 }};
                 starknet::SyscallResult::Ok(())
             }}
-            fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
-         -> starknet::SyscallResult<{enum_name}> {{
+            fn read_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8) -> \
+         starknet::SyscallResult<{enum_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read_at_offset(address_domain, base, offset)?;
                 match idx {{
                     {match_idx_at_offset},
@@ -263,8 +264,9 @@ fn handle_enum(
                 }}
             }}
             #[inline(always)]
-            fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: \
-         u8, value: {enum_name}) -> starknet::SyscallResult<()> {{
+            fn write_at_offset(address_domain: u32, base: \
+         starknet::storage_access::StorageBaseAddress, offset: u8, value: {enum_name}) -> \
+         starknet::SyscallResult<()> {{
                 match value {{
                     {match_value_at_offset}
                 }};
