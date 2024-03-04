@@ -8,7 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder, Severity,
+    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
+    DiagnosticsBuilder, ErrorCode, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax as syntax;
@@ -759,6 +760,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             _ => Severity::Error,
         }
     }
+
+    fn error_code(&self) -> Option<ErrorCode> {
+        self.kind.error_code()
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1089,6 +1094,15 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArrayNonSingleValue,
     FixedSizeArrayEmptyElements,
     FixedSizeArraySizeTooBig,
+}
+
+impl SemanticDiagnosticKind {
+    pub fn error_code(&self) -> Option<ErrorCode> {
+        Some(match &self {
+            Self::UnusedVariable => error_code!(E0001),
+            _ => return None,
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

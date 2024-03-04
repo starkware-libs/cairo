@@ -283,12 +283,12 @@ test_expr_diagnostics
 //! > function_body
 
 //! > expected_diagnostics
-warning: Unused variable. Consider ignoring by prefixing with `_`.
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:7
   let x = 7;
       ^
 
-warning: Unused variable. Consider ignoring by prefixing with `_`.
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:5:7
   let y = 5;
       ^
