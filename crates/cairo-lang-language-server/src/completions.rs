@@ -20,6 +20,7 @@ use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use tracing::debug;
 
 use crate::{find_node_module, from_pos};
 
@@ -208,7 +209,7 @@ pub fn dot_completions(
     // Get the type.
     let ty = semantic_expr.ty();
     if ty.is_missing(db) {
-        eprintln!("Type is missing");
+        debug!("type is missing");
         return None;
     }
 
@@ -337,7 +338,7 @@ fn find_methods_for_type(
                 Some(stable_ptr),
                 |_| {},
             ) else {
-                eprintln!("Can't fit");
+                debug!("can't fit");
                 continue;
             };
 
