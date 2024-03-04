@@ -37,16 +37,8 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v22: core::felt252) <- core::felt252_add(v0, v0)
-  (v10: core::felt252) <- 0
-||||||| 6fe4987d2
-  (v22: core::felt252) <- core::felt252_add(v0, v0)
-  (v10: core::felt252) <- 0u
-=======
   (v21: core::felt252) <- core::felt252_add(v0, v0)
-  (v10: core::felt252) <- 0u
->>>>>>> origin/main
+  (v10: core::felt252) <- 0
   (v11: core::felt252) <- test::foo(v10)
 End:
   Return(v21)

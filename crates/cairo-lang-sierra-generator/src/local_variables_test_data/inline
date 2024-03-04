@@ -41,16 +41,8 @@ End:
 
 blk1:
 Statements:
-<<<<<<< HEAD
-  (v10: core::felt252) <- 1
-  (v24: core::felt252) <- core::felt252_add(v0, v10)
-||||||| 6fe4987d2
-  (v10: core::felt252) <- 1u
-  (v24: core::felt252) <- core::felt252_add(v0, v10)
-=======
-  (v3: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::felt252_add(v0, v3)
->>>>>>> origin/main
 End:
   Return(v4)
 
@@ -110,19 +102,9 @@ End:
 
 blk1:
 Statements:
-<<<<<<< HEAD
-  (v11: ()) <- test::revoke_ap()
-  (v12: core::felt252) <- 1
-  (v27: core::felt252) <- core::felt252_add(v0, v12)
-||||||| 6fe4987d2
-  (v11: ()) <- test::revoke_ap()
-  (v12: core::felt252) <- 1u
-  (v27: core::felt252) <- core::felt252_add(v0, v12)
-=======
   () <- test::revoke_ap()
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
   (v5: core::felt252) <- core::felt252_add(v0, v4)
->>>>>>> origin/main
 End:
   Goto(blk3, {v5 -> v1})
 

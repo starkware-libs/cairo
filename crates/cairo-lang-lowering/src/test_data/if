@@ -116,16 +116,8 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v1: core::felt252) <- 0
-  (v20: core::felt252) <- core::felt252_sub(v1, v0)
-||||||| 6fe4987d2
-  (v1: core::felt252) <- 0u
-  (v20: core::felt252) <- core::felt252_sub(v1, v0)
-=======
-  (v1: core::felt252) <- 0u
   (v13: core::felt252) <- core::felt252_sub(v1, v0)
->>>>>>> origin/main
 End:
   Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk1,
@@ -236,16 +228,8 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
   (v11: core::felt252) <- 5
-  (v43: core::felt252) <- core::felt252_sub(v0, v11)
-||||||| 6fe4987d2
-  (v11: core::felt252) <- 5u
-  (v43: core::felt252) <- core::felt252_sub(v0, v11)
-=======
-  (v11: core::felt252) <- 5u
   (v34: core::felt252) <- core::felt252_sub(v0, v11)
->>>>>>> origin/main
 End:
   Match(match core::felt252_is_zero(v34) {
     IsZeroResult::Zero => blk3,
@@ -439,22 +423,10 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v0: core::felt252) <- 0
   (v1: core::felt252) <- 5
   (v4: core::felt252) <- 6
-  (v39: core::felt252) <- core::felt252_sub(v1, v4)
-||||||| 6fe4987d2
-  (v0: core::felt252) <- 0u
-  (v1: core::felt252) <- 5u
-  (v4: core::felt252) <- 6u
-  (v39: core::felt252) <- core::felt252_sub(v1, v4)
-=======
-  (v0: core::felt252) <- 0u
-  (v1: core::felt252) <- 5u
-  (v4: core::felt252) <- 6u
   (v30: core::felt252) <- core::felt252_sub(v1, v4)
->>>>>>> origin/main
 End:
   Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk1,
@@ -546,16 +518,8 @@ End:
 
 blk14:
 Statements:
-<<<<<<< HEAD
   (v26: core::felt252) <- 1
-  (v38: core::felt252) <- core::felt252_add(v25, v26)
-||||||| 6fe4987d2
-  (v26: core::felt252) <- 1u
-  (v38: core::felt252) <- core::felt252_add(v25, v26)
-=======
-  (v26: core::felt252) <- 1u
   (v37: core::felt252) <- core::felt252_add(v25, v26)
->>>>>>> origin/main
 End:
   Return(v37)
 
@@ -872,6 +836,6 @@ End:
 
 blk3:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v4: core::felt252) <- 2
 End:
   Return(v4)
