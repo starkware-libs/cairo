@@ -723,6 +723,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FixedSizeArrayEmptyElements => {
                 "Fixed size array must have at least one element.".into()
             }
+            SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
+                "Fixed size array size must be smaller than 2^15.".into()
+            }
         }
     }
 
@@ -1072,6 +1075,7 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArrayNonNumericSize,
     FixedSizeArrayNonSingleValue,
     FixedSizeArrayEmptyElements,
+    FixedSizeArraySizeTooBig,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
