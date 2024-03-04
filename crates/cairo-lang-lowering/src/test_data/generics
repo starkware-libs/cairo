@@ -183,3 +183,39 @@ Statements:
   (v0: core::felt252) <- core::felt252_const::<1>()
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > genric param in expression
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+    bar::<1>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N + 5
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:2:5
+    N + 5
+    ^
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- test::bar::<1>()
+End:
+  Return(v0)

@@ -101,11 +101,6 @@ fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
 foo
 
 //! > expected_diagnostics
-error: Const generic args are not allowed in this context.
- --> lib.cairo:1:11
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
-          ^************^
-
 error: Trait not found.
  --> lib.cairo:1:35
 fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
@@ -614,3 +609,27 @@ error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<1
  --> lib.cairo:6:46
         let _x: super::S<{ super::K + 9 }> = super::bar();
                                              ^**********^
+
+//! > ==========================================================================
+
+//! > genric param in expression
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<1>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N + 5
+}
+
+//! > function_body
+
+//! > expected_diagnostics

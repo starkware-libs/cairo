@@ -283,6 +283,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprEnumVariantCtor, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprPropagateError, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprGenericConstant, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);

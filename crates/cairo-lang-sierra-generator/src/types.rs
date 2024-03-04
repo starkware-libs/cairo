@@ -1,3 +1,4 @@
+use core::panic;
 use std::sync::Arc;
 use std::vec;
 
@@ -107,6 +108,9 @@ pub fn get_concrete_long_type_id(
                                         ConstValue::Int,
                                         "Only integer constants are supported."
                                     ))
+                                }
+                                semantic::GenericArgumentId::GenericConstant(_) => {
+                                    panic!("Generic constants are not supported.")
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")

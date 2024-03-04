@@ -749,7 +749,9 @@ impl<'db> Resolver<'db> {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
                 ),
-                GenericKind::Const => todo!("Add a variant to ConstId."),
+                GenericKind::Const => {
+                    ResolvedConcreteItem::ConstGenericParameter(*generic_param_id)
+                }
                 GenericKind::Impl => {
                     ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
