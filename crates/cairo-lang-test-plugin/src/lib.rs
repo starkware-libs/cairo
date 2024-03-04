@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
@@ -28,6 +27,7 @@ use cairo_lang_utils::ordered_hash_map::{
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 pub use test_config::{try_extract_test_config, TestConfig};
 
 mod inline_macros;

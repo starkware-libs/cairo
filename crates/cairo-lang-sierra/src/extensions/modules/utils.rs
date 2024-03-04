@@ -1,8 +1,8 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use num_bigint::BigInt;
 use num_traits::One;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::bounded_int::BoundedIntType;
 use super::bytes31::Bytes31Type;

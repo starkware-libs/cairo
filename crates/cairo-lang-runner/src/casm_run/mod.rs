@@ -1,13 +1,12 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-use std::ops::{Deref, Shl};
+use std::ops::Shl;
 use std::vec::IntoIter;
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{BigInteger, Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -30,12 +29,14 @@ use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
+use starknet_types_core::felt::Felt as Felt252;
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
@@ -49,11 +50,9 @@ mod test;
 mod contract_address;
 mod dict_manager;
 
-// TODO(orizi): This def is duplicated.
-/// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> Felt252 {
-    felt252_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-}
+/// The Beta value of the Starkware elliptic curve.
+const BETA: Felt252 =
+    Felt252::from_hex_unchecked("6F21413EFBE40DE150E596D72F7A8C5609AD26C15C915C1F4CDFCB99CEE9E89");
 
 #[derive(MontConfig)]
 #[modulus = "3618502788666131213697322783095070105623107215331596699973092056135872020481"]
@@ -142,7 +141,7 @@ pub struct StarknetState {
 impl StarknetState {
     pub fn get_next_id(&mut self) -> Felt252 {
         self.next_id += Felt252::from(1);
-        self.next_id.clone()
+        self.next_id
     }
 
     /// Replaces the addresses in the context.
@@ -228,7 +227,7 @@ struct MemoryExecScope {
 
 /// Fetches the value of a cell from the vm.
 fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
+    Ok(*vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref())
 }
 
 /// Fetch the `MaybeRelocatable` value from an address.
@@ -263,7 +262,7 @@ fn get_double_deref_val(
     cell: &CellRef,
     offset: &Felt252,
 ) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref().clone())
+    Ok(*vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref())
 }
 
 /// Fetches the maybe relocatable value of a pointer described by the value at `cell` plus an offset
@@ -318,10 +317,10 @@ enum SyscallResult {
 
 macro_rules! fail_syscall {
     ($reason:expr) => {
-        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be($reason)]))
+        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be_slice($reason)]))
     };
     ($existing:ident, $reason:expr) => {
-        $existing.push(Felt252::from_bytes_be($reason));
+        $existing.push(Felt252::from_bytes_be_slice($reason));
         return Ok(SyscallResult::Failure($existing))
     };
 }
@@ -628,7 +627,9 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<(), HintError> {
         let system_ptr = extract_relocatable(vm, system)?;
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
+
         let selector = system_buffer.next_felt252()?.to_bytes_be();
+
         let mut gas_counter = system_buffer.next_usize()?;
         let mut execute_handle_helper =
             |handler: &mut dyn FnMut(
@@ -651,143 +652,193 @@ impl<'a> CairoHintProcessor<'a> {
                 }
                 Ok(())
             };
-        match std::str::from_utf8(&selector).unwrap() {
-            "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.storage_write(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                )
-            }),
-            "StorageRead" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.storage_read(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                )
-            }),
-            "GetBlockHash" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.get_block_hash(gas_counter, system_buffer.next_u64()?)
-            }),
-            "GetExecutionInfo" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.get_execution_info(gas_counter, system_buffer)
-            }),
-            "EmitEvent" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
-            }),
-            "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.send_message_to_l1(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                )
-            }),
-            "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                keccak(gas_counter, system_buffer.next_arr()?)
-            }),
-            "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_new(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1Add" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_add(
-                    gas_counter,
-                    exec_scopes,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_usize()?,
-                )
-            }),
-            "Secp256k1Mul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_mul(
-                    gas_counter,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1GetPointFromX" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_get_point_from_x(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_bool()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256k1GetXy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
-            }),
-            "Secp256r1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_new(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1Add" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_add(
-                    gas_counter,
-                    exec_scopes,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_usize()?,
-                )
-            }),
-            "Secp256r1Mul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_mul(
-                    gas_counter,
-                    system_buffer.next_usize()?,
-                    system_buffer.next_u256()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1GetPointFromX" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_get_point_from_x(
-                    gas_counter,
-                    system_buffer.next_u256()?,
-                    system_buffer.next_bool()?,
-                    exec_scopes,
-                )
-            }),
-            "Secp256r1GetXy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256r1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
-            }),
-            "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.deploy(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer.next_bool()?,
-                    system_buffer,
-                )
-            }),
-            "CallContract" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.call_contract(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer,
-                )
-            }),
-            "LibraryCall" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.library_call(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?,
-                    system_buffer,
-                )
-            }),
-            "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
-            }),
-            _ => panic!("Unknown selector for system call!"),
+
+        match &selector {
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0StorageWrite" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.storage_write(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0StorageRead" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.storage_read(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0GetBlockHash" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.get_block_hash(gas_counter, system_buffer.next_u64()?)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0GetExecutionInfo" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.get_execution_info(gas_counter, system_buffer)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0EmitEvent" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.emit_event(
+                        gas_counter,
+                        system_buffer.next_arr()?,
+                        system_buffer.next_arr()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0SendMessageToL1" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.send_message_to_l1(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Keccak" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    keccak(gas_counter, system_buffer.next_arr()?)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1New" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_new(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1Add" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_add(
+                        gas_counter,
+                        exec_scopes,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_usize()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1Mul" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_mul(
+                        gas_counter,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0Secp256k1GetPointFromX" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_get_point_from_x(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_bool()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256k1GetXy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256k1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1New" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_new(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1Add" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_add(
+                        gas_counter,
+                        exec_scopes,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_usize()?,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1Mul" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_mul(
+                        gas_counter,
+                        system_buffer.next_usize()?,
+                        system_buffer.next_u256()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0Secp256r1GetPointFromX" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_get_point_from_x(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_bool()?,
+                        exec_scopes,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Secp256r1GetXy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    secp256r1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Deploy" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.deploy(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer.next_bool()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0CallContract" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.call_contract(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0LibraryCall" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.library_call(
+                        gas_counter,
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_felt252()?.into_owned(),
+                        system_buffer.next_arr()?,
+                        system_buffer,
+                    )
+                })
+            }
+            b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0ReplaceClass" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
+                })
+            }
+            s => panic!(
+                "Unknown selector for system call!: {}",
+                std::str::from_utf8(s).expect("`selector` should be a valid utf8 string")
+            ),
         }
     }
 
@@ -804,7 +855,7 @@ impl<'a> CairoHintProcessor<'a> {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
         }
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state.storage.entry(contract).or_default().insert(addr, value);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -860,9 +911,9 @@ impl<'a> CairoHintProcessor<'a> {
         let signature_end = res_segment.ptr;
         let resource_bounds_start = res_segment.ptr;
         for value in &tx_info.resource_bounds {
-            res_segment.write(&value.resource)?;
-            res_segment.write(&value.max_amount)?;
-            res_segment.write(&value.max_price_per_unit)?;
+            res_segment.write(value.resource)?;
+            res_segment.write(value.max_amount)?;
+            res_segment.write(value.max_price_per_unit)?;
         }
         let resource_bounds_end = res_segment.ptr;
         let paymaster_data_start = res_segment.ptr;
@@ -872,33 +923,33 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write_data(tx_info.account_deployment_data.iter().cloned())?;
         let account_deployment_data_end = res_segment.ptr;
         let tx_info_ptr = res_segment.ptr;
-        res_segment.write(tx_info.version.clone())?;
-        res_segment.write(tx_info.account_contract_address.clone())?;
-        res_segment.write(tx_info.max_fee.clone())?;
+        res_segment.write(tx_info.version)?;
+        res_segment.write(tx_info.account_contract_address)?;
+        res_segment.write(tx_info.max_fee)?;
         res_segment.write(signature_start)?;
         res_segment.write(signature_end)?;
-        res_segment.write(tx_info.transaction_hash.clone())?;
-        res_segment.write(tx_info.chain_id.clone())?;
-        res_segment.write(tx_info.nonce.clone())?;
+        res_segment.write(tx_info.transaction_hash)?;
+        res_segment.write(tx_info.chain_id)?;
+        res_segment.write(tx_info.nonce)?;
         res_segment.write(resource_bounds_start)?;
         res_segment.write(resource_bounds_end)?;
-        res_segment.write(tx_info.tip.clone())?;
+        res_segment.write(tx_info.tip)?;
         res_segment.write(paymaster_data_start)?;
         res_segment.write(paymaster_data_end)?;
-        res_segment.write(tx_info.nonce_data_availability_mode.clone())?;
-        res_segment.write(tx_info.fee_data_availability_mode.clone())?;
+        res_segment.write(tx_info.nonce_data_availability_mode)?;
+        res_segment.write(tx_info.fee_data_availability_mode)?;
         res_segment.write(account_deployment_data_start)?;
         res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
-        res_segment.write(block_info.block_number.clone())?;
-        res_segment.write(block_info.block_timestamp.clone())?;
-        res_segment.write(block_info.sequencer_address.clone())?;
+        res_segment.write(block_info.block_number)?;
+        res_segment.write(block_info.block_timestamp)?;
+        res_segment.write(block_info.sequencer_address)?;
         let exec_info_ptr = res_segment.ptr;
         res_segment.write(block_info_ptr)?;
         res_segment.write(tx_info_ptr)?;
-        res_segment.write(exec_info.caller_address.clone())?;
-        res_segment.write(exec_info.contract_address.clone())?;
-        res_segment.write(exec_info.entry_point_selector.clone())?;
+        res_segment.write(exec_info.caller_address)?;
+        res_segment.write(exec_info.contract_address)?;
+        res_segment.write(exec_info.entry_point_selector)?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
@@ -910,7 +961,7 @@ impl<'a> CairoHintProcessor<'a> {
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
@@ -923,7 +974,7 @@ impl<'a> CairoHintProcessor<'a> {
         payload: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-        let contract = self.starknet_state.exec_info.contract_address.clone();
+        let contract = self.starknet_state.exec_info.contract_address;
         self.starknet_state
             .logs
             .entry(contract)
@@ -949,7 +1000,7 @@ impl<'a> CairoHintProcessor<'a> {
         let deployer_address = if deploy_from_zero {
             Felt252::zero()
         } else {
-            self.starknet_state.exec_info.contract_address.clone()
+            self.starknet_state.exec_info.contract_address
         };
         let deployed_contract_address = calculate_contract_address(
             &_contract_address_salt,
@@ -966,15 +1017,13 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Set the class hash of the deployed contract before executing the constructor,
         // as the constructor could make an external call to this address.
-        self.starknet_state
-            .deployed_contracts
-            .insert(deployed_contract_address.clone(), class_hash);
+        self.starknet_state.deployed_contracts.insert(deployed_contract_address, class_hash);
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
             let old_addrs = self
                 .starknet_state
-                .open_caller_context((deployed_contract_address.clone(), deployer_address));
+                .open_caller_context((deployed_contract_address, deployer_address));
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {
@@ -1029,8 +1078,8 @@ impl<'a> CairoHintProcessor<'a> {
         };
 
         let old_addrs = self.starknet_state.open_caller_context((
-            contract_address.clone(),
-            self.starknet_state.exec_info.contract_address.clone(),
+            contract_address,
+            self.starknet_state.exec_info.contract_address,
         ));
         let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
         self.starknet_state.close_caller_context(old_addrs);
@@ -1091,7 +1140,7 @@ impl<'a> CairoHintProcessor<'a> {
         {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
-        let address = self.starknet_state.exec_info.contract_address.clone();
+        let address = self.starknet_state.exec_info.contract_address;
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -1157,7 +1206,7 @@ impl<'a> CairoHintProcessor<'a> {
                      element",
                 ))))
             } else {
-                Ok(inputs[0].clone())
+                Ok(inputs[0])
             }
         };
 
@@ -1248,9 +1297,13 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         }
         keccak::f1600(&mut state)
     }
+
+    // a felt equal to 2 ** 64
+    const TWO_64_FELT: Felt252 = Felt252::from_hex_unchecked("0x10000000000000000");
+
     Ok(SyscallResult::Success(vec![
-        ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
-        ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
+        ((Felt252::from(state[1]) * TWO_64_FELT) + Felt252::from(state[0])).into(),
+        ((Felt252::from(state[3]) * TWO_64_FELT) + Felt252::from(state[2])).into(),
     ]))
 }
 
@@ -1722,7 +1775,7 @@ pub fn execute_core_hint(
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
             // residue.
-            let beta = Fq::from(get_beta().to_biguint());
+            let beta = Fq::from(BETA.to_biguint());
             let mut rng = ark_std::test_rng();
             let (random_x, random_y_squared) = loop {
                 let random_x = Fq::rand(&mut rng);
@@ -1803,7 +1856,7 @@ pub fn execute_core_hint(
         }
         CoreHint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
             let dict_access_size = 3;
-            let rangecheck_bound = Felt252::from(u128::MAX) + 1u32;
+            let rangecheck_bound = Felt252::from(u128::MAX) + Felt252::ONE;
 
             exec_scopes.assign_or_update_variable(
                 "dict_squash_exec_scope",
@@ -1870,10 +1923,9 @@ pub fn execute_core_hint(
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
             let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
-            let index_delta_minus_1_val =
-                dict_squash_exec_scope.current_access_index().unwrap().clone()
-                    - prev_access_index
-                    - 1_u32;
+            let index_delta_minus_1_val = dict_squash_exec_scope.current_access_index().unwrap()
+                - prev_access_index
+                - Felt252::ONE;
             insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
         }
         CoreHint::ShouldContinueSquashLoop { should_continue } => {
@@ -1901,7 +1953,7 @@ pub fn execute_core_hint(
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
             let mut lengths_and_indices =
-                [(a_val.clone(), 0), (b_val.clone() - a_val, 1), (Felt252::from(-1) - b_val, 2)];
+                [(a_val, 0), (b_val - a_val, 1), (Felt252::from(-1) - b_val, 2)];
             lengths_and_indices.sort();
             exec_scopes
                 .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
@@ -2033,8 +2085,8 @@ fn read_felts(
 
     let mut felts = Vec::new();
     while curr != end {
-        let value = vm.get_integer(curr)?.deref().clone();
-        felts.push(value);
+        let value = vm.get_integer(curr)?;
+        felts.push(*value);
         curr = (curr + 1)?;
     }
 
@@ -2049,7 +2101,7 @@ fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Ve
     };
     let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
     let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
-    (res_start..res_end).map(|i| memory[i].clone().unwrap()).collect()
+    (res_start..res_end).map(|i| memory[i].unwrap()).collect()
 }
 
 /// Loads a range of values from the VM memory.
@@ -2060,8 +2112,8 @@ pub fn vm_get_range(
 ) -> Result<Vec<Felt252>, HintError> {
     let mut values = vec![];
     while calldata_start_ptr != calldata_end_ptr {
-        let val = vm.get_integer(calldata_start_ptr)?.deref().clone();
-        values.push(val);
+        let val = vm.get_integer(calldata_start_ptr)?;
+        values.push(*val);
         calldata_start_ptr.offset += 1;
     }
     Ok(values)
@@ -2085,7 +2137,7 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-type RunFunctionRes = (Vec<Option<Felt252>>, usize);
+type RunFunctionRes = (Vec<Option<Felt252>>, Vec<RelocatedTraceEntry>);
 
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
@@ -2098,7 +2150,7 @@ pub fn run_function_with_runner(
     hint_processor: &mut dyn HintProcessor,
     runner: &mut CairoRunner,
 ) -> Result<(), Box<CairoRunError>> {
-    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
+    let end = runner.initialize(vm, false).map_err(CairoRunError::from)?;
 
     additional_initialization(RunFunctionContext { vm, data_len })?;
 
@@ -2147,7 +2199,7 @@ pub fn run_function<'a, 'b: 'a>(
 
     run_function_with_runner(vm, data_len, additional_initialization, hint_processor, &mut runner)?;
 
-    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+    Ok((runner.relocated_memory, runner.relocated_trace.unwrap()))
 }
 
 /// Formats the given felts as a debug string.
@@ -2199,7 +2251,7 @@ where
 {
     let first_felt = values.next()?;
 
-    if first_felt == felt252_str!(BYTE_ARRAY_MAGIC, 16) {
+    if first_felt == BYTE_ARRAY_MAGIC {
         if let Some(string) = try_format_string(values) {
             return Some(FormattedItem { item: string, is_string: true });
         }

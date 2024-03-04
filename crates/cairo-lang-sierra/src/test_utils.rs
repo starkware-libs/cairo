@@ -1,7 +1,7 @@
 use bimap::BiMap;
-use cairo_felt::Felt252;
 use itertools::chain;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use crate::ids::ConcreteTypeId;
 use crate::program::{ConcreteTypeLongId, GenericArg};

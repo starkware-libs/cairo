@@ -1,10 +1,10 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,

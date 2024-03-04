@@ -1,6 +1,5 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -8,6 +7,7 @@ use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::{BigInt, ToBigInt};
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;

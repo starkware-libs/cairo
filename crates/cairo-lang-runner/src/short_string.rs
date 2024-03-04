@@ -1,11 +1,11 @@
-use cairo_felt::Felt252;
 use num_traits::Zero;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.
 pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     let mut as_string = String::default();
     let mut is_end = false;
-    for byte in value.to_bytes_be() {
+    for byte in value.to_bytes_be().into_iter().skip_while(|b| *b == 0) {
         if byte == 0 {
             is_end = true;
         } else if is_end {
@@ -31,14 +31,14 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     }
 
     let bytes = value.to_bytes_be();
-    let bytes_len = bytes.len();
-    if bytes_len > length {
-        // `value` has more bytes than expected.
-        return None;
-    }
 
     let mut as_string = "".to_string();
-    for byte in bytes {
+    let mut bytes_len = 0;
+    for byte in bytes.into_iter().skip_while(|b| *b == 0) {
+        if bytes_len == length {
+            return None;
+        }
+
         if byte == 0 {
             as_string.push_str(r"\0");
         } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
@@ -46,11 +46,15 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
         } else {
             as_string.push_str(format!(r"\x{:02x}", byte).as_str());
         }
+
+        bytes_len += 1;
     }
 
     // `to_bytes_be` misses starting nulls. Prepend them as needed.
     let missing_nulls = length - bytes_len;
-    as_string.insert_str(0, &r"\0".repeat(missing_nulls));
+    if missing_nulls > 0 {
+        as_string.insert_str(0, &r"\0".repeat(missing_nulls));
+    }
 
     Some(as_string)
 }

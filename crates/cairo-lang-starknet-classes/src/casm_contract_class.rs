@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
@@ -35,6 +34,7 @@ use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use starknet_crypto::{poseidon_hash_many, FieldElement};
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;

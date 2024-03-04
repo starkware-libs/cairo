@@ -1,5 +1,5 @@
-use cairo_felt::Felt252;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::utils::Range;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
