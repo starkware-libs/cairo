@@ -93,7 +93,6 @@ impl OptimizationStrategyId {
 pub fn inlined_function_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     db.intern_strategy(OptimizationStrategy(vec![
         OptimizationPhase::ApplyInlining,
-        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
         // The call to `reorder_statements` before and after `branch_inversion` is intentional.
         // See description of `branch_inversion` for more details.

@@ -189,7 +189,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v21: core::RangeCheck, v22: core::gas::GasBuiltin
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
@@ -202,6 +202,6 @@ Statements:
   (v16: core::byte_array::ByteArray, v17: @core::byte_array::ByteArray) <- snapshot(v3)
   (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
   (v18: core::byte_array::ByteArray, v19: @core::byte_array::ByteArray) <- snapshot(v7)
-  (v23: core::RangeCheck, v24: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- core::byte_array::ByteArrayImpl::concat(v21, v22, v17, v19)
+  (v27: core::RangeCheck, v28: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- core::byte_array::ByteArrayImpl::concat(v25, v26, v17, v19)
 End:
-  Return(v23, v24, v20)
+  Return(v27, v28, v20)

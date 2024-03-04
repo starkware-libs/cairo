@@ -104,12 +104,17 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk1, {v3 -> v2})
+  Goto(blk5, {v3 -> v5})
 
 blk4:
 Statements:
 End:
-  Goto(blk1, {v1 -> v2})
+  Goto(blk5, {v1 -> v5})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v5 -> v2})
 
 //! > lowering_diagnostics
 
@@ -432,7 +437,7 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk9, {})
+  Goto(blk10, {})
 
 blk2:
 Statements:
@@ -468,39 +473,44 @@ Statements:
   (v15: ()) <- struct_construct()
   (v16: core::bool) <- bool::True(v15)
 End:
-  Goto(blk4, {v16 -> v6})
+  Goto(blk8, {v16 -> v17})
 
 blk7:
 Statements:
-  (v17: ()) <- struct_construct()
-  (v18: core::bool) <- bool::False(v17)
+  (v18: ()) <- struct_construct()
+  (v19: core::bool) <- bool::False(v18)
 End:
-  Goto(blk4, {v18 -> v6})
+  Goto(blk8, {v19 -> v17})
 
 blk8:
 Statements:
 End:
-  Goto(blk3, {v8 -> v10})
+  Goto(blk4, {v17 -> v6})
 
 blk9:
 Statements:
 End:
-  Match(match core::felt252_is_zero(v1) {
-    IsZeroResult::Zero => blk10,
-    IsZeroResult::NonZero(v19) => blk11,
-  })
+  Goto(blk3, {v8 -> v10})
 
 blk10:
 Statements:
-  (v20: core::felt252) <- 1u
 End:
-  Goto(blk8, {v20 -> v8})
+  Match(match core::felt252_is_zero(v1) {
+    IsZeroResult::Zero => blk11,
+    IsZeroResult::NonZero(v20) => blk12,
+  })
 
 blk11:
 Statements:
-  (v21: core::felt252) <- 0u
+  (v21: core::felt252) <- 1u
 End:
-  Goto(blk8, {v21 -> v8})
+  Goto(blk9, {v21 -> v8})
+
+blk12:
+Statements:
+  (v22: core::felt252) <- 0u
+End:
+  Goto(blk9, {v22 -> v8})
 
 //! > lowering_diagnostics
 
@@ -1118,7 +1128,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v16) => blk9,
+    IsZeroResult::NonZero(v16) => blk11,
   })
 
 blk8:
@@ -1127,15 +1137,30 @@ Statements:
   (v18: core::felt252) <- core::felt252_sub(v0, v17)
   (v19: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v18)
 End:
-  Goto(blk6, {v19 -> v8})
+  Match(match_enum(v19) {
+    PanicResult::Ok(v20) => blk9,
+    PanicResult::Err(v21) => blk10,
+  })
 
 blk9:
 Statements:
-  (v20: core::felt252) <- 1u
-  (v21: (core::felt252,)) <- struct_construct(v20)
-  (v22: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v21)
+  (v22: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v20)
 End:
   Goto(blk6, {v22 -> v8})
+
+blk10:
+Statements:
+  (v23: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
+End:
+  Goto(blk6, {v23 -> v8})
+
+blk11:
+Statements:
+  (v24: core::felt252) <- 1u
+  (v25: (core::felt252,)) <- struct_construct(v24)
+  (v26: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v25)
+End:
+  Goto(blk6, {v26 -> v8})
 
 //! > lowering_diagnostics
 
@@ -1452,7 +1477,22 @@ blk5:
 Statements:
   (v9: core::panics::PanicResult::<(core::felt252,)>) <- test::baz(v0)
 End:
-  Goto(blk4, {v9 -> v2})
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk6,
+    PanicResult::Err(v11) => blk7,
+  })
+
+blk6:
+Statements:
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v10)
+End:
+  Goto(blk4, {v12 -> v2})
+
+blk7:
+Statements:
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
+End:
+  Goto(blk4, {v13 -> v2})
 
 //! > lowering_diagnostics
 
@@ -1693,7 +1733,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v16) => blk9,
+    IsZeroResult::NonZero(v16) => blk11,
   })
 
 blk8:
@@ -1702,15 +1742,35 @@ Statements:
   (v18: core::felt252) <- core::felt252_sub(v0, v17)
   (v19: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v18)
 End:
-  Goto(blk6, {v19 -> v8})
+  Match(match_enum(v19) {
+    PanicResult::Ok(v20) => blk9,
+    PanicResult::Err(v21) => blk10,
+  })
 
 blk9:
 Statements:
-  (v20: core::felt252) <- 1u
-  (v21: (core::felt252,)) <- struct_construct(v20)
-  (v22: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v21)
+  (v22: core::felt252) <- struct_destructure(v20)
 End:
-  Goto(blk6, {v22 -> v8})
+  Goto(blk12, {v22 -> v23})
+
+blk10:
+Statements:
+  (v24: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
+End:
+  Goto(blk6, {v24 -> v8})
+
+blk11:
+Statements:
+  (v25: core::felt252) <- 1u
+End:
+  Goto(blk12, {v25 -> v23})
+
+blk12:
+Statements:
+  (v26: (core::felt252,)) <- struct_construct(v23)
+  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
+End:
+  Goto(blk6, {v27 -> v8})
 
 //! > lowering_diagnostics
 
