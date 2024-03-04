@@ -183,3 +183,33 @@ Statements:
   (v0: core::felt252) <- core::felt252_const::<1>()
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > generic param in expression
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+  bar::<{ 1 + 2 }>() + bar::<2>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N+5
+}
+
+//! > semantic_diagnostics
+error: This expression is not supported as constant.
+ --> lib.cairo:5:11
+    bar::<N>()
+          ^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
