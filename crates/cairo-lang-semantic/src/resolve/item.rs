@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::{
-    ConstantId, FunctionWithBodyId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId, VarId,
+    ConstantId, FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId,
+    ModuleId, ModuleItemId, ModuleTypeAliasId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -85,6 +86,7 @@ impl ResolvedGenericItem {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedConcreteItem {
     Constant(ConstantId),
+    ConstGenericParameter(GenericParamId),
     Module(ModuleId),
     Function(FunctionId),
     TraitFunction(ConcreteTraitGenericFunctionId),
@@ -97,6 +99,7 @@ impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
             ResolvedConcreteItem::Constant(id) => ResolvedGenericItem::Constant(*id),
+            ResolvedConcreteItem::ConstGenericParameter(_) => return None,
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 db.lookup_intern_function(*function).function.generic_function,

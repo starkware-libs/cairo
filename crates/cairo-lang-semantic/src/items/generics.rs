@@ -33,6 +33,7 @@ use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
 pub enum GenericArgumentId {
     Type(TypeId),
     Constant(ConstValueId),
+    GenericConstant(GenericParamId),
     Impl(ImplId), // TODO(spapini): impls and constants as generic values.
     NegImpl,
 }
@@ -41,6 +42,7 @@ impl GenericArgumentId {
         match self {
             GenericArgumentId::Type(_) => GenericKind::Type,
             GenericArgumentId::Constant(_) => GenericKind::Const,
+            GenericArgumentId::GenericConstant(_) => GenericKind::Const,
             GenericArgumentId::Impl(_) => GenericKind::Impl,
             GenericArgumentId::NegImpl => GenericKind::NegImpl,
         }
@@ -49,6 +51,7 @@ impl GenericArgumentId {
         match self {
             GenericArgumentId::Type(ty) => ty.format(db),
             GenericArgumentId::Constant(value) => value.format(db),
+            GenericArgumentId::GenericConstant(param) => param.format(db.upcast()),
             GenericArgumentId::Impl(imp) => imp.format(db),
             GenericArgumentId::NegImpl => "_".into(),
         }
@@ -58,6 +61,7 @@ impl GenericArgumentId {
         Some(match self {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
             GenericArgumentId::Constant(_) => GenericArgumentHead::Const,
+            GenericArgumentId::GenericConstant(_) => GenericArgumentHead::Const,
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
             GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
         })
@@ -67,6 +71,7 @@ impl GenericArgumentId {
         match self {
             GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
             GenericArgumentId::Constant(_) => true,
+            GenericArgumentId::GenericConstant(_) => false,
             GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
             GenericArgumentId::NegImpl => true,
         }
@@ -81,6 +86,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
         match self {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Constant(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::GenericConstant(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::NegImpl => write!(f, "_"),
         }
@@ -375,15 +381,6 @@ fn semantic_from_generic_param_ast(
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            if !matches!(
-                parent_item_id,
-                GenericItemId::ModuleItem(
-                    GenericModuleItemId::ExternFunc(_) | GenericModuleItemId::ExternType(_)
-                )
-            ) {
-                diagnostics
-                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamNotSupported);
-            }
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }

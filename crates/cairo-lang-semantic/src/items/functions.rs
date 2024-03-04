@@ -434,7 +434,7 @@ fn generic_params_to_args(
             GenericParam::Type(param) => Ok(GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
             )),
-            GenericParam::Const(_) => todo!("Support const generic arguments"),
+            GenericParam::Const(param) => Ok(GenericArgumentId::GenericConstant(param.id)),
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }

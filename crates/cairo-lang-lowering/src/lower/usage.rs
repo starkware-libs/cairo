@@ -266,6 +266,7 @@ impl BlockUsages {
             }
             Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Constant(_) => {}
+            Expr::GenericConstant(_) => {}
             Expr::Missing(_) => {}
         }
     }

@@ -393,6 +393,9 @@ pub fn get_concrete_libfunc_id(
                 ConstValue::Int,
                 "Only integer constants are supported."
             )),
+            semantic::GenericArgumentId::GenericConstant(_) => {
+                panic!("Generic constants are not supported.")
+            }
             semantic::GenericArgumentId::Impl(_) => {
                 panic!("Extern function with impl generics are not supported.")
             }
