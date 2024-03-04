@@ -50,9 +50,11 @@ pub fn concretize_lowered(
                 Statement::EnumConstruct(stmt) => {
                     stmt.variant = rewriter.rewrite(stmt.variant.clone())?;
                 }
+                Statement::Const(stmt) => {
+                    stmt.value = rewriter.rewrite(stmt.value.clone())?;
+                }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
-                | Statement::Const(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_) => {}
             }

@@ -20,6 +20,7 @@ use smol_str::SmolStr;
 use syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 
 use super::attribute::SemanticQueryAttrs;
+use super::constant::ConstValue;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -434,7 +435,9 @@ fn generic_params_to_args(
             GenericParam::Type(param) => Ok(GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
             )),
-            GenericParam::Const(_) => todo!("Support const generic arguments"),
+            GenericParam::Const(param) => Ok(GenericArgumentId::Constant(
+                db.intern_const_value(ConstValue::Generic(param.id)),
+            )),
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }
