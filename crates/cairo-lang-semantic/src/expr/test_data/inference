@@ -715,3 +715,37 @@ error: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>
  --> lib.cairo:14:7
       baz(a)
       ^*^
+
+//! > ==========================================================================
+
+//! > Test inference failure because of unbalanced snapshot.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+   let x = 5;
+   let y: u32 = 5;
+   takes_snapshots(x, y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn takes_snapshots<T>(x: @T, y: @T) {
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
+It is possible that the type inference failed because the types differ in the number of snapshots.
+Consider adding or removing snapshots.
+ --> lib.cairo:6:23
+   takes_snapshots(x, y);
+                      ^
+
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo:6:4
+   takes_snapshots(x, y);
+   ^*************^
