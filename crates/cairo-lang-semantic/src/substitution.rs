@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::{
     ImplVar, ImplVarId, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId, TypeVar,
 };
-use crate::items::constant::ConstValueId;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -283,6 +283,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprEnumVariantCtor, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprPropagateError, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprParamConstant, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
@@ -325,6 +326,17 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
                 let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
                 // return self.rewrite(self.db.lookup_intern_type(type_id));
                 return Ok(self.db.lookup_intern_type(type_id));
+            }
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn rewrite(&mut self, value: ConstValue) -> Maybe<ConstValue> {
+        if let ConstValue::Generic(param_id) = value {
+            if let Some(generic_arg) = self.substitution.get(&param_id) {
+                let const_value_id = extract_matches!(generic_arg, GenericArgumentId::Constant);
+                return Ok(self.db.lookup_intern_const_value(*const_value_id));
             }
         }
         value.default_rewrite(self)
