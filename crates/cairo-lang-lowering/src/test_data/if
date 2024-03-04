@@ -117,9 +117,9 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
-  (v20: core::felt252) <- core::felt252_sub(v1, v0)
+  (v13: core::felt252) <- core::felt252_sub(v1, v0)
 End:
-  Match(match core::felt252_is_zero(v20) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v14) => blk2,
   })
@@ -167,9 +167,9 @@ blk0 (root):
 Statements:
   (v16: core::felt252) <- core::felt252_add(v0, v1)
   (v17: core::felt252) <- core::felt252_sub(v2, v3)
-  (v27: core::felt252) <- core::felt252_sub(v16, v17)
+  (v20: core::felt252) <- core::felt252_sub(v16, v17)
 End:
-  Match(match core::felt252_is_zero(v27) {
+  Match(match core::felt252_is_zero(v20) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v21) => blk2,
   })
@@ -229,11 +229,11 @@ End:
 blk2:
 Statements:
   (v11: core::felt252) <- 5
-  (v43: core::felt252) <- core::felt252_sub(v0, v11)
+  (v34: core::felt252) <- core::felt252_sub(v0, v11)
 End:
-  Match(match core::felt252_is_zero(v43) {
+  Match(match core::felt252_is_zero(v34) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v36) => blk5,
+    IsZeroResult::NonZero(v35) => blk5,
   })
 
 blk3:
@@ -426,9 +426,9 @@ Statements:
   (v0: core::felt252) <- 0
   (v1: core::felt252) <- 5
   (v4: core::felt252) <- 6
-  (v39: core::felt252) <- core::felt252_sub(v1, v4)
+  (v30: core::felt252) <- core::felt252_sub(v1, v4)
 End:
-  Match(match core::felt252_is_zero(v39) {
+  Match(match core::felt252_is_zero(v30) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v31) => blk2,
   })
@@ -438,14 +438,14 @@ Statements:
   (v32: ()) <- struct_construct()
   (v33: core::bool) <- bool::True(v32)
 End:
-  Goto(blk3, {v33 -> v34})
+  Goto(blk3, {v33 -> v7})
 
 blk2:
 Statements:
-  (v35: ()) <- struct_construct()
-  (v36: core::bool) <- bool::False(v35)
+  (v34: ()) <- struct_construct()
+  (v35: core::bool) <- bool::False(v34)
 End:
-  Goto(blk3, {v36 -> v34})
+  Goto(blk3, {v35 -> v7})
 
 blk3:
 Statements:
@@ -459,7 +459,7 @@ End:
 blk4:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v16) => blk5,
     bool::True(v17) => blk6,
   })
@@ -471,14 +471,14 @@ End:
 
 blk6:
 Statements:
-  (v37: core::felt252) <- core::felt252_add(v0, v8)
+  (v36: core::felt252) <- core::felt252_add(v0, v8)
 End:
-  Goto(blk14, {v37 -> v25})
+  Goto(blk14, {v36 -> v25})
 
 blk7:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v19) => blk8,
     bool::True(v20) => blk9,
   })
@@ -496,7 +496,7 @@ End:
 blk10:
 Statements:
 End:
-  Match(match_enum(v34) {
+  Match(match_enum(v7) {
     bool::False(v22) => blk11,
     bool::True(v23) => blk12,
   })
@@ -519,9 +519,9 @@ End:
 blk14:
 Statements:
   (v26: core::felt252) <- 1
-  (v38: core::felt252) <- core::felt252_add(v25, v26)
+  (v37: core::felt252) <- core::felt252_add(v25, v26)
 End:
-  Return(v38)
+  Return(v37)
 
 //! > ==========================================================================
 
@@ -818,6 +818,24 @@ enum myEnum {
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- test::foo[expr30](v0)
 End:
-  Return(v1)
+  Match(match_enum(v0) {
+    myEnum::A(v2) => blk1,
+    myEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- 2
+End:
+  Return(v4)

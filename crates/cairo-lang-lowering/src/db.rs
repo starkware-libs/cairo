@@ -5,12 +5,16 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLangu
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{self as semantic, TypeId};
+use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
+use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{extract_matches, Upcast};
+use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
-use semantic::corelib;
+use num_traits::ToPrimitive;
+use semantic::items::constant::ConstValue;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -22,6 +26,7 @@ use crate::ids::FunctionLongId;
 use crate::inline::get_inline_diagnostics;
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::config::OptimizationConfig;
+use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
 use crate::{
@@ -86,6 +91,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function: ids::ConcreteFunctionWithBodyId,
         optimization_strategy: OptimizationStrategyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the lowered representation of a function to be considered for inlining.
+    fn inlined_function_with_body_lowered(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Computes the final lowered representation (after all the internal transformations).
@@ -305,6 +316,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the default optimization strategy.
     #[salsa::invoke(crate::optimizations::strategy::default_optimization_strategy)]
     fn default_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the the optimization strategy that is applied to a function before it is inlined.
+    #[salsa::invoke(crate::optimizations::strategy::inlined_function_optimization_strategy)]
+    fn inlined_function_optimization_strategy(&self) -> OptimizationStrategyId;
+
+    /// Returns the expected size of a type.
+    fn type_size(&self, ty: TypeId) -> usize;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -389,6 +407,7 @@ fn concrete_function_with_body_postpanic_lowered(
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     add_destructs(db, function, &mut lowered);
+    scrub_units(db, &mut lowered);
 
     Ok(Arc::new(lowered))
 }
@@ -400,6 +419,17 @@ fn optimized_concrete_function_with_body_lowered(
     optimization_strategy: OptimizationStrategyId,
 ) -> Maybe<Arc<FlatLowered>> {
     Ok(Arc::new(optimization_strategy.apply_strategy(db, function)?))
+}
+
+/// Query implementation of [LoweringGroup::inlined_function_with_body_lowered].
+fn inlined_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    db.optimized_concrete_function_with_body_lowered(
+        function,
+        db.inlined_function_optimization_strategy(),
+    )
 }
 
 /// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
@@ -681,4 +711,45 @@ fn file_lowering_diagnostics(
         }
     }
     Ok(diagnostics.build())
+}
+
+fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(struct_id) => db
+                .concrete_struct_members(struct_id)
+                .unwrap()
+                .into_iter()
+                .map(|(_, member)| db.type_size(member.ty))
+                .sum::<usize>(),
+            ConcreteTypeId::Enum(enum_id) => {
+                1 + db
+                    .concrete_enum_variants(enum_id)
+                    .unwrap()
+                    .into_iter()
+                    .map(|variant| db.type_size(variant.ty))
+                    .sum::<usize>()
+            }
+            ConcreteTypeId::Extern(extern_id) => {
+                match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
+                    "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
+                    "EcState" => 3,
+                    "Uint128MulGuarantee" => 4,
+                    _ => 1,
+                }
+            }
+        },
+        TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
+        TypeLongId::Snapshot(ty) => db.type_size(ty),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            db.type_size(type_id)
+                * extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                    .to_usize()
+                    .unwrap()
+        }
+        TypeLongId::Coupon(_) => 0,
+        TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            panic!("Function should only be called with fully concrete types")
+        }
+    }
 }

@@ -28,13 +28,13 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v71: core::RangeCheck, v0: core::integer::u256
+Parameters: v31: core::RangeCheck, v0: core::integer::u256
 blk0 (root):
 Statements:
   (v10: core::integer::u128, v11: core::integer::u128) <- struct_destructure(v0)
-  (v14: core::integer::u128) <- 0
+  (v12: core::integer::u128) <- 0
 End:
-  Match(match core::integer::u128_eq(v11, v14) {
+  Match(match core::integer::u128_eq(v11, v12) {
     bool::False => blk1,
     bool::True => blk2,
   })
@@ -42,38 +42,38 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk5, {v71 -> v72})
+  Goto(blk5, {v31 -> v32})
 
 blk2:
 Statements:
 End:
-  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v71, v10) {
-    Option::Some(v73, v40) => blk3,
-    Option::None(v74) => blk4,
+  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v31, v10) {
+    Option::Some(v33, v15) => blk3,
+    Option::None(v34) => blk4,
   })
 
 blk3:
 Statements:
-  (v51: (core::integer::u64,)) <- struct_construct(v40)
-  (v52: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v51)
+  (v21: (core::integer::u64,)) <- struct_construct(v15)
+  (v22: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v21)
 End:
-  Return(v73, v52)
+  Return(v33, v22)
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v74 -> v72})
+  Goto(blk5, {v34 -> v32})
 
 blk5:
 Statements:
-  (v62: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374
-  (v63: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v62, v24)
-  (v69: core::panics::Panic) <- struct_construct()
-  (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v69, v63)
-  (v55: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v50)
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v24)
+  (v26: core::panics::Panic) <- struct_construct()
+  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v26, v25)
+  (v28: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v27)
 End:
-  Return(v72, v55)
+  Return(v32, v28)
 
 //! > lowering
 Main:

@@ -41,41 +41,33 @@ test::bar: OrderedHashMap({})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-libfunc drop<Unit> = drop<Unit>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([1]) { fallthrough() 11([2]) }; // 0
+felt252_is_zero([1]) { fallthrough() 7([2]) }; // 0
 branch_align() -> (); // 1
-function_call<user@test::bar>() -> ([3]); // 2
-drop<Unit>([3]) -> (); // 3
-function_call<user@test::bar>() -> ([4]); // 4
-drop<Unit>([4]) -> (); // 5
-function_call<user@test::bar>() -> ([5]); // 6
-drop<Unit>([5]) -> (); // 7
-struct_construct<Unit>() -> ([6]); // 8
-store_temp<GasBuiltin>([0]) -> ([0]); // 9
-return([0], [6]); // 10
-branch_align() -> (); // 11
-drop<NonZero<felt252>>([2]) -> (); // 12
-redeposit_gas([0]) -> ([7]); // 13
-struct_construct<Unit>() -> ([8]); // 14
-store_temp<GasBuiltin>([7]) -> ([7]); // 15
-return([7], [8]); // 16
-struct_construct<Unit>() -> ([0]); // 17
-return([0]); // 18
+function_call<user@test::bar>() -> (); // 2
+function_call<user@test::bar>() -> (); // 3
+function_call<user@test::bar>() -> (); // 4
+store_temp<GasBuiltin>([0]) -> ([0]); // 5
+return([0]); // 6
+branch_align() -> (); // 7
+drop<NonZero<felt252>>([2]) -> (); // 8
+redeposit_gas([0]) -> ([3]); // 9
+store_temp<GasBuiltin>([3]) -> ([3]); // 10
+return([3]); // 11
+return(); // 12
 
-test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
-test::bar@17() -> (Unit);
+test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin);
+test::bar@12() -> ();
 
 //! > ==========================================================================
 
@@ -137,8 +129,8 @@ test::foo: OrderedHashMap({Bitwise: 2, Pedersen: 1, Const: 1730})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
-type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
@@ -158,14 +150,13 @@ libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc pedersen = pedersen;
 libfunc drop<felt252> = drop<felt252>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([3]) { fallthrough() 29([4]) }; // 0
+felt252_is_zero([3]) { fallthrough() 28([4]) }; // 0
 branch_align() -> (); // 1
 const_as_immediate<Const<u128, 1>>() -> ([5]); // 2
 const_as_immediate<Const<u128, 2>>() -> ([6]); // 3
@@ -189,21 +180,19 @@ store_temp<felt252>([17]) -> ([17]); // 20
 store_temp<felt252>([18]) -> ([18]); // 21
 pedersen([2], [17], [18]) -> ([19], [20]); // 22
 drop<felt252>([20]) -> (); // 23
-struct_construct<Unit>() -> ([21]); // 24
-store_temp<GasBuiltin>([0]) -> ([0]); // 25
-store_temp<Bitwise>([13]) -> ([13]); // 26
-store_temp<Pedersen>([19]) -> ([19]); // 27
-return([0], [13], [19], [21]); // 28
-branch_align() -> (); // 29
-drop<NonZero<felt252>>([4]) -> (); // 30
-redeposit_gas([0]) -> ([22]); // 31
-struct_construct<Unit>() -> ([23]); // 32
-store_temp<GasBuiltin>([22]) -> ([22]); // 33
-store_temp<Bitwise>([1]) -> ([1]); // 34
-store_temp<Pedersen>([2]) -> ([2]); // 35
-return([22], [1], [2], [23]); // 36
+store_temp<GasBuiltin>([0]) -> ([0]); // 24
+store_temp<Bitwise>([13]) -> ([13]); // 25
+store_temp<Pedersen>([19]) -> ([19]); // 26
+return([0], [13], [19]); // 27
+branch_align() -> (); // 28
+drop<NonZero<felt252>>([4]) -> (); // 29
+redeposit_gas([0]) -> ([21]); // 30
+store_temp<GasBuiltin>([21]) -> ([21]); // 31
+store_temp<Bitwise>([1]) -> ([1]); // 32
+store_temp<Pedersen>([2]) -> ([2]); // 33
+return([21], [1], [2]); // 34
 
-test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasBuiltin, Bitwise, Pedersen, Unit);
+test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasBuiltin, Bitwise, Pedersen);
 
 //! > ==========================================================================
 

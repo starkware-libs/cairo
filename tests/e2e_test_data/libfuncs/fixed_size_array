@@ -42,8 +42,6 @@ libfunc const_as_immediate<Const<felt252, 30>> = const_as_immediate<Const<felt25
 libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
 libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252, felt252, felt252>>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-libfunc drop<Unit> = drop<Unit>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Tuple<felt252, felt252, felt252>> = drop<Tuple<felt252, felt252, felt252>>;
 
 const_as_immediate<Const<felt252, 10>>() -> ([0]); // 0
@@ -51,13 +49,10 @@ const_as_immediate<Const<felt252, 20>>() -> ([1]); // 1
 const_as_immediate<Const<felt252, 30>>() -> ([2]); // 2
 struct_construct<Tuple<felt252, felt252, felt252>>([0], [1], [2]) -> ([3]); // 3
 store_temp<Tuple<felt252, felt252, felt252>>([3]) -> ([3]); // 4
-function_call<user@test::bar>([3]) -> ([4]); // 5
-drop<Unit>([4]) -> (); // 6
-struct_construct<Unit>() -> ([5]); // 7
-return([5]); // 8
-drop<Tuple<felt252, felt252, felt252>>([0]) -> (); // 9
-struct_construct<Unit>() -> ([1]); // 10
-return([1]); // 11
+function_call<user@test::bar>([3]) -> (); // 5
+return(); // 6
+drop<Tuple<felt252, felt252, felt252>>([0]) -> (); // 7
+return(); // 8
 
-test::foo@0() -> (Unit);
-test::bar@9([0]: Tuple<felt252, felt252, felt252>) -> (Unit);
+test::foo@0() -> ();
+test::bar@7([0]: Tuple<felt252, felt252, felt252>) -> ();
