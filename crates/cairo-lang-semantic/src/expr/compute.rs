@@ -71,8 +71,8 @@ use crate::types::{
     verify_fixed_size_array_size, wrap_in_snapshots, ConcreteTypeId,
 };
 use crate::{
-    ConcreteEnumId, GenericArgumentId, Member, Mutability, Parameter, PatternStringLiteral,
-    PatternStruct, Signature,
+    ConcreteEnumId, GenericArgumentId, GenericParam, Member, Mutability, Parameter,
+    PatternStringLiteral, PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -2311,6 +2311,17 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             ty: db.constant_semantic_data(constant_id)?.ty(),
             stable_ptr: path.stable_ptr().into(),
         })),
+        ResolvedConcreteItem::ConstGenericParameter(generic_param_id) => {
+            Ok(Expr::ParamConstant(ExprParamConstant {
+                const_value_id: db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                ty: extract_matches!(
+                    db.generic_param_semantic(generic_param_id)?,
+                    GenericParam::Const
+                )
+                .ty,
+                stable_ptr: path.stable_ptr().into(),
+            }))
+        }
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;

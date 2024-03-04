@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
+    ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
+    NamedLanguageElementId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
@@ -70,15 +71,16 @@ impl ConstValueId {
 }
 
 /// A constant value.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum ConstValue {
-    Int(BigInt),
+    Int(#[dont_rewrite] BigInt),
     Struct(Vec<(TypeId, ConstValue)>),
     Enum(ConcreteVariant, Box<ConstValue>),
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
+    Generic(#[dont_rewrite] GenericParamId),
     /// A missing value, used in cases where the value is not known due to diagnostics.
-    Missing(DiagnosticAdded),
+    Missing(#[dont_rewrite] DiagnosticAdded),
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
