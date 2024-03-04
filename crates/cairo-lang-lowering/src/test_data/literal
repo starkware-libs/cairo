@@ -59,20 +59,8 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
 Parameters:
 blk0 (root):
 Statements:
-<<<<<<< HEAD
-  (v7: ()) <- struct_construct()
-||||||| 6fe4987d2
-  (v6: ()) <- struct_construct()
-=======
->>>>>>> origin/main
 End:
-<<<<<<< HEAD
-  Return(v7)
-||||||| 6fe4987d2
-  Return(v6)
-=======
   Return()
->>>>>>> origin/main
 
 //! > semantic_diagnostics
 

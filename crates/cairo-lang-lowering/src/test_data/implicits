@@ -32,13 +32,7 @@ Parameters: v31: core::RangeCheck, v0: core::integer::u256
 blk0 (root):
 Statements:
   (v10: core::integer::u128, v11: core::integer::u128) <- struct_destructure(v0)
-<<<<<<< HEAD
-  (v14: core::integer::u128) <- 0
-||||||| 6fe4987d2
-  (v14: core::integer::u128) <- 0u
-=======
-  (v12: core::integer::u128) <- 0u
->>>>>>> origin/main
+  (v12: core::integer::u128) <- 0
 End:
   Match(match core::integer::u128_eq(v11, v12) {
     bool::False => blk1,
@@ -72,28 +66,12 @@ End:
 
 blk5:
 Statements:
-<<<<<<< HEAD
-  (v62: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374
-  (v63: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v62, v24)
-  (v69: core::panics::Panic) <- struct_construct()
-  (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v69, v63)
-  (v55: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v50)
-||||||| 6fe4987d2
-  (v62: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v63: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v62, v24)
-  (v69: core::panics::Panic) <- struct_construct()
-  (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v69, v63)
-  (v55: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v50)
-=======
   (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
+  (v24: core::felt252) <- 29721761890975875353235833581453094220424382983267374
   (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v24)
   (v26: core::panics::Panic) <- struct_construct()
   (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v26, v25)
   (v28: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v27)
->>>>>>> origin/main
 End:
   Return(v32, v28)
 

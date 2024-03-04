@@ -1190,7 +1190,6 @@
       ]
     ],
     [
-<<<<<<< HEAD
       60,
       [
         {
@@ -1268,74 +1267,6 @@
     ],
     [
       103,
-||||||| 6fe4987d2
-      56,
-=======
-      60,
-      [
-        {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
-              }
-            }
-          }
-        }
-      ]
-    ],
-    [
-      67,
-      [
-        {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -3
-              }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      69,
-      [
-        {
-          "DivMod": {
-            "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -4
-              }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "quotient": {
-              "register": "AP",
-              "offset": 3
-            },
-            "remainder": {
-              "register": "AP",
-              "offset": 4
-            }
-          }
-        }
-      ]
-    ],
-    [
-      90,
->>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -1348,13 +1279,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
       131,
-||||||| 6fe4987d2
-      76,
-=======
-      103,
->>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -1367,30 +1292,6 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      146,
-||||||| 6fe4987d2
-      91,
-=======
-      131,
->>>>>>> origin/main
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-<<<<<<< HEAD
-      161,
-||||||| 6fe4987d2
-      106,
-=======
       146,
       [
         {
@@ -1405,7 +1306,6 @@
     ],
     [
       161,
->>>>>>> origin/main
       [
         {
           "TestLessThanOrEqual": {

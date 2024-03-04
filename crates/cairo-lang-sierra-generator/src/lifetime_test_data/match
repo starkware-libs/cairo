@@ -122,16 +122,8 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
   (v10: core::felt252) <- 3
-  (v23: core::felt252) <- core::felt252_add(v1, v10)
-||||||| 6fe4987d2
-  (v10: core::felt252) <- 3u
-  (v23: core::felt252) <- core::felt252_add(v1, v10)
-=======
-  (v10: core::felt252) <- 3u
   (v22: core::felt252) <- core::felt252_add(v1, v10)
->>>>>>> origin/main
 End:
   Return()
 
@@ -191,16 +183,8 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
   (v12: core::felt252) <- 1
-  (v63: core::felt252) <- core::felt252_sub(v0, v12)
-||||||| 6fe4987d2
-  (v12: core::felt252) <- 1u
-  (v63: core::felt252) <- core::felt252_sub(v0, v12)
-=======
-  (v12: core::felt252) <- 1u
   (v45: core::felt252) <- core::felt252_sub(v0, v12)
->>>>>>> origin/main
 End:
   Match(match core::felt252_is_zero(v45) {
     IsZeroResult::Zero => blk3,

@@ -32,25 +32,13 @@ End:
 
 blk1:
 Statements:
-<<<<<<< HEAD
-  (v10: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v10: core::felt252) <- 1u
-=======
-  (v3: core::felt252) <- 1u
->>>>>>> origin/main
+  (v3: core::felt252) <- 1
 End:
   Return(v3)
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v11: core::felt252) <- 0
-||||||| 6fe4987d2
-  (v11: core::felt252) <- 0u
-=======
-  (v4: core::felt252) <- 0u
->>>>>>> origin/main
+  (v4: core::felt252) <- 0
 End:
   Return(v4)
 
@@ -94,16 +82,8 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v3: core::felt252) <- 2
-  (v30: core::felt252) <- core::felt252_sub(v0, v3)
-||||||| 6fe4987d2
-  (v3: core::felt252) <- 2u
-  (v30: core::felt252) <- core::felt252_sub(v0, v3)
-=======
-  (v3: core::felt252) <- 2u
   (v13: core::felt252) <- core::felt252_sub(v0, v3)
->>>>>>> origin/main
 End:
   Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk1,
@@ -120,25 +100,13 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v28: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v28: core::felt252) <- 1u
-=======
-  (v20: core::felt252) <- 1u
->>>>>>> origin/main
+  (v20: core::felt252) <- 1
 End:
   Return(v20)
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v29: core::felt252) <- 0
-||||||| 6fe4987d2
-  (v29: core::felt252) <- 0u
-=======
-  (v21: core::felt252) <- 0u
->>>>>>> origin/main
+  (v21: core::felt252) <- 0
 End:
   Return(v21)
 
@@ -266,28 +234,12 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v43: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v14: core::felt252) <- 375233589013918064796019
-  (v44: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v43, v14)
-  (v52: core::panics::Panic) <- struct_construct()
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v52, v44)
-  (v23: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v17)
-||||||| 6fe4987d2
-  (v43: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v14: core::felt252) <- 375233589013918064796019u
-  (v44: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v43, v14)
-  (v52: core::panics::Panic) <- struct_construct()
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v52, v44)
-  (v23: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v17)
-=======
   (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v13: core::felt252) <- 375233589013918064796019u
+  (v13: core::felt252) <- 375233589013918064796019
   (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v13)
   (v15: core::panics::Panic) <- struct_construct()
   (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
   (v17: core::panics::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v16)
->>>>>>> origin/main
 End:
   Return(v22, v23, v17)
 

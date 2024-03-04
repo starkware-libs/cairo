@@ -157,25 +157,11 @@ Statements:
   (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: core::felt252) <- 10
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
-<<<<<<< HEAD
   (v5: core::felt252) <- 11
-  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12
-  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v26, v8)
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
-||||||| 6fe4987d2
-  (v5: core::felt252) <- 11u
-  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12u
-  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v26, v8)
-  (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
-=======
-  (v5: core::felt252) <- 11u
   (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12u
+  (v8: core::felt252) <- 12
   (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
   (v11: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
->>>>>>> origin/main
   (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
   (v14: core::felt252) <- 0
   (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
@@ -230,22 +216,10 @@ Statements:
   (v23: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: core::felt252) <- 10
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v2)
-<<<<<<< HEAD
   (v5: core::felt252) <- 11
-  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12
-  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v26, v8)
-||||||| 6fe4987d2
-  (v5: core::felt252) <- 11u
-  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12u
-  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v26, v8)
-=======
-  (v5: core::felt252) <- 11u
   (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
-  (v8: core::felt252) <- 12u
+  (v8: core::felt252) <- 12
   (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v8)
->>>>>>> origin/main
   (v12: core::felt252, v13: @core::felt252) <- snapshot(v0)
   (v14: core::felt252) <- 0
   (v15: core::felt252, v16: @core::felt252) <- snapshot(v14)
@@ -282,19 +256,9 @@ End:
 
 blk4:
 Statements:
-<<<<<<< HEAD
-  (v40: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
-  () <- test::cosume(v40)
-  (v22: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v40: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v28)
-  () <- test::cosume(v40)
-  (v22: core::felt252) <- 1u
-=======
   (v35: (core::felt252, core::array::Array::<core::felt252>)) <- struct_construct(v0, v26)
   () <- test::cosume(v35)
-  (v22: core::felt252) <- 1u
->>>>>>> origin/main
+  (v22: core::felt252) <- 1
 End:
   Return(v22)
 
@@ -857,16 +821,8 @@ End:
 
 blk11:
 Statements:
-<<<<<<< HEAD
-  (v24: core::felt252, v25: @core::felt252) <- snapshot(v67)
-  (v26: core::felt252) <- 0
-||||||| 6fe4987d2
-  (v24: core::felt252, v25: @core::felt252) <- snapshot(v67)
-  (v26: core::felt252) <- 0u
-=======
   (v24: core::felt252, v25: @core::felt252) <- snapshot(v61)
-  (v26: core::felt252) <- 0u
->>>>>>> origin/main
+  (v26: core::felt252) <- 0
   (v27: core::felt252, v28: @core::felt252) <- snapshot(v26)
   (v52: core::felt252) <- desnap(v25)
   (v53: core::felt252) <- desnap(v28)

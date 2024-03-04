@@ -5,21 +5,16 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLangu
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
-<<<<<<< HEAD
-use cairo_lang_semantic::{self as semantic, TypeId};
-||||||| 6fe4987d2
-use cairo_lang_semantic::TypeId;
-=======
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
->>>>>>> origin/main
+use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{extract_matches, Upcast};
 use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
-use semantic::corelib;
+use num_traits::ToPrimitive;
+use semantic::items::constant::ConstValue;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -746,6 +741,13 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
         },
         TypeLongId::Tuple(types) => types.into_iter().map(|ty| db.type_size(ty)).sum::<usize>(),
         TypeLongId::Snapshot(ty) => db.type_size(ty),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            db.type_size(type_id)
+                * extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                    .to_usize()
+                    .unwrap()
+        }
+        TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
             panic!("Function should only be called with fully concrete types")
         }
