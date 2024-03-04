@@ -36,25 +36,33 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v18) => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
+<<<<<<< HEAD
   (v10: core::felt252) <- 1
   (v24: core::felt252) <- core::felt252_add(v0, v10)
+||||||| 6fe4987d2
+  (v10: core::felt252) <- 1u
+  (v24: core::felt252) <- core::felt252_add(v0, v10)
+=======
+  (v3: core::felt252) <- 1u
+  (v4: core::felt252) <- core::felt252_add(v0, v3)
+>>>>>>> origin/main
 End:
-  Return(v24)
+  Return(v4)
 
 blk2:
 Statements:
-  (v25: core::felt252) <- core::felt252_add(v0, v0)
-  (v13: ()) <- test::revoke_ap()
+  (v5: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Return(v25)
+  Return(v5)
 
 //! > local_variables
-v25
+v5
 
 //! > ==========================================================================
 
@@ -97,32 +105,42 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v21) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
+<<<<<<< HEAD
   (v11: ()) <- test::revoke_ap()
   (v12: core::felt252) <- 1
   (v27: core::felt252) <- core::felt252_add(v0, v12)
+||||||| 6fe4987d2
+  (v11: ()) <- test::revoke_ap()
+  (v12: core::felt252) <- 1u
+  (v27: core::felt252) <- core::felt252_add(v0, v12)
+=======
+  () <- test::revoke_ap()
+  (v4: core::felt252) <- 1u
+  (v5: core::felt252) <- core::felt252_add(v0, v4)
+>>>>>>> origin/main
 End:
-  Goto(blk3, {v27 -> v1})
+  Goto(blk3, {v5 -> v1})
 
 blk2:
 Statements:
-  (v28: core::felt252) <- core::felt252_add(v0, v0)
-  (v15: ()) <- test::revoke_ap()
+  (v6: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Goto(blk3, {v28 -> v1})
+  Goto(blk3, {v6 -> v1})
 
 blk3:
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v1, v0)
+  (v7: core::felt252) <- core::felt252_add(v1, v0)
 End:
-  Return(v17)
+  Return(v7)
 
 //! > local_variables
-v28
+v6
 
 //! > ==========================================================================
 
@@ -158,7 +176,7 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1
   (v5: core::felt252) <- core::felt252_add(v0, v1)
-  (v4: ()) <- test::revoke_ap()
+  () <- test::revoke_ap()
 End:
   Return(v5)
 

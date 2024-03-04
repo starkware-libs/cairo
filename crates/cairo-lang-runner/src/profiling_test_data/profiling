@@ -260,7 +260,7 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 1: 1 (return([0]))
+  statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
 Weight by generic libfunc:
@@ -270,7 +270,7 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::main: 1
+  function unknown: 1
 Weight by Sierra stack trace:
   test::main: 1
 Weight by Cairo stack trace:
@@ -302,7 +302,7 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 1: 1 (return([0]))
+  statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
 Weight by generic libfunc:
@@ -312,7 +312,7 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::main: 1
+  function unknown: 1
 Weight by Sierra stack trace:
   test::main: 1
 Weight by Cairo stack trace:
@@ -344,7 +344,7 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 1: 1 (return([0]))
+  statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
 Weight by generic libfunc:
@@ -354,7 +354,7 @@ Weight by user function (inc. generated):
 Weight by original user function (exc. generated):
   function test::main: 1
 Weight by Cairo function:
-  function lib.cairo::main: 1
+  function unknown: 1
 Weight by Sierra stack trace:
   test::main: 1
 Weight by Cairo stack trace:

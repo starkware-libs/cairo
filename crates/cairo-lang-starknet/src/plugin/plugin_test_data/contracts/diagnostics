@@ -5704,6 +5704,8 @@ mod component3 {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
+It is possible that the type inference failed because the types differ in the number of snapshots.
+Consider adding or removing snapshots.
  --> lib.cairo:59:32
             get_dep_component!(self, Comp1).foo1();
                                ^**^
@@ -5740,6 +5742,8 @@ error: Invalid path.
                                         ^***********^
 
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
+It is possible that the type inference failed because the types differ in the number of snapshots.
+Consider adding or removing snapshots.
  --> lib.cairo:66:32
             get_dep_component!(not_contract_state, Comp1).foo1();
                                ^****************^

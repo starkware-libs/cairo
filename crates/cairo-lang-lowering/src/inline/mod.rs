@@ -11,8 +11,9 @@ use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq, Itertools};
-use statements_weights::{InlineWeight, SimpleInlineWeight};
+use statements_weights::InlineWeight;
 
+use self::statements_weights::ApproxCasmInlineWeight;
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
@@ -51,9 +52,16 @@ pub fn priv_should_inline(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+    // Breaks cycles.
+    // TODO(ilya): consider #[inline(never)] attributes for feedback set.
+    if db.function_with_body_feedback_set(function_id)?.contains(&function_id) {
+        return Ok(false);
+    }
+
     let config = db.function_declaration_inline_config(
         function_id.function_with_body_id(db).base_semantic_function(db),
     )?;
+
     Ok(match config {
         InlineConfiguration::Never(_) => false,
         InlineConfiguration::Should(_) => true,
@@ -67,6 +75,7 @@ fn should_inline_lowered(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
+<<<<<<< HEAD
     if db
         .concrete_function_with_body_postpanic_direct_callees_with_body(
             function_id,
@@ -78,11 +87,22 @@ fn should_inline_lowered(
     }
 
     let lowered = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+||||||| 6fe4987d2
+    if db
+        .concrete_function_with_body_postpanic_direct_callees_with_body(function_id)?
+        .contains(&function_id)
+    {
+        return Ok(false);
+    }
+
+    let lowered = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+=======
+    let lowered = db.inlined_function_with_body_lowered(function_id)?;
+>>>>>>> origin/main
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contains only a call or a literal are always inlined.
 
-    let weight = SimpleInlineWeight {};
-    let weight_of_blocks = weight.lowered_weight(db, lowered.as_ref());
+    let weight_of_blocks = ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered);
 
     if weight_of_blocks < inline_small_functions_threshold(db).into_or_panic() {
         return Ok(true);
@@ -292,33 +312,34 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
+<<<<<<< HEAD
             if let (Some(function_id), false) =
                 (stmt.function.body(self.variables.db)?, stmt.with_coupon)
             {
                 if !self.is_function_in_call_stack(function_id)
                     && self.variables.db.priv_should_inline(function_id)?
+||||||| 6fe4987d2
+            if let Some(function_id) = stmt.function.body(self.variables.db)? {
+                if !self.is_function_in_call_stack(function_id)
+                    && self.variables.db.priv_should_inline(function_id)?
+=======
+            if let Some(called_func) = stmt.function.body(self.variables.db)? {
+                let orig_func = self.block_to_function[&BlockId::root()];
+
+                // TODO: Implement better logic to avoid inlining of destructors that call
+                // themselves.
+                if called_func != orig_func
+                    && orig_func == self.block_to_function[&self.current_block_id]
+                    && self.variables.db.priv_should_inline(called_func)?
+>>>>>>> origin/main
                 {
-                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+                    return self.inline_function(called_func, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
 
         self.statements.push(statement);
         Ok(())
-    }
-
-    fn is_function_in_call_stack(&self, function_id: ConcreteFunctionWithBodyId) -> bool {
-        let mut current_block = &self.current_block_id;
-        if self.block_to_function[current_block] == function_id {
-            return true;
-        }
-        while let Some(block_id) = self.block_to_parent.get(current_block) {
-            if self.block_to_function[block_id] == function_id {
-                return true;
-            }
-            current_block = block_id;
-        }
-        false
     }
 
     /// Inlines the given function, with the given input and output variables.
@@ -332,8 +353,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         inputs: &[VarUsage],
         outputs: &[VariableId],
     ) -> Maybe<()> {
-        let lowered =
-            self.variables.db.concrete_function_with_body_postpanic_lowered(function_id)?;
+        let lowered = self.variables.db.inlined_function_with_body_lowered(function_id)?;
         lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
