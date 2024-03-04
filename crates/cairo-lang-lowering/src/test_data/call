@@ -35,16 +35,8 @@ blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-<<<<<<< HEAD
-  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
-  (v15: core::felt252) <- 5
-||||||| 6fe4987d2
-  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
-  (v15: core::felt252) <- 5u
-=======
   (v7: core::felt252) <- test::bar(v0, v2)
-  (v15: core::felt252) <- 5u
->>>>>>> origin/main
+  (v15: core::felt252) <- 5
 End:
   Return(v7, v15)
 

@@ -32,7 +32,6 @@ Statements:
   (v1: core::felt252) <- 20
   (v2: core::felt252) <- 30
   (v3: [core::felt252; 3]) <- struct_construct(v0, v1, v2)
-  (v4: ()) <- test::bar(v3)
-  (v5: ()) <- struct_construct()
+  () <- test::bar(v3)
 End:
-  Return(v5)
+  Return()

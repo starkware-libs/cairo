@@ -149,18 +149,8 @@ impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
 Parameters:
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v0: core::felt252) <- 5
-  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
-  (v2: ()) <- struct_construct()
-||||||| 6fe4987d2
-  (v0: core::felt252) <- 5u
-  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
-  (v2: ()) <- struct_construct()
-=======
-  (v0: core::felt252) <- 5u
   () <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
->>>>>>> origin/main
 End:
   Return()
 

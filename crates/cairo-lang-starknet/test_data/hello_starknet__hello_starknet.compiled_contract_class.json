@@ -8,7 +8,7 @@
     "0x100000000000000000000000000000000",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
-    "0xff",
+    "0x98",
     "0x4825800180007ffa",
     "0x0",
     "0x400280007ff97fff",
@@ -34,7 +34,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0xd4",
+    "0x6d",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x12",
@@ -51,7 +51,7 @@
     "0x402480017fff7ffb",
     "0xffffffffffffffffffffffffffffffff",
     "0x20680017fff7fff",
-    "0xbf",
+    "0x58",
     "0x402780017fff7fff",
     "0x1",
     "0x400080007ff87ffe",
@@ -80,125 +80,24 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-<<<<<<< HEAD
-    "0x166",
-||||||| 6fe4987d2
-    "0x168",
-=======
     "0x187",
->>>>>>> origin/main
     "0x482480017fff8000",
-<<<<<<< HEAD
-    "0x165",
-||||||| 6fe4987d2
-    "0x167",
-=======
     "0x186",
->>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007fef",
-<<<<<<< HEAD
-    "0x451a",
-||||||| 6fe4987d2
-    "0x5050",
-=======
     "0x4862",
->>>>>>> origin/main
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff77fff",
     "0x10780017fff7fff",
-    "0x87",
+    "0x20",
     "0x4824800180007fef",
-<<<<<<< HEAD
-    "0x451a",
-||||||| 6fe4987d2
-    "0x5050",
-=======
     "0x4862",
->>>>>>> origin/main
     "0x400080007ff87fff",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091",
-    "0x482480017ff68000",
+    "0x482480017ff88000",
     "0x1",
-<<<<<<< HEAD
-    "0x480680017fff8000",
-    "0x53746f7261676552656164",
-    "0x400280007ffb7fff",
-    "0x400280017ffb7ffb",
-    "0x400280027ffb7ffc",
-    "0x400280037ffb7ffd",
-    "0x480280057ffb8000",
-    "0x20680017fff7fff",
-    "0x67",
-    "0x480280067ffb8000",
-    "0x480280047ffb8000",
-    "0x482680017ffb8000",
-    "0x7",
-    "0xa0680017fff8000",
-    "0x12",
-    "0x4824800180007ffc",
-    "0x100000000",
-    "0x4844800180008002",
-    "0x8000000000000110000000000000000",
-    "0x4830800080017ffe",
-    "0x480080007ff67fff",
-    "0x482480017ffe8000",
-    "0xefffffffffffffde00000000ffffffff",
-    "0x480080017ff47fff",
-    "0x400080027ff37ffb",
-    "0x402480017fff7ffb",
-    "0xffffffffffffffffffffffffffffffff",
-    "0x20680017fff7fff",
-    "0x45",
-    "0x402780017fff7fff",
-    "0x1",
-    "0x400080007ff97ffc",
-    "0x482480017ffc8000",
-    "0xffffffffffffffffffffffff00000000",
-    "0x400080017ff87fff",
-    "0xa0680017fff8000",
-    "0x8",
-    "0x48307fea7ffa8000",
-    "0x4824800180007fff",
-    "0x100000000",
-    "0x400080027ff57fff",
-    "0x10780017fff7fff",
-    "0x29",
-    "0x48307fea7ffa8001",
-    "0x4824800180007fff",
-    "0xffffffffffffffffffffffff00000000",
-    "0x400080027ff57ffe",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091",
-    "0x482480017ff38000",
-    "0x3",
-    "0x480680017fff8000",
-    "0x53746f726167655772697465",
-    "0x400080007ff67fff",
-    "0x400080017ff67ff5",
-    "0x400080027ff67ffc",
-    "0x400080037ff67ffd",
-    "0x400080047ff67ffb",
-    "0x480080067ff68000",
-    "0x20680017fff7fff",
-    "0xd",
-||||||| 6fe4987d2
-    "0x48127ffe7fff8000",
-    "0x480a7ffb7fff8000",
-    "0x48127ff27fff8000",
-    "0x1104800180018000",
-    "0xb3",
-    "0x20680017fff7ffd",
-    "0xc",
-=======
     "0x48127ffe7fff8000",
     "0x480a7ffb7fff8000",
     "0x48127ff27fff8000",
@@ -206,63 +105,19 @@
     "0xe9",
     "0x20680017fff7ffd",
     "0xc",
->>>>>>> origin/main
     "0x40780017fff7fff",
     "0x1",
-    "0x48127ffc7fff8000",
-    "0x480080057ff38000",
-    "0x482480017ff28000",
-    "0x7",
+    "0x48127ff97fff8000",
+    "0x48127ff97fff8000",
+    "0x48127ff97fff8000",
     "0x480680017fff8000",
     "0x0",
     "0x48127ffb7fff8000",
     "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
-    "0x48127ffd7fff8000",
-    "0x480080057ff48000",
-    "0x482480017ff38000",
-    "0x9",
-    "0x480080077ff28000",
-    "0x480080087ff18000",
-    "0x10780017fff7fff",
-    "0x24",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x7533325f616464204f766572666c6f77",
-    "0x400080007ffe7fff",
-    "0x482480017ff38000",
-    "0x3",
-    "0x48127ff67fff8000",
-    "0x48127ff67fff8000",
-    "0x48127ffb7fff8000",
-    "0x482480017ffa8000",
-    "0x1",
-    "0x10780017fff7fff",
-    "0x16",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x53746f7265553332202d206e6f6e20753332",
-    "0x400080007ffe7fff",
-    "0x482480017ff18000",
-    "0x3",
-    "0x48127ff47fff8000",
-    "0x48127ff47fff8000",
-    "0x48127ffb7fff8000",
-    "0x482480017ffa8000",
-    "0x1",
-    "0x10780017fff7fff",
-    "0x8",
-    "0x48127ffd7fff8000",
-    "0x480280047ffb8000",
-    "0x482680017ffb8000",
-    "0x8",
-    "0x480280067ffb8000",
-    "0x480280077ffb8000",
-    "0x48127ffb7fff8000",
-    "0x48127ffb7fff8000",
-    "0x48127ffb7fff8000",
+    "0x48127ffa7fff8000",
+    "0x48127ffa7fff8000",
+    "0x48127ffa7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
@@ -351,21 +206,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-<<<<<<< HEAD
-    "0x81",
-||||||| 6fe4987d2
-    "0xea",
-=======
     "0x109",
->>>>>>> origin/main
     "0x482480017fff8000",
-<<<<<<< HEAD
-    "0x80",
-||||||| 6fe4987d2
-    "0xe9",
-=======
     "0x108",
->>>>>>> origin/main
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -379,86 +222,6 @@
     "0x4824800180007ff8",
     "0x15ae",
     "0x400080007ff87fff",
-<<<<<<< HEAD
-||||||| 6fe4987d2
-    "0x482480017ff88000",
-    "0x1",
-    "0x48127ffe7fff8000",
-    "0x480a7ffb7fff8000",
-    "0x1104800180018000",
-    "0x88",
-    "0x20680017fff7ffd",
-    "0xe",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x400080007fff7ffe",
-    "0x48127ff97fff8000",
-    "0x48127ff97fff8000",
-    "0x48127ff97fff8000",
-    "0x480680017fff8000",
-    "0x0",
-    "0x48127ffb7fff8000",
-    "0x482480017ffa8000",
-    "0x1",
-    "0x208b7fff7fff7ffe",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
-    "0x482480017ff58000",
-    "0x1",
-    "0x48127ff37fff8000",
-    "0x480a7ffb7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
-    "0x482680017ff98000",
-    "0x1",
-    "0x480a7ffa7fff8000",
-    "0x480a7ffb7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
-    "0x208b7fff7fff7ffe",
-    "0x480a7ffa7fff8000",
-    "0x480a7ffb7fff8000",
-    "0x480a7ffc7fff8000",
-    "0x1104800180018000",
-    "0x4f",
-    "0x20680017fff7ffd",
-    "0x43",
-    "0xa0680017fff8000",
-    "0x8",
-    "0x48287ffd7ffe8000",
-    "0x4824800180007fff",
-    "0x100000000",
-    "0x400080007ff77fff",
-    "0x10780017fff7fff",
-    "0x2a",
-    "0x48287ffd7ffe8001",
-    "0x4824800180007fff",
-    "0xffffffffffffffffffffffff00000000",
-    "0x400080007ff77ffe",
-=======
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
@@ -624,50 +387,10 @@
     "0x4824800180007fff",
     "0xffffffffffffffffffffffff00000000",
     "0x400280027ffa7ffe",
->>>>>>> origin/main
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
     "0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091",
-<<<<<<< HEAD
-    "0x482480017ff68000",
-||||||| 6fe4987d2
-    "0x482480017ff58000",
-    "0x1",
-    "0x480680017fff8000",
-    "0x53746f726167655772697465",
-    "0x400080007ff57fff",
-    "0x400080017ff57ff4",
-    "0x400080027ff57ffc",
-    "0x400080037ff57ffd",
-    "0x400080047ff57ffb",
-    "0x480080067ff58000",
-    "0x20680017fff7fff",
-    "0xd",
-    "0x48127ffd7fff8000",
-    "0x480080057ff38000",
-    "0x482480017ff28000",
-    "0x7",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x0",
-    "0x208b7fff7fff7ffe",
-    "0x48127ffd7fff8000",
-    "0x480080057ff38000",
-    "0x482480017ff28000",
-    "0x9",
-    "0x480680017fff8000",
-    "0x1",
-    "0x480080077ff08000",
-    "0x480080087fef8000",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x3",
-    "0x40780017fff7fff",
-=======
     "0x482680017ffa8000",
     "0x3",
     "0x480680017fff8000",
@@ -703,134 +426,8 @@
     "0x40780017fff7fff",
     "0x3",
     "0x40780017fff7fff",
->>>>>>> origin/main
     "0x1",
     "0x480680017fff8000",
-<<<<<<< HEAD
-    "0x53746f7261676552656164",
-    "0x400280007ffb7fff",
-    "0x400280017ffb7ffb",
-    "0x400280027ffb7ffc",
-    "0x400280037ffb7ffd",
-    "0x480280057ffb8000",
-    "0x20680017fff7fff",
-    "0x37",
-    "0x480280067ffb8000",
-    "0x480280047ffb8000",
-    "0x482680017ffb8000",
-    "0x7",
-    "0xa0680017fff8000",
-    "0x12",
-    "0x4824800180007ffc",
-    "0x100000000",
-    "0x4844800180008002",
-    "0x8000000000000110000000000000000",
-    "0x4830800080017ffe",
-    "0x480080007ff67fff",
-    "0x482480017ffe8000",
-    "0xefffffffffffffde00000000ffffffff",
-    "0x480080017ff47fff",
-    "0x400080027ff37ffb",
-    "0x402480017fff7ffb",
-    "0xffffffffffffffffffffffffffffffff",
-    "0x20680017fff7fff",
-    "0x15",
-    "0x402780017fff7fff",
-    "0x1",
-    "0x400080007ff97ffc",
-    "0x482480017ffc8000",
-    "0xffffffffffffffffffffffff00000000",
-    "0x400080017ff87fff",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x400080007fff7ffa",
-    "0x482480017ff78000",
-    "0x2",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
-    "0x480680017fff8000",
-    "0x0",
-    "0x48127ffb7fff8000",
-    "0x482480017ffa8000",
-    "0x1",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-||||||| 6fe4987d2
-    "0x7533325f616464204f766572666c6f77",
-    "0x400080007ffe7fff",
-    "0x482480017ff28000",
-    "0x1",
-    "0x48127ff27fff8000",
-    "0x48127ff27fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x8",
-    "0x48127ff27fff8000",
-    "0x48127ff27fff8000",
-    "0x48127ff27fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ff27fff8000",
-    "0x48127ff27fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091",
-    "0x480680017fff8000",
-    "0x53746f7261676552656164",
-    "0x400280007ffd7fff",
-    "0x400380017ffd7ffc",
-    "0x400280027ffd7ffd",
-    "0x400280037ffd7ffe",
-    "0x480280057ffd8000",
-    "0x20680017fff7fff",
-    "0x37",
-    "0x480280067ffd8000",
-    "0x480280047ffd8000",
-    "0x482680017ffd8000",
-    "0x7",
-    "0xa0680017fff8000",
-    "0x12",
-    "0x4824800180007ffc",
-    "0x100000000",
-    "0x4844800180008002",
-    "0x8000000000000110000000000000000",
-    "0x4830800080017ffe",
-    "0x480280007ffb7fff",
-    "0x482480017ffe8000",
-    "0xefffffffffffffde00000000ffffffff",
-    "0x480280017ffb7fff",
-    "0x400280027ffb7ffb",
-    "0x402480017fff7ffb",
-    "0xffffffffffffffffffffffffffffffff",
-    "0x20680017fff7fff",
-    "0x14",
-    "0x402780017fff7fff",
-    "0x1",
-    "0x400280007ffb7ffc",
-    "0x482480017ffc8000",
-    "0xffffffffffffffffffffffff00000000",
-    "0x400280017ffb7fff",
-    "0x40780017fff7fff",
-    "0x7",
-    "0x482680017ffb8000",
-    "0x2",
-    "0x48127ff47fff8000",
-    "0x48127ff47fff8000",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x0",
-    "0x48127fef7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-=======
     "0x7533325f616464204f766572666c6f77",
     "0x400080007ffe7fff",
     "0x482680017ffa8000",
@@ -844,83 +441,20 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
->>>>>>> origin/main
     "0x1",
     "0x480680017fff8000",
     "0x53746f7265553332202d206e6f6e20753332",
     "0x400080007ffe7fff",
-<<<<<<< HEAD
-    "0x482480017ff18000",
-||||||| 6fe4987d2
-    "0x482680017ffb8000",
-=======
     "0x482680017ffa8000",
->>>>>>> origin/main
     "0x3",
     "0x48127ff47fff8000",
     "0x48127ff47fff8000",
-<<<<<<< HEAD
     "0x48127ffb7fff8000",
     "0x482480017ffa8000",
-    "0x1",
-    "0x10780017fff7fff",
-    "0x8",
-    "0x48127ffd7fff8000",
-    "0x480280047ffb8000",
-    "0x482680017ffb8000",
-    "0x8",
-    "0x480280067ffb8000",
-    "0x480280077ffb8000",
-    "0x48127ffb7fff8000",
-    "0x48127ffb7fff8000",
-    "0x48127ffb7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
-    "0x482480017ff58000",
-    "0x1",
-    "0x48127ff37fff8000",
-    "0x480a7ffb7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-||||||| 6fe4987d2
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-=======
-    "0x48127ffb7fff8000",
-    "0x482480017ffa8000",
->>>>>>> origin/main
     "0x1",
     "0x10780017fff7fff",
     "0xa",
     "0x40780017fff7fff",
-<<<<<<< HEAD
-    "0x1",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
-    "0x482680017ff98000",
-    "0x1",
-    "0x480a7ffa7fff8000",
-    "0x480a7ffb7fff8000",
-||||||| 6fe4987d2
-    "0xc",
-    "0x480a7ffb7fff8000",
-    "0x480280047ffd8000",
-    "0x482680017ffd8000",
-    "0x8",
-=======
     "0xc",
     "0x480a7ffa7fff8000",
     "0x480280047ffc8000",
@@ -931,25 +465,16 @@
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
->>>>>>> origin/main
     "0x480680017fff8000",
     "0x1",
-<<<<<<< HEAD
-    "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
-||||||| 6fe4987d2
-    "0x480280067ffd8000",
-    "0x480280077ffd8000",
-=======
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
->>>>>>> origin/main
     "0x208b7fff7fff7ffe"
   ],
   "bytecode_segment_lengths": [
-    275,
-    160
+    172,
+    160,
+    136
   ],
   "hints": [
     [
@@ -1050,13 +575,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-<<<<<<< HEAD
-              "Immediate": "0x451a"
-||||||| 6fe4987d2
-              "Immediate": "0x5050"
-=======
               "Immediate": "0x4862"
->>>>>>> origin/main
             },
             "rhs": {
               "Deref": {
@@ -1073,125 +592,7 @@
       ]
     ],
     [
-      106,
-      [
-        {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
-              }
-            }
-          }
-        }
-      ]
-    ],
-    [
-      113,
-      [
-        {
-          "TestLessThan": {
-            "lhs": {
-              "BinOp": {
-                "op": "Add",
-                "a": {
-                  "register": "AP",
-                  "offset": -3
-                },
-                "b": {
-                  "Immediate": "0x0"
-                }
-              }
-            },
-            "rhs": {
-              "Immediate": "0x100000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      117,
-      [
-        {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xfffffffffffffffffffffffffffffffe"
-            },
-            "x": {
-              "register": "AP",
-              "offset": 0
-            },
-            "y": {
-              "register": "AP",
-              "offset": 1
-            }
-          }
-        }
-      ]
-    ],
-    [
-      135,
-      [
-        {
-          "TestLessThan": {
-            "lhs": {
-              "BinOp": {
-                "op": "Add",
-                "a": {
-                  "register": "AP",
-                  "offset": -5
-                },
-                "b": {
-                  "Deref": {
-                    "register": "AP",
-                    "offset": -21
-                  }
-                }
-              }
-            },
-            "rhs": {
-              "Immediate": "0x100000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      160,
-      [
-        {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "AP",
-                "offset": -10
-              }
-            }
-          }
-        }
-      ]
-    ],
-    [
-      163,
+      103,
       [
         {
           "AllocSegment": {
@@ -1204,7 +605,7 @@
       ]
     ],
     [
-      182,
+      121,
       [
         {
           "AllocSegment": {
@@ -1217,23 +618,70 @@
       ]
     ],
     [
-      196,
+      143,
       [
         {
-<<<<<<< HEAD
           "AllocSegment": {
-||||||| 6fe4987d2
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      157,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      172,
+      [
+        {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x186a"
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
-                "register": "AP",
-                "offset": -7
+                "register": "FP",
+                "offset": -6
               }
             },
-=======
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      189,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      208,
+      [
+        {
           "TestLessThanOrEqual": {
             "lhs": {
               "Immediate": "0x15ae"
@@ -1244,7 +692,6 @@
                 "offset": -7
               }
             },
->>>>>>> origin/main
             "dst": {
               "register": "AP",
               "offset": 0
@@ -1254,13 +701,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      224,
-||||||| 6fe4987d2
-      228,
-=======
       232,
->>>>>>> origin/main
       [
         {
           "SystemCall": {
@@ -1303,13 +744,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      246,
-||||||| 6fe4987d2
-      248,
-=======
       243,
->>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -1338,13 +773,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      260,
-||||||| 6fe4987d2
-      263,
-=======
       261,
->>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -1357,49 +786,10 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      275,
-||||||| 6fe4987d2
-      285,
-=======
       274,
->>>>>>> origin/main
       [
         {
-<<<<<<< HEAD
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
-              }
-            },
-||||||| 6fe4987d2
-          "TestLessThan": {
-            "lhs": {
-              "BinOp": {
-                "op": "Add",
-                "a": {
-                  "register": "AP",
-                  "offset": -1
-                },
-                "b": {
-                  "Deref": {
-                    "register": "FP",
-                    "offset": -3
-                  }
-                }
-              }
-            },
-            "rhs": {
-              "Immediate": "0x100000000"
-            },
-=======
           "AllocSegment": {
->>>>>>> origin/main
             "dst": {
               "register": "AP",
               "offset": 0
@@ -1409,13 +799,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      292,
-||||||| 6fe4987d2
-      310,
-=======
       302,
->>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -1428,25 +812,10 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      311,
-||||||| 6fe4987d2
-      335,
-=======
       317,
->>>>>>> origin/main
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x15ae"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -7
-              }
-            },
+          "AllocSegment": {
             "dst": {
               "register": "AP",
               "offset": 0
@@ -1456,26 +825,14 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      335,
-||||||| 6fe4987d2
-      370,
-=======
       342,
->>>>>>> origin/main
       [
         {
           "SystemCall": {
             "system": {
               "Deref": {
                 "register": "FP",
-<<<<<<< HEAD
-                "offset": -5
-||||||| 6fe4987d2
-                "offset": -3
-=======
                 "offset": -4
->>>>>>> origin/main
               }
             }
           }
@@ -1483,13 +840,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      342,
-||||||| 6fe4987d2
-      377,
-=======
       349,
->>>>>>> origin/main
       [
         {
           "TestLessThan": {
@@ -1517,13 +868,7 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      346,
-||||||| 6fe4987d2
-      381,
-=======
       353,
->>>>>>> origin/main
       [
         {
           "LinearSplit": {
@@ -1552,50 +897,6 @@
       ]
     ],
     [
-<<<<<<< HEAD
-      364,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      377,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      405,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      420,
-||||||| 6fe4987d2
-      411,
-=======
       373,
       [
         {
@@ -1656,7 +957,6 @@
     ],
     [
       438,
->>>>>>> origin/main
       [
         {
           "AllocSegment": {
@@ -1697,93 +997,64 @@
     [
       82,
       [
-<<<<<<< HEAD
-        "memory[ap + 0] = 17690 <= memory[ap + -16]"
-||||||| 6fe4987d2
-        "memory[ap + 0] = 20560 <= memory[ap + -16]"
-=======
         "memory[ap + 0] = 18530 <= memory[ap + -16]"
->>>>>>> origin/main
       ]
     ],
     [
-      106,
-      [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
-      ]
-    ],
-    [
-      113,
-      [
-        "memory[ap + 0] = (memory[ap + -3] + 0) % PRIME < 4294967296"
-      ]
-    ],
-    [
-      117,
-      [
-        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
-      ]
-    ],
-    [
-      135,
-      [
-        "memory[ap + 0] = (memory[ap + -5] + memory[ap + -21]) % PRIME < 4294967296"
-      ]
-    ],
-    [
-      160,
-      [
-        "syscall_handler.syscall(syscall_ptr=memory[ap + -10])"
-      ]
-    ],
-    [
-      163,
+      103,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      182,
+      121,
       [
-<<<<<<< HEAD
         "memory[ap + 0] = segments.add()"
-||||||| 6fe4987d2
-        "memory[ap + 0] = 6250 <= memory[ap + -7]"
-=======
+      ]
+    ],
+    [
+      143,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      157,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      172,
+      [
+        "memory[ap + 0] = 0 <= memory[fp + -6]"
+      ]
+    ],
+    [
+      189,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      208,
+      [
         "memory[ap + 0] = 5550 <= memory[ap + -7]"
->>>>>>> origin/main
       ]
     ],
     [
-<<<<<<< HEAD
-      196,
-||||||| 6fe4987d2
-      228,
-=======
       232,
->>>>>>> origin/main
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
       ]
     ],
     [
-<<<<<<< HEAD
-      224,
-||||||| 6fe4987d2
-      248,
-=======
       239,
->>>>>>> origin/main
       [
         "memory[ap + 0] = (memory[ap + -3] + 0) % PRIME < 4294967296"
       ]
     ],
     [
-<<<<<<< HEAD
-      246,
-||||||| 6fe4987d2
-      263,
-=======
       243,
       [
         "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
@@ -1791,125 +1062,47 @@
     ],
     [
       261,
->>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-<<<<<<< HEAD
-      260,
-||||||| 6fe4987d2
-      285,
-=======
       274,
->>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-<<<<<<< HEAD
-      275,
-||||||| 6fe4987d2
-      310,
-=======
       302,
->>>>>>> origin/main
       [
-<<<<<<< HEAD
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
-||||||| 6fe4987d2
-        "syscall_handler.syscall(syscall_ptr=memory[ap + -11])"
-=======
         "memory[ap + 0] = segments.add()"
->>>>>>> origin/main
       ]
     ],
     [
-<<<<<<< HEAD
-      292,
-||||||| 6fe4987d2
-      335,
-=======
       317,
->>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-<<<<<<< HEAD
-      311,
-||||||| 6fe4987d2
-      370,
-=======
       342,
->>>>>>> origin/main
       [
-<<<<<<< HEAD
-        "memory[ap + 0] = 5550 <= memory[ap + -7]"
-||||||| 6fe4987d2
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
-=======
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
->>>>>>> origin/main
       ]
     ],
     [
-<<<<<<< HEAD
-      335,
-      [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
-      ]
-    ],
-    [
-      342,
-||||||| 6fe4987d2
-      377,
-=======
       349,
->>>>>>> origin/main
       [
         "memory[ap + 0] = (memory[ap + -3] + 0) % PRIME < 4294967296"
       ]
     ],
     [
-<<<<<<< HEAD
-      346,
-||||||| 6fe4987d2
-      381,
-=======
       353,
->>>>>>> origin/main
       [
         "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
       ]
     ],
     [
-<<<<<<< HEAD
-      364,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      377,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      405,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      420,
-||||||| 6fe4987d2
-      411,
-=======
       373,
       [
         "memory[ap + 0] = (memory[ap + -9] + memory[fp + -3]) % PRIME < 4294967296"
@@ -1929,7 +1122,6 @@
     ],
     [
       438,
->>>>>>> origin/main
       [
         "memory[ap + 0] = segments.add()"
       ]
@@ -1946,7 +1138,7 @@
       },
       {
         "selector": "0x39e11d48192e4333233c7eb19d10ad67c362bb28580c604d67884c85da39695",
-        "offset": 275,
+        "offset": 172,
         "builtins": [
           "range_check"
         ]

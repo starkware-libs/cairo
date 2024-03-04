@@ -263,19 +263,9 @@ error: Unsupported value in while-let. Currently, while-let on tuples only suppo
 Parameters:
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v0: core::felt252) <- 0
-  (v2: core::felt252, v1: ()) <- test::foo[expr10](v0)
-  (v3: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v0: core::felt252) <- 0u
-  (v2: core::felt252, v1: ()) <- test::foo[expr10](v0)
-  (v3: core::felt252) <- 1u
-=======
-  (v0: core::felt252) <- 0u
   (v2: core::felt252) <- test::foo[expr10](v0)
-  (v3: core::felt252) <- 1u
->>>>>>> origin/main
+  (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
   Return(v4)
@@ -314,19 +304,9 @@ error: Numeric values are not supported in while-let conditions.
 Parameters:
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v0: core::felt252) <- 0
-  (v2: core::felt252, v1: ()) <- test::foo[expr8](v0)
-  (v3: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v0: core::felt252) <- 0u
-  (v2: core::felt252, v1: ()) <- test::foo[expr8](v0)
-  (v3: core::felt252) <- 1u
-=======
-  (v0: core::felt252) <- 0u
   (v2: core::felt252) <- test::foo[expr8](v0)
-  (v3: core::felt252) <- 1u
->>>>>>> origin/main
+  (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
   Return(v4)
@@ -429,19 +409,9 @@ error: Unsupported type in while-let. Type: `test::MyStruct`.
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-<<<<<<< HEAD
   (v1: core::felt252) <- 0
-  (v3: core::felt252, v2: ()) <- test::foo[expr8](v0, v1)
-  (v4: core::felt252) <- 1
-||||||| 6fe4987d2
-  (v1: core::felt252) <- 0u
-  (v3: core::felt252, v2: ()) <- test::foo[expr8](v0, v1)
-  (v4: core::felt252) <- 1u
-=======
-  (v1: core::felt252) <- 0u
   (v3: core::felt252) <- test::foo[expr8](v0, v1)
-  (v4: core::felt252) <- 1u
->>>>>>> origin/main
+  (v4: core::felt252) <- 1
   (v5: core::felt252) <- core::Felt252Add::add(v3, v4)
 End:
   Return(v5)
