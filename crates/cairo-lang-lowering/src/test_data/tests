@@ -295,10 +295,6 @@ foo
 type Array<T,const N: usize> = (T,felt252);
 
 //! > semantic_diagnostics
-error: Const generic args are not allowed in this context.
- --> lib.cairo:1:14
-type Array<T,const N: usize> = (T,felt252);
-             ^************^
 
 //! > lowering_diagnostics
 

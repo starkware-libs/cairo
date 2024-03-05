@@ -211,6 +211,7 @@ fn const_type_id(
                 ConstValue::Boxed(_, _) => {
                     unreachable!("Should be handled by `const_libfunc_id_by_type`.")
                 }
+                ConstValue::Generic(_) => unreachable!("Should be caught by the lowering."),
                 ConstValue::Missing(_) => unreachable!("Should be caught by the lowering."),
             },
         }
@@ -393,6 +394,7 @@ pub fn get_concrete_libfunc_id(
                 ConstValue::Int,
                 "Only integer constants are supported."
             )),
+
             semantic::GenericArgumentId::Impl(_) => {
                 panic!("Extern function with impl generics are not supported.")
             }
