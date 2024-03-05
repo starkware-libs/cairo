@@ -63,8 +63,6 @@ pub struct AbiBuilder<'a> {
     db: &'a dyn SemanticGroup,
     /// The builder configuration.
     config: BuilderConfig,
-    /// Whether the contract is an account contract.
-    account_contract: bool,
 
     // TODO(spapini): Add storage variables.
     /// The constructed ABI.
@@ -80,7 +78,7 @@ pub struct AbiBuilder<'a> {
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
-    entry_point_names: HashSet<String>,
+    entry_points: HashMap<String, Source>,
 
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
@@ -98,15 +96,10 @@ impl<'a> AbiBuilder<'a> {
         let mut builder = Self {
             db,
             config,
-            account_contract: submodule_id.has_attr_with_arg(
-                db,
-                CONTRACT_ATTR,
-                CONTRACT_ATTR_ACCOUNT_ARG,
-            )?,
             abi_items: Default::default(),
             types: HashSet::new(),
             event_info: HashMap::new(),
-            entry_point_names: HashSet::new(),
+            entry_points: HashMap::new(),
             ctor: None,
             errors: Vec::new(),
         };
@@ -131,19 +124,34 @@ impl<'a> AbiBuilder<'a> {
 
     /// Runs account contract validations if required.
     fn account_contract_validations(&mut self, submodule_id: SubmoduleId) -> Maybe<()> {
-        if self.config.account_contract_validations {
-            if self.account_contract {
-                for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                    if !self.entry_point_names.contains(*selector) {
-                        self.errors.push(ABIError::EntryPointMissingForAccountContract {
-                            selector: selector.to_string(),
-                        });
-                    }
+        if !self.config.account_contract_validations {
+            return Ok(());
+        }
+        let attrs = submodule_id.query_attr(self.db, CONTRACT_ATTR)?;
+        let mut is_account_contract = false;
+        for attr in attrs {
+            if attr.is_single_unnamed_arg(self.db.upcast(), CONTRACT_ATTR_ACCOUNT_ARG) {
+                is_account_contract = true;
+            } else if !attr.args.is_empty() {
+                self.errors.push(ABIError::IllegalContractAttrArgs);
+                return Ok(());
+            }
+        }
+        if is_account_contract {
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if !self.entry_points.contains_key(*selector) {
+                    self.errors.push(ABIError::EntryPointMissingForAccountContract {
+                        selector: selector.to_string(),
+                    });
                 }
-            } else {
-                // Attribute must exist on the submdule, otherwise wouldn't have got here.
-                if !submodule_id.find_attr(self.db, CONTRACT_ATTR)?.unwrap().args.is_empty() {
-                    self.errors.push(ABIError::IllegalContractAttrArgs);
+            }
+        } else {
+            for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
+                if let Some(source) = self.entry_points.get(*selector) {
+                    self.errors.push(ABIError::EntryPointSupportedOnlyOnAccountContract {
+                        selector: selector.to_string(),
+                        source_ptr: *source,
+                    });
                 }
             }
         }
@@ -274,7 +282,7 @@ impl<'a> AbiBuilder<'a> {
         let interface_path = trait_id.full_path(self.db.upcast());
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
-            self.add_entry_point_name(function.name(self.db.upcast()).into(), source)?;
+            self.add_entry_point(function.name(self.db.upcast()).into(), source)?;
             items.push(self.trait_function_as_abi(*function, storage_type)?);
         }
 
@@ -727,7 +735,7 @@ impl<'a> AbiBuilder<'a> {
             Item::L1Handler(item) => Some(item.name.to_string()),
             _ => None,
         } {
-            self.add_entry_point_name(name, source)?;
+            self.add_entry_point(name, source)?;
         }
 
         self.insert_abi_item(item, prevent_dups.then_some(source))
@@ -765,17 +773,8 @@ impl<'a> AbiBuilder<'a> {
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
-    fn add_entry_point_name(&mut self, name: String, source: Source) -> Result<(), ABIError> {
-        if self.config.account_contract_validations
-            && !self.account_contract
-            && ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS.contains(&name.as_str())
-        {
-            return Err(ABIError::EntryPointSupportedOnlyOnAccountContract {
-                selector: name,
-                source_ptr: source,
-            });
-        }
-        if !self.entry_point_names.insert(name.clone()) {
+    fn add_entry_point(&mut self, name: String, source: Source) -> Result<(), ABIError> {
+        if self.entry_points.insert(name.clone(), source).is_some() {
             return Err(ABIError::DuplicateEntryPointName { name, source_ptr: source });
         }
         Ok(())
