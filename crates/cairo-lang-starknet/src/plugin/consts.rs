@@ -46,6 +46,7 @@ pub const VALIDATE_ENTRY_POINT_SELECTOR: &str = "__validate__";
 pub const EXECUTE_ENTRY_POINT_SELECTOR: &str = "__execute__";
 pub const ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS: &[&str] =
     &[VALIDATE_ENTRY_POINT_SELECTOR, EXECUTE_ENTRY_POINT_SELECTOR];
+pub const VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR: &str = "__validate_deploy__";
 
 // ABI attribute
 pub const ABI_ATTR: &str = "abi";
