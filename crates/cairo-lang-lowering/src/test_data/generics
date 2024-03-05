@@ -183,3 +183,41 @@ Statements:
   (v0: core::felt252) <- core::felt252_const::<1>()
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > generic param in expression
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+  bar::<{ 1 + 2 }>() + bar::<2>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N + 5
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v3: core::felt252) <- 3
+  (v4: core::felt252) <- 5
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
+  (v6: core::felt252) <- 2
+  (v7: core::felt252) <- 5
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
+  (v9: core::felt252) <- core::felt252_add(v5, v8)
+End:
+  Return(v9)
