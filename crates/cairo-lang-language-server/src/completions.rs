@@ -24,6 +24,7 @@ use tracing::debug;
 
 use crate::{find_node_module, from_pos};
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -109,6 +110,7 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
     }
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn colon_colon_completions(
     db: &(dyn SemanticGroup + 'static),
     module_file_id: ModuleFileId,
@@ -183,6 +185,7 @@ pub fn colon_colon_completions(
     })
 }
 
+#[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
     db: &dyn SemanticGroup,
     file_id: FileId,
@@ -257,6 +260,7 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
+#[tracing::instrument(level = "trace", skip_all)]
 fn completion_for_method(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -292,6 +296,7 @@ fn completion_for_method(
 }
 
 /// Checks if a module has a trait in scope.
+#[tracing::instrument(level = "trace", skip_all)]
 fn module_has_trait(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -309,6 +314,7 @@ fn module_has_trait(
 }
 
 /// Finds all methods that can be called on a type.
+#[tracing::instrument(level = "trace", skip_all)]
 fn find_methods_for_type(
     db: &dyn SemanticGroup,
     mut resolver: Resolver<'_>,
