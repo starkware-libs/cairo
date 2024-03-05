@@ -202,3 +202,39 @@ warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(pe
  --> lib.cairo:11:5
     #[abi(per_item)]
     ^**************^
+
+//! > ==========================================================================
+
+//! > Test bad __validate_deploy__.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::contract(account)]
+mod contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl Impl of Trait {
+        #[constructor]
+        fn constructor(ref self: ContractState, param_a: starknet::ClassHash, param_b: Array<felt252>) {}
+        #[external(v0)]
+        fn __validate_deploy__(self: @ContractState, class_hash: felt252, contract_address_salt: felt252, param_a: starknet::ClassHash, param_b: Array<u8>) {}
+        #[external(v0)]
+        fn __validate__(ref self: ContractState) {}
+        #[external(v0)]
+        fn __execute__(ref self: ContractState) {}
+    }
+}
+
+//! > expected_error
+`__validate_deploy__` entry point must match the constructor.
+
+//! > expected_diagnostics
+warning: Plugin diagnostic: Failed to generate ABI: `__validate_deploy__` entry point must match the constructor.
+ --> lib.cairo:11:9
+        #[external(v0)]
+        ^*************^
