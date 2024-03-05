@@ -132,6 +132,11 @@ impl BlockUsages {
                     self.handle_expr(function_body, *expr_id, current);
                 }
             }
+            Expr::FixedSizeArray(expr) => {
+                for expr_id in &expr.items {
+                    self.handle_expr(function_body, *expr_id, current);
+                }
+            }
             Expr::Snapshot(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
@@ -279,6 +284,11 @@ impl BlockUsages {
             }
             Pattern::Tuple(pattern) => {
                 for pattern in &pattern.field_patterns {
+                    Self::handle_pattern(arena, *pattern, current);
+                }
+            }
+            Pattern::FixedSizeArray(pattern) => {
+                for pattern in &pattern.elements_patterns {
                     Self::handle_pattern(arena, *pattern, current);
                 }
             }

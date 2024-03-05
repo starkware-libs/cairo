@@ -16,6 +16,7 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::{arc_unwrap_or_clone, extract_matches, Upcast};
@@ -146,7 +147,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::match_or("match_or", false)]
 fn cairo_to_casm(
     #[case] name: &str,
-    #[case] enable_gas_checks: bool,
+    #[case] gas_usage_check: bool,
     example_dir_data: &ExampleDirData,
 ) {
     let program = checked_compile_to_sierra(name, example_dir_data, false);
@@ -155,12 +156,12 @@ fn cairo_to_casm(
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &if enable_gas_checks {
+            &if gas_usage_check {
                 calc_metadata(&program, Default::default()).unwrap()
             } else {
                 calc_metadata_ap_change_only(&program).unwrap()
             },
-            enable_gas_checks,
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )
         .unwrap()
         .to_string(),
@@ -178,7 +179,7 @@ fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData)
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &calc_metadata(&program, Default::default()).unwrap(),
-            true,
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
         )
         .unwrap()
         .to_string(),
@@ -306,7 +307,7 @@ fn run_function_test(
 )]
 #[case::fib_fail(
     "fib",
-    &[1, 1, 10].map(Felt252::from), Some(20000), None,
+    &[1, 1, 10].map(Felt252::from), Some(10000), None,
     RunResultValue::Panic(vec![Felt252::from_bytes_be(b"Out of gas")])
 )]
 fn run_function_auto_gas_test(

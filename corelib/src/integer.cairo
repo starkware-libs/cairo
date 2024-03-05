@@ -9,6 +9,8 @@ use core::array::SpanTrait;
 pub trait NumericLiteral<T>;
 impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 
+impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
+
 #[derive(Copy, Drop)]
 pub extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;

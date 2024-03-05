@@ -1,0 +1,37 @@
+//! > Test fixed size array.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+impl FixedArrayDrop of Drop::<[felt252; 3]>;
+
+fn foo() {
+    let x = [10, 20, 30];
+    bar(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(x: [felt252; 3]) {
+    let _y = x;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 10
+  (v1: core::felt252) <- 20
+  (v2: core::felt252) <- 30
+  (v3: [core::felt252; 3]) <- struct_construct(v0, v1, v2)
+  () <- test::bar(v3)
+End:
+  Return()

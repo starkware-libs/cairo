@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    LanguageElementId, ModuleItemId, NamedLanguageElementId, ParamLongId,
+    LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
@@ -144,6 +144,25 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
         }
     }
+    /// Returns the ModuleFileId of the function's definition if possible.
+    pub fn module_file_id(&self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
+        match self {
+            GenericFunctionId::Free(free_function) => {
+                Some(free_function.module_file_id(db.upcast()))
+            }
+            GenericFunctionId::Extern(extern_function) => {
+                Some(extern_function.module_file_id(db.upcast()))
+            }
+            GenericFunctionId::Impl(impl_generic_function_id) => {
+                // Return the module file of the impl containing the function.
+                if let ImplId::Concrete(concrete_impl_id) = impl_generic_function_id.impl_id {
+                    Some(concrete_impl_id.impl_def_id(db).module_file_id(db.upcast()))
+                } else {
+                    None
+                }
+            }
+        }
+    }
     /// Returns whether the function has the `#[must_use]` attribute.
     pub fn is_must_use(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
         match self {
@@ -158,6 +177,16 @@ impl GenericFunctionId {
             GenericFunctionId::Free(id) => id.find_attr(db, UNSTABLE_ATTR),
             GenericFunctionId::Impl(id) => id.function.find_attr(db, UNSTABLE_ATTR),
             GenericFunctionId::Extern(_) => Ok(None),
+        }
+    }
+
+    /// Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        match self {
+            GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => true,
+            GenericFunctionId::Impl(impl_generic_function) => {
+                impl_generic_function.impl_id.is_fully_concrete(db)
+            }
         }
     }
 }
@@ -220,6 +249,16 @@ impl FunctionId {
 
     pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
         self.get_concrete(db).full_name(db)
+    }
+
+    /// Returns true if the function does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        let func = self.get_concrete(db);
+        func.generic_function.is_fully_concrete(db)
+            && func
+                .generic_args
+                .iter()
+                .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
 }
 

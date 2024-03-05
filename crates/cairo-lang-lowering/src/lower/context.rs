@@ -12,8 +12,9 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name};
+use semantic::corelib::{core_module, get_ty_by_name, get_usize_ty};
 use semantic::expr::inference::InferenceError;
+use semantic::items::constant::value_as_const_value;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -225,6 +226,11 @@ pub enum LoweredExpr {
         exprs: Vec<LoweredExpr>,
         location: LocationId,
     },
+    /// The expression value is a fixed size array.
+    FixedSizeArray {
+        exprs: Vec<LoweredExpr>,
+        location: LocationId,
+    },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
     Member(ExprVarMemberPath, LocationId),
@@ -267,6 +273,25 @@ impl LoweredExpr {
 
                 Ok(VarUsage { var_id: snapshot, location })
             }
+            LoweredExpr::FixedSizeArray { exprs, location } => {
+                let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
+                    type_id: exprs[0].ty(ctx),
+                    size: ctx.db.intern_const_value(
+                        value_as_const_value(
+                            ctx.db.upcast(),
+                            get_usize_ty(ctx.db.upcast()),
+                            &exprs.len().into(),
+                        )
+                        .unwrap(),
+                    ),
+                });
+                let inputs = exprs
+                    .into_iter()
+                    .map(|expr| expr.as_var_usage(ctx, builder))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(generators::StructConstruct { inputs, ty, location }
+                    .add(ctx, &mut builder.statements))
+            }
         }
     }
 
@@ -285,6 +310,19 @@ impl LoweredExpr {
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
+            LoweredExpr::FixedSizeArray { exprs, .. } => {
+                ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
+                    type_id: exprs[0].ty(ctx),
+                    size: ctx.db.intern_const_value(
+                        value_as_const_value(
+                            ctx.db.upcast(),
+                            get_usize_ty(ctx.db.upcast()),
+                            &exprs.len().into(),
+                        )
+                        .unwrap(),
+                    ),
+                })
+            }
         }
     }
     pub fn location(&self) -> LocationId {
@@ -294,6 +332,7 @@ impl LoweredExpr {
             | LoweredExpr::ExternEnum(LoweredExprExternEnum { location, .. })
             | LoweredExpr::Member(_, location)
             | LoweredExpr::Snapshot { location, .. } => *location,
+            LoweredExpr::FixedSizeArray { location, .. } => *location,
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut, Neg};
+use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
@@ -11,7 +11,6 @@ use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -27,18 +26,19 @@ use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
 use crate::items::visibility;
-use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::resolve_type;
+use crate::types::{are_coupons_enabled, resolve_type};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
@@ -600,6 +600,20 @@ impl<'db> Resolver<'db> {
                     generic_args_syntax.unwrap_or_default(),
                 )?))
             }
+            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+                if !are_coupons_enabled(self.db, self.module_file_id) {
+                    diagnostics.report(identifier, CouponsDisabled);
+                }
+                if matches!(
+                    function_id.get_concrete(self.db).generic_function,
+                    GenericFunctionId::Extern(_)
+                ) {
+                    return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                }
+                Ok(ResolvedConcreteItem::Type(
+                    self.db.intern_type(TypeLongId::Coupon(*function_id)),
+                ))
+            }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
     }
@@ -982,57 +996,45 @@ impl<'db> Resolver<'db> {
                 let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                 GenericArgumentId::Type(ty)
             }
-            GenericParam::Const(_) => {
+            GenericParam::Const(const_param) => {
                 // TODO(spapini): Currently no bound checks are performed. Move literal validation
                 // to inference finalization and use inference here. This will become more relevant
                 // when we support constant expressions, which need inference.
-                // TODO(mkaput): This is a dumb heuristic, the expr here should be const-evaluated.
-                let syntax_db = self.db.upcast();
+                let environment = Environment::empty();
+                let mut resolver =
+                    Resolver::new(self.db, self.module_file_id, InferenceId::Canonical);
 
-                let value = match generic_arg_syntax {
-                    Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
-                    Expr::ShortString(literal) => {
-                        literal.numeric_value(self.db.upcast()).unwrap_or_default()
-                    }
-                    Expr::Path(path) => {
-                        let ResolvedConcreteItem::Constant(constant_id) = self
-                            .resolve_concrete_path(
-                                diagnostics,
-                                path,
-                                NotFoundItemType::Identifier,
-                            )?
-                        else {
-                            return Err(diagnostics.report(path, UnknownLiteral));
-                        };
+                for param in self.generic_params.iter() {
+                    resolver.add_generic_param(*param);
+                }
 
-                        let crate::Expr::Literal(const_expr_literal) =
-                            self.db.constant_semantic_data(constant_id)?.value
-                        else {
-                            return Err(diagnostics.report(path, UnknownLiteral));
-                        };
-                        const_expr_literal.value
-                    }
-                    // TODO(yuval): support string const generic arguments?
-                    Expr::Unary(unary) => {
-                        if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
-                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                        }
+                let mut ctx = ComputationContext::new(
+                    self.db,
+                    diagnostics,
+                    None,
+                    resolver,
+                    None,
+                    environment,
+                );
+                let value = compute_expr_semantic(&mut ctx, generic_arg_syntax);
 
-                        if let Expr::Literal(literal) = unary.expr(syntax_db) {
-                            literal.numeric_value(syntax_db).unwrap_or_default().neg()
-                        } else {
-                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                        }
-                    }
+                let (_, const_value) = resolve_const_expr_and_evaluate(
+                    self.db,
+                    &mut ctx,
+                    &value,
+                    generic_arg_syntax.stable_ptr().untyped(),
+                    const_param.ty,
+                );
 
-                    _ => {
-                        return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
-                    }
-                };
-
-                let literal = LiteralLongId { value };
-                GenericArgumentId::Literal(self.db.intern_literal(literal))
+                match const_value {
+                    ConstValue::Int(value) => GenericArgumentId::Constant(
+                        self.db.intern_const_value(ConstValue::Int(value)),
+                    ),
+                    ConstValue::Missing(err) => return Err(err),
+                    _ => unreachable!("Invalid const value."),
+                }
             }
+
             GenericParam::Impl(param) => {
                 let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
                     .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
@@ -1065,7 +1067,6 @@ impl<'db> Resolver<'db> {
             }
         })
     }
-
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {

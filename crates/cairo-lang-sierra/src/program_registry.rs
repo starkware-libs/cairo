@@ -27,27 +27,27 @@ mod test;
 /// Errors encountered in the program registry.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ProgramRegistryError {
-    #[error("used the same function id twice")]
+    #[error("used the same function id twice `{0}`.")]
     FunctionIdAlreadyExists(FunctionId),
-    #[error("Could not find the requested function")]
+    #[error("Could not find the requested function `{0}`.")]
     MissingFunction(FunctionId),
-    #[error("Error during type specialization")]
+    #[error("Error during type specialization of `{concrete_id}`: {error}")]
     TypeSpecialization { concrete_id: ConcreteTypeId, error: ExtensionError },
-    #[error("Used the same concrete type id twice")]
+    #[error("Used concrete type id `{0}` twice")]
     TypeConcreteIdAlreadyExists(ConcreteTypeId),
-    #[error("Declared the same concrete type twice")]
+    #[error("Declared concrete type `{0}` twice")]
     TypeAlreadyDeclared(Box<TypeDeclaration>),
-    #[error("Could not find the requested type")]
+    #[error("Could not find requested type `{0}`.")]
     MissingType(ConcreteTypeId),
-    #[error("Error during libfunc specialization")]
+    #[error("Error during libfunc specialization of {concrete_id}: {error}")]
     LibfuncSpecialization { concrete_id: ConcreteLibfuncId, error: ExtensionError },
-    #[error("Used the same concrete libfunc id twice")]
+    #[error("Used concrete libfunc id `{0}` twice.")]
     LibfuncConcreteIdAlreadyExists(ConcreteLibfuncId),
-    #[error("Could not find the requested libfunc")]
+    #[error("Could not find requested libfunc `{0}`.")]
     MissingLibfunc(ConcreteLibfuncId),
-    #[error("Type info declaration mismatch")]
+    #[error("Type info declaration mismatch for `{0}`.")]
     TypeInfoDeclarationMismatch(ConcreteTypeId),
-    #[error("Function parameter type must be storable")]
+    #[error("Function `{func_id}`'s parameter type `{ty}` is not storable.")]
     FunctionWithUnstorableType { func_id: FunctionId, ty: ConcreteTypeId },
     #[error("#{0}: Libfunc invocation input count mismatch")]
     LibfuncInvocationInputCountMismatch(StatementIdx),

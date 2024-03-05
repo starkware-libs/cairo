@@ -21,7 +21,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::Constant;
+use crate::items::constant::{ConstValue, Constant};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -31,8 +31,7 @@ use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitIt
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
-    corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
-    SemanticDiagnostic, TypeId,
+    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -90,7 +89,7 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
-    fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+    fn intern_const_value(&self, id: items::constant::ConstValue) -> items::constant::ConstValueId;
     #[salsa::interned]
     fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
@@ -98,6 +97,7 @@ pub trait SemanticGroup:
     // ====
     /// Private query to compute data about a constant definition.
     #[salsa::invoke(items::constant::priv_constant_semantic_data)]
+    #[salsa::cycle(items::constant::priv_constant_semantic_data_cycle)]
     fn priv_constant_semantic_data(
         &self,
         const_id: ConstantId,
@@ -110,9 +110,15 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the semantic data of a constant definition.
     #[salsa::invoke(items::constant::constant_semantic_data)]
+    #[salsa::cycle(items::constant::constant_semantic_data_cycle)]
     fn constant_semantic_data(&self, use_id: ConstantId) -> Maybe<Constant>;
     #[salsa::invoke(items::constant::constant_resolver_data)]
+    #[salsa::cycle(items::constant::constant_resolver_data_cycle)]
     fn constant_resolver_data(&self, use_id: ConstantId) -> Maybe<Arc<ResolverData>>;
+    #[salsa::invoke(items::constant::constant_const_value)]
+    fn constant_const_value(&self, const_id: ConstantId) -> Maybe<ConstValue>;
+    #[salsa::invoke(items::constant::constant_const_type)]
+    fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;
 
     // Use.
     // ====

@@ -1,45 +1,49 @@
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<u128> = Struct<ut@Tuple, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 39878429859757942499084499860145094553463> = Const<felt252, 39878429859757942499084499860145094553463> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 39878429859763533771555484554338820190071> = Const<felt252, 39878429859763533771555484554338820190071> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc u128_const<0> = u128_const<0>;
+libfunc const_as_immediate<Const<u128, 0>> = const_as_immediate<Const<u128, 0>>;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_eq = u128_eq;
 libfunc branch_align = branch_align;
 libfunc u128_overflowing_add = u128_overflowing_add;
-libfunc u128_const<1> = u128_const<1>;
+libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc function_call<user@examples::fib_u128::fib> = function_call<user@examples::fib_u128::fib>;
 libfunc drop<u128> = drop<u128>;
 libfunc array_new<felt252> = array_new<felt252>;
-libfunc felt252_const<39878429859763533771555484554338820190071> = felt252_const<39878429859763533771555484554338820190071>;
+libfunc const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>> = const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u128,)>> = store_temp<core::panics::PanicResult::<(core::integer::u128,)>>;
-libfunc felt252_const<39878429859757942499084499860145094553463> = felt252_const<39878429859757942499084499860145094553463>;
+libfunc const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>> = const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>>;
 libfunc struct_construct<Tuple<u128>> = struct_construct<Tuple<u128>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>;
 
 disable_ap_tracking() -> (); // 0
-u128_const<0>() -> ([4]); // 1
+const_as_immediate<Const<u128, 0>>() -> ([4]); // 1
 dup<u128>([3]) -> ([3], [5]); // 2
 u128_eq([5], [4]) { fallthrough() 46() }; // 3
 branch_align() -> (); // 4
 dup<u128>([2]) -> ([2], [6]); // 5
 u128_overflowing_add([0], [1], [6]) { fallthrough([7], [8]) 32([9], [10]) }; // 6
 branch_align() -> (); // 7
-u128_const<1>() -> ([11]); // 8
+const_as_immediate<Const<u128, 1>>() -> ([11]); // 8
 store_temp<u128>([11]) -> ([11]); // 9
 u128_overflowing_sub([7], [3], [11]) { fallthrough([12], [13]) 18([14], [15]) }; // 10
 branch_align() -> (); // 11
@@ -54,7 +58,7 @@ drop<u128>([15]) -> (); // 19
 drop<u128>([2]) -> (); // 20
 drop<u128>([8]) -> (); // 21
 array_new<felt252>() -> ([18]); // 22
-felt252_const<39878429859763533771555484554338820190071>() -> ([19]); // 23
+const_as_immediate<Const<felt252, 39878429859763533771555484554338820190071>>() -> ([19]); // 23
 store_temp<felt252>([19]) -> ([19]); // 24
 array_append<felt252>([18], [19]) -> ([20]); // 25
 struct_construct<core::panics::Panic>() -> ([21]); // 26
@@ -68,7 +72,7 @@ drop<u128>([10]) -> (); // 33
 drop<u128>([2]) -> (); // 34
 drop<u128>([3]) -> (); // 35
 array_new<felt252>() -> ([24]); // 36
-felt252_const<39878429859757942499084499860145094553463>() -> ([25]); // 37
+const_as_immediate<Const<felt252, 39878429859757942499084499860145094553463>>() -> ([25]); // 37
 store_temp<felt252>([25]) -> ([25]); // 38
 array_append<felt252>([24], [25]) -> ([26]); // 39
 struct_construct<core::panics::Panic>() -> ([27]); // 40

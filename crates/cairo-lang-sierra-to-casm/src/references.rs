@@ -93,6 +93,11 @@ impl ReferenceExpression {
         Self { cells: vec![cell_expr] }
     }
 
+    /// Builds a zero-sized reference expression.
+    pub fn zero_sized() -> Self {
+        Self { cells: vec![] }
+    }
+
     /// If returns the cells as an array of the requested size if the size is correct.
     pub fn try_unpack<const SIZE: usize>(
         &self,

@@ -21,7 +21,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
-use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
+use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, calc_metadata_ap_change_only, Metadata, MetadataComputationConfig, MetadataError,
 };
@@ -112,6 +112,9 @@ pub enum RunResultValue {
 pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     match token_type {
         CostTokenType::Const => 1,
+        CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+            panic!("Token type {:?} has no gas cost.", token_type)
+        }
         CostTokenType::Pedersen => 4130,
         CostTokenType::Poseidon => 500,
         CostTokenType::Bitwise => 594,
@@ -188,7 +191,7 @@ impl SierraCasmRunner {
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
-            gas_usage_check,
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
 
         // Find all contracts.
@@ -215,7 +218,7 @@ impl SierraCasmRunner {
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
         let (hints_dict, string_to_hint) =
-            build_hints_dict(chain!(entry_code.iter(), self.casm_program.instructions.iter()));
+            build_hints_dict(chain!(&entry_code, &self.casm_program.instructions));
         let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
 
         let mut hint_processor = CairoHintProcessor {

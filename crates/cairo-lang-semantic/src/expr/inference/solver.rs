@@ -102,9 +102,19 @@ pub fn enrich_lookup_context(
     // Add the defining module of the generic params to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
-            if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {
-                lookup_context
-                    .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);
+            match db.lookup_intern_type(*ty) {
+                TypeLongId::Concrete(concrete) => {
+                    lookup_context
+                        .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);
+                }
+                TypeLongId::Coupon(function_id) => {
+                    if let Some(module_file_id) =
+                        function_id.get_concrete(db).generic_function.module_file_id(db)
+                    {
+                        lookup_context.insert_module(module_file_id.0);
+                    }
+                }
+                _ => (),
             }
         }
     }

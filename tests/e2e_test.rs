@@ -12,6 +12,7 @@ use cairo_lang_sierra::program::{Function, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_to_casm::compiler;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataComputationConfig};
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
@@ -57,12 +58,15 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         box_: "box",
         builtin_costs: "builtin_costs",
         casts: "casts",
+        consts: "consts",
+        coupon: "coupon",
         ec: "ec",
         enum_: "enum",
         enum_snapshot: "enum_snapshot",
         felt252_dict: "felt252_dict",
         felt252_downcast: "felt252_downcast",
         felt252: "felt252",
+        fixed_size_array: "fixed_size_array",
         i128: "i128",
         i16: "i16",
         i32: "i32",
@@ -196,21 +200,25 @@ fn run_e2e_test(
         };
 
     // Compute the metadata.
-    let mut metadata_config =
-        MetadataComputationConfig { function_set_costs: enforced_costs, ..Default::default() };
+    let mut metadata_config = MetadataComputationConfig {
+        function_set_costs: enforced_costs,
+        compute_runtime_costs: params.metadata_computation,
+        ..Default::default()
+    };
     let metadata_with_linear = calc_metadata(&sierra_program, metadata_config.clone()).unwrap();
 
+    let config =
+        compiler::SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX };
     // Compile to casm.
     let casm =
-        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_with_linear, true)
-            .unwrap()
-            .to_string();
+        compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap().to_string();
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
     if params.metadata_computation {
         metadata_config.linear_gas_solver = false;
         metadata_config.linear_ap_change_solver = false;
+        metadata_config.skip_non_linear_solver_comparisons = true;
         let metadata_with_lp = calc_metadata(&sierra_program, metadata_config).unwrap();
         res.insert("gas_solution_lp".into(), format!("{}", metadata_with_lp.gas_info));
         res.insert("gas_solution_linear".into(), format!("{}", metadata_with_linear.gas_info));
@@ -218,8 +226,7 @@ fn run_e2e_test(
         res.insert("ap_solution_linear".into(), format!("{}", metadata_with_linear.ap_change_info));
 
         // Compile again, this time with the no-solver metadata.
-        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_with_lp, true)
-            .unwrap();
+        compiler::compile(&sierra_program, &metadata_with_lp, config).unwrap();
     } else {
         let function_costs_str = metadata_with_linear
             .gas_info

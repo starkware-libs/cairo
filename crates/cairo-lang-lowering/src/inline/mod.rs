@@ -36,7 +36,7 @@ pub fn get_inline_diagnostics(
     if let InlineConfiguration::Always(_) =
         db.function_declaration_inline_config(semantic_function_id)?
     {
-        if db.in_cycle(function_id)? {
+        if db.in_cycle(function_id, crate::DependencyType::Call)? {
             diagnostics.report(
                 semantic_function_id.untyped_stable_ptr(db.upcast()),
                 LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
@@ -86,11 +86,18 @@ fn should_inline_lowered(
     }
 
     let root_block = lowered.blocks.root_block()?;
+    // The inline heuristics optimization flag only applies to non-trivial small functions.
+    // Functions which contains only a call or a literal are always inlined.
+    let num_of_statements: usize =
+        lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
+    if num_of_statements < inline_small_functions_threshold(db) {
+        return Ok(true);
+    }
 
     Ok(match &root_block.end {
         FlatBlockEnd::Return(..) => {
             // Inline a function that only calls another function or returns a literal.
-            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
+            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Const(_)])
         }
         FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } | FlatBlockEnd::Panic(_) => false,
         FlatBlockEnd::NotSet => {

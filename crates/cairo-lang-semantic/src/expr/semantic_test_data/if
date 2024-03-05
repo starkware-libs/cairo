@@ -29,12 +29,7 @@ If(
             [
                 EnumVariant(
                     PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::A),
-                            ty: core::felt252,
-                            idx: 0,
-                        },
+                        variant: MyEnum::A,
                         inner_pattern: Some(
                             Variable(
                                 x,
@@ -45,12 +40,7 @@ If(
                 ),
                 EnumVariant(
                     PatternEnumVariant {
-                        variant: ConcreteVariant {
-                            concrete_enum_id: test::MyEnum,
-                            id: VariantId(test::B),
-                            ty: core::felt252,
-                            idx: 1,
-                        },
+                        variant: MyEnum::B,
                         inner_pattern: Some(
                             Variable(
                                 x,

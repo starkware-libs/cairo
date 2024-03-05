@@ -12,10 +12,11 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
-use num_bigint::BigInt;
+
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
+use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 use semantic::MatchArmSelector;
 
@@ -204,8 +205,7 @@ pub struct Variable {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
     // Values.
-    // TODO(spapini): Consts.
-    Literal(StatementLiteral),
+    Const(StatementConst),
 
     // Flow control.
     Call(StatementCall),
@@ -223,7 +223,7 @@ pub enum Statement {
 impl Statement {
     pub fn inputs(&self) -> &[VarUsage] {
         match &self {
-            Statement::Literal(_stmt) => &[],
+            Statement::Const(_stmt) => &[],
             Statement::Call(stmt) => stmt.inputs.as_slice(),
             Statement::StructConstruct(stmt) => stmt.inputs.as_slice(),
             Statement::StructDestructure(stmt) => std::slice::from_ref(&stmt.input),
@@ -235,7 +235,7 @@ impl Statement {
 
     pub fn inputs_mut(&mut self) -> &mut [VarUsage] {
         match self {
-            Statement::Literal(_stmt) => &mut [],
+            Statement::Const(_stmt) => &mut [],
             Statement::Call(stmt) => stmt.inputs.as_mut_slice(),
             Statement::StructConstruct(stmt) => stmt.inputs.as_mut_slice(),
             Statement::StructDestructure(stmt) => std::slice::from_mut(&mut stmt.input),
@@ -247,7 +247,7 @@ impl Statement {
 
     pub fn outputs(&self) -> &[VariableId] {
         match &self {
-            Statement::Literal(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
             Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::StructDestructure(stmt) => stmt.outputs.as_slice(),
@@ -259,7 +259,7 @@ impl Statement {
     pub fn location(&self) -> Option<LocationId> {
         // TODO(Gil): Add location to all statements.
         match &self {
-            Statement::Literal(_) => None,
+            Statement::Const(_) => None,
             Statement::Call(stmt) => Some(stmt.location),
             Statement::StructConstruct(_) => None,
             Statement::StructDestructure(stmt) => Some(stmt.input.location),
@@ -270,11 +270,11 @@ impl Statement {
     }
 }
 
-/// A statement that binds a literal value to a variable.
+/// A statement that binds a const value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementLiteral {
-    /// The value of the literal.
-    pub value: BigInt,
+pub struct StatementConst {
+    /// The value of the const.
+    pub value: ConstValue,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
@@ -286,6 +286,9 @@ pub struct StatementCall {
     pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VarUsage>,
+    /// Is the last input a coupon for the function call. See
+    /// [semantic::ExprFunctionCall::coupon_arg] for more information.
+    pub with_coupon: bool,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
@@ -438,4 +441,13 @@ impl MatchInfo {
             MatchInfo::Value(s) => &s.location,
         }
     }
+}
+
+/// Used in graph algorithms, and describes how to construct the edges in function dependency graph.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DependencyType {
+    /// A function depends on another function if it may call it.
+    Call,
+    /// A function depends on another function if its cost depends on the other function's cost.
+    Cost,
 }

@@ -45,9 +45,13 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 .iter()
                 .rev()
                 .filter_map(|stmt| match stmt {
-                    Statement::Call(StatementCall { function, inputs, outputs, .. })
-                        if function == &bool_not_func_id && outputs[..] == [info.input.var_id] =>
-                    {
+                    Statement::Call(StatementCall {
+                        function,
+                        inputs,
+                        outputs,
+                        with_coupon: false,
+                        ..
+                    }) if function == &bool_not_func_id && outputs[..] == [info.input.var_id] => {
                         Some(inputs[0])
                     }
                     _ => None,

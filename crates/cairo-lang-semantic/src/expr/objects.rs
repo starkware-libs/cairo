@@ -134,6 +134,7 @@ pub enum Expr {
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
+    FixedSizeArray(ExprFixedSizeArray),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -159,6 +160,7 @@ impl Expr {
             Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Constant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
+            Expr::FixedSizeArray(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
@@ -183,6 +185,7 @@ impl Expr {
             Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Constant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
+            Expr::FixedSizeArray(expr) => expr.stable_ptr,
         }
     }
 
@@ -198,6 +201,16 @@ impl Expr {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprTuple {
+    pub items: Vec<ExprId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFixedSizeArray {
     pub items: Vec<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
@@ -318,6 +331,10 @@ pub enum ExprFunctionCallArg {
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
+    /// The `__coupon__` argument of the function call, if used. Attaching a coupon to a function
+    /// means that the coupon is used instead of reducing the cost of the called function from the
+    /// gas wallet. In particular, the cost of such a call is constant.
+    pub coupon_arg: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

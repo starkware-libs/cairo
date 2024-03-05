@@ -27,16 +27,16 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt252_const<10>() -> ([0])
+const_as_immediate<Const<felt252, 10>>() -> ([0])
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
-felt252_const<3>() -> ([2])
+const_as_immediate<Const<felt252, 3>>() -> ([2])
 PushValues([2]: felt252) -> ([2])
 return([2])
 label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([1]) -> ()
-felt252_const<4>() -> ([3])
+const_as_immediate<Const<felt252, 4>>() -> ([3])
 PushValues([3]: felt252) -> ([3])
 return([3])
 label_test::foo::1:
@@ -45,7 +45,7 @@ label_test::foo::1:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 10u
+  (v0: core::felt252) <- 10
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
@@ -54,13 +54,13 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 3u
+  (v2: core::felt252) <- 3
 End:
   Return(v2)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 4u
+  (v3: core::felt252) <- 4
 End:
   Return(v3)
 
@@ -92,7 +92,7 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt252_const<7>() -> ([0])
+const_as_immediate<Const<felt252, 7>>() -> ([0])
 dup<felt252>([0]) -> ([0], [1])
 felt252_is_zero([1]) { fallthrough() label_test::foo::0([2]) }
 branch_align() -> ()
@@ -102,7 +102,7 @@ label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
 drop<felt252>([0]) -> ()
-felt252_const<7>() -> ([3])
+const_as_immediate<Const<felt252, 7>>() -> ([3])
 PushValues([3]: felt252) -> ([3])
 return([3])
 label_test::foo::1:
@@ -111,7 +111,7 @@ label_test::foo::1:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 7u
+  (v0: core::felt252) <- 7
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
@@ -125,7 +125,7 @@ End:
 
 blk2:
 Statements:
-  (v2: core::felt252) <- 7u
+  (v2: core::felt252) <- 7
 End:
   Return(v2)
 
@@ -164,7 +164,7 @@ return([3])
 label_test::foo::0:
 branch_align() -> ()
 drop<Unit>([2]) -> ()
-felt252_const<0>() -> ([4])
+const_as_immediate<Const<felt252, 0>>() -> ([4])
 PushValues([4]: felt252) -> ([4])
 return([4])
 label_test::foo::1:
@@ -187,6 +187,6 @@ End:
 
 blk2:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v4: core::felt252) <- 0
 End:
   Return(v4)

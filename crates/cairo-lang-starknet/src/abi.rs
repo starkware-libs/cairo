@@ -640,9 +640,14 @@ impl<'a> AbiBuilder<'a> {
                 Ok(())
             }
             TypeLongId::Snapshot(ty) => self.add_type(ty),
-            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
-                Err(ABIError::UnexpectedType)
+            TypeLongId::FixedSizeArray { type_id, .. } => {
+                self.add_type(type_id)?;
+                Ok(())
             }
+            TypeLongId::Coupon(_)
+            | TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::Missing(_) => Err(ABIError::UnexpectedType),
         }
     }
 

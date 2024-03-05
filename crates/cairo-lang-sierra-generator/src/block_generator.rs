@@ -283,8 +283,8 @@ pub fn generate_statement_code(
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     match statement {
-        lowering::Statement::Literal(statement_literal) => {
-            generate_statement_literal_code(context, statement_literal)
+        lowering::Statement::Const(statement_literal) => {
+            generate_statement_const_code(context, statement_literal)
         }
         lowering::Statement::Call(statement_call) => {
             generate_statement_call_code(context, statement_call, statement_location)
@@ -307,17 +307,17 @@ pub fn generate_statement_code(
     }
 }
 
-/// Generates Sierra code for [lowering::StatementLiteral].
-fn generate_statement_literal_code(
+/// Generates Sierra code for [lowering::StatementConst].
+fn generate_statement_const_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementLiteral,
+    statement: &lowering::StatementConst,
 ) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     let output_var = context.get_sierra_variable(statement.output);
     Ok(vec![simple_statement(
         const_libfunc_id_by_type(
             context.get_db(),
             context.get_var_type(statement.output),
-            statement.value.clone(),
+            &statement.value,
         ),
         &[],
         &[output_var],
@@ -331,7 +331,8 @@ fn generate_statement_call_code(
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::StatementWithLocation>> {
     // Check if this is a user defined function or a libfunc.
-    let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
+    let (body, libfunc_id) =
+        get_concrete_libfunc_id(context.get_db(), statement.function, statement.with_coupon);
     // Checks if the call invalidates ap tracking.
     let libfunc_signature = get_libfunc_signature(context.get_db(), libfunc_id.clone());
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
@@ -375,6 +376,8 @@ fn generate_statement_call_code(
             ),
         ])
     } else {
+        assert!(!statement.with_coupon, "Extern functions cannot have a __coupon__ argument.");
+
         // Dup variables as needed.
         let mut statements: Vec<pre_sierra::StatementWithLocation> = vec![];
         let inputs_after_dup = maybe_add_dup_statements(
@@ -456,7 +459,7 @@ fn generate_match_extern_code(
         maybe_add_dup_statements(context, statement_location, &match_info.inputs, &mut statements)?;
     // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), match_info.function);
+        get_concrete_libfunc_id(context.get_db(), match_info.function, false);
 
     generate_match_code(
         context,

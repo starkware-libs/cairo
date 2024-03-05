@@ -38,7 +38,7 @@ End:
 blk2:
 Statements:
   (v21: core::felt252) <- core::felt252_add(v0, v0)
-  (v10: core::felt252) <- 0u
+  (v10: core::felt252) <- 0
   (v11: core::felt252) <- test::foo(v10)
 End:
   Return(v21)

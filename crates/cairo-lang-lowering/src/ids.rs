@@ -3,9 +3,10 @@ use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::FreeFunctionId;
+use defs::ids::{ExternFunctionId, FreeFunctionId};
+use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 use smol_str::SmolStr;
@@ -272,6 +273,11 @@ impl FunctionId {
     }
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
         self.lookup(db).semantic_full_path(db)
+    }
+    pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
+        let semantic = try_extract_matches!(self.lookup(db), FunctionLongId::Semantic)?;
+        let generic = semantic.get_concrete(db.upcast()).generic_function;
+        try_extract_matches!(generic, GenericFunctionId::Extern)
     }
 }
 pub trait SemanticFunctionIdEx {

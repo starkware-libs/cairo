@@ -38,7 +38,7 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
 End:
   Return(v3)
 
@@ -79,7 +79,7 @@ End:
 
 blk1:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
 End:
   Return(v8)
 
@@ -116,7 +116,7 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
   (v13: core::felt252) <- core::felt252_sub(v1, v0)
 End:
   Match(match core::felt252_is_zero(v13) {
@@ -126,13 +126,13 @@ End:
 
 blk1:
 Statements:
-  (v8: core::felt252) <- 10u
+  (v8: core::felt252) <- 10
 End:
   Return(v8)
 
 blk2:
 Statements:
-  (v10: core::felt252) <- 20u
+  (v10: core::felt252) <- 20
 End:
   Return(v10)
 
@@ -176,13 +176,13 @@ End:
 
 blk1:
 Statements:
-  (v12: core::felt252) <- 0u
+  (v12: core::felt252) <- 0
 End:
   Return(v12)
 
 blk2:
 Statements:
-  (v14: core::felt252) <- 1u
+  (v14: core::felt252) <- 1
 End:
   Return(v14)
 
@@ -228,7 +228,7 @@ End:
 
 blk2:
 Statements:
-  (v11: core::felt252) <- 5u
+  (v11: core::felt252) <- 5
   (v34: core::felt252) <- core::felt252_sub(v0, v11)
 End:
   Match(match core::felt252_is_zero(v34) {
@@ -243,13 +243,13 @@ End:
 
 blk4:
 Statements:
-  (v20: core::felt252) <- 0u
+  (v20: core::felt252) <- 0
 End:
   Return(v20)
 
 blk5:
 Statements:
-  (v22: core::felt252) <- 1u
+  (v22: core::felt252) <- 1
 End:
   Return(v22)
 
@@ -311,7 +311,7 @@ End:
 
 blk4:
 Statements:
-  (v4: core::felt252) <- 0u
+  (v4: core::felt252) <- 0
 End:
   Return(v4)
 
@@ -351,7 +351,7 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
+  (v0: core::felt252) <- 0
 End:
   Match(match test::a() {
     myEnum::A(v1) => blk1,
@@ -382,7 +382,7 @@ End:
 
 blk5:
 Statements:
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
   (v7: core::felt252) <- core::felt252_add(v3, v4)
 End:
   Return(v7)
@@ -423,9 +423,9 @@ extern fn a() -> myEnum nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 0u
-  (v1: core::felt252) <- 5u
-  (v4: core::felt252) <- 6u
+  (v0: core::felt252) <- 0
+  (v1: core::felt252) <- 5
+  (v4: core::felt252) <- 6
   (v30: core::felt252) <- core::felt252_sub(v1, v4)
 End:
   Match(match core::felt252_is_zero(v30) {
@@ -518,7 +518,7 @@ End:
 
 blk14:
 Statements:
-  (v26: core::felt252) <- 1u
+  (v26: core::felt252) <- 1
   (v37: core::felt252) <- core::felt252_add(v25, v26)
 End:
   Return(v37)
@@ -630,7 +630,7 @@ enum myEnum {
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
     myEnum::A(v2) => blk1,
@@ -655,9 +655,9 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
+  (v5: core::felt252) <- 5
   (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
   (v11: core::felt252) <- core::felt252_add(v10, v8)
 End:
   Return(v11)
@@ -703,7 +703,7 @@ error: Unreachable else clause.
 Parameters: v0: test::myEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0u
+  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
     myEnum::A(v2) => blk1,
@@ -728,9 +728,9 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt252) <- 5u
+  (v5: core::felt252) <- 5
   (v10: core::felt252) <- core::felt252_add(v1, v5)
-  (v8: core::felt252) <- 1u
+  (v8: core::felt252) <- 1
   (v11: core::felt252) <- core::felt252_add(v10, v8)
 End:
   Return(v11)
@@ -836,6 +836,6 @@ End:
 
 blk3:
 Statements:
-  (v4: core::felt252) <- 2u
+  (v4: core::felt252) <- 2
 End:
   Return(v4)

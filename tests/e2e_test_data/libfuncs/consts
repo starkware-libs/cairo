@@ -1,0 +1,973 @@
+//! > const felt252
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: felt252 = 100;
+
+fn bar() -> felt252 { V }
+fn foo() -> Box<felt252> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 100>> = const_as_immediate<Const<felt252, 100>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
+
+const_as_immediate<Const<felt252, 100>>() -> ([0]); // 0
+store_temp<felt252>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (felt252);
+test::foo@3() -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > const u8
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: u8 = 100;
+
+fn bar() -> u8 { V }
+fn foo() -> Box<u8> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<u8> = Box<u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u8, 100> = Const<u8, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<u8, 100>> = const_as_immediate<Const<u8, 100>>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc const_as_box<Const<u8, 100>, 0> = const_as_box<Const<u8, 100>, 0>;
+
+const_as_immediate<Const<u8, 100>>() -> ([0]); // 0
+store_temp<u8>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<u8, 100>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (u8);
+test::foo@3() -> (Box<u8>);
+
+//! > ==========================================================================
+
+//! > const i16
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: i16 = -1000;
+
+fn bar() -> i16 { V }
+fn foo() -> Box<i16> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = -1000, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw -1000;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<i16> = Box<i16> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<i16, -1000> = Const<i16, -1000> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<i16, -1000>> = const_as_immediate<Const<i16, -1000>>;
+libfunc store_temp<i16> = store_temp<i16>;
+libfunc const_as_box<Const<i16, -1000>, 0> = const_as_box<Const<i16, -1000>, 0>;
+
+const_as_immediate<Const<i16, -1000>>() -> ([0]); // 0
+store_temp<i16>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<i16, -1000>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (i16);
+test::foo@3() -> (Box<i16>);
+
+//! > ==========================================================================
+
+//! > const u256
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V1: u256 = 0x2000000000000000000000000000000010;
+const V2: u256 = u256 { low: 0x10, high: 0x20 };
+
+fn bar1() -> u256 { V1 }
+fn bar2() -> u256 { V2 }
+fn foo1() -> Box<u256> { BoxTrait::new(V1) }
+fn foo2() -> Box<u256> { BoxTrait::new(V2) }
+
+//! > casm
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
+call rel 10;
+[ap + 0] = [ap + -1] + 9, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 16;
+dw 32;
+
+//! > function_costs
+test::bar1: OrderedHashMap({Const: 200})
+test::bar2: OrderedHashMap({Const: 200})
+test::foo1: OrderedHashMap({Const: 300})
+test::foo2: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0> = const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>;
+
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 0
+store_temp<core::integer::u256>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 3
+store_temp<core::integer::u256>([0]) -> ([0]); // 4
+return([0]); // 5
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 6
+return([0]); // 7
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 8
+return([0]); // 9
+
+test::bar1@0() -> (core::integer::u256);
+test::bar2@3() -> (core::integer::u256);
+test::foo1@6() -> (Box<core::integer::u256>);
+test::foo2@8() -> (Box<core::integer::u256>);
+
+//! > ==========================================================================
+
+//! > const bool
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn bar() -> bool { false }
+fn foo() -> Box<bool> { BoxTrait::new(false) }
+
+//! > casm
+[ap + 0] = 0, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<core::bool, 0, Const<Unit>> = Const<core::bool, 0, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Box<core::bool> = Box<core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc const_as_box<Const<core::bool, 0, Const<Unit>>, 0> = const_as_box<Const<core::bool, 0, Const<Unit>>, 0>;
+
+struct_construct<Unit>() -> ([0]); // 0
+enum_init<core::bool, 0>([0]) -> ([1]); // 1
+store_temp<core::bool>([1]) -> ([1]); // 2
+return([1]); // 3
+const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]); // 4
+return([0]); // 5
+
+test::bar@0() -> (core::bool);
+test::foo@4() -> (Box<core::bool>);
+
+//! > ==========================================================================
+
+//! > const complex
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum ThreeOptions {
+    A: felt252,
+    B: u256,
+    C,
+}
+
+const V: ThreeOptions = ThreeOptions::B(u256 { low: 0x10, high: 0x20 });
+
+fn bar() -> ThreeOptions { V }
+fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 3, ap++;
+[ap + 0] = 16, ap++;
+[ap + 0] = 32, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 3;
+dw 16;
+dw 32;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> = Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>> = const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>;
+libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
+libfunc const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0> = const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>;
+
+const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>() -> ([0]); // 0
+store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (test::ThreeOptions);
+test::foo@3() -> (Box<test::ThreeOptions>);
+
+//! > ==========================================================================
+
+//! > const complex with padding
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum ThreeOptions {
+    A: felt252,
+    B: u256,
+    C,
+}
+
+const V: ThreeOptions = ThreeOptions::A(1337);
+
+fn bar() -> ThreeOptions { V }
+fn foo() -> Box<ThreeOptions> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 1337, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 5;
+dw 0;
+dw 1337;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, core::integer::u256, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptions> = Box<test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>> = const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>;
+libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
+libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>;
+
+const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 0
+store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (test::ThreeOptions);
+test::foo@3() -> (Box<test::ThreeOptions>);
+
+//! > ==========================================================================
+
+//! > const several complex enums
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum ThreeOptions {
+    A: felt252,
+    B: (u256, u256),
+    C,
+}
+
+struct ThreeOptionsPair {
+    a: ThreeOptions,
+    b: ThreeOptions,
+}
+
+const V: ThreeOptionsPair = ThreeOptionsPair {
+    a: ThreeOptions::A(1337),
+    b: ThreeOptions::C,
+};
+
+
+fn bar() -> ThreeOptionsPair { V }
+fn foo() -> Box<ThreeOptionsPair> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 1337, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 5;
+dw 0;
+dw 0;
+dw 0;
+dw 1337;
+dw 1;
+dw 0;
+dw 0;
+dw 0;
+dw 0;
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 1000})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::ThreeOptions = Enum<ut@test::ThreeOptions, felt252, Tuple<core::integer::u256, core::integer::u256>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::ThreeOptionsPair = Struct<ut@test::ThreeOptionsPair, test::ThreeOptions, test::ThreeOptions> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::ThreeOptionsPair> = Box<test::ThreeOptionsPair> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> = Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<test::ThreeOptions, 2, Const<Unit>> = Const<test::ThreeOptions, 2, Const<Unit>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<test::ThreeOptions, 0, Const<felt252, 1337>> = Const<test::ThreeOptions, 0, Const<felt252, 1337>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Unit> = Const<Unit> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1337> = Const<felt252, 1337> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>> = const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>;
+libfunc store_temp<test::ThreeOptionsPair> = store_temp<test::ThreeOptionsPair>;
+libfunc const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0> = const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>;
+
+const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]); // 0
+store_temp<test::ThreeOptionsPair>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (test::ThreeOptionsPair);
+test::foo@3() -> (Box<test::ThreeOptionsPair>);
+
+//! > ==========================================================================
+
+//! > const and builtin costs
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> (Box<felt252>, BuiltinCosts) {
+    (BoxTrait::new(100), get_builtin_costs())
+}
+
+//! > casm
+call rel 13;
+[ap + 0] = [ap + -1] + 12, ap++;
+call rel 7;
+[ap + 0] = [ap + -1] + 6, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [[ap + -5] + 0], ap++;
+ret;
+ret;
+dw 100;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 800})
+
+//! > sierra_code
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<felt252>, BuiltinCosts> = Struct<ut@Tuple, Box<felt252>, BuiltinCosts> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc get_builtin_costs = get_builtin_costs;
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
+libfunc struct_construct<Tuple<Box<felt252>, BuiltinCosts>> = struct_construct<Tuple<Box<felt252>, BuiltinCosts>>;
+libfunc store_temp<Tuple<Box<felt252>, BuiltinCosts>> = store_temp<Tuple<Box<felt252>, BuiltinCosts>>;
+
+get_builtin_costs() -> ([0]); // 0
+const_as_box<Const<felt252, 100>, 0>() -> ([1]); // 1
+struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([1], [0]) -> ([2]); // 2
+store_temp<Tuple<Box<felt252>, BuiltinCosts>>([2]) -> ([2]); // 3
+return([2]); // 4
+
+test::foo@0() -> (Tuple<Box<felt252>, BuiltinCosts>);
+
+//! > ==========================================================================
+
+//! > const segmentation
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type Const<T, const VALUE: T>;
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
+
+fn foo() -> (Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>) {
+    (
+        const_as_box::<Const<felt252, 100>, 0>(),
+        const_as_box::<Const<felt252, 200>, 1>(),
+        const_as_box::<Const<felt252, 300>, 2>(),
+        const_as_box::<Const<felt252, 300>, 2>(),
+        const_as_box::<Const<felt252, 400>, 0>(),
+        const_as_box::<Const<felt252, 300>, 1>(),
+    )
+}
+
+//! > casm
+call rel 31;
+[ap + 0] = [ap + -1] + 30, ap++;
+call rel 30;
+[ap + 0] = [ap + -1] + 29, ap++;
+call rel 29;
+[ap + 0] = [ap + -1] + 28, ap++;
+call rel 25;
+[ap + 0] = [ap + -1] + 24, ap++;
+call rel 15;
+[ap + 0] = [ap + -1] + 15, ap++;
+call rel 14;
+[ap + 0] = [ap + -1] + 14, ap++;
+[ap + 0] = [ap + -16], ap++;
+[ap + 0] = [ap + -14], ap++;
+[ap + 0] = [ap + -12], ap++;
+[ap + 0] = [ap + -10], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ret;
+dw 100;
+dw 400;
+ret;
+dw 200;
+dw 300;
+ret;
+dw 300;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 2400})
+
+//! > sierra_code
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> = Struct<ut@Tuple, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
+libfunc const_as_box<Const<felt252, 200>, 1> = const_as_box<Const<felt252, 200>, 1>;
+libfunc const_as_box<Const<felt252, 300>, 2> = const_as_box<Const<felt252, 300>, 2>;
+libfunc const_as_box<Const<felt252, 400>, 0> = const_as_box<Const<felt252, 400>, 0>;
+libfunc const_as_box<Const<felt252, 300>, 1> = const_as_box<Const<felt252, 300>, 1>;
+libfunc struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+libfunc store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+
+const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
+const_as_box<Const<felt252, 200>, 1>() -> ([1]); // 1
+const_as_box<Const<felt252, 300>, 2>() -> ([2]); // 2
+const_as_box<Const<felt252, 300>, 2>() -> ([3]); // 3
+const_as_box<Const<felt252, 400>, 0>() -> ([4]); // 4
+const_as_box<Const<felt252, 300>, 1>() -> ([5]); // 5
+struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([0], [1], [2], [3], [4], [5]) -> ([6]); // 6
+store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([6]) -> ([6]); // 7
+return([6]); // 8
+
+test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
+
+//! > ==========================================================================
+
+//! > const felt252 span
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
+
+fn foo() -> @Array<felt252> {
+    span_from_tuple(BoxTrait::new((100, 200, 300, 400)).as_snapshot())
+}
+
+//! > casm
+call rel 8;
+[ap + 0] = [ap + -1] + 7, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 4, ap++;
+ret;
+ret;
+dw 100;
+dw 200;
+dw 300;
+dw 400;
+
+//! > sierra_code
+type Box<Tuple<felt252, felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0> = const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>;
+libfunc snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>> = snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc drop<Box<Tuple<felt252, felt252, felt252, felt252>>> = drop<Box<Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>> = box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>>;
+libfunc span_from_tuple<Tuple<felt252, felt252, felt252, felt252>> = span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>;
+libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
+
+const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>() -> ([0]); // 0
+snapshot_take<Box<Tuple<felt252, felt252, felt252, felt252>>>([0]) -> ([1], [2]); // 1
+drop<Box<Tuple<felt252, felt252, felt252, felt252>>>([1]) -> (); // 2
+box_forward_snapshot<Tuple<felt252, felt252, felt252, felt252>>([2]) -> ([3]); // 3
+span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>([3]) -> ([4]); // 4
+store_temp<Snapshot<Array<felt252>>>([4]) -> ([4]); // 5
+return([4]); // 6
+
+test::foo@0() -> (Snapshot<Array<felt252>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > ==========================================================================
+
+//! > const felt252 quad span
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+type quad_felt252 = (felt252, felt252, felt252, felt252);
+
+extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<quad_felt252> nopanic;
+
+fn foo() -> @Array<quad_felt252> {
+    span_from_tuple(BoxTrait::new((
+        (100, 200, 300, 400),
+        (200, 300, 400, 100),
+        (300, 400, 100, 200),
+        (400, 100, 200, 300),
+    )).as_snapshot())
+}
+
+//! > casm
+call rel 8;
+[ap + 0] = [ap + -1] + 7, ap++;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 16, ap++;
+ret;
+ret;
+dw 100;
+dw 200;
+dw 300;
+dw 400;
+dw 200;
+dw 300;
+dw 400;
+dw 100;
+dw 300;
+dw 400;
+dw 100;
+dw 200;
+dw 400;
+dw 100;
+dw 200;
+dw 300;
+
+//! > sierra_code
+type Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<Tuple<felt252, felt252, felt252, felt252>> = Array<Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>> = Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>> = Struct<ut@Tuple, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>> = Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 200> = Const<felt252, 200> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 400> = Const<felt252, 400> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> = Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0> = const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>;
+libfunc snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>> = snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>;
+libfunc drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>> = drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>;
+libfunc box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>;
+libfunc store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>> = store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>;
+
+const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>() -> ([0]); // 0
+snapshot_take<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>([0]) -> ([1], [2]); // 1
+drop<Box<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>>([1]) -> (); // 2
+box_forward_snapshot<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([2]) -> ([3]); // 3
+span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([3]) -> ([4]); // 4
+store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>([4]) -> ([4]); // 5
+return([4]); // 6
+
+test::foo@0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > ==========================================================================
+
+//! > const NonZero<felt252>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<felt252> = 100;
+
+fn bar() -> NonZero<felt252> { V }
+fn foo() -> Box<NonZero<felt252>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<felt252>> = Box<NonZero<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<felt252>, Const<felt252, 100>> = Const<NonZero<felt252>, Const<felt252, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 100> = Const<felt252, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>> = const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>;
+libfunc store_temp<NonZero<felt252>> = store_temp<NonZero<felt252>>;
+libfunc const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0> = const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>;
+
+const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>() -> ([0]); // 0
+store_temp<NonZero<felt252>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<felt252>);
+test::foo@3() -> (Box<NonZero<felt252>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u8>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u8> = 100;
+
+fn bar() -> NonZero<u8> { V }
+fn foo() -> Box<NonZero<u8>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 100, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 100;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u8> = NonZero<u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<u8>> = Box<NonZero<u8>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<u8>, Const<u8, 100>> = Const<NonZero<u8>, Const<u8, 100>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u8, 100> = Const<u8, 100> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>> = const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>;
+libfunc store_temp<NonZero<u8>> = store_temp<NonZero<u8>>;
+libfunc const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0> = const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>;
+
+const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>() -> ([0]); // 0
+store_temp<NonZero<u8>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<u8>);
+test::foo@3() -> (Box<NonZero<u8>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u256> 0 low.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u256> = 0x2000000000000000000000000000000000;
+
+fn bar() -> NonZero<u256> { V }
+fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 32, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+dw 32;
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<core::integer::u256>> = Box<NonZero<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>> = Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>> = Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 32> = Const<u128, 32> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>> = const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>;
+libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
+libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>;
+
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>() -> ([0]); // 0
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<core::integer::u256>);
+test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u256> 0 high.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+const V: NonZero<u256> = 16;
+
+fn bar() -> NonZero<u256> { V }
+fn foo() -> Box<NonZero<u256>> { BoxTrait::new(V) }
+
+//! > casm
+[ap + 0] = 16, ap++;
+[ap + 0] = 0, ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 16;
+dw 0;
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<NonZero<core::integer::u256>> = Box<NonZero<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>> = Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>> = Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>> = const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>;
+libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
+libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>;
+
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>() -> ([0]); // 0
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
+return([0]); // 2
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 3
+return([0]); // 4
+
+test::bar@0() -> (NonZero<core::integer::u256>);
+test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+
+//! > function_costs
+test::bar: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const NonZero<u512> 0 high.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::integer::u512;
+
+mod value { extern type Const<T, const VALUE: T>; }
+mod struct4 { extern type Const<T, C0, C1, C2, C3>; }
+mod nz { extern type Const<T, C>; }
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<NonZero<u512>> nopanic;
+
+fn foo() -> Box<NonZero<u512>> {
+    const_as_box::<
+        nz::Const<
+            NonZero<u512>,
+            struct4::Const<
+                u512,
+                value::Const<u128, 0>,
+                value::Const<u128, 0>,
+                value::Const<u128, 16>,
+                value::Const<u128, 0>,
+            >,
+        >,
+        0,
+    >()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+dw 0;
+dw 16;
+dw 0;
+
+//! > sierra_code
+type Box<NonZero<core::integer::u512>> = Box<NonZero<core::integer::u512>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>> = Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u512 = Struct<ut@core::integer::u512, u128, u128, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u512> = NonZero<core::integer::u512> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>> = Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 16> = Const<u128, 16> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>;
+
+const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (Box<NonZero<core::integer::u512>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})

@@ -355,13 +355,16 @@ impl<'a> FindLocalsContext<'a> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
-            lowering::Statement::Literal(statement_literal) => {
+            lowering::Statement::Const(statement_literal) => {
                 self.constants.insert(statement_literal.output);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Call(statement_call) => {
-                let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(self.db, statement_call.function);
+                let (_, concrete_function_id) = get_concrete_libfunc_id(
+                    self.db,
+                    statement_call.function,
+                    statement_call.with_coupon,
+                );
 
                 self.analyze_call(concrete_function_id, inputs, outputs)
             }
@@ -419,7 +422,7 @@ impl<'a> FindLocalsContext<'a> {
     fn get_match_libfunc_signature(&self, match_info: &MatchInfo) -> Maybe<LibfuncSignature> {
         Ok(match match_info {
             MatchInfo::Extern(s) => {
-                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function);
+                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function, false);
                 get_libfunc_signature(self.db, concrete_function_id)
             }
             MatchInfo::Enum(s) => {

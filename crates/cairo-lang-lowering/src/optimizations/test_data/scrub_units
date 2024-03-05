@@ -33,7 +33,7 @@ extern fn my_fn() nopanic;
 Parameters: v0: core::option::Option::<()>
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 433078840523992521883553776259654958u
+  (v1: core::felt252) <- 433078840523992521883553776259654958
   (v2: ()) <- core::option::OptionTraitImpl::<()>::expect(v0, v1)
   (v3: ()) <- test::bar::<(), test::MyDestruct>(v2)
 End:
@@ -43,7 +43,7 @@ End:
 Parameters: v0: core::option::Option::<()>
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 433078840523992521883553776259654958u
+  (v1: core::felt252) <- 433078840523992521883553776259654958
   () <- core::option::OptionTraitImpl::<()>::expect(v0, v1)
   (v2: ()) <- struct_construct()
   () <- test::bar::<(), test::MyDestruct>(v2)

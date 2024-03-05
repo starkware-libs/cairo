@@ -131,6 +131,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
                 "Member specified more than once.".into()
             }
+            SemanticDiagnosticKind::ConstCycle => {
+                "Cycle detected while resolving 'const' items.".into()
+            }
             SemanticDiagnosticKind::UseCycle => {
                 "Cycle detected while resolving 'use' items.".into()
             }
@@ -471,10 +474,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnexpectedTuplePattern { ty } => {
                 format!(r#"Unexpected type for tuple pattern. "{}" is not a tuple."#, ty.format(db),)
             }
+            SemanticDiagnosticKind::UnexpectedFixedSizeArrayPattern { ty } => {
+                format!(
+                    "Unexpected type for fixed size array pattern. \"{}\" is not a fixed size \
+                     array.",
+                    ty.format(db),
+                )
+            }
             SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
                 r#"Wrong number of tuple elements in pattern. Expected: {}. Got: {}."#,
                 expected, actual
             ),
+            SemanticDiagnosticKind::WrongNumberOfFixedSizeArrayElements { expected, actual } => {
+                format!(
+                    "Wrong number of fixed size array elements in pattern. Expected: {}. Got: {}.",
+                    expected, actual
+                )
+            }
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
@@ -538,15 +554,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
-                    UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
                     UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
             }
-            SemanticDiagnosticKind::OnlyLiteralConstants => {
-                "Only literal constants are currently supported.".into()
+            SemanticDiagnosticKind::UnsupportedConstant => {
+                "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
                 "Extern items with impl generics are not supported".into()
             }
@@ -686,6 +702,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplItem { kind } => {
                 format!("{kind} items are not yet supported in impls.")
             }
+            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
+                "Coupon cannot be used with extern functions.".into()
+            }
+            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
+                "The __coupon__ argument cannot have modifiers.".into()
+            }
+            SemanticDiagnosticKind::CouponsDisabled => {
+                "Coupons are disabled in the current crate.\nYou can enable them by enabling the \
+                 coupons experimental feature in the crate config."
+                    .into()
+            }
             SemanticDiagnosticKind::StructBaseStructExpressionNotLast => {
                 "The base struct must always be the last argument.".into()
             }
@@ -693,6 +720,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Base struct has no effect, all the fields in the struct have already been \
                  specified."
                     .into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayTypeNonSingleType => {
+                "Fixed size array type must have exactly one type.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayTypeEmptySize => {
+                "Fixed size array type must have a size clause.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayNonNumericSize => {
+                "Fixed size array type must have a positive integer size.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayNonSingleValue => {
+                "Fixed size array with defined size must have exactly one value.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArrayEmptyElements => {
+                "Fixed size array must have at least one element.".into()
+            }
+            SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
+                "Fixed size array size must be smaller than 2^15.".into()
             }
         }
     }
@@ -753,6 +798,7 @@ pub enum SemanticDiagnosticKind {
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,
     StructBaseStructExpressionNoEffect,
+    ConstCycle,
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,
@@ -929,7 +975,14 @@ pub enum SemanticDiagnosticKind {
     UnexpectedTuplePattern {
         ty: semantic::TypeId,
     },
+    UnexpectedFixedSizeArrayPattern {
+        ty: semantic::TypeId,
+    },
     WrongNumberOfTupleElements {
+        expected: usize,
+        actual: usize,
+    },
+    WrongNumberOfFixedSizeArrayElements {
         expected: usize,
         actual: usize,
     },
@@ -969,7 +1022,8 @@ pub enum SemanticDiagnosticKind {
     UnsupportedOutsideOfFunction {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
-    OnlyLiteralConstants,
+    UnsupportedConstant,
+    DivisionByZero,
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
     TraitMismatch {
@@ -1025,6 +1079,16 @@ pub enum SemanticDiagnosticKind {
     UnsupportedImplItem {
         kind: String,
     },
+    CouponForExternFunctionNotAllowed,
+    CouponArgumentNoModifiers,
+    /// Coupons are disabled in the current crate.
+    CouponsDisabled,
+    FixedSizeArrayTypeNonSingleType,
+    FixedSizeArrayTypeEmptySize,
+    FixedSizeArrayNonNumericSize,
+    FixedSizeArrayNonSingleValue,
+    FixedSizeArrayEmptyElements,
+    FixedSizeArraySizeTooBig,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1038,7 +1102,6 @@ pub enum NotFoundItemType {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum UnsupportedOutsideOfFunctionFeatureName {
-    FunctionCall,
     ReturnStatement,
     ErrorPropagate,
 }

@@ -1,14 +1,12 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_semantic::items::enm::MatchArmSelector;
-use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
 use itertools::Itertools;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, MatchExternInfo, Statement, StatementCall, StatementLiteral,
-    StatementStructDestructure, VariableId,
+    BlockId, MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
+    VariableId,
 };
 use crate::{
     FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
@@ -182,7 +180,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         }
         write!(f, ") <- ")?;
         match self {
-            Statement::Literal(stmt) => stmt.fmt(f, ctx),
+            Statement::Const(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
@@ -203,23 +201,22 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        _ctx: &LoweredFormatter<'_>,
-    ) -> std::fmt::Result {
-        write!(f, "{}u", self.value)
+impl DebugWithDb<LoweredFormatter<'_>> for StatementConst {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        self.value.fmt(f, ctx.db)
     }
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
-        let mut inputs = self.inputs.iter().peekable();
-        while let Some(var) = inputs.next() {
+        for (i, var) in self.inputs.iter().enumerate() {
+            let is_last = i == self.inputs.len() - 1;
+            if is_last && self.with_coupon {
+                write!(f, "__coupon__: ")?;
+            }
             var.fmt(f, ctx)?;
-            if inputs.peek().is_some() {
+            if !is_last {
                 write!(f, ", ")?;
             }
         }
@@ -246,29 +243,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name = self.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
-        let variant_name = self.id.name(ctx.db.upcast());
-        write!(f, "{enum_name}::{variant_name}")
-    }
-}
-impl DebugWithDb<LoweredFormatter<'_>> for MatchArmSelector {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        match self {
-            MatchArmSelector::VariantId(variant_id) => {
-                write!(f, "{:?}", variant_id.debug(ctx))
-            }
-            MatchArmSelector::Value(s) => {
-                write!(f, "{:?}", s.value)
-            }
-        }
-    }
-}
-
 impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "    {:?}", self.arm_selector.debug(ctx))?;
+        write!(f, "    {:?}", self.arm_selector.debug(ctx.db))?;
 
         if !self.var_ids.is_empty() {
             write!(f, "(")?;

@@ -41,7 +41,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::felt252_add(v0, v3)
 End:
   Return(v4)
@@ -103,7 +103,7 @@ End:
 blk1:
 Statements:
   () <- test::revoke_ap()
-  (v4: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
   (v5: core::felt252) <- core::felt252_add(v0, v4)
 End:
   Goto(blk3, {v5 -> v1})
@@ -156,7 +156,7 @@ fn revoke_ap() {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
+  (v1: core::felt252) <- 1
   (v5: core::felt252) <- core::felt252_add(v0, v1)
   () <- test::revoke_ap()
 End:

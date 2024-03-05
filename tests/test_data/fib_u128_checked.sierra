@@ -1,5 +1,6 @@
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -16,7 +17,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc u128_overflowing_add = u128_overflowing_add;
-libfunc u128_const<1> = u128_const<1>;
+libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc function_call<user@examples::fib_u128_checked::fib> = function_call<user@examples::fib_u128_checked::fib>;
@@ -39,7 +40,7 @@ drop<NonZero<felt252>>([6]) -> (); // 12
 dup<u128>([2]) -> ([2], [8]); // 13
 u128_overflowing_add([0], [1], [8]) { fallthrough([9], [10]) 35([11], [12]) }; // 14
 branch_align() -> (); // 15
-u128_const<1>() -> ([13]); // 16
+const_as_immediate<Const<u128, 1>>() -> ([13]); // 16
 store_temp<u128>([13]) -> ([13]); // 17
 u128_overflowing_sub([9], [3], [13]) { fallthrough([14], [15]) 26([16], [17]) }; // 18
 branch_align() -> (); // 19

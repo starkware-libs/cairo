@@ -1,6 +1,6 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-  "compiler_version": "2.5.4",
+  "compiler_version": "2.6.0",
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",
@@ -470,6 +470,11 @@
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe"
+  ],
+  "bytecode_segment_lengths": [
+    172,
+    160,
+    136
   ],
   "hints": [
     [

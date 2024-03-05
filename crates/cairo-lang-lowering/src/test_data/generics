@@ -33,12 +33,12 @@ extern fn immovable<T>(t: T) -> T nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 5u
+  (v0: core::felt252) <- 5
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v13: (core::felt252, core::bool)) <- struct_construct(v0, v2)
   (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v13)
-  (v6: core::felt252) <- 6u
+  (v6: core::felt252) <- 6
   (v7: ()) <- struct_construct()
   (v8: core::bool) <- bool::False(v7)
   (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
@@ -76,8 +76,8 @@ struct Query<V> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1u
-  (v3: core::felt252) <- 2u
+  (v0: core::felt252) <- 1
+  (v3: core::felt252) <- 2
   (v7: core::felt252) <- core::felt252_add(v3, v0)
 End:
   Return(v7)
@@ -149,7 +149,7 @@ impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 5u
+  (v0: core::felt252) <- 5
   () <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
 End:
   Return()
@@ -180,6 +180,6 @@ const one: felt252 = 1;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- core::felt252_const::<LiteralLongId { value: 1 }>()
+  (v0: core::felt252) <- core::felt252_const::<1>()
 End:
   Return(v0)

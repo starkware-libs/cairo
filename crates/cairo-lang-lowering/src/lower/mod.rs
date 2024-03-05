@@ -10,10 +10,12 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
+use num_traits::ToPrimitive;
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
-    never_ty, unit_ty, validate_literal,
+    never_ty, unit_ty,
 };
+use semantic::items::constant::{value_as_const_value, ConstValue};
 use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
@@ -625,47 +627,72 @@ fn lower_single_pattern(
                 }
             }
         }
-        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, .. }) => {
-            let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
-                exprs
-            } else {
-                let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
-                let reqs =
-                    zip_eq(&field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
-                        .map(|(pattern, ty)| VarRequest {
-                            ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                            location: ctx.get_location(
-                                ctx.function_body.patterns[*pattern].stable_ptr().untyped(),
-                            ),
-                        })
-                        .collect();
-                generators::StructDestructure {
-                    input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
-                    var_reqs: reqs,
-                }
-                .add(ctx, &mut builder.statements)
-                .into_iter()
-                .map(|var_id| {
-                    LoweredExpr::AtVariable(VarUsage {
-                        var_id,
-                        // The variable is used immediately after the destructure, so the usage
-                        // location is the same as the definition location.
-                        location: ctx.variables[var_id].location,
-                    })
-                })
-                .collect()
-            };
-            for (var, pattern) in zip_eq(outputs, field_patterns) {
-                lower_single_pattern(
-                    ctx,
-                    builder,
-                    ctx.function_body.patterns[pattern].clone(),
-                    var,
-                )?;
-            }
+        semantic::Pattern::Tuple(semantic::PatternTuple {
+            field_patterns: patterns, ty, ..
+        })
+        | semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
+            elements_patterns: patterns,
+            ty,
+            ..
+        }) => {
+            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, ty)?;
         }
         semantic::Pattern::Otherwise(_) => {}
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
+    }
+    Ok(())
+}
+
+/// An helper function to handle patterns of tuples or fixed size arrays.
+fn lower_tuple_like_pattern_helper(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    lowered_expr: LoweredExpr,
+    patterns: &[semantic::PatternId],
+    ty: semantic::TypeId,
+) -> LoweringResult<()> {
+    let outputs = match lowered_expr {
+        LoweredExpr::Tuple { exprs, .. } => exprs,
+        LoweredExpr::FixedSizeArray { exprs, .. } => exprs,
+        _ => {
+            let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+            let tys = match long_type_id {
+                TypeLongId::Tuple(tys) => tys,
+                TypeLongId::FixedSizeArray { type_id, size } => {
+                    let size =
+                        extract_matches!(ctx.db.lookup_intern_const_value(size), ConstValue::Int)
+                            .to_usize()
+                            .unwrap();
+                    vec![type_id; size]
+                }
+                _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
+            };
+            let reqs = patterns
+                .iter()
+                .zip_eq(tys)
+                .map(|(pattern, ty)| VarRequest {
+                    ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
+                    location: ctx
+                        .get_location(ctx.function_body.patterns[*pattern].stable_ptr().untyped()),
+                })
+                .collect();
+            generators::StructDestructure {
+                input: lowered_expr.as_var_usage(ctx, builder)?.var_id,
+                var_reqs: reqs,
+            }
+            .add(ctx, &mut builder.statements)
+            .into_iter()
+            .map(|var_id| {
+                LoweredExpr::AtVariable(VarUsage {
+                    var_id,
+                    location: ctx.variables[var_id].location,
+                })
+            })
+            .collect()
+        }
+    };
+    for (var, pattern) in zip_eq(outputs, patterns) {
+        lower_single_pattern(ctx, builder, ctx.function_body.patterns[*pattern].clone(), var)?;
     }
     Ok(())
 }
@@ -716,6 +743,7 @@ fn lower_expr(
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, builder),
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
+        semantic::Expr::FixedSizeArray(expr) => lower_expr_fixed_size_array(ctx, expr, builder),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, builder),
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
@@ -740,39 +768,14 @@ fn lower_expr_literal_helper(
     value: &BigInt,
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
-    if let Err(err) = validate_literal(ctx.db.upcast(), ty, value.clone()) {
-        ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err));
-    }
+    let value = value_as_const_value(ctx.db.upcast(), ty, value)
+        .map_err(|err| {
+            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err))
+        })
+        .unwrap_or_else(ConstValue::Missing);
     let location = ctx.get_location(stable_ptr);
-    let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
-
-    if ty == u256_ty {
-        let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
-
-        let mask128 = BigInt::from(u128::MAX);
-        let low = value & mask128;
-        let high = value >> 128;
-        let u256 = vec![low, high];
-
-        return Ok(LoweredExpr::AtVariable(
-            generators::StructConstruct {
-                inputs: u256
-                    .into_iter()
-                    .map(|value| {
-                        generators::Literal { value, ty: u128_ty, location }
-                            .add(ctx, &mut builder.statements)
-                    })
-                    .collect(),
-                ty: u256_ty,
-                location,
-            }
-            .add(ctx, &mut builder.statements),
-        ));
-    }
-
     Ok(LoweredExpr::AtVariable(
-        generators::Literal { value: value.clone(), ty, location }
-            .add(ctx, &mut builder.statements),
+        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
     ))
 }
 
@@ -843,6 +846,7 @@ fn build_empty_data_array(
     generators::Call {
         function: data_array_new_function,
         inputs: vec![],
+        coupon_input: None,
         extra_ret_tys: vec![],
         ret_tys: vec![data_array_ty],
         location: ctx.get_location(expr.stable_ptr.untyped()),
@@ -866,8 +870,8 @@ fn add_chunks_to_data_array<'a>(
     let chunks = expr.value.as_bytes().chunks_exact(31);
     let remainder = chunks.remainder();
     for chunk in chunks {
-        let chunk_usage = generators::Literal {
-            value: BigInt::from_bytes_be(Sign::Plus, chunk),
+        let chunk_usage = generators::Const {
+            value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk)),
             ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
@@ -876,6 +880,7 @@ fn add_chunks_to_data_array<'a>(
         *data_array_usage = generators::Call {
             function: data_array_append_function,
             inputs: vec![*data_array_usage, chunk_usage],
+            coupon_input: None,
             extra_ret_tys: vec![data_array_ty],
             ret_tys: vec![],
             location: ctx.get_location(expr_stable_ptr),
@@ -899,16 +904,16 @@ fn add_pending_word(
     let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
     let felt252_ty = core_felt252_ty(ctx.db.upcast());
 
-    let pending_word_usage = generators::Literal {
-        value: BigInt::from_bytes_be(Sign::Plus, pending_word_bytes),
+    let pending_word_usage = generators::Const {
+        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes)),
         ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
 
     let pending_word_len = expr.value.len() % 31;
-    let pending_word_len_usage = generators::Literal {
-        value: pending_word_len.into(),
+    let pending_word_len_usage = generators::Const {
+        value: ConstValue::Int(pending_word_len.into()),
         ty: u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
@@ -922,12 +927,20 @@ fn lower_expr_constant(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
-    let const_expr =
-        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?.value;
-    let semantic::Expr::Literal(const_expr_literal) = const_expr else {
-        panic!("Only literal constants are supported.");
-    };
-    lower_expr_literal(ctx, const_expr_literal, builder)
+    let (value, ty) = ctx
+        .db
+        .constant_const_value(expr.constant_id)
+        .map(|value| {
+            (
+                value,
+                ctx.db.constant_const_type(expr.constant_id).expect("Constant must have a type."),
+            )
+        })
+        .map_err(LoweringFlowError::Failed)?;
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    Ok(LoweredExpr::AtVariable(
+        generators::Const { value, ty, location }.add(ctx, &mut builder.statements),
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
@@ -944,6 +957,22 @@ fn lower_expr_tuple(
         .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(LoweredExpr::Tuple { exprs: inputs, location })
+}
+
+/// Lowers an expression of type [semantic::ExprFixedSizeArray]
+fn lower_expr_fixed_size_array(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprFixedSizeArray,
+    builder: &mut BlockBuilder,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    log::trace!("Lowering a fixed size array: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let exprs = expr
+        .items
+        .iter()
+        .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(LoweredExpr::FixedSizeArray { exprs, location })
 }
 
 /// Lowers an expression of type [semantic::ExprSnapshot].
@@ -998,6 +1027,12 @@ fn lower_expr_function_call(
         .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
     let ref_tys = ref_args_iter.clone().map(|ref_arg| ref_arg.ty()).collect();
 
+    let coupon_input = if let Some(coupon_arg) = expr.coupon_arg {
+        Some(lower_expr_to_var_usage(ctx, builder, coupon_arg)?)
+    } else {
+        None
+    };
+
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
@@ -1026,8 +1061,18 @@ fn lower_expr_function_call(
         }
     }
 
-    let (ref_outputs, res) =
-        perform_function_call(ctx, builder, expr.function, arg_inputs, ref_tys, expr.ty, location)?;
+    let (ref_outputs, res) = perform_function_call(
+        ctx,
+        builder,
+        FunctionCallInfo {
+            function: expr.function,
+            inputs: arg_inputs,
+            coupon_input,
+            extra_ret_tys: ref_tys,
+            ret_ty: expr.ty,
+        },
+        location,
+    )?;
 
     // Rebind the ref variables.
     for (ref_arg, output_var) in zip_eq(ref_args_iter, ref_outputs) {
@@ -1037,23 +1082,33 @@ fn lower_expr_function_call(
     Ok(res)
 }
 
+/// Information required for [perform_function_call].
+struct FunctionCallInfo {
+    function: semantic::FunctionId,
+    inputs: Vec<VarUsage>,
+    coupon_input: Option<VarUsage>,
+    extra_ret_tys: Vec<semantic::TypeId>,
+    ret_ty: semantic::TypeId,
+}
+
 /// Creates a LoweredExpr for a function call, taking into consideration external function facades:
 /// For external functions, sometimes the high level signature doesn't exactly correspond to the
 /// external function returned variables / branches.
 fn perform_function_call(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    function: semantic::FunctionId,
-    inputs: Vec<VarUsage>,
-    extra_ret_tys: Vec<semantic::TypeId>,
-    ret_ty: semantic::TypeId,
+    function_call_info: FunctionCallInfo,
     location: LocationId,
 ) -> Result<(Vec<VarUsage>, LoweredExpr), LoweringFlowError> {
+    let FunctionCallInfo { function, inputs, coupon_input, extra_ret_tys, ret_ty } =
+        function_call_info;
+
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
         let call_result = generators::Call {
             function: function.lowered(ctx.db),
             inputs,
+            coupon_input,
             extra_ret_tys,
             ret_tys: vec![ret_ty],
             location,
@@ -1090,10 +1145,12 @@ fn perform_function_call(
     };
 
     // Extern function.
+    assert!(coupon_input.is_none(), "Extern functions cannot have a __coupon__ argument.");
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call {
         function: function.lowered(ctx.db),
         inputs,
+        coupon_input: None,
         extra_ret_tys,
         ret_tys,
         location,
@@ -1186,6 +1243,7 @@ fn call_loop_func(
     let call_result = generators::Call {
         function,
         inputs,
+        coupon_input: None,
         extra_ret_tys,
         ret_tys: vec![loop_signature.return_type],
         location,

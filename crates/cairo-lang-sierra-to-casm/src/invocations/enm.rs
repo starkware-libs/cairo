@@ -61,30 +61,7 @@ fn build_enum_init(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expression] = builder.try_get_refs()?;
     let init_arg_cells = &expression.cells;
-    let variant_selector = if n_variants <= 2 {
-        // For num_branches <= 2, we use the index as the variant_selector as the `match`
-        // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
-        // 1.
-        index
-    } else {
-        // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
-        // order to optimize `enum_match`, we define the variant_selector as the relevant
-        // relative jump in case we match the actual variant.
-        //
-        // - To jump to the variant in index 0, we skip the jump table and directly jump to it. Its
-        //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
-        //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
-        //   operand).
-        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
-        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
-        //   which makes them of size 2.
-        match (n_variants - index).checked_mul(2) {
-            Some(double) => double - 1,
-            None => {
-                return Err(InvocationError::IntegerOverflow);
-            }
-        }
-    };
+    let variant_selector = get_variant_selector(n_variants, index)?;
 
     let variant_size = builder
         .program_info
@@ -114,6 +91,29 @@ fn build_enum_init(
     Ok(builder.build_only_reference_changes(output_expressions))
 }
 
+/// Returns the variant selector for variant `index` out of `n_variants`.
+pub fn get_variant_selector(n_variants: usize, index: usize) -> Result<usize, InvocationError> {
+    Ok(if n_variants <= 2 {
+        // For num_branches <= 2, we use the index as the variant_selector as the `match`
+        // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
+        // 1.
+        index
+    } else {
+        // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
+        // order to optimize `enum_match`, we define the variant_selector as the relevant
+        // relative jump in case we match the actual variant.
+        //
+        // - To jump to the variant in index 0, we skip the jump table and directly jump to it. Its
+        //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
+        //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
+        //   operand).
+        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
+        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
+        //   which makes them of size 2.
+        (n_variants - index).checked_mul(2).ok_or(InvocationError::IntegerOverflow)? - 1
+    })
+}
+
 fn build_enum_from_bounded_int(
     builder: CompiledInvocationBuilder<'_>,
     n_variants: usize,
@@ -128,10 +128,10 @@ fn build_enum_from_bounded_int(
         deref value;
     };
 
-    // Given `n` as the number of variants, and `k` the index of the variant (`0 <= k < n`):
+    // Given the number of variants, `n`, and the index of the variant `0 <= k < n`:
     // The variant selector for enums with 3 or more variants is the relative jump to the variant
     // handle which is `2 * (n - k) - 1`.
-    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2*((2*n - 1) / 2 - k)`
+    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2 * ((2*n - 1) / 2 - k)`
     // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
     // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
 

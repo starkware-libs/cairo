@@ -3,14 +3,17 @@ use std::vec;
 
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::chain;
+use num_traits::ToPrimitive;
+use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplLookupContext;
 use semantic::TypeId;
 
@@ -98,10 +101,12 @@ pub fn get_concrete_long_type_id(
                                 semantic::GenericArgumentId::Type(ty) => {
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
-                                semantic::GenericArgumentId::Literal(literal_id) => {
-                                    SierraGenericArg::Value(
-                                        db.lookup_intern_literal(literal_id).value,
-                                    )
+                                semantic::GenericArgumentId::Constant(value_id) => {
+                                    SierraGenericArg::Value(extract_matches!(
+                                        db.lookup_intern_const_value(value_id),
+                                        ConstValue::Int,
+                                        "Only integer constants are supported."
+                                    ))
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")
@@ -116,7 +121,9 @@ pub fn get_concrete_long_type_id(
                 }
             }
         }
-        semantic::TypeLongId::Tuple(_) => user_type_long_id("Struct", "Tuple".into())?.into(),
+        semantic::TypeLongId::Tuple(_) | semantic::TypeLongId::FixedSizeArray { .. } => {
+            user_type_long_id("Struct", "Tuple".into())?.into()
+        }
         semantic::TypeLongId::Snapshot(ty) => {
             let inner_ty = db.get_concrete_type_id(ty).unwrap();
             let ty =
@@ -131,6 +138,13 @@ pub fn get_concrete_long_type_id(
                 .into()
             }
         }
+        semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
+            generic_id: "Coupon".into(),
+            generic_args: vec![SierraGenericArg::UserFunc(
+                db.intern_sierra_function(function_id.lowered(db.upcast())),
+            )],
+        }
+        .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {
@@ -182,6 +196,13 @@ pub fn type_dependencies(
         },
         semantic::TypeLongId::Tuple(inner_types) => inner_types,
         semantic::TypeLongId::Snapshot(ty) => vec![ty],
+        semantic::TypeLongId::Coupon(_) => vec![],
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
+            [type_id].repeat(size)
+        }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

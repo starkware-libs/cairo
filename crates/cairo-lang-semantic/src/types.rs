@@ -1,28 +1,34 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use cairo_lang_defs::ids::{
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, StructId,
+};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
+use num_bigint::BigInt;
+use num_traits::Zero;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait,
+    concrete_panic_destruct_trait, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -33,6 +39,11 @@ pub enum TypeLongId {
     Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
+    Coupon(FunctionId),
+    FixedSizeArray {
+        type_id: TypeId,
+        size: ConstValueId,
+    },
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -85,6 +96,8 @@ impl TypeId {
             TypeLongId::GenericParameter(_) => false,
             TypeLongId::Var(_) => false,
             TypeLongId::Missing(_) => false,
+            TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
         }
     }
 }
@@ -104,7 +117,11 @@ impl TypeLongId {
                 format!("{}", generic_param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::Var(var) => format!("?{}", var.id.0),
+            TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
             TypeLongId::Missing(_) => "<missing>".to_string(),
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                format!("[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
+            }
         }
     }
 
@@ -114,6 +131,8 @@ impl TypeLongId {
             TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
             TypeLongId::Tuple(_) => TypeHead::Tuple,
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
+            TypeLongId::Coupon(_) => TypeHead::Coupon,
+            TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
             }
@@ -138,6 +157,8 @@ pub enum TypeHead {
     Concrete(GenericTypeId),
     Snapshot(Box<TypeHead>),
     Tuple,
+    Coupon,
+    FixedSizeArray,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -217,7 +238,7 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(_) => Ok(None),
         }
     }
-    // Returns true if the type does not depend on any generics.
+    /// Returns true if the type does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
         self.generic_args(db)
             .iter()
@@ -374,10 +395,73 @@ pub fn maybe_resolve_type(
                 return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
             }
         }
+        ast::Expr::FixedSizeArray(array_syntax) => {
+            let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
+                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+            };
+            let ty = resolve_type(db, diagnostics, resolver, ty);
+            let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
+            {
+                Some(size) => size,
+                None => {
+                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
+                }
+            };
+            db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size })
+        }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
         }
     })
+}
+
+/// Extracts the size of a fixed size array, or none if the size is missing. Reports an error if the
+/// size is not a numeric literal.
+pub fn extract_fixed_size_array_size(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    syntax: &ast::ExprFixedSizeArray,
+    resolver: &Resolver<'_>,
+) -> Maybe<Option<ConstValueId>> {
+    let syntax_db = db.upcast();
+    match syntax.size(syntax_db) {
+        ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
+            let environment = Environment::empty();
+            let resolver = Resolver::with_data(
+                db,
+                (resolver.data).clone_with_inference_id(db, resolver.inference_data.inference_id),
+            );
+            let mut ctx =
+                ComputationContext::new(db, diagnostics, None, resolver, None, environment);
+            let size_expr_syntax = size_clause.size(syntax_db);
+            let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
+            let (_, const_value) = resolve_const_expr_and_evaluate(
+                db,
+                &mut ctx,
+                &size,
+                size_expr_syntax.stable_ptr().untyped(),
+                get_usize_ty(db),
+            );
+            match &const_value {
+                ConstValue::Int(_) => Ok(Some(db.intern_const_value(const_value))),
+
+                _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
+            }
+        }
+        ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
+    }
+}
+
+/// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
+pub fn verify_fixed_size_array_size(
+    diagnostics: &mut SemanticDiagnostics,
+    size: &BigInt,
+    syntax: &ast::ExprFixedSizeArray,
+) -> Maybe<()> {
+    if size > &BigInt::from(i16::MAX) {
+        return Err(diagnostics.report(syntax, FixedSizeArraySizeTooBig));
+    }
+    Ok(())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
@@ -452,6 +536,12 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         semantic::TypeLongId::GenericParameter(_) => false,
         semantic::TypeLongId::Var(_) => false,
         semantic::TypeLongId::Missing(_) => false,
+        semantic::TypeLongId::Coupon(_) => false,
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => {
+            db.single_value_type(type_id)?
+                || matches!(db.lookup_intern_const_value(size), 
+                            ConstValue::Int(value) if value.is_zero())
+        }
     })
 }
 
@@ -493,4 +583,11 @@ pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: us
         ty = db.intern_type(TypeLongId::Snapshot(ty));
     }
     ty
+}
+
+/// Returns `true` if coupons are enabled in the module.
+pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.coupons
 }

@@ -116,7 +116,7 @@ error: Expected 3 generic arguments, found 4.
     bar::<1,1,1,1>();
                 ^
 
-error: Unknown literal.
+error: Expected variable or constant, found type.
  --> lib.cairo:4:19
     bar::<felt252,felt252>();
                   ^*****^
@@ -126,10 +126,15 @@ error: Const generic inference not yet supported.
     bar::<felt252>();
     ^*^
 
-error: Impl not found.
- --> lib.cairo:7:21
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>
+ --> lib.cairo:7:17
     bar::<usize,-1, A>();
-                    ^
+                ^^
+
+error: The value does not fit within the range of type core::integer::u32.
+ --> lib.cairo:7:17
+    bar::<usize,-1, A>();
+                ^^
 
 //! > ==========================================================================
 
@@ -549,3 +554,63 @@ error: Unknown impl.
  --> lib.cairo:4:30
 impl MyImpl<T> of MyTrait<T, T> {
                              ^
+
+//! > ==========================================================================
+
+//! > Pass const expressions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar::<{ 1 + 2 }>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const M : felt252>() nopanic;
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > evaluate const expressions arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _s: S<{ 1 - 2 }> = bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type S<const N: felt252>;
+extern fn bar() -> S<{ 3 + 8 }> nopanic;
+const K: felt252 = 98;
+mod A {
+    fn f() {
+        let _x: super::S<{ super::K + 9 }> = super::bar();
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
+ --> lib.cairo:10:28
+    let _s: S<{ 1 - 2 }> = bar();
+                           ^***^
+
+error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
+ --> lib.cairo:6:46
+        let _x: super::S<{ super::K + 9 }> = super::bar();
+                                             ^**********^

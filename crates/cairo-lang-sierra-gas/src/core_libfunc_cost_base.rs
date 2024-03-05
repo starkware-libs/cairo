@@ -5,7 +5,9 @@ use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
+use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
@@ -14,11 +16,11 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
-use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
-use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -41,7 +43,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
 use num_traits::Zero;
 
-use crate::objects::{BranchCost, ConstCost, CostInfoProvider, PreCost};
+use crate::objects::{
+    BranchCost, BranchCostSign, ConstCost, CostInfoProvider, PreCost, WithdrawGasBranchInfo,
+};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 /// The cost per each unique key in the dictionary. This cost is pre-charged for each access
@@ -124,12 +128,14 @@ pub fn core_libfunc_cost(
     info_provider: &dyn CostInfoProvider,
 ) -> Vec<BranchCost> {
     match libfunc {
-        FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
-            vec![BranchCost::FunctionCall {
+        FunctionCall(SignatureAndFunctionConcreteLibfunc { function, .. }) => {
+            vec![BranchCost::FunctionCost {
                 const_cost: ConstCost::steps(2),
                 function: function.clone(),
+                sign: BranchCostSign::Subtract,
             }]
         }
+        CouponCall(_) => vec![ConstCost::steps(2).into()],
         Bool(libfunc) => match libfunc {
             BoolConcreteLibfunc::And(_) => vec![ConstCost::steps(0).into()],
             BoolConcreteLibfunc::Not(_) => vec![ConstCost::steps(1).into()],
@@ -209,31 +215,27 @@ pub fn core_libfunc_cost(
         },
         Gas(libfunc) => match libfunc {
             WithdrawGas(_) => vec![
-                BranchCost::WithdrawGas {
-                    const_cost: ConstCost::steps(3) + ConstCost::range_checks(1),
+                BranchCost::WithdrawGas(WithdrawGasBranchInfo {
                     success: true,
                     with_builtin_costs: false,
-                },
-                BranchCost::WithdrawGas {
-                    const_cost: ConstCost::steps(4) + ConstCost::range_checks(1),
+                }),
+                BranchCost::WithdrawGas(WithdrawGasBranchInfo {
                     success: false,
                     with_builtin_costs: false,
-                },
+                }),
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![ConstCost::default().into()],
             BuiltinWithdrawGas(_) => {
                 vec![
-                    BranchCost::WithdrawGas {
-                        const_cost: ConstCost::steps(3) + ConstCost::range_checks(1),
+                    BranchCost::WithdrawGas(WithdrawGasBranchInfo {
                         success: true,
                         with_builtin_costs: true,
-                    },
-                    BranchCost::WithdrawGas {
-                        const_cost: ConstCost::steps(5) + ConstCost::range_checks(1),
+                    }),
+                    BranchCost::WithdrawGas(WithdrawGasBranchInfo {
                         success: false,
                         with_builtin_costs: true,
-                    },
+                    }),
                 ]
             }
             GetBuiltinCosts(_) => vec![ConstCost::steps(3).into()],
@@ -416,7 +418,26 @@ pub fn core_libfunc_cost(
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
             ],
         },
-        Const(_) => vec![ConstCost::default().into()],
+        Const(libfunc) => match libfunc {
+            ConstConcreteLibfunc::AsBox(_) => vec![ConstCost::steps(3).into()],
+            ConstConcreteLibfunc::AsImmediate(_) => vec![ConstCost::steps(0).into()],
+        },
+        Coupon(libfunc) => match libfunc {
+            CouponConcreteLibfunc::Buy(libfunc) => {
+                vec![BranchCost::FunctionCost {
+                    const_cost: ConstCost::default(),
+                    function: libfunc.function.clone(),
+                    sign: BranchCostSign::Subtract,
+                }]
+            }
+            CouponConcreteLibfunc::Refund(libfunc) => {
+                vec![BranchCost::FunctionCost {
+                    const_cost: ConstCost::default(),
+                    function: libfunc.function.clone(),
+                    sign: BranchCostSign::Add,
+                }]
+            }
+        },
     }
 }
 
@@ -433,9 +454,18 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
     res.into_iter()
         .map(|cost| match cost {
             BranchCost::Regular { const_cost, pre_cost: _ } => ops.const_cost(const_cost),
-            BranchCost::FunctionCall { const_cost, function } => {
+            BranchCost::FunctionCost { const_cost, function, sign } => {
                 let func_content_cost = ops.function_token_cost(&function, CostTokenType::Const);
-                ops.add(ops.const_cost(const_cost), func_content_cost)
+                let cost = ops.add(ops.const_cost(const_cost), func_content_cost);
+
+                match sign {
+                    BranchCostSign::Add => {
+                        // The refund may be at most `cost`. It can be smaller if the refund cannot
+                        // be used later (e.g., if the next statement is `return`).
+                        ops.sub(ops.statement_var_cost(CostTokenType::Const), cost)
+                    }
+                    BranchCostSign::Subtract => cost,
+                }
             }
             BranchCost::BranchAlign => {
                 let ap_change = info_provider.ap_change_var_value();
@@ -453,22 +483,25 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     )
                 }
             }
-            BranchCost::WithdrawGas { const_cost, success, with_builtin_costs } => {
-                let mut res = ops.const_cost(const_cost);
-                if with_builtin_costs {
-                    let cost_computation =
-                        BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
-                            info_provider.token_usages(token_type)
-                        })
-                        .into_or_panic();
-                    res = ops.add(res, ops.steps(cost_computation));
+            BranchCost::WithdrawGas(info) => {
+                let total_cost = ops.const_cost(
+                    info.const_cost(|token_type| info_provider.token_usages(token_type)),
+                );
+                if info.success {
+                    ops.sub(total_cost, ops.statement_var_cost(CostTokenType::Const))
+                } else {
+                    total_cost
                 }
-                if success {
-                    res = ops.sub(res, ops.statement_var_cost(CostTokenType::Const));
-                }
-                res
             }
-            BranchCost::RedepositGas => ops.statement_var_cost(CostTokenType::Const),
+            BranchCost::RedepositGas => ops.add(
+                ops.const_cost(ConstCost::steps(
+                    BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                        info_provider.token_usages(token_type)
+                    })
+                    .into_or_panic(),
+                )),
+                ops.statement_var_cost(CostTokenType::Const),
+            ),
         })
         .collect()
 }
@@ -500,23 +533,36 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                 }
                 res
             }
-            BranchCost::FunctionCall { const_cost: _, function } => {
+            BranchCost::FunctionCost { const_cost: _, function, sign } => {
                 let func_content_cost = CostTokenType::iter_precost()
                     .map(|token| ops.function_token_cost(&function, *token))
                     .collect_vec()
                     .into_iter()
                     .reduce(|x, y| ops.add(x, y));
-                func_content_cost.unwrap()
+
+                match sign {
+                    BranchCostSign::Add => {
+                        // The refund may be at most `cost`. It can be smaller if the refund cannot
+                        // be used later (e.g., if the next statement is
+                        // `return`).
+                        ops.sub(
+                            statement_vars_cost(ops, CostTokenType::iter_precost()),
+                            func_content_cost.unwrap(),
+                        )
+                    }
+                    BranchCostSign::Subtract => func_content_cost.unwrap(),
+                }
             }
-            BranchCost::BranchAlign => statement_vars_cost(ops, CostTokenType::iter_precost()),
-            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs } => {
-                if with_builtin_costs && success {
+            BranchCost::BranchAlign | BranchCost::RedepositGas => {
+                statement_vars_cost(ops, CostTokenType::iter_precost())
+            }
+            BranchCost::WithdrawGas(info) => {
+                if info.success {
                     ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost()))
                 } else {
                     ops.steps(0)
                 }
             }
-            BranchCost::RedepositGas => ops.steps(0),
         })
         .collect()
 }

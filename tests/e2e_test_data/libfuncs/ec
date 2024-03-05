@@ -259,19 +259,20 @@ test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_is_zero = ec_point_is_zero;
 libfunc branch_align = branch_align;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc drop<felt252> = drop<felt252>;
 
 ec_point_is_zero([0]) { fallthrough() 5([1]) }; // 0
 branch_align() -> (); // 1
-felt252_const<1>() -> ([2]); // 2
+const_as_immediate<Const<felt252, 1>>() -> ([2]); // 2
 store_temp<felt252>([2]) -> ([2]); // 3
 return([2]); // 4
 branch_align() -> (); // 5
@@ -400,6 +401,7 @@ test::foo: OrderedHashMap({Const: 1300})
 
 //! > sierra_code
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 
@@ -512,6 +514,7 @@ test::foo: OrderedHashMap({EcOp: 1, Const: 900})
 
 //! > sierra_code
 type EcOp = EcOp [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

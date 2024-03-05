@@ -33,7 +33,7 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: core::bool) <- test::immovable::<core::bool>(v2)
-  (v4: core::felt252) <- 5u
+  (v4: core::felt252) <- 5
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
   Return(v5)
