@@ -847,7 +847,7 @@ Match(
 )
 
 //! > expected_diagnostics
-warning: Unused variable. Consider ignoring by prefixing with `_`.
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:15
     MyEnum::A(x) | MyEnum::B((x, _)) => 1,
               ^
