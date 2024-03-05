@@ -63,7 +63,7 @@ use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tracing::warn;
+use tracing::{debug, error, warn};
 use tracing_subscriber::filter::{EnvFilter, LevelFilter};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
@@ -185,7 +185,7 @@ impl Backend {
         let db = db_mut.snapshot();
         drop(db_mut);
         std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
-            eprintln!("Caught panic in LSP worker thread.");
+            error!("caught panic in LSP worker thread");
             LSPError::internal_error()
         })
     }
@@ -443,7 +443,7 @@ impl Backend {
         // Fallback to a single file.
         if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
             let file_path_s = file_path.to_string_lossy();
-            eprintln!("Error loading file {file_path_s} as a single crate: {err}");
+            error!("error loading file {file_path_s} as a single crate: {err}");
         }
     }
 
@@ -639,7 +639,7 @@ impl LanguageServer for Backend {
             if let [TextDocumentContentChangeEvent { text, .. }] = &params.content_changes[..] {
                 text
             } else {
-                eprintln!("Unexpected format of document change.");
+                error!("unexpected format of document change");
                 return;
             };
         let mut db = self.db_mut().await;
@@ -679,7 +679,7 @@ impl LanguageServer for Backend {
 
             // Find module.
             let module_id = find_node_module(db, file_id, node.clone()).on_none(|| {
-                eprintln!("Completion failed. Failed to find module.");
+                error!("completion failed: failed to find module");
             })?;
             let file_index = FileIndex(0);
             let module_file_id = ModuleFileId(module_id, file_index);
@@ -724,7 +724,7 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
             let Ok(node) = db.file_syntax(file) else {
-                eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
+                error!("semantic analysis failed: file '{file_uri}' does not exist");
                 return None;
             };
 
@@ -748,18 +748,18 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
             let node = db.file_syntax(file).ok().on_none(|| {
-                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                error!("formatting failed: file '{file_uri}' does not exist");
             })?;
             db.file_syntax_diagnostics(file).check_error_free().ok().on_none(|| {
-                eprintln!("Formatting failed. Cannot properly parse '{file_uri}' exist.");
+                error!("formatting failed: cannot properly parse '{file_uri}' exist");
             })?;
             let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
             let file_summary = db.file_summary(file).on_none(|| {
-                eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
+                error!("formatting failed: cannot get summary for file '{file_uri}'");
             })?;
             let old_line_count = file_summary.line_count().try_into().ok().on_none(|| {
-                eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
+                error!("formatting failed: line count out of bound in file '{file_uri}'");
             })?;
 
             Some(vec![TextEdit {
@@ -857,7 +857,7 @@ fn find_definition(
         if parent.kind(db) == SyntaxKind::ItemModule {
             let containing_module_id =
                 find_node_module(db, file, parent.clone()).on_none(|| {
-                    eprintln!("`find_definition` failed. Failed to find module.");
+                    error!("`find_definition` failed: could not find module");
                 })?;
 
             let submodule_id = db.intern_submodule(SubmoduleLongId(
@@ -950,7 +950,7 @@ enum CompletionKind {
 }
 
 fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
-    eprintln!("node.kind: {:#?}", node.kind(db));
+    debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
         SyntaxKind::TerminalDot => {
             let parent = node.parent().unwrap();
@@ -960,12 +960,12 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
         }
         SyntaxKind::TerminalColonColon => {
             let parent = node.parent().unwrap();
-            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            debug!("parent.kind: {:#?}", parent.kind(db));
             if parent.kind(db) == SyntaxKind::ExprPath {
                 return completion_kind_from_path_node(db, parent);
             }
             let grandparent = parent.parent().unwrap();
-            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            debug!("grandparent.kind: {:#?}", grandparent.kind(db));
             if grandparent.kind(db) == SyntaxKind::ExprPath {
                 return completion_kind_from_path_node(db, grandparent);
             }
@@ -978,41 +978,41 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
             } else if grandparent.kind(db) == SyntaxKind::UsePathSingle {
                 (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, grandparent)), false)
             } else {
-                eprintln!("Generic");
+                debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
             let mut segments = vec![];
             let Ok(()) = get_use_segments(db.upcast(), &use_ast, &mut segments) else {
-                eprintln!("Generic");
+                debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
             if should_pop {
                 segments.pop();
             }
-            eprintln!("ColonColon");
+            debug!("ColonColon");
             return CompletionKind::ColonColon(segments);
         }
         SyntaxKind::TerminalIdentifier => {
             let parent = node.parent().unwrap();
-            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            debug!("parent.kind: {:#?}", parent.kind(db));
             let grandparent = parent.parent().unwrap();
-            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            debug!("grandparent.kind: {:#?}", grandparent.kind(db));
             if grandparent.kind(db) == SyntaxKind::ExprPath {
                 if db.get_children(grandparent.clone())[0].stable_ptr() != parent.stable_ptr() {
                     // Not first segment.
-                    eprintln!("Not first segment");
+                    debug!("Not first segment");
                     return completion_kind_from_path_node(db, grandparent);
                 }
                 // First segment.
                 let grandgrandparent = grandparent.parent().unwrap();
-                eprintln!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
+                debug!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
                 if grandgrandparent.kind(db) == SyntaxKind::ExprBinary {
                     let expr = ast::ExprBinary::from_syntax_node(db, grandgrandparent.clone());
                     if matches!(
                         ast::ExprBinary::from_syntax_node(db, grandgrandparent).op(db),
                         ast::BinaryOperator::Dot(_)
                     ) {
-                        eprintln!("Dot");
+                        debug!("Dot");
                         return CompletionKind::Dot(expr);
                     }
                 }
@@ -1023,24 +1023,24 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
                 let Ok(()) =
                     get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast), &mut segments)
                 else {
-                    eprintln!("Generic");
+                    debug!("Generic");
                     return CompletionKind::ColonColon(vec![]);
                 };
                 segments.pop();
-                eprintln!("ColonColon");
+                debug!("ColonColon");
                 return CompletionKind::ColonColon(segments);
             }
         }
         _ => (),
     }
-    eprintln!("Generic");
+    debug!("Generic");
     CompletionKind::ColonColon(vec![])
 }
 
 fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
-    eprintln!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
+    debug!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
     let expr = ast::ExprPath::from_syntax_node(db, parent);
-    eprintln!("has_tail: {}", expr.has_tail(db));
+    debug!("has_tail: {}", expr.has_tail(db));
     let mut segments = expr.to_segments(db);
     if expr.has_tail(db) {
         segments.pop();
@@ -1168,15 +1168,15 @@ fn get_node_and_lookup_items(
 
     // Get syntax for file.
     let syntax = db.file_syntax(file).to_option().on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
 
     // Get file summary and content.
     let file_summary = db.file_summary(file).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
     let content = db.file_content(file).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. File '{filename}' does not exist.");
+        error!("`get_node_and_lookup_items` failed: file '{filename}' does not exist");
     })?;
 
     // Find offset for position.
@@ -1185,7 +1185,7 @@ fn get_node_and_lookup_items(
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
-        eprintln!("`get_node_and_lookup_items` failed. Failed to find module.");
+        error!("`get_node_and_lookup_items` failed: failed to find module");
     })?;
     let file_index = FileIndex(0);
     let module_file_id = ModuleFileId(module_id, file_index);
@@ -1211,12 +1211,12 @@ fn position_to_offset(
     content: &str,
 ) -> Option<TextOffset> {
     let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        eprintln!("Hover failed. Position out of bounds.");
+        error!("hover failed: position out of bounds");
     })?;
     let mut chars_it = offset.take_from(content).chars();
     for _ in 0..position.character {
         let c = chars_it.next().on_none(|| {
-            eprintln!("Position does not exist.");
+            error!("position does not exist");
         })?;
         offset = offset.add_width(TextWidth::from_char(c));
     }
