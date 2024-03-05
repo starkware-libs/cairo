@@ -633,3 +633,34 @@ fn bar<const N: felt252>() -> felt252 {
 //! > function_body
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > generic param in argument
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> S<1> {
+    bar::<1>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> S<{3-2}> {
+    S::<N>{field: 1}
+}
+struct S<const N: felt252>{
+    field: felt252
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<GenericParamConst(test::bar::N)>".
+ --> lib.cairo:1:40
+fn bar<const N: felt252>() -> S<{3-2}> {
+                                       ^
