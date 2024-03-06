@@ -67,26 +67,28 @@ Block(
                     ),
                     expr: FixedSizeArray(
                         ExprFixedSizeArray {
-                            items: [
-                                Literal(
-                                    ExprLiteral {
-                                        value: 1,
-                                        ty: core::integer::u8,
-                                    },
-                                ),
-                                Literal(
-                                    ExprLiteral {
-                                        value: 2,
-                                        ty: core::integer::u8,
-                                    },
-                                ),
-                                Literal(
-                                    ExprLiteral {
-                                        value: 3,
-                                        ty: core::integer::u8,
-                                    },
-                                ),
-                            ],
+                            items: Items(
+                                [
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 1,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 2,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ],
+                            ),
                             ty: [core::integer::u8; 3],
                         },
                     ),
