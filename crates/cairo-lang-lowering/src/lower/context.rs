@@ -64,10 +64,10 @@ impl<'db> VariableAllocator<'db> {
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
         let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
         self.variables.alloc(Variable {
-            duplicatable: ty_info
+            copyable: ty_info
                 .clone()
                 .map_err(InferenceError::Failed)
-                .and_then(|info| info.duplicatable),
+                .and_then(|info| info.copyable),
             droppable: ty_info
                 .clone()
                 .map_err(InferenceError::Failed)

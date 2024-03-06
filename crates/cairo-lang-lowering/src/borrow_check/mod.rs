@@ -121,7 +121,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
 
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
-        if let Err(inference_error) = var.duplicatable.clone() {
+        if let Err(inference_error) = var.copyable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
                     .get(self.db)
@@ -164,7 +164,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
             }
             Statement::Desnap(stmt) => {
                 let var = &self.lowered.variables[stmt.output];
-                if let Err(inference_error) = var.duplicatable.clone() {
+                if let Err(inference_error) = var.copyable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
                         var.location.get(self.db).with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
