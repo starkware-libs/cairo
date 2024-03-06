@@ -698,7 +698,7 @@ fn check_special_impls(
         if let Some(inference_error) = tys
             .into_iter()
             .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
-            .flat_map(|info| info.duplicatable.err())
+            .flat_map(|info| info.copyable.err())
             .next()
         {
             return Err(
