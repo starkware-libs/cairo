@@ -4,11 +4,13 @@ mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::{self, OrderedHashMap};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::{chain, zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::DemandReporter;
 use crate::borrow_check::Demand;
+use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, VarRemapping, VarUsage, VariableId,
@@ -36,20 +38,47 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
 
+    // Maps target block to the variables that should be introduced at that block.
+    let mut target_blocks: OrderedHashMap<BlockId, Vec<VariableId>> = Default::default();
+
     // Fixes were added in reverse order, so we apply them in reverse.
     // Either order is will result in correct code, but this way variables with smaller ids appear
     // earlier.
     for FixInfo { statement_location, match_block, arm_idx, target_block, remapping } in
         fixes.into_iter().rev()
     {
-        if remapping.len() > 1 {
-            if let Some(incoming) = incoming.get(&match_block) {
-                if *incoming > 0 {
-                    // The optimization is not applicable here
-                    continue;
-                }
-            }
+        let var_remappings = remapping.len() - 1;
+        let match_is_reachable = match incoming.get(&match_block) {
+            Some(incoming) => *incoming > 0,
+            None => false,
+        };
+
+        if match_is_reachable && remapping.len() > 1 {
+            // The optimization is not applicable here
+            continue;
         }
+
+        let new_vars = match target_blocks.entry(target_block) {
+            ordered_hash_map::Entry::Vacant(entry) => {
+                let new_vars = entry.insert(
+                    remapping
+                        .keys()
+                        .take(var_remappings)
+                        .map(|var_id| lowered.variables.alloc(lowered.variables[*var_id].clone()))
+                        .collect_vec(),
+                );
+                let renamed_vars = UnorderedHashMap::from_iter(zip_eq(
+                    remapping.keys().take(var_remappings).cloned(),
+                    new_vars.iter().cloned(),
+                ));
+
+                let block = &mut lowered.blocks[target_block];
+                *block = VarRename { renamed_vars }.rebuild_block(block);
+
+                new_vars
+            }
+            ordered_hash_map::Entry::Occupied(entry) => entry.into_mut(),
+        };
 
         let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
@@ -59,15 +88,23 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         );
 
         block.statements.pop();
-        block.end = FlatBlockEnd::Goto(target_block, remapping.clone());
+        block.end = FlatBlockEnd::Goto(
+            target_block,
+            VarRemapping {
+                remapping: OrderedHashMap::from_iter(zip_eq(
+                    chain!(new_vars.iter(), remapping.keys().last()).cloned(),
+                    remapping.values().cloned(),
+                )),
+            },
+        );
 
-        if statement_location.0 == match_block {
+        if !match_is_reachable || statement_location.0 == match_block {
             // The match was removed, no need to fix it.
             continue;
         }
 
         let block = &mut lowered.blocks[match_block];
-        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location: _, .. }) } =
+        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
             &mut block.end
         else {
             unreachable!("match block should end with a match.");
@@ -86,7 +123,15 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
         new_blocks.push(FlatBlock {
             statements: vec![],
-            end: FlatBlockEnd::Goto(arm.block_id, remapping.clone()),
+            end: FlatBlockEnd::Goto(
+                arm.block_id,
+                VarRemapping {
+                    remapping: OrderedHashMap::from_iter([(
+                        orig_var,
+                        VarUsage { var_id: *arm_var, location: *location },
+                    )]),
+                },
+            ),
         });
         arm.block_id = next_block_id;
         next_block_id = next_block_id.next_block_id();
@@ -192,6 +237,8 @@ impl MatchOptimizerContext<'_> {
         // }
 
         let mut remapping = candidate.remapping.cloned().unwrap_or_default();
+        remapping.swap_remove(&candidate.orig_match_var);
+
         // The input to EnumConstruct should be available as `var_id`
         // in `arm.block_id`
         remapping.insert(*var_id, *input);
@@ -236,8 +283,11 @@ pub struct FixInfo {
 
 #[derive(Clone)]
 struct OptimizationCandidate<'a> {
-    /// The variable that is match.
+    /// The variable that we are looking for in the Enumconstruct
     match_variable: VariableId,
+
+    /// The variable that is match.
+    orig_match_var: VariableId,
 
     /// The match arms of the extern match that we are optimizing.
     match_arms: &'a [MatchArm],
@@ -335,6 +385,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext<'a> {
             {
                 Some(OptimizationCandidate {
                     match_variable: input.var_id,
+                    orig_match_var: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
                     arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
@@ -361,5 +412,29 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext<'a> {
         let mut demand = MatchOptimizerDemand::default();
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Self::Info { candidate: None, demand }
+    }
+}
+
+#[derive(Default)]
+pub struct VarRename {
+    renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+}
+
+impl Rebuilder for VarRename {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+        let Some(mut new_var_id) = self.renamed_vars.get(&var).cloned() else {
+            return var;
+        };
+        while let Some(new_id) = self.renamed_vars.get(&new_var_id) {
+            assert_ne!(new_var_id, *new_id);
+            new_var_id = *new_id;
+        }
+
+        self.renamed_vars.insert(var, new_var_id);
+        new_var_id
+    }
+
+    fn map_block_id(&mut self, block: BlockId) -> BlockId {
+        block
     }
 }

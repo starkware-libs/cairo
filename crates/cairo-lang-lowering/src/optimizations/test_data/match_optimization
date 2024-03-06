@@ -97,8 +97,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v12) => blk7,
-    Option::None(v13) => blk8,
+    Option::Some(v5) => blk4,
+    Option::None(v6) => blk5,
   })
 
 blk4:
@@ -119,16 +119,6 @@ blk6:
 Statements:
 End:
   Return(v11)
-
-blk7:
-Statements:
-End:
-  Goto(blk4, {v0 -> v5})
-
-blk8:
-Statements:
-End:
-  Goto(blk5, {v2 -> v6})
 
 //! > ==========================================================================
 
@@ -436,8 +426,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v27) => blk10,
-    Option::None(v28) => blk11,
+    Option::Some(v5) => blk4,
+    Option::None(v6) => blk5,
   })
 
 blk4:
@@ -457,8 +447,8 @@ blk6:
 Statements:
 End:
   Match(match_enum(v12) {
-    Option::Some(v29) => blk12,
-    Option::None(v30) => blk13,
+    Option::Some(v15) => blk7,
+    Option::None(v16) => blk8,
   })
 
 blk7:
@@ -485,26 +475,6 @@ Statements:
   (v26: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v25)
 End:
   Return(v26)
-
-blk10:
-Statements:
-End:
-  Goto(blk4, {v0 -> v5})
-
-blk11:
-Statements:
-End:
-  Goto(blk5, {v2 -> v6})
-
-blk12:
-Statements:
-End:
-  Goto(blk7, {v14 -> v15})
-
-blk13:
-Statements:
-End:
-  Goto(blk8, {v10 -> v16})
 
 //! > ==========================================================================
 
@@ -609,8 +579,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v19) => blk7,
-    Option::None(v20) => blk8,
+    Option::Some(v8) => blk4,
+    Option::None(v9) => blk5,
   })
 
 blk4:
@@ -636,16 +606,6 @@ Statements:
   (v18: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v17)
 End:
   Return(v18)
-
-blk7:
-Statements:
-End:
-  Goto(blk4, {v0 -> v8})
-
-blk8:
-Statements:
-End:
-  Goto(blk5, {v2 -> v9})
 
 //! > ==========================================================================
 
@@ -751,7 +711,7 @@ blk3:
 Statements:
 End:
   Match(match_enum(v5) {
-    MyEnum::A(v9) => blk7,
+    MyEnum::A(v6) => blk4,
     MyEnum::B(v7) => blk5,
   })
 
@@ -770,14 +730,9 @@ Statements:
 End:
   Return(v8)
 
-blk7:
-Statements:
-End:
-  Goto(blk4, {v3 -> v6})
-
 //! > ==========================================================================
 
-//! > ref argument remapping.
+//! > ref argument remapping with return.
 
 //! > test_runner_name
 test_match_optimizer
@@ -786,7 +741,7 @@ test_match_optimizer
 fn foo(ref a: Array<u32>) -> u32 {
     match a.pop_front() {
         Option::Some(x) => { return x; },
-        Option::None => { return 0 }
+        Option::None => { return 0; }
     }   
 }
 
@@ -796,10 +751,6 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Missing token TerminalSemicolon.
- --> lib.cairo:4:35
-        Option::None => { return 0 }
-                                  ^
 
 //! > lowering_diagnostics
 
@@ -860,39 +811,147 @@ blk1:
 Statements:
   (v9: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v7)
 End:
-  Goto(blk4, {v6 -> v2, v10 -> v1, v9 -> v3})
+  Goto(blk4, {v6 -> v13, v9 -> v3})
 
 blk2:
 Statements:
   (v11: ()) <- struct_construct()
 End:
-  Goto(blk5, {v8 -> v2, v12 -> v1, v11 -> v4})
+  Goto(blk5, {v8 -> v14, v11 -> v4})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v1) {
-    Option::Some(v13) => blk6,
-    Option::None(v14) => blk7,
+    Option::Some(v3) => blk4,
+    Option::None(v4) => blk5,
   })
 
 blk4:
 Statements:
 End:
-  Return(v2, v3)
+  Return(v13, v3)
 
 blk5:
 Statements:
   (v5: core::integer::u32) <- 0u
 End:
-  Return(v2, v5)
+  Return(v14, v5)
+
+//! > ==========================================================================
+
+//! > ref argument remapping with merge.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: Array<u32>) -> u32 {
+    match a.pop_front() {
+        Option::Some(x) => x,
+        Option::None => 0,
+    }   
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v8)
+  (v11: core::option::Option::<core::integer::u32>) <- Option::Some(v10)
+End:
+  Goto(blk3, {v7 -> v2, v11 -> v1})
+
+blk2:
+Statements:
+  (v12: ()) <- struct_construct()
+  (v13: core::option::Option::<core::integer::u32>) <- Option::None(v12)
+End:
+  Goto(blk3, {v9 -> v2, v13 -> v1})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk4,
+    Option::None(v4) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v3 -> v6})
+
+blk5:
+Statements:
+  (v5: core::integer::u32) <- 0u
+End:
+  Goto(blk6, {v5 -> v6})
 
 blk6:
 Statements:
 End:
-  Goto(blk4, {v6 -> v2, v10 -> v1, v9 -> v3})
+  Return(v2, v6)
 
-blk7:
+//! > after
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
 Statements:
 End:
-  Goto(blk5, {v8 -> v2, v12 -> v1, v11 -> v4})
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v8)
+End:
+  Goto(blk4, {v7 -> v14, v10 -> v3})
+
+blk2:
+Statements:
+  (v12: ()) <- struct_construct()
+End:
+  Goto(blk5, {v9 -> v15, v12 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk4,
+    Option::None(v4) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v3 -> v6})
+
+blk5:
+Statements:
+  (v5: core::integer::u32) <- 0u
+End:
+  Goto(blk6, {v5 -> v6})
+
+blk6:
+Statements:
+End:
+  Return(v2, v6)
