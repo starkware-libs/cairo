@@ -189,8 +189,8 @@ pub enum FlatBlockEnd {
 pub struct Variable {
     /// Can the type be (trivially) dropped.
     pub droppable: InferenceResult<ImplId>,
-    /// Can the type be (trivially) duplicated.
-    pub duplicatable: InferenceResult<ImplId>,
+    /// Can the type be (trivially) copied.
+    pub copyable: InferenceResult<ImplId>,
     /// A Destruct impl for the type, if found.
     pub destruct_impl: InferenceResult<ImplId>,
     /// A PanicDestruct impl for the type, if found.

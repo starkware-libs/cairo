@@ -479,7 +479,7 @@ pub fn generic_type_generic_params(
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
     pub droppable: InferenceResult<ImplId>,
-    pub duplicatable: InferenceResult<ImplId>,
+    pub copyable: InferenceResult<ImplId>,
     pub destruct_impl: InferenceResult<ImplId>,
     pub panic_destruct_impl: InferenceResult<ImplId>,
 }
@@ -556,13 +556,13 @@ pub fn type_info(
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let droppable =
         get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let duplicatable =
+    let copyable =
         get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
     let destruct_impl =
         get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
-    Ok(TypeInfo { droppable, duplicatable, destruct_impl, panic_destruct_impl })
+    Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

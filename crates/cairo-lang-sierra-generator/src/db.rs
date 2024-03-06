@@ -193,7 +193,7 @@ fn get_type_info(
                 long_id,
                 storable: true,
                 droppable: info.droppable.is_ok(),
-                duplicatable: info.duplicatable.is_ok(),
+                duplicatable: info.copyable.is_ok(),
                 zero_sized: false,
             }));
         }
