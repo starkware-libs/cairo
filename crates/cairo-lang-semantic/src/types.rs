@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, ImplDefId, ImplTypeDefId, ModuleFileId,
     NamedLanguageElementId, StructId, TraitOrImplContext, TraitTypeId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -24,10 +24,12 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::trt::ConcreteTraitTypeLongId;
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
@@ -105,7 +107,8 @@ impl TypeId {
             TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_fully_concrete(db),
-            TypeLongId::ImplType(_) => todo!(), // TODO(yg)
+            TypeLongId::ImplType(_) => false, /* TODO(yg): I've put false here for now for
+                                               * tests to work, but what's the right logic here? */
         }
     }
 }
@@ -174,21 +177,33 @@ pub fn reduce_impl_type_if_possible(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     trait_or_impl_context: TraitOrImplContext,
+    resolver: Option<&mut Resolver>,
 ) -> Maybe<TypeId> {
-    let TypeLongId::ImplType(impl_type_id) = type_to_reduce.lookup(db) else {
-        // Nothing to reduce.
+    let TypeLongId::ImplType(mut impl_type_id) = type_to_reduce.lookup(db) else {
+        // Nothing to implize.
         return Ok(type_to_reduce);
     };
-    // Try to reduce by the concrete impl type if it is concrete.
+
+    // TODO(yg): fix doc.
+    // Try to implize an impl type if it's an ImplVar.
+    if let Some(resolver) = resolver {
+        println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
+        impl_type_id = reduce_trait_impl_type(db, impl_type_id, resolver);
+        println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
+    }
+
+    // Try to implize by the concrete impl type if it is concrete.
     if let Some(ty) = reduce_concrete_impl_type(db, impl_type_id)? {
+        println!("yg returning type: {:?}", ty.format(db));
         return Ok(ty);
     }
-    // Try to reduce by the impl context, if given.
+    // Try to implize by the impl context, if given.
     if let TraitOrImplContext::Impl { impl_def_id } = trait_or_impl_context {
         if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
             return Ok(ty);
         }
     }
+
     // Could not reduce.
     Ok(type_to_reduce)
 }
@@ -221,6 +236,61 @@ fn reduce_concrete_impl_type(
 
     let impl_def_id = concrete_impl.impl_def_id(db);
     reduce_in_impl_context(db, impl_type_id, impl_def_id)
+}
+
+// TODO(yg): rename, fix doc, tidy up.
+fn reduce_trait_impl_type(
+    db: &dyn SemanticGroup,
+    impl_type_id: ImplTypeId,
+    resolver: &mut Resolver,
+) -> ImplTypeId {
+    let ImplTypeId { impl_id, ty } = impl_type_id;
+    // TODO(yg): matches.
+    let crate::items::imp::ImplId::ImplVar(_) = impl_id else {
+        println!("yg returning early");
+        return impl_type_id;
+    };
+
+    let mut inference = resolver.inference();
+    println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
+    inference.solve().unwrap();
+    let impl_id = inference.rewrite(impl_id).unwrap();
+
+    // TODO(yg): why do I get NumericLiteralu32??? I don't get it with the first line!
+    println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
+    ImplTypeId { impl_id, ty }
+
+    // let impl_var = inference.rewrite(impl_var).unwrap();
+
+    // let concrete_trait_id = impl_var.concrete_trait_id(db);
+    // println!("yg concrete_trait_id: {:?}", concrete_trait_id.debug(db.elongate()));
+    // let trait_type_id = impl_type_id.ty;
+    // let concrete_trait_type_long_id =
+    //     ConcreteTraitTypeLongId::new(db, concrete_trait_id, trait_type_id);
+    // let concrete_trait_type_id = db.intern_concrete_trait_type(concrete_trait_type_long_id);
+
+    // let impl_lookup_context = impl_var.lookup_context(db);
+    // let ty = inference.infer_trait_type(
+    //         concrete_trait_type_id,
+    //         &impl_lookup_context,
+    //         None, // TODO(yg): Some(identifier.stable_ptr().untyped()),
+    //     )
+    //     // TODO(yg): do this right. don't skip_diagnostic.
+    //     // .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
+    //     .map_err(|_| skip_diagnostic())?;
+    // println!("yg ty1: {:?}", ty.debug(db.elongate()));
+    // // let ty = inference.rewrite(ty).unwrap();
+    // // println!("yg ty2: {:?}", ty.debug(db.elongate()));
+    // // inference.solve().unwrap();
+    // // println!("yg ty3: {:?}", ty.debug(db.elongate()));
+    // // let ty = inference.rewrite(ty).unwrap();
+    // // println!("yg ty4: {:?}", ty.debug(db.elongate()));
+
+    // // println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
+    // // let impl_id = inference.rewrite(impl_id).unwrap();
+    // // println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
+
+    // Ok(Some(ty))
 }
 
 /// Head of a type. A non-param non-variable type has a head, which represents the kind of the root
@@ -614,6 +684,7 @@ pub fn get_impl_at_context(
 ) -> InferenceResult<ImplId> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
+    println!("yg new_impl_var 6");
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
     if let Some((_, err)) = inference.finalize() {
         return Err(err);

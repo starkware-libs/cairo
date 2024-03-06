@@ -206,6 +206,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
+            SemanticDiagnosticKind::TraitTypeUnsupportedInTrait => {
+                // TODO(yg): this assumes disallowing all. If allowing MyTrait == Self, change
+                // phrasing.
+                "Trait types are not supported inside traits. Did you mean to use `Self::`?"
+                    .to_string()
+            }
             SemanticDiagnosticKind::TraitFunctionWithBody { trait_id, function_id } => {
                 let defs_db = db.upcast();
                 format!(
@@ -840,6 +846,7 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
+    TraitTypeUnsupportedInTrait,
     TraitFunctionWithBody {
         trait_id: TraitId,
         function_id: TraitFunctionId,

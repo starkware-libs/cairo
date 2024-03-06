@@ -9,13 +9,14 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ast::OptionReturnTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{define_short_id, extract_matches};
 use itertools::chain;
 use smol_str::SmolStr;
 
@@ -33,7 +34,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId,
+    SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -752,13 +753,14 @@ pub fn priv_trait_function_declaration_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
+    println!("yg trait_function_id: {}", trait_function_id.name(db.upcast()));
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
-    let declaration = function_syntax.declaration(syntax_db);
+    let declaration_syntax = function_syntax.declaration(syntax_db);
     let function_generic_params_data =
         db.priv_trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
@@ -770,9 +772,9 @@ pub fn priv_trait_function_declaration_data(
     );
     diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
 
-    let signature_syntax = declaration.signature(syntax_db);
+    let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
-    let signature = semantic::Signature::from_ast(
+    let mut signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -780,6 +782,9 @@ pub fn priv_trait_function_declaration_data(
         FunctionTitleId::Trait(trait_function_id),
         &mut environment,
     );
+
+    // TODO(yg): consider doing those 2 together to get the diags in the order of parameters.
+    change_bad_types_to_missing(db, &mut diagnostics, &mut signature, &signature_syntax, trait_id);
 
     validate_trait_function_signature(
         db,
@@ -813,6 +818,72 @@ pub fn priv_trait_function_declaration_data(
         inline_config,
         implicit_precedence,
     })
+}
+
+// TODO(yg): doc.
+fn change_bad_types_to_missing(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    sig: &mut semantic::Signature,
+    sig_syntax: &ast::FunctionSignature,
+    // TODO(yg): remove if disallowing all.
+    context_trait_id: TraitId,
+) {
+    let syntax_db = db.upcast();
+
+    if let TypeLongId::ImplType(impl_type_id) = sig.return_type.lookup(db) {
+        // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
+        // TODO(yg): don't unwrap.
+        let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
+        if path_trait_id != context_trait_id {
+            let diag_added = diagnostics.report(
+                &(extract_matches!(
+                    sig_syntax.ret_ty(syntax_db),
+                    OptionReturnTypeClause::ReturnTypeClause
+                ))
+                .ty(syntax_db),
+                crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
+            );
+            sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
+        }
+    }
+    // TODO(yg): disallow all:
+    // if matches!(sig.return_type.lookup(db), TypeLongId::ImplType(_)) {
+    //     let diag_added = diagnostics.report(
+    //         &(extract_matches!(
+    //             sig_syntax.ret_ty(syntax_db),
+    //             OptionReturnTypeClause::ReturnTypeClause
+    //         ))
+    //         .ty(syntax_db),
+    //         crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
+    //     );
+    //     sig.return_type = db.intern_type(TypeLongId::Missing(diag_added));
+    // }
+
+    for (idx, param) in sig.params.iter_mut().enumerate() {
+        if let TypeLongId::ImplType(impl_type_id) = param.ty.lookup(db) {
+            // TODO(yg): use impl_type_id.trait_id(db) here once it's implemented.
+            // TODO(yg): don't unwrap.
+            let path_trait_id = impl_type_id.impl_id().concrete_trait(db).unwrap().trait_id(db);
+            if path_trait_id != context_trait_id {
+                let diag_added = diagnostics.report(
+                    &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                        .type_clause(syntax_db)
+                        .ty(syntax_db),
+                    crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
+                );
+                param.ty = db.intern_type(TypeLongId::Missing(diag_added));
+            }
+        }
+        // TODO(yg): disallow all:
+        // if matches!(param.ty.lookup(db), TypeLongId::ImplType(_)) {
+        //     let diag_added = diagnostics.report(
+        //         &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx],
+        //         crate::diagnostic::SemanticDiagnosticKind::TraitTypeUnsupportedInTrait,
+        //     );
+        //     param.ty = db.intern_type(TypeLongId::Missing(diag_added));
+        // }
+    }
 }
 
 fn validate_trait_function_signature(

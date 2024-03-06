@@ -597,6 +597,7 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
+                        println!("yg resolve generic_function {:?}", generic_function);
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -625,8 +626,14 @@ impl<'db> Resolver<'db> {
                             .map_err(|err| {
                                 err.report(diagnostics, identifier.stable_ptr().untyped())
                             })?;
-                        let ty =
-                            reduce_impl_type_if_possible(self.db, ty, TraitOrImplContext::None)?;
+                        println!("yg resolve ty {:?}", ty);
+                        // TODO(yg): is a reduce_impl_type_if_possible needed here? check if it
+                        // wasn't lost in the rebase.
+                        //
+                        // let ty = self.inference().rewrite(ty).unwrap();
+                        // let ty = reduce_impl_type_if_possible(self.db, ty,
+                        // TraitOrImplContext::None, Some(self))?;
+                        // let ty = self.inference().rewrite(ty).unwrap();
 
                         Ok(ResolvedConcreteItem::Type(ty))
                     }
@@ -657,10 +664,12 @@ impl<'db> Resolver<'db> {
                         let type_long_id =
                             TypeLongId::ImplType(ImplTypeId::new(*impl_id, trait_type_id, self.db));
 
+                        // TODO(yg): is this one needed?
                         let ty = reduce_impl_type_if_possible(
                             self.db,
                             self.db.intern_type(type_long_id),
                             TraitOrImplContext::None,
+                            None,
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

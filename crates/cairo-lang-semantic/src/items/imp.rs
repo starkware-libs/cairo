@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
-use std::vec;
+use std::{panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -547,6 +547,14 @@ pub fn impl_type_by_trait_type(
 ) -> Maybe<Option<ImplTypeDefId>> {
     if trait_type_id.trait_id(db.upcast()) != db.impl_def_trait(impl_def_id)? {
         // The trait type belongs to a trait other than the one the impl implements.
+        println!(
+            "yg trait_type_id.trait_id(db.upcast()): {:?}",
+            trait_type_id.trait_id(db.upcast()).debug(db.elongate())
+        );
+        println!(
+            "yg db.impl_def_trait(impl_def_id)?: {:?}",
+            db.impl_def_trait(impl_def_id)?.debug(db.elongate())
+        );
         return Ok(None);
     }
 
@@ -1537,6 +1545,7 @@ pub fn priv_impl_function_declaration_data(
         &signature,
         function_syntax,
         &generic_params,
+        &mut resolver,
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -1580,6 +1589,7 @@ fn validate_impl_function_signature(
     signature: &semantic::Signature,
     impl_function_syntax: &ast::FunctionWithBody,
     impl_func_generics: &[GenericParam],
+    resolver: &mut Resolver,
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();
@@ -1645,8 +1655,9 @@ fn validate_impl_function_signature(
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
-        let expected_ty = reduce_impl_type_if_possible(db, trait_param.ty, impl_ctx)?;
-        let actual_ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx)?;
+        let expected_ty =
+            reduce_impl_type_if_possible(db, trait_param.ty, impl_ctx, Some(resolver))?;
+        let actual_ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, Some(resolver))?;
 
         if expected_ty != actual_ty {
             diagnostics.report(
@@ -1698,9 +1709,14 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty =
-        reduce_impl_type_if_possible(db, concrete_trait_signature.return_type, impl_ctx)?;
-    let actual_ty = reduce_impl_type_if_possible(db, signature.return_type, impl_ctx)?;
+    let expected_ty = reduce_impl_type_if_possible(
+        db,
+        concrete_trait_signature.return_type,
+        impl_ctx,
+        Some(resolver),
+    )?;
+    let actual_ty =
+        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, Some(resolver))?;
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {

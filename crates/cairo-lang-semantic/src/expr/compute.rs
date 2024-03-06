@@ -6,6 +6,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
@@ -204,7 +205,7 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     // TODO(yg): find a more distinguished name (different verb) for those two.
-    // TODO(yg): is this right? Check why self is mut?
+    // TODO(yg): separate pr: is this right? Check why self is mut?
     /// Assigns the most known concrete type to the given type, according to previous knowledge.
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         // TODO(spapini): Propagate error to diagnostics.
@@ -212,8 +213,13 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     // TODO(yg): doc.
-    fn reduce_impl_type_if_possible(&self, type_to_reduce: TypeId) -> Maybe<TypeId> {
-        reduce_impl_type_if_possible(self.db, type_to_reduce, self.resolver.data.trait_or_impl_ctx)
+    fn reduce_impl_type_if_possible(&mut self, type_to_reduce: TypeId) -> Maybe<TypeId> {
+        reduce_impl_type_if_possible(
+            self.db,
+            type_to_reduce,
+            self.resolver.data.trait_or_impl_ctx,
+            Some(&mut self.resolver),
+        )
     }
 }
 
@@ -361,7 +367,7 @@ pub fn maybe_compute_expr_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
-    match syntax {
+    let expr = match syntax {
         ast::Expr::Path(path) => resolve_expr_path(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
             Ok(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
@@ -396,7 +402,9 @@ pub fn maybe_compute_expr_semantic(
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
-    }
+    };
+    println!("yg inferred_type -2: {:?}", expr.clone()?.ty().debug(db.elongate()));
+    expr
 }
 
 fn compute_expr_inline_macro_semantic(
@@ -789,24 +797,14 @@ fn compute_expr_function_call_semantic(
             }))
         }
         ResolvedConcreteItem::Function(function) => {
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
+            let expr = expr_function_call(ctx, function, named_args, syntax.stable_ptr().into());
+            println!("yg inferred_type -3: {:?}", expr.clone()?.ty().debug(db.elongate()));
+            expr
         }
         _ => Err(ctx.diagnostics.report(
             &path,
             UnexpectedElement { expected: vec![ElementKind::Function], actual: (&item).into() },
         )),
-    }
-}
-
-trait MyTrait {
-    type MyType;
-    fn foo(x: Self::MyType);
-}
-struct MyStruct;
-impl MyTrait for MyStruct {
-    type MyType = Option<usize>;
-    fn foo(x: Self::MyType) {
-        x.unwrap();
     }
 }
 
@@ -848,6 +846,7 @@ pub fn compute_named_argument_clause(
     NamedArg(expr, arg_name_identifier, mutability)
 }
 
+// TODO(yggg): should reduce signatures in all callers?
 pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
@@ -2063,6 +2062,7 @@ fn new_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
+    println!("yg new_impl_var 1 (numeric literal)");
     ctx.resolver
         .inference()
         .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
@@ -2115,6 +2115,7 @@ fn new_string_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
+    println!("yg new_impl_var 2");
     ctx.resolver
         .inference()
         .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
@@ -2477,7 +2478,7 @@ fn expr_function_call(
         }
     }
 
-    let signature = get_function_reduced_signature(ctx.db, function_id)?;
+    let signature = get_function_reduced_signature(ctx.db, function_id, &mut ctx.resolver)?;
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -2537,6 +2538,7 @@ fn expr_function_call(
         });
     }
 
+    println!("yg inferred_type -4: {:?}", signature.return_type.debug(ctx.db.elongate()));
     let expr_function_call = ExprFunctionCall {
         function: function_id,
         args,
@@ -2556,9 +2558,23 @@ fn expr_function_call(
 fn get_function_reduced_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
+    resolver: &mut Resolver,
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
+    // TODO(yg): remove.
+    // TODO(yggg!): The problem is that I use the same Local ID from the context of the trait.
+    // (should it even be visible??). To resolve I need to come up with new IDs when calling the
+    // function, or better - don't create it in the trait itself, I think there is no use for it.
+    // match function_id.lookup(db).function.generic_function {
+    //     crate::items::functions::GenericFunctionId::Impl(x) => {
+    //         println!("yg inferred_type -6: {:?}", x.impl_id)
+    //     }
+    //     _ => {
+    //         println!("yg inferred_type -6: what???")
+    //     }
+    // }
     let mut signature = db.concrete_function_signature(function_id)?;
+    println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
     let generic_function = function_id.lookup(db).function.generic_function;
 
     // If the generic function isn't an impl function, return signature as is.
@@ -2574,10 +2590,11 @@ fn get_function_reduced_signature(
     let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
 
     for param in signature.params.iter_mut() {
-        // Reduce the type in the context of the concrete function impl, not `ctx.impl_ctx`.
-        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx)?;
+        // Reduce the type in the context of the concrete function impl.
+        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, Some(resolver))?;
     }
-    signature.return_type = reduce_impl_type_if_possible(db, signature.return_type, impl_ctx)?;
+    signature.return_type =
+        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, Some(resolver))?;
     Ok(signature)
 }
 
@@ -2654,10 +2671,18 @@ pub fn compute_statement_semantic(
     }
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
+            println!("yg ==================== let statement ====================");
+            println!("yg === RHS ===");
+            println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
+            println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
+            println!("yg inferred_type -1: {:?}", inferred_type.debug(db.elongate()));
             let rhs_expr_id = expr.id;
+            println!("yg #pending: {}", ctx.resolver.inference().data.pending.len());
+            println!("yg #impl_vars: {}", ctx.resolver.inference().data.impl_vars.len());
 
+            println!("yg === LHS ===");
             let ty = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => inferred_type,
                 ast::OptionTypeClause::TypeClause(type_clause) => {
@@ -2667,6 +2692,9 @@ pub fn compute_statement_semantic(
                     let explicit_type = ctx.reduce_ty(explicit_type);
                     let explicit_type = ctx.reduce_impl_type_if_possible(explicit_type)?;
                     let inferred_type = ctx.reduce_ty(inferred_type);
+                    println!("yg inferred_type before: {:?}", inferred_type.debug(db.elongate()));
+                    let inferred_type = ctx.reduce_impl_type_if_possible(inferred_type)?;
+                    println!("yg inferred_type after: {:?}", inferred_type.debug(db.elongate()));
                     if !inferred_type.is_missing(db)
                         && ctx
                             .resolver
@@ -2754,6 +2782,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
+            println!("yg ==================== return statement ====================");
             if ctx.loop_ctx.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }

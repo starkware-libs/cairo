@@ -31,7 +31,7 @@ use crate::items::functions::{
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{self, ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
@@ -259,7 +259,8 @@ pub struct InferenceData {
     pub stable_ptrs: HashMap<InferenceVar, SyntaxStablePtrId>,
 
     /// Inference variables that are pending to be solved.
-    pending: VecDeque<LocalImplVarId>,
+    // TODO(yg): remove pub.
+    pub pending: VecDeque<LocalImplVarId>,
     /// Inference variables that have been refuted - no solutions exist.
     refuted: Vec<LocalImplVarId>,
     /// Inference variables that have been solved.
@@ -428,6 +429,7 @@ impl<'db> Inference<'db> {
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<ImplId> {
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
+        println!("yg new_impl_var_raw from new_impl_var");
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         Ok(ImplId::ImplVar(self.impl_var(var).intern(self.db)))
     }
@@ -458,11 +460,34 @@ impl<'db> Inference<'db> {
     /// Solves the inference system. After a successful solve, there are no more pending impl
     /// inferences.
     pub fn solve(&mut self) -> InferenceResult<()> {
+        let print = !self.pending.is_empty();
+        if print {
+            println!("yg #ambiguous before: {}", self.ambiguous.len());
+            println!("yg #pending before: {}", self.pending.len());
+            println!("yg pending before: {:?}", self.pending);
+            println!("yg solved before: {:?}", self.solved);
+        }
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
             self.solve_single_pending(var)?;
+        }
+        if print {
+            println!("yg #ambiguous before: {}", self.ambiguous.len());
+            println!("yg #pending after: {}", self.pending.len());
+            println!("yg pending after: {:?}", self.pending);
+            println!("yg solved after: {:?}", self.solved);
+            println!("yg type_assign: {:#?}", self.type_assignment);
+            // println!("yg impl_assign: {:#?}", self.impl_assignment);
+            for (local, impl_id) in self.impl_assignment.iter() {
+                println!(
+                    "yg local: {}, impl_id: {:?} ({:?})",
+                    local.0,
+                    impl_id.debug(self.db.elongate()),
+                    impl_id
+                );
+            }
         }
         Ok(())
     }
@@ -806,10 +831,23 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
+        println!("yg ImplId internal_rewrite");
         if let ImplId::ImplVar(var) = value {
+            println!("yg ImplId rewrite - impl var");
+            // println!("yg impl_assign: {:#?}", self.impl_assignment);
+            for (local, impl_id) in self.impl_assignment.iter() {
+                println!(
+                    "yg local: {}, impl_id: {:?} ({:?})",
+                    local.0,
+                    impl_id.debug(self.db.elongate()),
+                    impl_id
+                );
+            }
             // Relax the candidates.
+            println!("yg local index: {}", var.get(self.db).id.0);
             if let Some(mut impl_id) = self.impl_assignment(var.get(self.db).id) {
                 self.internal_rewrite(&mut impl_id)?;
+                println!("yg ImplId rewrite - early ret with {:?}", impl_id);
                 *value = impl_id;
                 return Ok(RewriteResult::Modified);
             }
