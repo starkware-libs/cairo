@@ -67,26 +67,19 @@ Block(
                     ),
                     expr: FixedSizeArray(
                         ExprFixedSizeArray {
-                            items: [
-                                Literal(
-                                    ExprLiteral {
-                                        value: 1,
-                                        ty: core::integer::u8,
+                            items: Items(
+                                [
+                                    Id {
+                                        idx: 0,
                                     },
-                                ),
-                                Literal(
-                                    ExprLiteral {
-                                        value: 2,
-                                        ty: core::integer::u8,
+                                    Id {
+                                        idx: 1,
                                     },
-                                ),
-                                Literal(
-                                    ExprLiteral {
-                                        value: 3,
-                                        ty: core::integer::u8,
+                                    Id {
+                                        idx: 2,
                                     },
-                                ),
-                            ],
+                                ],
+                            ),
                             ty: [core::integer::u8; 3],
                         },
                     ),
