@@ -13,7 +13,7 @@ use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use id_arena::Arena;
 use itertools::Itertools;
 use num_bigint::BigInt;
-use num_traits::{Num, Zero};
+use num_traits::{Num, ToPrimitive, Zero};
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::structure::SemanticStructEx;
@@ -148,9 +148,11 @@ pub fn resolve_const_expr_and_evaluate(
     for (_, expr) in ctx.exprs.iter_mut() {
         *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
     }
-
-    // Check that the expression is a valid constant.
-    evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics)
+    match &value.expr {
+        Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),
+        // Check that the expression is a valid constant.
+        _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
+    }
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
@@ -219,7 +221,6 @@ pub fn evaluate_constant_expr(
             Expr::Constant(expr) => priv_constant_semantic_data(db, expr.constant_id)
                 .map(|data| data.const_value)
                 .unwrap_or_else(ConstValue::Missing),
-
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. })
                 if statements.is_empty() =>
             {
@@ -267,12 +268,28 @@ pub fn evaluate_constant_expr(
             ),
             Expr::MemberAccess(expr) => extract_const_member_access(db, exprs, expr, diagnostics)
                 .unwrap_or_else(ConstValue::Missing),
-            Expr::FixedSizeArray(expr) => ConstValue::Struct(
-                expr.items
+            Expr::FixedSizeArray(expr) => ConstValue::Struct(match &expr.items {
+                crate::FixedSizeArrayItems::Items(items) => items
                     .iter()
                     .map(|expr_id| evaluate_constant_expr(db, exprs, *expr_id, diagnostics))
                     .collect(),
-            ),
+                crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
+                    let value = evaluate_constant_expr(db, exprs, *value, diagnostics).1;
+                    let count = db.lookup_intern_const_value(*count);
+                    if let ConstValue::Int(count) = count {
+                        (0..count.to_usize().unwrap())
+                            .map(|_| value.clone())
+                            .map(|value| (expr.ty, value))
+                            .collect()
+                    } else {
+                        diagnostics.report_by_ptr(
+                            expr.stable_ptr.untyped(),
+                            SemanticDiagnosticKind::UnsupportedConstant,
+                        );
+                        vec![]
+                    }
+                }
+            }),
             _ if diagnostics.diagnostics.error_count == 0 => {
                 ConstValue::Missing(diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),

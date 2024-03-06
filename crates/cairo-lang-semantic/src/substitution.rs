@@ -287,6 +287,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
+        $crate::prune_single!(__regular_helper, FixedSizeArrayItems, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, Statement, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementExpr, $($exclude)*);
