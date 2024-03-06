@@ -1032,6 +1032,9 @@ impl<'db> Resolver<'db> {
                     ConstValue::Int(value) => GenericArgumentId::Constant(
                         self.db.intern_const_value(ConstValue::Int(value)),
                     ),
+                    ConstValue::Generic(generic_param_id) => GenericArgumentId::Constant(
+                        self.db.intern_const_value(ConstValue::Generic(generic_param_id)),
+                    ),
                     ConstValue::Missing(err) => return Err(err),
                     _ => unreachable!("Invalid const value."),
                 }

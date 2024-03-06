@@ -148,9 +148,11 @@ pub fn resolve_const_expr_and_evaluate(
     for (_, expr) in ctx.exprs.iter_mut() {
         *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
     }
-
-    // Check that the expression is a valid constant.
-    evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics)
+    match &value.expr {
+        Expr::ParamConstant(expr) => (expr.ty, db.lookup_intern_const_value(expr.const_value_id)),
+        // Check that the expression is a valid constant.
+        _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
+    }
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
@@ -219,7 +221,6 @@ pub fn evaluate_constant_expr(
             Expr::Constant(expr) => priv_constant_semantic_data(db, expr.constant_id)
                 .map(|data| data.const_value)
                 .unwrap_or_else(ConstValue::Missing),
-
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. })
                 if statements.is_empty() =>
             {
