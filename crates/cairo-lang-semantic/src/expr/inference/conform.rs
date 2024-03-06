@@ -331,9 +331,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let generic_args = concrete.generic_args(self.db);
                 self.generic_args_contain_var(&generic_args, var)
             }
-            TypeLongId::Tuple(tys) => {
-                tys.into_iter().map(|ty| self.ty_contains_var(ty, var)).any(|x| x)
-            }
+            TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
             TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
             TypeLongId::Var(new_var) => {
                 if InferenceVar::Type(new_var.id) == var {
