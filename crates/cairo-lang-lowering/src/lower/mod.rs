@@ -982,11 +982,31 @@ fn lower_expr_fixed_size_array(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a fixed size array: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let exprs = expr
-        .items
-        .iter()
-        .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
-        .collect::<Result<Vec<_>, _>>()?;
+    let exprs = match &expr.items {
+        semantic::FixedSizeArrayItems::Items(items) => items
+            .iter()
+            .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id))
+            .collect::<Result<Vec<_>, _>>()?,
+        semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
+            let lowered_value = lower_expr(ctx, builder, *value)?;
+            let var_usage = lowered_value.as_var_usage(ctx, builder)?;
+            let size = extract_matches!(ctx.db.lookup_intern_const_value(*size), ConstValue::Int)
+                .to_usize()
+                .unwrap();
+            // If there are multiple elements, the type must be duplicatable as we duplicate the var
+            // `size` times.
+            if size > 1 && ctx.variables[var_usage.var_id].duplicatable.is_err() {
+                {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(expr.stable_ptr.0, FixedSizeArrayNonDuplicatableType),
+                    ));
+                }
+            }
+            let expr = LoweredExpr::AtVariable(var_usage);
+            vec![expr; size]
+        }
+    };
     Ok(LoweredExpr::FixedSizeArray { exprs, location })
 }
 
