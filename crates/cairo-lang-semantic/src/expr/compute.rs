@@ -47,7 +47,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
@@ -56,7 +56,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::{value_as_const_value, ConstValue};
+use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -680,20 +680,20 @@ fn compute_expr_fixed_size_array_semantic(
         .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayEmptyElements))?;
     let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
 
-    let mut items: Vec<ExprId> = vec![];
-
-    if let Some(size) = extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)? {
+    let items = if let Some(size_const_id) =
+        extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
+    {
         // Fixed size array with a defined size must have exactly one element.
         if !tail_exprs.is_empty() {
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         }
-        let size = extract_matches!(db.lookup_intern_const_value(size), ConstValue::Int)
+        let size = extract_matches!(db.lookup_intern_const_value(size_const_id), ConstValue::Int)
             .to_usize()
             .unwrap();
-        for _ in 0..size {
-            items.push(first_expr_semantic.id);
-        }
+        verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
+        FixedSizeArrayItems::ValueAndSize(first_expr_semantic.id, size_const_id)
     } else {
+        let mut items: Vec<ExprId> = vec![];
         items.push(first_expr_semantic.id);
         // The type of the first expression is the type of the array. All other expressions must
         // have the same type.
@@ -709,16 +709,21 @@ fn compute_expr_fixed_size_array_semantic(
             }
             items.push(expr_semantic.id);
         }
-    }
-    let size = items.len();
-    verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
-    let size_const_value_id =
-        db.intern_const_value(value_as_const_value(db, get_usize_ty(db), &size.into()).unwrap());
+        FixedSizeArrayItems::Items(items)
+    };
+    let size = match &items {
+        FixedSizeArrayItems::ValueAndSize(_, size_const_id) => *size_const_id,
+        FixedSizeArrayItems::Items(items) => {
+            let size = BigInt::from(items.len());
+            verify_fixed_size_array_size(ctx.diagnostics, &size, syntax)?;
+            db.intern_const_value(ConstValue::Int(size))
+        }
+    };
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
         items,
         ty: db.intern_type(TypeLongId::FixedSizeArray {
             type_id: ctx.reduce_ty(first_expr_semantic.ty()),
-            size: size_const_value_id,
+            size,
         }),
         stable_ptr: syntax.stable_ptr().into(),
     }))
