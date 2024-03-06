@@ -7,6 +7,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::write_comma_separated;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -57,6 +58,20 @@ pub struct IntroductionPoint {
     pub destination_statement_idx: StatementIdx,
     /// The output index of the generating statement of the var.
     pub output_idx: usize,
+}
+
+impl core::fmt::Display for IntroductionPoint {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if let Some(source_statement_idx) = self.source_statement_idx {
+            write!(
+                f,
+                "#{source_statement_idx}->#{}[{}]",
+                self.destination_statement_idx, self.output_idx
+            )
+        } else {
+            write!(f, "Function@{}[{}]", self.destination_statement_idx, self.output_idx)
+        }
+    }
 }
 
 /// A Sierra reference to a value.
@@ -125,6 +140,14 @@ impl ApplyApChange for ReferenceExpression {
 
     fn can_apply_unknown(&self) -> bool {
         self.cells.iter().all(|cell| cell.can_apply_unknown())
+    }
+}
+
+impl core::fmt::Display for ReferenceExpression {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "[")?;
+        write_comma_separated(f, &self.cells)?;
+        write!(f, "]")
     }
 }
 
