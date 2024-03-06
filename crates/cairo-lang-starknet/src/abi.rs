@@ -35,7 +35,7 @@ use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
     CONSTRUCTOR_ATTR, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG, CONTRACT_STATE_NAME,
     EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
-    L1_HANDLER_ATTR,
+    L1_HANDLER_ATTR, VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR,
 };
 use crate::plugin::events::EventData;
 
@@ -49,6 +49,14 @@ enum EventInfo {
     Struct,
     /// The event is an enum, contains its set of selectors.
     Enum(HashSet<String>),
+}
+
+/// The information of an entrypoint.
+struct EntryPointInfo {
+    /// The source of the entry point.
+    source: Source,
+    /// The signature of the entry point.
+    inputs: Vec<Input>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -78,10 +86,10 @@ pub struct AbiBuilder<'a> {
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
-    entry_points: HashMap<String, Source>,
+    entry_points: HashMap<String, EntryPointInfo>,
 
     /// The constructor for the contract.
-    ctor: Option<FunctionWithBodyId>,
+    ctor: Option<EntryPointInfo>,
 
     /// Accumulated errors.
     errors: Vec<ABIError>,
@@ -145,12 +153,25 @@ impl<'a> AbiBuilder<'a> {
                     });
                 }
             }
+            if let Some(validate_deploy) =
+                self.entry_points.get(VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR)
+            {
+                let ctor_inputs =
+                    self.ctor.as_ref().map(|ctor| ctor.inputs.as_slice()).unwrap_or(&[]);
+                println!("{:?}", validate_deploy.inputs);
+                println!("{:?}", ctor_inputs);
+                if !validate_deploy.inputs.ends_with(ctor_inputs) {
+                    self.errors.push(ABIError::ValidateDeployMismatchingConstructor(
+                        validate_deploy.source,
+                    ));
+                }
+            }
         } else {
             for selector in ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS {
-                if let Some(source) = self.entry_points.get(*selector) {
+                if let Some(info) = self.entry_points.get(*selector) {
                     self.errors.push(ABIError::EntryPointSupportedOnlyOnAccountContract {
                         selector: selector.to_string(),
-                        source_ptr: *source,
+                        source_ptr: info.source,
                     });
                 }
             }
@@ -282,8 +303,12 @@ impl<'a> AbiBuilder<'a> {
         let interface_path = trait_id.full_path(self.db.upcast());
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
-            self.add_entry_point(function.name(self.db.upcast()).into(), source)?;
-            items.push(self.trait_function_as_abi(*function, storage_type)?);
+            let f = self.trait_function_as_abi(*function, storage_type)?;
+            self.add_entry_point(
+                function.name(self.db.upcast()).into(),
+                EntryPointInfo { source, inputs: f.inputs.clone() },
+            )?;
+            items.push(Item::Function(f));
         }
 
         let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
@@ -303,7 +328,7 @@ impl<'a> AbiBuilder<'a> {
         let trait_id = self.db.impl_def_trait(impl_def_id)?;
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let function_abi = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_abi_item(function_abi, true, source)?;
+            self.add_abi_item(Item::Function(function_abi), true, source)?;
         }
 
         Ok(())
@@ -398,7 +423,7 @@ impl<'a> AbiBuilder<'a> {
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let function = self.function_as_abi(&name, signature, storage_type)?;
-        self.add_abi_item(function, true, Source::Function(function_with_body_id))?;
+        self.add_abi_item(Item::Function(function), true, Source::Function(function_with_body_id))?;
 
         Ok(())
     }
@@ -413,12 +438,12 @@ impl<'a> AbiBuilder<'a> {
         if self.ctor.is_some() {
             return Err(ABIError::MultipleConstructors(source));
         }
-        self.ctor = Some(function_with_body_id);
         let name = function_with_body_id.name(self.db.upcast()).into();
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
+        self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
         if state_mutability != StateMutability::External {
             return Err(ABIError::UnexpectedType);
         }
@@ -503,7 +528,7 @@ impl<'a> AbiBuilder<'a> {
         &mut self,
         trait_function_id: TraitFunctionId,
         storage_type: TypeId,
-    ) -> Result<Item, ABIError> {
+    ) -> Result<Function, ABIError> {
         let name: String = trait_function_id.name(self.db.upcast()).into();
         let signature = self.db.trait_function_signature(trait_function_id)?;
 
@@ -516,13 +541,13 @@ impl<'a> AbiBuilder<'a> {
         name: &str,
         signature: Signature,
         storage_type: TypeId,
-    ) -> Result<Item, ABIError> {
+    ) -> Result<Function, ABIError> {
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
 
         let outputs = self.get_signature_outputs(&signature)?;
 
-        Ok(Item::Function(Function { name: name.to_string(), inputs, outputs, state_mutability }))
+        Ok(Function { name: name.to_string(), inputs, outputs, state_mutability })
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
@@ -729,13 +754,13 @@ impl<'a> AbiBuilder<'a> {
         prevent_dups: bool,
         source: Source,
     ) -> Result<(), ABIError> {
-        if let Some(name) = match &item {
-            Item::Function(item) => Some(item.name.to_string()),
-            Item::Constructor(item) => Some(item.name.to_string()),
-            Item::L1Handler(item) => Some(item.name.to_string()),
+        if let Some((name, inputs)) = match &item {
+            Item::Function(item) => Some((item.name.to_string(), item.inputs.clone())),
+            Item::Constructor(item) => Some((item.name.to_string(), item.inputs.clone())),
+            Item::L1Handler(item) => Some((item.name.to_string(), item.inputs.clone())),
             _ => None,
         } {
-            self.add_entry_point(name, source)?;
+            self.add_entry_point(name, EntryPointInfo { source, inputs })?;
         }
 
         self.insert_abi_item(item, prevent_dups.then_some(source))
@@ -773,9 +798,10 @@ impl<'a> AbiBuilder<'a> {
     }
 
     /// Adds an entry point name to the set of names, to track unsupported duplication.
-    fn add_entry_point(&mut self, name: String, source: Source) -> Result<(), ABIError> {
-        if self.entry_points.insert(name.clone(), source).is_some() {
-            return Err(ABIError::DuplicateEntryPointName { name, source_ptr: source });
+    fn add_entry_point(&mut self, name: String, info: EntryPointInfo) -> Result<(), ABIError> {
+        let source_ptr = info.source;
+        if self.entry_points.insert(name.clone(), info).is_some() {
+            return Err(ABIError::DuplicateEntryPointName { name, source_ptr });
         }
         Ok(())
     }
@@ -873,6 +899,8 @@ pub enum ABIError {
     EntryPointSupportedOnlyOnAccountContract { selector: String, source_ptr: Source },
     #[error("`{selector}` entry point must exist for account contracts.")]
     EntryPointMissingForAccountContract { selector: String },
+    #[error("`{VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR}` entry point must match the constructor.")]
+    ValidateDeployMismatchingConstructor(Source),
 }
 impl ABIError {
     pub fn location(&self, db: &dyn SemanticGroup) -> Option<SyntaxStablePtrId> {
@@ -895,9 +923,8 @@ impl ABIError {
             | ABIError::ContractInterfaceImplCannotBePerItem(source)
             | ABIError::InvalidDuplicatedItem { source_ptr: source, .. }
             | ABIError::DuplicateEntryPointName { source_ptr: source, .. }
-            | ABIError::EntryPointSupportedOnlyOnAccountContract { source_ptr: source, .. } => {
-                Some(source.location(db))
-            }
+            | ABIError::EntryPointSupportedOnlyOnAccountContract { source_ptr: source, .. }
+            | ABIError::ValidateDeployMismatchingConstructor(source) => Some(source.location(db)),
             ABIError::IllegalContractAttrArgs => None,
             ABIError::EntryPointMissingForAccountContract { .. } => None,
         }
