@@ -147,49 +147,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // arguments to a local variables.
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
                     }
-                    StructDeconstructLibfunc::STR_ID => {
-                        let arg = &invocation.args[0];
-                        let var_state = state.pop_var_state(arg);
-
-                        let results = &invocation.branches[0].results;
-                        let mut non_zero_sized_outputs = vec![];
-                        for (output, output_info) in
-                            zip_eq(results, &signature.branch_signatures[0].vars)
-                        {
-                            let output_state = match var_state {
-                                VarState::ZeroSizedVar => VarState::ZeroSizedVar,
-                                _ if matches!(
-                                    output_info.ref_info,
-                                    OutputVarReferenceInfo::ZeroSized
-                                ) =>
-                                {
-                                    VarState::ZeroSizedVar
-                                }
-                                VarState::TempVar { .. } => {
-                                    VarState::TempVar { ty: output_info.ty.clone() }
-                                }
-                                VarState::Deferred { info: DeferredVariableInfo { kind, .. } } => {
-                                    VarState::Deferred {
-                                        info: DeferredVariableInfo {
-                                            kind,
-                                            ty: output_info.ty.clone(),
-                                        },
-                                    }
-                                }
-                                VarState::LocalVar => VarState::LocalVar,
-                                VarState::Removed => unreachable!(),
-                            };
-
-                            if !matches!(output_state, VarState::ZeroSizedVar) {
-                                non_zero_sized_outputs.push(output.clone())
-                            }
-
-                            state.variables.insert(output.clone(), output_state);
-                        }
-                        state.known_stack.deconstruct_variable(arg, &non_zero_sized_outputs);
-                        self.result.push(statement);
-                        return Some(std::mem::take(state));
-                    }
                     _ => self.prepare_libfunc_arguments(
                         state,
                         &invocation.args,
