@@ -215,11 +215,19 @@ pub struct ExprTuple {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprFixedSizeArray {
-    pub items: Vec<ExprId>,
+    pub items: FixedSizeArrayItems,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+
+/// Either a vector of items, if all was written in the code i.e. ([10, 11, 12] or [10, 10, 10]), or
+/// a value and a size, if the array was written as ([10; 3]).
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub enum FixedSizeArrayItems {
+    Items(Vec<ExprId>),
+    ValueAndSize(ExprId, ConstValueId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
