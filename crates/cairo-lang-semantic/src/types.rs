@@ -9,7 +9,7 @@ use cairo_lang_syntax::attribute::consts::{MUST_USE_ATTR, UNSTABLE_ATTR};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -17,7 +17,7 @@ use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty,
+    concrete_panic_destruct_trait, core_bool_ty, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -32,7 +32,7 @@ use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitTypeLongId;
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId};
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -177,20 +177,62 @@ pub fn reduce_impl_type_if_possible(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
     trait_or_impl_context: TraitOrImplContext,
-    resolver: Option<&mut Resolver>,
+    resolver: &mut Resolver,
 ) -> Maybe<TypeId> {
-    let TypeLongId::ImplType(mut impl_type_id) = type_to_reduce.lookup(db) else {
+    // First, reduce if already inferred.
+    let mut inference = resolver.inference();
+    let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
+
+    // Then, reduce recursively.
+    let mut long_ty = type_to_reduce.lookup(db);
+    match &mut long_ty {
+        TypeLongId::Concrete(concrete_type) => {
+            let mut generic_args = concrete_type.generic_args(db);
+            for generic_arg in generic_args.iter_mut() {
+                let GenericArgumentId::Type(generic_arg_type) = generic_arg else {
+                    continue;
+                };
+                *generic_arg_type = reduce_impl_type_if_possible(
+                    db,
+                    *generic_arg_type,
+                    trait_or_impl_context,
+                    resolver,
+                )?;
+                *generic_arg = GenericArgumentId::Type(*generic_arg_type);
+            }
+            concrete_type.modify_generic_args(db, generic_args);
+        }
+        TypeLongId::Tuple(types) => {
+            for ty in types.iter_mut() {
+                *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, resolver)?;
+            }
+        }
+        TypeLongId::Snapshot(ty) => {
+            *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, resolver)?
+        }
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => {}
+        TypeLongId::Coupon(_) => todo!(), // TODO(yg)
+        TypeLongId::FixedSizeArray { type_id, size } => {} /* TODO(yg): i've put it here for
+                                            * tests to pass, but what is the
+                                            * right behavior? */
+    }
+    let type_to_reduce = db.intern_type(long_ty);
+
+    // Finally, reduce the impl type itself, if possible.
+
+    let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
         // Nothing to implize.
         return Ok(type_to_reduce);
     };
 
     // TODO(yg): fix doc.
     // Try to implize an impl type if it's an ImplVar.
-    if let Some(resolver) = resolver {
-        println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
-        impl_type_id = reduce_trait_impl_type(db, impl_type_id, resolver);
-        println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
-    }
+    // println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
+    impl_type_id = reduce_trait_impl_type(db, impl_type_id, resolver);
+    // println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
 
     // Try to implize by the concrete impl type if it is concrete.
     if let Some(ty) = reduce_concrete_impl_type(db, impl_type_id)? {
@@ -387,6 +429,32 @@ impl ConcreteTypeId {
         self.generic_args(db)
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    // TODO(ygd)
+    pub fn modify_generic_args(
+        &mut self,
+        db: &dyn SemanticGroup,
+        new_generic_args: Vec<GenericArgumentId>,
+    ) {
+        match self {
+            ConcreteTypeId::Struct(id) => {
+                let long_id = db.lookup_intern_concrete_struct(*id);
+                let new_long_id =
+                    ConcreteStructLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Struct(db.intern_concrete_struct(new_long_id));
+            }
+            ConcreteTypeId::Enum(id) => {
+                let long_id = db.lookup_intern_concrete_enum(*id);
+                let new_long_id = ConcreteEnumLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Enum(db.intern_concrete_enum(new_long_id));
+            }
+            ConcreteTypeId::Extern(id) => {
+                let long_id = db.lookup_intern_concrete_extern_type(*id);
+                let new_long_id =
+                    ConcreteExternTypeLongId { generic_args: new_generic_args, ..long_id };
+                *self = ConcreteTypeId::Extern(db.intern_concrete_extern_type(new_long_id));
+            }
+        }
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {

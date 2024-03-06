@@ -16,14 +16,14 @@ use super::functions::{
 use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::compute::{compute_root_expr, implize_signature, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, SemanticDiagnostic, TypeId};
+use crate::{semantic, FunctionLongId, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -149,7 +149,7 @@ pub fn priv_free_function_declaration_data(
     let mut environment = Environment::from_lookup_item_id(db, lookup_item_id, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
-    let signature = semantic::Signature::from_ast(
+    let mut signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -157,6 +157,8 @@ pub fn priv_free_function_declaration_data(
         FunctionTitleId::Free(free_function_id),
         &mut environment,
     );
+    // TODO(yg): uncomment?
+    // implize_signature(db, &mut signature, &mut resolver, None)?;
 
     let attributes = free_function_syntax.attributes(syntax_db).structurize(syntax_db);
 

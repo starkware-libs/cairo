@@ -669,7 +669,7 @@ impl<'db> Resolver<'db> {
                             self.db,
                             self.db.intern_type(type_long_id),
                             TraitOrImplContext::None,
-                            None,
+                            self,
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

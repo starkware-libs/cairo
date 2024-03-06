@@ -1,11 +1,7 @@
-//! > traits' items are resolved when there is a single impl in context.
-
-//! > TODO(ygg1): eliminate diags, change expect_diagnostics to false.
-
-//! > TODO(ygg1): change types in MyTrait+AnotherTrait to u16 and check there are diags for incompatible (concrete) types. (add a test for it)
+//! > recursive resolution.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: *)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -19,62 +15,31 @@ trait MyTrait {
     type MyType2;
 }
 impl MyImpl of MyTrait {
-    type MyType1 = u32;
+    type MyType1 = u16;
     type MyType2 = u32;
 }
-fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
-    return x;
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
 }
-fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+    (x, y)
+}
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
     x
-}
-fn let_statement(x: MyTrait::MyType2) {
-    let _: MyTrait::MyType1 = x;
-}
-fn break_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
-    loop {
-        if cond {
-            break x;
-        } else {
-            break y;
-        }
-    };
-}
-enum MyEnum {
-    VariantA,
-    VariantB,
-}
-fn match_statement(e: MyEnum, x: MyTrait::MyType1, y: MyTrait::MyType2) {
-    let _ = match e {
-        MyEnum::VariantA => {
-            x
-        },
-        MyEnum::VariantB => {
-            y
-        },
-    };
-}
-fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
-    if cond { x } else { y };
 }
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "ImplVarId(675)::MyType2", found: "ImplVarId(677)::MyType1".
- --> lib.cairo:10:12
-    return x;
-           ^
+error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:9:79
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+                                                                              ^
 
-error: Loop has incompatible return types: "ImplVarId(696)::MyType1" and "ImplVarId(702)::MyType2"
- --> lib.cairo:23:19
-            break y;
-                  ^
+error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
+ --> lib.cairo:12:92
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+                                                                                           ^
 
-error: Match arms have incompatible types: "ImplVarId(710)::MyType1" and "ImplVarId(712)::MyType2"
- --> lib.cairo:36:29
-        MyEnum::VariantB => {
-                            ^
-
-error: If blocks have incompatible types: "ImplVarId(714)::MyType1" and "ImplVarId(716)::MyType2"
- --> lib.cairo:42:5
-    if cond { x } else { y };
-    ^**********************^
+error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:15:58
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^

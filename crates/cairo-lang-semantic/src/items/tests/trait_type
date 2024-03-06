@@ -7,6 +7,7 @@
 * make sure it works with type aliases. Add a test for it.
 * Consider and add test: should using impls' types in traits be allowed? If any - make sure cycles are avoided. And if not allowed - consider whether impls' types should be allowed to be used in other impls.
 * Add tests for trait MyTrait { fn foo() -> AnotherImpl::AnotherType; } - should it be supported? Beware cycles.
+* Add tests for impl::MyType, for impl in {generic impls, ImplVars}.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -649,7 +650,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(909)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(897)::AnotherType`.
  --> lib.cairo:9:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -659,7 +660,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(909)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(897)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:9:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -669,7 +670,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(911)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(899)::AnotherType`.
  --> lib.cairo:10:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -689,7 +690,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(912)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(900)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:12:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -709,7 +710,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(916)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(904)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^
@@ -761,7 +762,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(917)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(905)::AnotherType`.
  --> lib.cairo:15:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -771,7 +772,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(917)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(905)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -781,7 +782,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(919)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(907)::AnotherType`.
  --> lib.cairo:16:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -801,7 +802,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(920)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(908)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:18:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -821,7 +822,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(924)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(912)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:21:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^
@@ -869,3 +870,275 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > traits' items resolved in all kind of statements.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u32;
+    type MyType2 = u32;
+}
+fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    return x;
+}
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    x
+}
+fn let_statement(x: MyTrait::MyType2) {
+    let _: MyTrait::MyType1 = x;
+}
+fn break_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    loop {
+        if cond {
+            break x;
+        } else {
+            break y;
+        }
+    };
+}
+enum MyEnum {
+    VariantA,
+    VariantB,
+}
+fn match_statement(e: MyEnum, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    let _ = match e {
+        MyEnum::VariantA => {
+            x
+        },
+        MyEnum::VariantB => {
+            y
+        },
+    };
+}
+fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    if cond { x } else { y };
+}
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Diagnostics on mismatches with traits' items that are resolved in all kind of statements.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u16;
+    type MyType2 = u32;
+}
+fn ret_statement(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    return x;
+}
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+    x
+}
+fn let_statement(x: MyTrait::MyType2) {
+    let _: MyTrait::MyType1 = x;
+}
+fn break_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    loop {
+        if cond {
+            break x;
+        } else {
+            break y;
+        }
+    };
+}
+enum MyEnum {
+    VariantA,
+    VariantB,
+}
+fn match_statement(e: MyEnum, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    let _ = match e {
+        MyEnum::VariantA => {
+            x
+        },
+        MyEnum::VariantB => {
+            y
+        },
+    };
+}
+fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
+    if cond { x } else { y };
+}
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:10:12
+    return x;
+           ^
+
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:12:54
+fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
+                                                     ^
+
+error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:16:31
+    let _: MyTrait::MyType1 = x;
+                              ^
+
+error: Loop has incompatible return types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:23:19
+            break y;
+                  ^
+
+error: Match arms have incompatible types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:36:29
+        MyEnum::VariantB => {
+                            ^
+
+error: If blocks have incompatible types: "core::integer::u16" and "core::integer::u32"
+ --> lib.cairo:42:5
+    if cond { x } else { y };
+    ^**********************^
+
+error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:44:79
+fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+                                                                              ^
+
+//! > ==========================================================================
+
+//! > Recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    type MyType3;
+    type MyType4;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u32;
+    type MyType2 = u32;
+    type MyType3 = u32;
+    type MyType4 = u32;
+}
+fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+    (x, y)
+}
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    x
+}
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
+    x
+}
+fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+    x
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Diagnostics on mismatches with recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType1;
+    type MyType2;
+    type MyType3;
+    type MyType4;
+}
+impl MyImpl of MyTrait {
+    type MyType1 = u16;
+    type MyType2 = u32;
+    type MyType3 = u32;
+    type MyType4 = u32;
+}
+fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+    Option::Some(x?)
+}
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+    (x, y)
+}
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+    x
+}
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
+    x
+}
+fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+    x
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:13:74
+fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
+                                                                         ^
+
+error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
+ --> lib.cairo:16:92
+fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
+                                                                                           ^
+
+error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
+ --> lib.cairo:19:58
+fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
+                                                         ^
+
+error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:22:156
+fn complex1(x: @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>)) -> @(u32, Option<@Result<u32, (@u32, u32)>>) {
+                                                                                                                                                           ^
+
+error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<core::integer::u32, (@core::integer::u32, core::integer::u32)>>)".
+ --> lib.cairo:25:156
+fn complex2(x: @(u32, Option<@Result<u32, (@u32, u32)>>)) -> @(MyTrait::MyType1, Option<@Result<MyTrait::MyType2, (@MyTrait::MyType3, MyTrait::MyType4)>>) {
+                                                                                                                                                           ^

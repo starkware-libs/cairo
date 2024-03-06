@@ -9,8 +9,8 @@ use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, LanguageElementId, LocalVarLongId,
-    LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId, TraitOrImplContext,
+    EnumId, FunctionTitleId, FunctionWithBodyId, GenericKind, ImplDefId, LanguageElementId,
+    LocalVarLongId, LookupItemId, MemberId, ModuleId, TraitFunctionId, TraitId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -218,7 +218,7 @@ impl<'ctx> ComputationContext<'ctx> {
             self.db,
             type_to_reduce,
             self.resolver.data.trait_or_impl_ctx,
-            Some(&mut self.resolver),
+            &mut self.resolver,
         )
     }
 }
@@ -861,6 +861,7 @@ pub fn compute_root_expr(
     let return_type = ctx.reduce_ty(return_type);
     let return_type = ctx.reduce_impl_type_if_possible(return_type)?;
     if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
+        // TODO(yg): here fails with ?.
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
     }
@@ -1093,6 +1094,7 @@ fn compute_expr_match_semantic(
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
+        let expr_ty = ctx.reduce_impl_type_if_possible(expr_ty)?;
         if let Err((match_ty, arm_ty)) =
             helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr_ty)
         {
@@ -1167,6 +1169,8 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
     // TODO(yg): separate pr: first can be done inside new*.
+    let if_block_ty = ctx.reduce_impl_type_if_possible(if_block.ty())?;
+    let else_block_ty = ctx.reduce_impl_type_if_possible(else_block_ty)?;
     helper
         .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block_ty)
         .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
@@ -2478,7 +2482,7 @@ fn expr_function_call(
         }
     }
 
-    let signature = get_function_reduced_signature(ctx.db, function_id, &mut ctx.resolver)?;
+    let signature = get_function_implized_signature(ctx.db, function_id, &mut ctx.resolver)?;
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -2555,47 +2559,49 @@ fn expr_function_call(
     Ok(Expr::FunctionCall(expr_function_call))
 }
 
-fn get_function_reduced_signature(
+fn get_function_implized_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
     resolver: &mut Resolver,
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
-    // TODO(yg): remove.
-    // TODO(yggg!): The problem is that I use the same Local ID from the context of the trait.
-    // (should it even be visible??). To resolve I need to come up with new IDs when calling the
-    // function, or better - don't create it in the trait itself, I think there is no use for it.
-    // match function_id.lookup(db).function.generic_function {
-    //     crate::items::functions::GenericFunctionId::Impl(x) => {
-    //         println!("yg inferred_type -6: {:?}", x.impl_id)
-    //     }
-    //     _ => {
-    //         println!("yg inferred_type -6: what???")
-    //     }
-    // }
     let mut signature = db.concrete_function_signature(function_id)?;
     println!("yg inferred_type -5: {:?}", signature.return_type.debug(db.elongate()));
     let generic_function = function_id.lookup(db).function.generic_function;
 
-    // If the generic function isn't an impl function, return signature as is.
-    let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
-    else {
-        return Ok(signature);
+    // TODO(yg): export to a function? Maybe query...
+    // If the generic function is a concrete impl function, add impl_def_id as context.
+    let impl_ctx = if let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) =
+        generic_function
+    {
+        if let Some(impl_function) = impl_generic_function.impl_function(db)? {
+            TraitOrImplContext::Impl { impl_def_id: impl_function.impl_def_id(db.upcast()) }
+        } else {
+            TraitOrImplContext::None
+        }
+    } else {
+        TraitOrImplContext::None
     };
-    // If the impl of the impl generic function isn't concrete, return signature as is.
-    let Some(impl_function) = impl_generic_function.impl_function(db)? else {
-        return Ok(signature);
-    };
-    let impl_def_id = impl_function.impl_def_id(db.upcast());
-    let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
 
+    // Implize the signature in the context of the concrete function impl.
+    implize_signature(db, &mut signature, resolver, impl_ctx)?;
+    Ok(signature)
+}
+
+// TODO(ygd)
+pub fn implize_signature(
+    db: &dyn SemanticGroup,
+    signature: &mut Signature,
+    resolver: &mut Resolver,
+    impl_ctx: TraitOrImplContext,
+) -> Maybe<()> {
     for param in signature.params.iter_mut() {
-        // Reduce the type in the context of the concrete function impl.
-        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, Some(resolver))?;
+        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, resolver)?;
     }
     signature.return_type =
-        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, Some(resolver))?;
-    Ok(signature)
+        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, resolver)?;
+
+    Ok(())
 }
 
 /// Checks if a panicable function is called from a disallowed context.
@@ -2797,13 +2803,14 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
                 }
             };
-            // TODO(ygg): need to reduce this?
             let expected_ty = ctx
                 .get_signature(
                     return_syntax.stable_ptr().untyped(),
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                 )?
                 .return_type;
+            let expected_ty = ctx.reduce_impl_type_if_possible(expected_ty)?;
+            let expr_ty = ctx.reduce_impl_type_if_possible(expr_ty)?;
             if !expected_ty.is_missing(db)
                 && !expr_ty.is_missing(db)
                 && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
@@ -2828,6 +2835,7 @@ pub fn compute_statement_semantic(
                 }
             };
             let ty = ctx.reduce_ty(ty);
+            let ty = ctx.reduce_impl_type_if_possible(ty)?;
             match &mut ctx.loop_ctx {
                 None => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
