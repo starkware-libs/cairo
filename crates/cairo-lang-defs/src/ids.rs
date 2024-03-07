@@ -946,3 +946,12 @@ define_language_element_id_as_enum! {
         ImplItem(ImplItemId),
     }
 }
+
+/// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
+/// "Self::" paths.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TraitOrImplContext {
+    None,
+    Trait { trait_id: TraitId },
+    Impl { impl_def_id: ImplDefId },
+}
