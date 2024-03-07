@@ -950,7 +950,10 @@ define_language_element_id_as_enum! {
 /// "Self::" paths.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TraitOrImplContext {
+    /// No trait/impl context.
     None,
+    /// The context is of a trait.
     Trait { trait_id: TraitId },
+    /// The context is of an impl.
     Impl { impl_def_id: ImplDefId },
 }
