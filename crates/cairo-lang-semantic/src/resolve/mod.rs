@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId,
+    ModuleId, TraitId, TraitOrImplContext,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -101,6 +101,8 @@ pub struct ResolverData {
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
     pub inference_data: InferenceData,
+    // TODO(ygd)
+    pub trait_or_impl_ctx: TraitOrImplContext,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -110,6 +112,7 @@ impl ResolverData {
             generic_params: Default::default(),
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
+            trait_or_impl_ctx: TraitOrImplContext::None,
         }
     }
     pub fn clone_with_inference_id(
@@ -123,6 +126,7 @@ impl ResolverData {
             generic_params: self.generic_params.clone(),
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
+            trait_or_impl_ctx: self.trait_or_impl_ctx,
         }
     }
 }
@@ -167,16 +171,7 @@ impl<'db> Resolver<'db> {
         module_file_id: ModuleFileId,
         inference_id: InferenceId,
     ) -> Self {
-        Self::with_data(
-            db,
-            ResolverData {
-                module_file_id,
-                generic_param_by_name: Default::default(),
-                generic_params: Default::default(),
-                resolved_items: Default::default(),
-                inference_data: InferenceData::new(inference_id),
-            },
-        )
+        Self::with_data(db, ResolverData::new(module_file_id, inference_id))
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {

@@ -946,3 +946,11 @@ define_language_element_id_as_enum! {
         ImplItem(ImplItemId),
     }
 }
+
+// TODO(ygdm)
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TraitOrImplContext {
+    None,
+    Trait { trait_id: TraitId },
+    Impl { impl_def_id: ImplDefId },
+}

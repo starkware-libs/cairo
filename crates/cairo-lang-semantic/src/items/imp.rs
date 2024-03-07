@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, ImplFunctionLongId, ImplItemId, ImplTypeId, ImplTypeLongId, LanguageElementId,
     LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitTypeId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitOrImplContext, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -405,13 +405,14 @@ pub fn priv_impl_declaration_data_inner(
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
-    let resolver_data = Arc::new(resolver.data);
+    let mut resolver_data = resolver.data;
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl { impl_def_id };
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
         concrete_trait,
         attributes,
-        resolver_data,
+        resolver_data: Arc::new(resolver_data),
     })
 }
 
