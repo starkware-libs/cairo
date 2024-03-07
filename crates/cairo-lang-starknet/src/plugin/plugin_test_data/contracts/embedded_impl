@@ -572,7 +572,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
 
 impl ContractStateOutsideImpl of
@@ -1461,7 +1461,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
 
 impl ContractStateOutsideImplWithDestruct of
@@ -1975,7 +1975,7 @@ use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
+#[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
 
 impl ContractStateOutsideImplWithDrop of
