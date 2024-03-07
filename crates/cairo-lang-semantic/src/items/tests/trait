@@ -863,3 +863,95 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test `Self` in impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo1() -> u32;
+   fn foo2() -> u32;
+}
+impl MyImpl of MyTrait {
+   fn foo1() -> u32 {
+      Self::foo2()
+   }
+   fn foo2() -> u32 { 3 }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Type mismatch with `Self` in impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo1() -> u32;
+   fn foo2() -> u16;
+}
+impl MyImpl of MyTrait {
+   fn foo1() -> u32 {
+      Self::foo2()
+   }
+   fn foo2() -> u16 { 3 }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:6:21
+   fn foo1() -> u32 {
+                    ^
+
+//! > ==========================================================================
+
+//! > `Self` can't be non-first segment.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+   trait MyTrait {
+      fn foo1();
+      fn foo2();
+   }
+   impl MyImpl of MyTrait {
+      fn foo1() {
+         super::inner::MyImpl::foo2(); // This is ok.
+         super::inner::Self::foo2(); // This is not.
+      }
+      fn foo2() {}
+   }
+}
+
+//! > expected_diagnostics
+error: `Self` can only be the first segment of a path.
+ --> lib.cairo:9:24
+         super::inner::Self::foo2(); // This is not.
+                       ^**^
