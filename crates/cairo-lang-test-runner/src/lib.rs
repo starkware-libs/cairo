@@ -192,7 +192,7 @@ impl TestCompiler {
         let db = &mut {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
             b.with_plugin_suite(test_plugin_suite());
             if starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
