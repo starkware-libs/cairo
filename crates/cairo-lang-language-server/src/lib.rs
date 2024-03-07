@@ -21,7 +21,7 @@ use cairo_lang_defs::ids::{
     TraitItemId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
+    codes, DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
@@ -619,6 +619,7 @@ impl LanguageServer for Backend {
                 document_formatting_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
+                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -931,6 +932,60 @@ impl LanguageServer for Backend {
             }))
         })
         .await
+    }
+
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
+        eprintln!("Code action");
+        self.with_db(|db| {
+            let mut actions = Vec::with_capacity(params.context.diagnostics.len());
+            let file_id = file(db, params.text_document.uri.clone());
+            let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
+            for diagnostic in params.context.diagnostics.iter() {
+                let action = if let Some(NumberOrString::String(code)) = &diagnostic.code {
+                    match code.as_str() {
+                        codes::UNUSED_VARIABLE => unused_variable(
+                            db,
+                            &node,
+                            diagnostic.clone(),
+                            params.text_document.uri.clone(),
+                        ),
+                        _ => CodeAction::default(),
+                    }
+                } else {
+                    CodeAction::default()
+                };
+                actions.push(CodeActionOrCommand::from(action));
+            }
+            Some(actions)
+        })
+        .await
+    }
+}
+
+/// Create a code action that prefixes an unused variable with an `_`.
+#[tracing::instrument(level = "trace", skip_all)]
+fn unused_variable(
+    db: &dyn SemanticGroup,
+    node: &SyntaxNode,
+    diagnostic: Diagnostic,
+    uri: Url,
+) -> CodeAction {
+    CodeAction {
+        title: format!("Rename to `_{}`", node.get_text(db.upcast())),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from_iter([(
+                uri,
+                // The diagnostic range is just the first char of the variable name so we can just
+                // pass an underscore as the new text it won't replace the current variable name
+                // and it will prefix it with `_`
+                vec![TextEdit { range: diagnostic.range, new_text: "_".to_owned() }],
+            )])),
+            document_changes: None,
+            change_annotations: None,
+        }),
+        diagnostics: Some(vec![diagnostic]),
+        ..Default::default()
     }
 }
 
@@ -1601,6 +1656,7 @@ fn get_diagnostics<T: DiagnosticEntry>(
                 Severity::Error => DiagnosticSeverity::ERROR,
                 Severity::Warning => DiagnosticSeverity::WARNING,
             }),
+            code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
             ..Diagnostic::default()
         });
     }
