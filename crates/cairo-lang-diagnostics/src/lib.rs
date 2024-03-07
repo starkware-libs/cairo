@@ -6,7 +6,7 @@ pub use diagnostics::{
     DiagnosticNote, Diagnostics, DiagnosticsBuilder, FormattedDiagnosticEntry, Maybe, Severity,
     ToMaybe, ToOption,
 };
-pub use error_code::{ErrorCode, OptionErrorCodeExt};
+pub use error_code::{codes, ErrorCode, OptionErrorCodeExt};
 pub use location_marks::get_location_marks;
 
 mod diagnostics;
