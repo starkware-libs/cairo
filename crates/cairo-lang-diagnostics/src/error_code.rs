@@ -72,6 +72,6 @@ impl OptionErrorCodeExt for Option<ErrorCode> {
 }
 
 pub mod codes {
-    /// Unused variable
+    /// Unused variable.
     pub const UNUSED_VARIABLE: &str = "E0001";
 }
