@@ -21,7 +21,7 @@ use cairo_lang_defs::ids::{
     TraitItemId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{
-    codes, DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
+    DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity, ToOption,
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
@@ -936,30 +936,61 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
-        eprintln!("Code action");
         self.with_db(|db| {
             let mut actions = Vec::with_capacity(params.context.diagnostics.len());
             let file_id = file(db, params.text_document.uri.clone());
             let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, params.range.start)?;
             for diagnostic in params.context.diagnostics.iter() {
-                let action = if let Some(NumberOrString::String(code)) = &diagnostic.code {
-                    match code.as_str() {
-                        codes::UNUSED_VARIABLE => unused_variable(
-                            db,
-                            &node,
-                            diagnostic.clone(),
-                            params.text_document.uri.clone(),
-                        ),
-                        _ => CodeAction::default(),
-                    }
-                } else {
-                    CodeAction::default()
-                };
-                actions.push(CodeActionOrCommand::from(action));
+                actions.extend(
+                    get_code_actions_for_diagnostic(db, &node, diagnostic, &params)
+                        .into_iter()
+                        .map(CodeActionOrCommand::from),
+                );
             }
             Some(actions)
         })
         .await
+    }
+}
+
+/// Generate code actions for a given diagnostic.
+///
+/// # Arguments
+///
+/// * `db` - A reference to the Salsa database.
+/// * `node` - The syntax node where the diagnostic is located.
+/// * `diagnostic` - The diagnostic for which to generate code actions.
+/// * `params` - The parameters for the code action request.
+///
+/// # Returns
+///
+/// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostic.
+fn get_code_actions_for_diagnostic(
+    db: &dyn SemanticGroup,
+    node: &SyntaxNode,
+    diagnostic: &Diagnostic,
+    params: &CodeActionParams,
+) -> Vec<CodeAction> {
+    let code = match &diagnostic.code {
+        Some(NumberOrString::String(code)) => code,
+        Some(NumberOrString::Number(code)) => {
+            debug!("diagnostic code is not a string: `{code}`");
+            return vec![];
+        }
+        None => {
+            debug!("diagnostic code is missing");
+            return vec![];
+        }
+    };
+
+    match code.as_str() {
+        "E0001" => {
+            vec![unused_variable(db, node, diagnostic.clone(), params.text_document.uri.clone())]
+        }
+        code => {
+            debug!("no code actions for diagnostic code: {code}");
+            vec![]
+        }
     }
 }
 
