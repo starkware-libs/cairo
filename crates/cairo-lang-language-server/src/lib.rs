@@ -30,7 +30,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -43,7 +43,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Mutability, SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -865,7 +865,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
-            let file_id = file(db, file_uri);
+            let file_id = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
             let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
             let lookup_item_id = lookup_items.into_iter().next()?;
@@ -885,8 +885,8 @@ impl LanguageServer for Backend {
             let mut hints = Vec::new();
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
-                hints.push(hint);
+            } else if let Some(hint) = get_expr_hint(db, file_uri, position) {
+                hints.extend(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
                 hints.push(MarkedString::String(hint));
@@ -903,29 +903,13 @@ impl LanguageServer for Backend {
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
         self.with_db(|db| {
-            let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
-            let file = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
-            let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
-            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                return None;
-            }
-            let identifier =
-                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-            let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
-            let node = stable_ptr.lookup(syntax_db);
-            let found_file = stable_ptr.file_id(syntax_db);
-            let span = node.span_without_trivia(syntax_db);
-            let width = span.width();
-            let (found_file, span) =
-                get_originating_location(db.upcast(), found_file, span.start_only());
+            let (found_file, span) = get_definition_location(db, file_uri, position)?;
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
-            let end = from_pos(
-                span.end.add_width(width).position_in_file(db.upcast(), found_file).unwrap(),
-            );
+            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
             Some(GotoDefinitionResponse::Scalar(Location {
                 uri: found_uri,
                 range: Range { start, end },
@@ -1426,45 +1410,83 @@ fn get_identifier_hint(
 /// If the node is an expression, retrieves a hover hint for it.
 #[tracing::instrument(level = "trace", skip_all)]
 fn get_expr_hint(
-    db: &(dyn SemanticGroup + 'static),
-    function_id: FunctionWithBodyId,
-    node: SyntaxNode,
-) -> Option<MarkedString> {
-    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
-    let text = match semantic_expr {
-        cairo_lang_semantic::Expr::FunctionCall(call) => {
-            let args = if let Ok(signature) =
-                call.function.get_concrete(db).generic_function.generic_signature(db.upcast())
-            {
-                signature
-                    .params
-                    .iter()
-                    .map(|arg| {
-                        let mutability = match arg.mutability {
-                            Mutability::Immutable => "",
-                            Mutability::Mutable => "mut ",
-                            Mutability::Reference => "ref ",
-                        };
-                        format!("{mutability}{}: {}", arg.name, arg.ty.format(db.upcast()))
-                    })
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            } else {
-                "".to_owned()
-            };
-            let mut s = format!(
-                "fn {}({}) -> {}",
-                call.function.name(db.upcast()),
-                args,
-                call.ty.format(db.upcast())
-            );
-            s.retain(|c| c != '"');
-            s
+    db: &RootDatabase,
+    file_uri: Url,
+    position: Position,
+) -> Option<Vec<MarkedString>> {
+    let mut hints = vec![];
+    // We'll do the following. Let's consider this case:
+    // /// abc
+    // fn abc() {}
+    //
+    // let _ = abc();
+    // If we hover over the function call `abc()`
+    // we get the location of the `abc` function definition. The we get the first node of the
+    // definition (here `fn`) and we get the text with trivia from this node so `/// abc\n fn`
+    // And then we properly format it.
+
+    // Find the definition of the expression.
+    let (file_id, text_span) = get_definition_location(db, file_uri, position)?;
+    // Get the content of the file where the expression is defined.
+    let file_content = db.file_content(file_id)?;
+    // Get the definition string and format it in a single line.
+    let func = text_span.take(&file_content);
+    let func = func
+        .find('{')
+        .map_or_else(|| func.trim().to_string(), |index| func[..index].trim_end().to_string())
+        .lines()
+        .skip_while(|line| !line.trim_start().chars().next().unwrap().is_alphabetic())
+        .map(|line| line.trim().to_string())
+        .collect::<String>();
+    // Format the definition as a cairo string.
+    hints.push(MarkedString::from_language_code("cairo".to_owned(), func.to_owned()));
+    // Add a separator.
+    hints.push(MarkedString::String("\n---\n".to_string()));
+    // Get the position of the first node of the expression definition.
+    let first_node_pos = from_pos(text_span.start.position_in_file(db.upcast(), file_id).unwrap());
+    // Get the first node of the definition.
+    let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, first_node_pos)?;
+    // Get its parent to get the trivia.
+    if let Some(parent_node) = node.parent() {
+        let mut is_cairo_string = false;
+        // Get the trivia and remove the node text.
+        let lines = if let Some(split) = parent_node.get_text(db.upcast()).rsplit_once('\n') {
+            split.0.to_string()
+        } else {
+            "".to_string()
+        };
+        let mut doc = "".to_string();
+        for line in lines.lines() {
+            // Skip everything else than doc
+            if !line.trim_start().starts_with("///") {
+                continue;
+            }
+            // Remove the leading whitespaces and `///`
+            let line = line.trim().trim_start_matches("///").trim_start().to_string();
+            // If we reach ``` it means that we either begin a code section or end a code section.
+            if line.starts_with("```") {
+                // If is_cairo_string is true it means that we end the code block so append the code
+                // in a cairo formatted string.
+                hints.push(if is_cairo_string {
+                    MarkedString::from_language_code("cairo".to_owned(), doc)
+                } else {
+                    // else append a regular string.
+                    MarkedString::from_markdown(doc)
+                });
+                // Switch the variable to properly format the following block.
+                is_cairo_string = !is_cairo_string;
+                // reset the string to start the next block.
+                doc = "".to_string();
+                continue;
+            }
+            // Append the current block string.
+            doc += line.as_str();
+            // add new line to have a proper formatting.
+            doc += "\n";
         }
-        _ => semantic_expr.ty().format(db),
-    };
-    // Format the hover text.
-    Some(MarkedString::from_language_code("cairo".to_owned(), text))
+        hints.push(MarkedString::from_markdown(doc));
+    }
+    Some(hints)
 }
 
 /// Returns the semantic expression for the current node.
@@ -1660,4 +1682,26 @@ fn get_diagnostics<T: DiagnosticEntry>(
             ..Diagnostic::default()
         });
     }
+}
+
+pub fn get_definition_location(
+    db: &RootDatabase,
+    uri: Url,
+    position: Position,
+) -> Option<(FileId, TextSpan)> {
+    let file = file(db.upcast(), uri);
+    let syntax_db = db.upcast();
+    let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
+    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+        return None;
+    }
+    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+    let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+    let node = stable_ptr.lookup(syntax_db);
+    let found_file = stable_ptr.file_id(syntax_db);
+    let span = node.span_without_trivia(syntax_db);
+    let width = span.width();
+    let (file_id, mut span) = get_originating_location(db.upcast(), found_file, span.start_only());
+    span.end = span.end.add_width(width);
+    Some((file_id, span))
 }
