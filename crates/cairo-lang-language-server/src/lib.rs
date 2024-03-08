@@ -1727,6 +1727,17 @@ fn get_diagnostics<T: DiagnosticEntry>(
     }
 }
 
+/// Returns the file id and span of the definition of an expression from its position.
+///
+/// # Arguments
+///
+/// * `db` - Preloaded compilation database
+/// * `uri` - Uri of the expression position
+/// * `position` - Position of the expression
+///
+/// # Returns
+///
+/// The [FileId] and [TextSpan] of the expression definition if found.
 pub fn get_definition_location(
     db: &RootDatabase,
     uri: Url,
