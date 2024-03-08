@@ -885,7 +885,7 @@ impl LanguageServer for Backend {
             let mut hints = Vec::new();
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db, file_uri, position) {
+            } else if let Some(hint) = get_expr_hint(db, file_id, position) {
                 hints.extend(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
@@ -905,7 +905,8 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
             let position = params.text_document_position_params.position;
-            let (found_file, span) = get_definition_location(db, file_uri, position)?;
+            let (found_file, span) =
+                get_definition_location(db, file(db.upcast(), file_uri), position)?;
             let found_uri = get_uri(db, found_file);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
@@ -1409,11 +1410,7 @@ fn get_identifier_hint(
 
 /// If the node is an expression, retrieves a hover hint for it.
 #[tracing::instrument(level = "trace", skip_all)]
-fn get_expr_hint(
-    db: &RootDatabase,
-    file_uri: Url,
-    position: Position,
-) -> Option<Vec<MarkedString>> {
+fn get_expr_hint(db: &RootDatabase, file: FileId, position: Position) -> Option<Vec<MarkedString>> {
     let mut hints = vec![];
     // We'll do the following. Let's consider this case:
     // /// abc
@@ -1426,7 +1423,7 @@ fn get_expr_hint(
     // And then we properly format it.
 
     // Find the definition of the expression.
-    let (file_id, text_span) = get_definition_location(db, file_uri, position)?;
+    let (file_id, text_span) = get_definition_location(db, file, position)?;
     // Get the content of the file where the expression is defined.
     let file_content = db.file_content(file_id)?;
     // Get the definition string and format it in a single line.
@@ -1435,7 +1432,7 @@ fn get_expr_hint(
         .find('{')
         .map_or_else(|| func.trim().to_string(), |index| func[..index].trim_end().to_string())
         .lines()
-        .skip_while(|line| !line.trim_start().chars().next().unwrap().is_alphabetic())
+        .skip_while(|line| !line.trim_start().chars().next().unwrap().is_alphabetic()) // Remove macros above definition
         .map(|line| line.trim().to_string())
         .collect::<String>();
     // Format the definition as a cairo string.
@@ -1697,10 +1694,9 @@ fn get_diagnostics<T: DiagnosticEntry>(
 /// The [FileId] and [TextSpan] of the expression definition if found.
 pub fn get_definition_location(
     db: &RootDatabase,
-    uri: Url,
+    file: FileId,
     position: Position,
 ) -> Option<(FileId, TextSpan)> {
-    let file = file(db.upcast(), uri);
     let syntax_db = db.upcast();
     let (node, lookup_items) = get_node_and_lookup_items(db, file, position)?;
     if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
