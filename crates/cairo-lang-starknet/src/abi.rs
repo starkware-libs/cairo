@@ -158,8 +158,6 @@ impl<'a> AbiBuilder<'a> {
             {
                 let ctor_inputs =
                     self.ctor.as_ref().map(|ctor| ctor.inputs.as_slice()).unwrap_or(&[]);
-                println!("{:?}", validate_deploy.inputs);
-                println!("{:?}", ctor_inputs);
                 if !validate_deploy.inputs.ends_with(ctor_inputs) {
                     self.errors.push(ABIError::ValidateDeployMismatchingConstructor(
                         validate_deploy.source,
