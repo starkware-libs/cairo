@@ -1,17 +1,18 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::{get_location_marks, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::chain;
+use itertools::{chain, Itertools};
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup};
 use crate::extra_sierra_info::type_has_const_size;
@@ -174,6 +175,50 @@ pub struct SierraProgramWithDebug {
     pub program: cairo_lang_sierra::program::Program,
     pub debug_info: SierraProgramDebugInfo,
 }
+/// Implementation for a debug print of a Sierra program with all locations.
+/// The print is a valid textual Sierra program.
+impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SierraGenGroup) -> std::fmt::Result {
+        let sierra_program = DebugReplacer { db }.apply(&self.program);
+        for declaration in &sierra_program.type_declarations {
+            writeln!(f, "{declaration};")?;
+        }
+        writeln!(f)?;
+        for declaration in &sierra_program.libfunc_declarations {
+            writeln!(f, "{declaration};")?;
+        }
+        writeln!(f)?;
+        let sierra_program = DebugReplacer { db }.apply(&self.program);
+        let mut funcs = sierra_program.funcs.iter().peekable();
+        while let Some(func) = funcs.next() {
+            let start = func.entry_point.0;
+            let end = funcs
+                .peek()
+                .map(|f| f.entry_point.0)
+                .unwrap_or_else(|| sierra_program.statements.len());
+            writeln!(f, "// {}:", func.id)?;
+            for param in &func.params {
+                writeln!(f, "//   {}", param)?;
+            }
+            for i in start..end {
+                writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
+                if let Some(loc) =
+                    &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
+                {
+                    let loc =
+                        get_location_marks(db.upcast(), &loc.diagnostic_location(db.upcast()));
+                    println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
+                }
+            }
+        }
+        writeln!(f)?;
+        for func in &sierra_program.funcs {
+            writeln!(f, "{func};")?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo {
     pub statements_locations: StatementsLocations,
