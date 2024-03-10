@@ -12,7 +12,8 @@ use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::{
-    ImplVar, ImplVarId, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId, TypeVar,
+    ConstVar, ImplVar, ImplVarId, InferenceId, InferenceVar, LocalConstVarId, LocalImplVarId,
+    LocalTypeVarId, TypeVar,
 };
 use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
@@ -184,7 +185,6 @@ macro_rules! add_basic_rewrites {
 
         $crate::prune_single!(__identity_helper, InferenceId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ParamId, $($exclude)*);
-        $crate::prune_single!(__identity_helper, ConstValueId, $($exclude)*);
         $crate::prune_single!(__identity_helper, FreeFunctionId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ExternFunctionId, $($exclude)*);
         $crate::prune_single!(__identity_helper, ExternTypeId, $($exclude)*);
@@ -198,12 +198,15 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
         $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ConstVar, $($exclude)*);
         $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identity_helper, LocalVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, LocalImplVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, LocalTypeVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, LocalConstVarId, $($exclude)*);
         $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ConstValue, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -225,6 +228,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, FunctionLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, TypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, TypeLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConstValueId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteVariant, $($exclude)*);
         $crate::prune_single!(__regular_helper, ValueSelectorArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArmSelector, $($exclude)*);
@@ -319,7 +323,8 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, @exclude TypeLongId ImplId);
+
+add_basic_rewrites!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, @exclude TypeLongId ImplId ConstValue);
 impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
     fn rewrite(&mut self, value: TypeLongId) -> Maybe<TypeLongId> {
         if let TypeLongId::GenericParameter(generic_param) = value {
