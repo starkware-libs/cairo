@@ -6,11 +6,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
-    ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId,
-    TypeVar,
+    ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
+    LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::db::SemanticGroup;
-use crate::items::constant::ConstValueId;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -78,6 +78,7 @@ impl CanonicalMapping {
     fn from_to_canonic(to_canonic: VarMapping) -> CanonicalMapping {
         let from_canonic = VarMapping {
             type_var_mapping: to_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            const_var_mapping: to_canonic.const_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             impl_var_mapping: to_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             source_inference_id: to_canonic.target_inference_id,
             target_inference_id: to_canonic.source_inference_id,
@@ -87,6 +88,11 @@ impl CanonicalMapping {
     fn from_from_canonic(from_canonic: VarMapping) -> CanonicalMapping {
         let to_canonic = VarMapping {
             type_var_mapping: from_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            const_var_mapping: from_canonic
+                .const_var_mapping
+                .iter()
+                .map(|(k, v)| (*v, *k))
+                .collect(),
             impl_var_mapping: from_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             source_inference_id: from_canonic.target_inference_id,
             target_inference_id: from_canonic.source_inference_id,
@@ -99,6 +105,7 @@ impl CanonicalMapping {
 #[derive(Debug)]
 pub struct VarMapping {
     type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
+    const_var_mapping: OrderedHashMap<LocalConstVarId, LocalConstVarId>,
     impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
     source_inference_id: InferenceId,
     target_inference_id: InferenceId,
@@ -107,6 +114,7 @@ impl VarMapping {
     fn new_to_canonic(source_inference_id: InferenceId) -> Self {
         Self {
             type_var_mapping: OrderedHashMap::default(),
+            const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
             source_inference_id,
             target_inference_id: InferenceId::Canonical,
@@ -115,6 +123,7 @@ impl VarMapping {
     fn new_from_canonic(target_inference_id: InferenceId) -> Self {
         Self {
             type_var_mapping: OrderedHashMap::default(),
+            const_var_mapping: OrderedHashMap::default(),
             impl_var_mapping: OrderedHashMap::default(),
             source_inference_id: InferenceId::Canonical,
             target_inference_id,
@@ -164,7 +173,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Canonicalizer<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId ImplId ConstValue);
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
         let TypeLongId::Var(var) = value else {
@@ -176,6 +185,21 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
         let next_id = LocalTypeVarId(self.to_canonic.type_var_mapping.len());
         Ok(TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
+            inference_id: InferenceId::Canonical,
+        }))
+    }
+}
+impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
+    fn rewrite(&mut self, value: ConstValue) -> Result<ConstValue, NoError> {
+        let ConstValue::Var(var) = value else {
+            return value.default_rewrite(self);
+        };
+        if var.inference_id != self.to_canonic.source_inference_id {
+            return value.default_rewrite(self);
+        }
+        let next_id = LocalConstVarId(self.to_canonic.const_var_mapping.len());
+        Ok(ConstValue::Var(ConstVar {
+            id: *self.to_canonic.const_var_mapping.entry(var.id).or_insert(next_id),
             inference_id: InferenceId::Canonical,
         }))
     }
@@ -282,7 +306,7 @@ impl<'db> HasDb<&'db dyn SemanticGroup> for Mapper<'db> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId ConstValue);
 impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, MapperError> {
         let TypeLongId::Var(var) = value else {
@@ -297,6 +321,21 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
         Ok(TypeLongId::Var(TypeVar { id, inference_id: self.mapping.target_inference_id }))
     }
 }
+impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
+    fn rewrite(&mut self, value: ConstValue) -> Result<ConstValue, MapperError> {
+        let ConstValue::Var(var) = value else {
+            return value.default_rewrite(self);
+        };
+        let id = self
+            .mapping
+            .const_var_mapping
+            .get(&var.id)
+            .copied()
+            .ok_or(MapperError(InferenceVar::Const(var.id)))?;
+        Ok(ConstValue::Var(ConstVar { id, inference_id: self.mapping.target_inference_id }))
+    }
+}
+
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: ImplId) -> Result<ImplId, MapperError> {
         let ImplId::ImplVar(var_id) = value else {
