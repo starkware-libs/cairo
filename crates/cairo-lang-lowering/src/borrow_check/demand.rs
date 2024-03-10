@@ -51,8 +51,7 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
     >(
         &mut self,
         reporter: &mut T,
-        remapping: impl Iterator<Item = (&'a V, (&'a V, T::UsePosition))>
-        + std::iter::DoubleEndedIterator
+        remapping: impl std::iter::DoubleEndedIterator<Item = (&'a V, (&'a V, T::UsePosition))>
         + std::iter::ExactSizeIterator,
     ) {
         // Traverse the remapping in reverse order, as remappings can use the same variable more
@@ -80,8 +79,7 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
     >(
         &mut self,
         reporter: &mut T,
-        vars: impl Iterator<Item = (&'a V, T::UsePosition)>
-        + std::iter::DoubleEndedIterator
+        vars: impl std::iter::DoubleEndedIterator<Item = (&'a V, T::UsePosition)>
         + std::iter::ExactSizeIterator,
     ) {
         for (var, position) in vars.rev() {

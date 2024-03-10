@@ -74,7 +74,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
                 statements.push(rebuilder.rebuild_statement(stmt));
             }
             if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
-                if rebuilder.block_remapping.get(target_block_id).is_none() {
+                if !rebuilder.block_remapping.contains_key(target_block_id) {
                     assert!(
                         rebuilder.rebuild_remapping(remappings).is_empty(),
                         "Remapping should be empty."

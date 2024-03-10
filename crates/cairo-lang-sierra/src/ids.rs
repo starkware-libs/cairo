@@ -1,7 +1,6 @@
 use derivative::Derivative;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use salsa;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;

@@ -22,7 +22,6 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use thiserror::Error;
-use {cairo_lang_casm, cairo_lang_sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;

@@ -38,10 +38,9 @@ use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructL
 use crate::{
     add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
     ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
-    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, ExprLiteral,
-    ExprStringLiteral, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, LocalVariable,
-    MatchArmSelector, Member, Parameter, Pattern, SemanticObject, Signature, TypeId, TypeLongId,
-    ValueSelectorArm,
+    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, FunctionId,
+    FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector, Member,
+    Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
 };
 
 pub mod canonic;
