@@ -1112,7 +1112,7 @@ impl<'a> CairoHintProcessor<'a> {
         let mut res = runner
             .run_function_with_starknet_context(
                 function,
-                &[Arg::Array(calldata)],
+                &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
                 Some(*gas_counter),
                 self.starknet_state.clone(),
             )

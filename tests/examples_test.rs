@@ -343,3 +343,81 @@ fn run_fib_array_len(#[case] n: usize, #[case] last: usize, example_dir_data: &E
         [_, _, actual_last, actual_len] if actual_last == &Felt252::from(last) && actual_len == &Felt252::from(n)
     );
 }
+
+#[rstest]
+fn complex_input_test(example_dir_data: &ExampleDirData) {
+    let runner = SierraCasmRunner::new(
+        checked_compile_to_sierra("complex_input", example_dir_data, false),
+        None,
+        Default::default(),
+        None,
+    )
+    .expect("Failed setting up runner.");
+    let result = runner
+        .run_function_with_starknet_context(
+            // find first
+            runner.find_function("").expect("Failed finding the function."),
+            &[
+                // `felt_input`
+                Arg::Value(Felt252::from(1)),
+                // `felt_arr_input`
+                Arg::Array(vec![Arg::Value(Felt252::from(2)), Arg::Value(Felt252::from(3))]),
+                // `a_input.val.low`
+                Arg::Value(Felt252::from(4)),
+                // `a_input.val.high`
+                Arg::Value(Felt252::from(5)),
+                // `a_input.arr`
+                Arg::Array(vec![
+                    // `a_input.arr[0].low`
+                    Arg::Value(Felt252::from(6)),
+                    // `a_input.arr[0].high`
+                    Arg::Value(Felt252::from(7)),
+                ]),
+                // `a_arr_input`
+                Arg::Array(vec![
+                    // `a_arr_input[0].val.low`
+                    Arg::Value(Felt252::from(8)),
+                    // `a_arr_input[0].val.high`
+                    Arg::Value(Felt252::from(9)),
+                    // `a_arr_input[0].arr`
+                    Arg::Array(vec![
+                        // `a_arr_input[0].arr[0].low`
+                        Arg::Value(Felt252::from(10)),
+                        // `a_arr_input[0].arr[0].high`
+                        Arg::Value(Felt252::from(11)),
+                        // `a_arr_input[0].arr[1].low`
+                        Arg::Value(Felt252::from(12)),
+                        // `a_arr_input[0].arr[1].high`
+                        Arg::Value(Felt252::from(13)),
+                        // `a_arr_input[0].arr[2].low`
+                        Arg::Value(Felt252::from(14)),
+                        // `a_arr_input[0].arr[2].high`
+                        Arg::Value(Felt252::from(15)),
+                    ]),
+                    // `a_arr_input[1].val.low`
+                    Arg::Value(Felt252::from(16)),
+                    // `a_arr_input[1].val.high`
+                    Arg::Value(Felt252::from(17)),
+                    // `a_arr_input[1].arr`
+                    Arg::Array(vec![
+                        // `a_arr_input[1].arr[0].low`
+                        Arg::Value(Felt252::from(18)),
+                        // `a_arr_input[1].arr[0].high`
+                        Arg::Value(Felt252::from(19)),
+                    ]),
+                ]),
+            ],
+            None,
+            Default::default(),
+        )
+        .expect("Failed running the function.");
+    assert_eq!(
+        result.value,
+        RunResultValue::Success(vec![
+            // `r.low`
+            Felt252::from(1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18),
+            // `r.high`
+            Felt252::from(5 + 7 + 9 + 11 + 13 + 15 + 17 + 19)
+        ])
+    );
+}
