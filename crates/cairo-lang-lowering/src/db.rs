@@ -728,7 +728,8 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .unwrap()
                     .into_iter()
                     .map(|variant| db.type_size(variant.ty))
-                    .sum::<usize>()
+                    .max()
+                    .unwrap_or_default()
             }
             ConcreteTypeId::Extern(extern_id) => {
                 match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
