@@ -1,14 +1,20 @@
+use std::collections::HashMap;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{extract_matches, Upcast};
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use semantic::test_utils::setup_test_module_ex;
 
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
@@ -148,4 +154,57 @@ a = a * 3
 
 "}
     );
+}
+
+#[test]
+fn test_sizes() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let type_to_size = [
+        ("u8", 1),
+        ("u256", 2),
+        ("felt252", 1),
+        ("()", 0),
+        ("(u8, u16)", 2),
+        ("(u8, u256, u32)", 4),
+        ("Array<u8>", 2),
+        ("Array<u256>", 2),
+        ("Array<felt252>", 2),
+        ("Result<(), ()>", 1),
+        ("Result<(), u16>", 2),
+        ("Result<(), u256>", 3),
+        ("Result<u8, ()>", 2),
+        ("Result<u8, u16>", 2),
+        ("Result<u8, u256>", 3),
+        ("Result<u256, ()>", 3),
+        ("Result<u256, u16>", 3),
+        ("Result<u256, u256>", 3),
+        ("[u256; 10]", 20),
+        ("[felt252; 7]", 7),
+        ("@[felt252; 7]", 7),
+        ("core::cmp::min::<u8>::Coupon", 0),
+    ];
+
+    let test_module = setup_test_module_ex(
+        db,
+        &type_to_size
+            .iter()
+            .enumerate()
+            .map(|(i, (ty_str, _))| format!("type T{i} = {ty_str};\n"))
+            .join(""),
+        None,
+    )
+    .unwrap();
+    let db: &LoweringDatabaseForTesting = db;
+    let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();
+    assert_eq!(type_aliases.len(), type_to_size.len());
+    let alias_expected_size = HashMap::<_, _>::from_iter(
+        type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),
+    );
+    for (alias_id, alias) in type_aliases.iter() {
+        let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
+        let size = db.type_size(ty);
+        let alias_name = alias.name(db.upcast()).text(db.upcast());
+        let expected_size = alias_expected_size[alias_name.as_str()];
+        assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db.upcast()));
+    }
 }
