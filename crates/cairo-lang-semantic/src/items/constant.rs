@@ -26,14 +26,15 @@ use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment, ExprAndId};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::InferenceId;
+use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
-    ConcreteVariant, Expr, ExprBlock, ExprFunctionCall, ExprFunctionCallArg, ExprId,
-    ExprMemberAccess, ExprStructCtor, FunctionId, SemanticDiagnostic, TypeId,
+    semantic_object_for_id, ConcreteVariant, Expr, ExprBlock, ExprFunctionCall,
+    ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor, FunctionId, SemanticDiagnostic,
+    TypeId,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -64,6 +65,7 @@ pub struct ConstantData {
 }
 
 define_short_id!(ConstValueId, ConstValue, SemanticGroup, lookup_intern_const_value);
+semantic_object_for_id!(ConstValueId, lookup_intern_const_value, intern_const_value, ConstValue);
 impl ConstValueId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         format!("{:?}", db.lookup_intern_const_value(*self).debug(db.elongate()))
@@ -79,6 +81,7 @@ pub enum ConstValue {
     NonZero(TypeId, Box<ConstValue>),
     Boxed(TypeId, Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
+    Var(ConstVar),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
 }

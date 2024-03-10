@@ -3,6 +3,7 @@ use itertools::zip_eq;
 use super::canonic::ResultNoErrEx;
 use super::{Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
 use crate::substitution::SemanticRewriter;
@@ -21,6 +22,11 @@ pub trait InferenceConform {
         ty1: TypeId,
         ty0_is_self: bool,
     ) -> Result<(TypeId, usize), InferenceError>;
+    fn conform_const(
+        &mut self,
+        ty0: ConstValueId,
+        ty1: ConstValueId,
+    ) -> Result<ConstValueId, InferenceError>;
     fn maybe_peel_snapshots(&mut self, ty0_is_self: bool, ty1: TypeId) -> (usize, TypeLongId);
     fn conform_generic_args(
         &mut self,
@@ -184,6 +190,36 @@ impl<'db> InferenceConform for Inference<'db> {
         }
     }
 
+    /// Same as conform_ty but supports adding snapshots to ty0 if `ty0_is_self` is true.
+    /// Returns the reduced type for ty0 and the number of snapshots that needs to be added
+    /// for the types to conform.
+    fn conform_const(
+        &mut self,
+        id0: ConstValueId,
+        id1: ConstValueId,
+    ) -> Result<ConstValueId, InferenceError> {
+        let id0 = self.rewrite(id0).no_err();
+        let id1 = self.rewrite(id1).no_err();
+        if id0 == id1 {
+            return Ok(id0);
+        }
+        let const_value0 = self.db.lookup_intern_const_value(id0);
+        if matches!(const_value0, ConstValue::Missing(_)) {
+            return Ok(id1);
+        }
+        match self.db.lookup_intern_const_value(id1) {
+            ConstValue::Missing(_) => return Ok(id1),
+            ConstValue::Var(var) => return self.assign_const(var, id0),
+            _ => {}
+        }
+
+        match const_value0 {
+            ConstValue::Var(var) => Ok(self.assign_const(var, id1)?),
+
+            _ => Err(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }),
+        }
+    }
+
     // Conditionally peels snapshots.
     fn maybe_peel_snapshots(&mut self, ty0_is_self: bool, ty1: TypeId) -> (usize, TypeLongId) {
         let (n_snapshots, long_ty1) = if ty0_is_self {
@@ -221,8 +257,12 @@ impl<'db> InferenceConform for Inference<'db> {
                 };
                 Ok(GenericArgumentId::Type(self.conform_ty(gty0, gty1)?))
             }
-            GenericArgumentId::Constant(_) => {
-                Err(InferenceError::GenericArgMismatch { garg0, garg1 })
+            GenericArgumentId::Constant(gc0) => {
+                let GenericArgumentId::Constant(gc1) = garg1 else {
+                    return Err(InferenceError::GenericArgMismatch { garg0, garg1 });
+                };
+
+                Ok(GenericArgumentId::Constant(self.conform_const(gc0, gc1)?))
             }
             GenericArgumentId::Impl(impl0) => {
                 let GenericArgumentId::Impl(impl1) = garg1 else {

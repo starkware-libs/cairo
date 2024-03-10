@@ -25,7 +25,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
-use crate::items::constant::ConstValueId;
+use crate::items::constant::{ConstValue, ConstValueId};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -55,6 +55,14 @@ pub mod solver;
 pub struct TypeVar {
     pub inference_id: InferenceId,
     pub id: LocalTypeVarId,
+}
+
+/// A type variable, created when a generic type argument is not passed, and thus is not known
+/// yet and needs to be inferred.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ConstVar {
+    pub inference_id: InferenceId,
+    pub id: LocalConstVarId,
 }
 
 /// An id for an inference context. Each inference variable is associated with an inference id.
@@ -96,6 +104,9 @@ pub struct LocalTypeVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject)]
 pub struct LocalImplVarId(pub usize);
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject)]
+pub struct LocalConstVarId(pub usize);
+
 define_short_id!(ImplVarId, ImplVar, SemanticGroup, lookup_intern_impl_var);
 impl ImplVarId {
     pub fn get(&self, db: &dyn SemanticGroup) -> ImplVar {
@@ -116,6 +127,7 @@ semantic_object_for_id!(ImplVarId, lookup_intern_impl_var, intern_impl_var, Impl
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject)]
 pub enum InferenceVar {
     Type(LocalTypeVarId),
+    Const(LocalConstVarId),
     Impl(LocalImplVarId),
 }
 
@@ -125,6 +137,7 @@ pub enum InferenceError {
     Failed(DiagnosticAdded),
     Cycle { var: InferenceVar },
     TypeKindMismatch { ty0: TypeId, ty1: TypeId },
+    ConstKindMismatch { const0: ConstValueId, const1: ConstValueId },
     ImplKindMismatch { impl0: ImplId, impl1: ImplId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
     TraitMismatch { trt0: TraitId, trt1: TraitId },
@@ -144,6 +157,9 @@ impl InferenceError {
             InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
                 format!("Type mismatch: `{:?}` and `{:?}`", ty0.debug(db), ty1.debug(db))
+            }
+            InferenceError::ConstKindMismatch { const0, const1 } => {
+                format!("Const mismatch: `{:?}` and `{:?}`", const0.debug(db), const1.debug(db))
             }
             InferenceError::ImplKindMismatch { impl0, impl1 } => {
                 format!("Impl mismatch: `{:?}` and `{:?}`", impl0.debug(db), impl1.debug(db))
@@ -228,10 +244,12 @@ pub struct InferenceData {
     pub inference_id: InferenceId,
     /// Current inferred assignment for type variables.
     pub type_assignment: HashMap<LocalTypeVarId, TypeId>,
+    pub const_assignment: HashMap<LocalConstVarId, ConstValueId>,
     /// Current inferred assignment for impl variables.
     pub impl_assignment: HashMap<LocalImplVarId, ImplId>,
     /// Type variables.
     pub type_vars: Vec<TypeVar>,
+    pub const_vars: Vec<ConstVar>,
     /// Impl variables.
     pub impl_vars: Vec<ImplVar>,
     /// Mapping from variables to stable pointers, if exist.
@@ -252,8 +270,10 @@ impl InferenceData {
             inference_id,
             type_assignment: HashMap::new(),
             impl_assignment: HashMap::new(),
+            const_assignment: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
+            const_vars: Vec::new(),
             stable_ptrs: HashMap::new(),
             pending: VecDeque::new(),
             refuted: Vec::new(),
@@ -274,8 +294,10 @@ impl InferenceData {
         Self {
             inference_id,
             type_assignment: inference_id_replacer.rewrite(self.type_assignment.clone()).no_err(),
+            const_assignment: inference_id_replacer.rewrite(self.const_assignment.clone()).no_err(),
             impl_assignment: inference_id_replacer.rewrite(self.impl_assignment.clone()).no_err(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
+            const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
             stable_ptrs: self.stable_ptrs.clone(),
             pending: inference_id_replacer.rewrite(self.pending.clone()).no_err(),
@@ -288,8 +310,10 @@ impl InferenceData {
         Self {
             inference_id: self.inference_id,
             type_assignment: self.type_assignment.clone(),
+            const_assignment: self.const_assignment.clone(),
             impl_assignment: self.impl_assignment.clone(),
             type_vars: self.type_vars.clone(),
+            const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
             stable_ptrs: self.stable_ptrs.clone(),
             pending: self.pending.clone(),
@@ -356,6 +380,27 @@ impl<'db> Inference<'db> {
             self.stable_ptrs.insert(InferenceVar::Type(var.id), stable_ptr);
         }
         self.type_vars.push(var);
+        var
+    }
+
+    /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
+    /// Returns a wrapping TypeId.
+    pub fn new_const_var(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstValueId {
+        let var = self.new_const_var_raw(stable_ptr);
+        self.db.intern_const_value(ConstValue::Var(var))
+    }
+
+    /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
+    /// Returns the variable id.
+    pub fn new_const_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> ConstVar {
+        let var = ConstVar {
+            inference_id: self.inference_id,
+            id: LocalConstVarId(self.const_vars.len()),
+        };
+        if let Some(stable_ptr) = stable_ptr {
+            self.stable_ptrs.insert(InferenceVar::Const(var.id), stable_ptr);
+        }
+        self.const_vars.push(var);
         var
     }
 
@@ -569,6 +614,20 @@ impl<'db> Inference<'db> {
         Ok(ty)
     }
 
+    /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
+    /// Assumes the variable is not already assigned.
+    fn assign_const(&mut self, var: ConstVar, id: ConstValueId) -> InferenceResult<ConstValueId> {
+        if var.inference_id != self.inference_id {
+            return Err(InferenceError::ConstKindMismatch {
+                const0: self.db.intern_const_value(ConstValue::Var(var)),
+                const1: id,
+            });
+        }
+
+        self.const_assignment.insert(var.id, id);
+        Ok(id)
+    }
+
     /// Computes the solution set for an impl variable with a recursive query.
     fn impl_var_solution_set(
         &mut self,
@@ -613,6 +672,14 @@ impl<'db> Inference<'db> {
             Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
                 // Don't try to infer such impls.
                 return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer { concrete_trait_id }));
+            }
+            Some(GenericArgumentId::Constant(const_value)) => {
+                if let ConstValue::Var(_) = self.db.lookup_intern_const_value(*const_value) {
+                    // Don't try to infer such impls.
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
+                        concrete_trait_id,
+                    }));
+                }
             }
             _ => {}
         };
@@ -694,7 +761,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId);
+add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId ConstValue);
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
@@ -702,6 +769,16 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
         if let TypeLongId::Var(var) = value {
             if let Some(type_id) = self.type_assignment.get(&var.id) {
                 return self.rewrite(self.db.lookup_intern_type(*type_id));
+            }
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
+    fn rewrite(&mut self, value: ConstValue) -> Result<ConstValue, NoError> {
+        if let ConstValue::Var(var) = value {
+            if let Some(const_value_id) = self.const_assignment.get(&var.id) {
+                return self.rewrite(self.db.lookup_intern_const_value(*const_value_id));
             }
         }
         value.default_rewrite(self)
