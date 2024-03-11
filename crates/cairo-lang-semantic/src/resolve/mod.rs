@@ -499,29 +499,36 @@ impl<'db> Resolver<'db> {
     fn resolve_path_next_segment_concrete(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        item: &ResolvedConcreteItem,
+        containing_item: &ResolvedConcreteItem,
         identifier: &ast::TerminalIdentifier,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-        match item {
+        match containing_item {
             ResolvedConcreteItem::Module(module_id) => {
+                // Prefix "super" segments should be removed earlier. Middle "super" segments are
+                // not allowed.
                 if ident == "super" {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
-                let item_info = self
+                let inner_item_info = self
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
-                let generic_item =
-                    ResolvedGenericItem::from_module_item(self.db, item_info.item_id)?;
+                self.validate_item_visibility(
+                    diagnostics,
+                    *module_id,
+                    identifier,
+                    &inner_item_info,
+                );
+                let inner_generic_item =
+                    ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
-                    generic_item,
+                    inner_generic_item,
                     generic_args_syntax,
                 )?)
             }
@@ -705,20 +712,25 @@ impl<'db> Resolver<'db> {
     fn resolve_path_next_segment_generic(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        item: &ResolvedGenericItem,
+        containing_item: &ResolvedGenericItem,
         identifier: &ast::TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedGenericItem> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-        match item {
+        match containing_item {
             ResolvedGenericItem::Module(module_id) => {
-                let item_info = self
+                let inner_item_info = self
                     .db
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.validate_item_visibility(diagnostics, *module_id, identifier, &item_info);
-                ResolvedGenericItem::from_module_item(self.db, item_info.item_id)
+                self.validate_item_visibility(
+                    diagnostics,
+                    *module_id,
+                    identifier,
+                    &inner_item_info,
+                );
+                ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
