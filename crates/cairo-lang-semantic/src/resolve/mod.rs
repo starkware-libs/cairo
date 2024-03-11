@@ -243,8 +243,7 @@ impl<'db> Resolver<'db> {
             (callbacks.resolve_path_first_segment)(self, diagnostics, &mut segments)?;
 
         // Follow modules.
-        while segments.peek().is_some() {
-            let segment = segments.next().unwrap();
+        while let Some(segment) = segments.next() {
             (callbacks.validate_segment)(diagnostics, segment)?;
             let identifier = segment.identifier_ast(syntax_db);
             let generic_args = segment.generic_args(syntax_db);
