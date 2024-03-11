@@ -222,6 +222,19 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
         }
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for GenericFunctionId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            GenericFunctionId::Free(func) => write!(f, "{:?}", func.debug(db)),
+            GenericFunctionId::Extern(func) => write!(f, "{:?}", func.debug(db)),
+            GenericFunctionId::Impl(func) => write!(f, "{:?}", func.debug(db)),
+        }
+    }
+}
 
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.

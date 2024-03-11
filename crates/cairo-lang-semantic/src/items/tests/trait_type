@@ -650,7 +650,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(897)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(653)::AnotherType`.
  --> lib.cairo:9:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -660,7 +660,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(897)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(653)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:9:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -670,7 +670,7 @@ error: Trait has no implementation in context: test::AnotherTrait
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(899)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(666)::AnotherType`.
  --> lib.cairo:10:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -690,7 +690,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(900)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(667)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:12:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -710,7 +710,7 @@ error: Trait has no implementation in context: test::AnotherTrait
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(904)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(678)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^
@@ -762,7 +762,7 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(905)::AnotherType`.
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(900)::AnotherType`.
  --> lib.cairo:15:18
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                  ^***********************^
@@ -772,7 +772,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(905)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(900)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:15:44
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                            ^*******^
@@ -782,7 +782,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
     fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
                                ^*********^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(907)::AnotherType`.
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(902)::AnotherType`.
  --> lib.cairo:16:16
     fn foo2(x: AnotherTrait::AnotherType) {}
                ^***********************^
@@ -802,7 +802,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                            ^*********^
 
-error: Unexpected return type. Expected: "ImplVarId(908)::AnotherType", found: "core::integer::u32".
+error: Unexpected return type. Expected: "ImplVarId(903)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:18:40
 fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
                                        ^*******^
@@ -822,7 +822,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^*********^
 
-error: Unexpected argument type. Expected: "ImplVarId(912)::AnotherType", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "ImplVarId(907)::AnotherType", found: "core::integer::u32".
  --> lib.cairo:21:40
     let _: AnotherTrait::AnotherType = 3_u32;
                                        ^***^

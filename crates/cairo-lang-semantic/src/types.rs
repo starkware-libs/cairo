@@ -30,6 +30,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitTypeLongId;
+use crate::lookup_item::HasResolverData;
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
@@ -179,9 +180,11 @@ pub fn reduce_impl_type_if_possible(
     trait_or_impl_context: TraitOrImplContext,
     resolver: &mut Resolver,
 ) -> Maybe<TypeId> {
+    println!("yg1 reduce_impl_type_if_possible1 type: {:?}", type_to_reduce.debug(db.elongate()));
     // First, reduce if already inferred.
     let mut inference = resolver.inference();
     let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
+    println!("yg1 reduce_impl_type_if_possible2 type: {:?}", type_to_reduce.debug(db.elongate()));
 
     // Then, reduce recursively.
     let mut long_ty = type_to_reduce.lookup(db);
@@ -220,35 +223,72 @@ pub fn reduce_impl_type_if_possible(
                                             * right behavior? */
     }
     let type_to_reduce = db.intern_type(long_ty);
+    println!("yg1 reduce_impl_type_if_possible3 type: {:?}", type_to_reduce.debug(db.elongate()));
 
     // Finally, reduce the impl type itself, if possible.
 
     let TypeLongId::ImplType(mut impl_type_id) = db.lookup_intern_type(type_to_reduce) else {
         // Nothing to implize.
+        println!("yg1 returning 3.5 original type: {:?}", type_to_reduce.debug(db.elongate()));
         return Ok(type_to_reduce);
     };
+    println!("yg1 reduce_impl_type_if_possible4 type: {:?}", impl_type_id.debug(db.elongate()));
 
     // TODO(yg): fix doc.
     // Try to implize an impl type if it's an ImplVar.
     // println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
+    // let mut resolver = yg_get_resolver(impl_type_id)?;
     impl_type_id = reduce_trait_impl_type(db, impl_type_id, resolver);
     // println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
 
+    println!("yg1 reduce_impl_type_if_possible5 type: {:?}", impl_type_id.debug(db.elongate()));
+
     // Try to implize by the concrete impl type if it is concrete.
     if let Some(ty) = reduce_concrete_impl_type(db, impl_type_id)? {
-        println!("yg returning type: {:?}", ty.format(db));
+        println!("yg1 returning 6.5 type: {:?}", ty.format(db));
         return Ok(ty);
     }
+
+    println!("yg1 reduce_impl_type_if_possible6 type: {:?}", impl_type_id.debug(db.elongate()));
+
     // Try to implize by the impl context, if given.
     if let TraitOrImplContext::Impl { impl_def_id } = trait_or_impl_context {
         if let Some(ty) = reduce_in_impl_context(db, impl_type_id, impl_def_id)? {
+            println!("yg1 returning 6.5 type: {:?}", ty.format(db));
             return Ok(ty);
         }
     }
 
+    println!("yg1 reduce_impl_type_if_possible7 type: {:?}", impl_type_id.debug(db.elongate()));
+
     // Could not reduce.
     Ok(type_to_reduce)
 }
+
+// fn yg_get_resolver(db: &dyn SemanticGroup, impl_type_id: ImplTypeId) -> Maybe<Option<Resolver>> {
+//     match impl_type_id.impl_id {
+//         ImplId::Concrete(concrete_impl_id) => {
+//             let Some(impl_type_def) = impl_type_id.impl_type_def(db)? else {
+//                 return Ok(None);
+//             };
+
+//         }
+//         ImplId::GenericParameter(_) => todo!(),
+//         ImplId::ImplVar(_) => Ok(None),
+//     };
+
+//     let impl_def_id = impl_type_def.impl_def_id(db.upcast());
+//     println!("yg1 bla impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
+//     println!("yg1 bla impl_type_id.impl_id: {:?}", impl_type_id.impl_id.debug(db.elongate()));
+//     let inference_id = if let ImplId::ImplVar(impl_var) = impl_type_id.impl_id {
+//         impl_var.get(db).inference_id
+//     } else {
+//         InferenceId::Canonical
+//     };
+
+//     let resolver_data = impl_def_id.resolver_data(db)?.clone_with_inference_id(db, inference_id);
+//     Resolver::with_data(db, resolver_data)
+// }
 
 // TODO(yg): doc.
 fn reduce_in_impl_context(
@@ -272,11 +312,14 @@ fn reduce_concrete_impl_type(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
 ) -> Maybe<Option<TypeId>> {
+    println!("yg1 impl_type_id {:?}", impl_type_id.debug(db.elongate()));
     let crate::items::imp::ImplId::Concrete(concrete_impl) = impl_type_id.impl_id else {
         return Ok(None);
     };
+    println!("yg1 concrete, concrete_impl {:?}", concrete_impl.debug(db.elongate()));
 
     let impl_def_id = concrete_impl.impl_def_id(db);
+    println!("yg1 impl_def_id {:?}", impl_def_id.debug(db.elongate()));
     reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
@@ -298,7 +341,6 @@ fn reduce_trait_impl_type(
     inference.solve().unwrap();
     let impl_id = inference.rewrite(impl_id).unwrap();
 
-    // TODO(yg): why do I get NumericLiteralu32??? I don't get it with the first line!
     println!("yg impl_id after: {:?}", impl_id.debug(db.elongate()));
     ImplTypeId { impl_id, ty }
 

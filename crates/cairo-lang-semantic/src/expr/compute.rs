@@ -57,13 +57,15 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::expr::inference::InferenceId;
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{filter_candidate_traits, infer_impl_by_self, ImplId};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
+use crate::lookup_item::HasResolverData;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
@@ -2482,7 +2484,7 @@ fn expr_function_call(
         }
     }
 
-    let signature = get_function_implized_signature(ctx.db, function_id, &mut ctx.resolver)?;
+    let signature = get_function_implized_signature(ctx.db, function_id)?;
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -2562,7 +2564,6 @@ fn expr_function_call(
 fn get_function_implized_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
-    resolver: &mut Resolver,
 ) -> Maybe<Signature> {
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let mut signature = db.concrete_function_signature(function_id)?;
@@ -2571,20 +2572,44 @@ fn get_function_implized_signature(
 
     // TODO(yg): export to a function? Maybe query...
     // If the generic function is a concrete impl function, add impl_def_id as context.
-    let impl_ctx = if let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) =
-        generic_function
-    {
-        if let Some(impl_function) = impl_generic_function.impl_function(db)? {
-            TraitOrImplContext::Impl { impl_def_id: impl_function.impl_def_id(db.upcast()) }
-        } else {
-            TraitOrImplContext::None
-        }
-    } else {
-        TraitOrImplContext::None
+    println!("yg1 generic_function: {:?}", generic_function.debug(db.elongate()));
+    let crate::items::functions::GenericFunctionId::Impl(impl_generic_function) = generic_function
+    else {
+        return Ok(signature);
     };
 
-    // Implize the signature in the context of the concrete function impl.
-    implize_signature(db, &mut signature, resolver, impl_ctx)?;
+    let Some(impl_function) = impl_generic_function.impl_function(db)? else {
+        return Ok(signature);
+    };
+
+    // TODO(yg): add debugWithDb to TraitOrImplContext?
+    let impl_def_id = impl_function.impl_def_id(db.upcast());
+    let impl_ctx = TraitOrImplContext::Impl { impl_def_id };
+    println!("yg1 impl_def_id: {:?}", impl_def_id.debug(db.elongate()));
+    println!(
+        "yg2 impl_generic_function.impl_id: {:?}",
+        impl_generic_function.impl_id.debug(db.elongate())
+    );
+    // let inference_id = if let ImplId::ImplVar(impl_var) = impl_generic_function.impl_id {
+    //     // TODO(yg): remove.
+    //     panic!();
+    //     // impl_var.get(db).inference_id
+    // } else {
+    //     // TODO(yg): remove.
+    //     // panic!();
+    //     InferenceId::NoContext
+    // };
+
+    // TODO(yg): ResolverData::clone()
+    // let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
+    // let mut temp_inference = temp_inference_data.inference(ctx.db);
+
+    let resolver_data = impl_def_id.resolver_data(db)?;
+    let inference_id = resolver_data.inference_data.inference_id;
+    let resolver_data = resolver_data.clone_with_inference_id(db, inference_id);
+    let mut resolver = Resolver::with_data(db, resolver_data);
+
+    implize_signature(db, &mut signature, &mut resolver, impl_ctx)?;
     Ok(signature)
 }
 
@@ -2596,7 +2621,9 @@ pub fn implize_signature(
     impl_ctx: TraitOrImplContext,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
+        println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
         param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, resolver)?;
+        println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
     signature.return_type =
         reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, resolver)?;

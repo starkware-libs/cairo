@@ -153,6 +153,7 @@ impl DerefMut for Resolver<'_> {
     }
 }
 
+// TODO(yg): move up in a separate pr.
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;

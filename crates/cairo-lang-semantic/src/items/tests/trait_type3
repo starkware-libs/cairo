@@ -1,0 +1,103 @@
+//! > traits' items can't be resolved if there is no impl in context.
+
+//! > TODO(yuval): try to eliminate redundant diagnostics.
+
+//! > TODO(yuval): try to change "ImplVarId(#)::..." in diagnostics to "<missing>".
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    type AnotherType;
+}
+trait MyTrait {
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+    fn foo2(x: AnotherTrait::AnotherType) {}
+}
+fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
+fn bar2(x: AnotherTrait::AnotherType) {}
+fn bar3() {
+    let _: AnotherTrait::AnotherType = 3_u32;
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `ImplVarId(653)::AnotherType`.
+ --> lib.cairo:9:18
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+                 ^***********************^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:9:32
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+                               ^*********^
+
+error: Unexpected return type. Expected: "ImplVarId(653)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:9:44
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+                                           ^*******^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:9:32
+    fn foo1() -> AnotherTrait::AnotherType { 3_u32 }
+                               ^*********^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `ImplVarId(666)::AnotherType`.
+ --> lib.cairo:10:16
+    fn foo2(x: AnotherTrait::AnotherType) {}
+               ^***********************^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:10:30
+    fn foo2(x: AnotherTrait::AnotherType) {}
+                             ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:10:30
+    fn foo2(x: AnotherTrait::AnotherType) {}
+                             ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:12:28
+fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
+                           ^*********^
+
+error: Unexpected return type. Expected: "ImplVarId(667)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:12:40
+fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
+                                       ^*******^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:12:28
+fn bar1() -> AnotherTrait::AnotherType { 3_u32 }
+                           ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:13:26
+fn bar2(x: AnotherTrait::AnotherType) {}
+                         ^*********^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:13:26
+fn bar2(x: AnotherTrait::AnotherType) {}
+                         ^*********^
+
+error: Unexpected argument type. Expected: "ImplVarId(678)::AnotherType", found: "core::integer::u32".
+ --> lib.cairo:15:40
+    let _: AnotherTrait::AnotherType = 3_u32;
+                                       ^***^
+
+error: Trait has no implementation in context: test::AnotherTrait
+ --> lib.cairo:15:26
+    let _: AnotherTrait::AnotherType = 3_u32;
+                         ^*********^

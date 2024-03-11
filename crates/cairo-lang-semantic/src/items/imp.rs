@@ -539,6 +539,19 @@ pub fn impl_type_by_id(
     Ok(impl_types.get(&impl_type_id).cloned())
 }
 
+// TODO(yg): remove/ separate pr.
+macro_rules! debug_assert_eq {
+    ($lhs:expr, $rhs:expr, $db:expr) => {
+        if $lhs != $rhs {
+            panic!(
+                "Assertion: `left == right` failed:\n  left: {:?}\n right: {:?}",
+                $lhs.debug($db.elongate()),
+                $rhs.debug($db.elongate())
+            );
+        }
+    };
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_type_by_trait_type].
 pub fn impl_type_by_trait_type(
     db: &dyn SemanticGroup,

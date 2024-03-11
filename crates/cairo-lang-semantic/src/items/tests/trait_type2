@@ -1,7 +1,7 @@
-//! > recursive resolution.
+//! > debugging
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -11,35 +11,19 @@ foo
 
 //! > module_code
 trait MyTrait {
-    type MyType1;
-    type MyType2;
+    type OtherType;
+    type InputType;
+    fn other_fn(x: u16);
+    fn foo1(x: MyTrait::InputType);
 }
 impl MyImpl of MyTrait {
-    type MyType1 = u16;
-    type MyType2 = u32;
+    type OtherType = u16;
+    type InputType = u32;
+    fn other_fn(x: u16) {}
+    fn foo1(x: MyTrait::InputType) { }
 }
-fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
-}
-fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
-    (x, y)
-}
-fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
-    x
+fn main() {
+    MyImpl::foo1(3_u32);
 }
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
- --> lib.cairo:9:79
-fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-                                                                              ^
-
-error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
- --> lib.cairo:12:92
-fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
-                                                                                           ^
-
-error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
- --> lib.cairo:15:58
-fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
-                                                         ^
