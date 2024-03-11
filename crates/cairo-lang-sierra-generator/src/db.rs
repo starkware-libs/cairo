@@ -13,8 +13,9 @@ use semantic::items::imp::ImplLookupContext;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
+use crate::replace_ids::SierraIdReplacer;
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{ap_change, function_generator, pre_sierra};
+use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
 /// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.
 /// This is required for cases where the type long id is self referential.
@@ -203,7 +204,11 @@ fn get_type_info(
         &long_id.generic_id,
         &long_id.generic_args,
     )
-    .expect("Got failure while specializing type.");
+    .unwrap_or_else(|err| {
+        let mut long_id = long_id.as_ref().clone();
+        replace_ids::DebugReplacer { db }.replace_generic_args(&mut long_id.generic_args);
+        panic!("Got failure while specializing type `{long_id}`: {err}")
+    });
     Ok(Arc::new(concrete_ty.info().clone()))
 }
 
