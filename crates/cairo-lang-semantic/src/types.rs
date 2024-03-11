@@ -444,6 +444,7 @@ pub fn extract_fixed_size_array_size(
             );
             match &const_value {
                 ConstValue::Int(_) => Ok(Some(db.intern_const_value(const_value))),
+                ConstValue::Generic(_) => Ok(Some(db.intern_const_value(const_value))),
 
                 _ => Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize)),
             }

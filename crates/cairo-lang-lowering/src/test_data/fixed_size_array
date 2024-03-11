@@ -13,8 +13,6 @@ fn foo() {
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[felt252; 3]>;
-
 #[inline(never)]
 fn bar(x: [felt252; 3]) {
     let _y = x;
@@ -52,8 +50,6 @@ fn foo() -> [felt252; 3]{
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[felt252; 3]>;
-
 #[inline(never)]
 fn get_10() -> felt252 {
     10
@@ -96,7 +92,6 @@ fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3]{
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[MyStruct; 3]>;
 #[derive(Drop, Copy)]
 struct MyStruct {
     x: felt252,
@@ -142,7 +137,6 @@ fn foo() -> [MyStruct; 3] {
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[MyStruct; 3]>;
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
@@ -152,7 +146,7 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
- --> lib.cairo:7:5
+ --> lib.cairo:6:5
     [MyStruct { x: 10 }; 3]
     ^*********************^
 
@@ -178,7 +172,6 @@ fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3]{
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[MyStruct; 3]>;
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
@@ -198,7 +191,7 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
 
 //! > lowering_diagnostics
 error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
- --> lib.cairo:20:5
+ --> lib.cairo:19:5
     [CtorTrait::<T>::new(); 3]
     ^************************^
 
@@ -206,7 +199,7 @@ error: Fixed size array inner type must implement the `Copy` trait when the arra
 Parameters:
 blk0 (root):
 Statements:
-  (v0: [test::MyStruct; 3]) <- test::foo_ex::<test::MyStruct, test::FixedArrayDrop, test::CtorMyStruct>()
+  (v0: [test::MyStruct; 3]) <- test::foo_ex::<test::MyStruct, core::traits::FixedArrayDrop::<test::MyStruct, test::MyStructDrop, 3>, test::CtorMyStruct>()
 End:
   Return(v0)
 
@@ -226,8 +219,6 @@ fn foo() -> [MyStruct; 1] {
 foo
 
 //! > module_code
-impl FixedArrayDrop of Drop::<[MyStruct; 1]>;
-
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
