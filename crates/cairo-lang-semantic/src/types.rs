@@ -25,7 +25,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::expr::inference::{Inference, InferenceData, InferenceId, InferenceResult, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
 use crate::items::imp::{ImplId, ImplLookupContext};
@@ -171,18 +171,26 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-// TODO(yg): doc.
+// TODO(yg): doc. note tmp_inference may change. Consider passing a temporary clone to avoid
+// affecting the original inference.
+// TODO(yg): consider cloning in inference in all callsites.
 /// `trait_or_impl_context` is the context we're at. That is, if we're inside an impl function, the
 /// wrapping impl is the context here.
 pub fn reduce_impl_type_if_possible(
     db: &dyn SemanticGroup,
     type_to_reduce: TypeId,
+    // TODO(yg): consider separate contexts for self:: and MyImpl::foo(param to resolve). Also
+    // pass ::None when this is the right thing to do...
     trait_or_impl_context: TraitOrImplContext,
-    resolver: &mut Resolver,
+    inference: &mut Inference,
 ) -> Maybe<TypeId> {
+    // TODO(yg): don't unwrap.
+    // Make sure the inference is solved. This function doesn't add new inference data, only uses
+    // the existing data.
+    // inference.solve().unwrap();
+
     println!("yg1 reduce_impl_type_if_possible1 type: {:?}", type_to_reduce.debug(db.elongate()));
     // First, reduce if already inferred.
-    let mut inference = resolver.inference();
     let type_to_reduce = inference.rewrite(type_to_reduce).unwrap();
     println!("yg1 reduce_impl_type_if_possible2 type: {:?}", type_to_reduce.debug(db.elongate()));
 
@@ -199,7 +207,7 @@ pub fn reduce_impl_type_if_possible(
                     db,
                     *generic_arg_type,
                     trait_or_impl_context,
-                    resolver,
+                    inference,
                 )?;
                 *generic_arg = GenericArgumentId::Type(*generic_arg_type);
             }
@@ -207,11 +215,11 @@ pub fn reduce_impl_type_if_possible(
         }
         TypeLongId::Tuple(types) => {
             for ty in types.iter_mut() {
-                *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, resolver)?;
+                *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, inference)?;
             }
         }
         TypeLongId::Snapshot(ty) => {
-            *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, resolver)?
+            *ty = reduce_impl_type_if_possible(db, *ty, trait_or_impl_context, inference)?
         }
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
@@ -238,7 +246,7 @@ pub fn reduce_impl_type_if_possible(
     // Try to implize an impl type if it's an ImplVar.
     // println!("yg reduce_if_possible before resolving: {:?}", impl_type_id);
     // let mut resolver = yg_get_resolver(impl_type_id)?;
-    impl_type_id = reduce_trait_impl_type(db, impl_type_id, resolver);
+    impl_type_id = reduce_trait_impl_type(db, impl_type_id, inference);
     // println!("yg reduce_if_possible after resolving: {:?}", impl_type_id);
 
     println!("yg1 reduce_impl_type_if_possible5 type: {:?}", impl_type_id.debug(db.elongate()));
@@ -323,11 +331,12 @@ fn reduce_concrete_impl_type(
     reduce_in_impl_context(db, impl_type_id, impl_def_id)
 }
 
-// TODO(yg): rename, fix doc, tidy up.
+// TODO(yg): rename, fix doc, tidy up. Assumes the given inference is `solve()`ed.
+// TODO(yg): consider a SolvedInference/ReadOnlyInference type to relax this assumption.
 fn reduce_trait_impl_type(
     db: &dyn SemanticGroup,
     impl_type_id: ImplTypeId,
-    resolver: &mut Resolver,
+    inference: &mut Inference,
 ) -> ImplTypeId {
     let ImplTypeId { impl_id, ty } = impl_type_id;
     // TODO(yg): matches.
@@ -336,7 +345,6 @@ fn reduce_trait_impl_type(
         return impl_type_id;
     };
 
-    let mut inference = resolver.inference();
     println!("yg impl_id before: {:?}", impl_id.debug(db.elongate()));
     inference.solve().unwrap();
     let impl_id = inference.rewrite(impl_id).unwrap();

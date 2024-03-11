@@ -57,7 +57,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, TraitInferenceErrors,
     UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::expr::inference::InferenceId;
+use crate::expr::inference::{self, InferenceId};
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self, ImplId};
@@ -220,7 +220,7 @@ impl<'ctx> ComputationContext<'ctx> {
             self.db,
             type_to_reduce,
             self.resolver.data.trait_or_impl_ctx,
-            &mut self.resolver,
+            &mut self.resolver.inference(),
         )
     }
 }
@@ -2601,32 +2601,33 @@ fn get_function_implized_signature(
     // };
 
     // TODO(yg): ResolverData::clone()
-    // let mut temp_inference_data = ctx.resolver.data.inference_data.temporary_clone();
-    // let mut temp_inference = temp_inference_data.inference(ctx.db);
+    // let resolver_data = impl_def_id.resolver_data(db)?;
+    // let inference_id = resolver_data.inference_data.inference_id;
+    // let resolver_data = resolver_data.clone_with_inference_id(db, inference_id);
+    // let mut resolver = Resolver::with_data(db, resolver_data);
 
-    let resolver_data = impl_def_id.resolver_data(db)?;
-    let inference_id = resolver_data.inference_data.inference_id;
-    let resolver_data = resolver_data.clone_with_inference_id(db, inference_id);
-    let mut resolver = Resolver::with_data(db, resolver_data);
+    let mut tmp_inference_data = impl_def_id.resolver_data(db)?.inference_data.temporary_clone();
+    let mut tmp_inference = tmp_inference_data.inference(db);
 
-    implize_signature(db, &mut signature, &mut resolver, impl_ctx)?;
+    implize_signature(db, &mut signature, &mut tmp_inference, impl_ctx)?;
     Ok(signature)
 }
 
-// TODO(ygd)
+// TODO(ygd): note tmp_inference may change. Consider passing a temporary clone to avoid affecting
+// the original inference.
 pub fn implize_signature(
     db: &dyn SemanticGroup,
     signature: &mut Signature,
-    resolver: &mut Resolver,
+    tmp_inference: &mut Inference,
     impl_ctx: TraitOrImplContext,
 ) -> Maybe<()> {
     for param in signature.params.iter_mut() {
         println!("yg1 param type before: {:?}", param.ty.debug(db.elongate()));
-        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, resolver)?;
+        param.ty = reduce_impl_type_if_possible(db, param.ty, impl_ctx, tmp_inference)?;
         println!("yg1 param type after: {:?}", param.ty.debug(db.elongate()));
     }
     signature.return_type =
-        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, resolver)?;
+        reduce_impl_type_if_possible(db, signature.return_type, impl_ctx, tmp_inference)?;
 
     Ok(())
 }

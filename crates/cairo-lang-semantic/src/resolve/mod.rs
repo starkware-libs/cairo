@@ -670,7 +670,7 @@ impl<'db> Resolver<'db> {
                             self.db,
                             self.db.intern_type(type_long_id),
                             TraitOrImplContext::None,
-                            self,
+                            &mut self.inference(),
                         )?;
                         Ok(ResolvedConcreteItem::Type(ty))
                     }

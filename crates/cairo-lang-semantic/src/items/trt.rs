@@ -783,7 +783,7 @@ pub fn priv_trait_function_declaration_data(
         &mut environment,
     );
 
-    // TODO(yg): consider doing those 2 together to get the diags in the order of parameters.
+    // TODO(yg): consider doing those 2 together to get the diags in the order of parameters. + doc
     change_bad_types_to_missing(db, &mut diagnostics, &mut signature, &signature_syntax, trait_id);
 
     validate_trait_function_signature(
