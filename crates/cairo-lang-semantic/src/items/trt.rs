@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
     NamedLanguageElementLongId, TopLevelLanguageElementId, TraitFunctionId, TraitFunctionLongId,
-    TraitId, TraitItemId, TraitTypeId, TraitTypeLongId,
+    TraitId, TraitItemId, TraitOrImplContext, TraitTypeId, TraitTypeLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -255,12 +255,13 @@ pub fn priv_trait_declaration_data(
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
-    let resolver_data = Arc::new(resolver.data);
+    let mut resolver_data = resolver.data;
+    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait { trait_id };
     Ok(TraitDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
-        resolver_data,
+        resolver_data: Arc::new(resolver_data),
     })
 }
 
