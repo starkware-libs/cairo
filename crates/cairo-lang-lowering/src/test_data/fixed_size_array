@@ -246,3 +246,31 @@ Statements:
   (v2: [test::MyStruct; 1]) <- struct_construct(v1)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test fixed size array of size 0.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [u32; 0] {
+    [0_u32; 0]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Fixed size array repeated element size must be greater than 0.
+ --> lib.cairo:2:5
+    [0_u32; 0]
+    ^********^
+
+//! > lowering_flat
+Parameters:

@@ -85,6 +85,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
                  is greater than 1."
                     .into()
             },
+            LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
+                "Fixed size array repeated element size must be greater than 0.".into()
+            },
         }
     }
 
@@ -205,6 +208,7 @@ pub enum LoweringDiagnosticKind {
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
     FixedSizeArrayNonCopyableType,
+    EmptyRepeatedElementFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
 }

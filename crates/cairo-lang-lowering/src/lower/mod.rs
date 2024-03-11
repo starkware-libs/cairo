@@ -993,6 +993,12 @@ fn lower_expr_fixed_size_array(
             let size = extract_matches!(ctx.db.lookup_intern_const_value(*size), ConstValue::Int)
                 .to_usize()
                 .unwrap();
+            if size == 0 {
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics
+                        .report(expr.stable_ptr.untyped(), EmptyRepeatedElementFixedSizeArray),
+                ));
+            }
             // If there are multiple elements, the type must be copyable as we copy the var `size`
             // times.
             if size > 1 && ctx.variables[var_usage.var_id].copyable.is_err() {
