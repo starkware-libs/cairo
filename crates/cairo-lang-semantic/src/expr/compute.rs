@@ -666,7 +666,6 @@ fn compute_expr_tuple_semantic(
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
-
 /// Computes the semantic model of an expression of type [ast::ExprFixedSizeArray].
 fn compute_expr_fixed_size_array_semantic(
     ctx: &mut ComputationContext<'_>,
