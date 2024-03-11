@@ -85,6 +85,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
                  is greater than 1."
                     .into()
             },
+            LoweringDiagnosticKind::EmptyFixedSizeArray => {
+                "Fixed size array must have at least one element.".into()
+            },
+            
         }
     }
 
@@ -205,6 +209,7 @@ pub enum LoweringDiagnosticKind {
     NoPanicFunctionCycle,
     LiteralError(LiteralError),
     FixedSizeArrayNonCopyableType,
+    EmptyFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
 }

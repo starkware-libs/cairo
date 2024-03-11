@@ -1006,6 +1006,11 @@ fn lower_expr_fixed_size_array(
             vec![expr; size]
         }
     };
+    if exprs.is_empty() {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), EmptyFixedSizeArray),
+        ));
+    }
     Ok(LoweredExpr::FixedSizeArray { exprs, location })
 }
 
