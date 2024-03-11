@@ -8,7 +8,6 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::write_comma_separated;
 use thiserror::Error;
-use {cairo_lang_casm, cairo_lang_sierra};
 
 use crate::invocations::InvocationError;
 

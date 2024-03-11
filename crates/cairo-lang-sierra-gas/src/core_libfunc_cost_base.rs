@@ -78,16 +78,6 @@ pub trait CostOperations {
         self.const_cost(ConstCost { steps, ..ConstCost::default() })
     }
 
-    /// Gets a cost from hole count.
-    fn holes(&self, holes: i32) -> Self::CostType {
-        self.const_cost(ConstCost { holes, ..ConstCost::default() })
-    }
-
-    /// Gets a cost from range check count.
-    fn range_checks(&self, range_checks: i32) -> Self::CostType {
-        self.const_cost(ConstCost { range_checks, ..ConstCost::default() })
-    }
-
     /// Gets a cost of the given token type.
     fn cost_token(&self, count: i32, token_type: CostTokenType) -> Self::CostType;
     /// Gets a cost for the content of a function.
