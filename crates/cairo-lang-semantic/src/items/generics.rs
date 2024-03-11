@@ -176,12 +176,14 @@ pub struct GenericParamsData {
     pub resolver_data: Arc<ResolverData>,
 }
 
+// --- Selectors ---
+
 /// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
 pub fn generic_param_semantic(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<GenericParam> {
-    Ok(db.generic_param_data(generic_param_id)?.generic_param)
+    Ok(db.priv_generic_param_data(generic_param_id)?.generic_param)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
@@ -189,7 +191,7 @@ pub fn generic_param_diagnostics(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.generic_param_data(generic_param_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_generic_param_data(generic_param_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
@@ -197,11 +199,53 @@ pub fn generic_param_resolver_data(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.generic_param_data(generic_param_id)?.resolver_data)
+    Ok(db.priv_generic_param_data(generic_param_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_param_data].
-pub fn generic_param_data(
+/// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
+pub fn generic_impl_param_trait(
+    db: &dyn SemanticGroup,
+    generic_param_id: GenericParamId,
+) -> Maybe<TraitId> {
+    let syntax_db = db.upcast();
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
+    let generic_params_syntax = extract_matches!(
+        option_generic_params_syntax,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList
+    );
+    let generic_param_syntax = generic_params_syntax
+        .generic_params(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .find(|param_syntax| {
+            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
+                == generic_param_id
+        })
+        .unwrap();
+
+    let trait_path_syntax = match generic_param_syntax {
+        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(syntax_db),
+        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(syntax_db),
+        _ => {
+            panic!("generic_impl_param_trait() called on a non impl generic param.")
+        }
+    };
+
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
+    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
+    // in the context.
+    // Remove also GenericImplParamTrait.
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+
+    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_generic_param_data].
+pub fn priv_generic_param_data(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<GenericParamData> {
@@ -256,8 +300,8 @@ pub fn generic_param_data(
     })
 }
 
-/// Cycle handling for [crate::db::SemanticGroup::generic_param_data].
-pub fn generic_param_data_cycle(
+/// Cycle handling for [crate::db::SemanticGroup::priv_generic_param_data].
+pub fn priv_generic_param_data_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
     generic_param_id: &GenericParamId,
@@ -271,6 +315,8 @@ pub fn generic_param_data_cycle(
     ))
 }
 
+// --- Helpers ---
+
 /// Returns the generic parameters list AST node of a generic parameter.
 fn generic_param_generic_params_list(
     db: &dyn SemanticGroup,
@@ -283,46 +329,6 @@ fn generic_param_generic_params_list(
     let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
     Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
-}
-
-/// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
-pub fn generic_impl_param_trait(
-    db: &dyn SemanticGroup,
-    generic_param_id: GenericParamId,
-) -> Maybe<TraitId> {
-    let syntax_db = db.upcast();
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
-    let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
-    let generic_params_syntax = extract_matches!(
-        option_generic_params_syntax,
-        ast::OptionWrappedGenericParamList::WrappedGenericParamList
-    );
-    let generic_param_syntax = generic_params_syntax
-        .generic_params(syntax_db)
-        .elements(syntax_db)
-        .into_iter()
-        .find(|param_syntax| {
-            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
-                == generic_param_id
-        })
-        .unwrap();
-
-    let trait_path_syntax = match generic_param_syntax {
-        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(syntax_db),
-        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(syntax_db),
-        _ => {
-            panic!("generic_impl_param_trait() called on a non impl generic param.")
-        }
-    };
-
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
-    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
-    // in the context.
-    // Remove also GenericImplParamTrait.
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
-
-    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
@@ -346,7 +352,7 @@ pub fn semantic_generic_params(
                     module_file_id,
                     param_syntax.stable_ptr(),
                 ));
-                let generic_param_data = db.generic_param_data(generic_param_id)?;
+                let generic_param_data = db.priv_generic_param_data(generic_param_id)?;
                 let generic_param = generic_param_data.generic_param;
                 diagnostics.diagnostics.extend(generic_param_data.diagnostics);
                 resolver.add_generic_param(generic_param_id);

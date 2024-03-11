@@ -996,10 +996,6 @@ pub trait SemanticGroup:
 
     // Generic param.
     // ==============
-    /// Query to compute data about a generic param.
-    #[salsa::invoke(items::generics::generic_param_data)]
-    #[salsa::cycle(items::generics::generic_param_data_cycle)]
-    fn generic_param_data(&self, generic_param: GenericParamId) -> Maybe<GenericParamData>;
     /// Returns the semantic data of a generic param.
     #[salsa::invoke(items::generics::generic_param_semantic)]
     fn generic_param_semantic(&self, generic_param: GenericParamId) -> Maybe<GenericParam>;
@@ -1019,6 +1015,10 @@ pub trait SemanticGroup:
     /// Panics if the generic param is not an impl generic param.
     #[salsa::invoke(items::generics::generic_impl_param_trait)]
     fn generic_impl_param_trait(&self, generic_param_id: GenericParamId) -> Maybe<TraitId>;
+    /// Private query to compute data about a generic param.
+    #[salsa::invoke(items::generics::priv_generic_param_data)]
+    #[salsa::cycle(items::generics::priv_generic_param_data_cycle)]
+    fn priv_generic_param_data(&self, generic_param: GenericParamId) -> Maybe<GenericParamData>;
 
     // Concrete type.
     // ==============
