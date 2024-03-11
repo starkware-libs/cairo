@@ -141,9 +141,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 let TypeLongId::FixedSizeArray { type_id: type_id1, size: size1 } = long_ty1 else {
                     return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
                 };
-                if size != size1 {
-                    return Err(InferenceError::TypeKindMismatch { ty0, ty1 });
-                }
+                let size = self.conform_const(size, size1)?;
                 let ty = self.conform_ty(type_id, type_id1)?;
                 Ok((
                     self.db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size }),
