@@ -5,16 +5,18 @@ mod test;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::zip_eq;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use itertools::{chain, zip_eq};
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
 use crate::ids::FunctionLongId;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement, StatementCall,
-    StatementConst, StatementDesnap, StatementEnumConstruct, StatementStructConstruct,
-    StatementStructDestructure, VarUsage, VariableId,
+    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
+    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    StatementStructConstruct, StatementStructDestructure, VarUsage, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -38,15 +40,32 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let mut var_info = UnorderedHashMap::<_, _>::default();
 
     let semantic_db = db.upcast();
-    let felt_sub = db.intern_lowering_function(FunctionLongId::Semantic(
-        corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]),
-    ));
+    let to_lowering_id = |id| db.intern_lowering_function(FunctionLongId::Semantic(id));
+    let felt_sub =
+        to_lowering_id(corelib::get_core_function_id(semantic_db, "felt252_sub".into(), vec![]));
     let box_module = corelib::core_submodule(db.upcast(), "box");
     let Ok(Some(ModuleItemId::ExternFunction(into_box))) =
         db.module_item_by_name(box_module, "into_box".into())
     else {
         unreachable!("core::box::into_box not found");
     };
+    let integer_module = corelib::core_submodule(db.upcast(), "integer");
+    let nz_fns = UnorderedHashSet::<_>::from_iter(
+        chain!(
+            [corelib::get_core_function_id(semantic_db, "felt252_is_zero".into(), vec![])],
+            ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"].map(
+                |ty| {
+                    corelib::get_function_id(
+                        semantic_db,
+                        integer_module,
+                        format!("{}_is_zero", ty).into(),
+                        vec![],
+                    )
+                }
+            )
+        )
+        .map(to_lowering_id),
+    );
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -143,13 +162,48 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             FlatBlockEnd::Match { info } => {
                 stack.extend(info.arms().iter().map(|arm| arm.block_id));
                 maybe_replace_inputs(&var_info, info.inputs_mut());
-                if let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = info {
-                    if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
-                        var_info.get(&input.var_id)
-                    {
-                        let arm = &arms[variant.idx];
-                        var_info.insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
+                match info {
+                    MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
+                        if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
+                            var_info.get(&input.var_id)
+                        {
+                            let arm = &arms[variant.idx];
+                            var_info.insert(arm.var_ids[0], VarInfo::Const(value.as_ref().clone()));
+                        }
                     }
+                    MatchInfo::Extern(MatchExternInfo { function, inputs, arms, .. }) => {
+                        if nz_fns.contains(function) {
+                            let input_var = inputs[0].var_id;
+                            if let Some(VarInfo::Const(val)) = var_info.get(&input_var) {
+                                let is_zero = match val {
+                                    ConstValue::Int(v) => v.is_zero(),
+                                    ConstValue::Struct(s) => s.iter().all(|(_, v)| {
+                                        extract_matches!(v, ConstValue::Int).is_zero()
+                                    }),
+                                    _ => unreachable!(),
+                                };
+                                if is_zero {
+                                    block.end =
+                                        FlatBlockEnd::Goto(arms[0].block_id, Default::default());
+                                } else {
+                                    let arm = &arms[1];
+                                    let nz_var = arm.var_ids[0];
+                                    let nz_val = ConstValue::NonZero(
+                                        lowered.variables[input_var].ty,
+                                        Box::new(val.clone()),
+                                    );
+                                    var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
+                                    block.statements.push(Statement::Const(StatementConst {
+                                        value: nz_val,
+                                        output: nz_var,
+                                    }));
+                                    block.end =
+                                        FlatBlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                            }
+                        }
+                    }
+                    MatchInfo::Value(..) => {}
                 }
             }
             FlatBlockEnd::Return(ref mut inputs, _) => maybe_replace_inputs(&var_info, inputs),

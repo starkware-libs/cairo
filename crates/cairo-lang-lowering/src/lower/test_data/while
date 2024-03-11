@@ -152,8 +152,7 @@ End:
 test_generated_function
 
 //! > function
-fn foo(ref arr: Array<felt252>) -> felt252 {
-    let mut x = 5;
+fn foo(ref arr: Array<felt252>, mut x: felt252) -> felt252 {
     while let true = (x != 0) {
         x = x - 1;
         break;
@@ -175,20 +174,18 @@ Parameters:
 
 //! > lowering
 Main:
-Parameters: v0: core::array::Array::<core::felt252>
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 5
-  (v3: core::felt252, v2: ()) <- test::foo[expr13](v1)
+  (v3: core::felt252, v2: ()) <- test::foo[expr12](v1)
 End:
   Return(v0, v3)
 
 
 Final lowering:
-Parameters: v0: core::array::Array::<core::felt252>
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 5
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
