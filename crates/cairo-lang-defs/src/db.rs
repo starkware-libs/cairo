@@ -18,6 +18,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
 
 use crate::ids::*;
 use crate::plugin::{
@@ -99,6 +100,11 @@ pub trait DefsGroup:
     fn module_file(&self, module_id: ModuleFileId) -> Maybe<FileId>;
     /// Gets the directory of a module.
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
+
+    /// Gets the documentation above an item definition.
+    fn documentation(&self, item_id: LookupItemId) -> String;
+    /// Gets the the definition + documentation above.
+    fn documentation_with_definition(&self, item_id: LookupItemId) -> (String, String);
 
     // File to module.
     fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
@@ -279,6 +285,45 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     }
 }
 
+fn documentation(db: &dyn DefsGroup, item_id: LookupItemId) -> String {
+    // Get the text of the item (trivia + definition)
+    let doc = item_id.stable_location(db).syntax_node(db).get_text(db.upcast());
+    // Only get the doc comments (start with `///` or `//!`) above the function.
+    doc.lines()
+        .take_while_ref(|line| {
+            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+        })
+        .filter_map(|line| {
+            (line.trim_start().starts_with("///") || line.trim_start().starts_with("//!"))
+                .then_some(line.trim_start())
+        })
+        .collect::<Vec<&str>>()
+        .join("\n")
+}
+
+fn documentation_with_definition(db: &dyn DefsGroup, item_id: LookupItemId) -> (String, String) {
+    // Get the whole definition (declaration + implementation if it's a function)
+    let definition =
+        item_id.stable_location(db).syntax_node(db).get_text_without_trivia(db.upcast());
+    // Remove the function implementation if it's a function.
+    let definition = if let Some(index) = definition.find('{') {
+        &definition.trim()[..index]
+    } else {
+        definition.trim()
+    };
+    (
+        // Skip all the macros and anything that would be above the function that is not trivia.
+        definition
+            .lines()
+            .skip_while(|line| {
+                !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+            })
+            .map(|line| line.trim())
+            .collect::<Vec<&str>>()
+            .join(""),
+        documentation(db, item_id),
+    )
+}
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
     modules.push(module_id);
