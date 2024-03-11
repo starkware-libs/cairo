@@ -865,7 +865,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
         self.with_db(|db| {
             let file_uri = params.text_document_position_params.text_document.uri;
-            let file_id = file(db, file_uri.clone());
+            let file_id = file(db, file_uri);
             let position = params.text_document_position_params.position;
             let (node, lookup_items) = get_node_and_lookup_items(db, file_id, position)?;
             let lookup_item_id = lookup_items.into_iter().next()?;
@@ -881,11 +881,20 @@ impl LanguageServer for Backend {
                 }
             };
 
+            // Get the item id of the definition.
+            let (found_file, span) = get_definition_location(db, file_id, position)?;
+            // Get the documentation and declaration of the item.
+            let (_, lookup_items) = get_node_and_lookup_items(
+                db,
+                found_file,
+                from_pos(span.start.position_in_file(db.upcast(), found_file)?),
+            )?;
             // Build texts.
             let mut hints = Vec::new();
             if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
-            } else if let Some(hint) = get_expr_hint(db, file_id, position) {
+            } else if let Some(hint) = get_expr_hint(db.upcast(), lookup_items.into_iter().next()?)
+            {
                 hints.extend(hint);
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
@@ -1410,79 +1419,43 @@ fn get_identifier_hint(
 
 /// If the node is an expression, retrieves a hover hint for it.
 #[tracing::instrument(level = "trace", skip_all)]
-fn get_expr_hint(db: &RootDatabase, file: FileId, position: Position) -> Option<Vec<MarkedString>> {
+fn get_expr_hint(db: &dyn DefsGroup, lookup_item_id: LookupItemId) -> Option<Vec<MarkedString>> {
     let mut hints = vec![];
-    // We'll do the following. Let's consider this case:
-    // /// abc
-    // fn abc() {}
-    //
-    // let _ = abc();
-    // If we hover over the function call `abc()`
-    // we get the location of the `abc` function definition. The we get the first node of the
-    // definition (here `fn`) and we get the text with trivia from this node so `/// abc\n fn`
-    // And then we properly format it.
-
-    // Find the definition of the expression.
-    let (file_id, text_span) = get_definition_location(db, file, position)?;
-    // Get the content of the file where the expression is defined.
-    let file_content = db.file_content(file_id)?;
-    // Get the definition string and format it in a single line.
-    let func = text_span.take(&file_content);
-    let func = func
-        .find('{')
-        .map_or_else(|| func.trim().to_string(), |index| func[..index].trim_end().to_string())
-        .lines()
-        .skip_while(|line| !line.trim_start().chars().next().unwrap().is_alphabetic()) // Remove macros above definition
-        .map(|line| line.trim().to_string())
-        .collect::<String>();
-    // Format the definition as a cairo string.
-    hints.push(MarkedString::from_language_code("cairo".to_owned(), func.to_owned()));
+    let (definition, documentation) = db.documentation_with_definition(lookup_item_id);
+    hints.push(MarkedString::from_language_code("cairo".to_owned(), definition));
     // Add a separator.
     hints.push(MarkedString::String("\n---\n".to_string()));
-    // Get the position of the first node of the expression definition.
-    let first_node_pos = from_pos(text_span.start.position_in_file(db.upcast(), file_id).unwrap());
-    // Get the first node of the definition.
-    let (node, _lookup_items) = get_node_and_lookup_items(db, file_id, first_node_pos)?;
-    // Get its parent to get the trivia.
-    if let Some(parent_node) = node.parent() {
-        let mut is_cairo_string = false;
-        // Get the trivia and remove the node text.
-        let lines = if let Some(split) = parent_node.get_text(db.upcast()).rsplit_once('\n') {
-            split.0.to_string()
-        } else {
-            "".to_string()
-        };
-        let mut doc = "".to_string();
-        for line in lines.lines() {
-            // Skip everything else than doc
-            if !line.trim_start().starts_with("///") {
-                continue;
-            }
-            // Remove the leading whitespaces and `///`
-            let line = line.trim().trim_start_matches("///").trim_start().to_string();
-            // If we reach ``` it means that we either begin a code section or end a code section.
-            if line.starts_with("```") {
-                // If is_cairo_string is true it means that we end the code block so append the code
-                // in a cairo formatted string.
-                hints.push(if is_cairo_string {
-                    MarkedString::from_language_code("cairo".to_owned(), doc)
-                } else {
-                    // else append a regular string.
-                    MarkedString::from_markdown(doc)
-                });
-                // Switch the variable to properly format the following block.
-                is_cairo_string = !is_cairo_string;
-                // reset the string to start the next block.
-                doc = "".to_string();
-                continue;
-            }
-            // Append the current block string.
-            doc += line.as_str();
-            // add new line to have a proper formatting.
-            doc += "\n";
+    let mut doc = "".to_string();
+    let mut is_cairo_string = false;
+    for line in documentation.lines() {
+        if line.starts_with("```") {
+            // If is_cairo_string is true it means that we end the code block so append the code
+            // in a cairo formatted string.
+            hints.push(if is_cairo_string {
+                MarkedString::from_language_code("cairo".to_owned(), doc)
+            } else {
+                // else append a regular string.
+                MarkedString::from_markdown(doc)
+            });
+            // Switch the variable to properly format the following block.
+            is_cairo_string = !is_cairo_string;
+            // reset the string to start the next block.
+            doc = "".to_string();
+            continue;
         }
-        hints.push(MarkedString::from_markdown(doc));
+        // Append the current block string.
+        doc += if let Some(stripped) = line.strip_prefix("///") {
+            stripped
+        } else if let Some(stripped) = line.strip_prefix("//!") {
+            stripped
+        } else {
+            line
+        };
+        // add new line to have a proper formatting.
+        doc += "\n";
     }
+    hints.push(MarkedString::from_markdown(doc));
+
     Some(hints)
 }
 
