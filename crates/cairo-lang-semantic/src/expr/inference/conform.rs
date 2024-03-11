@@ -326,26 +326,8 @@ impl<'db> InferenceConform for Inference<'db> {
     /// Checks if a type tree contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
     fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool {
-        match self.db.lookup_intern_type(self.rewrite(ty).no_err()) {
-            TypeLongId::Concrete(concrete) => {
-                let generic_args = concrete.generic_args(self.db);
-                self.generic_args_contain_var(&generic_args, var)
-            }
-            TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
-            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
-            TypeLongId::Var(new_var) => {
-                if InferenceVar::Type(new_var.id) == var {
-                    return true;
-                }
-                if let Some(ty) = self.type_assignment.get(&new_var.id) {
-                    return self.ty_contains_var(*ty, var);
-                }
-                false
-            }
-            TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
-            TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
-            TypeLongId::FixedSizeArray { type_id, .. } => self.ty_contains_var(type_id, var),
-        }
+        let ty = self.rewrite(ty).no_err();
+        internal_ty_contains_var(self, ty, var)
     }
 
     /// Checks if a slice of generics arguments contain a certain [InferenceVar] somewhere. Used to
@@ -357,7 +339,7 @@ impl<'db> InferenceConform for Inference<'db> {
     ) -> bool {
         for garg in generic_args {
             if match garg {
-                GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
+                GenericArgumentId::Type(ty) => internal_ty_contains_var(self, *ty, var),
                 GenericArgumentId::Constant(_) => false,
                 GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
                 GenericArgumentId::NegImpl => false,
@@ -403,5 +385,34 @@ impl<'db> InferenceConform for Inference<'db> {
                 GenericFunctionId::Impl(impl_generic_function_id)
                 if self.impl_contains_var(&impl_generic_function_id.impl_id, var)
             )
+    }
+}
+
+/// helper function for ty_contains_var
+/// Assumes ty was already rewritten.
+fn internal_ty_contains_var(inference: &mut Inference<'_>, ty: TypeId, var: InferenceVar) -> bool {
+    match inference.db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete) => {
+            let generic_args = concrete.generic_args(inference.db);
+            inference.generic_args_contain_var(&generic_args, var)
+        }
+        TypeLongId::Tuple(tys) => {
+            tys.into_iter().any(|ty| internal_ty_contains_var(inference, ty, var))
+        }
+        TypeLongId::Snapshot(ty) => internal_ty_contains_var(inference, ty, var),
+        TypeLongId::Var(new_var) => {
+            if InferenceVar::Type(new_var.id) == var {
+                return true;
+            }
+            if let Some(ty) = inference.type_assignment.get(&new_var.id) {
+                return internal_ty_contains_var(inference, *ty, var);
+            }
+            false
+        }
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
+        TypeLongId::Coupon(function_id) => inference.function_contains_var(function_id, var),
+        TypeLongId::FixedSizeArray { type_id, .. } => {
+            internal_ty_contains_var(inference, type_id, var)
+        }
     }
 }
