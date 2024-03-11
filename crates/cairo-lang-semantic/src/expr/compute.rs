@@ -686,9 +686,11 @@ fn compute_expr_fixed_size_array_semantic(
         if !tail_exprs.is_empty() {
             return Err(ctx.diagnostics.report(syntax, FixedSizeArrayNonSingleValue));
         }
-        let size = extract_matches!(db.lookup_intern_const_value(size_const_id), ConstValue::Int)
-            .to_usize()
-            .unwrap();
+        let size =
+            try_extract_matches!(db.lookup_intern_const_value(size_const_id), ConstValue::Int)
+                .ok_or_else(|| ctx.diagnostics.report(syntax, FixedSizeArrayNonNumericSize))?
+                .to_usize()
+                .unwrap();
         verify_fixed_size_array_size(ctx.diagnostics, &size.into(), syntax)?;
         FixedSizeArrayItems::ValueAndSize(first_expr_semantic.id, size_const_id)
     } else {

@@ -4,8 +4,6 @@
 SmallE2ETestRunner
 
 //! > cairo
-impl FixedArrayDrop of Drop::<[felt252; 3]>;
-
 fn foo() {
     let x = [10, 20, 30];
     bar(x);
