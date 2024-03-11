@@ -207,3 +207,29 @@ error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[c
  --> lib.cairo:5:25
     let _x: [u32; 2]  = [true, false];
                         ^***********^
+
+//! > ==========================================================================
+
+//! > Test fixed size array, generic short notation
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> [felt252; 1] {
+   bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: usize>() -> [felt252; N]{
+   [0; N]
+}
+
+//! > expected_diagnostics
+error: Fixed size array type must have a positive integer size.
+ --> lib.cairo:2:4
+   [0; N]
+   ^****^
