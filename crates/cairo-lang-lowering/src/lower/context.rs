@@ -229,6 +229,8 @@ pub enum LoweredExpr {
     /// The expression value is a fixed size array.
     FixedSizeArray {
         exprs: Vec<LoweredExpr>,
+        /// The type of the elements of the array.
+        inner_ty: semantic::TypeId,
         location: LocationId,
     },
     /// The expression value is an enum result from an extern call.
@@ -273,9 +275,9 @@ impl LoweredExpr {
 
                 Ok(VarUsage { var_id: snapshot, location })
             }
-            LoweredExpr::FixedSizeArray { exprs, location } => {
+            LoweredExpr::FixedSizeArray { exprs, inner_ty, location } => {
                 let ty = ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
-                    type_id: exprs[0].ty(ctx),
+                    type_id: inner_ty,
                     size: ctx.db.intern_const_value(
                         value_as_const_value(
                             ctx.db.upcast(),

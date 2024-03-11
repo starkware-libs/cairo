@@ -246,3 +246,32 @@ Statements:
   (v2: [test::MyStruct; 1]) <- struct_construct(v1)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test fixed size array of size 0.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> [u32; 0] {
+    [0_u32; 0]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v1: [core::integer::u32; 0]) <- struct_construct()
+End:
+  Return(v1)

@@ -1006,7 +1006,11 @@ fn lower_expr_fixed_size_array(
             vec![expr; size]
         }
     };
-    Ok(LoweredExpr::FixedSizeArray { exprs, location })
+    let inner_ty = match ctx.db.lookup_intern_type(expr.ty) {
+        TypeLongId::FixedSizeArray { type_id, .. } => type_id,
+        _ => unreachable!("Fixed size array must have a fixed size array type."),
+    };
+    Ok(LoweredExpr::FixedSizeArray { exprs, inner_ty, location })
 }
 
 /// Lowers an expression of type [semantic::ExprSnapshot].

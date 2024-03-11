@@ -56,3 +56,48 @@ return(); // 8
 
 test::foo@0() -> ();
 test::bar@7([0]: Tuple<felt252, felt252, felt252>) -> ();
+
+//! > ==========================================================================
+
+//! > Fixed size array, size 0.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+impl FixedArrayDrop of Drop::<[felt252; 0]>;
+
+fn foo() {
+    let x = [1; 0];
+    bar(x);
+}
+
+#[inline(never)]
+fn bar(x: [felt252; 0]) {
+    let _y = x;
+}
+
+//! > casm
+call rel 3;
+ret;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+test::bar: OrderedHashMap({})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc drop<Unit> = drop<Unit>;
+
+struct_construct<Unit>() -> ([0]); // 0
+function_call<user@test::bar>([0]) -> (); // 1
+return(); // 2
+drop<Unit>([0]) -> (); // 3
+return(); // 4
+
+test::foo@0() -> ();
+test::bar@3([0]: Unit) -> ();
