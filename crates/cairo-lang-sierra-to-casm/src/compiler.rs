@@ -455,15 +455,18 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                let updated_annotations = StatementAnnotations {
+                let branching_libfunc = compiled_invocation.results.len() > 1;
+                let mut all_updated_annotations = vec![StatementAnnotations {
                     environment: compiled_invocation.environment,
                     ..annotations
-                };
+                }];
+                while all_updated_annotations.len() < compiled_invocation.results.len() {
+                    all_updated_annotations.push(all_updated_annotations[0].clone());
+                }
 
-                let branching_libfunc = compiled_invocation.results.len() > 1;
-
-                for (branch_info, branch_changes) in
+                for ((branch_info, branch_changes), updated_annotations) in
                     zip_eq(&invocation.branches, compiled_invocation.results)
+                        .zip(all_updated_annotations)
                 {
                     let destination_statement_idx = statement_idx.next(&branch_info.target);
                     if branching_libfunc
@@ -482,7 +485,7 @@ pub fn compile(
                         .propagate_annotations(
                             statement_idx,
                             destination_statement_idx,
-                            &updated_annotations,
+                            updated_annotations,
                             branch_info,
                             branch_changes,
                             branching_libfunc,

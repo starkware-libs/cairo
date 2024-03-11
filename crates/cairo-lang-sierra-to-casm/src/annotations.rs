@@ -254,21 +254,29 @@ impl ProgramAnnotations {
     }
 
     /// Returns the result of applying take_args to the StatementAnnotations at statement_idx.
+    /// Can be called only once per item, the item is removed from the annotations, and can no
+    /// longer be used for merges.
     pub fn get_annotations_after_take_args<'a>(
-        &self,
+        &mut self,
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
         let statement_annotations = self.per_statement_annotations[statement_idx.0]
-            .as_ref()
-            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?
-            .clone();
-
-        let (statement_refs, taken_refs) =
-            take_args(statement_annotations.refs, ref_ids).map_err(|error| {
-                AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
-            })?;
-        Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
+            .as_mut()
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
+        let refs = std::mem::take(&mut statement_annotations.refs);
+        let (statement_refs, taken_refs) = take_args(refs, ref_ids).map_err(|error| {
+            AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
+        })?;
+        let updated_annotations = StatementAnnotations {
+            refs: statement_refs,
+            function_id: statement_annotations.function_id.clone(),
+            convergence_allowed: statement_annotations.convergence_allowed,
+            environment: statement_annotations.environment.clone(),
+        };
+        // Merging with this data is no longer allowed.
+        statement_annotations.convergence_allowed = false;
+        Ok((updated_annotations, taken_refs))
     }
 
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
@@ -280,7 +288,7 @@ impl ProgramAnnotations {
         &mut self,
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
-        annotations: &StatementAnnotations,
+        mut annotations: StatementAnnotations,
         branch_info: &BranchInfo,
         branch_changes: BranchChanges,
         must_set: bool,
@@ -292,33 +300,24 @@ impl ProgramAnnotations {
             });
         }
 
-        let mut new_refs = StatementRefs::default();
-        for (var_id, ref_value) in annotations.refs.iter() {
-            new_refs.insert(
-                var_id.clone(),
-                ReferenceValue {
-                    expression: ref_value
-                        .expression
-                        .clone()
-                        .apply_ap_change(branch_changes.ap_change)
-                        .map_err(|error| AnnotationError::ApChangeError {
-                            var_id: var_id.clone(),
-                            source_statement_idx,
-                            destination_statement_idx,
-                            error,
-                        })?,
-                    ty: ref_value.ty.clone(),
-                    stack_idx: if branch_changes.clear_old_stack {
-                        None
-                    } else {
-                        ref_value.stack_idx
-                    },
-                    introduction_point: ref_value.introduction_point.clone(),
-                },
-            );
+        for (var_id, ref_value) in annotations.refs.iter_mut() {
+            if branch_changes.clear_old_stack {
+                ref_value.stack_idx = None;
+            }
+            let mut tmp = ReferenceExpression::zero_sized();
+            std::mem::swap(&mut tmp, &mut ref_value.expression);
+            ref_value.expression =
+                tmp.apply_ap_change(branch_changes.ap_change).map_err(|error| {
+                    AnnotationError::ApChangeError {
+                        var_id: var_id.clone(),
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    }
+                })?;
         }
         let mut refs = put_results(
-            new_refs,
+            annotations.refs,
             zip_eq(
                 &branch_info.results,
                 branch_changes.refs.into_iter().map(|value| ReferenceValue {
@@ -394,12 +393,12 @@ impl ProgramAnnotations {
             destination_statement_idx,
             StatementAnnotations {
                 refs,
-                function_id: annotations.function_id.clone(),
+                function_id: annotations.function_id,
                 convergence_allowed: !must_set,
                 environment: Environment {
                     ap_tracking,
                     stack_size,
-                    frame_state: annotations.environment.frame_state.clone(),
+                    frame_state: annotations.environment.frame_state,
                     gas_wallet: annotations
                         .environment
                         .gas_wallet
